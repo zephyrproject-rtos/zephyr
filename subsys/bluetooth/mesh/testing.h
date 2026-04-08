@@ -78,6 +78,15 @@ int bt_mesh_test_lpn_group_remove(uint16_t *groups, size_t groups_count);
  */
 int bt_mesh_test_rpl_clear(void);
 
+#if defined(CONFIG_BT_TESTING) && defined(CONFIG_BT_MESH_LOW_POWER)
+/** Reset counter of LPN ADV policy violations (non-Friend-cred accepted in friend flow). */
+void bt_mesh_test_lpn_adv_filter_violation_reset(void);
+/** Increment LPN ADV policy violation counter (filter disabled; see BT_MESH_LPN_ADV_FILTER). */
+void bt_mesh_test_lpn_adv_filter_violation_inc(void);
+/** Read LPN ADV policy violation count. */
+uint32_t bt_mesh_test_lpn_adv_filter_violation_get(void);
+#endif
+
 void bt_mesh_test_net_recv(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst,
 			   const void *payload, size_t payload_len);
 void bt_mesh_test_model_recv(uint16_t src, uint16_t dst, const void *payload, size_t payload_len);

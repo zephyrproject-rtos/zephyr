@@ -1680,6 +1680,15 @@ config BT_MESH_LPN_RECV_DELAY
 	  the minimal value for the delay can not be less than 50ms due
 	  to a limitation in the legacy advertiser implementation.
 
+config BT_MESH_LPN_ADV_FILTER
+	bool "Drop non-Friend-credential ADV during LPN friend flow"
+	default y
+	help
+	  When enabled, the stack rejects master-credential network PDUs received
+	  over the advertising bearer while the LPN awaits a Friend Update or
+	  friendship is still being established. Disable only for local regression
+	  testing; BabbleSim friendship tests expect this to be enabled.
+
 config BT_MESH_LPN_POLL_TIMEOUT
 	int "The value of the PollTimeout timer"
 	range 10 244735

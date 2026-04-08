@@ -11,6 +11,7 @@
 
 #include <zephyr/bluetooth/mesh/access.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/slist.h>
 
 #include "net.h"
@@ -118,6 +119,25 @@ int bt_mesh_test_lpn_group_remove(uint16_t *groups, size_t groups_count)
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_TESTING)
+static atomic_t lpn_adv_filter_violations;
+
+void bt_mesh_test_lpn_adv_filter_violation_reset(void)
+{
+	atomic_set(&lpn_adv_filter_violations, 0);
+}
+
+void bt_mesh_test_lpn_adv_filter_violation_inc(void)
+{
+	(void)atomic_inc(&lpn_adv_filter_violations);
+}
+
+uint32_t bt_mesh_test_lpn_adv_filter_violation_get(void)
+{
+	return (uint32_t)atomic_get(&lpn_adv_filter_violations);
+}
+#endif /* CONFIG_BT_TESTING */
 #endif /* CONFIG_BT_MESH_LOW_POWER */
 
 int bt_mesh_test_rpl_clear(void)
