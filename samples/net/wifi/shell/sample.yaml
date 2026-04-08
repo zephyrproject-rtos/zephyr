@@ -105,3 +105,15 @@ tests:
       - CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD=y
     platform_allow:
       - siwx917_rb4338a
+  sample.net.wifi.sta_owe:
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - CONFIG_WIFI_CREDENTIALS_STATIC=y
+      - CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE=y
+      - CONFIG_ESP32_WIFI_ENABLE_WPA3_OWE_STA=y
+      - CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE=y
+      - CONFIG_ESP32_WIFI_OWE=y
+      - CONFIG_NXP_WIFI_OWE=y
+    platform_allow:
+      - frdm_rw612
+      - esp32c6_devkitc/esp32c6/hpcore

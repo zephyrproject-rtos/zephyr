@@ -481,6 +481,12 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 			return -EINVAL;
 		}
 		break;
+	case WIFI_SECURITY_TYPE_OWE:
+		/* OWE uses ECDH; no credentials are expected. */
+		if (params->psk_length || params->sae_password_length) {
+			return -EINVAL;
+		}
+		break;
 #if !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT) || defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP)
 	case WIFI_SECURITY_TYPE_WEP:
 	case WIFI_SECURITY_TYPE_WEP_OPEN:
@@ -1832,8 +1838,10 @@ static int add_static_network_config(struct net_if *iface)
 
 #if defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN)
 	creds.header.type = WIFI_SECURITY_TYPE_NONE;
+	creds.password_len = 0;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE)
 	creds.header.type = WIFI_SECURITY_TYPE_OWE;
+	creds.password_len = 0;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK)
 	creds.header.type = WIFI_SECURITY_TYPE_PSK;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK_SHA256)
@@ -1848,8 +1856,10 @@ static int add_static_network_config(struct net_if *iface)
 
 	memcpy(creds.header.ssid, CONFIG_WIFI_CREDENTIALS_STATIC_SSID,
 	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID));
+#if !defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN) && !defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE)
 	memcpy(creds.password, CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD,
 	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD));
+#endif
 
 	LOG_DBG("Adding statically configured WiFi network [%s] to internal list.",
 		CONFIG_WIFI_CREDENTIALS_STATIC_SSID);
