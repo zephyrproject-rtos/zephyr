@@ -25,4 +25,5 @@ supported:
   - netif:eth
   - i2c
   - watchdog
+  - pwm
 vendor: nxp
