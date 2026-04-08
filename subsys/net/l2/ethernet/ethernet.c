@@ -296,6 +296,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		if (verdict == NET_OK) {
 			iface = net_eth_get_bridge(ctx);
 		}
+
+		/* For NET_CONTINUE case, current iface continues to handle the pkt. */
 	}
 
 	type = net_ntohs(hdr->type);
