@@ -15,6 +15,8 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #include <r_ssi.h>
 #include <r_dtc.h>
@@ -62,6 +64,9 @@ struct renesas_ra_ssie_data {
 	bool stop_with_draining;
 	bool full_duplex;
 	bool trigger_drop;
+#ifdef CONFIG_PM
+	atomic_t ssie_active_state;
+#endif
 
 #if defined(CONFIG_I2S_RENESAS_RA_SSIE_DTC)
 	struct st_transfer_instance rx_transfer;
@@ -77,6 +82,13 @@ struct renesas_ra_ssie_data {
 	struct st_transfer_info DTC_TRANSFER_INFO_ALIGNMENT tx_transfer_info;
 #endif /* CONFIG_I2S_RENESAS_RA_SSIE_DTC */
 };
+
+#ifdef CONFIG_PM
+enum ssie_active_state {
+	SSIE_ACTIVE_TRANSFER = 0,
+	SSIE_ACTIVE_READ     = 1,
+};
+#endif
 
 /* FSP interruption handlers. */
 void ssi_txi_isr(void);
@@ -96,6 +108,35 @@ __maybe_unused static void ssi_rt_isr(void *p_args)
 		ssi_rxi_isr();
 	}
 }
+#ifdef CONFIG_PM
+static inline void renesas_ra_ssie_pm_policy_state_lock_get(const struct device *dev,
+							    enum ssie_active_state state)
+{
+	struct renesas_ra_ssie_data *dev_data = (struct renesas_ra_ssie_data *)dev->data;
+
+	if (atomic_test_and_set_bit(&dev_data->ssie_active_state, state)) {
+		return;
+	}
+
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static inline void renesas_ra_ssie_pm_policy_state_lock_put(const struct device *dev,
+							    enum ssie_active_state state)
+{
+	struct renesas_ra_ssie_data *dev_data = (struct renesas_ra_ssie_data *)dev->data;
+
+	if (!atomic_test_and_clear_bit(&dev_data->ssie_active_state, state)) {
+		return;
+	}
+
+	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+#endif /* CONFIG_PM */
 
 static int audio_clock_enable(const struct device *dev)
 {
@@ -630,6 +671,9 @@ static void renesas_ra_ssie_idle_callback(const struct device *dev)
 
 	if (dev_data->trigger_drop) {
 		dev_data->state = I2S_STATE_READY;
+#ifdef CONFIG_PM
+		renesas_ra_ssie_pm_policy_state_lock_put(dev, SSIE_ACTIVE_TRANSFER);
+#endif
 		return;
 	}
 
@@ -646,6 +690,11 @@ static void renesas_ra_ssie_idle_callback(const struct device *dev)
 	default:
 		LOG_ERR("Invalid direction: %d", dev_data->active_dir);
 	}
+#ifdef CONFIG_PM
+	if (dev_data->state == I2S_STATE_READY || dev_data->state == I2S_STATE_ERROR) {
+		renesas_ra_ssie_pm_policy_state_lock_put(dev, SSIE_ACTIVE_TRANSFER);
+	}
+#endif
 }
 
 static void renesas_ra_ssie_callback(i2s_callback_args_t *p_args)
@@ -702,7 +751,9 @@ static int renesas_ra_ssie_start_transfer(const struct device *dev, enum i2s_dir
 	dev_data->active_dir = dir;
 	dev_data->stop_with_draining = false;
 	dev_data->trigger_drop = false;
-
+#ifdef CONFIG_PM
+	renesas_ra_ssie_pm_policy_state_lock_get(dev, SSIE_ACTIVE_TRANSFER);
+#endif
 	return 0;
 }
 
@@ -1042,8 +1093,13 @@ static int i2s_renesas_ra_ssie_read(const struct device *dev, void **mem_block, 
 		LOG_ERR("RX invalid state: %d", (int)dev_data->state);
 		return -EIO;
 	}
-
+#ifdef CONFIG_PM
+	renesas_ra_ssie_pm_policy_state_lock_get(dev, SSIE_ACTIVE_READ);
 	ret = i2s_renesas_ra_get_stream(&dev_data->rx_queue, &rx_stream, timeout);
+	renesas_ra_ssie_pm_policy_state_lock_put(dev, SSIE_ACTIVE_READ);
+#else
+	ret = i2s_renesas_ra_get_stream(&dev_data->rx_queue, &rx_stream, timeout);
+#endif
 	if (ret == -ENOMSG) {
 		return -EIO;
 	}
@@ -1158,6 +1214,49 @@ static int i2s_renesas_ra_ssie_init(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int renesas_ra_ssie_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct renesas_ra_ssie_data *data = dev->data;
+	fsp_err_t fsp_err = FSP_SUCCESS;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (data->state == I2S_STATE_RUNNING || data->state == I2S_STATE_STOPPING) {
+			return -EBUSY;
+		}
+
+		if (data->fsp_ctrl.open) {
+			/* In master mode, halt bit and frame clocks before standby. */
+			if (data->fsp_cfg.operating_mode == I2S_MODE_MASTER) {
+				data->fsp_ctrl.p_reg->SSIOFR_b.BCKASTP = 1;
+				data->fsp_ctrl.p_reg->SSIOFR_b.LRCONT = 0;
+			}
+
+			fsp_err = R_SSI_Close(&data->fsp_ctrl);
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		audio_clock_enable(dev);
+
+		if (!data->fsp_ctrl.open) {
+			fsp_err = R_SSI_Open(&data->fsp_ctrl, &data->fsp_cfg);
+			if (fsp_err == FSP_SUCCESS &&
+			    data->fsp_cfg.operating_mode == I2S_MODE_MASTER &&
+			    data->fsp_ctrl.p_reg != NULL) {
+				/* Allow bit clock to run again; LRCONT is set in Open(). */
+				data->fsp_ctrl.p_reg->SSIOFR_b.BCKASTP = 0;
+			}
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return (fsp_err == FSP_SUCCESS) ? 0 : -EIO;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(i2s, i2s_renesas_ra_drv_api) = {
 	.configure = i2s_renesas_ra_ssie_configure,
@@ -1331,7 +1430,8 @@ static DEVICE_API(i2s, i2s_renesas_ra_drv_api) = {
 			    .p_transfer_rx = NULL},                                                \
 		SSIE_DTC_INIT(index)};                                                             \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &i2s_renesas_ra_ssie_init, NULL,                              \
+	PM_DEVICE_DT_INST_DEFINE(index, renesas_ra_ssie_pm_action);				   \
+	DEVICE_DT_INST_DEFINE(index, &i2s_renesas_ra_ssie_init, PM_DEVICE_DT_INST_GET(index),	   \
 			      &renesas_ra_ssie_data_##index, &renesas_ra_ssie_config_##index,      \
 			      POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &i2s_renesas_ra_drv_api);
 
