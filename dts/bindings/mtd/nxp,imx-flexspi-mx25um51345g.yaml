@@ -5,4 +5,4 @@ description: NXP FlexSPI MX25UM51345G
 
 compatible: "nxp,imx-flexspi-mx25um51345g"
 
-include: ["nxp,imx-flexspi-device.yaml", soc-nv-flash.yaml]
+include: ["nxp,imx-flexspi-device.yaml"]
