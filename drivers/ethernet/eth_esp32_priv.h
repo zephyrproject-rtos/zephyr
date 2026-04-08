@@ -14,6 +14,9 @@
 #include <hal/emac_periph.h>
 #include <soc/gpio_periph.h>
 #include <soc/io_mux_reg.h>
+#if SOC_EMAC_USE_MULTI_IO_MUX
+#include <hal/gpio_ll.h>
+#endif
 
 /*
  * Find the IOMUX entry matching a specific GPIO number.
@@ -40,37 +43,57 @@ static inline const emac_iomux_info_t *esp32_emac_iomux_find(const emac_iomux_in
 	return NULL;
 }
 
-static inline void esp32_emac_iomux_output(const emac_iomux_info_t *pin)
+static inline void esp32_emac_iomux_output(const emac_iomux_info_t *pin, uint32_t sig_idx)
 {
 	if (pin == NULL) {
 		return;
 	}
 	PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	ARG_UNUSED(sig_idx);
 }
 
-static inline void esp32_emac_iomux_input(const emac_iomux_info_t *pin)
+static inline void esp32_emac_iomux_input(const emac_iomux_info_t *pin, uint32_t sig_idx)
 {
 	if (pin == NULL) {
 		return;
 	}
 	PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
 	PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+#if SOC_EMAC_USE_MULTI_IO_MUX
+	/*
+	 * On P4, tell the peripheral to read input from IOMUX pad
+	 * (sig_in_sel=0) rather than through GPIO matrix.
+	 */
+	gpio_ll_set_input_signal_from(&GPIO, sig_idx, false);
+#else
+	ARG_UNUSED(sig_idx);
+#endif
 }
 
 /*
- * Initialize RMII data plane IOMUX pins. Each signal is routed to its
- * dedicated EMAC IOMUX pad; pass the desired GPIO per signal, or -1 to
- * use the first available pad.
+ * Initialize RMII data plane IOMUX pins.
+ *
+ * On ESP32, each signal has a single dedicated IOMUX pin.
+ * On ESP32-P4 (SOC_EMAC_USE_MULTI_IO_MUX), each signal has
+ * multiple IOMUX options and input signals need sig_in_sel
+ * configured to read from IOMUX pad.
+ * Pass the desired GPIO number per signal, or -1 for default.
  */
 static inline void esp32_emac_iomux_init_rmii(int gpio_tx_en, int gpio_txd0, int gpio_txd1,
 					      int gpio_crs_dv, int gpio_rxd0, int gpio_rxd1)
 {
-	esp32_emac_iomux_output(esp32_emac_iomux_find(emac_rmii_iomux_pins.tx_en, gpio_tx_en));
-	esp32_emac_iomux_output(esp32_emac_iomux_find(emac_rmii_iomux_pins.txd0, gpio_txd0));
-	esp32_emac_iomux_output(esp32_emac_iomux_find(emac_rmii_iomux_pins.txd1, gpio_txd1));
-	esp32_emac_iomux_input(esp32_emac_iomux_find(emac_rmii_iomux_pins.crs_dv, gpio_crs_dv));
-	esp32_emac_iomux_input(esp32_emac_iomux_find(emac_rmii_iomux_pins.rxd0, gpio_rxd0));
-	esp32_emac_iomux_input(esp32_emac_iomux_find(emac_rmii_iomux_pins.rxd1, gpio_rxd1));
+	esp32_emac_iomux_output(esp32_emac_iomux_find(emac_rmii_iomux_pins.tx_en, gpio_tx_en),
+				emac_io_idx.mii_tx_en_o_idx);
+	esp32_emac_iomux_output(esp32_emac_iomux_find(emac_rmii_iomux_pins.txd0, gpio_txd0),
+				emac_io_idx.mii_txd0_o_idx);
+	esp32_emac_iomux_output(esp32_emac_iomux_find(emac_rmii_iomux_pins.txd1, gpio_txd1),
+				emac_io_idx.mii_txd1_o_idx);
+	esp32_emac_iomux_input(esp32_emac_iomux_find(emac_rmii_iomux_pins.crs_dv, gpio_crs_dv),
+			       emac_io_idx.mii_rx_dv_i_idx);
+	esp32_emac_iomux_input(esp32_emac_iomux_find(emac_rmii_iomux_pins.rxd0, gpio_rxd0),
+			       emac_io_idx.mii_rxd0_i_idx);
+	esp32_emac_iomux_input(esp32_emac_iomux_find(emac_rmii_iomux_pins.rxd1, gpio_rxd1),
+			       emac_io_idx.mii_rxd1_i_idx);
 }
 
 /*

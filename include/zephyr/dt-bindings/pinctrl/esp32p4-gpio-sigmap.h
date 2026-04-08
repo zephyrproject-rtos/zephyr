@@ -182,4 +182,9 @@
 #define ESP_LEDC_LS_SIG_OUT6 132 /**< LEDC low-speed signal output 6 */
 #define ESP_LEDC_LS_SIG_OUT7 133 /**< LEDC low-speed signal output 7 */
 
+/* EMAC */
+#define ESP_EMAC_MDI_I 107 /**< EMAC MDIO data input */
+#define ESP_EMAC_MDC_O 108 /**< EMAC MDIO clock output */
+#define ESP_EMAC_MDO_O 109 /**< EMAC MDIO data output */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32P4_GPIO_SIGMAP_H_ */
