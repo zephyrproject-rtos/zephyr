@@ -14,23 +14,20 @@ config WIFI_SILABS_SIWX91X
 
 if WIFI_SILABS_SIWX91X
 
-config WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP
-	bool "Enhanced Max PSP Support"
-	default y
-	help
-	  Enable this option to allow the device to configure
-	  Enhanced Maximum Power Save (PSP) support during
-	  device initialization.
+config NET_TCP_WORKQ_STACK_SIZE
+	default 2048
 
-	  **Advantages:**
-	  - Reduces power consumption during low traffic periods.
-	  - Automatically transitions to Fast PSP for improved responsiveness
-	    when traffic is high.
+config NET_RX_STACK_SIZE
+	default 2048
 
-	  **Limitations:**
-	  - Initially uses PS-Poll frames for power management, even if the
-	    user configures NULL frame-based.
-	  - Switches to NULL frame-based only when traffic increases.
+config NET_MGMT_EVENT_STACK_SIZE
+	default 2048
+
+config NET_MGMT_EVENT_QUEUE_SIZE
+	default 10
+
+config WIFI_MGMT_SCAN_SSID_FILT_MAX
+	default 1
 
 choice
 	prompt "Network stack"
@@ -51,17 +48,49 @@ config WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 
 endchoice
 
-config NET_TCP_WORKQ_STACK_SIZE
-	default 2048
+config WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP
+	bool "Enhanced Max PSP Support"
+	default y
+	help
+	  Enable this option to allow the device to configure
+	  Enhanced Maximum Power Save (PSP) support during
+	  device initialization.
 
-config NET_RX_STACK_SIZE
-	default 2048
+	  **Advantages:**
+	  - Reduces power consumption during low traffic periods.
+	  - Automatically transitions to Fast PSP for improved responsiveness
+	    when traffic is high.
 
-config NET_MGMT_EVENT_STACK_SIZE
-	default 2048
+	  **Limitations:**
+	  - Initially uses PS-Poll frames for power management, even if the
+	    user configures NULL frame-based.
+	  - Switches to NULL frame-based only when traffic increases.
 
-config NET_MGMT_EVENT_QUEUE_SIZE
-	default 10
+config WIFI_SILABS_SIWX91X_MFP
+	bool "802.11w Management Frame Protection (MFP) support"
+	default y
+	help
+	  Enable IEEE 802.11w Management Frame Protection (MFP) for secure
+	  handling of management frames.
+
+	  Note:
+	    - Required for WPA3-Personal and WPA3-Transition modes.
+	    - Disabling this frees memory used by MFP, improving TCP throughput
+	      by about 10–12% (≈1–2 Mbps).
+
+config WIFI_SILABS_SIWX91X_FEAT_SECURITY_PSK
+	bool "WPA/WPA2 (PSK) Security Support"
+	default y
+	help
+	  Enable WPA/WPA2 (PSK-based) security in client mode.
+	  Recommended for configurations requiring WPA, WPA2, or mixed security modes.
+	  Disabling this feature can reduce data buffer usage, potentially improving throughput.
+
+config WIFI_SILABS_SIWX91X_FEAT_HIDE_PSK_CREDENTIALS
+	bool "Hide PSK and Sensitive Credentials in Logs"
+	help
+	  When enabled, prevents printing sensitive credentials such as
+	  PSK, PMK, and EAP keys in debug or log messages.
 
 config WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA
 	bool "Limits the number of packets buffered per STA in AP mode"
@@ -174,34 +203,4 @@ config WIFI_SILABS_SIWX91X_ENABLE_INSTANT_SCAN
 	  can perform an advanced scan without waiting for the periodic
 	  scan interval, enabling quicker detection of available networks.
 
-# Override the WIFI_MGMT_SCAN_SSID_FILT_MAX parameter for the Wi-Fi subsystem.
-# This device supports filtering scan results for only one SSID.
-config WIFI_MGMT_SCAN_SSID_FILT_MAX
-	default 1
-
-config WIFI_SILABS_SIWX91X_MFP
-	bool "802.11w Management Frame Protection (MFP) support"
-	default y
-	help
-	  Enable IEEE 802.11w Management Frame Protection (MFP) for secure
-	  handling of management frames.
-
-	  Note:
-	    - Required for WPA3-Personal and WPA3-Transition modes.
-	    - Disabling this frees memory used by MFP, improving TCP throughput
-	      by about 10–12% (≈1–2 Mbps).
-
-config WIFI_SILABS_SIWX91X_FEAT_SECURITY_PSK
-	bool "WPA/WPA2 (PSK) Security Support"
-	default y
-	help
-	  Enable WPA/WPA2 (PSK-based) security in client mode.
-	  Recommended for configurations requiring WPA, WPA2, or mixed security modes.
-	  Disabling this feature can reduce data buffer usage, potentially improving throughput.
-
-config WIFI_SILABS_SIWX91X_FEAT_HIDE_PSK_CREDENTIALS
-	bool "Hide PSK and Sensitive Credentials in Logs"
-	help
-	  When enabled, prevents printing sensitive credentials such as
-	  PSK, PMK, and EAP keys in debug or log messages.
 endif
