@@ -40,4 +40,18 @@ int siwx91x_nwp_flash_write(const struct device *dev, uint32_t dest, const void 
 int siwx91x_nwp_fw_upgrade_start(const struct device *dev, const void *hdr);
 int siwx91x_nwp_fw_upgrade_write(const struct device *dev, const void *buf, size_t len);
 
+/* Wifi APIs */
+int siwx91x_nwp_wifi_init(const struct device *dev);
+int siwx91x_nwp_scan(const struct device *dev, uint16_t channel_list, const char *ssid,
+		     bool passive, bool internal);
+int siwx91x_nwp_join(const struct device *dev, const char *ssid,
+		     const uint8_t *bssid, int security_type);
+int siwx91x_nwp_disconnect(const struct device *dev);
+void siwx91x_nwp_set_region_sta(const struct device *dev, sl_wifi_region_code_t region_code);
+void siwx91x_nwp_set_psk(const struct device *dev, const char *psk);
+void siwx91x_nwp_set_sta_config(const struct device *dev);
+void siwx91x_nwp_set_band(const struct device *dev, sl_wifi_band_mode_t band);
+void siwx91x_nwp_set_config(const struct device *dev, uint16_t type, uint16_t value);
+void siwx91x_nwp_get_mac_address(const struct device *dev, uint8_t mac[NET_ETH_ADDR_LEN]);
+
 #endif

@@ -85,6 +85,177 @@ static uint32_t siwx91x_nwp_send_cmd2(const struct device *dev,
 	return status ? (0x10000 | status) : 0;
 }
 
+#define SCAN_FEATURE_QUICK_SCAN       BIT(0)
+#define SCAN_FEATURE_RESULTS_TO_HOST  BIT(1)
+#define SCAN_FEATURE_TX_POWER_MASK    0xF8
+
+#define PASSIVE_SCAN_ENABLE           BIT(7)
+int siwx91x_nwp_scan(const struct device *dev, uint16_t channel_list, const char *ssid,
+		      bool passive, bool internal)
+{
+	sli_wifi_request_scan_t params = {
+		.scan_feature_bitmap = FIELD_PREP(SCAN_FEATURE_TX_POWER_MASK, 31),
+	};
+	uint32_t status;
+
+	__ASSERT(strlen(ssid) < sizeof(params.ssid), "Corrupted data");
+	if (ssid) {
+		strcpy(params.ssid, ssid);
+	}
+	if (passive) {
+		params.pscan_bitmap[3] |= PASSIVE_SCAN_ENABLE;
+	}
+	if (ssid && channel_list) {
+		params.scan_feature_bitmap |= SCAN_FEATURE_QUICK_SCAN;
+	}
+	if (!internal) {
+		params.scan_feature_bitmap |= SCAN_FEATURE_RESULTS_TO_HOST;
+	}
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_SCAN,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	/* Return an error if scan is requested while device is connected */
+	return status ? -EINVAL : 0;
+}
+
+void siwx91x_nwp_set_psk(const struct device *dev, const char *psk)
+{
+	sli_wifi_request_psk_t params = {
+		.type = 1, /* PSK */
+	};
+	uint32_t status;
+
+	__ASSERT(psk, "Invalid arguments");
+	__ASSERT(strlen(psk) < sizeof(params.psk_or_pmk), "Invalid arguments");
+	strcpy(params.psk_or_pmk, psk);
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_HOST_PSK,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+#define JOIN_POWER_LEVEL_MASK    0x7C
+
+int siwx91x_nwp_join(const struct device *dev, const char *ssid,
+		     const uint8_t *bssid, int security_type)
+{
+	sli_wifi_join_request_t params = {
+		.power_level = 0x80 | FIELD_PREP(JOIN_POWER_LEVEL_MASK, 31),
+		.security_type = security_type,
+		.ssid_len = strlen(ssid),
+		.join_feature_bitmap = 0, /* FIXME: See SL_WIFI_JOIN_FEAT_* */
+	};
+	uint32_t status;
+
+	__ASSERT(ssid, "Invalid arguments");
+	strncpy(params.ssid, ssid, sizeof(params.ssid));
+	if (bssid) {
+		memcpy(params.join_bssid, bssid, sizeof(params.join_bssid));
+	}
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_JOIN,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+
+	switch (status) {
+	case 0:
+		return 0;
+	case SL_STATUS_SI91X_REJOIN_FAILURE:
+		return -ENOENT;
+	case SL_STATUS_SI91X_COMMAND_GIVEN_IN_INVALID_STATE:
+		return -EBADFD;
+	default:
+		return -EINVAL;
+	}
+}
+
+int siwx91x_nwp_disconnect(const struct device *dev)
+{
+	sli_wifi_disassociation_request_t params = {
+		.mode_flag = SL_WIFI_CLIENT_VAP_ID,
+	};
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_DISCONNECT,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	/* Return an error if already disconnected */
+	return status ? -EINVAL : 0;
+}
+
+void siwx91x_nwp_set_region_sta(const struct device *dev, sl_wifi_region_code_t region_code)
+{
+	sli_wifi_set_region_request_t params = {
+		.set_region_code_from_user_cmd = SET_REGION_CODE_FROM_USER,
+		.region_code = (uint8_t)region_code,
+	};
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_SET_REGION,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+int siwx91x_nwp_wifi_init(const struct device *dev)
+{
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, NULL, 0, SLI_WIFI_REQ_INIT,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	/* Return an error if already initialized */
+	return status ? -EINVAL : 0;
+}
+
+void siwx91x_nwp_get_mac_address(const struct device *dev, uint8_t reply[NET_ETH_ADDR_LEN])
+{
+	struct net_buf *reply_buf;
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, NULL, 0, SLI_WIFI_REQ_MAC_ADDRESS, SLI_WLAN_MGMT_Q, 0,
+				      &reply_buf);
+	__ASSERT(!status, "Corrupted NWP reply");
+	__ASSERT(reply_buf, "Corrupted NWP reply");
+
+	net_buf_linearize(reply, NET_ETH_ADDR_LEN,
+			  reply_buf, sizeof(struct siwx91x_frame_desc), SIZE_MAX);
+	net_buf_unref(reply_buf);
+}
+
+void siwx91x_nwp_set_sta_config(const struct device *dev)
+{
+	sli_wifi_rejoin_params_t params = {
+		.max_retry_attempts = 1,
+	};
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_REJOIN_PARAMS,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+void siwx91x_nwp_set_band(const struct device *dev, sl_wifi_band_mode_t band)
+{
+	uint8_t params = band;
+	uint32_t status;
+
+	__ASSERT(band == SL_WIFI_BAND_MODE_2_4GHZ, "Unsupported option");
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_BAND,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+void siwx91x_nwp_set_config(const struct device *dev, uint16_t type, uint16_t value)
+{
+	sli_wifi_config_request_t params = {
+		.config_type = type,
+		.value = value,
+	};
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_CONFIG,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
 void siwx91x_nwp_get_firmware_version(const struct device *dev,
 				      struct siwx91x_nwp_version *reply)
 {

@@ -193,38 +193,6 @@ zephyr_library_sources_ifdef(CONFIG_WDT_SILABS_SIWX91X
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_wwdt.c
 )
 
-if(CONFIG_WIFI_SILABS_SIWX91X)
-  zephyr_library_sources(
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sli_net_si91x_utility.c
-    ${WISECONNECT}/components/protocol/wifi/src/sl_wifi_basic_credentials.c
-    ${WISECONNECT}/components/service/network_manager/src/sl_net_basic_profiles.c
-    ${WISECONNECT}/components/service/network_manager/src/sl_net_credentials.c
-  )
-  zephyr_compile_definitions(
-    SLI_SI91X_CONFIG_WIFI6_PARAMS
-    SLI_SI91X_ENABLE_TWT_FEATURE
-  )
-  zephyr_compile_definitions_ifdef(CONFIG_NET_IPV6
-    SLI_SI91X_ENABLE_IPV6
-  )
-  zephyr_compile_definitions_ifdef(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
-    SLI_SI91X_OFFLOAD_NETWORK_STACK
-    SLI_SI91X_SOCKETS
-  )
-  zephyr_include_directories_ifdef(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
-    # Needed for <sys/socket.h>
-    ${ZEPHYR_BASE}/include/zephyr/posix
-  )
-  zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/socket/src/sl_si91x_socket_utility.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/asynchronous_socket/src/sl_si91x_socket.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sl_si91x_net_internal_stack.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_si91x_integration_handler.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_rsi_utility.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_si91x_callback_framework.c
-  )
-endif() # CONFIG_WIFI_SILABS_SIWX91X
-
 if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_include_directories(
     ${SISDK}/platform/service/sleeptimer/src
