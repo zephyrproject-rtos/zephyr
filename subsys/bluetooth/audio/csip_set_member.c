@@ -814,7 +814,7 @@ static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void
 				       sizeof(bt_addr_le_t));
 				LOG_DBG("Added %s to bonded list\n",
 					bt_addr_le_str(&svc_inst->clients[j].addr));
-				return;
+				break;
 			}
 		}
 	}
