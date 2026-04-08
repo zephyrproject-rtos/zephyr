@@ -22,7 +22,7 @@ Key Features
 
 - ESP32-S3-WROOM-1 module with 16MB Flash + 16MB PSRAM
 - 2.4-inch ILI9341 LCD display (320x240 resolution)
-- Capacitive touch screen (TT21100 controller)
+- Capacitive touch screen (GT911 controller)
 - Dual microphone with ES7210 codec
 - Speaker with ES8311 audio codec
 - Temperature and humidity sensor (AHT30)

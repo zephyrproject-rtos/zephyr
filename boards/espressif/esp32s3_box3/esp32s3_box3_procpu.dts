@@ -9,6 +9,7 @@
 #include <espressif/esp32s3/esp32s3_wroom_n16.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 #include "esp32s3_box3-pinctrl.dtsi"
 
@@ -19,6 +20,7 @@
 	aliases {
 		watchdog0 = &wdt0;
 		sw0 = &button0;
+		radar-int = &radar_detect_pin;
 	};
 
 	chosen {
@@ -50,6 +52,15 @@
 			label = "LCD Backlight";
 		};
 	};
+
+	gpio_radar {
+		compatible = "gpio-keys";
+		radar_detect_pin: radar_detect {
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			label = "Radar Detection Pin";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
 };
 
 &usb_serial {
@@ -64,20 +75,29 @@
 	status = "okay";
 };
 
-&i2c1 {
+&i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	pinctrl-0 = <&i2c1_default>;
+	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 
 	gt911: gt911@5d {
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
-		alt-addr = <0x14>;
-		irq-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
-		screen-width = <320>;
-		screen-height = <240>;
+		irq-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	
+	at581x: at581x@28 {
+		compatible = "andar,at581x";
+		reg = <0x28>;
 		status = "okay";
 	};
 };

@@ -21,10 +21,20 @@
 		};
 	};
 
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO8>,
+				 <I2C0_SCL_GPIO18>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
 	i2c1_default: i2c1_default {
 		group1 {
-			pinmux = <I2C1_SDA_GPIO8>,
-				 <I2C1_SCL_GPIO18>;
+			pinmux = <I2C1_SDA_GPIO41>,
+				 <I2C1_SCL_GPIO40>;
 			bias-pull-up;
 			drive-open-drain;
 			output-high;

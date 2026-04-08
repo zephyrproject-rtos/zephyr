@@ -128,6 +128,7 @@ source "drivers/sensor/wsen/Kconfig"
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/a01nyub/Kconfig"
+source "drivers/sensor/at581x/Kconfig"
 source "drivers/sensor/amd_sb_tsi/Kconfig"
 source "drivers/sensor/amg88xx/Kconfig"
 source "drivers/sensor/apds9253/Kconfig"

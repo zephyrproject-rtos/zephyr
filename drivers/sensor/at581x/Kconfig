@@ -1,0 +1,11 @@
+# AT581X Radar Sensor configuration
+
+config AT581X
+	bool "AT581X radar sensor"
+	default y
+	depends on DT_HAS_ANDAR_AT581X_ENABLED
+	depends on I2C
+	help
+	  Enable driver for AT581X radar sensor.
+
+	  This sensor uses I2C to communicate with the host processor.
