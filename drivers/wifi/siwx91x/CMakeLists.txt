@@ -5,7 +5,8 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X
   siwx91x_wifi.c
   siwx91x_wifi_data.c
   siwx91x_wifi_sta.c
-  siwx91x_wifi_scan.c)
+  siwx91x_wifi_scan.c
+  siwx91x_wifi_reg.c)
 
 
 if(CONFIG_SIWX91X_NWP_RELOCATION_SRAM)
