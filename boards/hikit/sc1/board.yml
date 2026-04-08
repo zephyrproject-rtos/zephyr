@@ -1,0 +1,8 @@
+board:
+  name: hikit_sc1
+  full_name: HiKit SC1
+  vendor: hikit
+  socs:
+  - name: stm32l562xx
+    variants:
+    - name: 'cetx'

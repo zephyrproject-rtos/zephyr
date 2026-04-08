@@ -1,0 +1,21 @@
+identifier: hikit_sc1
+name: HIKIT SC1
+type: mcu
+arch: arm
+ram: 256
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - spi
+  - usbd
+  - watchdog
+  - netif:openthread
+vendor: hikit

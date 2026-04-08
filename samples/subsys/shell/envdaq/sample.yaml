@@ -1,0 +1,16 @@
+sample:
+  name: EnvDAQ
+  description: LED blink and relay cycle test application for HIKIT SC1
+common:
+  platform_allow:
+    - hikit_sc1
+  integration_platforms:
+    - hikit_sc1
+  harness: console
+  build_only: true
+  tags:
+    - envdaq
+    - gpio
+tests:
+  sample.subsys.shell.envdaq:
+    filter: dt_alias_exists("led0") and dt_alias_exists("relay")

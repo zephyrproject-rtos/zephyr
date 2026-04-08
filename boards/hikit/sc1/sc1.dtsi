@@ -1,0 +1,214 @@
+/*
+ * Copyright (c) 2022-2023 Marcin Niestroj
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l5/stm32l562Xe.dtsi>
+#include <st/l5/stm32l562cetx-pinctrl.dtsi>
+#include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
+
+/ {
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioa 1 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+			label = "User LED";
+		};
+	};
+
+	relays {
+		compatible = "gpio-leds";
+
+		relay: relay_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+			label = "RELAY";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpiob 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	dht11: dht11 {
+		compatible = "aosong,dht";
+		dio-gpios = <&gpiob 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		label = "DHT11";
+		status = "okay";
+	};
+
+	aliases {
+		led0 = &led0;
+		relay = &relay;
+		sw0 = &button0;
+		dht0 = &dht11;
+	};
+
+	/* Dedicated extra SRAM region for retention/secure buffers. */
+	sram1: memory@20030000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20030000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "SRAM1";
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&clk_lse {
+	clock-frequency = <32768>;
+	driving-capability = <0>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <2>;
+	mul-n = <55>;
+	div-p = <7>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(110)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+	eeprom0: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <256>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+		status = "okay";
+	};
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+	bh1750: bh1750@23 {
+		compatible = "rohm,bh1750";
+		reg = <0x23>;
+		status = "okay";
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	eth_w5500: ethernet@0 {
+		compatible = "wiznet,w5500";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(32)>;
+		int-gpios = <&gpioa 3 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
+		local-mac-address = [00 08 dc 00 00 01];
+		status = "okay";
+	};
+};
+
+&gpiob {
+	bh_addr: bh_addr {
+		gpio-hog;
+		gpios = <9 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "BH_ADDR";
+	};
+};
+
+&pinctrl {
+	led0_pa1_od: led0_pa1_od {
+		pinmux = <STM32_PINMUX('A', 1, GPIO)>;
+		drive-open-drain;
+		bias-disable;
+		slew-rate = "low-speed";
+		output-high;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(228)>;
+		};
+
+		slot1_partition: partition@45000 {
+			label = "image-1";
+			reg = <0x00045000 DT_SIZE_K(230)>;
+		};
+
+		storage_partition: partition@7e800 {
+			label = "storage";
+			reg = <0x0007e800 DT_SIZE_K(6)>;
+		};
+	};
+};
+
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(192)>;
+	/delete-property/ zephyr,memory-region;
+};
