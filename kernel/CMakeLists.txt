@@ -186,6 +186,7 @@ if(${CONFIG_KERNEL_MEM_POOL})
 endif()
 
 add_subdirectory_ifdef(CONFIG_USERSPACE userspace)
+add_subdirectory(sys)
 
 if(${CONFIG_DYNAMIC_THREAD})
   target_sources(kernel PRIVATE dynamic.c)

@@ -9,7 +9,6 @@ zephyr_sources(
   cbprintf_packaged.c
   clock.c
   printk.c
-  sem.c
   thread_entry.c
   )
 
