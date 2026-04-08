@@ -259,7 +259,7 @@ LOG_OUTPUT_DEFINE(log_output, log_output_func, log_output_buf, sizeof(log_output
 /** @brief Process a log message. */
 static void log_message_process(struct log_frontend_stmesp_demux_log *packet)
 {
-	uint32_t flags = LOG_OUTPUT_FLAG_COLORS | LOG_OUTPUT_FLAG_LEVEL |
+	static const uint32_t flags = LOG_OUTPUT_FLAG_COLORS | LOG_OUTPUT_FLAG_LEVEL |
 			 LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	uint64_t ts = packet->timestamp;
 	uint8_t level = packet->hdr.level;
@@ -278,8 +278,8 @@ static void log_message_process(struct log_frontend_stmesp_demux_log *packet)
 /** @brief Process a trace point message. */
 static void trace_point_process(struct log_frontend_stmesp_demux_trace_point *packet)
 {
-	static const uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP |
-				      LOG_OUTPUT_FLAG_LEVEL;
+	static const uint32_t flags = LOG_OUTPUT_FLAG_COLORS | LOG_OUTPUT_FLAG_LEVEL |
+			 LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	static const char *tp = "%d";
 	static const char *tp_d32 = "%d %08x";
 	const char *dname = stm_m_name[packet->major];
