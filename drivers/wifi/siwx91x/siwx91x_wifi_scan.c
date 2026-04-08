@@ -11,7 +11,7 @@
 
 #include "sl_rsi_utility.h"
 
-LOG_MODULE_DECLARE(siwx91x_wifi);
+LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 #define SIWX91X_DEFAULT_PASSIVE_SCAN_DWELL_TIME 400
 

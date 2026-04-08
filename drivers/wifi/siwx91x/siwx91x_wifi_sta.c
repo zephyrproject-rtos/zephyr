@@ -14,7 +14,7 @@
 #include "sl_net_default_values.h"
 #include "sl_net.h"
 
-LOG_MODULE_DECLARE(siwx91x_wifi);
+LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 enum {
 	STATE_IDLE = 0x00,
