@@ -698,9 +698,7 @@ int bt_gatt_authorization_cb_register(const struct bt_gatt_authorization_cb *cb)
  *  @return 0 in case of success or negative value in case of error.
  *  @return -EINVAL only if @kconfig{CONFIG_BT_SETTINGS} and
  *          @kconfig{CONFIG_BT_GATT_SERVICE_CHANGED} are enabled, the stack is
- *          initialized, and Service Changed settings are not loaded yet; not used
- *          when @kconfig{CONFIG_BT_GATT_SERVICE_CHANGED} is disabled (see
- *          ``-ENOTSUP`` below).
+ *          initialized, and Service Changed settings are not loaded yet.
  *  @return -ENOTSUP if @kconfig{CONFIG_BT_GATT_SERVICE_CHANGED} is disabled and
  *          the stack is already initialized.
  */
