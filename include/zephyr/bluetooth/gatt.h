@@ -672,26 +672,24 @@ int bt_gatt_authorization_cb_register(const struct bt_gatt_authorization_cb *cb)
  *  calculation and a new hash stored.
  *
  *  When both @kconfig{CONFIG_BT_SETTINGS} and
- *  @kconfig{CONFIG_BT_GATT_SERVICE_CHANGED} are enabled, registration order is
- *  constrained while settings are being restored: after @ref bt_enable, do not
- *  register services that depend on loaded bond or Service Changed state until
- *  @ref settings_load has progressed far enough (otherwise ``-EINVAL`` is
- *  returned). When @kconfig{CONFIG_BT_SETTINGS} is disabled, that ``-EINVAL``
- *  path does not exist and you may register after @ref bt_enable as usual for
- *  dynamic services.
+ *  @kconfig{CONFIG_BT_GATT_SERVICE_CHANGED} are enabled, after @ref bt_enable
+ *  do not register services that depend on loaded bond or Service Changed state
+ *  until @ref settings_load has progressed far enough for those dependencies.
+ *  When @kconfig{CONFIG_BT_SETTINGS} is disabled, you may register after
+ *  @ref bt_enable as usual for dynamic services.
  *
- *  When @kconfig{CONFIG_BT_GATT_SERVICE_CHANGED} is disabled, services may only
- *  be registered before @ref bt_enable is called. Calling this function after
- *  @ref bt_enable has completed returns ``-ENOTSUP``. The application cannot
- *  change the GATT database through registration after that in that configuration.
- *  The stack does not detect whether the GATT database layout changed across
- *  firmware updates in that configuration; maintaining compatibility for bonded
- *  peers is the application's responsibility.
+ *  When @kconfig{CONFIG_BT_GATT_SERVICE_CHANGED} is disabled, only register
+ *  services that affect the database before @ref bt_enable; the application
+ *  cannot change the GATT database through registration after the stack is
+ *  initialized in that configuration. The stack does not detect whether the
+ *  GATT database layout changed across firmware updates; maintaining
+ *  compatibility for bonded peers is the application's responsibility.
  *
- *  @note Follow-up enhancements (for example persisting a GATT database hash in
- *  @kconfig{CONFIG_BT_SETTINGS} and comparing it during startup when Service
- *  Changed is unavailable) may be discussed and tracked on the Zephyr GitHub issue
- *  tracker.
+ *  @note Follow-up work may add optional detection of GATT database layout
+ *  changes when Service Changed is disabled (for example by persisting a
+ *  database hash in @kconfig{CONFIG_BT_SETTINGS} and comparing it on
+ *  @ref bt_enable). Track progress in a Zephyr GitHub issue if you need this
+ *  enhancement; it is not implemented in the host today.
  *
  *  @param svc Service containing the available attributes
  *
@@ -706,10 +704,15 @@ int bt_gatt_service_register(struct bt_gatt_service *svc);
 
 /** @brief Unregister GATT service.
  *
+<<<<<<< HEAD
  *  When @kconfig{CONFIG_BT_GATT_SERVICE_CHANGED} is disabled, services may only
  *  be unregistered before @ref bt_enable is called. The application cannot
  *  change the GATT database through unregistration after that in that
  *  configuration. The same cross-firmware compatibility considerations as for
+=======
+ *  When @kconfig{CONFIG_BT_GATT_SERVICE_CHANGED} is disabled, unregister only
+ *  before @ref bt_enable; the same usage constraints as
+>>>>>>> 54706c07e01 (Bluetooth: GATT: clarify register docs and use IS_ENABLED for SC)
  *  @ref bt_gatt_service_register apply.
  *
  *  @param svc Service to be unregistered.
