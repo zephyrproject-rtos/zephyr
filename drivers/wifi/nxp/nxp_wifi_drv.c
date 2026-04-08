@@ -623,7 +623,14 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 
 		if (params->security == WIFI_SECURITY_TYPE_NONE) {
 			nxp_wlan_uap_network.security.type = WLAN_SECURITY_NONE;
-		} else if (params->security == WIFI_SECURITY_TYPE_PSK) {
+		} 
+#if defined(CONFIG_NXP_WIFI_OWE)	
+		else if (params->security == WIFI_SECURITY_TYPE_OWE) {
+			nxp_wlan_uap_network.security.type = WLAN_SECURITY_OWE_ONLY;
+			nxp_wlan_uap_network.security.key_mgmt = WLAN_KEY_MGMT_OWE;
+		}
+#endif
+		else if (params->security == WIFI_SECURITY_TYPE_PSK) {
 			nxp_wlan_uap_network.security.type = WLAN_SECURITY_WPA2;
 			nxp_wlan_uap_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_uap_network.security.psk, params->psk, params->psk_length);
@@ -846,6 +853,12 @@ static int nxp_wifi_process_results(unsigned int count)
 			res.security = WIFI_SECURITY_TYPE_SAE;
 		}
 
+#if defined(CONFIG_NXP_WIFI_OWE)
+		if (scan_result.owe) {
+			res.security = WIFI_SECURITY_TYPE_OWE;
+		}
+#endif
+
 		if (scan_result.wpa3_entp) {
 			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_ONLY;
 			res.security = WIFI_SECURITY_TYPE_EAP;
@@ -1056,9 +1069,14 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 
 		if (params->security == WIFI_SECURITY_TYPE_NONE) {
 			nxp_wlan_network.security.type = WLAN_SECURITY_NONE;
-		}else if(params->security == WIFI_SECURITY_TYPE_OWE){
+		}
+#if defined (CONFIG_NXP_WIFI_OWE)
+		else if (params->security == WIFI_SECURITY_TYPE_OWE) {
 			nxp_wlan_network.security.type = WLAN_SECURITY_OWE_ONLY;
-		}else if (params->security == WIFI_SECURITY_TYPE_PSK) {
+			nxp_wlan_network.security.key_mgmt = WLAN_KEY_MGMT_OWE;
+		}
+#endif
+		else if (params->security == WIFI_SECURITY_TYPE_PSK) {
 			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2;
 			nxp_wlan_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_network.security.psk, params->psk, params->psk_length);
@@ -1186,6 +1204,8 @@ static inline enum wifi_security_type nxp_wifi_key_mgmt_to_zephyr(int key_mgmt, 
 	switch (key_mgmt) {
 	case WLAN_KEY_MGMT_NONE:
 		return WIFI_SECURITY_TYPE_NONE;
+	case WLAN_KEY_MGMT_OWE:
+		return WIFI_SECURITY_TYPE_OWE;
 	case WLAN_KEY_MGMT_PSK:
 		return WIFI_SECURITY_TYPE_PSK;
 	case WLAN_KEY_MGMT_PSK_SHA256:

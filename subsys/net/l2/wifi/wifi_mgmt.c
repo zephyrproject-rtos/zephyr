@@ -1726,6 +1726,8 @@ static inline const char *wpa_supp_security_txt(enum wifi_security_type security
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		return "NONE";
+	case WIFI_SECURITY_TYPE_OWE:
+		return "OWE";
 	case WIFI_SECURITY_TYPE_PSK:
 		return "WPA-PSK";
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
@@ -1830,6 +1832,8 @@ static int add_static_network_config(struct net_if *iface)
 
 #if defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN)
 	creds.header.type = WIFI_SECURITY_TYPE_NONE;
+#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE)
+	creds.header.type = WIFI_SECURITY_TYPE_OWE;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK)
 	creds.header.type = WIFI_SECURITY_TYPE_PSK;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK_SHA256)
