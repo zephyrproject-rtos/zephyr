@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Narek Aydinyan
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip LAN78xx USB-to-Ethernet adapter configuration
+
+compatible: "microchip,lan78xx"
+
+include:
+  - name: ethernet-controller.yaml
+  - name: base.yaml
+
+properties:
+  uhc:
+    type: phandle
+    required: true
+    description: USB Host Controller device node (UHC) used to reach the adapter.
+
+  vid:
+    type: int
+    default: 0x0424
+    description: USB Vendor ID to match (default is Microchip 0x0424).
+
+  pid:
+    type: int
+    default: 0x7800
+    description: USB Product ID to match (default LAN78xx 0x7800).
+
+  reset-gpios:
+    type: phandle-array
+    description: Optional reset GPIO controlling the LAN78xx or hub power/reset
+
+  rx-buf-size:
+    type: int
+    default: 2048
+    description: USB RX buffer size for bulk-IN transfers.
+
+  rx-xfers:
+    type: int
+    default: 4
+    description: Number of concurrent bulk-IN transfers kept queued.
+
+  tx-inflight:
+    type: int
+    default: 4
+    description: Number of concurrent bulk-OUT transfers kept queued.
+
+  led-enable-mask:
+    type: int
+    default: 0
+    description: |
+      Bitmask of LAN78xx LED outputs to enable in HW_CFG.
+
+      Bit 0 = LED0
+      Bit 1 = LED1
+      Bit 2 = LED2
+      Bit 3 = LED3
+
+      Examples:
+        <0x1> enables LED0
+        <0x2> enables LED1
+        <0x4> enables LED2
+        <0x8> enables LED3
+        <0x3> enables LED0 and LED1
+        <0xf> enables LED0..LED3

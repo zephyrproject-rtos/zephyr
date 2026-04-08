@@ -1,0 +1,16 @@
+# LAN78xx USB Ethernet Controller configuration options
+#
+# Copyright (c) 2026 Narek Aydinyan
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_LAN78XX
+	bool "LAN78xx USB Ethernet Controller"
+	default y
+	depends on DT_HAS_MICROCHIP_LAN78XX_ENABLED
+	depends on USB_HOST_STACK
+	help
+	  Enable support for Microchip LAN78xx USB Ethernet adapters.
+
+	  The driver implementation is expected to live under the Ethernet
+	  driver subsystem even though the device is attached through the
+	  USB host stack.
