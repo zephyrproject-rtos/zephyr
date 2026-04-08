@@ -6,25 +6,15 @@ config WIFI_SILABS_SIWX91X
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_WIFI_ENABLED
 	depends on NETWORKING
-	select SILABS_SIWX91X_NWP_WISECONNECT
-	select EVENTS
+	select SILABS_SIWX91X_NWP
 	select NET_L2_WIFI_MGMT
 	help
 	  Enable WiFi driver for the Silabs SiWx91x SoC series.
 
 if WIFI_SILABS_SIWX91X
 
-config NET_TCP_WORKQ_STACK_SIZE
-	default 2048
-
-config NET_RX_STACK_SIZE
-	default 2048
-
 config NET_MGMT_EVENT_STACK_SIZE
-	default 2048
-
-config NET_MGMT_EVENT_QUEUE_SIZE
-	default 10
+	default 1024
 
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	default 1
@@ -40,6 +30,7 @@ choice
 config WIFI_SILABS_SIWX91X_NET_STACK_NATIVE
 	bool "Native"
 	select WIFI_USE_NATIVE_NETWORKING
+	select NET_L2_ETHERNET_RESERVE_HEADER
 	select NET_L2_ETHERNET
 
 config WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
