@@ -40,6 +40,19 @@ config FLASH_INFINEON_PDL
 	help
 	  Enable the Flash driver for Infineon PDL-based families (PSoC4, PSC3).
 
+config FLASH_INFINEON_ECT
+	bool "Infineon eCT flash controller driver"
+	default y
+	depends on DT_HAS_INFINEON_ECT_FLASH_CONTROLLER_ENABLED
+	depends on !USE_INFINEON_LEGACY_HAL
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select USE_INFINEON_FLASH
+	select FLASH_HAS_EXPLICIT_ERASE
+	select NOCACHE_MEMORY
+	help
+	  Enable the flash driver for the Infineon eCT flash controller.
+
 config INFINEON_CAT1_QSPI_FLASH
 	bool "Infineon CAT1 QSPI FLASH driver"
 	default y
