@@ -8,7 +8,7 @@
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_ps.h"
 
-LOG_MODULE_DECLARE(siwx91x_wifi);
+LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 enum {
 	REQUEST_TWT = 0,

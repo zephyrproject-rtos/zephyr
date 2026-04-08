@@ -11,7 +11,7 @@
 
 #define SIWX91X_AP_BEACON_INTERVAL_MS 100
 
-LOG_MODULE_DECLARE(siwx91x_wifi);
+LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 static int siwx91x_nwp_reboot_if_required(const struct device *dev, uint8_t oper_mode)
 {
