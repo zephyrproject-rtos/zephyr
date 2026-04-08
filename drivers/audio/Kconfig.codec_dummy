@@ -1,0 +1,9 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_DUMMY_STUB
+	bool "Dummy audio codec driver stub"
+	depends on DT_HAS_ZEPHYR_CODEC_DUMMY_STUB_ENABLED
+	help
+	  Enable the dummy audio codec driver that can be used for testing and development purposes without requiring actual hardware.
+	  The driver implements the necessary interfaces but does not perform any real audio processing.
