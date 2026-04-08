@@ -5,6 +5,10 @@ tests:
       - uart
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
+    harness_config:
+      interactions:
+        - pattern: "Please send characters to serial console"
+          response: "hello\n"
     integration_platforms:
       - mps2/an385
   drivers.uart.basic_api.wide:
@@ -15,6 +19,10 @@ tests:
       - uart
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
+    harness_config:
+      interactions:
+        - pattern: "Please send characters to serial console"
+          response: "hello\n"
     arch_allow: arm
     platform_allow:
       - nucleo_h743zi
@@ -29,6 +37,10 @@ tests:
       - uart
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
+    harness_config:
+      interactions:
+        - pattern: "Please send characters to serial console"
+          response: "hello\n"
     integration_platforms:
       - mps2/an385
   drivers.uart.basic_api.shell:
@@ -39,6 +51,10 @@ tests:
       - uart
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
+    harness_config:
+      interactions:
+        - pattern: "Please send characters to serial console"
+          response: "hello\n"
     integration_platforms:
       - mps2/an385
   drivers.uart.basic_api.cdc_acm:
@@ -51,12 +67,20 @@ tests:
     filter: CONFIG_UART_CONSOLE
     depends_on: usbd
     harness: keyboard
+    harness_config:
+      interactions:
+        - pattern: "Please send characters to serial console"
+          response: "hello\n"
   drivers.uart.basic_api.shell_ke17z9_uart:
     tags:
       - drivers
       - uart
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
+    harness_config:
+      interactions:
+        - pattern: "Please send characters to serial console"
+          response: "hello\n"
     platform_allow: frdm_ke17z512
     extra_args:
       - CONF_FILE=prj_shell.conf
