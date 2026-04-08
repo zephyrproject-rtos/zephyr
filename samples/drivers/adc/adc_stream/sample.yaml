@@ -8,7 +8,7 @@ common:
   harness_config:
     type: one_line
     regex:
-      - "^ADC data for [^@]+@\\d+ \\([0-9.]+\\) \\d+n$"
+      - "^ADC data for [^@]+@\\d+ channel \\d+ \\([0-9.]+\\) \\d+ns$"
 tests:
   sample.driver.adc_stream: {}
   sample.driver.adc_stream.ad4052-stream:

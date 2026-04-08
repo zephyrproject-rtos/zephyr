@@ -4,6 +4,30 @@
  */
 
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	pwm1_default: pwm1_default {
+		group1 {
+			/* D3 = GPIO0 pin 29 */
+			psels = <NRF_PSEL(PWM_OUT0, 0, 29)>;
+		};
+	};
+
+	pwm1_sleep: pwm1_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 29)>;
+			low-power-enable;
+		};
+	};
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
 
 / {
 	chosen {
@@ -21,9 +45,19 @@
 		};
 	};
 
+	pwm_buzzer: pwm_buzzer {
+		compatible = "pwm-leds";
+
+		buzzer_pwm: buzzer_pwm {
+			/* 4kHz: period = 250us */
+			pwms = <&pwm1 0 PWM_HZ(4000) PWM_POLARITY_NORMAL>;
+		};
+	};
+
 	aliases {
 		sw0 = &xiao_button0;
 		rtc = &pfc8563_rtc;
+		buzzer = &buzzer_pwm;
 	};
 };
 
@@ -41,6 +75,7 @@
 		multiplex-ratio = <63>;
 		segment-remap;
 		com-invdir;
+		inversion-on;
 		prechargep = <0x22>;
 	};
 

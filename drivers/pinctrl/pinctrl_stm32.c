@@ -143,32 +143,6 @@ static int stm32_pins_remap(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt)
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
-static void apply_iosync_configuration(
-	const struct device *port_device, uint32_t pin, uint32_t pincfg)
-{
-	const struct gpio_stm32_config *gpio_cfg = port_device->config;
-	GPIO_TypeDef *gpio_reg = gpio_cfg->base;
-	uint32_t piocfgr = (pincfg >> STM32_IORETIME_ADVCFGR_SHIFT) & STM32_IORETIME_ADVCFGR_MASK;
-	uint32_t delayr = (pincfg >> STM32_IODELAY_LENGTH_SHIFT) & STM32_IODELAY_LENGTH_MASK;
-	uint32_t pinbit = BIT(pin);
-
-	/**
-	 * Thanks to clever encoding, we don't have to check whether the I/O retiming
-	 * is to be enabled or not; all we need to do is write to the registers where
-	 * everything will fall in place nicely. This can obviously be updated for
-	 * new hardware, if required...
-	 */
-	if (pin <= 7) {
-		LL_GPIO_SetDelayPin_0_7(gpio_reg, pinbit, delayr);
-		LL_GPIO_SetPIOControlPin_0_7(gpio_reg, pinbit, piocfgr);
-	} else {
-		LL_GPIO_SetDelayPin_8_15(gpio_reg, pinbit, delayr);
-		LL_GPIO_SetPIOControlPin_8_15(gpio_reg, pinbit, piocfgr);
-	}
-}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl) */
-
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define IS_GPIO_OUT GPIO_OUT
 #else
@@ -260,12 +234,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 			}
 		}
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
-		if (cfg_ret >= 0) {
-			apply_iosync_configuration(port, line, pins[i].pincfg);
-		}
-#endif
 
 		ret = pm_device_runtime_put(port);
 		if (ret < 0) {

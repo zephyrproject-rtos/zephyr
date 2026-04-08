@@ -97,6 +97,9 @@ Random MAC address with prefix
 NVMEM-provided MAC address with prefix
 --------------------------------------
 
+MAC address can be retrieved from a non-volatile memory, typically an EEPROM, thanks
+to the :ref:`NVMEM API<nvmem>`.
+
 .. code-block:: devicetree
 
    &eth0 {

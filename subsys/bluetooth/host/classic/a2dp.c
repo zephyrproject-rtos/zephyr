@@ -14,7 +14,6 @@
 #include <errno.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/printk.h>
 
@@ -1354,7 +1353,7 @@ int bt_a2dp_stream_delay_report(struct bt_a2dp_stream *stream, uint16_t delay)
 	int err;
 	struct bt_a2dp *a2dp;
 
-	CHECKIF(stream == NULL) {
+	if (stream == NULL) {
 		return -EINVAL;
 	}
 
@@ -1554,7 +1553,7 @@ int bt_a2dp_register_ep(struct bt_a2dp_ep *ep, uint8_t media_type, uint8_t sep_t
 
 struct bt_conn *bt_a2dp_get_conn(struct bt_a2dp *a2dp)
 {
-	CHECKIF(a2dp == NULL) {
+	if (a2dp == NULL) {
 		return NULL;
 	}
 

@@ -58,11 +58,11 @@ Sample Output
 
     X-NUCLEO-IKS02A1 sensor Mode 1 dashboard
 
-    IIS2DLPC: Accel (m.s-2): x: 0.000, y: 0.000, z: 9.342
-    IIS2MDC: Magn (gauss): x: -0.120, y: -0.095, z: -0.338
+    IIS2DLPC: Accel (m/s^2): x: 0.000, y: 0.000, z: 9.342
+    IIS2MDC: Magn (G): x: -0.120, y: -0.095, z: -0.338
     IIS2MDC: Temperature: 25.1 C
-    ISM330DHCX: Accel (m.s-2): x: 0.182, y: -0.306, z: 9.753
-    ISM330DHCX: GYro (dps): x: 0.005, y: 0.001, z: -0.004
+    ISM330DHCX: Accel (m/s^2): x: 0.182, y: -0.306, z: 9.753
+    ISM330DHCX: Gyro (rad/s): x: 0.005, y: 0.001, z: -0.004
     5:: iis2dlpc trig 809
     5:: ism330dhcx acc trig 3332
     5:: ism330dhcx gyr trig 1666

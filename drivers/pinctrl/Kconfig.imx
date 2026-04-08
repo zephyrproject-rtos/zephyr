@@ -18,6 +18,7 @@ config PINCTRL_IMX_SCU
 config PINCTRL_IMX_SCMI
 	bool "Pin controller SCMI-based driver for i.MX SoCs"
 	depends on ARM_SCMI_PINCTRL_HELPERS
+	depends on DT_HAS_NXP_IMX93_PINCTRL_ENABLED
 	default y
 	help
 	  Enable pin controller SCMI-based driver for NXP i.MX SoCs.

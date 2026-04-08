@@ -231,7 +231,7 @@ static bool eeprom_at24_bus_is_ready(const struct device *dev)
  *
  * It allows to address several devices as a continuous memory region
  * but also to address higher part of eeprom for chips
- * with more than 2^(addr_width) adressable word.
+ * with more than 2^(addr_width) addressable word.
  */
 static uint16_t eeprom_at24_translate_offset(const struct device *dev,
 					     off_t *offset)

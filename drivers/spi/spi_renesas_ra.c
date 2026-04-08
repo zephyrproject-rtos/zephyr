@@ -434,7 +434,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 		ra_spi_transceive_data(data);
 	} while (ra_spi_transfer_ongoing(data));
 
-	/* Wait for transmision complete */
+	/* Wait for transmission complete */
 	while (p_spi_reg->SPSR_b.IDLNF) {
 	}
 	/* Disable the SPI Transfer. */

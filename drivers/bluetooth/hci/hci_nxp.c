@@ -132,7 +132,7 @@ static const uint8_t hci_cal_data_params[] = {
 	 * BIT[1]] Disable Pwr Control for class 2= 0
 	 * BIT[2]] MiscFlag(to indicagte external XTAL) = 0
 	 * BIT[3] Used Internal Sleep Clock = 1
-	 * BIT[4] BT AOA localtion support = 0
+	 * BIT[4] BT AOA location support = 0
 	 * BIT[5] Force Class 1 mode = 1
 	 * BIT[7:6] Reserved
 	 */
@@ -521,7 +521,7 @@ static int bt_nxp_send(const struct device *dev, struct net_buf *buf)
 
 #if defined(HCI_NXP_LOCK_STANDBY_BEFORE_SEND)
 	/* Sending an HCI message requires to wake up the controller core if it's asleep.
-	 * Platform controllers may send reponses using non wakeable interrupts which can
+	 * Platform controllers may send responses using non wakeable interrupts which can
 	 * be lost during standby usage.
 	 * Blocking standby usage until the HCI message is sent.
 	 */

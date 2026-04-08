@@ -1,0 +1,6 @@
+board:
+  name: nucleo_wba25ce1
+  full_name: Nucleo WBA25CE1
+  vendor: st
+  socs:
+    - name: stm32wba25xx

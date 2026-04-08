@@ -37,6 +37,14 @@ void usbc_timer_init(struct usbc_timer_t *usbc_timer, uint32_t timeout_ms);
 void usbc_timer_start(struct usbc_timer_t *usbc_timer);
 
 /**
+ * @brief Start a timer with a specific timeout value
+ *
+ * @param usbc_timer timer object
+ * @param timeout_ms timer timeout in ms
+ */
+void usbc_timer_start_with_value(struct usbc_timer_t *usbc_timer, uint32_t timeout_ms);
+
+/**
  * @brief Check if a timer has expired
  *
  * @param usbc_timer timer object

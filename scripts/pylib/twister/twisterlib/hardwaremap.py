@@ -19,7 +19,7 @@ from pathlib import Path
 import scl
 import yaml
 from natsort import natsorted
-from twisterlib.constants import ZEPHYR_BASE
+from twisterlib import ZEPHYR_BASE
 from twisterlib.error import NoDeviceAvailableException, TwisterException
 from twisterlib.hardwaredata import CompoundHardwareData, HardwareData
 

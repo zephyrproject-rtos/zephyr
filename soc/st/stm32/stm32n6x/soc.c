@@ -49,6 +49,7 @@ void soc_reset_hook(void)
 
 static void soc_rif_config(void)
 {
+#if defined(CONFIG_TRUSTED_EXECUTION_SECURE)
 	/* Enable the clock for the RIFSC (RIF Security Controller) */
 	__HAL_RCC_RIFSC_CLK_ENABLE();
 
@@ -68,12 +69,15 @@ static void soc_rif_config(void)
 	/* LTDC Layer 1 */
 	RIF_MASTER_CID1_SEC_PRIV(LTDC1);
 	RIF_SLAVE_SEC_PRIV(LTDCL1);
+#ifdef NPU_PRESENT
 	/* NPU */
 	RIF_MASTER_CID1_SEC_PRIV(NPU);
 	RIF_SLAVE_SEC_PRIV(NPU);
+#endif
 	/* VENC */
 	RIF_MASTER_CID1_SEC_PRIV(VENC);
 	RIF_SLAVE_SEC_PRIV(VENC);
+#endif /* CONFIG_TRUSTED_EXECUTION_SECURE */
 }
 
 /**

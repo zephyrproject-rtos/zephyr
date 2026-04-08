@@ -346,11 +346,19 @@
 
 	bt_hci_wb0: bt_hci_wb0 {
 		compatible = "st,hci-stm32wb0";
+		interrupt-parent = <&nvic>;
+		interrupts = <18 0>, <22 0>, <25 0>;
+		interrupt-names = "radio-txrx", "radio-rrm", "radio-txrx-seq";
 		status = "disabled";
 	};
 
 	radio_timer: radio_timer {
 		compatible = "st,stm32wb0-radio-timer";
+		interrupt-parent = <&nvic>;
+		interrupts = <20 0>, <23 0>, <24 0>;
+		interrupt-names = "radio-timer-error",
+				  "radio-timer-cpu-wkup",
+				  "radio-timer-txrx-wkup";
 		compensated-timer-freq = <409600>;
 		max-hs-startup-time = <320>;
 		status = "disabled";

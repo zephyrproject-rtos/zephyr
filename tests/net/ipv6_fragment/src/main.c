@@ -1493,6 +1493,8 @@ static enum net_verdict udp_data_received(struct net_conn *conn,
 	static const char expected_data[] = "123456789.";
 	const size_t expected_data_len = sizeof(expected_data) - 1;
 	uint16_t i;
+	uint16_t out_chksum = 0;
+	int ret;
 
 	NET_DBG("Data %p received", pkt);
 
@@ -1527,8 +1529,10 @@ static enum net_verdict udp_data_received(struct net_conn *conn,
 			  "UDP header destination port mismatch");
 	zassert_mem_equal(verify_buf + 4, &expected_udp_length, 2,
 			  "UDP header length mismatch");
-	zassert_equal(net_calc_verify_chksum_udp(pkt), 0,
-		      "UDP header invalid checksum");
+
+	ret = net_calc_verify_chksum_udp(pkt, &out_chksum);
+	zassert_equal(ret, 0, "Calculation failed");
+	zassert_equal(out_chksum, 0, "UDP header invalid checksum");
 
 	/* Verify data is valid */
 	i = NET_IPV6H_LEN + NET_UDPH_LEN;
@@ -2230,6 +2234,8 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	uint16_t expected_icmpv6_length = net_htons(test_recv_payload_len + ECHO_REPLY_H_LEN);
 	uint16_t i;
 	uint8_t expected_data = 0;
+	uint16_t chksum = 0;
+	int ret;
 
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(ip_hdr);
@@ -2264,8 +2270,10 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	zassert_equal(verify_buf[0], NET_ICMPV6_ECHO_REPLY,
 		      "Echo reply header invalid type");
 	zassert_equal(verify_buf[1], 0, "Echo reply header invalid code");
-	zassert_equal(net_calc_chksum_icmpv6(pkt), 0,
-		      "Echo reply header invalid checksum");
+
+	ret = net_calc_chksum_icmpv6(pkt, &chksum);
+	zassert_equal(ret, 0, "Calculation failed");
+	zassert_equal(chksum, 0, "Echo reply header invalid checksum");
 	zassert_mem_equal(verify_buf + 4, ipv6_reass_frag1 + ECHO_REPLY_ID_OFFSET, 2,
 			  "Echo reply header invalid identifier");
 	zassert_mem_equal(verify_buf + 6, ipv6_reass_frag1 + ECHO_REPLY_SEQ_OFFSET, 2,

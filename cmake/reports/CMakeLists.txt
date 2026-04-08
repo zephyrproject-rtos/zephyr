@@ -156,3 +156,16 @@ if(NOT ${PAHOLE} STREQUAL PAHOLE-NOTFOUND)
     USES_TERMINAL
     )
 endif()
+
+add_custom_target(
+  dashboard
+  ${PYTHON_EXECUTABLE}
+  ${ZEPHYR_BASE}/scripts/dashboard/dashboard.py
+  --output ${CMAKE_BINARY_DIR}/dashboard
+  --zephyr-base ${ZEPHYR_BASE}
+  --kernel-bin-name ${CONFIG_KERNEL_BIN_NAME}
+  --open
+  ${CMAKE_BINARY_DIR}
+  DEPENDS ${logical_target_for_zephyr_elf}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )

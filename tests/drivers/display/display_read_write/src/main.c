@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 (c) TOKITA Hiroshi
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,8 +40,13 @@ static inline uint8_t bytes_per_pixel(enum display_pixel_format pixel_format)
 {
 	switch (pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
+	case PIXEL_FORMAT_XRGB_8888:
+	case PIXEL_FORMAT_ABGR_8888:
+	case PIXEL_FORMAT_RGBA_8888:
+	case PIXEL_FORMAT_BGRA_8888:
 		return 4;
 	case PIXEL_FORMAT_RGB_888:
+	case PIXEL_FORMAT_BGR_888:
 		return 3;
 	case PIXEL_FORMAT_RGB_565:
 	case PIXEL_FORMAT_RGB_565X:

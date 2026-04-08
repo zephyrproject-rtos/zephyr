@@ -11,6 +11,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -657,36 +658,36 @@ static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, vo
 	err = bt_bap_ep_get_info(cap_stream->bap_stream.ep, &ep_info);
 	if (err != 0) {
 		FAIL("Failed to get EP info: %d\n", err);
-		return true;
+		return false;
 	}
 
 	err = bt_cap_unicast_group_get_info(unicast_group, &cap_info);
 	if (err != 0) {
 		FAIL("Failed to get CAP unicast group info: %d\n", err);
-		return true;
+		return false;
 	}
 
 	err = bt_bap_unicast_group_get_info(cap_info.unicast_group, &bap_info);
 	if (err != 0) {
 		FAIL("Failed to get BAP unicast group info: %d\n", err);
-		return true;
+		return false;
 	}
 
 	if (ep_info.dir == BT_AUDIO_DIR_SINK) {
 		if (bap_info.sink_pd != expected_pd) {
 			FAIL("Unexpected sink PD %u (expected %u)\n", bap_info.sink_pd,
 			     expected_pd);
-			return true;
+			return false;
 		}
 	} else {
 		if (bap_info.source_pd != expected_pd) {
 			FAIL("Unexpected source PD %u (expected %u)\n", bap_info.source_pd,
 			     expected_pd);
-			return true;
+			return false;
 		}
 	}
 
-	return false;
+	return true;
 }
 
 static void unicast_audio_start(struct bt_cap_unicast_group *unicast_group, bool wait)

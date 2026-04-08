@@ -382,7 +382,7 @@ ZTEST_F(cap_commander_test_broadcast_reception,
 /*
  * Test for pa_interval_high omitted
  * pa_interval is a uint16_t, BT_GAP_PER_ADV_MAX_INTERVAL is defined as 0xFFFF
- * and therefor we can not test in the current implementation
+ * and therefore we can not test in the current implementation
  */
 
 ZTEST_F(cap_commander_test_broadcast_reception, test_commander_reception_start_inval_broadcast_id)

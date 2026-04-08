@@ -25,7 +25,6 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -55,7 +54,7 @@ struct bt_adv_id_check_data {
 #if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_BROADCASTER)
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr)
 {
-	CHECKIF(id >= CONFIG_BT_ID_MAX || addr == NULL) {
+	if (id >= CONFIG_BT_ID_MAX || addr == NULL) {
 		return NULL;
 	}
 
@@ -175,7 +174,7 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 	struct net_buf *buf;
 	int err;
 
-	CHECKIF(adv == NULL || addr == NULL) {
+	if (adv == NULL || addr == NULL) {
 		return -EINVAL;
 	}
 
@@ -351,7 +350,7 @@ int bt_id_set_private_addr(uint8_t id)
 	bt_addr_t rpa;
 	int err;
 
-	CHECKIF(id >= CONFIG_BT_ID_MAX) {
+	if (id >= CONFIG_BT_ID_MAX) {
 		return -EINVAL;
 	}
 
@@ -416,18 +415,25 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 	bt_addr_t rpa;
 	int err;
 
-	CHECKIF(adv == NULL) {
+	if (adv == NULL) {
 		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    (adv->options & BT_LE_ADV_OPT_USE_NRPA)) {
-		/* The host doesn't support setting NRPAs when BT_PRIVACY=y.
-		 * In that case you probably want to use an RPA anyway.
-		 */
-		LOG_ERR("NRPA not supported when BT_PRIVACY=y");
+		bt_addr_le_t addr;
 
-		return -ENOSYS;
+		err = bt_addr_le_create_nrpa(&addr);
+		if (err != 0) {
+			return err;
+		}
+
+		err = bt_id_set_adv_random_addr(adv, &addr.a);
+		if (err == 0 && !atomic_test_bit(adv->flags, BT_ADV_LIMITED)) {
+			le_rpa_timeout_submit();
+		}
+
+		return err;
 	}
 
 	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
@@ -492,7 +498,7 @@ int bt_id_set_private_addr(uint8_t id)
 	bt_addr_t nrpa;
 	int err;
 
-	CHECKIF(id >= CONFIG_BT_ID_MAX) {
+	if (id >= CONFIG_BT_ID_MAX) {
 		return -EINVAL;
 	}
 
@@ -520,7 +526,7 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 	bt_addr_t nrpa;
 	int err;
 
-	CHECKIF(adv == NULL) {
+	if (adv == NULL) {
 		return -EINVAL;
 	}
 
@@ -760,7 +766,7 @@ bool bt_id_scan_random_addr_check(void)
 
 bool bt_id_adv_random_addr_check(const struct bt_le_adv_param *param)
 {
-	CHECKIF(param == NULL) {
+	if (param == NULL) {
 		return false;
 	}
 
@@ -1004,7 +1010,7 @@ struct bt_keys *bt_id_find_conflict(struct bt_keys *candidate)
 
 void bt_id_add(struct bt_keys *keys)
 {
-	CHECKIF(keys == NULL) {
+	if (keys == NULL) {
 		return;
 	}
 
@@ -1167,7 +1173,7 @@ void bt_id_del(struct bt_keys *keys)
 	struct bt_conn *conn;
 	int err;
 
-	CHECKIF(keys == NULL) {
+	if (keys == NULL) {
 		return;
 	}
 
@@ -1552,7 +1558,7 @@ uint8_t bt_id_read_public_addr(bt_addr_le_t *addr)
 	struct net_buf *rsp;
 	int err;
 
-	CHECKIF(addr == NULL) {
+	if (addr == NULL) {
 		LOG_WRN("Invalid input parameters");
 		return 0U;
 	}
@@ -1742,7 +1748,7 @@ int bt_id_set_create_conn_own_addr(bool use_filter, uint8_t *own_addr_type)
 {
 	int err;
 
-	CHECKIF(own_addr_type == NULL) {
+	if (own_addr_type == NULL) {
 		return -EINVAL;
 	}
 
@@ -1834,7 +1840,7 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 {
 	int err;
 
-	CHECKIF(own_addr_type == NULL) {
+	if (own_addr_type == NULL) {
 		return -EINVAL;
 	}
 
@@ -1912,7 +1918,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 	const bt_addr_le_t *id_addr;
 	int err = 0;
 
-	CHECKIF(adv == NULL || own_addr_type == NULL) {
+	if (adv == NULL || own_addr_type == NULL) {
 		return -EINVAL;
 	}
 
@@ -2049,7 +2055,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 #if defined(CONFIG_BT_CLASSIC)
 int bt_br_oob_get_local(struct bt_br_oob *oob)
 {
-	CHECKIF(oob == NULL) {
+	if (oob == NULL) {
 		return -EINVAL;
 	}
 
@@ -2064,7 +2070,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 	struct bt_le_ext_adv *adv = NULL;
 	int err;
 
-	CHECKIF(oob == NULL) {
+	if (oob == NULL) {
 		return -EINVAL;
 	}
 
@@ -2143,7 +2149,7 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 {
 	int err;
 
-	CHECKIF(adv == NULL || oob == NULL) {
+	if (adv == NULL || oob == NULL) {
 		return -EINVAL;
 	}
 
@@ -2205,7 +2211,7 @@ int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const uint8_t *tk)
 		return -EINVAL;
 	}
 
-	CHECKIF(tk == NULL) {
+	if (tk == NULL) {
 		return -EINVAL;
 	}
 

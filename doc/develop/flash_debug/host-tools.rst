@@ -717,7 +717,7 @@ at: `Realtek Supported Boards`_
 	https://www.nxp.com/design/software/development-software/mcuxpresso-software-and-tools-/mcuxpresso-for-visual-studio-code:MCUXPRESSO-VSC
 
 .. _MCUXpresso Installer:
-	https://github.com/nxp-mcuxpresso/vscode-for-mcux/wiki/Dependency-Installation
+	https://mcuxpresso.nxp.com/mcux-vscode/latest/html/MCUXpresso-Installer.html
 
 .. _NXP S32 Design Studio for S32 Platform:
    https://www.nxp.com/design/software/development-software/s32-design-studio-ide/s32-design-studio-for-s32-platform:S32DS-S32PLATFORM

@@ -20,7 +20,7 @@
 	chosen {
 		zephyr,console = &usart2;
 		zephyr,shell-uart = &usart2;
-		zephyr,sram = &sram0;
+		zephyr,sram = &sram1;
 		zephyr,canbus = &fdcan1;
 	};
 
@@ -198,10 +198,13 @@
 };
 
 &dac1 {
-	/* only 2 output channels : out1 on pa4 or out2 on pa5 */
+	/* Only 2 output channels: OUT1 on PA4 or OUT2 on PA5
+	 * Disable by default due to conflict with SPI1 (PA4)
+	 * and green_led_0 (PA5).
+	 */
 	pinctrl-0 = <&dac1_out1_pa4>;  /* Arduino D10 */
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 };
 
 &spi1 {
@@ -224,9 +227,10 @@
 };
 
 &fdcan3 {
+	/* Disable by default due to conflict with ADC3 (PA12) */
 	pinctrl-0 = <&fdcan3_tx_pe12 &fdcan3_rx_pe13>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 };
 
 &digi_die_temp {

@@ -225,7 +225,7 @@
 			};
 
 			cst816s@2 {
-				compatible = "hynitron,cst816s";
+				compatible = "hynitron,cst8xx";
 				reg = <0x2>;
 				irq-gpios = <&test_gpio 0 0>;
 				rst-gpios = <&test_gpio 1 0>;
@@ -320,6 +320,11 @@
 				compatible = "parade,tma525b";
 				reg = <0xd>;
 				int-gpios = <&test_gpio 0 0>;
+			};
+
+			seesaw@e {
+				compatible = "adafruit,seesaw-gamepad";
+				reg = <0xe>;
 			};
 		};
 

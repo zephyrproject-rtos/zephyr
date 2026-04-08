@@ -133,7 +133,7 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 		.posBufPwr = CY_AUTANALOG_SAR_BUF_PWR_OFF,
 		.negBufPwr = CY_AUTANALOG_SAR_BUF_PWR_OFF,
 		/* Note:  This setting chooses "accumulate and dump" vs. "interleaved" for channels
-		 * where averaging is enabled.  The selection for "accumulate" vs. "accumlate and
+		 * where averaging is enabled.  The selection for "accumulate" vs. "accumulate and
 		 * divide" is tracked by adc->average_is_accumulate and is applied in the hardware
 		 * on a per-channel basis.
 		 */

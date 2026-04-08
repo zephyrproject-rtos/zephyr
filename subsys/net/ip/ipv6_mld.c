@@ -410,8 +410,11 @@ static int send_mld_report(struct net_if *iface)
 		net_pkt_cursor_init(pkt);
 		net_pkt_set_overwrite(pkt, true);
 
-		net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt) +
-				  sizeof(struct net_icmp_hdr) + MLDV2_REPORT_RESERVED_BYTES);
+		if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt) +
+					      sizeof(struct net_icmp_hdr) +
+					      MLDV2_REPORT_RESERVED_BYTES) < 0) {
+			goto drop;
+		}
 
 		count -= info.skipped;
 

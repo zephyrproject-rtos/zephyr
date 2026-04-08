@@ -258,14 +258,10 @@ static int udc_ambiq_ep_dequeue(const struct device *dev, struct udc_ep_config *
 {
 	unsigned int lock_key;
 	struct udc_ambiq_data *priv = udc_get_private(dev);
-	struct net_buf *buf;
 
 	lock_key = irq_lock();
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	}
+	udc_ep_cancel_queued(dev, ep_cfg);
 
 	udc_ep_set_busy(ep_cfg, false);
 	am_hal_usb_ep_state_reset(priv->usb_handle, ep_cfg->addr);

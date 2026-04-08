@@ -54,7 +54,7 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 	sensor_channel_get(dev, SENSOR_CHAN_ACCEL_Y, &accel_y);
 	sensor_channel_get(dev, SENSOR_CHAN_ACCEL_Z, &accel_z);
 #ifdef ARGONKEY_TEST_LOG
-	sprintf(out_str, "accel (%f %f %f) m/s2", (double)out_ev(&accel_x),
+	sprintf(out_str, "accel (%f %f %f) m/s^2", (double)out_ev(&accel_x),
 						(double)out_ev(&accel_y),
 						(double)out_ev(&accel_z));
 	printk("TRIG %s\n", out_str);
@@ -66,7 +66,7 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Y, &gyro_y);
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Z, &gyro_z);
 #ifdef ARGONKEY_TEST_LOG
-	sprintf(out_str, "gyro (%f %f %f) dps", (double)out_ev(&gyro_x),
+	sprintf(out_str, "gyro (%f %f %f) rad/s", (double)out_ev(&gyro_x),
 						(double)out_ev(&gyro_y),
 						(double)out_ev(&gyro_z));
 	printk("TRIG %s\n", out_str);
@@ -79,7 +79,7 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 	sensor_channel_get(dev, SENSOR_CHAN_MAGN_Y, &magn_y);
 	sensor_channel_get(dev, SENSOR_CHAN_MAGN_Z, &magn_z);
 #ifdef ARGONKEY_TEST_LOG
-	sprintf(out_str, "magn (%f %f %f) gauss", (double)out_ev(&magn_x),
+	sprintf(out_str, "magn (%f %f %f) G", (double)out_ev(&magn_x),
 						 (double)out_ev(&magn_y),
 						 (double)out_ev(&magn_z));
 	printk("TRIG %s\n", out_str);
@@ -292,7 +292,7 @@ int main(void)
 		sensor_channel_get(baro_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 		sensor_channel_get(baro_dev, SENSOR_CHAN_PRESS, &press);
 
-		printk("temp: %d.%02d C; press: %d.%06d\n",
+		printk("temp: %d.%02d C; press: %d.%06d kPa\n",
 		       temp.val1, temp.val2, press.val1, press.val2);
 #endif
 
@@ -300,7 +300,7 @@ int main(void)
 		sensor_sample_fetch(hum_dev);
 		sensor_channel_get(hum_dev, SENSOR_CHAN_HUMIDITY, &humidity);
 
-		printk("humidity: %d.%06d\n",
+		printk("humidity: %d.%06d %%RH\n",
 		       humidity.val1, humidity.val2);
 #endif
 
@@ -310,7 +310,7 @@ int main(void)
 		sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_X, &accel_x);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_Y, &accel_y);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_ACCEL_Z, &accel_z);
-		sprintf(out_str, "accel (%f %f %f) m/s2", (double)out_ev(&accel_x),
+		sprintf(out_str, "accel (%f %f %f) m/s^2", (double)out_ev(&accel_x),
 							(double)out_ev(&accel_y),
 							(double)out_ev(&accel_z));
 		printk("%s\n", out_str);
@@ -320,7 +320,7 @@ int main(void)
 		sensor_channel_get(accel_dev, SENSOR_CHAN_GYRO_X, &gyro_x);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_GYRO_Y, &gyro_y);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_GYRO_Z, &gyro_z);
-		sprintf(out_str, "gyro (%f %f %f) dps", (double)out_ev(&gyro_x),
+		sprintf(out_str, "gyro (%f %f %f) rad/s", (double)out_ev(&gyro_x),
 							(double)out_ev(&gyro_y),
 							(double)out_ev(&gyro_z));
 		printk("%s\n", out_str);
@@ -330,7 +330,7 @@ int main(void)
 		sensor_channel_get(accel_dev, SENSOR_CHAN_MAGN_X, &magn_x);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_MAGN_Y, &magn_y);
 		sensor_channel_get(accel_dev, SENSOR_CHAN_MAGN_Z, &magn_z);
-		sprintf(out_str, "magn (%f %f %f) gauss", (double)out_ev(&magn_x),
+		sprintf(out_str, "magn (%f %f %f) G", (double)out_ev(&magn_x),
 							 (double)out_ev(&magn_y),
 							 (double)out_ev(&magn_z));
 		printk("%s\n", out_str);

@@ -166,7 +166,7 @@ static void tbs_client_discover_cb(struct bt_conn *conn, int err, uint8_t tbs_co
 			const uint8_t idx = i + (gtbs_found ? 1 : 0);
 
 			if (idx >= ARRAY_SIZE(client->bearers)) {
-				LOG_WRN("Discoverd more TBS instances (%u) than the CCP Call "
+				LOG_WRN("Discovered more TBS instances (%u) than the CCP Call "
 					"Control Client supports %zu",
 					tbs_count, ARRAY_SIZE(client->bearers));
 				break;

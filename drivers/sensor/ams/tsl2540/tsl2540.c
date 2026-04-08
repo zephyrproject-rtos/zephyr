@@ -200,8 +200,7 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 			thld = sensor_value_to_double(val) * cpl;
 			LOG_DBG("attr: %d, cpl: %g, thld: %x\n", attr, cpl, thld);
 
-			le16_buffer = sys_cpu_to_le16(sys_cpu_to_le16(thld));
-
+			le16_buffer = sys_cpu_to_le16(thld);
 			ret = i2c_burst_write_dt(
 				&((const struct tsl2540_config *)dev->config)->i2c_spec,
 				TSL2540_REG_AILT_LOW, (uint8_t *)&le16_buffer, sizeof(le16_buffer));

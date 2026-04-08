@@ -7,6 +7,9 @@
 #include <kernel_internal.h>
 #include <zephyr/arch/cache.h>
 #include <zephyr/sys/barrier.h>
+#if defined(CONFIG_GIC_V3)
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#endif
 #include "boot.h"
 
 void z_arm64_el2_init(void);
@@ -127,6 +130,10 @@ void z_arm64_el3_init(void)
 		ICC_SRE_ELx_SRE_BIT |	/* System register interface is used */
 		ICC_SRE_ELx_EN_BIT);	/* Enables lower Exception level access to ICC_SRE_EL1 */
 	write_sysreg(reg, ICC_SRE_EL3);
+#if defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
+	/* Must be set while in Secure mode */
+	sys_write32(sys_read32(GICD_CTLR) | GICD_CTLR_DS, GICD_CTLR);
+#endif
 #endif
 
 	z_arm64_el3_plat_init();

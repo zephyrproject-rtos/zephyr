@@ -5,9 +5,6 @@
 
 if SOC_STM32WBA65XX
 
-config NUM_IRQS
-	default 82
-
 # BL2 implementation not available yet
 config TFM_BL2_NOT_SUPPORTED
 	default y

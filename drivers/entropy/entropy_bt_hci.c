@@ -20,12 +20,12 @@ static int entropy_bt_init(const struct device *dev)
 static int entropy_bt_get_entropy(const struct device *dev,
 				  uint8_t *buffer, uint16_t length)
 {
-	/* Do not wait for BT to be ready (i.e. bt_is_ready()) before issueing
+	/* Do not wait for BT to be ready (i.e. bt_is_ready()) before issuing
 	 * the command. The reason is that when crypto is enabled and the PSA
 	 * Crypto API support is provided through Mbed TLS, random number generator
 	 * needs to be available since the very first call to psa_crypto_init()
 	 * which is usually done before BT is completely initialized.
-	 * On the other hand, in devices like the nrf5340, the crytographically
+	 * On the other hand, in devices like the nrf5340, the cryptographically
 	 * secure RNG is owned by the cpu_net, so the cpu_app needs to poll it
 	 * to get random data. Again, there is no need to wait for BT to be
 	 * completely initialized for this kind of support. Just try to send the

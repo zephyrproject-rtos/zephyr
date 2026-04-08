@@ -20,4 +20,7 @@ supported:
   - pwm
   - i2c
   - i2s
+testing:
+  binaries:
+    - flash.bin
 vendor: nxp

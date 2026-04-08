@@ -2164,6 +2164,11 @@ This has been fixed in main for v4.4.0
 - `PR 103163 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/103163>`_
 
+:cve:`2026-1677`
+----------------
+
+Under embargo until 2026-04-15
+
 :cve:`2026-1678`
 ----------------
 
@@ -2193,6 +2198,26 @@ This has been fixed in main for v4.4.0
 - `PR 99828 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/99828>`_
 
+:cve:`2026-1679`
+----------------
+
+The eswifi socket offload driver copies user-provided payloads into a fixed buffer without checking
+available space; oversized sends overflow eswifi->buf, corrupting kernel memory (CWE-120). Exploit
+requires local code that can call the socket send API; no remote attacker can reach it directly.
+
+- `Zephyr project bug tracker GHSA-qx3g-5g22-fq5w
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-qx3g-5g22-fq5w>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102119 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102119>`_
+
+:cve:`2026-1681`
+----------------
+
+Under embargo until 2026-04-15
+
 :cve:`2026-4179`
 ----------------
 
@@ -2207,3 +2232,51 @@ This has been fixed in main for v4.4.0
 
 - `PR 104390 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/104390>`_
+
+:cve:`2026-5066`
+----------------
+
+Under embargo until 2026-06-01
+
+:cve:`2026-5067`
+----------------
+
+Under embargo until 2026-05-23
+
+:cve:`2026-5068`
+----------------
+
+Under embargo until 2026-05-21
+
+:cve:`2026-5071`
+----------------
+
+Under embargo until 2026-05-18
+
+:cve:`2026-5072`
+----------------
+
+Under embargo until 2026-05-18
+
+:cve:`2026-5589`
+----------------
+
+Under embargo until 2026-06-03
+
+:cve:`2026-5590`
+----------------
+
+net: ip/tcp: Null pointer dereference can be triggered by a race condition
+
+A race condition during TCP connection teardown can cause tcp_recv() to operate on a connection that
+has already been released. If tcp_conn_search() returns NULL while processing a SYN packet, a NULL
+pointer derived from stale context data is passed to tcp_backlog_is_full() and dereferenced without
+validation, leading to a crash.
+
+- `Zephyr project bug tracker GHSA-4vqm-pw24-g9jp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4vqm-pw24-g9jp>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102110 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102110>`_

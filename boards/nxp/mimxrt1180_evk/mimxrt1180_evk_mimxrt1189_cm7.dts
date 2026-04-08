@@ -18,7 +18,7 @@
 		zephyr,sram = &dtcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
-		zephyr,flash-controller = &w25q128jw;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,flash = &itcm;
 		zephyr,console = &lpuart12;
 		zephyr,shell-uart = &lpuart12;

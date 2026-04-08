@@ -305,12 +305,21 @@ static int nrf_rram_write(const struct device *dev, off_t addr, const void *data
 		return -EINVAL;
 	}
 
+	if ((addr % WRITE_LINE_SIZE) != 0 || (len % WRITE_LINE_SIZE) != 0) {
+		return -EINVAL;
+	}
+
+
 	return nrf_write(addr, data, len);
 }
 
 static int nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
 {
 	ARG_UNUSED(dev);
+
+	if ((addr % PAGE_SIZE) != 0 || (len % PAGE_SIZE) != 0) {
+		return -EINVAL;
+	}
 
 	return nrf_write(addr, NULL, len);
 }

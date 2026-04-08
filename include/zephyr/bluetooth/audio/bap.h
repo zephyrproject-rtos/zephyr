@@ -1575,8 +1575,11 @@ int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *c
  *
  * @param ep The structure object with endpoint info.
  * @param user_data Data to pass to the function.
+ *
+ * @retval true Continue iterating.
+ * @retval false Stop iterating.
  */
-typedef void (*bt_bap_ep_func_t)(struct bt_bap_ep *ep, void *user_data);
+typedef bool (*bt_bap_ep_func_t)(struct bt_bap_ep *ep, void *user_data);
 
 /**
  * @brief Iterate through all endpoints of the given connection.
@@ -1584,8 +1587,12 @@ typedef void (*bt_bap_ep_func_t)(struct bt_bap_ep *ep, void *user_data);
  * @param conn Connection object
  * @param func Function to call for each endpoint.
  * @param user_data Data to pass to the callback function.
+ *
+ * @retval 0 Success
+ * @retval -ECANCELED Iteration was stopped by the callback function before complete.
+ * @retval -EINVAL @p conn or @p func were NULL.
  */
-void bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data);
+int bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data);
 
 /**
  * @brief Initialize and configure a new ASE.
@@ -1755,8 +1762,8 @@ int bt_bap_unicast_group_delete(struct bt_bap_unicast_group *unicast_group);
  * @param stream     The audio stream
  * @param user_data  User data
  *
- * @retval true Stop iterating.
- * @retval false Continue iterating.
+ * @retval true Continue iterating.
+ * @retval false Stop iterating.
  */
 typedef bool (*bt_bap_unicast_group_foreach_stream_func_t)(struct bt_bap_stream *stream,
 							   void *user_data);
@@ -1814,10 +1821,21 @@ struct bt_bap_unicast_client_cb {
 	 * @param conn  Connection to the remote unicast server.
 	 * @param dir   Direction of the location.
 	 * @param loc   The location bitfield value.
-	 *
-	 * @return 0 in case of success or negative value in case of error.
 	 */
 	void (*location)(struct bt_conn *conn, enum bt_audio_dir dir, enum bt_audio_location loc);
+
+	/**
+	 * @brief Remote Unicast Server Supported Contexts
+	 *
+	 * This callback is called whenever the supported contexts are read
+	 * from the server or otherwise notified to the client.
+	 *
+	 * @param conn     Connection to the remote unicast server.
+	 * @param snk_ctx  The sink context bitfield value.
+	 * @param src_ctx  The source context bitfield value.
+	 */
+	void (*supported_contexts)(struct bt_conn *conn, enum bt_audio_context snk_ctx,
+				   enum bt_audio_context src_ctx);
 
 	/**
 	 * @brief Remote Unicast Server Available Contexts
@@ -1828,8 +1846,6 @@ struct bt_bap_unicast_client_cb {
 	 * @param conn     Connection to the remote unicast server.
 	 * @param snk_ctx  The sink context bitfield value.
 	 * @param src_ctx  The source context bitfield value.
-	 *
-	 * @return 0 in case of success or negative value in case of error.
 	 */
 	void (*available_contexts)(struct bt_conn *conn, enum bt_audio_context snk_ctx,
 				   enum bt_audio_context src_ctx);
@@ -2498,8 +2514,8 @@ int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
  * @param stream     The audio stream
  * @param user_data  User data
  *
- * @retval true  Stop iterating.
- * @retval false Continue iterating.
+ * @retval true  Continue iterating.
+ * @retval false Stop iterating.
  */
 typedef bool (*bt_bap_broadcast_source_foreach_stream_func_t)(struct bt_bap_stream *stream,
 							      void *user_data);
@@ -2512,7 +2528,7 @@ typedef bool (*bt_bap_broadcast_source_foreach_stream_func_t)(struct bt_bap_stre
  * @param user_data      User specified data that is sent to the callback function
  *
  * @retval 0          Success (even if no streams exists in the broadcast source).
- * @retval -ECANCELED The @p func returned true.
+ * @retval -ECANCELED The @p func returned false and stopped the iteration.
  * @retval -EINVAL    @p source or @p func were NULL.
  */
 int bt_bap_broadcast_source_foreach_stream(struct bt_bap_broadcast_source *source,

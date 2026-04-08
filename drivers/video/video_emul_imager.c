@@ -231,8 +231,13 @@ static int emul_imager_set_frmival(const struct device *dev, struct video_frmiva
 {
 	struct emul_imager_data *data = dev->data;
 	struct video_frmival_enum fie = {.format = &data->fmt, .discrete = *frmival};
+	int ret;
 
-	video_closest_frmival(dev, &fie);
+	ret = video_closest_frmival(dev, &fie);
+	if (ret < 0) {
+		return ret;
+	}
+
 	LOG_DBG("Applying frame interval number %u", fie.index);
 	return emul_imager_set_mode(dev, &emul_imager_modes[data->fmt_id][fie.index]);
 }

@@ -41,7 +41,7 @@ static const uint16_t mpu6050_gyro_sensitivity_x10[] = {
 	1310, 655, 328, 164
 };
 
-/* Device type, uses the correct offets for a particular device */
+/* Device type, uses the correct offsets for a particular device */
 enum mpu6050_device_type {
 	DEVICE_TYPE_MPU6050 = 0,
 	DEVICE_TYPE_MPU6500,

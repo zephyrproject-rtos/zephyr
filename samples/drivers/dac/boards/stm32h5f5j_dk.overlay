@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dac1 {
+	status = "okay";
+};
+
+&spi1 {
+	status = "disabled";
+};

@@ -127,8 +127,9 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	struct video_ctrl *vc;
 	struct video_device *vdev;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(ctrl != NULL);
+	if (ctrl == NULL) {
+		return -EINVAL;
+	}
 
 	vdev = video_find_vdev(dev);
 	if (!vdev) {
@@ -233,11 +234,13 @@ static inline bool is_cluster_manual(const struct video_ctrl *primary)
 	return primary->type == VIDEO_CTRL_TYPE_INTEGER64 ? primary->val64 == 0 : primary->val == 0;
 }
 
-void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
+int video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
 {
 	bool has_volatiles = false;
 
-	__ASSERT(sz && ctrls, "The 1st control, i.e. the primary control, must not be NULL");
+	if (sz == 0 || ctrls == NULL) {
+		return -EINVAL;
+	}
 
 	for (uint8_t i = 0; i < sz; i++) {
 		ctrls[i].cluster_sz = sz;
@@ -248,15 +251,23 @@ void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
 	}
 
 	ctrls->has_volatiles = has_volatiles;
+
+	return 0;
 }
 
-void video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile)
+int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile)
 {
-	video_cluster_ctrl(ctrls, sz);
+	int ret;
 
-	__ASSERT(sz > 1, "Control auto cluster size must be > 1");
-	__ASSERT(!(set_volatile && !DEVICE_API_GET(video, ctrls->vdev->dev)->get_volatile_ctrl),
-		 "Volatile is set but no ops");
+	if (sz <= 1 ||
+	    (set_volatile && !DEVICE_API_GET(video, ctrls->vdev->dev)->get_volatile_ctrl)) {
+		return -EINVAL;
+	}
+
+	ret = video_cluster_ctrl(ctrls, sz);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ctrls->is_auto = true;
 	ctrls->has_volatiles = set_volatile;
@@ -269,6 +280,8 @@ void video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_vola
 					  (set_volatile ? VIDEO_CTRL_FLAG_VOLATILE : 0);
 		}
 	}
+
+	return 0;
 }
 
 static int video_find_ctrl(const struct device *dev, uint32_t id, struct video_ctrl **ctrl)
@@ -292,8 +305,9 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 {
 	struct video_ctrl *ctrl = NULL;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(control != NULL);
+	if (dev == NULL || control == NULL) {
+		return -EINVAL;
+	}
 
 	int ret = video_find_ctrl(dev, control->id, &ctrl);
 
@@ -338,8 +352,9 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	int32_t val = 0;
 	int64_t val64 = 0;
 
-	__ASSERT_NO_MSG(dev != NULL);
-	__ASSERT_NO_MSG(control != NULL);
+	if (dev == NULL || control == NULL) {
+		return -EINVAL;
+	}
 
 	ret = video_find_ctrl(dev, control->id, &ctrl);
 	if (ret) {
@@ -560,8 +575,9 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 	struct video_device *vdev;
 	struct video_ctrl *ctrl = NULL;
 
-	__ASSERT_NO_MSG(cq != NULL);
-	__ASSERT_NO_MSG(cq->dev != NULL);
+	if (cq == NULL || cq->dev == NULL) {
+		return -EINVAL;
+	}
 
 	if (cq->id & VIDEO_CTRL_FLAG_NEXT_CTRL) {
 		cq->id &= ~VIDEO_CTRL_FLAG_NEXT_CTRL;
@@ -604,8 +620,10 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 	const char *type = NULL;
 	char buf[11];
 
-	__ASSERT_NO_MSG(cq != NULL);
-	__ASSERT_NO_MSG(cq->dev != NULL);
+	if (cq == NULL || cq->dev == NULL) {
+		LOG_ERR("%s - Invalid parameter given", __func__);
+		return;
+	}
 
 	/* Get type of the control */
 	switch (cq->type) {

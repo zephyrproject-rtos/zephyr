@@ -865,8 +865,6 @@ enum bt_le_adv_opt {
 	 * This is an advanced feature; most users will want to enable
 	 * @kconfig{CONFIG_BT_EXT_ADV} instead.
 	 *
-	 * @note Not implemented when @kconfig{CONFIG_BT_PRIVACY}.
-	 *
 	 * @note Mutually exclusive with BT_LE_ADV_OPT_USE_IDENTITY.
 	 */
 	BT_LE_ADV_OPT_USE_NRPA = BIT(19),

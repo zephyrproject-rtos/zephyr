@@ -619,7 +619,6 @@ static void answer_addr_cb(struct net_if *iface, struct net_if_addr *ifaddr,
 
 	if (ret > 0) {
 		ctx->buf_offset += ret;
-		ctx->buf_size -= ret;
 		ctx->answer_count++;
 	} else {
 		NET_DBG("Not enough buffer space to include additional A/AAAA record");
@@ -885,7 +884,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 	}
 
 	/* first add the answer record */
-	r = add_ptr_record(inst, DNS_SD_PTR_TTL, buf, offset, buf_size - offset, &service_offset,
+	r = add_ptr_record(inst, DNS_SD_PTR_TTL, buf, offset, buf_size, &service_offset,
 			   &instance_offset, &domain_offset);
 	if (r < 0) {
 		return r; /* LCOV_EXCL_LINE */
@@ -895,7 +894,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 	offset += r;
 
 	/* then add the additional records */
-	r = add_txt_record(inst, DNS_SD_TXT_TTL, instance_offset, buf, offset, buf_size - offset);
+	r = add_txt_record(inst, DNS_SD_TXT_TTL, instance_offset, buf, offset, buf_size);
 	if (r < 0) {
 		return r; /* LCOV_EXCL_LINE */
 	}
@@ -904,7 +903,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 	offset += r;
 
 	r = add_srv_record(inst, DNS_SD_SRV_TTL, instance_offset, domain_offset, buf, offset,
-			   buf_size - offset, &host_offset);
+			   buf_size, &host_offset);
 	if (r < 0) {
 		return r; /* LCOV_EXCL_LINE */
 	}
@@ -914,7 +913,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 
 	if (addr6 != NULL && !net_ipv6_is_addr_unspecified(addr6)) {
 		r = add_aaaa_record(inst, DNS_SD_AAAA_TTL, host_offset, addr6->s6_addr, buf, offset,
-				    buf_size - offset); /* LCOV_EXCL_LINE */
+				    buf_size); /* LCOV_EXCL_LINE */
 		if (r < 0) {
 			return r; /* LCOV_EXCL_LINE */
 		}
@@ -926,7 +925,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 	if (addr4 != NULL && !net_ipv4_is_addr_unspecified(addr4)) {
 		tmp = net_htonl(*(addr4->s4_addr32));
 		r = add_a_record(inst, DNS_SD_A_TTL, host_offset, tmp, buf, offset,
-				 buf_size - offset);
+				 buf_size);
 		if (r < 0) {
 			return r; /* LCOV_EXCL_LINE */
 		}
@@ -940,7 +939,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 		 * addresses if they fit.
 		 */
 		r = add_remaining_aaaa_records(iface, inst, host_offset, addr6,
-					       buf, &offset, buf_size - offset);
+					       buf, &offset, buf_size);
 		/* offset was updated inside the function */
 		rsp->arcount += r;
 	}
@@ -950,7 +949,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 		 * addresses if they fit.
 		 */
 		r = add_remaining_a_records(iface, inst, host_offset, addr4,
-					    buf, &offset, buf_size - offset);
+					    buf, &offset, buf_size);
 		/* offset was updated inside the function */
 		rsp->arcount += r;
 	}

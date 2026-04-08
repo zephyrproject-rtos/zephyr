@@ -30,6 +30,7 @@ ZTEST(app_version, test_appversion)
 
 ZTEST(app_version, test_basic_strings)
 {
+	zassert_equal(0, strcmp("development", STRINGIFY(APP_EXTRAVERSION)));
 	zassert_equal(0, strcmp("5.6.7-development", APP_VERSION_STRING));
 	zassert_equal(0, strcmp("5.6.7-development+89", APP_VERSION_EXTENDED_STRING));
 	zassert_equal(0, strcmp("5.6.7+89", APP_VERSION_TWEAK_STRING));

@@ -2164,8 +2164,11 @@ static struct net_pkt *net_pkt_clone_internal(struct net_pkt *pkt,
 
 	net_pkt_cursor_init(clone_pkt);
 
-	if (cursor_offset) {
-		net_pkt_skip(clone_pkt, cursor_offset);
+	if (net_pkt_skip(clone_pkt, cursor_offset) < 0) {
+		net_pkt_unref(clone_pkt);
+		net_pkt_cursor_restore(pkt, &backup);
+		net_pkt_set_overwrite(pkt, overwrite);
+		return NULL;
 	}
 	net_pkt_set_overwrite(clone_pkt, overwrite);
 

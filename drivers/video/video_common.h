@@ -178,7 +178,7 @@ int video_modify_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint3
 			 uint32_t field_value);
 
 /**
- * @brief Read a Camera Control Interace register value from the specified address and size.
+ * @brief Read a Camera Control Interface register value from the specified address and size.
  *
  * The size of the register address and register data passed as flags in the high bits of
  * @p reg_addr in the unused bits of the address.

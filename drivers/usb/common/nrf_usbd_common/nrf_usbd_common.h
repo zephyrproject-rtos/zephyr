@@ -34,7 +34,7 @@ extern "C" {
  *
  * Number of bytes for isochronous endpoints in total.
  * This number would be shared between IN and OUT endpoint.
- * It may be also assigned totaly to one endpoint.
+ * It may be also assigned totally to one endpoint.
  * @sa nrf_usbd_isosplit_set
  * @sa nrf_usbd_isosplit_get
  */

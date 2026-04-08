@@ -33,7 +33,7 @@ struct mcux_lpit_channel_data {
 
 struct mcux_lpit_config {
 	struct counter_config_info info;
-	LPIT_Type *base;           /* Poniter to LPIT peripheral instance base address*/
+	LPIT_Type *base;           /* Pointer to LPIT peripheral instance base address*/
 	lpit_config_t lpit_config; /* LPIT configuration structure */
 	int num_channels;          /* Number of channels for one LPIT instance*/
 	void (*irq_config_func)(const struct device *dev);
@@ -230,7 +230,7 @@ static DEVICE_API(counter, mcux_lpit_driver_api) = {
 			 &mcux_lpit_##lpit_inst##_config, POST_KERNEL,                             \
 			 CONFIG_COUNTER_INIT_PRIORITY, &mcux_lpit_driver_api);
 
-/* Creates a decleration for each lpit channel */
+/* Creates a declaration for each lpit channel */
 #define MCUX_LPIT_CHANNEL_DECLARATIONS(node)                                                       \
 	static struct mcux_lpit_channel_data mcux_lpit_channel_data_##node;
 

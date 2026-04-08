@@ -1506,7 +1506,16 @@ static bool uncompress_IPHC_header(struct net_pkt *pkt)
 		udp->len = net_htons(len);
 
 		if (nhc & NET_6LO_NHC_UDP_CHECKSUM) {
-			udp->chksum = net_calc_chksum_udp(pkt);
+			int ret;
+			uint16_t chksum = 0;
+
+			udp->chksum = 0;
+			ret = net_calc_chksum_udp(pkt, &chksum);
+			if (ret < 0) {
+				goto fail;
+			}
+
+			udp->chksum = chksum;
 		}
 	}
 

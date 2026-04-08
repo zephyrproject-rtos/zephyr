@@ -19,7 +19,11 @@ void soc_early_init_hook(void)
 	__maybe_unused sl_power_peripheral_t peripheral_config = {};
 	__maybe_unused sl_power_ram_retention_config_t ram_configuration = {
 		.configure_ram_banks = false,
-		.m4ss_ram_size_kb = (DT_REG_SIZE(DT_NODELABEL(sram0)) / 1024),
+		/* The real RAM size from DT is correct but the power manager API expect to
+		 * receive either 192/256/320 KB value, so we need to round it up to the
+		 * next boundary to avoid powering down the top M4 bank(s) by mistake.
+		 */
+		.m4ss_ram_size_kb = (DT_REG_SIZE(DT_NODELABEL(sram0)) / 1024) + 1,
 		.ulpss_ram_size_kb = 4,
 	};
 

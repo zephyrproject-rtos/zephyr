@@ -666,7 +666,7 @@ static void renesas_ra_ssie_callback(i2s_callback_args_t *p_args)
 		break;
 
 	default:
-		LOG_ERR("Invalid triger envent: %d", p_args->event);
+		LOG_ERR("Invalid trigger event: %d", p_args->event);
 	}
 }
 

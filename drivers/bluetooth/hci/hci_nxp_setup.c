@@ -1315,7 +1315,7 @@ static int bt_nxp_set_calibration_data_annex55(void)
 							/* BIT[1] Disable Pwr Ctrl for class 2=0 */
 							/* BIT[2] MiscFlg(to indicate ext.XTAL)=0 */
 							/* BIT[3] Used Internal Sleep Clock = 0 */
-							/* BIT[4] BT AOA localtion support = 0 */
+							/* BIT[4] BT AOA location support = 0 */
 							/* BIT[5] Force Class 1 mode = 0 */
 							/* BIT[7:6] Reserved */
 			0x00,        /* AOANumberOfAntennas: 0x00 */

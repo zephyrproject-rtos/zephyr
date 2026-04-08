@@ -16,3 +16,6 @@ string
 	default "ek_ra8d2/r7ka8d2kflcac/cm33" if $(BOARD) = "ek_ra8d2"
 	default "ek_ra8m2/r7ka8m2jflcac/cm33" if $(BOARD) = "ek_ra8m2"
 	default "ek_ra8t2/r7ka8t2lflcac/cm33" if $(BOARD) = "ek_ra8t2"
+	default "max78002evkit/max78002/rv32" if $(BOARD) = "max78002evkit"
+	default "max32690evkit/max32690/rv32" if $(BOARD) = "max32690evkit"
+	default "max32655evkit/max32655/rv32" if $(BOARD) = "max32655evkit"

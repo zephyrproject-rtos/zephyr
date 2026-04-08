@@ -84,3 +84,11 @@ axp2101@7 {
 		charge-term-current-microamp = <100000>;
 	};
 };
+
+npm10xx@8 {
+	reg = <0x8>;
+
+	charger {
+		compatible = "nordic,npm10xx-charger";
+	};
+};

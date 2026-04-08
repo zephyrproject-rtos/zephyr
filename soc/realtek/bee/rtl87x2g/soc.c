@@ -32,6 +32,7 @@ extern char __extram_bss_start[];
 extern char __extram_bss_end[];
 
 extern void _isr_wrapper(void);
+extern void Peripheral_Handler(void);
 
 #define S_RAM_VECTOR_ADDR (0x14ec00)
 #define STACK_ROM_ADDRESS DT_REG_ADDR(DT_NODELABEL(bee_bt_controller))
@@ -80,6 +81,7 @@ static void rtl87x2g_extra_ram_init(void)
  * ----------------------------------------------------------------------------
  */
 
+#ifdef CONFIG_BT
 static void rtl87x2g_bt_controller_init(void)
 {
 	BOOL_PATCH_FUNC bt_controller_entry;
@@ -95,6 +97,7 @@ static void rtl87x2g_bt_controller_init(void)
 		LOG_ERR("Failed to load Realtek Bee BT Controller ROM.");
 	}
 }
+#endif
 
 /*
  * Sync ROM-initialized ISRs with Zephyr by wrapping them via z_isr_install.
@@ -135,6 +138,13 @@ void soc_early_init_hook(void)
 
 	SCB->VTOR = (uint32_t)S_RAM_VECTOR_ADDR;
 	(void)memcpy((void *)S_RAM_VECTOR_ADDR, _vector_start, vector_size);
+
+	/*
+	 * Connect the Level 1 interrupt ISR (Peripheral_Handler,
+	 * which is implemented in ROM) to the Zephyr interrupt subsystem.
+	 */
+	IRQ_CONNECT(Peripheral_IRQn, 0, Peripheral_Handler, NULL, 0);
+	irq_enable(Peripheral_IRQn);
 
 	rtl87x2g_extra_ram_init();
 
@@ -201,7 +211,9 @@ void soc_late_init_hook(void)
 	/* Initialize HW AES mutex. */
 	hw_aes_mutex_init();
 
+#ifdef CONFIG_BT
 	rtl87x2g_bt_controller_init();
+#endif
 
 	/* [Phase 2] ISR Restoration:
 	 * Register ROM-installed ISRs to Zephyr and restore _isr_wrapper.

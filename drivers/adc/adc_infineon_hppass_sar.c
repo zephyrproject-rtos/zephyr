@@ -435,7 +435,7 @@ static void ifx_hppass_sar_adc_isr(const struct device *dev)
  * @brief Initialize pdl adc configuration structure
  *
  * This function initializes the pdl adc configuration with values derived from the device tree and
- * other default values.  Channel and Group configurations are set to NULL intially.  Channels will
+ * other default values.  Channel and Group configurations are set to NULL initially.  Channels will
  * be configured later in the channel setup function.  Groups are configured when a conversion is
  * started.
  */

@@ -325,7 +325,6 @@ static int eth_cyclonev_set_config(const struct device *dev, enum ethernet_confi
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(p->mac_addr, config->mac_address.addr, sizeof(p->mac_addr));
 		eth_cyclonev_set_mac_addr(p->mac_addr, cv_config->emac_index, 0, p); /* Set MAC */
-		net_if_set_link_addr(p->iface, p->mac_addr, sizeof(p->mac_addr), NET_LINK_ETHERNET);
 		break;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
@@ -753,7 +752,7 @@ cont:
 /**
  * @brief Release tx function
  * Main purpose of its function is to track current descriptor number
- * and give back succeding tx semaphore when it have been used.
+ * and give back succeeding tx semaphore when it have been used.
  *
  * @param p Pointer to device structure
  */

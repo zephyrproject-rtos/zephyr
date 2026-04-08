@@ -190,7 +190,7 @@ struct gpio_pca_series_config {
 struct gpio_pca_series_data {
 	struct gpio_driver_data common; /** gpio_driver_data needs to be first */
 	struct k_sem lock;
-	void *cache;  /** device spicific reg cache
+	void *cache;  /** device specific reg cache
 			*  - if CONFIG_GPIO_PCA_SERIES_CACHE_ALL is set,
 			*    it points to device specific cache memory.
 			*  - if CONFIG_GPIO_PCA_SERIES_CACHE_ALL is not set,
@@ -1021,6 +1021,10 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 	int ret = 0;
 
 	if ((flags & GPIO_INPUT) && (flags & GPIO_OUTPUT)) {
+		return -ENOTSUP;
+	}
+
+	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == GPIO_DISCONNECTED) {
 		return -ENOTSUP;
 	}
 

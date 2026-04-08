@@ -362,10 +362,16 @@ SECTIONS {
   __common_rom_region_end = .;
     __rodata_region_end = .;
 
-  .noinit SEGSTART_UNCACHED : HDR_MMU_PAGE_ALIGN {
+  .noinit SEGSTART_UNCACHED (NOLOAD) : HDR_MMU_PAGE_ALIGN {
     __data_start = .;
     *(.noinit)
     *(.noinit.*)
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() CMake function.
+ */
+#include <snippets-noinit.ld>
+
   } >ucram
 
 #include <zephyr/linker/kobject-priv-stacks.ld>

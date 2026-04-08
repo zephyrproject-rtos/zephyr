@@ -30,3 +30,17 @@ properties:
       Module password for authentication. Defaults to the factory-programmed
       value 0x00000000, which causes password verification to be skipped at
       power-on. Override only if changed via the SetPwd command.
+
+examples:
+  - |
+    &uart1 {
+      status = "okay";
+      current-speed = <57600>;
+
+      fingerprint0: fingerprint0 {
+        compatible = "zhiantec,zfm-x0";
+        status = "okay";
+        comm-addr = <0xffffffff>;
+        password = <0x00000000>;
+      };
+    };

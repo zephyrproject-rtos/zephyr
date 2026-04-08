@@ -1,4 +1,4 @@
-/* obex.c - IrDA Oject Exchange Protocol handling */
+/* obex.c - IrDA Object Exchange Protocol handling */
 
 /*
  * Copyright 2024-2026 NXP

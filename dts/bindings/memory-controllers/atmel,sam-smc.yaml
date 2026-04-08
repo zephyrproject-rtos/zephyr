@@ -130,7 +130,7 @@ child-binding:
       type: array
       required: true
       description: |
-        This value is used to effectivelly read/write at memory region (pulse phase).
+        This value is used to effectively read/write at memory region (pulse phase).
         The pulse value is an array of the signals NWE, NCS_WR, NRD and NCS_RD where
         each value is configured in terms of MCK cycles and a value of 0 is forbidden.
         Each value is encoded in 7 bits where the highest bit adds an offset of 256

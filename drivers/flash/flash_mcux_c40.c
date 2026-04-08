@@ -378,10 +378,8 @@ static DEVICE_API(flash, mcux_c40_api) = {
 		))										\
 	};											\
 	static struct mcux_c40_data mcux_c40_data_##inst;					\
-	DEVICE_DT_DEFINE(C40_FLASH_NODE(inst), flash_mcux_c40_init, NULL, &mcux_c40_data_##inst,\
-			      &mcux_c40_cfg_##inst, POST_KERNEL,				\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mcux_c40_api);		\
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL,			\
-				CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+	DEVICE_DT_INST_DEFINE(inst, flash_mcux_c40_init, NULL, &mcux_c40_data_##inst,		\
+		&mcux_c40_cfg_##inst, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+		&mcux_c40_api);
 
 DT_INST_FOREACH_STATUS_OKAY(C40_INIT)

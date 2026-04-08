@@ -18,7 +18,7 @@ description: |
         micro-ticks-per-rev = <685440000>;
    };
 
-  When inherting from an existing TPM instance you might want to remove the prescaler property
+  When inheriting from an existing TPM instance you might want to remove the prescaler property
   Since the QDEC mode doesn't use the prescaler, you do this using:
   /delete-property/ prescaler;
 

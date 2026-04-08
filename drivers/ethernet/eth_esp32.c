@@ -347,22 +347,17 @@ static int eth_esp32_set_config(const struct device *dev,
 				const struct ethernet_config *config)
 {
 	struct eth_esp32_dev_data *const dev_data = dev->data;
-	int ret = -ENOTSUP;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(dev_data->mac_addr, config->mac_address.addr, 6);
 		emac_hal_set_address(&dev_data->hal, dev_data->mac_addr);
-		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
-				     sizeof(dev_data->mac_addr),
-				     NET_LINK_ETHERNET);
-		ret = 0;
-		break;
+		return 0;
 	default:
 		break;
 	}
 
-	return ret;
+	return -ENOTSUP;
 }
 
 static int eth_esp32_send(const struct device *dev, struct net_pkt *pkt)

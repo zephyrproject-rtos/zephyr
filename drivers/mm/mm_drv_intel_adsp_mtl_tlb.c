@@ -70,7 +70,7 @@ uintptr_t adsp_mm_get_unused_l2_start_aligned(void)
 /**
  * Calculate the index to the TLB table.
  *
- * @param vaddr Page-aligned virutal address.
+ * @param vaddr Page-aligned virtual address.
  * @return Index to the TLB table.
  */
 static uint32_t get_tlb_entry_idx(uintptr_t vaddr)
@@ -739,7 +739,7 @@ static int sys_mm_drv_mm_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	/*
-	 * Change size of avalible physical memory according to fw register information
+	 * Change size of available physical memory according to fw register information
 	 * in runtime.
 	 */
 

@@ -979,7 +979,7 @@ int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
 		i2c_tgt_mask &= ~BIT(cur_addr_slot);
 	}
 
-	/* Input addrss is not in the smbaddr */
+	/* Input address is not in the smbaddr */
 	if (i2c_tgt_mask == 0 || reg_smbaddr == NULL) {
 		LOG_ERR("Address %#x is not found", target_cfg->address);
 		return -EINVAL;

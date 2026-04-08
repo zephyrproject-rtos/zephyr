@@ -1902,15 +1902,29 @@ static ssize_t ascs_config(struct bt_conn *conn, struct net_buf_simple *buf)
 	return buf->size;
 }
 
-void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data)
+int bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data)
 {
+	if (conn == NULL) {
+		LOG_DBG("conn is NULL");
+		return -EINVAL;
+	}
+
+	if (func == NULL) {
+		LOG_DBG("func is NULL");
+		return -EINVAL;
+	}
+
 	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn == conn) {
-			func(&ase->ep, user_data);
+			if (!func(&ase->ep, user_data)) {
+				return -ECANCELED;
+			}
 		}
 	}
+
+	return 0;
 }
 
 static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
@@ -3108,7 +3122,7 @@ static void configure_ase_char(uint8_t snk_cnt, uint8_t src_cnt)
 	size_t attrs_to_rem;
 
 	/* Remove the Source ASEs. The ones to remove will always be at the very tail of the
-	 * attributes, so we just decrease the count withe the amount of sources we want to remove.
+	 * attributes, so we just decrease the count with the amount of sources we want to remove.
 	 */
 	attrs_to_rem = src_ases_to_rem * ASCS_ASE_CHAR_ATTR_COUNT;
 	ascs_svc.attr_count -= attrs_to_rem;

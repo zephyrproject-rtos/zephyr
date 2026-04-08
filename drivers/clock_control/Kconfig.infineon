@@ -5,10 +5,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CLOCK_CONTROL_INFINEON_CAT1
-	bool "Infineon CAT1 clock control driver"
+	bool "Infineon Legacy HAL CAT1 clock control driver"
 	default y
 	depends on SOC_FAMILY_INFINEON_CAT1
 	depends on DT_HAS_FIXED_CLOCK_ENABLED
+	depends on USE_INFINEON_LEGACY_HAL
 	help
 	  This option enables the clock control driver for Infineon CAT1 family.
 

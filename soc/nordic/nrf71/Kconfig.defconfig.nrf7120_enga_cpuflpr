@@ -5,8 +5,10 @@
 
 if SOC_NRF7120_ENGA_CPUFLPR
 
+# VREGUSB, LFXO, LFRC, HFXO64M, AUXPLL interrupts aren't used in drivers so we can minimise
+# the gen_isr_table by setting NUM_IRQS to 270 (CLOCK_POWER) + 1 + 16 (reserved for RISC-V)
 config NUM_IRQS
-	default 304
+	default 287
 
 # As FLPR has limited memory most of tests does not fit with asserts enabled.
 config ASSERT

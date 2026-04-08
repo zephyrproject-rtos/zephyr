@@ -176,7 +176,7 @@ static void on_rx(struct modem_chat *chat, char **argv, uint16_t argc, void *use
 	} else {
 		err = k_msgq_put(&driver_data->rx_msgq, &msg, K_NO_WAIT);
 		if (err != 0) {
-			LOG_ERR("error adding messgae to queue: %d", err);
+			LOG_ERR("error adding message to queue: %d", err);
 			driver_data->handler_error = err;
 		}
 	}
@@ -531,7 +531,7 @@ int rylr_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
 		return err;
 	}
 
-	/* This is not a user error but the documeted way to cancel async reception in lora api*/
+	/* This is not a user error but the documented way to cancel async reception in lora api*/
 	if (cb == NULL) {
 		goto bail;
 	}

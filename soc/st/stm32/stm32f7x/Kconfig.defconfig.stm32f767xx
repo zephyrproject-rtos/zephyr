@@ -5,9 +5,6 @@
 
 if SOC_STM32F767XX
 
-config NUM_IRQS
-	default 110
-
 config CPU_HAS_FPU_DOUBLE_PRECISION
 	default y
 

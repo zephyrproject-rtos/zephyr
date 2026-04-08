@@ -270,6 +270,7 @@ ARM64 arch:
   collaborators:
     - npitre
     - JiafeiPan
+    - carlocaione
   files:
     - arch/arm64/
     - include/zephyr/arch/arm64/
@@ -795,6 +796,18 @@ Broadcom Platforms:
     - dts/*/broadcom/
     - soc/brcm/
     - boards/brcm/
+
+Build Dashboard:
+  status: maintained
+  maintainers:
+    - grahamroff-dev
+  collaborators:
+    - mbolivar
+    - kartben
+  files:
+    - scripts/dashboard/
+  labels:
+    - "area: Build Dashboard"
 
 Build system:
   status: maintained
@@ -1584,6 +1597,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - teburd
+  collaborators:
+    - mcuxted
   files:
     - drivers/dma/
     - tests/drivers/dma/
@@ -1770,6 +1785,7 @@ Documentation Infrastructure:
     - de-nordic
   collaborators:
     - rghaddab
+    - Albort12138
   files:
     - drivers/flash/
     - dts/bindings/flash_controller/
@@ -2294,6 +2310,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - gmarull
+    - lucien-nxp
   files:
     - doc/hardware/pinctrl/
     - include/zephyr/drivers/pinctrl/
@@ -2519,13 +2536,19 @@ Documentation Infrastructure:
     - drivers.stepper
 
 "Drivers: Syscon":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - carlocaione
+  collaborators:
+    - pdgendt
   files:
     - include/zephyr/drivers/syscon.h
     - drivers/syscon/
     - tests/drivers/syscon/
   tests:
     - drivers.syscon
+  labels:
+    - "area: Syscon"
 
 "Drivers: System timer":
   status: maintained
@@ -2814,6 +2837,9 @@ Espressif Platforms:
     - name: Espressif hosted Wi-Fi driver
       files:
         - drivers/wifi/esp_hosted
+    - name: Espressif ESP-AT Wi-Fi driver
+      files:
+        - drivers/wifi/esp_at
   labels:
     - "platform: ESP32"
 
@@ -2953,7 +2979,8 @@ Heap Management:
 IPC:
   status: maintained
   maintainers:
-    - doki-nordic
+    - iuliana-prodan
+    - anangl
   collaborators:
     - arnopo
   files:
@@ -3027,6 +3054,8 @@ Input:
   status: maintained
   maintainers:
     - fabiobaltieri
+  collaborators:
+    - mcuxted
   files:
     - doc/services/input/
     - drivers/input/
@@ -4464,6 +4493,21 @@ Open AMP:
   tests:
     - sample.ipc.openamp
 
+OpenRISC Arch:
+  status: maintained
+  maintainers:
+    - jhol
+  files:
+    - arch/openrisc/
+    - boards/qemu/or1k/
+    - drivers/timer/*openrisc*
+    - include/zephyr/arch/openrisc/
+    - soc/qemu/or1k/
+  labels:
+    - "area: OpenRISC"
+  tests:
+    - arch.openrisc
+
 OpenTitan Platforms:
   status: maintained
   maintainers:
@@ -4711,8 +4755,8 @@ Realtek Ameba Platforms:
     - zjian-zhang
     - Derek-RTK
   files:
+    - boards/realtek/rtl872*/
     - drivers/*/*ameba*
-    - boards/realtek/
     - soc/realtek/ameba/
     - dts/arm/realtek/ameba*/
     - dts/bindings/*/*ameba*
@@ -4745,7 +4789,7 @@ Realtek EC Platforms:
     - JhanBoChao-Realtek
     - Titan-Realtek
   files:
-    - boards/realtek/
+    - boards/realtek/rts5912*/
     - drivers/*/*rts5912*
     - dts/bindings/*/*rts5912*
     - dts/arm/realtek/ec/
@@ -5044,6 +5088,9 @@ Security:
   maintainers:
     - ceolin
     - d3zd3z
+  collaborators:
+    - tomi-font
+    - valeriosetti
   files:
     - doc/security/
   labels:
@@ -5166,10 +5213,10 @@ SiFli SF32LB Platforms:
   status: maintained
   maintainers:
     - gmarull
+    - HalfSweet
   collaborators:
     - cameled
     - ck-telecom
-    - HalfSweet
   files:
     - boards/sifli/
     - drivers/*/*sf32lb*
@@ -6113,6 +6160,7 @@ West:
     - nika-nordic
     - nordic-krch
     - carlescufi
+    - hakonfam
   collaborators:
     - kl-cruz
     - magp-nordic
@@ -6121,6 +6169,11 @@ West:
     - adamkondraciuk
     - lstnl
     - rlubos
+    - "57300"
+    - jonathannilsen
+    - karstenkoenig
+    - SebastianBoe
+    - kyberdin
   files:
     - modules/hal_nordic/
   labels:
@@ -6218,8 +6271,10 @@ West:
   status: maintained
   maintainers:
     - gmarull
+    - HalfSweet
   collaborators:
     - cameled
+    - ck-telecom
   files:
     - modules/hal_sifli/
   labels:
@@ -6447,7 +6502,7 @@ West:
     - crypto.mbedtls
     - psa.secure_storage
 
-"West project: mbedtls-framework":
+"West project: mbedtls-3.6":
   status: maintained
   maintainers:
     - ceolin
@@ -6478,6 +6533,16 @@ West:
     - modules/Kconfig.syst
   labels:
     - "area: Tracing"
+
+"West project: mldsa-native":
+  status: maintained
+  maintainers:
+    - ceolin
+    - valeriosetti
+    - tomi-font
+  files: []
+  labels:
+    - "area: TF-PSA-Crypto"
 
 "West project: nanopb":
   status: maintained
@@ -6649,6 +6714,7 @@ West:
   collaborators:
     - wearyzen
     - ithinuel
+    - ceolin
   files:
     - modules/trusted-firmware-a/
   labels:

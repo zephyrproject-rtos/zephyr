@@ -20,7 +20,6 @@ if(CONFIG_BOARD_MPS3_CORSTONE300_AN547)
   set(QEMU_FLAGS_${ARCH}
     -cpu ${QEMU_CPU_TYPE_${ARCH}}
     -machine mps3-an547
-    -nographic
     -vga none
     )
 elseif(CONFIG_BOARD_MPS3_CORSTONE300_FVP OR CONFIG_BOARD_MPS3_CORSTONE300_FVP_NS)

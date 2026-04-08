@@ -1503,6 +1503,13 @@ static int dns_read(struct dns_resolve_context *ctx,
 
 	ret = dns_validate_msg(ctx, &dns_msg, dns_id, &query_idx,
 			       dns_cname, query_hash);
+
+#if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING)
+	if (ctx->pkt_fw_cb != NULL) {
+		ctx->pkt_fw_cb(dns_data, data_len, ctx->queries[query_idx].user_data);
+	}
+#endif /* CONFIG_DNS_RESOLVER_PACKET_FORWARDING */
+
 	if (ret == DNS_EAI_AGAIN) {
 		return ret;
 	}
@@ -1511,12 +1518,6 @@ static int dns_read(struct dns_resolve_context *ctx,
 	    query_idx > CONFIG_DNS_NUM_CONCUR_QUERIES) {
 		return ret;
 	}
-
-#if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING)
-	if (ctx->pkt_fw_cb != NULL) {
-		ctx->pkt_fw_cb(dns_data, data_len, ctx->queries[query_idx].user_data);
-	}
-#endif /* CONFIG_DNS_RESOLVER_PACKET_FORWARDING */
 
 	/* Mark the query as success. Only used in case of DNS-SD query which need to wait for
 	 * multiple responses.

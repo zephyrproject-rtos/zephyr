@@ -65,14 +65,14 @@ The sample code outputs sensors data on the STWIN.box console.
     STWIN.box dashboard
 
     STTS22H: Temperature: 24.4 C
-    IIS2DLPC: Accel (m.s-2): x: -5.590, y: -0.536, z: 8.040
-    IIS2MDC: Magn (gauss): x: 0.420, y: -0.116, z: -0.103
+    IIS2DLPC: Accel (m/s^2): x: -5.590, y: -0.536, z: 8.040
+    IIS2MDC: Magn (G): x: 0.420, y: -0.116, z: -0.103
     IIS2MDC: Temperature: 21.0 C
-    ISM330DHCX: Accel (m.s-2): x: 0.000, y: 5.704, z: 7.982
-    ISM330DHCX: Gyro (dps): x: 0.026, y: -0.006, z: -0.008
-    IIS2ICLX: Accel (m.s-2): x: -0.157, y: 5.699
+    ISM330DHCX: Accel (m/s^2): x: 0.000, y: 5.704, z: 7.982
+    ISM330DHCX: Gyro (rad/s): x: 0.026, y: -0.006, z: -0.008
+    IIS2ICLX: Accel (m/s^2): x: -0.157, y: 5.699
     ILPS22QS: Temperature: 26.4 C
-    ILPS22QS: Pressure: 100.539 kpa
+    ILPS22QS: Pressure: 100.539 kPa
     1:: iis2dlpc trig 2021
     1:: iis2mdc trig 993
     1:: ism330dhcx acc trig 4447

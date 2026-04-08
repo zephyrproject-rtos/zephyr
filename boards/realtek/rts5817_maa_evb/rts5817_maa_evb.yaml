@@ -10,6 +10,4 @@ flash: 2048
 toolchain:
   - zephyr
   - gnuarmemb
-testing:
-  default: true
 vendor: realtek

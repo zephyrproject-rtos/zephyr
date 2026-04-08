@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2022-2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -112,6 +112,27 @@ description: |
           example, all pins are in 'group1'). Other peripherals can have more than
           one group.
 
+    Another useful pin property is 'sleep-hold-en'. When this property is
+    defined, the ESP GPIO pad hold feature is enabled for that pin during
+    system sleep. The pin state is latched right before the system enters
+    a low power mode and remains unchanged while the system is sleeping.
+    This ensures the GPIO level is retained even if the peripheral
+    controlling the pin is powered down or its registers lose state.
+
+    This property works in both input and output modes and is only
+    applicable to output-capable GPIOs.
+
+    Note: For deep sleep cycles, the automatic hold functionality may not
+          cover the entire period from entering sleep until the application
+          resumes execution. During deep sleep, register states are lost due to
+          reset, and the hold configuration will be released during the driver
+          initialization phase. For outputs where maintaining a stable level is
+          critical (for example, edge-sensitive signals), the application may
+          need to explicitly enable the hold feature using gpio_hold_en() before
+          requesting a power-off. This ensures that the pin state remains held
+          throughout the deep sleep period and until the application is running
+          again.
+
 compatible: "espressif,esp32-pinctrl"
 
 include: base.yaml
@@ -135,6 +156,7 @@ child-binding:
           - output-enable
           - output-high
           - output-low
+          - sleep-hold-en
 
     properties:
       pinmux:
@@ -144,3 +166,19 @@ child-binding:
           Each array element represents pin muxing information of an individual
           pin. The array elements are pre-declared macros taken from Espressif's
           HAL.
+
+      sleep-hold-en:
+        type: boolean
+        description: |
+          Enable ESP GPIO pad hold during system sleep. When enabled, the pin
+          state is latched before entering sleep and remains unchanged while
+          the system is in low power mode.
+
+examples:
+  - |
+    ledc0_default: ledc0_default {
+        group1 {
+            pinmux = <LEDC_CH0_GPIO2>;
+            sleep-hold-en;
+        };
+    };

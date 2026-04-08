@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/sys/util.h>
 
 /* MICP commands */
 #define BTP_MICP_READ_SUPPORTED_COMMANDS	0x01

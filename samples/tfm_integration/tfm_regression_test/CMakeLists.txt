@@ -36,6 +36,12 @@ set_property(TARGET zephyr_property_target
              -DCONFIG_TFM_TEST_CONFIG_FILE=${TFM_TEST_CONFIG_FILE}
 )
 
+# Let TF-M install Mbed TLS (3.6.5) include files in the binary directory.
+set_property(TARGET zephyr_property_target
+             APPEND PROPERTY TFM_CMAKE_OPTIONS
+             -DTFM_INSTALL_MBEDTLS_HEADERS=ON
+)
+
 include(ExternalProject)
 
 ExternalProject_Add(tfm_regression_test_app

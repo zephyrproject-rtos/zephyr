@@ -9,6 +9,7 @@ flash: 64
 supported:
   - adc
   - arduino_gpio
+  - dma
   - entropy
   - gpio
   - memc

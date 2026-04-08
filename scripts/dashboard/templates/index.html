@@ -1,0 +1,108 @@
+<!--
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+SPDX-License-Identifier: Apache-2.0
+-->
+{% extends "base.html" %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="row mb-4">
+  <div class="col-8">
+
+    <div class="card">
+      <div class="card-header">
+        Build Attributes
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+          <div class="bold-lt">Zephyr Version</div>
+          <div>{{build.zephyr_version}}</div>
+        </li>
+        <li class="list-group-item">
+          <div class="bold-lt">Board</div>
+          <div><code>{{build.board}}</code></div>
+        </li>
+        <li class="list-group-item">
+          <div class="bold-lt">Application</div>
+          <div><code>{{build.application}}</code></div>
+        </li>
+        <li class="list-group-item">
+          <div class="bold-lt">Date</div>
+          <div>{{build.elf_date_str}}</div>
+        </li>
+        <li class="list-group-item">
+          <div class="bold-lt">Toolchain</div>
+          <div>{{build.toolchain}}</div>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+  <div class="col-4">
+
+    <div class="card">
+      <div class="card-header">
+        Memory Summary
+      </div>
+      <ul class="list-group list-group-flush">
+        {% if build.bin_size_str %}
+        <li class="list-group-item">
+          <div class="bold-lt">Bin Size</div>
+          <div>{{build.bin_size_str}}</div>
+        </li>
+        {% else %}
+        <li class="list-group-item">
+          <div class="bold-lt">ELF Size</div>
+          <div>{{build.elf_size_str}}</div>
+        </li>
+        {% endif %}
+        <li class="list-group-item">
+          <div class="bold-lt">Text (Code)</div>
+          <div>{{build.memory_summary.text|display_size}}</div>
+        </li>
+        <li class="list-group-item">
+          <div class="bold-lt">Read-Only Data</div>
+          <div>{{build.memory_summary.rodata|display_size}}</div>
+        </li>
+        <li class="list-group-item">
+          <div class="bold-lt">Read/Write Data</div>
+          <div>{{build.memory_summary.rwdata|display_size}}</div>
+        </li>
+        <li class="list-group-item">
+          <div class="bold-lt">BSS (Zero Init)</div>
+          <div>{{build.memory_summary.bss|display_size}}</div>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<div class="row">
+  <div class="col">
+
+    <div class="card">
+      <div class="card-header">
+        Build Command
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+          <div class="bold-lt">Output Directory</div>
+          <div><code>{{build.build_path.absolute()}}</code></div>
+        </li>
+        <li class="list-group-item">
+          <div class="bold-lt">Command</div>
+          <div><code>{{build.command}}</code></div>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

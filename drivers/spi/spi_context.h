@@ -261,7 +261,7 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 /* For synchronous transfers, this will signal to a thread waiting
  * on spi_context_wait for completion.
  *
- * For asynchronous tranfers, this will call the async callback function
+ * For asynchronous transfers, this will call the async callback function
  * with the user data.
  */
 static inline void spi_context_complete(struct spi_context *ctx,

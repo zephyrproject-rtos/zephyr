@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(adc_ite_it51xxx);
 #define IT51XXX_ADC_CHANNEL_DISABLED 0x1F
 
 #ifdef CONFIG_ADC_IT51XXX_VOL_FULL_SCALE
-#define ADC_0_7_FULL_SCALE_MASK GENMASK(7, 0)
+#define FULL_SCALE_MASK GENMASK(7, 0)
 #endif
 
 /* (45xxh) Analog to Digital Converter (ADC) registers */
@@ -81,7 +81,8 @@ LOG_MODULE_REGISTER(adc_ite_it51xxx);
 #define IT51XXX_ADC_INTDVEN BIT(5)
 
 /* 12-bit ADC Resolution Selection @ ADCRSR */
-#define IT51XXX_ADC_12bit BIT(0)
+#define IT51XXX_ADC_12bit  BIT(0)
+#define IT51XXX_RESOLUTION 12U
 
 struct adc_it51xxx_data {
 	struct adc_context ctx;
@@ -111,6 +112,7 @@ struct adc_it51xxx_cfg {
 static int adc_it51xxx_channel_setup(const struct device *dev,
 				     const struct adc_channel_cfg *channel_cfg)
 {
+	const struct adc_it51xxx_cfg *config = dev->config;
 	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
@@ -118,8 +120,7 @@ static int adc_it51xxx_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Support channels 0~7 */
-	if (!(channel_id >= 0 && channel_id <= 7)) {
+	if (channel_id >= config->channel_count) {
 		LOG_ERR("Channel %d is not valid", channel_id);
 		return -EINVAL;
 	}
@@ -243,11 +244,11 @@ static void adc_enable_measurement(uint32_t ch)
 	}
 }
 
-static int check_buffer_size(const struct adc_sequence *sequence, uint8_t active_channels)
+static int check_buffer_size(const struct adc_sequence *sequence)
 {
 	size_t needed_buffer_size;
 
-	needed_buffer_size = active_channels * sizeof(uint16_t);
+	needed_buffer_size = POPCOUNT(sequence->channels) * sizeof(uint16_t);
 	if (sequence->options) {
 		needed_buffer_size *= (1 + sequence->options->extra_samplings);
 	}
@@ -266,14 +267,25 @@ static int adc_it51xxx_start_read(const struct device *dev, const struct adc_seq
 	const struct adc_it51xxx_cfg *config = dev->config;
 	struct adc_it51xxx_data *data = dev->data;
 	uint32_t channel_mask = sequence->channels;
+	int ret;
 
 	if (!channel_mask || channel_mask & ~BIT_MASK(config->channel_count)) {
 		LOG_ERR("Invalid selection of channels");
 		return -EINVAL;
 	}
 
-	if (!sequence->resolution) {
-		LOG_ERR("ADC resolution is not valid");
+	ret = check_buffer_size(sequence);
+	if (ret) {
+		return ret;
+	}
+
+	/* only supported 12-bit resolution */
+	if (sequence->resolution != IT51XXX_RESOLUTION) {
+		return -EINVAL;
+	}
+
+	if (sequence->oversampling) {
+		LOG_ERR("unsupported oversampling");
 		return -EINVAL;
 	}
 
@@ -288,7 +300,6 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct adc_it51xxx_data *data = CONTAINER_OF(ctx, struct adc_it51xxx_data, ctx);
 	uint32_t channels = ctx->sequence.channels;
-	uint8_t channel_count = 0;
 
 	data->repeat_buffer = data->buffer;
 
@@ -301,12 +312,6 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		channels &= ~BIT(data->ch);
 
 		adc_enable_measurement(data->ch);
-
-		channel_count++;
-	}
-
-	if (check_buffer_size(&ctx->sequence, channel_count)) {
-		return;
 	}
 
 	adc_context_on_sampling_done(&data->ctx, DEVICE_DT_INST_GET(0));
@@ -393,8 +398,9 @@ static int adc_it51xxx_init(const struct device *dev)
 	int status;
 
 #ifdef CONFIG_ADC_IT51XXX_VOL_FULL_SCALE
-	/* ADC input voltage 0V ~ AVCC (3.3V) is mapped into 0h-3FFh */
-	sys_write8(ADC_0_7_FULL_SCALE_MASK, config->base + ADCIVMFSCS1);
+	/* ADC input voltage 0V ~ AVCC (3.3V) is mapped into 0h-FFFh */
+	sys_write8(FULL_SCALE_MASK, config->base + ADCIVMFSCS1);
+	sys_write8(FULL_SCALE_MASK, config->base + ADCIVMFSCS2);
 #endif
 
 	/* 12-bit ADC Resolution Selection */

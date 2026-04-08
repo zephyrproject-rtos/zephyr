@@ -45,16 +45,16 @@ Sample Output
 
     X-NUCLEO-IKS4A1 sensor dashboard
 
-    LIS2MDL: Magn (gauss): x: -0.364, y: -0.523, z: -0.399
+    LIS2MDL: Magn (G): x: -0.364, y: -0.523, z: -0.399
     LIS2MDL: Temperature: 22.4 C
-    LSM6DSO16IS: Accel (m.s-2): x: -0.167, y: -0.249, z: 9.954
-    LSM6DSO16IS: GYro (dps): x: 0.047, y: -0.052, z: -0.042
+    LSM6DSO16IS: Accel (m/s^2): x: -0.167, y: -0.249, z: 9.954
+    LSM6DSO16IS: Gyro (rad/s): x: 0.047, y: -0.052, z: -0.042
     LSM6DSO16IS: Temperature: 25.8 C
-    LSM6DSV16X: Accel (m.s-2): x: 0.005, y: 0.053, z: 9.930
-    LSM6DSV16X: GYro (dps): x: -0.000, y: 0.000, z: 0.005
+    LSM6DSV16X: Accel (m/s^2): x: 0.005, y: 0.053, z: 9.930
+    LSM6DSV16X: Gyro (rad/s): x: -0.000, y: 0.000, z: 0.005
     LPS22DF: Temperature: 25.2 C
-    LPS22DF: Pressure:98.121 kpa
-    LIS2DUXS12: Accel (m.s-2): x: 0.689, y: -0.306, z: 9.571
+    LPS22DF: Pressure:98.121 kPa
+    LIS2DUXS12: Accel (m/s^2): x: 0.689, y: -0.306, z: 9.571
     LIS2DUXS12: Temperature: 23.9 C
 
     10:: lis2mdl trig 1839

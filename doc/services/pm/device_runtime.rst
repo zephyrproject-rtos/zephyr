@@ -185,7 +185,7 @@ suspended, the init function should call
 
         /* enable device runtime power management */
         ret = pm_device_runtime_enable(dev);
-        if ((ret < 0) && (ret != -ENOSYS)) {
+        if (ret < 0) {
             return ret;
         }
     }

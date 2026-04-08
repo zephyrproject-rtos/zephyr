@@ -180,8 +180,8 @@
 			compatible = "microchip,xec-watchdog";
 			reg = <0x40000400 0x400>;
 			interrupts = <171 0>;
-			girqs = <21 2>;
-			pcrs = <1 9>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(21, 2)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 9)>;
 		};
 
 		uart0: uart@400f2400 {

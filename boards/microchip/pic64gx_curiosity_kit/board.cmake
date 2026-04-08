@@ -2,7 +2,7 @@
 
 set(OPENOCD_USE_LOAD_IMAGE NO)
 
-board_runner_args(openocd --use-elf --no-load)
+board_runner_args(openocd --file-type=elf --no-load)
 
 if(CONFIG_BOARD_PIC64GX_CURIOSITY_KIT_PIC64GX1000_E51)
   board_runner_args(openocd --gdb-client-port=3333)

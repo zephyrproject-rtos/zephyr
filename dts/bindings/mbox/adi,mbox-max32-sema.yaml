@@ -1,0 +1,25 @@
+# Copyright 2024 Analog Devices, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI MAX32 SEMA Mailbox
+
+compatible: "adi,mbox-max32-sema"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  msg-payloads:
+    type: boolean
+    description: Enable 32-bit data payloads, in addition to signaling.
+
+  "#mbox-cells":
+    const: 1
+
+mbox-cells:
+  - channel

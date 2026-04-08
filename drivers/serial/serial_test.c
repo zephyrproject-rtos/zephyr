@@ -137,6 +137,14 @@ static int irq_tx_ready(const struct device *dev)
 	return available;
 }
 
+static int irq_is_pending(const struct device *dev)
+{
+	struct serial_vnd_data *data = dev->data;
+
+	return (data->irq_rx_enabled && !ring_buf_is_empty(data->read_queue)) ||
+	       (data->irq_tx_enabled && ring_buf_space_get(data->written) > 0) ? 1 : 0;
+}
+
 static void irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 			     void *user_data)
 {
@@ -445,6 +453,7 @@ static DEVICE_API(uart, serial_vnd_api) = {
 	.irq_tx_enable = irq_tx_enable,
 	.irq_tx_disable = irq_tx_disable,
 	.irq_tx_ready = irq_tx_ready,
+	.irq_is_pending = irq_is_pending,
 	.fifo_read = fifo_read,
 	.fifo_fill = fifo_fill,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

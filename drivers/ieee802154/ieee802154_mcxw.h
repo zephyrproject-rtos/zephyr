@@ -109,7 +109,7 @@ struct mcxw_context {
 	int8_t max_ed;
 	/* TX power level */
 	int8_t tx_pwr_lvl;
-	/* Enery detect */
+	/* Energy detect */
 	energy_scan_done_cb_t energy_scan_done;
 	/* TX Status */
 	int tx_status;

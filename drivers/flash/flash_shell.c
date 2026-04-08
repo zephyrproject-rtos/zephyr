@@ -354,6 +354,7 @@ static int cmd_test(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		if (memcmp(test_arr, check_arr, size) != 0) {
+			result = -EIO;
 			shell_error(sh, "Verification ERROR!");
 			break;
 		}

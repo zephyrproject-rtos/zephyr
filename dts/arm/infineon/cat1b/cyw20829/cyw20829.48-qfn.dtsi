@@ -288,6 +288,24 @@
 				pinmux = <DT_CAT1_PINMUX(3, 3, HSIOM_SEL_ACT_6)>;
 			};
 
+			/* canfd_ttcan_rx */
+			/omit-if-no-ref/ p3_2_can0_rx: p3_2_can0_rx {
+				pinmux = <DT_CAT1_PINMUX(3, 2, HSIOM_SEL_ACT_12)>;
+			};
+
+			/omit-if-no-ref/ p5_0_can0_rx: p5_0_can0_rx {
+				pinmux = <DT_CAT1_PINMUX(5, 0, HSIOM_SEL_ACT_12)>;
+			};
+
+			/* canfd_ttcan_tx */
+			/omit-if-no-ref/ p3_3_can0_tx: p3_3_can0_tx {
+				pinmux = <DT_CAT1_PINMUX(3, 3, HSIOM_SEL_ACT_12)>;
+			};
+
+			/omit-if-no-ref/ p5_1_can0_tx: p5_1_can0_tx {
+				pinmux = <DT_CAT1_PINMUX(5, 1, HSIOM_SEL_ACT_12)>;
+			};
+
 			/* PWM tcpwm_line*/
 			/omit-if-no-ref/ p0_1_pwm0_1: p0_1_pwm0_1 {
 				pinmux = <DT_CAT1_PINMUX(0, 1, HSIOM_SEL_ACT_0)>;

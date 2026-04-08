@@ -20,6 +20,15 @@ config CLOCK_CONTROL
 config CORTEX_M_SYSTICK
 	default n if STM32_LPTIM_TIMER
 
+# Compute IRQ table size automatically using DT for Cortex-M.
+# dt_highest_controller_irq_number() returns zero-based IRQn,
+# increment it to obtain the table size (= max IRQn + 1)
+DT_NVIC_PATH := /soc/interrupt-controller@e000e100
+DT_NVIC_MAX_IRQN := $(dt_highest_controller_irq_number,$(DT_NVIC_PATH),irq)
+
+configdefault NUM_IRQS
+	default $(inc,$(DT_NVIC_MAX_IRQN)) if $(dt_path_enabled,$(DT_NVIC_PATH))
+
 # Reduce kernel stack sizes to fit MCUs with 8 KiB RAM or less
 config MAIN_STACK_SIZE
 	default 320 if SRAM_SIZE <= 2

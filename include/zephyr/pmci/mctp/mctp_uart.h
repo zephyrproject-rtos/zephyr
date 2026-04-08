@@ -42,8 +42,13 @@ struct mctp_binding_uart {
 	int rx_res;
 
 	/* staging buffer for tx */
+	struct k_sem tx_done;
 	uint8_t tx_buf[256];
 	int tx_res;
+	bool waiting;
+
+	/* Keep track of all UART bindings */
+	sys_snode_t node;
 
 	/** INTERNAL_HIDDEN @endcond */
 };

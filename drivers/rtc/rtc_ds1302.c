@@ -164,7 +164,7 @@ unlock:
 	return err;
 }
 
-static const struct rtc_driver_api ds1302_driver_api = {
+static DEVICE_API(rtc, ds1302_driver_api) = {
 	.set_time = ds1302_set_time,
 	.get_time = ds1302_get_time,
 };

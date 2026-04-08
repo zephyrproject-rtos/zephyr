@@ -19,6 +19,12 @@ enum {
 	ARG_IDX_VALUE = 3,
 };
 
+enum {
+	ARG_IDX_ACCEL_MAX = 2,
+	ARG_IDX_SPEED_MAX = 3,
+	ARG_IDX_DECEL_MAX = 4,
+};
+
 struct stepper_microstep_map {
 	const char *name;
 	enum stepper_micro_step_resolution microstep;
@@ -333,6 +339,44 @@ static int cmd_stepper_ctrl_set_microstep_interval(const struct shell *sh, size_
 	return err;
 }
 
+static int cmd_stepper_ctrl_configure_ramp(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	int err = 0;
+
+	struct stepper_ctrl_ramp ramp = {0};
+
+	ramp.acceleration_max = shell_strtoull(argv[ARG_IDX_ACCEL_MAX], 10, &err);
+	if (err < 0) {
+		shell_error(sh, "Could not parse accel: %d", err);
+		return err;
+	}
+
+	ramp.deceleration_max = shell_strtoull(argv[ARG_IDX_DECEL_MAX], 10, &err);
+	if (err < 0) {
+		shell_error(sh, "Could not parse decel: %d", err);
+		return err;
+	}
+
+	ramp.speed_max = shell_strtoull(argv[ARG_IDX_SPEED_MAX], 10, &err);
+	if (err < 0) {
+		shell_error(sh, "Could not parse speed: %d", err);
+		return err;
+	}
+
+	err = parse_device_arg(sh, argv, &dev);
+	if (err < 0) {
+		return err;
+	}
+
+	err = stepper_ctrl_configure_ramp(dev, &ramp);
+	if (err) {
+		shell_error(sh, "Error: %d", err);
+	}
+
+	return err;
+}
+
 static int cmd_stepper_set_micro_step_res(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -590,6 +634,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(set_microstep_interval, &dsub_pos_stepper_controller_name,
 		      SHELL_HELP("Set microstep interval", "<device> <interval_ns>"),
 		      cmd_stepper_ctrl_set_microstep_interval, 3, 0),
+	SHELL_CMD_ARG(configure_ramp, &dsub_pos_stepper_controller_name,
+		      SHELL_HELP("Configure ramp parameters",
+				 "<device> <accel_max> <speed_max> <decel_max>"),
+		      cmd_stepper_ctrl_configure_ramp, 5, 0),
 	SHELL_CMD_ARG(move_by, &dsub_pos_stepper_controller_name,
 		      SHELL_HELP("Move by relative steps", "<device> <microsteps>"),
 		      cmd_stepper_move_by, 3, 0),

@@ -47,6 +47,11 @@
 		};
 	};
 
+	bee_bt_hci: bee_bt_hci {
+		compatible = "realtek,bee-bt-hci";
+		status = "disabled";
+	};
+
 	soc {
 		cctl: clock-controller@40000200 {
 			compatible = "realtek,bee-cctl";
@@ -270,6 +275,14 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+		};
+
+		keyscan: keyscan@40005000 {
+			compatible = "realtek,bee-keyscan";
+			reg = <0x40005000 0x34>;
+			interrupts = <19 0>;
+			clocks = <&cctl APB_CLK(KEYSCAN)>;
+			status = "disabled";
 		};
 	};
 

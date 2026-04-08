@@ -9,6 +9,11 @@ menu "ARM Options"
 config ARCH
 	default "arm"
 
+config CPU_ARM9
+	bool
+	help
+	  This option signifies the use of a CPU of the ARM9 family.
+
 config CPU_CORTEX
 	bool
 	help

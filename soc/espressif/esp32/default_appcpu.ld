@@ -212,7 +212,7 @@ SECTIONS
     _iram_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
-  .flash.text : ALIGN(16)
+  .text : ALIGN(16)
   {
     _stext = .;
     _text_start = ABSOLUTE(.);

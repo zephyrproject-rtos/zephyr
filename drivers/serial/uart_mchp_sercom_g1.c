@@ -40,46 +40,6 @@ LOG_MODULE_REGISTER(uart_mchp_sercom_g1, CONFIG_UART_LOG_LEVEL);
 /* 65536 * 16 = 1 << 20 */
 #define SAMPLING_RATE_16X_ARITHMETIC 20U
 
-/* Do the peripheral interrupt related configuration */
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_MCHP_ASYNC)
-
-#if DT_INST_IRQ_HAS_IDX(0, 3)
-/**
- * @brief Configure UART IRQ handler for multiple interrupts.
- *
- * This macro sets up the IRQ handler for the UART peripheral when
- * multiple interrupts are available.
- *
- * @param n Instance number.
- */
-#define UART_MCHP_IRQ_HANDLER(n)                                                                   \
-	static void uart_mchp_irq_config_##n(const struct device *dev)                             \
-	{                                                                                          \
-		MCHP_UART_IRQ_CONNECT(n, 0);                                                       \
-		MCHP_UART_IRQ_CONNECT(n, 1);                                                       \
-		MCHP_UART_IRQ_CONNECT(n, 2);                                                       \
-		MCHP_UART_IRQ_CONNECT(n, 3);                                                       \
-	}
-#else /* DT_INST_IRQ_HAS_IDX(0, 3) */
-/**
- * @brief Configure UART IRQ handler for a single interrupt.
- *
- * This macro sets up the IRQ handler for the UART peripheral when
- * only a single interrupt is available.
- *
- * @param n Instance number.
- */
-#define UART_MCHP_IRQ_HANDLER(n)                                                                   \
-	static void uart_mchp_irq_config_##n(const struct device *dev)                             \
-	{                                                                                          \
-		MCHP_UART_IRQ_CONNECT(n, 0);                                                       \
-	}
-#endif /* DT_INST_IRQ_HAS_IDX(0, 3) */
-
-#else /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC */
-#define UART_MCHP_IRQ_HANDLER(n)
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC */
-
 /******************************************************************************
  * @brief Data type definitions
  *****************************************************************************/
@@ -1130,6 +1090,9 @@ static int uart_mchp_init(const struct device *dev)
 		if (retval != 0) {
 			return retval;
 		}
+	} else {
+		LOG_WRN("UART TX DMA unavailable (configured=%d, allocated=%d)",
+			cfg->uart_dma.tx_dma_channel, dma_ch_request);
 	}
 
 	dma_ch = cfg->uart_dma.rx_dma_channel;
@@ -1158,6 +1121,9 @@ static int uart_mchp_init(const struct device *dev)
 		if (retval != 0) {
 			return retval;
 		}
+	} else {
+		LOG_WRN("UART RX DMA unavailable (configured=%d, allocated=%d)",
+			cfg->uart_dma.rx_dma_channel, dma_ch_request);
 	}
 #endif /* CONFIG_UART_MCHP_ASYNC */
 
@@ -2309,20 +2275,34 @@ static DEVICE_API(uart, uart_mchp_driver_api) = {
 };
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_MCHP_ASYNC)
-#define MCHP_UART_IRQ_CONNECT(n, m)                                                                \
+#define UART_MCHP_IRQ_CONNECT(idx, inst)                                                           \
 	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority),     \
-			    uart_mchp_isr, DEVICE_DT_INST_GET(n), 0);                              \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));                                         \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, idx, irq),                                    \
+			    DT_INST_IRQ_BY_IDX(inst, idx, priority), uart_mchp_isr,                \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQ_BY_IDX(inst, idx, irq));                                    \
 	} while (false)
 
-#define UART_MCHP_IRQ_HANDLER_DECL(n) static void uart_mchp_irq_config_##n(const struct device *dev)
-#define UART_MCHP_IRQ_HANDLER_FUNC(n) .irq_config_func = uart_mchp_irq_config_##n,
+#define UART_MCHP_IRQ_HANDLER_DECL(inst)                                                           \
+	static void uart_mchp_irq_config_##inst(const struct device *dev)
 
-#else /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC */
-#define UART_MCHP_IRQ_HANDLER_DECL(n)
-#define UART_MCHP_IRQ_HANDLER_FUNC(n)
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC */
+#define UART_MCHP_IRQ_HANDLER(inst)                                                                \
+	UART_MCHP_IRQ_HANDLER_DECL(inst)                                                           \
+	{                                                                                          \
+		LISTIFY(                                                       \
+			DT_INST_NUM_IRQS(inst),                               \
+			UART_MCHP_IRQ_CONNECT,                                \
+			(;),                                                  \
+			inst                                                  \
+		);                    \
+	}
+
+#define UART_MCHP_IRQ_HANDLER_FUNC(inst) .irq_config_func = uart_mchp_irq_config_##inst,
+#else /*CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC*/
+#define UART_MCHP_IRQ_HANDLER(inst)
+#define UART_MCHP_IRQ_HANDLER_DECL(inst)
+#define UART_MCHP_IRQ_HANDLER_FUNC(inst)
+#endif /*CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC*/
 
 #ifdef CONFIG_UART_MCHP_ASYNC
 #define UART_MCHP_DMA_CHANNELS(n)                                                                  \

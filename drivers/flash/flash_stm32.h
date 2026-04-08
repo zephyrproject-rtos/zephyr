@@ -41,12 +41,12 @@ struct flash_stm32_priv {
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
-/* FLASH register names differ for this serie */
+/* FLASH register names differ for this series */
 #define FLASH_NSSR_BSY FLASH_SR_BSY
 #define OPTR OPTCR
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 
-/* Register mapping for the stm32H7RS serie (single bank)*/
+/* Register mapping for the stm32H7RS series (single bank)*/
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #define FLASH_NB_32BITWORD_IN_FLASHWORD 4 /* 128 bits */
 #define CR1 CR

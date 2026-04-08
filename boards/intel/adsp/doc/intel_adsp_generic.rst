@@ -62,10 +62,9 @@ you will also need to set up the SOF rimage signing tool and key.
 
 .. code-block:: shell
 
-   cd zephyrproject
-   west config manifest.project-filter -- +sof
-   west update
-   cd modules/audio/sof/tools/rimage
+   git clone https://github.com/thesofproject/rimage
+   git submodule update --init
+   cd tools/rimage/
 
 Follow the instructions in the rimage :file:`README.md` to build the tool on
 your system. You can either copy the executable to a directory in your PATH or

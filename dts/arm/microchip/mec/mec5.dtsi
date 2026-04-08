@@ -251,7 +251,8 @@
 		watchdog0: watchdog@40000400 {
 			reg = <0x40000400 0x400>;
 			interrupts = <171 0>;
-			girqs = <21 2>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(21, 2)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 9)>;
 			status = "disabled";
 		};
 
@@ -588,7 +589,6 @@
 		adc0: adc@40007c00 {
 			reg = <0x40007c00 0x90>;
 			interrupts = <78 3>, <79 3>;
-			interrupt-names = "single", "repeat";
 			girqs = <17 8>, <17 9>;
 			interrupt-names = "single", "repeat";
 			status = "disabled";

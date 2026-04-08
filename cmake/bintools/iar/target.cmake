@@ -8,7 +8,7 @@ include(extensions)
 # Specifically choose arm-zephyr-eabi from the zephyr sdk for objcopy and friends
 
 if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
-  set(IAR_ZEPHYR_HOME ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin)
+  set(IAR_ZEPHYR_HOME ${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi/bin)
   set(IAR_GNU_PREFIX arm-zephyr-eabi-)
 else()
   message(ERROR "IAR_TOOLCHAIN_VARIANT not set")

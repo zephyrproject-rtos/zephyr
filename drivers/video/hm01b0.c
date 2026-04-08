@@ -395,7 +395,10 @@ static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *fr
 	fie.format = &drv_data->fmt;
 	fie.discrete = *frmival;
 	fie.type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	video_closest_frmival(dev, &fie);
+	ret = video_closest_frmival(dev, &fie);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/*
 	 * Note: in highres mode max FPS is 45 else 60

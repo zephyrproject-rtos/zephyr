@@ -82,6 +82,8 @@ int main(void)
 	t_s = TEST_LOG(rpt, (LOG_INF("test with string %s", str)));
 	t_s -= delta;
 
+	TEST_LOG(rpt, (LOG_INF("test with 64bit argument %llu", 2LLU << 41)));
+
 #ifdef CONFIG_LOG_FRONTEND_STMESP
 	uint32_t rpt_tp = 20;
 	uint32_t t_tp, t_tpd;

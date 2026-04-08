@@ -185,53 +185,62 @@ struct hwspinlock_dt_spec {
 #define HWSPINLOCK_DT_SPEC_INST_GET(inst) \
 	HWSPINLOCK_DT_SPEC_GET(DT_DRV_INST(inst))
 
-/** @cond INTERNAL_HIDDEN */
+/**
+ * @def_driverbackendgroup{Hardware Spinlock,hwspinlock_interface}
+ * @{
+ */
 
 /**
- * @brief Callback API for trying to lock HW spinlock
+ * @brief Callback API to try to lock an HW spinlock.
  *
- * This callback is optional. If not implemented, hw_spin_trylock() will return -ENOSYS.
- *
- * @see hw_spin_trylock
+ * See hw_spin_trylock() for argument description.
  */
 typedef int (*hwspinlock_api_trylock)(const struct device *dev, uint32_t id);
 
 /**
- * @brief Callback API to lock HW spinlock
+ * @brief Callback API to lock an HW spinlock.
  *
- * This callback must be implemented.
- *
- * @see hw_spin_lock
+ * See hw_spin_lock() for argument description.
  */
 typedef void (*hwspinlock_api_lock)(const struct device *dev, uint32_t id);
 
 /**
- * @brief Callback API to unlock HW spinlock
+ * @brief Callback API to unlock an HW spinlock.
  *
- * This callback must be implemented.
- *
- * @see hw_spin_unlock
+ * See hw_spin_unlock() for argument description.
  */
 typedef void (*hwspinlock_api_unlock)(const struct device *dev, uint32_t id);
 
 /**
- * @brief Callback API to get HW spinlock max ID
+ * @brief Callback API to get the maximum HW spinlock ID.
  *
- * This callback must be implemented.
- *
- * @see hw_spinlock_get_max_id
+ * See hw_spinlock_get_max_id() for argument description.
  */
 typedef uint32_t (*hwspinlock_api_get_max_id)(const struct device *dev);
 
+/**
+ * @driver_ops{Hardware Spinlock}
+ */
 __subsystem struct hwspinlock_driver_api {
+	/**
+	 * @driver_ops_optional @copybrief hw_spin_trylock
+	 */
 	hwspinlock_api_trylock trylock;
+	/**
+	 * @driver_ops_mandatory @copybrief hw_spin_lock
+	 */
 	hwspinlock_api_lock lock;
+	/**
+	 * @driver_ops_mandatory @copybrief hw_spin_unlock
+	 */
 	hwspinlock_api_unlock unlock;
+	/**
+	 * @driver_ops_mandatory @copybrief hw_spinlock_get_max_id
+	 */
 	hwspinlock_api_get_max_id get_max_id;
 };
-
 /**
- * @endcond
+ * @}
  */
 
 /**
