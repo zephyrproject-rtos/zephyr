@@ -12,4 +12,5 @@ target_sources(
 zephyr_sources(
   mutex.c
   user_work.c
+  sem.c
 )
