@@ -29,8 +29,10 @@
 	};
 
 	aliases {
+		dmic-dev = &dmic0;
 		eeprom-0 = &eeprom0;
 		i2c-0 = &i2c0;
+		i2s-node0 = &i2s_rxtx;
 		spi-0 = &spi0;
 		led0 = &led0;
 		rtc = &rtc;
@@ -229,6 +231,34 @@
 		compatible = "zephyr,adc-emul";
 		nchannels = <2>;
 		#io-channel-cells = <1>;
+		status = "okay";
+	};
+
+	i2s_rx0: i2s_rx {
+		compatible = "zephyr,native-sim-i2s";
+		status = "okay";
+		stream-direction = "rx";
+	};
+
+	i2s_rxtx: i2s_rxtx {
+		compatible = "zephyr,native-sim-i2s";
+		status = "okay";
+		stream-direction = "both";
+	};
+
+	i2s_tx0: i2s_tx {
+		compatible = "zephyr,native-sim-i2s";
+		status = "okay";
+		stream-direction = "tx";
+	};
+
+	dmic0: dmic0 {
+		compatible = "zephyr,native-sim-dmic";
+		status = "okay";
+	};
+
+	audio_codec: audio_codec {
+		compatible = "zephyr,codec-dummy-stub";
 		status = "okay";
 	};
 
