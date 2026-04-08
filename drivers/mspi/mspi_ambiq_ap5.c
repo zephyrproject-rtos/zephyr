@@ -861,13 +861,13 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 			goto e_return;
 		}
 
-		data->dev_id = (struct mspi_dev_id *)dev_id;
-
 		ret = pm_device_runtime_get(controller);
 		if (ret) {
 			LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_get.", __LINE__);
 			goto e_return;
 		}
+
+		data->dev_id = (struct mspi_dev_id *)dev_id;
 	}
 
 	if (mspi_is_inp(controller)) {
