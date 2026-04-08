@@ -21,3 +21,12 @@ config ADC_INFINEON_SAR_SARSEQ_SWITCHING
 	help
 	  Enable SARSEQ (hardware sequencer) control of SAR ADC input switches.
 	  If disabled, the driver relies on firmware-controlled switches only.
+
+config ADC_INFINEON_SAR_V2
+        bool "Infineon CAT1 SAR driver"
+        default y
+        depends on DT_HAS_INFINEON_SAR_V2_ENABLED
+	select USE_INFINEON_ADC
+        select ADC_CONFIGURABLE_INPUTS
+        help
+          This option enables the SAR driver for Infineon CAT1 family.
