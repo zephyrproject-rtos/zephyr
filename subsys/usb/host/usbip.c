@@ -43,6 +43,7 @@ struct usbip_dev_ctx {
 	struct k_thread thread;
 	struct k_event event;
 	struct k_mutex send_mutex;
+	struct k_spinlock lock;
 	sys_dlist_t dlist;
 	int connfd;
 	uint32_t devid;
@@ -134,15 +135,15 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	struct usbip_return ret;
 	struct iovec iov[2];
 	struct msghdr msg;
-	unsigned int key;
+	k_spinlock_key_t key;
 	int err;
 
 	LOG_INF("SUBMIT seqnum %u finished err %d ep 0x%02x",
 		cmd->hdr.seqnum, xfer->err, xfer->ep);
 
-	key = irq_lock();
+	key = k_spin_lock(&dev_ctx->lock);
 	sys_dlist_remove(&cmd_nd->node);
-	irq_unlock(key);
+	k_spin_unlock(&dev_ctx->lock, key);
 
 	if (xfer->err == -ECONNRESET || cmd_nd->unlinked) {
 		LOG_INF("URB seqnum %u unlinked (ECONNRESET)", cmd->hdr.seqnum);
@@ -359,7 +360,7 @@ static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 	struct usbip_cmd_unlink *unlink = &cmd->unlink;
 	struct usbip_return rsp;
 	struct usbip_cmd_node *cmd_nd;
-	unsigned int key;
+	k_spinlock_key_t key;
 	int ret;
 
 	ret = zsock_recv(dev_ctx->connfd, unlink, sizeof(*unlink), ZSOCK_MSG_WAITALL);
@@ -377,7 +378,7 @@ static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 
 	memset(&rsp.unlink, 0, sizeof(rsp.unlink));
 
-	key = irq_lock();
+	key = k_spin_lock(&dev_ctx->lock);
 	cmd_nd = find_seqnum(dev_ctx, cmd->unlink.seqnum);
 	if (cmd_nd != NULL) {
 		rsp.unlink.status = net_htonl(-ECONNRESET);
@@ -391,7 +392,7 @@ static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 			cmd_nd->unlinked = true;
 		}
 	}
-	irq_unlock(key);
+	k_spin_unlock(&dev_ctx->lock, key);
 
 	k_mutex_lock(&dev_ctx->send_mutex, K_FOREVER);
 	ret = usbip_send(dev_ctx->connfd, &rsp, sizeof(rsp));
