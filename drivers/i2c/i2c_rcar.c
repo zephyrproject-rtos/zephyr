@@ -12,6 +12,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -25,7 +26,12 @@ struct i2c_rcar_cfg {
 	uint32_t reg_addr;
 	init_func_t init_func;
 	const struct device *clock_dev;
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+	clock_control_subsys_t mod_clk;
+	const struct pinctrl_dev_config *pcfg;
+#else
 	struct rcar_cpg_clk mod_clk;
+#endif
 	uint32_t bitrate;
 };
 
@@ -321,13 +327,23 @@ static int i2c_rcar_init(const struct device *dev)
 
 	k_sem_init(&data->int_sem, 0, 1);
 
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
+
 	if (!device_is_ready(config->clock_dev)) {
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+	ret = clock_control_on(config->clock_dev, config->mod_clk);
+#else
 	ret = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t)&config->mod_clk);
-
+#endif
 	if (ret != 0) {
 		return ret;
 	}
@@ -353,37 +369,50 @@ static DEVICE_API(i2c, i2c_rcar_driver_api) = {
 };
 
 /* Device Instantiation */
-#define I2C_RCAR_INIT(n)						       \
-	static void i2c_rcar_##n##_init(const struct device *dev);	       \
-	static const struct i2c_rcar_cfg i2c_rcar_cfg_##n = {		       \
-		.reg_addr = DT_INST_REG_ADDR(n),			       \
-		.init_func = i2c_rcar_##n##_init,			       \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	       \
-		.bitrate = DT_INST_PROP(n, clock_frequency),		       \
-		.mod_clk.module =					       \
-			DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),	       \
-		.mod_clk.domain =					       \
-			DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),	       \
-	};								       \
-									       \
-	static struct i2c_rcar_data i2c_rcar_data_##n;			       \
-									       \
-	I2C_DEVICE_DT_INST_DEFINE(n,					       \
-			      i2c_rcar_init,				       \
-			      NULL,					       \
-			      &i2c_rcar_data_##n,			       \
-			      &i2c_rcar_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	       \
-			      &i2c_rcar_driver_api			       \
-			      );					       \
-	static void i2c_rcar_##n##_init(const struct device *dev)	       \
-	{								       \
-		IRQ_CONNECT(DT_INST_IRQN(n),				       \
-			    0,						       \
-			    i2c_rcar_isr,				       \
-			    DEVICE_DT_INST_GET(n), 0);			       \
-									       \
-		irq_enable(DT_INST_IRQN(n));				       \
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+#define I2C_RCAR_INIT_CLOCKS(n) \
+	.mod_clk = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name)
+#define I2C_RCAR_PINCTRL_INST_DEFINE(n) PINCTRL_DT_INST_DEFINE(n)
+#define I2C_RCAR_PINCTRL_CONFIG_GET(n) \
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)
+#else
+#define I2C_RCAR_INIT_CLOCKS(n)						\
+	.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),	\
+	.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain)
+#define I2C_RCAR_PINCTRL_INST_DEFINE(n)
+#define I2C_RCAR_PINCTRL_CONFIG_GET(n)
+#endif
+
+#define I2C_RCAR_INIT(n)						\
+	I2C_RCAR_PINCTRL_INST_DEFINE(n);				\
+	static void i2c_rcar_##n##_init(const struct device *dev);	\
+	static const struct i2c_rcar_cfg i2c_rcar_cfg_##n = {		\
+		.reg_addr = DT_INST_REG_ADDR(n),			\
+		.init_func = i2c_rcar_##n##_init,			\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
+		.bitrate = DT_INST_PROP(n, clock_frequency),		\
+		I2C_RCAR_INIT_CLOCKS(n),				\
+		I2C_RCAR_PINCTRL_CONFIG_GET(n)				\
+	};								\
+									\
+	static struct i2c_rcar_data i2c_rcar_data_##n;			\
+									\
+	I2C_DEVICE_DT_INST_DEFINE(n,					\
+			      i2c_rcar_init,				\
+			      NULL,					\
+			      &i2c_rcar_data_##n,			\
+			      &i2c_rcar_cfg_##n,			\
+			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
+			      &i2c_rcar_driver_api			\
+			      );					\
+	static void i2c_rcar_##n##_init(const struct device *dev)	\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			    0,						\
+			    i2c_rcar_isr,				\
+			    DEVICE_DT_INST_GET(n), 0);			\
+									\
+		irq_enable(DT_INST_IRQN(n));				\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_RCAR_INIT)
