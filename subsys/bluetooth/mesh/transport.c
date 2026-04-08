@@ -1639,15 +1639,19 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 				      buf->data, buf->len);
 	}
 
-	/* If LPN mode is enabled messages are only accepted when we've
-	 * requested the Friend to send them. The messages must also
-	 * be encrypted using the Friend Credentials.
+	/* In LPN receive window,
+	 * accept only Friend-credential responses on ADV (also during establish).
 	 */
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
-	    bt_mesh_lpn_established() && rx->net_if == BT_MESH_NET_IF_ADV &&
-	    (!bt_mesh_lpn_waiting_update() || !rx->friend_cred)) {
-		LOG_WRN("Ignoring unexpected message in Low Power mode");
-		return -EAGAIN;
+	    rx->net_if == BT_MESH_NET_IF_ADV) {
+		const bool waiting = bt_mesh_lpn_waiting_update();
+		const bool lpn_in_friend_flow = bt_mesh_lpn_established() || waiting;
+		const bool allowed_friend_adv = waiting && rx->friend_cred;
+
+		if (lpn_in_friend_flow && !allowed_friend_adv) {
+			LOG_WRN("Ignoring unexpected message in Low Power mode");
+			return -EAGAIN;
+		}
 	}
 
 	/* Save the app-level state so the buffer can later be placed in
