@@ -1056,7 +1056,9 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 
 		if (params->security == WIFI_SECURITY_TYPE_NONE) {
 			nxp_wlan_network.security.type = WLAN_SECURITY_NONE;
-		} else if (params->security == WIFI_SECURITY_TYPE_PSK) {
+		}else if(params->security == WIFI_SECURITY_TYPE_OWE){
+			nxp_wlan_network.security.type = WLAN_SECURITY_OWE_ONLY;
+		}else if (params->security == WIFI_SECURITY_TYPE_PSK) {
 			nxp_wlan_network.security.type = WLAN_SECURITY_WPA2;
 			nxp_wlan_network.security.psk_len = params->psk_length;
 			strncpy(nxp_wlan_network.security.psk, params->psk, params->psk_length);
