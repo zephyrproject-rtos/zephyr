@@ -1092,6 +1092,14 @@ Video
   * :c:macro:`VIDEO_PIX_FMT_BGRX32` (newly introduced)
   * :c:macro:`VIDEO_PIX_FMT_RGBX32` (newly introduced)
 
+W1
+==
+
+* Updated :dtcompatible:`zephyr,w1-serial` to allow configuring 1-Wire overdrive timing
+  indirectly via the new properties ``overdrive-data-baud`` and ``overdrive-reset-baud``.
+  If not specified, the driver defaults to 1000000 Baud for data and 115200 Baud for reset,
+  unchanged from previous behavior.
+
 Watchdog
 ========
 
