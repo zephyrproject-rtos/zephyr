@@ -5,8 +5,6 @@ tests:
   esp.wifi.sec.none:
     tags: wifi
     filter: CONFIG_WIFI_ESP32
-    extra_configs:
-      - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
@@ -18,7 +16,6 @@ tests:
     filter: CONFIG_WIFI_ESP32
     extra_configs:
       - CONFIG_WIFI_TEST_AUTH_MODE_WPA2=y
-      - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
@@ -30,7 +27,6 @@ tests:
     filter: CONFIG_WIFI_ESP32
     extra_configs:
       - CONFIG_WIFI_TEST_AUTH_MODE_WPA3=y
-      - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
