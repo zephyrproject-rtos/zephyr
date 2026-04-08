@@ -707,8 +707,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc);
 /** @brief Unregister GATT service.
  *
  *  When @kconfig{CONFIG_BT_GATT_SERVICE_CHANGED} is disabled, services may only
- *  be unregistered before @ref bt_enable is called. Calling this function after
- *  @ref bt_enable has completed returns ``-ENOTSUP``. The application cannot
+ *  be unregistered before @ref bt_enable is called. The application cannot
  *  change the GATT database through unregistration after that in that
  *  configuration. The same cross-firmware compatibility considerations as for
  *  @ref bt_gatt_service_register apply.
