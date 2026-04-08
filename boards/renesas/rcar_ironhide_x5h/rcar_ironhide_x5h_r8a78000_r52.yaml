@@ -9,3 +9,4 @@ supported:
   - clock_control
   - gpio
   - uart
+  - i2c

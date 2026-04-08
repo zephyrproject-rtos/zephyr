@@ -98,3 +98,11 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&i2c5 {
+	pinctrl-0 = <&i2c5_scl_default
+		     &i2c5_sda_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};

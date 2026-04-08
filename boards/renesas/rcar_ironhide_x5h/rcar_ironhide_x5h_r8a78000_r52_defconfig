@@ -13,3 +13,6 @@ CONFIG_UART_CONSOLE=y
 
 # GPIO-related configurations
 CONFIG_GPIO=y
+
+# I2C-related configurations
+CONFIG_I2C=y
