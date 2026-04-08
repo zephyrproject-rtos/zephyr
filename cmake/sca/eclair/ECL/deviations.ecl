@@ -377,7 +377,7 @@ unexpected result when the structure is given as argument to a sizeof() operator
 
 -doc_begin="Code violating Rule 20.7 is safe when macro parameters are used: (1)
 as function arguments; (2) as macro arguments; (3) as array indices; (4) as lhs
-in assignments; (5) as initializers, possibly designated, in initalizer lists;
+in assignments; (5) as initializers, possibly designated, in initializer lists;
 (6) as the constant expression in a switch clause label."
 -config=MC3A2.R20.7,expansion_context=
 {safe, "context(__call_expr_arg_contexts)"},
