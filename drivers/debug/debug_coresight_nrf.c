@@ -9,6 +9,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/logging/log_frontend_stmesp.h>
 #include <ironside/se/api.h>
 #include <ironside_zephyr/se/uicr_periphconf.h>
 
@@ -204,6 +205,9 @@ static int coresight_nrf_init_stm_etr(uintptr_t buf, size_t buf_word_len)
 	nrf_etr_init(buf, buf_word_len);
 	nrf_stm_init();
 
+ #if defined(CONFIG_LOG_FRONTEND_STMESP_EARLY_BUF_SIZE) && CONFIG_LOG_FRONTEND_STMESP_EARLY_BUF_SIZE
+	log_frontend_stmesp_etr_ready();
+ #endif
 	return 0;
 }
 #endif
