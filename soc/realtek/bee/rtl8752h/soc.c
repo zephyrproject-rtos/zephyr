@@ -17,6 +17,7 @@
 #include "system_rtl876x.h"
 #include "utils.h"
 #include "vector_table.h"
+#include "rtl876x_aon_reg.h"
 
 extern void _isr_wrapper(void);
 
@@ -118,8 +119,22 @@ void soc_early_init_hook(void)
 
 	work_around_32k_power_glitch();
 
-	/* Restart power sequence to latch new settings. */
-	pmu_power_on_sequence_restart();
+	/* RTK PM: use aon_boot_done to distinguish between Power Down mode
+	 * wakeup and HW reset/first boot.
+	 */
+	AON_FAST_REG_REG0X_FW_GENERAL_TYPE aon_fast_boot = {
+		.d16 = btaon_fast_read(AON_FAST_REG_REG0X_FW_GENERAL)};
+	bool aon_boot_done = aon_fast_boot.aon_boot_done;
+
+	if (!aon_boot_done) {
+		/* Restart power sequence to latch new settings. */
+		pmu_power_on_sequence_restart();
+	} else {
+		/* TODO: implement Power Down mode resume flow
+		 * - si_flow_after_exit_low_power_mode();
+		 * - pmu_pm_exit();
+		 */
+	}
 
 	si_flow_after_power_on_sequence_restart();
 
