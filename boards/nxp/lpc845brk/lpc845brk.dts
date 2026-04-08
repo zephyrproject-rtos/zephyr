@@ -9,6 +9,7 @@
 #include <nxp/lpc/nxp_lpc845.dtsi>
 #include <zephyr/dt-bindings/pinctrl/lpc84x-pinctrl.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "NXP LPC845-BRK Board";
@@ -26,6 +27,7 @@
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
+		sw0 = &user_btn;
 	};
 
 	leds {
@@ -44,6 +46,16 @@
 		led2: led_2 {
 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 			label = "RGB Red Led";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		user_btn: button_0 {
+			label = "User Button";
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 };
