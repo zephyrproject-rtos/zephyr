@@ -163,11 +163,19 @@ const __imx_boot_container_section container boot_header = {
 #endif /* (defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)) */
 
 #ifdef CONFIG_INIT_ARM_PLL
+#define ARM_PLL_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_imxrt118x_arm_pll)
+#define ARM_PLL_LOOP_DIV DT_PROP(ARM_PLL_NODE, loop_div)
+#define ARM_PLL_POST_DIV DT_PROP(ARM_PLL_NODE, post_div)
+
+#define ARM_PLL_POST_DIV_ENUM \
+	((ARM_PLL_POST_DIV == 1) ? kCLOCK_PllPostDiv1 : \
+	(ARM_PLL_POST_DIV == 2) ? kCLOCK_PllPostDiv2 : \
+	(ARM_PLL_POST_DIV == 4) ? kCLOCK_PllPostDiv4 : \
+	kCLOCK_PllPostDiv8)
+
 static const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN = {
-	/* Post divider, 0 - DIV by 2, 1 - DIV by 4, 2 - DIV by 8, 3 - DIV by 1 */
-	.postDivider = kCLOCK_PllPostDiv2,
-	/* PLL Loop divider, Fout = Fin * ( loopDivider / ( 2 * postDivider ) ) */
-	.loopDivider = 132,
+	.postDivider = ARM_PLL_POST_DIV_ENUM,
+	.loopDivider = ARM_PLL_LOOP_DIV,
 };
 #endif
 
@@ -264,6 +272,12 @@ __weak void clock_init(void)
 	board_flexspi_clock_safe_config();
 
 #ifdef CONFIG_INIT_ARM_PLL
+	BUILD_ASSERT((ARM_PLL_POST_DIV == 1) || (ARM_PLL_POST_DIV == 2) ||
+		     (ARM_PLL_POST_DIV == 4) || (ARM_PLL_POST_DIV == 8),
+		     "ARM PLL post-div must be 1, 2, 4, or 8");
+	BUILD_ASSERT(ARM_PLL_LOOP_DIV >= 104 && ARM_PLL_LOOP_DIV <= 208,
+		     "ARM PLL loop-div must be in range 104-208");
+
 	/* Init Arm Pll. */
 	CLOCK_InitArmPll(&armPllConfig_BOARD_BootClockRUN);
 #endif
