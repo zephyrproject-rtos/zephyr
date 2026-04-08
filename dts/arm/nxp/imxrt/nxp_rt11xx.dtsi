@@ -197,10 +197,10 @@
 			 * ARM PLL is an integer PLL, with an input clock
 			 * of 24MHz. The PLL features a loop divider and
 			 * post divider. The output frequency is calculated
-			 * as Fout = 24MHz * (clock-mult / clock-div)
+			 * as Fout = 24MHz * loop-div / (2 * post-div)
 			 */
-			arm_pll: arm-pll {
-				compatible = "fixed-factor-clock";
+			arm_pll: clock {
+				compatible = "nxp,imxrt11xx-arm-pll";
 				#clock-cells = <0>;
 			};
 		};
