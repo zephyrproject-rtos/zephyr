@@ -155,14 +155,17 @@ static int wdt_renesas_ra_setup(const struct device *dev, uint8_t options)
 	struct wdt_renesas_ra_data *data = dev->data;
 	int ret = 0;
 
-	/*
-	 * TODO: WDT must be restarted with wdt_feed call after sleep -> will be added later when PM
-	 * mode is supported
-	 */
-	if ((options & WDT_OPT_PAUSE_IN_SLEEP) != 0) {
-		LOG_ERR("wdt pause in sleep mode not supported");
+#ifdef CONFIG_PM
+	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
+		data->wdt_cfg.stop_control = WDT_STOP_CONTROL_ENABLE;
+	} else {
+		/* The WDT does not work in standby mode because
+		 * its peripheral clock is disabled in standby mode.
+		 */
+		LOG_ERR("Must enable WDT_OPT_PAUSE_IN_SLEEP option in sleep mode");
 		return -ENOTSUP;
 	}
+#endif
 
 	wdt_renesas_ra_inst_lock(dev);
 
