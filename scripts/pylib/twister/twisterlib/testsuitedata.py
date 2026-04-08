@@ -20,6 +20,10 @@ class RequiredDevice:
     fixture: list[str] = field(default_factory=list)
     application: str | None = None
 
+@dataclass
+class Interaction:
+    pattern: str = None
+    response: str = None
 
 @dataclass
 class Record:
@@ -41,6 +45,7 @@ class HarnessConfig:
     pytest_args: list[str] = field(default_factory=list)
     pytest_dut_scope: str | None = None
     required_devices: list[RequiredDevice] = field(default_factory=list)
+    interactions: list[Interaction] = field(default_factory=list)
     ctest_args: list[str] = field(default_factory=list)
     regex: list[str] = field(default_factory=list)
     robot_testsuite: Any | None = None  # schema has no type defined
@@ -65,6 +70,8 @@ class HarnessConfig:
             data['shell_commands'] = [ShellCommand(**cmd) for cmd in data['shell_commands']]
         if 'required_devices' in data:
             data['required_devices'] = [RequiredDevice(**dev) for dev in data['required_devices']]
+        if 'interactions' in data:
+            data['interactions'] = [Interaction(**interaction) for interaction in data['interactions']]
         return cls(**data)
 
     # Below methods added to allow dict-like access to the dataclass fields,

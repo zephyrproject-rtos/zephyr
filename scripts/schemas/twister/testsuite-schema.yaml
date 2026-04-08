@@ -155,6 +155,17 @@ $defs:
                   type: string
             required: [regex]
             additionalProperties: false
+          interactions:
+            type: array
+            items:
+              type: object
+              properties:
+                pattern:
+                  type: string
+                response:
+                  type: string
+              required: [pattern, response]
+              additionalProperties: false
           bsim_exe_name:
             type: string
           tests_scripts:

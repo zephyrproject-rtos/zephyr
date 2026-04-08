@@ -34,6 +34,7 @@ SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native', 'sim
 
 SUPPORTED_HARNESSES = [
     'console',
+    'keyboard',
     'display_capture',
     'ztest',
     'pytest',

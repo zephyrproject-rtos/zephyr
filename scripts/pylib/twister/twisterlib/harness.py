@@ -212,7 +212,7 @@ class Robot(Harness):
             self.path = config.get('robot_testsuite', None)
             self.option = config.get('robot_option', None)
 
-    def handle(self, line):
+    def handle(self, line, callback = None):
         ''' Test cases that make use of this harness care about results given
             by Robot Framework which is called in run_robot_test(), so works of this
             handle is trying to give a PASS or FAIL to avoid timeout, nothing
@@ -313,7 +313,7 @@ class Console(Harness):
             raise ConfigurationError(self.instance.name, tc.reason)
         #
 
-    def handle(self, line):
+    def handle(self, line, callback = None):
         if self.type == "one_line":
             if self.pattern.search(line):
                 logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED:"
@@ -379,6 +379,48 @@ class Console(Harness):
         if self.status == TwisterStatus.PASS:
             tc.status = TwisterStatus.PASS
         else:
+            tc.status = TwisterStatus.FAIL
+
+
+class Keyboard(Harness):
+    """Harness for tests that require keyboard input.
+
+    Monitors serial output and automatically sends configured responses when
+    a line matches a given pattern. Pass/fail verdict is determined by the
+    standard PROJECT EXECUTION SUCCESSFUL / FAILED markers.
+
+    Example harness_config::
+
+        harness: keyboard
+        harness_config:
+          interactions:
+            - pattern: "Please send characters to serial console"
+              response: "hello\\n"
+    """
+
+    def configure(self, instance):
+        super().configure(instance)
+        config = instance.testsuite.harness_config or {}
+        self.interactions = [
+            (re.compile(item.pattern), item.response.encode('utf-8'))
+            for item in config.get('interactions', [])
+        ]
+
+    def handle(self, line, callback):
+        for pattern, response in self.interactions:
+            if pattern.search(line):
+                logger.debug(
+                    f"HARNESS:{self.__class__.__name__}:matched "
+                    f"'{pattern.pattern}', sending response"
+                )
+                callback(response)
+
+        self.process_test(line)
+
+        tc = self.instance.get_case_or_create(self.get_testcase_name())
+        if self.status == TwisterStatus.PASS:
+            tc.status = TwisterStatus.PASS
+        elif self.status == TwisterStatus.FAIL:
             tc.status = TwisterStatus.FAIL
 
 
@@ -817,7 +859,7 @@ class Gtest(Harness):
         self.tc = None
         self.has_failures = False
 
-    def handle(self, line):
+    def handle(self, line, callback = None):
         # Strip the ANSI characters, they mess up the patterns
         non_ansi_line = self.ANSI_ESCAPE.sub('', line)
 
@@ -1036,7 +1078,7 @@ class Test(Harness):
         elif phase != 'TS_SUM':
             logger.warning(f"{phase}: END case '{tc_name}' without START detected")
 
-    def handle(self, line):
+    def handle(self, line, callback = None):
         testcase_match = None
         if self._match:
             self.testcase_output += line + "\n"

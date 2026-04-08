@@ -489,7 +489,7 @@ class DeviceHandler(Handler):
                         log_out_fp.flush()
                         if sl := sl.strip():
                             logger.debug(f"DEVICE: {sl}")
-                            harness.handle(sl)
+                            harness.handle(sl, lambda data: ser.write(data))
 
                 if harness.status != TwisterStatus.NONE and not harness.capture_coverage:
                     ser.close()
