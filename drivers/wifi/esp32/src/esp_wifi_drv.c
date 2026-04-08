@@ -248,6 +248,9 @@ static void scan_done_handler(void)
 		case WIFI_AUTH_OPEN:
 			res.security = WIFI_SECURITY_TYPE_NONE;
 			break;
+		case WIFI_AUTH_OWE:
+			res.security = WIFI_SECURITY_TYPE_OWE;
+			break;
 		case WIFI_AUTH_WPA2_PSK:
 			res.security = WIFI_SECURITY_TYPE_PSK;
 			break;
@@ -556,6 +559,11 @@ static int esp32_wifi_connect(const struct device *dev,
 		data->status.security = WIFI_AUTH_OPEN;
 		wifi_config.sta.pmf_cfg.required = false;
 		break;
+	case WIFI_SECURITY_TYPE_OWE:
+		wifi_config.sta.owe_enabled = 1;
+		wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
+		wifi_config.sta.pmf_cfg.capable = true;
+		wifi_config.sta.pmf_cfg.required = true;
 	case WIFI_SECURITY_TYPE_PSK:
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
 		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
@@ -717,6 +725,12 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		wifi_config.ap.authmode = WIFI_AUTH_OPEN;
 		data->status.security = WIFI_AUTH_OPEN;
 		wifi_config.ap.pmf_cfg.required = false;
+		break;
+	case WIFI_SECURITY_TYPE_OWE:
+		wifi_config.sta.owe_enabled = 1;
+		wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
+		wifi_config.sta.pmf_cfg.capable = true;
+		wifi_config.sta.pmf_cfg.required = true;
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
 		strncpy((char *) wifi_config.ap.password, params->psk, params->psk_length);

@@ -69,6 +69,8 @@ enum wifi_conn_status {
 enum wifi_security_type {
 	/** No security. */
 	WIFI_SECURITY_TYPE_NONE = 0,
+	/** Unauthenicated, ECDH encryption.  */
+	WIFI_SECURITY_TYPE_OWE,
 	/** WPA2-PSK security. */
 	WIFI_SECURITY_TYPE_PSK,
 	/** WPA2-PSK-SHA256 security. */
