@@ -1,0 +1,52 @@
+# Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon CAT1 SAR driver(cyt4dn) based on pdl
+  sample overlay
+
+  / {
+        zephyr,user {
+                io-channels = <&adc0 20>;
+        };
+  };
+
+  &adc0 {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        channel@20 {
+                reg = <20>;
+                zephyr,gain = "ADC_GAIN_1";
+                zephyr,reference = "ADC_REF_VDD_1";
+                zephyr,input-positive = <15>; /* internal led ADC[0]_15 */
+                zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)>;
+                zephyr,resolution = <12>;
+        };
+  };
+
+compatible: "infineon,sar-v2"
+
+include: [adc-controller.yaml, "infineon,system-interrupts.yaml", pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    type: array
+
+  "#io-channel-cells":
+    const: 1
+
+  clock-frequency:
+    type: int
+
+  total-channels:
+    type: int
+    required: true
+    description: total adc channels available in SoC.
+
+io-channel-cells:
+  - input
