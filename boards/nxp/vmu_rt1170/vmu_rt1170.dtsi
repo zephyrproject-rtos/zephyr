@@ -200,7 +200,7 @@
 	rx-clock-source = <1>;
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
 
-	mx25um51345g: mx25um51345g@0 {
+	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
@@ -208,36 +208,45 @@
 		spi-max-frequency = <DT_FREQ_M(120)>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
-		erase-block-size = <DT_SIZE_K(4)>;
-		write-block-size = <2>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR set */
 
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x30000000 DT_SIZE_M(64)>;
 
-			/*
-			 * Partition sizes must be aligned
-			 * to the flash memory sector size of 4KB.
-			 */
-			boot_partition: partition@0 {
-				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(128)>;
-			};
+		mx25um51345g: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <2>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR set */
 
-			slot0_partition: partition@20000 {
-				label = "image-0";
-				reg = <0x00020000 DT_SIZE_M(3)>;
-			};
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			slot1_partition: partition@320000 {
-				label = "image-1";
-				reg = <0x00320000 DT_SIZE_M(3)>;
-			};
+				/*
+				 * Partition sizes must be aligned
+				 * to the flash memory sector size of 4KB.
+				 */
+				boot_partition: partition@0 {
+					label = "mcuboot";
+					reg = <0x00000000 DT_SIZE_K(128)>;
+				};
 
-			storage_partition: partition@620000 {
-				label = "storage";
-				reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+				slot0_partition: partition@20000 {
+					label = "image-0";
+					reg = <0x00020000 DT_SIZE_M(3)>;
+				};
+
+				slot1_partition: partition@320000 {
+					label = "image-1";
+					reg = <0x00320000 DT_SIZE_M(3)>;
+				};
+
+				storage_partition: partition@620000 {
+					label = "storage";
+					reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+				};
 			};
 		};
 	};
