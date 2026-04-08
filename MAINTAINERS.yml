@@ -4982,8 +4982,8 @@ SPDX Tooling:
   collaborators:
     - pdgendt
   files:
+    - scripts/pylib/zspdx/
     - scripts/west_commands/spdx.py
-    - scripts/west_commands/zspdx/
     - tests/application_development/software_bill_of_materials/
   labels:
     - "area: SPDX Tooling"
