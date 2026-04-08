@@ -4,9 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/sys/util.h>
+#include <zephyr/net/wifi_mgmt.h>
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_ps.h"
+
+#include "sl_wifi_constants.h"
 
 LOG_MODULE_DECLARE(siwx91x_wifi);
 
@@ -340,4 +343,127 @@ int siwx91x_set_twt(const struct device *dev, struct wifi_twt_params *params)
 	}
 	params->fail_reason = WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
 	return -ENOTSUP;
+}
+
+sl_status_t siwx91x_on_twt(sl_wifi_event_t twt_event, sl_status_t status_code, void *data,
+			   uint32_t data_length, void *arg)
+{
+	uint32_t ev = (uint32_t)twt_event & ~(uint32_t)SL_WIFI_EVENT_FAIL_INDICATION;
+	bool ev_failed =
+		(uint32_t)twt_event & (uint32_t)SL_WIFI_EVENT_FAIL_INDICATION;
+
+	struct siwx91x_dev *sidev = arg;
+	struct wifi_twt_params params = { };
+	sl_wifi_twt_response_t *resp = NULL;
+
+	/*
+	 * Many TWT events pass sl_wifi_twt_response_t; some use NULL data.
+	 * Non-NULL with a short buffer must not be cast: log and exit instead of silent ignore.
+	 */
+	if (data != NULL) {
+		if (data_length < sizeof(sl_wifi_twt_response_t)) {
+			LOG_WRN("TWT event payload length %u < %zu (sl_wifi_twt_response_t)",
+				(unsigned int)data_length, sizeof(sl_wifi_twt_response_t));
+			return SL_STATUS_OK;
+		}
+		resp = (sl_wifi_twt_response_t *)data;
+	}
+
+	if (ev == SL_WIFI_TWT_EVENTS_END) {
+		LOG_DBG("TWT events end marker from NWP");
+		return SL_STATUS_OK;
+	}
+
+	if (ev == SL_WIFI_TWT_RESPONSE_EVENT && resp == NULL) {
+		LOG_DBG("Generic TWT response event without payload, ignored");
+		return SL_STATUS_OK;
+	}
+
+	LOG_DBG("TWT twt_event=0x%08x ev=0x%08x status=0x%x", (unsigned int)twt_event, ev,
+		(unsigned int)status_code);
+
+	/*
+	 * WiseConnect may set SL_WIFI_EVENT_FAIL_INDICATION or a non-OK status_code on
+	 * some callbacks; for the events below we still follow the success path in the
+	 * switch. Other events with indicated failure map to NOT_RECEIVED here.
+	 */
+	bool indicated_fail = ev_failed || (status_code != SL_STATUS_OK);
+	bool success_class =
+		(ev == SL_WIFI_TWT_RESPONSE_EVENT) ||
+		(ev == SL_WIFI_TWT_UNSOLICITED_SESSION_SUCCESS_EVENT) ||
+		(ev == SL_WIFI_RESCHEDULE_TWT_SUCCESS_EVENT) ||
+		(ev == SL_WIFI_TWT_TEARDOWN_SUCCESS_EVENT) ||
+		(ev == SL_WIFI_TWT_AP_TEARDOWN_SUCCESS_EVENT);
+
+	if (indicated_fail && !success_class) {
+		params.negotiation_type = WIFI_TWT_INDIVIDUAL;
+		params.operation = WIFI_TWT_SETUP;
+		params.resp_status = WIFI_TWT_RESP_NOT_RECEIVED;
+		params.fail_reason = WIFI_TWT_FAIL_CMD_EXEC_FAIL;
+		if (resp != NULL) {
+			params.flow_id = resp->twt_flow_id;
+		}
+		wifi_mgmt_raise_twt_event(sidev->iface, &params);
+		return SL_STATUS_OK;
+	}
+
+	params.negotiation_type = WIFI_TWT_INDIVIDUAL;
+
+	switch (ev) {
+	case SL_WIFI_TWT_UNSOLICITED_SESSION_SUCCESS_EVENT:
+	case SL_WIFI_TWT_RESPONSE_EVENT:
+	case SL_WIFI_RESCHEDULE_TWT_SUCCESS_EVENT:
+		params.operation = WIFI_TWT_SETUP;
+		params.resp_status = WIFI_TWT_RESP_RECEIVED;
+		params.setup_cmd = WIFI_TWT_SETUP_CMD_ACCEPT;
+		break;
+	case SL_WIFI_TWT_AP_REJECTED_EVENT:
+	case SL_WIFI_TWT_UNSUPPORTED_RESPONSE_EVENT:
+	case SL_WIFI_TWT_FAIL_MAX_RETRIES_REACHED_EVENT:
+		params.operation = WIFI_TWT_SETUP;
+		params.resp_status = WIFI_TWT_RESP_RECEIVED;
+		params.setup_cmd = WIFI_TWT_SETUP_CMD_REJECT;
+		params.fail_reason = WIFI_TWT_FAIL_CMD_EXEC_FAIL;
+		break;
+	case SL_WIFI_TWT_OUT_OF_TOLERANCE_EVENT:
+	case SL_WIFI_TWT_RESPONSE_NOT_MATCHED_EVENT:
+	case SL_WIFI_TWT_INFO_FRAME_EXCHANGE_FAILED_EVENT:
+		params.operation = WIFI_TWT_SETUP;
+		params.resp_status = WIFI_TWT_RESP_RECEIVED;
+		params.setup_cmd = WIFI_TWT_SETUP_CMD_ALTERNATE;
+		params.fail_reason = WIFI_TWT_FAIL_CMD_EXEC_FAIL;
+		break;
+	case SL_WIFI_TWT_TEARDOWN_SUCCESS_EVENT:
+	case SL_WIFI_TWT_AP_TEARDOWN_SUCCESS_EVENT:
+	case SL_WIFI_TWT_INACTIVE_DUE_TO_ROAMING_EVENT:
+	case SL_WIFI_TWT_INACTIVE_DUE_TO_DISCONNECT_EVENT:
+	case SL_WIFI_TWT_INACTIVE_NO_AP_SUPPORT_EVENT:
+		params.operation = WIFI_TWT_TEARDOWN;
+		params.teardown_status = WIFI_TWT_TEARDOWN_SUCCESS;
+		break;
+	default:
+		LOG_WRN("Unknown Wi-Fi TWT event: 0x%08x", ev);
+		return SL_STATUS_OK;
+	}
+
+	if (params.operation == WIFI_TWT_SETUP && resp != NULL) {
+		params.flow_id = resp->twt_flow_id;
+		params.setup.twt_exponent = resp->wake_int_exp;
+		params.setup.twt_mantissa = resp->wake_int_mantissa;
+		params.setup.twt_interval = (uint64_t)resp->wake_int_mantissa << resp->wake_int_exp;
+		params.setup.implicit = resp->implicit_twt;
+		params.setup.trigger = resp->triggered_twt;
+		params.setup.announce = !resp->un_announced_twt;
+		params.setup.twt_wake_interval = resp->wake_duration_unit != 0
+			? (uint32_t)resp->wake_duration * 1024
+			: (uint32_t)resp->wake_duration * 256;
+		params.setup.twt_info_disable = true;
+	}
+
+	if (params.operation == WIFI_TWT_TEARDOWN && resp != NULL) {
+		params.flow_id = resp->twt_flow_id;
+	}
+
+	wifi_mgmt_raise_twt_event(sidev->iface, &params);
+	return SL_STATUS_OK;
 }
