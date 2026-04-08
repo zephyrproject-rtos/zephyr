@@ -1033,12 +1033,19 @@ static void i2c_xec_v2_isr(const struct device *dev)
 	compl_status = sys_read32(rb + XEC_I2C_CMPL_OFS) & XEC_I2C_CMPL_RW1C_MSK;
 	config = sys_read32(rb + XEC_I2C_CFG_OFS);
 
+	if (tcfg != NULL) {
+		tcbs = tcfg->callbacks;
+	}
+
 	/* Idle interrupt enabled and active? */
 	if (((config & BIT(XEC_I2C_CFG_IDLE_IEN_POS)) != 0) &&
 	    ((compl_status & BIT(XEC_I2C_CMPL_IDLE_POS)) != 0)) {
 		sys_clear_bit(rb + XEC_I2C_CFG_OFS, XEC_I2C_CFG_IDLE_IEN_POS);
 
 		if ((status & BIT(XEC_I2C_SR_NBB_POS)) != 0) {
+			if ((tcbs != NULL) && (tcbs->stop != NULL)) {
+				tcbs->stop(data->target_cfg);
+			}
 			restart_target(dev);
 			goto clear_iag;
 		}
@@ -1046,10 +1053,6 @@ static void i2c_xec_v2_isr(const struct device *dev)
 
 	if (data->target_attached == false) {
 		goto clear_iag;
-	}
-
-	if (tcfg != NULL) {
-		tcbs = tcfg->callbacks;
 	}
 
 	/* External STOP or Bus Error: restart target handling */
