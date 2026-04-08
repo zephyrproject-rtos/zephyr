@@ -7,7 +7,7 @@ find_package(Git QUIET)
 # Usage:
 #   git_describe(<dir> <output>)
 #
-# Helper function to get a short GIT desciption associated with a directory.
+# Helper function to get a short GIT description associated with a directory.
 # OUTPUT is set to the output of `git describe --abbrev=12 --always` as run
 # from DIR.
 #
