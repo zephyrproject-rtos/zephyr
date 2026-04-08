@@ -148,8 +148,8 @@ config WIFI_SILABS_SIWX91X_ADV_PASSIVE_SCAN_DURATION
 	  scanning speed and accuracy based on your network environment.
 
 config WIFI_SILABS_SIWX91X_ADV_MULTIPROBE
-	int "Advanced multiprobe setting"
-	default 1
+	bool "Advanced multiprobe setting"
+	default y
 	help
 	  Configure the advanced multiprobe setting for WiFi scanning.
 	  When set to 1, multiple probe requests will be sent to all access
@@ -167,8 +167,8 @@ config WIFI_SILABS_SIWX91X_ADV_SCAN_PERIODICITY
 	  and power consumption based on your network environment.
 
 config WIFI_SILABS_SIWX91X_ENABLE_INSTANT_SCAN
-	int "Instant scan support"
-	default 1
+	bool "Instant scan support"
+	default y
 	help
 	  Enable support to start an advanced scan immediately. When enabled, the device
 	  can perform an advanced scan without waiting for the periodic
