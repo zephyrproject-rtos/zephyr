@@ -10,3 +10,18 @@
 &sram0 {
 	reg = <0x10000000 DT_SIZE_K(16)>;
 };
+
+/*
+ * GPIO configuration for LPC845 (JBD48 package).
+ * The hardware has 2 ports, but the 48-pin chip only has 42 real pins.
+ * - Port 0: has all 32 pins.
+ * - Port 1: only has 10 pins (0 to 9).
+ */
+
+&gpio0 {
+	ngpios = <32>;
+};
+
+&gpio1 {
+	ngpios = <10>;
+};
