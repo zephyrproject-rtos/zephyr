@@ -35,5 +35,7 @@ void siwx91x_nwp_feature(const struct device *dev, bool enable_pll);
 void siwx91x_nwp_dynamic_pool(const struct device *dev, int tx, int rx, int global);
 void siwx91x_nwp_get_firmware_version(const struct device *dev,
 				      struct siwx91x_nwp_version *version);
+int siwx91x_nwp_flash_erase(const struct device *dev, uint32_t dest, size_t len);
+int siwx91x_nwp_flash_write(const struct device *dev, uint32_t dest, const void *buf, size_t len);
 
 #endif

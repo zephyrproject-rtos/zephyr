@@ -54,6 +54,35 @@ static uint32_t siwx91x_nwp_send_cmd(const struct device *dev,
 	return status ? (0x10000 | status) : 0;
 }
 
+static uint32_t siwx91x_nwp_send_cmd2(const struct device *dev,
+				      const void *data1_buf, size_t data1_len,
+				      const void *data2_buf, size_t data2_len,
+				      uint16_t command, int queue_id, uint8_t flags,
+				      struct net_buf **reply_buf)
+{
+	struct siwx91x_frame_desc desc_buf;
+	NET_BUF_DEFINE_STACK(data2_container, data2_buf, data2_len, 0);
+	NET_BUF_DEFINE_STACK(data1_container, data1_buf, data1_len, 0);
+	NET_BUF_DEFINE_STACK(desc_container, &desc_buf, sizeof(desc_buf), sizeof(void *));
+	struct net_buf *local_reply;
+	uint32_t status;
+
+	__ASSERT(!(flags & SIWX91X_FRAME_FLAG_ASYNC), "Invalid call");
+	net_buf_frag_add(desc_container, net_buf_ref(data1_container));
+	net_buf_frag_add(desc_container, net_buf_ref(data2_container));
+	net_buf_unref(data1_container);
+	net_buf_unref(data2_container);
+
+	local_reply = siwx91x_nwp_send_frame(dev, desc_container, command, queue_id, flags);
+	__ASSERT(local_reply != NULL, "Corrupted state");
+	status = *(uint16_t *)(&((struct siwx91x_frame_desc *)local_reply->data)->reserved[8]);
+	if (reply_buf) {
+		*reply_buf = net_buf_ref(local_reply);
+	}
+	net_buf_unref(local_reply);
+	return status ? (0x10000 | status) : 0;
+}
+
 void siwx91x_nwp_get_firmware_version(const struct device *dev,
 				      struct siwx91x_nwp_version *reply)
 {
@@ -94,6 +123,52 @@ void siwx91x_nwp_dynamic_pool(const struct device *dev, int tx, int rx, int glob
 	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WLAN_REQ_DYNAMIC_POOL,
 				      SLI_WLAN_MGMT_Q, SIWX91X_FRAME_FLAG_NO_LOCK, NULL);
 	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+/* This is a redefintion of sli_si91x_request_ta2m4_t, but without allocating the full
+ * input_data field.
+ */
+struct siwx91x_nwp_req_ta2m4 {
+	uint8_t  sub_cmd;
+	uint32_t addr;
+	uint16_t input_buffer_length;
+	uint8_t  flash_sector_erase_enable;
+	uint8_t  input_data[];
+} __packed;
+
+int siwx91x_nwp_flash_erase(const struct device *dev, uint32_t dest, size_t len)
+{
+	struct siwx91x_nwp_req_ta2m4 params = {
+		.sub_cmd = SL_SI91X_WRITE_TO_COMMON_FLASH,
+		.flash_sector_erase_enable = 1,
+		.input_buffer_length = len,
+		.addr = dest,
+	};
+	uint32_t status;
+
+	__ASSERT(len <= FLASH_SECTOR_SIZE, "Corrupted argument");
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_COMMON_REQ_TA_M4_COMMANDS,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	return status ? -EINVAL : 0;
+}
+
+int siwx91x_nwp_flash_write(const struct device *dev, uint32_t dest,
+			    const void *data_buf, size_t data_len)
+{
+	struct siwx91x_nwp_req_ta2m4 params = {
+		.sub_cmd = SL_SI91X_WRITE_TO_COMMON_FLASH,
+		.flash_sector_erase_enable = 0,
+		.input_buffer_length = data_len,
+		.addr = dest,
+	};
+	uint32_t status;
+
+	__ASSERT(data_len <= MAX_CHUNK_SIZE, "Corrupted argument");
+
+	status = siwx91x_nwp_send_cmd2(dev, &params, sizeof(params), data_buf, data_len,
+				       SLI_COMMON_REQ_TA_M4_COMMANDS, SLI_WLAN_MGMT_Q, 0, NULL);
+	return status ? -EINVAL : 0;
 }
 
 void siwx91x_nwp_feature(const struct device *dev, bool enable_pll)
