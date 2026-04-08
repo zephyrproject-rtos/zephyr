@@ -17,4 +17,7 @@ supported:
   - gpio
   - net
   - uart
+testing:
+  binaries:
+    - flash.bin
 vendor: nxp

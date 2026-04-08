@@ -25,6 +25,9 @@ config DCDC_VALUE
 config FLEXSPI_CONFIG_BLOCK_OFFSET
 	default 0x400 if BOOT_FLEXSPI_NOR
 
+config CACHE_MANAGEMENT
+	default y if SOC_MIMXRT1176_CM4 || SOC_MIMXRT1166_CM4
+
 if SECOND_CORE_MCUX
 
 # RT Boot header is only needed on primary core
@@ -33,5 +36,9 @@ config NXP_IMXRT_BOOT_HEADER
 	depends on !(CPU_CORTEX_M4 || BOOTLOADER_MCUBOOT)
 
 endif
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE if SOC_MIMXRT1176_CM4 || SOC_MIMXRT1166_CM4
+endchoice
 
 endif

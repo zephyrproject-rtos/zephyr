@@ -68,6 +68,17 @@ config MIPS
 	help
 	  MIPS architecture
 
+config OPENRISC
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_BUILTIN
+	select BIG_ENDIAN
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	help
+	  OpenRISC architecture
+
 config SPARC
 	bool
 	select ARCH_IS_SET
@@ -241,7 +252,7 @@ config XIP
 	  option increases both the code and data footprint of the image.
 
 
-if ARC || ARM || ARM64 || X86 || RISCV || RX || ARCH_POSIX
+if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -264,7 +275,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || X86 || RISCV || RX || ARCH_POSIX
+endif # ARM || ARM64 || ARC || X86 || RISCV || RX || OPENRISC || ARCH_POSIX
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -429,6 +440,17 @@ config DYNAMIC_OBJECTS
 	  Objects allocated in this way can be freed with a supervisor-only
 	  API call, or when the number of references to that object drops to
 	  zero.
+
+config DYNAMIC_OBJECTS_FORCE_STACK_CACHED
+	bool "Force allocated thread stack objects to be in cached area"
+	default y
+	depends on USERSPACE
+	depends on KERNEL_COHERENCE
+	help
+	  With kernel coherence enabled, it is possible that the stack has been
+	  allocated on uncached area, which has performance implications.
+	  If this is enabled, the stack pointer will be forcibly converted to be
+	  in cached area.
 
 config NOCACHE_MEMORY
 	bool "Support for uncached memory"

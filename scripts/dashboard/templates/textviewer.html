@@ -1,0 +1,27 @@
+<!--
+Jinja2 template for a basic text viewer supporting optional syntax
+highlighting.
+
+Expects {file_path} and {file_contents} as template parameters.
+
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+SPDX-License-Identifier: Apache-2.0
+-->
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="row rst-content mb-3">
+  <div class="col">
+    <code class="literal p-1">{{file_path}}</code>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col">
+    <pre class="text-viewer"><code>{{file_contents}}</code></pre>
+  </div>
+</div>
+
+{% endblock %}

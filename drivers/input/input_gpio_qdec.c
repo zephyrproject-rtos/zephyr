@@ -355,7 +355,7 @@ static int gpio_qdec_pm_action(const struct device *dev,
 	struct gpio_qdec_data *data = dev->data;
 
 	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_SUSPEND: {
 		struct k_work_sync sync;
 
 		atomic_set(&data->suspended, 1);
@@ -371,6 +371,7 @@ static int gpio_qdec_pm_action(const struct device *dev,
 		gpio_qdec_pin_suspend(dev, true);
 
 		break;
+	}
 	case PM_DEVICE_ACTION_RESUME:
 		atomic_set(&data->suspended, 0);
 

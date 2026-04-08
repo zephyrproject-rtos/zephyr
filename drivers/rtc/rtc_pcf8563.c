@@ -98,7 +98,7 @@ struct pcf8563_data {
  * Then we put the number 3 in the last 4 bits and the number 4 in next 3 bits
  * It uses BCD notation so the number 3 is 0011 and the number for is 100 so the final
  * byte is 0 (ignored bit) 100 (the 4) 0011 (the 3) -> 0100001
- * Luckily, zephyr provides a couple of functions to do exactlly this: bin2bcd and bcd2bin,
+ * Luckily, zephyr provides a couple of functions to do exactly this: bin2bcd and bcd2bin,
  * but we will take care about the bits marked as non used in
  * the datasheet because they may contain unexpected values. Applying a mask will help us
  * to sanitize the read values

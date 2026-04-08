@@ -126,6 +126,27 @@
 			status = "disabled";
 		};
 
+		canfd0: canfd@40440000 {
+			compatible = "infineon,canfd-controller";
+			reg = <0x40440000 0x1088>, <0x40450000 0x1000>;
+			reg-names = "wrapper", "mram";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			can0: can@40440000 {
+				compatible = "infineon,can";
+				reg = <0x40440000 0x200>, <0x40450000 0x1000>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <0x10e>;
+				status = "disabled";
+				bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+				interrupts = <64 4>, <65 4>;
+				interrupt-names = "int0", "int1";
+			};
+		};
+
 		watchdog0: watchdog@4020c000 {
 			compatible = "infineon,watchdog";
 			reg = <0x4020c000 0x10>;

@@ -129,8 +129,7 @@ static int lan865x_set_config(const struct device *dev, enum ethernet_config_typ
 
 		lan865x_write_macaddress(dev);
 
-		return net_if_set_link_addr(ctx->iface, ctx->mac_address, sizeof(ctx->mac_address),
-					    NET_LINK_ETHERNET);
+		return 0;
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_T1S_PARAM) {

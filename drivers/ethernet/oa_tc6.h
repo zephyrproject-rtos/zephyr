@@ -214,7 +214,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt);
  *
  * @param hdr OA TC6 data transmission header value
  *
- * @param ftr poniter to OA TC6 data received footer
+ * @param ftr pointer to OA TC6 data received footer
  *
  * @return 0 if transmission was successful, <0 otherwise.
  */
@@ -226,7 +226,7 @@ int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_
  *
  * @param tc6 OA TC6 specific data
  *
- * @param ftr poniter to OA TC6 data received footer
+ * @param ftr pointer to OA TC6 data received footer
  *
  * @return 0 if successful, <0 otherwise.
  */

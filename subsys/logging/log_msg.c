@@ -48,6 +48,9 @@ void z_log_msg_finalize(struct log_msg *msg, const void *source,
 #if CONFIG_LOG_THREAD_ID_PREFIX
 	msg->hdr.tid = (k_is_in_isr() || k_is_pre_kernel()) ? NULL : k_current_get();
 #endif
+#if CONFIG_LOG_CORE_ID_PREFIX
+	msg->hdr.core_id = arch_proc_id();
+#endif
 	z_log_msg_commit(msg);
 }
 

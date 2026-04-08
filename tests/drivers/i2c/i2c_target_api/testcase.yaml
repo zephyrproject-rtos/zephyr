@@ -21,6 +21,7 @@ tests:
       - stm32n6570_dk/stm32n657xx/sb
       - stm32u083c_dk
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_g071rb
       - nucleo_f207zg
       - nucleo_f401re

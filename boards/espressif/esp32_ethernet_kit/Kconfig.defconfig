@@ -12,4 +12,7 @@ choice SPIRAM_TYPE
 	default SPIRAM_TYPE_ESPPSRAM64
 endchoice
 
+configdefault NET_L2_ETHERNET
+	default y
+
 endif # BOARD_ESP32_ETHERNET_KIT_ESP32_PROCPU

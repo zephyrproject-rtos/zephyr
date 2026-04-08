@@ -17,7 +17,8 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config CRC_HW_HANDLER
 	bool "CRC Hardware Accelerator"
-	default y if $(dt_chosen_enabled,$(DT_CHOSEN_Z_CRC))
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_CRC))
+	default y
 	select CRC_DRIVER
 	help
 	  Enable use of CRC hardware

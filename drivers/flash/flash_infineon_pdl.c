@@ -226,7 +226,7 @@ static void flash_ifx_page_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_driver_api flash_infineon_api = {
+static DEVICE_API(flash, flash_infineon_api) = {
 	.read = flash_ifx_read,
 	.write = flash_ifx_write,
 	.erase = flash_ifx_erase,

@@ -23,8 +23,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	channel@2 {
-		reg = <2>;
+	channel@1 {
+		reg = <1>;
 		zephyr,resolution = <12>;
 	};
 };
@@ -39,7 +39,7 @@
 		reg = <1>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
-		zephyr,resolution = <12>;
+		zephyr,resolution = <10>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
 	};
 };

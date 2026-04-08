@@ -41,7 +41,7 @@ config GIC_SINGLE_SECURITY_STATE
 	depends on GIC_V3
 	help
 	  Some ARM Cortex-family processors only supports single security
-	  state.
+	  state. Others must set it from EL3 to operate in single-security mode.
 
 config GIC_V3_RDIST_MATCHING_AFF0_ONLY
 	bool

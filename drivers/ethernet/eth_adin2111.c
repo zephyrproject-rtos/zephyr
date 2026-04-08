@@ -318,7 +318,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 							   NET_AF_UNSPEC, 0,
 							   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 			if (!pkt) {
-				LOG_ERR("OA RX: cannot allcate packet space, skipping.");
+				LOG_ERR("OA RX: cannot allocate packet space, skipping.");
 				return -ENOMEM;
 			}
 			/* Skipping CRC32 */
@@ -1245,10 +1245,7 @@ static int adin2111_port_set_config(const struct device *dev,
 			goto end_unlock;
 		}
 
-		(void)memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
-
-		(void)net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
-					   NET_LINK_ETHERNET);
+		memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
 	}
 
 	if (type == ETHERNET_CONFIG_TYPE_FILTER) {

@@ -759,12 +759,6 @@ static int eth_enc28j60_set_config(const struct device *dev,
 		       sizeof(config->mac_address.addr));
 		eth_enc28j60_init_mac(dev);
 
-		if (context->iface != NULL) {
-			net_if_set_link_addr(context->iface, context->mac_address,
-					     sizeof(context->mac_address),
-					     NET_LINK_ETHERNET);
-		}
-
 		LOG_INF("Set cfg - MAC %02x:%02x:%02x:%02x:%02x:%02x",
 			context->mac_address[0], context->mac_address[1],
 			context->mac_address[2], context->mac_address[3],

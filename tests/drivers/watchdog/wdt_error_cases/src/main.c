@@ -80,6 +80,14 @@
 #define MAX_INSTALLABLE_TIMEOUTS (1)
 #define WDT_WINDOW_MAX_ALLOWED   (0x4000)
 #define DEFAULT_OPTIONS          (0)
+#elif defined(CONFIG_SOC_IT51XXX)
+#define WDT_TEST_FLAGS                                                                             \
+	(WDT_DISABLE_SUPPORTED | WDT_FLAG_RESET_SOC_SUPPORTED |                                    \
+	 WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED | WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED)
+#define DEFAULT_FLAGS            WDT_FLAG_RESET_SOC
+#define MAX_INSTALLABLE_TIMEOUTS (1)
+#define WDT_WINDOW_MAX_ALLOWED   0xFFFFFFFFU
+#define DEFAULT_OPTIONS          (WDT_OPT_PAUSE_HALTED_BY_DBG)
 #else
 /* By default run most of the error checks.
  * See Readme.txt on how to align test scope for the specific target.

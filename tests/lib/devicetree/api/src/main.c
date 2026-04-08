@@ -100,6 +100,10 @@
 #define TEST_RANGES_OTHER DT_NODELABEL(test_ranges_other)
 #define TEST_RANGES_EMPTY DT_NODELABEL(test_ranges_empty)
 
+#define TEST_REGS_TEST_NODE   DT_NODELABEL(test_regs_test_node)
+#define TEST_REGS_OTHER       DT_NODELABEL(test_regs_other)
+#define TEST_REGS_EMPTY       DT_NODELABEL(test_regs_empty)
+
 #define TEST_MTD_0 DT_PATH(test, test_mtd_ffeeddcc)
 #define TEST_MTD_1 DT_PATH(test, test_mtd_33221100)
 #define TEST_MTD_2 DT_PATH(test_mtd_12830)
@@ -2944,6 +2948,255 @@ ZTEST(devicetree_api, test_ranges_empty)
 #define FAIL(node_id, idx) ztest_test_fail();
 
 	DT_FOREACH_RANGE(TEST_RANGES_EMPTY, FAIL);
+
+#undef FAIL
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_test_foreach_reg_unique
+
+ZTEST(devicetree_api, test_foreach_reg)
+{
+#define REG_ADDR(node_id, idx) \
+	DT_REG_ADDR_BY_IDX(node_id, idx),
+#define REG_SIZE(node_id, idx) \
+	DT_REG_SIZE_BY_IDX(node_id, idx),
+
+	unsigned int count = DT_NUM_REGS(TEST_REGS_TEST_NODE);
+
+	const uint64_t regs_addr[] = {
+		DT_FOREACH_REG(TEST_REGS_TEST_NODE, REG_ADDR)
+	};
+
+	const uint64_t regs_size[] = {
+		DT_FOREACH_REG(TEST_REGS_TEST_NODE, REG_SIZE)
+	};
+
+	zassert_equal(count, 3, "");
+
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_TEST_NODE, 0), 1, "");
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_TEST_NODE, 1), 1, "");
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_TEST_NODE, 2), 1, "");
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_TEST_NODE, 3), 0, "");
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_TEST_NODE, 4), 0, "");
+
+	zassert_equal(regs_addr[0], 0x2000000, "");
+	zassert_equal(regs_addr[1], 0x2200000, "");
+	zassert_equal(regs_addr[2], 0x8400000, "");
+	zassert_equal(regs_size[0], 0x0040000, "");
+	zassert_equal(regs_size[1], 0x5C00000, "");
+	zassert_equal(regs_size[2], 0x7A00000, "");
+
+#undef REG_ADDR
+#undef REG_SIZE
+}
+
+ZTEST(devicetree_api, test_foreach_reg_sep)
+{
+	const uint64_t regs_addr[] = {
+		DT_FOREACH_REG_SEP(TEST_REGS_TEST_NODE, DT_REG_ADDR_BY_IDX, (,))
+	};
+
+	const uint64_t regs_size[] = {
+		DT_FOREACH_REG_SEP(TEST_REGS_TEST_NODE, DT_REG_SIZE_BY_IDX, (,))
+	};
+
+	zassert_equal(regs_addr[0], 0x2000000, "");
+	zassert_equal(regs_addr[1], 0x2200000, "");
+	zassert_equal(regs_addr[2], 0x8400000, "");
+	zassert_equal(regs_size[0], 0x0040000, "");
+	zassert_equal(regs_size[1], 0x5C00000, "");
+	zassert_equal(regs_size[2], 0x7A00000, "");
+}
+
+ZTEST(devicetree_api, test_foreach_reg_sep_vargs)
+{
+/* Returns the size in pages */
+#define REG_SIZE_PAGES(node_id, idx, page_size) \
+	DT_REG_SIZE_BY_IDX(node_id, idx) / page_size
+
+	const uint64_t regs_size[] = {
+		DT_FOREACH_REG_SEP_VARGS(TEST_REGS_TEST_NODE, REG_SIZE_PAGES, (,), 0x1000)
+	};
+
+	zassert_equal(regs_size[0], 0x40, "");
+	zassert_equal(regs_size[1], 0x5C00, "");
+	zassert_equal(regs_size[2], 0x7A00, "");
+#undef REG_SIZE_PAGES
+}
+
+ZTEST(devicetree_api, test_foreach_reg_vargs)
+{
+/* Returns the size in pages with a coma at the end */
+#define REG_SIZE_PAGES(node_id, idx, page_size) \
+	DT_REG_SIZE_BY_IDX(node_id, idx) / page_size,
+
+	const uint64_t regs_size[] = {
+		DT_FOREACH_REG_VARGS(TEST_REGS_TEST_NODE, REG_SIZE_PAGES, 0x1000)
+	};
+
+	zassert_equal(regs_size[0], 0x40, "");
+	zassert_equal(regs_size[1], 0x5C00, "");
+	zassert_equal(regs_size[2], 0x7A00, "");
+#undef REG_SIZE_PAGES
+}
+
+ZTEST(devicetree_api, test_inst_foreach_reg)
+{
+#define REG_ADDR(node_id, idx) \
+	DT_REG_ADDR_BY_IDX(node_id, idx),
+#define REG_SIZE(node_id, idx) \
+	DT_REG_SIZE_BY_IDX(node_id, idx),
+
+	/* Because dt has only one node with such compatible, the result node of DT_INST(),
+	 * and the parsed reg values as well are axiomatic and can be tested
+	 */
+	const uint64_t regs_addr[] = {
+		DT_INST_FOREACH_REG(0, REG_ADDR)
+	};
+
+	const uint64_t regs_size[] = {
+		DT_INST_FOREACH_REG(0, REG_SIZE)
+	};
+
+	zassert_equal(DT_INST_REG_HAS_IDX(0, 0), 1, "");
+	zassert_equal(DT_INST_REG_HAS_IDX(0, 1), 1, "");
+	zassert_equal(DT_INST_REG_HAS_IDX(0, 2), 1, "");
+	zassert_equal(DT_INST_REG_HAS_IDX(0, 3), 0, "");
+	zassert_equal(DT_INST_REG_HAS_IDX(0, 4), 0, "");
+
+	zassert_equal(regs_addr[0], 0x2000000, "");
+	zassert_equal(regs_addr[1], 0x2200000, "");
+	zassert_equal(regs_addr[2], 0x8400000, "");
+	zassert_equal(regs_size[0], 0x0040000, "");
+	zassert_equal(regs_size[1], 0x5C00000, "");
+	zassert_equal(regs_size[2], 0x7A00000, "");
+#undef REG_ADDR
+#undef REG_SIZE
+}
+
+ZTEST(devicetree_api, test_inst_foreach_reg_vargs)
+{
+/* Returns the size in pages */
+#define REG_SIZE_PAGES(node_id, idx, page_size) \
+	DT_REG_SIZE_BY_IDX(node_id, idx) / page_size,
+
+	/* Because dt has only one node with such compatible, the result node of DT_INST(),
+	 * and the parsed size value as well are axiomatic and can be tested
+	 */
+	const uint64_t regs_size[] = {
+		DT_INST_FOREACH_REG_VARGS(0, REG_SIZE_PAGES, 0x1000)
+	};
+
+	zassert_equal(regs_size[0], 0x40, "");
+	zassert_equal(regs_size[1], 0x5C00, "");
+	zassert_equal(regs_size[2], 0x7A00, "");
+#undef REG_SIZE_PAGES
+}
+
+ZTEST(devicetree_api, test_inst_foreach_reg_sep_vargs)
+{
+/* Returns the size in pages */
+#define REG_SIZE_PAGES(node_id, idx, page_size) \
+	DT_REG_SIZE_BY_IDX(node_id, idx) / page_size
+
+	/* Because dt has only one node with such compatible, the result node of DT_INST(),
+	 * and the parsed size value as well are axiomatic and can be tested
+	 */
+	const uint64_t regs_inst_size[] = {
+		DT_INST_FOREACH_REG_SEP_VARGS(0, REG_SIZE_PAGES, (,), 0x1000)
+	};
+
+	zassert_equal(regs_inst_size[0], 0x40, "");
+	zassert_equal(regs_inst_size[1], 0x5C00, "");
+	zassert_equal(regs_inst_size[2], 0x7A00, "");
+
+#undef REG_SIZE_PAGES
+}
+
+ZTEST(devicetree_api, test_inst_foreach_reg_sep)
+{
+	/* Because dt has only one node with such compatible, the result node of DT_INST(),
+	 * and the parsed reg values as well are axiomatic and can be tested
+	 */
+	const uint64_t regs_inst_addr[] = {
+		DT_INST_FOREACH_REG_SEP(0, DT_REG_ADDR_BY_IDX, (,))
+	};
+
+	const uint64_t regs_inst_size[] = {
+		DT_INST_FOREACH_REG_SEP(0, DT_REG_SIZE_BY_IDX, (,))
+	};
+
+	zassert_equal(regs_inst_addr[0], 0x2000000, "");
+	zassert_equal(regs_inst_addr[1], 0x2200000, "");
+	zassert_equal(regs_inst_addr[2], 0x8400000, "");
+	zassert_equal(regs_inst_size[0], 0x0040000, "");
+	zassert_equal(regs_inst_size[1], 0x5C00000, "");
+	zassert_equal(regs_inst_size[2], 0x7A00000, "");
+}
+#undef DT_DRV_COMPAT
+
+ZTEST(devicetree_api, test_foreach_reg_other)
+{
+#define REG_ADDR(node_id, idx) \
+	DT_REG_ADDR_BY_IDX(node_id, idx),
+#define REG_SIZE(node_id, idx) \
+	DT_REG_SIZE_BY_IDX(node_id, idx),
+
+	unsigned int count = DT_NUM_REGS(TEST_REGS_OTHER);
+
+	const uint64_t regs_addr[] = {
+		DT_FOREACH_REG(TEST_REGS_OTHER, REG_ADDR)
+	};
+
+	const uint64_t regs_size[] = {
+		DT_FOREACH_REG(TEST_REGS_OTHER, REG_SIZE)
+	};
+
+	zassert_equal(count, 1, "");
+
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_OTHER, 0), 1, "");
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_OTHER, 1), 0, "");
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_OTHER, 2), 0, "");
+
+	zassert_equal(regs_addr[0], 0x107fff9000, "");
+	zassert_equal(regs_size[0], 0x1000, "");
+
+#undef REG_ADDR
+#undef REG_SIZE
+}
+
+ZTEST(devicetree_api, test_foreach_reg_vargs_other)
+{
+/* Returns the size in pages with a coma at the end */
+#define REG_SIZE_PAGES(node_id, idx, page_size) \
+	DT_REG_SIZE_BY_IDX(node_id, idx) / page_size,
+
+	const uint64_t regs_size[] = {
+		DT_FOREACH_REG_VARGS(TEST_REGS_OTHER, REG_SIZE_PAGES, 0x1000)
+	};
+
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_OTHER, 0), 1, "");
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_OTHER, 1), 0, "");
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_OTHER, 2), 0, "");
+
+	zassert_equal(regs_size[0], 1, "");
+
+#undef REG_SIZE_PAGES
+}
+
+ZTEST(devicetree_api, test_foreach_reg_empty)
+{
+	zassert_equal(DT_NODE_HAS_PROP(TEST_REGS_EMPTY, reg), 0, "");
+
+	zassert_equal(DT_NUM_REGS(TEST_REGS_EMPTY), 0, "");
+
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_EMPTY, 0), 0, "");
+	zassert_equal(DT_REG_HAS_IDX(TEST_REGS_EMPTY, 1), 0, "");
+
+#define FAIL(node_id, idx) ztest_test_fail();
+
+	DT_FOREACH_REG(TEST_REGS_EMPTY, FAIL);
 
 #undef FAIL
 }

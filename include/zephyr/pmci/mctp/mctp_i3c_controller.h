@@ -34,7 +34,6 @@ struct mctp_binding_i3c_controller {
 /** @cond INTERNAL_HIDDEN */
 int mctp_i3c_controller_start(struct mctp_binding *binding);
 int mctp_i3c_controller_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
-void mctp_i3c_controller_ibi_cb(struct i3c_device_desc *target, struct i3c_ibi_payload *payload);
 
 #define MCTP_I3C_ENDPOINT_IDS(_node_id, _name)					\
 	static uint8_t _name##_endpoint_ids[DT_PROP_LEN(_node_id, endpoints)]	\

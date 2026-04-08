@@ -784,8 +784,9 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_HSE_Enable();
 		while (LL_RCC_HSE_IsReady() != 1) {
 		}
-		/* Check if we need to enable HSE clock security system or not */
-#if STM32_HSE_CSS
+
+#ifdef STM32_HSE_CSS
+		/* Enable HSE clock security system */
 		z_arm_nmi_set_handler(HAL_RCC_NMI_IRQHandler);
 		LL_RCC_HSE_EnableCSS();
 #endif /* STM32_HSE_CSS */
@@ -1117,7 +1118,7 @@ int stm32_clock_control_init(const struct device *dev)
 	defined(CONFIG_SOC_STM32H7B3XX) || defined(CONFIG_SOC_STM32H7B3XXQ)
 	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_HSEM);
 #elif !defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	/* The stm32h7RS serie has no HSEM peripheral */
+	/* The stm32h7RS series has no HSEM peripheral */
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_HSEM);
 #endif
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
@@ -1236,7 +1237,7 @@ void HAL_RCC_CSSCallback(void)
 {
 	stm32_hse_css_callback();
 }
-#endif
+#endif /* STM32_HSE_CSS */
 
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so

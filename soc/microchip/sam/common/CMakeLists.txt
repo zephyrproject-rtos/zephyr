@@ -1,4 +1,4 @@
-# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -20,4 +20,8 @@ if(CONFIG_SOC_FAMILY_MICROCHIP_SAMA7)
     sama7g5.c
   )
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_SAMA7D6 sama7d65.c)
+endif()
+
+if(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+  zephyr_sources(irq_aic.c)
 endif()

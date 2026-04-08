@@ -112,7 +112,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		} else if (dev_data->active_fb != dev_data->fb[dev_data->next_idx]) {
 			/*
 			 * We must copy the entire current framebuffer to new
-			 * buffer, since we wil change the active buffer
+			 * buffer, since we will change the active buffer
 			 * address
 			 */
 			src = dev_data->active_fb;

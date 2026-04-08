@@ -17,10 +17,12 @@
 #include <hal/gpio_ll.h>
 #include <esp_attr.h>
 #include <esp_sleep.h>
+#include <esp_system.h>
 #include <hal/rtc_io_hal.h>
 
 #include <soc.h>
 #include <errno.h>
+#include <power.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
@@ -303,6 +305,11 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 	}
 
 #if CONFIG_PM
+	bool hold_en = (flags & ESP32_GPIO_SLEEP_HOLD_EN);
+
+	/* Enable pin pad state hold while in low power mode */
+	esp32_sleep_gpio_hold_config(io_pin, hold_en);
+
 	if (wakeup_disable) {
 		/* Account for pin reconfig with GPIO_INT_WAKEUP
 		 * disabled, or pin direction change.
@@ -549,6 +556,37 @@ static int gpio_esp32_pm_action(const struct device *dev, enum pm_device_action 
 	return 0;
 }
 
+static int gpio_esp32_sys_init(void)
+{
+#if CONFIG_PM
+	uint32_t reason = esp_reset_reason();
+
+	if (reason == ESP_RST_DEEPSLEEP) {
+		/* Coming back from deep sleep, we need to release hold state for the
+		 * pins that were not held by application before entering sleep.
+		 */
+		esp32_sleep_gpio_restore();
+	}
+
+	/* Configure GPIO sleep-state registers to isolate all pins.
+	 * This disables input, output, pull-up and pull-down while the
+	 * system is in sleep mode, reducing leakage current.
+	 */
+	esp_sleep_config_gpio_isolate();
+
+	/* Enable automatic hardware switching between the active and
+	 * sleep GPIO configurations when entering and exiting sleep.
+	 */
+	esp_sleep_enable_gpio_switch(true);
+
+#if !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+	gpio_deep_sleep_hold_en();
+#endif
+#endif
+
+	return 0;
+}
+
 static void gpio_esp32_isr(void *param);
 
 static int gpio_esp32_init(const struct device *dev)
@@ -619,3 +657,5 @@ static void IRAM_ATTR gpio_esp32_isr(void *param)
 	gpio_esp32_fire_callbacks(DEVICE_DT_INST_GET(1));
 #endif
 }
+
+SYS_INIT(gpio_esp32_sys_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

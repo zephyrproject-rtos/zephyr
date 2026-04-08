@@ -19,8 +19,14 @@ tests:
       - frdm_mcxn947/mcxn947/cpu0
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - mimxrt1180_evk/mimxrt1189/cm33
+      - frdm_imxrt1186/mimxrt1186/cm33
     integration_platforms:
-      - mcx_n9xx_evk/mcxn947/cpu0
       - frdm_mcxn947/mcxn947/cpu0
-      - mimxrt700_evk/mimxrt798s/cm33_cpu0
-      - mimxrt1180_evk/mimxrt1189/cm33
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "HOST: locked gate id=0, sending ping on channel"
+        - "HOST: unlocked gate, waiting for pong..."
+        - "HOST: received pong"

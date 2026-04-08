@@ -1085,8 +1085,11 @@ static uint8_t *tcp_options_get(struct net_pkt *pkt, int tcp_options_len,
 
 	net_pkt_cursor_backup(pkt, &backup);
 	net_pkt_cursor_init(pkt);
-	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) +
-		     sizeof(struct tcphdr));
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) +
+				      sizeof(struct tcphdr)) < 0) {
+		net_pkt_cursor_restore(pkt, &backup);
+		return NULL;
+	}
 	ret = net_pkt_read(pkt, buf, MIN(tcp_options_len, buf_len));
 	if (ret < 0) {
 		buf = NULL;
@@ -1309,7 +1312,9 @@ static enum net_verdict tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size
 		net_pkt_cursor_init(pkt);
 		net_pkt_set_overwrite(pkt, true);
 
-		net_pkt_skip(pkt, net_pkt_get_len(pkt) - *len);
+		if (net_pkt_skip(pkt, net_pkt_get_len(pkt) - *len) < 0) {
+			return NET_DROP;
+		}
 
 		tcp_update_recv_wnd(conn, -*len);
 		if (*len > conn->recv_win_sent) {
@@ -1712,8 +1717,13 @@ static int tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos,
 	net_pkt_cursor_init(from);
 
 	if (pos) {
+		int ret;
 		net_pkt_set_overwrite(from, true);
-		net_pkt_skip(from, pos);
+
+		ret = net_pkt_skip(from, pos);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	return net_pkt_copy(to, from, len);
@@ -2008,7 +2018,7 @@ static void tcp_resend_data(struct k_work *work)
  out:
 	k_mutex_unlock(&conn->lock);
 
-	if (conn_unref) {
+	if (conn_unref && conn->state != TCP_UNUSED && conn->state != TCP_CLOSED) {
 		tcp_conn_close(conn, -ETIMEDOUT);
 	}
 }
@@ -2312,6 +2322,9 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	}
 
 	th = th_get(pkt);
+	if (th == NULL || th_off(th) < 5) {
+		goto out;
+	}
 
 	if (th_flags(th) & SYN && !(th_flags(th) & ACK)) {
 		struct tcp *conn_old = ((struct net_context *)user_data)->tcp;
@@ -2947,13 +2960,6 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	}
 
 	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, pkt));
-
-	if (th_off(th) < 5) {
-		net_tcp_reply_rst(pkt);
-		do_close = true;
-		close_status = -ECONNRESET;
-		goto out;
-	}
 
 	len = tcp_data_len(pkt);
 
@@ -3747,9 +3753,10 @@ int net_tcp_put(struct net_context *context, bool force_close)
 
 			keep_alive_timer_stop(conn);
 		}
-	} else if (conn->in_connect) {
+	} else if (conn->in_connect && conn->state != TCP_CLOSED && conn->state != TCP_UNUSED) {
 		conn->in_connect = false;
 		k_sem_reset(&conn->connect_sem);
+		tcp_conn_close(conn, -ECONNABORTED);
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -4219,7 +4226,15 @@ int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum)
 	tcp_hdr->chksum = 0U;
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), type) || force_chksum) {
-		tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
+		int ret;
+		uint16_t chksum = 0;
+
+		ret = net_calc_chksum_tcp(pkt, &chksum);
+		if (ret < 0) {
+			return ret;
+		}
+
+		tcp_hdr->chksum = chksum;
 		net_pkt_set_chksum_done(pkt, true);
 	}
 
@@ -4235,10 +4250,15 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 
 	if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
 	    (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), type) ||
-	     net_pkt_is_ip_reassembled(pkt)) &&
-	    net_calc_chksum_tcp(pkt) != 0U) {
-		NET_DBG("DROP: checksum mismatch");
-		goto drop;
+	     net_pkt_is_ip_reassembled(pkt))) {
+		uint16_t chksum = 0;
+		int ret;
+
+		ret = net_calc_chksum_tcp(pkt, &chksum);
+		if (ret < 0 || chksum != 0U) {
+			NET_DBG("DROP: checksum mismatch");
+			goto drop;
+		}
 	}
 
 	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, tcp_access);
@@ -4261,7 +4281,7 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 	struct tcphdr *th = th_get(pkt);
 	enum net_verdict verdict = NET_DROP;
 
-	if (th) {
+	if (th && (th_off(th) < 5)) {
 		struct tcp *conn = tcp_conn_search(pkt);
 
 		if (conn == NULL && SYN == th_flags(th)) {
@@ -4352,11 +4372,15 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 	bool responded = false;
 	static char buf[512];
 	enum net_verdict verdict = NET_DROP;
+	size_t data_len;
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_set_overwrite(pkt, true);
-	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
-		     net_pkt_ip_opts_len(pkt) + sizeof(*uh));
+
+	data_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) + sizeof(*uh);
+	if (net_pkt_skip(pkt, data_len) < 0) {
+		return NET_DROP;
+	}
 	net_pkt_read(pkt, buf, data_len);
 	buf[data_len] = '\0';
 	data_len += 1;
@@ -4367,8 +4391,10 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_set_overwrite(pkt, true);
-	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
-		     net_pkt_ip_opts_len(pkt) + sizeof(*uh));
+	data_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) + sizeof(*uh);
+	if (net_pkt_skip(pkt, data_len) < 0) {
+		return NET_DROP;
+	}
 	net_pkt_read(pkt, buf, data_len);
 	buf[data_len] = '\0';
 	data_len += 1;

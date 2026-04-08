@@ -124,7 +124,7 @@ static int clock_control_esp32_on(const struct device *dev, clock_control_subsys
 
 	status = clock_control_esp32_get_status(dev, sys);
 	if (status == CLOCK_CONTROL_STATUS_ON) {
-		return -EALREADY;
+		return 0;
 	}
 
 	int module_id = (int)sys;

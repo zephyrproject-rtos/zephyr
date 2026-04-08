@@ -811,10 +811,7 @@ static int lan9250_set_config(const struct device *dev, enum ethernet_config_typ
 			ctx->mac_address[2], ctx->mac_address[3],
 			ctx->mac_address[4], ctx->mac_address[5]);
 
-		/* register the new mac address with the upper layer */
-		return net_if_set_link_addr(ctx->iface, ctx->mac_address,
-					    sizeof(ctx->mac_address),
-					    NET_LINK_ETHERNET);
+		return 0;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
 			uint32_t reg;

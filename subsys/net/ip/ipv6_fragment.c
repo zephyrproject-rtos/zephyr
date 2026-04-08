@@ -734,7 +734,9 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	/* Calculate the L4 checksum (if not done already) before the fragmentation. */
 	if (!net_pkt_is_chksum_done(pkt)) {
 		net_pkt_cursor_init(pkt);
-		net_pkt_skip(pkt, last_hdr_off);
+		if (net_pkt_skip(pkt, last_hdr_off) < 0) {
+			return -ENOBUFS;
+		}
 
 		switch (next_hdr) {
 		case NET_IPPROTO_ICMPV6:

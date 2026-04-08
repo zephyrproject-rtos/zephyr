@@ -182,7 +182,7 @@ Option 2. Boot Zephyr by Using JLink Runner
 Hardware Setup
 --------------
 
-The default runner for the board is JLink runner, there is one SWD connnector P14 on
+The default runner for the board is JLink runner, there is one SWD connector P14 on
 the FRDM-IMX91 board, connect P14 to J-Link debugger with Pin1 of P14 connect to SWDCLK,
 Pin2 of P14 connect to SWDIO, and Pin3 of P14 connect to GND, the VCC of J-Link debugger
 could connect to P1 of P12 connector.

@@ -23,6 +23,9 @@ board_runner_args(openocd --cmd-pre-init "source [find target/${MAX32_TARGET_CFG
 board_runner_args(openocd "--target-handle=_CHIPNAME.cpu")
 
 if(CONFIG_SOC_FAMILY_MAX32_M4 OR CONFIG_SOC_FAMILY_MAX32_M33)
-  board_runner_args(openocd --cmd-pre-init "allow_low_pwr_dbg")
+  # allow_low_pwr_dbg causes reset to fail on some boards after flashing
+  if(NOT DEFINED CONFIG_SOC_MAX32660)
+    board_runner_args(openocd --cmd-pre-init "allow_low_pwr_dbg")
+  endif()
   board_runner_args(openocd "--cmd-erase=max32xxx mass_erase 0")
 endif()

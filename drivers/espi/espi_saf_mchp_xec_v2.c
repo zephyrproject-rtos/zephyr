@@ -833,7 +833,7 @@ static int check_ecp_access_size(uint32_t reqlen)
 }
 
 /*
- * EC access to SAF atttached flash array
+ * EC access to SAF attached flash array
  * Allowed commands:
  * MCHP_SAF_ECP_CMD_READ(0x0), MCHP_SAF_ECP_CMD_WRITE(0x01),
  * MCHP_SAF_ECP_CMD_ERASE(0x02), MCHP_SAF_ECP_CMD_RPMC_OP1_CS0(0x03),

@@ -238,7 +238,7 @@
 #define DWT_SYS_CTRL_TXDLYS         0x00000004UL
 /* Cancel Suppression of auto-FCS transmission (on the current frame) */
 #define DWT_SYS_CTRL_CANSFCS        0x00000008UL
-/* Transceiver Off. Force Transciever OFF abort TX or RX immediately */
+/* Transceiver Off. Force Transceiver OFF abort TX or RX immediately */
 #define DWT_SYS_CTRL_TRXOFF         0x00000040UL
 /* Wait for Response */
 #define DWT_SYS_CTRL_WAIT4RESP      0x00000080UL

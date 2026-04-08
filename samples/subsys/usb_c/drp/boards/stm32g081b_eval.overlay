@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2022 The Chromium OS Authors.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <dt-bindings/usb-c/pd.h>
+
+/ {
+	aliases {
+		usbc-port0 = &port1;
+		usbc-port0-pwrctrl = &pwrctrl1;
+	};
+
+	pwrctrl1: pwrctrl {
+		compatible = "zephyr,usb-c-pwrctrl";
+
+		/* Pin D3 is used to enable VBUS Source */
+		source-en-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+
+		/* Pin A1 is used for DCDC_EN */
+		dcdc-en-gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+
+		/* Pin D4 enables VCONN on CC1 */
+		vconn1-en-gpios = <&gpiod 4 GPIO_ACTIVE_LOW>;
+
+		/* Pin B9 enables VCONN on CC2 */
+		vconn2-en-gpios = <&gpiob 9 GPIO_ACTIVE_LOW>;
+
+		/* PWM for voltage selection */
+		pwms = <&pwm15 1 PWM_USEC(50) PWM_POLARITY_INVERTED>;
+	};
+
+	/* usbc.rst vbus-voltage-divider-adc start */
+	vbus1: vbus {
+		compatible = "zephyr,usb-c-vbus-adc";
+		io-channels = <&adc1 9>;
+		output-ohms = <49900>;
+		full-ohms = <(330000 + 49900)>;
+
+		/* Pin B13 is used to control VBUS Discharge for Port1 */
+		discharge-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+	};
+	/* usbc.rst vbus-voltage-divider-adc end */
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* usbc.rst usbc-port start */
+		port1: usbc-port@1 {
+			compatible = "usb-c-connector";
+			reg = <1>;
+			tcpc = <&ucpd1>;
+			vbus = <&vbus1>;
+			power-role = "dual";
+			typec-power-opmode = "3.0A";
+			source-pdos = <PDO_FIXED(5000, 100, 0) PDO_FIXED(9000, 100, 0)
+				       PDO_FIXED(15000, 100, 0)>;
+			sink-pdos = <PDO_FIXED(5000, 100, 0)>;
+		};
+		/* usbc.rst usbc-port end */
+	};
+};
+
+&ucpd1 {
+	dead-battery;
+};

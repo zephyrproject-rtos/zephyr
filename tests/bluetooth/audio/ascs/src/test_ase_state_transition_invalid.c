@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/iso.h>

@@ -287,7 +287,7 @@ static int bt_hci_bee_close(const struct device *dev)
 	return 0;
 }
 
-static const struct bt_hci_driver_api drv = {
+static DEVICE_API(bt_hci, drv) = {
 	.open = bt_hci_bee_open,
 	.send = bt_hci_bee_send,
 	.close = bt_hci_bee_close,

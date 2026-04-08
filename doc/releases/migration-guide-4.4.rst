@@ -23,6 +23,7 @@ the :ref:`release notes<zephyr_4.4>`.
 Common
 ******
 
+* The minimum required Zephyr SDK version is now 1.0.0.
 * The minimum required Python version is now 3.12 (from 3.10).
 
 Build System
@@ -177,6 +178,17 @@ Boards
   targets that have not updated to use the :dtcompatible:`zephyr,mapped-partition` binding for
   ``zephyr,code-partition`` chosen devices. Support for using fixed-partitions as the chosen
   ``zephyr,code-partition`` node will be deprecated in the future.
+
+* Boards or projects based on STM32N6x SoCs (:kconfig:option:`CONFIG_SOC_SERIES_STM32N6X`) now need
+  to explicitly enable :kconfig:option:`CONFIG_TRUSTED_EXECUTION_SECURE` when the Zephyr
+  application is expected to execute in the secure state of the process. Alternatively, if the
+  Zephyr is expected to execute in the non-secure state of the processor, the board or project
+  must explicitly enable :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NON_SECURE`.
+
+* The following WCH SoC Kconfigs have been renamed. Kconfig/CMake/code
+  needs to be updated if they reference the old Kconfigs:
+
+  * ``CONFIG_SOC_SERIES_CH32V00X`` with :kconfig:option:`CONFIG_SOC_SERIES_QINGKE_V2C`
 
 Device Drivers and Devicetree
 *****************************
@@ -442,8 +454,9 @@ Devicetree
 ==========
 
 * :ref:`dt-bindings` are no longer allowed to specify any default values for
-  the ``#address-cells`` and ``#size-cells`` properties. The semantics for
+  the ``status`` and ``#address-cells``, ``#size-cells`` properties. The semantics for
   these properties are defined in Devicetree `Specification
+  <https://www.devicetree.org/specifications>`_ section 2.3.4 and `Specification
   <https://www.devicetree.org/specifications>`_ section 2.3.5 and users should
   not try to override them with their own defaults.
 
@@ -452,6 +465,8 @@ Devicetree
   .. code-block:: yaml
 
      properties:
+       "status":
+         default: ...             <---- any default is a build error
        "#address-cells":
          default: ...             <---- any default is a build error
        "#size-cells":
@@ -560,6 +575,9 @@ Ethernet
   * :dtcompatible:`wiznet,w5500` (:github:`100919`)
   * :dtcompatible:`snps,designware-ethernet` (:github:`105090`)
 
+  MAC address should now be set as a child node of a :dtcompatible:`nvmem-layout`.
+  See the documentation of :ref:`MAC address configuration <mac_address_config>`.
+
 * The ``fixed-link`` property has been removed from :dtcompatible:`ethernet-phy`. Use
   the new :dtcompatible:`ethernet-phy-fixed-link` compatible instead, if that functionality
   is needed. There you need to specify the fixed link parameters using the ``default-speeds``
@@ -583,6 +601,13 @@ Ethernet
   (:github:`105051`)
 
 * The ``phy-handle`` property of :dtcompatible:`microchip,lan865x` must now be set to the phy node.
+
+* ``CONFIG_NET_DSA_DEPRECATED`` has been removed. The drivers for the compatibles
+  ``microchip,ksz8463``, ``microchip,ksz8794`` and ``microchip,ksz8863`` were removed, as they
+  haven't been migrated to the new DSA subsystem. (:github:`105926`)
+
+* Ethernet drivers no longer need to call :c:func:`net_if_set_link_addr` themselves, when
+  the mac address is changed via ``ETHERNET_CONFIG_TYPE_MAC_ADDRESS``. (:github:`105931`)
 
 File System
 ===========
@@ -672,6 +697,34 @@ Infineon
   * ``CONFIG_BT_CYW43XX`` → :kconfig:option:` CONFIG_BT_HCI_UART_INFINEON`
   * ``dtcompatible: "infineon,cyw43xxx-bt-hci"`` → ``dtcompatible: "infineon,bt-hci-uart"``
 
+Input
+=====
+
+* The CST816S input driver has been generalized to support the CST8xx
+  family. The driver and Kconfig file been renamed (:github:`105348`)
+
+  * ``input_cst816s.c`` → ``input_cst8xx.c``
+  * ``Kconfig.cst816s`` → ``Kconfig.cst8xx``
+
+  Corresponding Devicetree compatible have been updated:
+
+  * ``hynitron,cst816s`` → :dtcompatible:`hynitron,cst8xx`
+
+  Corresponding Kconfig have also been updated:
+
+  * ``CONFIG_INPUT_CST816S`` → :kconfig:option:` CONFIG_INPUT_CST8XX`
+  * ``CONFIG_INPUT_CST816S_PERIOD`` → :kconfig:option:` CONFIG_INPUT_CST8XX_PERIOD`
+  * ``CONFIG_INPUT_CST816S_INTERRUPT`` → :kconfig:option:` CONFIG_INPUT_CST8XX_INTERRUPT`
+  * ``CONFIG_INPUT_CST816S_EV_DEVICE`` → :kconfig:option:` CONFIG_INPUT_CST8XX_EV_DEVICE`
+
+  The dt-binding macro prefix have also been updated from ``CST816S_*`` to ``CST8XX_*``.
+
+Interrupt Controller
+====================
+
+* :dtcompatible:`swerv,pic` is now :dtcompatible:`cdns,swerv-pic` by adding vendor
+  prefix.
+
 Keyboard matrix
 ===============
 
@@ -756,6 +809,20 @@ NXP
 
   On Kinetis KE1xF, this overlay is also required when
   :kconfig:option:`CONFIG_PM` is enabled.
+
+* :dtcompatible:`nxp,imx-flexspi-nor` compatible nodes now have
+  a :dtcompatible:`soc-nv-flash` compatible child node to describe
+  the flash memory. The ``nxp,imx-flexspi-nor`` node acts as the
+  flash controller (renamed to ``flash-controller@0``),
+  and ``erase-block-size``, ``write-block-size`` properties, as well
+  as ``partitions`` node, are moved into the flash chip node.
+  Out-of-tree boards must update their devicetrees accordingly.
+
+* ``zephyr,flash`` chosen property must point to the
+  :dtcompatible:`soc-nv-flash` compatible node.
+  * ``zephyr,flash-controller`` chosen property must point to the
+  :dtcompatible:`nxp,imx-flexspi-nor` compatible node.
+  * A ``ranges`` property is required on the controller node.
 
 QSPI
 ====
@@ -941,6 +1008,22 @@ STM32
   the ``cs-gpios`` or new ``st,soft-nss`` property operate in "Soft NSS" mode, while all other
   instances operate in "Hard NSS" mode.
 
+* To ensure that the SPI is functional at any frequency, all SPI pins are now configured with a
+  ``very-high-speed`` slew-rate by default. This may result in higher power consumption.
+  The slew-rate value can be overridden in board's dts or in overlays to a slower speed in order to
+  decrease power consumption.
+
+* :kconfig:option:`CONFIG_NUM_IRQS` is computed automatically based on active (``status = "okay";``)
+  devices by using the new ``dt_highest_controller_irq_number`` Kconfig preprocessor function.
+  Applications which register custom ISRs (using :c:macro:`IRQ_CONNECT()`) may encounter build
+  failures such as the following due to :kconfig:option:`CONFIG_NUM_IRQS` having a lower value:
+
+  .. code-block::
+
+    gen_isr_tables.py: error: IRQ 114 (offset=0) exceeds the maximum of 106
+
+  Explicitly set :kconfig:option:`CONFIG_NUM_IRQS` to an appropriate value to solve these issues.
+
 Timer
 =====
 
@@ -969,7 +1052,22 @@ Timer
 USB
 ===
 
-  * :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
+* :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
+* USB control transfer buffer allocation has been moved away from UDC to USB device_next.
+  Out-of-tree UDC drivers will have to be reworked. (:github:`103493`).
+
+* UVC device application API got modified:
+
+  * ``uvc_set_video_dev`` has been renamed to :c:func:`uvc_device_init`
+  * ``uvc_add_format`` has been renamed to :c:func:`uvc_device_add_format`
+  * :c:func:`uvc_device_enable` has been introduced
+  * :c:func:`uvc_device_shutdown` has been introduced
+
+USB-C
+=====
+
+* The ``alert_handler_cb`` field has been removed from the :c:struct:`tcpc_driver_api` struct as it
+  was unused and redundant with the callback registered via :c:func:`tcpc_set_alert_handler_cb`.
 
 Video
 =====
@@ -1016,6 +1114,8 @@ Watchdog
       * ``CONFIG_WDT_CC32XX_INITIAL_TIMEOUT``
 
 .. zephyr-keep-sorted-stop
+
+* Updated :dtcompatible:`microchip,xec-watchdog` for PCR and GIRQ properties to use new macros (:github:`105668`).
 
 Bluetooth
 *********
@@ -1065,6 +1165,14 @@ Bluetooth Audio
 * ``CONFIG_BT_TBS_SUPPORTED_FEATURES`` has been removed. Applications should use the defined macros
   :c:macro:`BT_TBS_FEATURE_HOLD` and :c:macro:`BT_TBS_FEATURE_JOIN` to set their supported features.
   (:github:`102666`)
+* :c:func:`bt_bap_unicast_server_foreach_ep` and :c:func:`bt_has_preset_foreach` may now return an
+  error if the iteration stopped early, or if provided with invalid parameters. (:github:`105462`)
+* The callbacks for :c:func:`bt_bap_unicast_server_foreach_ep`,
+  :c:func:`bt_bap_unicast_group_foreach_stream`, :c:func:`bt_bap_broadcast_source_foreach_stream`,
+  :c:func:`bt_cap_unicast_group_foreach_stream`, :c:func:`bt_cap_initiator_broadcast_foreach_stream`
+  and :c:func:`bt_has_preset_foreach` now return ``true`` to continue the iteration,
+  and ``false`` to stop the iteration. Any callbacks for these functions need to be updated to
+  reflect the new return types and values. (:github:`105462`)
 
 Bluetooth Mesh
 ==============
@@ -1080,6 +1188,13 @@ Bluetooth HCI
 
 Networking
 **********
+
+* :c:struct:`wifi_channel_info` gained a ``band`` field for set-channel. Behaviour
+  is backwards compatible for 2.4 GHz (channels 1–14) and 5 GHz (36–165): omit or
+  leave ``band`` as :c:macro:`WIFI_FREQ_BAND_UNKNOWN` and the driver infers the
+  band. For 6 GHz, set ``band`` to :c:macro:`WIFI_FREQ_BAND_6_GHZ` (channel
+  numbers overlap 1–14 with 2.4 GHz). Recompile so ``sizeof(struct
+  wifi_channel_info)`` is correct when calling net_mgmt.
 
 * Networking APIs found in
 
@@ -1292,6 +1407,88 @@ Settings
 
 * ``CONFIG_SETTINGS_TFM_ITS`` has been renamed to :kconfig:option:`CONFIG_SETTINGS_TFM_PSA`.
 
+Mbed TLS
+========
+
+* Mbed TLS has been upgraded to version 4.1.0. From now on this repo will only include TLS
+  and X.509, while crypto support was moved to TF-PSA-Crypto. A new west module
+  has been introduced for the latter and it's based on upstream release 1.1.0.
+  TF-M continues to build with Mbed TLS 3.6.5.
+  Crypto-wise there are many changes introduced with this change, so it's strongly
+  suggested to take a look to the official `Mbed TLS 3.x to TF-PSA-Crypto 1.x migration guide
+  <https://github.com/Mbed-TLS/TF-PSA-Crypto/blob/development/docs/1.0-migration-guide.md>`.
+
+* ``CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR`` has been renamed to
+  :kconfig:option:`CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY`.
+
+* The following PSA related Kconfig symbols have been removed as they are no longer
+  supported by TF-PSA-Crypto:
+
+  * ``CONFIG_PSA_WANT_KEY_TYPE_DES``
+  * ``CONFIG_PSA_WANT_ECC_SECP_R1_192``
+  * ``CONFIG_PSA_WANT_ECC_SECP_K1_192``
+  * ``CONFIG_PSA_WANT_ECC_SECP_R1_224``
+
+* The following Mbed TLS Kconfig symbols have been removed:
+
+  * ``CONFIG_MBEDTLS_CHACHAPOLY_AEAD_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_AES_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CAMELLIA_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CCM_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CHACHA20_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_DES_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_GCM_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_CBC_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_CTR_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_XTS_ENABLED``
+  * ``CONFIG_MBEDTLS_CMAC``
+  * ``CONFIG_MBEDTLS_DHM_C``
+  * ``CONFIG_MBEDTLS_ECDH_C``
+  * ``CONFIG_MBEDTLS_ECDSA_C``
+  * ``CONFIG_MBEDTLS_ECDSA_DETERMINISTIC``
+  * ``CONFIG_MBEDTLS_ECJPAKE_C``
+  * ``CONFIG_MBEDTLS_ECP_ALL_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_C``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP256R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP384R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP512R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_CURVE25519_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_CURVE448_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP192K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP192R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP224K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP224R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP256K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP384R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED``
+  * ``CONFIG_MBEDTLS_GENPRIME_ENABLED``
+  * ``CONFIG_MBEDTLS_HKDF_C``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED``
+  * ``CONFIG_MBEDTLS_MD5``
+  * ``CONFIG_MBEDTLS_PKCS1_V15``
+  * ``CONFIG_MBEDTLS_PKCS1_V21``
+  * ``CONFIG_MBEDTLS_POLY1305``
+  * ``CONFIG_MBEDTLS_RSA_C``
+  * ``CONFIG_MBEDTLS_RSA_ENABLE_LEGACY_APIS``
+  * ``CONFIG_MBEDTLS_SHA1``
+  * ``CONFIG_MBEDTLS_SHA224``
+  * ``CONFIG_MBEDTLS_SHA256``
+  * ``CONFIG_MBEDTLS_SHA384``
+  * ``CONFIG_MBEDTLS_SHA512``
+  * ``CONFIG_MBEDTLS_USE_PSA_CRYPTO``
+
+* The following PSA Crypto API changes are introduced with TF-PSA-Crypto 1.1:
+
+  * ``psa_open_key()`` has been removed. Keys are now automatically loaded from persistent storage
+    when they are used.
+  * ``psa_close_key()`` has been replaced by :c:func:`psa_purge_key`. Update all call sites
+    accordingly.
+  * ``psa_key_handle_t`` has been replaced by ``psa_key_id_t``. Update type declarations and
+    variable definitions accordingly.
+
 Modules
 *******
 
@@ -1322,6 +1519,11 @@ OpenThread
   for Secure Storage (Settings, ZMS, or a custom one) to be configured.
 
 * :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` is now enabled by default.
+
+* Following Mbed TLS bump to version 4.1.0, legacy crypto support is no longer available
+  in Zephyr. Therefore ``CONFIG_OPENTHREAD_CRYPTO_LEGACY_MBEDTLS_CONFIG`` has been removed.
+  :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA_CONFIG` was already the default choice for
+  crypto support and it is now the only supported crypto option.
 
 Trusted Firmware-M
 ==================

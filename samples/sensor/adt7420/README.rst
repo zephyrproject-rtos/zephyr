@@ -16,6 +16,10 @@ temperature.  As soon as the temperature goes outside the window an
 interrupt causes the application to display an event and update the
 upper and lower window boundaries.
 
+The ADT7420 is part of the ADT74XX family of devices.
+Other supported devices are ADT7410 and ADT7422, and have their respective
+devicetree compatibles to configure their hardware temperature limits.
+
 References
 **********
 

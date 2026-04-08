@@ -85,7 +85,7 @@ static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, vo
 
 	data->streams[data->cnt++] = cap_stream;
 
-	return false;
+	return true;
 }
 
 void bt_cap_handover_complete(struct bt_cap_common_proc *active_proc)
@@ -751,12 +751,12 @@ static bool broadcast_source_foreach_stream_cb(struct bt_cap_stream *cap_stream,
 	if (!bt_cap_initiator_stream_is_in_state(bap_stream, BT_BAP_EP_STATE_STREAMING)) {
 		LOG_DBG("Stream %p is in invalid state %s", cap_stream,
 			bt_bap_ep_state_str(bt_cap_initiator_stream_get_state(bap_stream)));
-		return true;
+		return false;
 	}
 
 	data->streams[data->cnt++] = cap_stream;
 
-	return false;
+	return true;
 }
 
 static bool valid_valid_broadcast_to_unicast_unicast_start_param(

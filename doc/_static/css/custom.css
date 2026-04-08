@@ -107,6 +107,30 @@ a.btn:hover {
     color: var(--link-color);
 }
 
+/* Ensure links in body text are visually distinct from other text as per WCAG 1.4.1 */
+.rst-content p a,
+.rst-content blockquote p a,
+.rst-content dl dd p a,
+.rst-content li a {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.2em;
+}
+.rst-content p a:hover,
+.rst-content blockquote p a:hover,
+.rst-content dl dd p a:hover,
+.rst-content li a:hover {
+  text-decoration: underline;
+}
+/* Preserve no-underline for buttons & navigation */
+a.btn,
+.wy-menu-vertical a,
+.wy-breadcrumbs a,
+.rst-versions a {
+  text-decoration: none !important;
+}
+
 /* Style external links differently to make them easier to distinguish from internal links. */
 .reference.external {
     background-position: center right;
@@ -306,7 +330,8 @@ a.internal:visited code.literal {
 }
 
 .highlight .ch /* Comment.Hashbang */,
-.highlight .cp /* Comment.Preproc */ {
+.highlight .cp /* Comment.Preproc */,
+.highlight .gp /* Generic.Prompt */ {
     color: var(--highlight-keyword2-color);
 }
 
@@ -466,6 +491,17 @@ kbd, .kbd,
     background-color: var(--guiitems-background-color);
     border-color: var(--guiitems-border-color);
 }
+
+/* footnote labels and brackets tweaks */
+.rst-content .fn-bracket,
+.rst-content .footnote .label,
+.rst-content .citation .label {
+  color: var(--body-color)
+}
+.rst-content .backrefs {
+  color: var(--link-color);
+}
+
 
 /* heading tweaks to make document hierarchy easier to grasp */
 

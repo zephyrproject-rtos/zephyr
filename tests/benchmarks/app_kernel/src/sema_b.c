@@ -27,7 +27,7 @@ void sema_test(void)
 	et = timing_cycles_get(&start, &end);
 
 	PRINT_F(FORMAT, "signal semaphore",
-		timing_cycles_to_ns_avg(et, NR_OF_SEMA_RUNS));
+		test_timing_cycles_to_ns_avg(et, NR_OF_SEMA_RUNS));
 
 	k_sem_reset(&SEM1);
 	k_sem_give(&STARTRCV);
@@ -40,7 +40,7 @@ void sema_test(void)
 	et = timing_cycles_get(&start, &end);
 
 	PRINT_F(FORMAT, "signal to waiting high pri task",
-		timing_cycles_to_ns_avg(et, NR_OF_SEMA_RUNS));
+		test_timing_cycles_to_ns_avg(et, NR_OF_SEMA_RUNS));
 
 	start = timing_timestamp_get();
 	for (i = 0; i < NR_OF_SEMA_RUNS; i++) {
@@ -50,5 +50,5 @@ void sema_test(void)
 	et = timing_cycles_get(&start, &end);
 
 	PRINT_F(FORMAT, "signal to waiting high pri task, with timeout",
-		timing_cycles_to_ns_avg(et, NR_OF_SEMA_RUNS));
+		test_timing_cycles_to_ns_avg(et, NR_OF_SEMA_RUNS));
 }

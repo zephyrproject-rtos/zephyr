@@ -4,3 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(include)
+
+zephyr_linker_sources(NOINIT noinit.ld)

@@ -221,7 +221,7 @@
 		};
 
 		pinctrl: pin-controller@42020000 {
-			compatible = "st,stm32-pinctrl";
+			compatible = "st,stm32h5-pinctrl", "st,stm32-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x42020000 0x2000>;
@@ -365,6 +365,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 

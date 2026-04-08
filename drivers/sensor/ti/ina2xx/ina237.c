@@ -349,7 +349,7 @@ static DEVICE_API(sensor, ina228_driver_api) = {
 };
 #endif /* ti_ina228 */
 
-/* Shunt calibration must be muliplied by 4 if high-prevision mode is selected */
+/* Shunt calibration must be multiplied by 4 if high-prevision mode is selected */
 #define CAL_PRECISION_MULTIPLIER(inst) \
 	((DT_INST_PROP_OR(inst, high_precision, 0)) * 3 + 1)
 

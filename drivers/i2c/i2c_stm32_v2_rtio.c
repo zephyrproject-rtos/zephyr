@@ -27,6 +27,14 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2_rtio);
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
 
+#if CONFIG_STM32_HAL2
+#define STM32_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period) \
+	LL_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period)
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period) \
+	__LL_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period)
+#endif /* CONFIG_STM32_HAL2 */
+
 static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -608,7 +616,7 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 			continue;
 		}
 
-		timing = __LL_I2C_CONVERT_TIMINGS(presc - 1,
+		timing = STM32_I2C_CONVERT_TIMINGS(presc - 1,
 					scldel - 1, sdadel, sclh - 1, scll - 1);
 		break;
 	} while (presc < 16);

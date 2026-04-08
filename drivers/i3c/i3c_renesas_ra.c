@@ -628,7 +628,7 @@ static int i3c_renesas_ra_attach_i3c_device(const struct device *dev,
 
 	if (target->dynamic_addr == 0 && target->static_addr == 0) {
 		/*
-		 * Do notthing.
+		 * Do nothing.
 		 * This case called from address slots init process.
 		 */
 		return 0;
@@ -759,7 +759,7 @@ static int i3c_renesas_ra_do_daa(const struct device *dev)
 	uint32_t num_dev = (config->common.dev_list.num_i3c) ? config->common.dev_list.num_i3c : 1;
 	uint32_t start_index = 0;
 
-	/* Start DAA without address asignment to get device info */
+	/* Start DAA without address assignment to get device info */
 	data->address_phase_count = 0;
 	data->skip_address_phase = false;
 	fsp_err = R_I3C_DynamicAddressAssignmentStart(data->fsp_ctrl, I3C_CCC_ENTDAA, start_index,

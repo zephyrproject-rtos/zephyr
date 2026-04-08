@@ -72,20 +72,29 @@ static int dmic_start_dma(const struct device *dev)
 	struct ifx_dmic_data *const data = dev->data;
 	struct dma_channel *dma_ch = &data->dma_rx;
 	uint32_t transfer_size;
+	uint32_t addr_offset;
 
-	/* compute the size of the next DMA transfer */
+	/* compute the size of the next DMA transfer.
+	 * transfer_size represents the number of bytes to transfer per channel.
+	 */
 	if (data->dma_rx.remaining_block_size <
-	    (FIFO_TRIGGER_LEVEL * dma_ch->dma_cfg.source_data_size)) {
-		transfer_size = data->dma_rx.remaining_block_size;
+	    (FIFO_TRIGGER_LEVEL * dma_ch->dma_cfg.source_data_size * data->num_pdm_channels)) {
+		transfer_size = data->dma_rx.remaining_block_size / data->num_pdm_channels;
 	} else {
 		transfer_size = FIFO_TRIGGER_LEVEL * dma_ch->dma_cfg.source_data_size;
 	}
-	data->dma_rx.remaining_block_size -= transfer_size;
+
+	/* determine the offset into the destination buffer where the next transfer should begin
+	 * and update the remaining_block_size based on the calculated transfer size.
+	 */
+	addr_offset = data->block_size - data->dma_rx.remaining_block_size;
+	data->dma_rx.remaining_block_size -= transfer_size * data->num_pdm_channels;
 
 	/* Set the destination addresses in each block configuration */
 	for (uint8_t ch = 0; ch < data->num_pdm_channels; ch++) {
-		dma_ch->blk_cfg[ch].dest_address =
-			(uint32_t)data->active_buf + (ch * dma_ch->dma_cfg.source_data_size);
+		dma_ch->blk_cfg[ch].dest_address = (uint32_t)data->active_buf + addr_offset +
+						   (ch * dma_ch->dma_cfg.source_data_size);
+
 		dma_ch->blk_cfg[ch].block_size = transfer_size;
 	}
 

@@ -29,23 +29,19 @@
 
 	/omit-if-no-ref/ uart30_default: uart30_default {
 		group1 {
-			psels = <NRF_PSEL(UART_TX, 2, 8)>,
-				<NRF_PSEL(UART_RTS, 2, 10)>;
+			psels = <NRF_PSEL(UART_TX, 0, 0)>;
 		};
 
 		group2 {
-			psels = <NRF_PSEL(UART_RX, 2, 7)>,
-				<NRF_PSEL(UART_CTS, 2, 9)>;
+			psels = <NRF_PSEL(UART_RX, 0, 1)>;
 			bias-pull-up;
 		};
 	};
 
 	/omit-if-no-ref/ uart30_sleep: uart30_sleep {
 		group1 {
-			psels = <NRF_PSEL(UART_TX, 2, 8)>,
-				<NRF_PSEL(UART_RX, 2, 7)>,
-				<NRF_PSEL(UART_RTS, 2, 10)>,
-				<NRF_PSEL(UART_CTS, 2, 9)>;
+			psels = <NRF_PSEL(UART_TX, 0, 0)>,
+				<NRF_PSEL(UART_RX, 0, 1)>;
 			low-power-enable;
 		};
 	};

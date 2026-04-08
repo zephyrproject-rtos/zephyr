@@ -290,7 +290,7 @@ static void adc_ad4114_acquisition_thread(struct adc_ad4114_data *data)
 				is_ended = true;
 			}
 			/* Wait before next status ready check: the minimal acquisition time for a
-			 * channel is 100us. So wait 10us betwen each check to avoid to use CPU for
+			 * channel is 100us. So wait 10us between each check to avoid to use CPU for
 			 * nothing.
 			 */
 			k_usleep(10);

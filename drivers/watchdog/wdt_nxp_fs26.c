@@ -757,7 +757,7 @@ static int wdt_nxp_fs26_init(const struct device *dev)
 	regval = ~BAD_WD_M;
 	fs26_setreg(&config->spi, FS26_FS_INTB_MASK, regval);
 
-	/* Mask all main interrupt souces */
+	/* Mask all main interrupt sources */
 	regval = 0xffff;
 	fs26_setreg(&config->spi, FS26_M_TSD_MSK, regval);
 	fs26_setreg(&config->spi, FS26_M_REG_MSK, regval);

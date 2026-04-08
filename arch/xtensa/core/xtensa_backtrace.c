@@ -7,6 +7,7 @@
 #include "xtensa/corebits.h"
 #include "xtensa_backtrace.h"
 #include <zephyr/sys/printk.h>
+#include <zephyr/arch/exception.h>
 #if defined(CONFIG_SOC_SERIES_ESP32)
 #include <esp_memory_utils.h>
 #elif defined(CONFIG_SOC_FAMILY_INTEL_ADSP)
@@ -138,11 +139,17 @@ int xtensa_backtrace_print(int depth, int *interrupted_stack)
 	if (cause != EXCCAUSE_INSTR_PROHIBITED) {
 		mask = stk_frame.pc & 0xc0000000;
 	}
+#if defined(CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK)
+	arch_exception_call_dump_hook("BT 0x%08x:0x%08x ",
+				      xtensa_cpu_process_stack_pc(stk_frame.pc),
+				      stk_frame.sp);
+#endif
+#if !defined(CONFIG_EXCEPTION_DUMP_HOOK_ONLY)
 	printk("\r\n\r\nBacktrace:");
 	printk("0x%08x:0x%08x ",
 			xtensa_cpu_process_stack_pc(stk_frame.pc),
 			stk_frame.sp);
-
+#endif
 	/* Check if first frame is valid */
 	bool corrupted = !(xtensa_stack_ptr_is_sane(stk_frame.sp) &&
 				(xtensa_ptr_executable((void *)
@@ -155,12 +162,29 @@ int xtensa_backtrace_print(int depth, int *interrupted_stack)
 		if (!xtensa_backtrace_get_next_frame(&stk_frame)) {
 			corrupted = true;
 		}
+#if defined(CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK)
+		arch_exception_call_dump_hook("0x%08x:0x%08x ",
+					      xtensa_cpu_process_stack_pc(stk_frame.pc),
+					      stk_frame.sp);
+#endif
+#if !defined(CONFIG_EXCEPTION_DUMP_HOOK_ONLY)
 		printk("0x%08x:0x%08x ", xtensa_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
+#endif
 	}
 
 	/* Print backtrace termination marker */
 	int ret = 0;
 
+#if defined(CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK)
+	if (corrupted) {
+		arch_exception_call_dump_hook("CORRUPTED");
+		ret = -1;
+	} else if (stk_frame.next_pc != 0) {    /* Backtrace continues */
+		arch_exception_call_dump_hook("CONTINUES");
+	}
+	arch_exception_call_dump_hook("\n");
+#endif
+#if !defined(CONFIG_EXCEPTION_DUMP_HOOK_ONLY)
 	if (corrupted) {
 		printk(" |<-CORRUPTED");
 		ret =  -1;
@@ -168,5 +192,6 @@ int xtensa_backtrace_print(int depth, int *interrupted_stack)
 		printk(" |<-CONTINUES");
 	}
 	printk("\r\n\r\n");
+#endif
 	return ret;
 }

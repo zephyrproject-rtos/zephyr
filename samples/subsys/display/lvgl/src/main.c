@@ -391,9 +391,14 @@ int main(void)
 	lv_indev_set_group(lvgl_input_get_indev(lvgl_keypad), btn_matrix_group);
 #endif /* CONFIG_LV_Z_KEYPAD_INPUT */
 
+<<<<<<< HEAD
 	countdown_label = lv_label_create(lv_screen_active());
 	lv_obj_set_style_text_align(countdown_label, LV_TEXT_ALIGN_CENTER, 0);
 	lv_obj_align(countdown_label, LV_ALIGN_TOP_MID, 0, 0);
+=======
+	if (IS_ENABLED(CONFIG_LV_Z_POINTER_INPUT) || IS_ENABLED(CONFIG_LV_Z_BUTTON_INPUT)) {
+		lv_obj_t *hello_world_button;
+>>>>>>> afcfbf6dee02ec40e1690132228da1c5faa7d5fd
 
 	hint_label = lv_label_create(lv_screen_active());
 	lv_obj_set_style_text_align(hint_label, LV_TEXT_ALIGN_CENTER, 0);

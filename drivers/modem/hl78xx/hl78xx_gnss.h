@@ -107,11 +107,9 @@ struct hl78xx_gnss_data {
 	/* Enter GNSS mode pending flag - set when GNSS mode is requested before modem is ready */
 	bool gnss_mode_enter_pending;
 
-#if defined(CONFIG_MODEM_HL78XX_00)
-	/* RRC IDLE check phase for HL7800 eDRX GNSS */
+	/* RRC IDLE check phase for GNSS start gating. */
 	bool rrc_check_phase;
 	uint8_t rrc_retry_count;
-#endif /* CONFIG_MODEM_HL78XX_00 */
 
 #ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
 	/* A-GNSS assistance data status - updated by AT+GNSSAD? queries */

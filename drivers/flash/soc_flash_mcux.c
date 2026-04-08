@@ -16,6 +16,7 @@
 #include "flash_priv.h"
 
 #include "fsl_common.h"
+#include <zephyr/cache.h>
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -159,6 +160,12 @@ static void clear_flash_caches(void)
 static void clear_flash_caches(void)
 {
 	SYSCON->LPCAC_CTRL |= SYSCON_LPCAC_CTRL_DIS_LPCAC(1U);
+}
+#elif defined(CONFIG_CACHE_NXP_LMEM_CACHE)
+static void clear_flash_caches(void)
+{
+	sys_cache_instr_invd_all();
+	sys_cache_data_invd_all();
 }
 #else
 #undef SOC_FLASH_NEED_CLEAR_CACHES

@@ -55,7 +55,7 @@ LOG_MODULE_REGISTER(w1, CONFIG_W1_LOG_LEVEL);
  *                         the first call, it carries the search progress for
  *                         further calls.
  * @param rom_inv_64       The found ROM: It must be set to zero before first
- *                         call and carries the last found ROM for furter calls.
+ *                         call and carries the last found ROM for further calls.
  *                         The ROM is stored in inverse byte order.
  *
  * @retval 0      If successful.
@@ -106,7 +106,7 @@ static int search_slave(const struct device *dev, uint8_t command,
 			 * No slave participating:
 			 * We can stop following the branch.
 			 */
-			LOG_DBG("No slave paricipating");
+			LOG_DBG("No slave participating");
 			*last_discrepancy = W1_SEARCH_NO_SLAVE;
 			return 0;
 		} else if (last_id_bit != last_complement_id_bit) {

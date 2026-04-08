@@ -32,6 +32,7 @@ extern void lvd_start_int(lvd_channel_t ch, void (*p_callback)(void *));
 extern void lvd_stop_int(lvd_channel_t ch);
 extern void lvd_hw_enable_reset_int(lvd_channel_t ch, bool enable);
 extern void lvd_hw_enable_reg_protect(bool enable);
+extern void lvd_hw_clear_lvd_status(lvd_channel_t ch);
 
 struct lvd_renesas_rx_data {
 	lvd_config_t lvd_config;
@@ -243,7 +244,12 @@ static DEVICE_API(comparator, lvd_renesas_rx_api) = {
 		ARG_UNUSED(args);                                                                  \
 		const struct device *dev = DEVICE_DT_GET(DT_INST(index, renesas_rx_lvd));          \
 		struct lvd_renesas_rx_data *data = dev->data;                                      \
+		const struct lvd_renesas_rx_config *config = dev->config;                          \
 		comparator_callback_t cb = data->user_cb;                                          \
+                                                                                                   \
+		lvd_hw_enable_reg_protect(false);                                                  \
+		lvd_hw_clear_lvd_status(config->channel);                                          \
+		lvd_hw_enable_reg_protect(true);                                                   \
                                                                                                    \
 		/* Call the user's callback function*/                                             \
 		if (cb) {                                                                          \

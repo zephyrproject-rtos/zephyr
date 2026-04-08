@@ -15,9 +15,6 @@ LOG_MODULE_REGISTER(net_sockets_raw, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/ethernet.h>
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-#include <zephyr/net/dsa.h>
-#endif
 
 #include "connection.h"
 #include "packet_socket.h"
@@ -27,16 +24,6 @@ void net_packet_socket_input(struct net_pkt *pkt,
 					 enum net_sock_type type)
 {
 	net_sa_family_t orig_family;
-
-#if defined(CONFIG_NET_DSA_DEPRECATED)
-	/*
-	 * For DSA the master port is not supporting raw packets. Only the
-	 * lan1..3 are working with them.
-	 */
-	if (dsa_is_port_master(net_pkt_iface(pkt))) {
-		return;
-	}
-#endif
 
 	orig_family = net_pkt_family(pkt);
 

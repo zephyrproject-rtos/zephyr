@@ -63,6 +63,15 @@ input (with or without pull-up or pull-down), or as peripheral alternate functio
 GPIO pins are shared with digital or analog alternate functions. All GPIOs are high current
 capable except for analog inputs.
 
+In default configuration, there is a potential conflict on PA5 (ARDUINO® D13) pin that is
+connected both to the green LED (LD1) and to SPI1 SCK (ARDUINO® SPI). It is not recommended to
+use both functions simultaneously.
+
+A second GPIO, PG0, can be connected by positioning SB7 instead of SB8 to drive LD1. This
+configuration allows the ARDUINO® D13 function to be used in parallel with the green LED function.
+In this configuration, the user LEDs are off when the STM32 I/O is in a high state, and on when the
+STM32 I/O is in a low state.
+
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
 Programming and Debugging

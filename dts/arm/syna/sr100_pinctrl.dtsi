@@ -1,0 +1,802 @@
+/*
+ * Copyright (c) 2025 Synaptics, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/syna-sr100-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl_global: pin-controller@50338000 { /* GLOBAL */
+			compatible = "syna,sr100-pinctrl";
+			reg = <0x50338000 0xc>, <0x50338800 0x100>,
+			      <0x50330a04 0x18>;
+			reg-names = "pinmux", "pincfg", "port";
+
+			/omit-if-no-ref/ gpio_44: gpio-44 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 0, 0, 0x00)>;
+			};
+
+			/omit-if-no-ref/ i2c_slv_sda: i2c-slv-sda {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 0, 1, 0x00)>;
+			};
+
+			/omit-if-no-ref/ uart0_tx_c: uart0-tx-c {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 0, 2, 0x00)>;
+			};
+
+			/omit-if-no-ref/ gpio_45: gpio-45 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 3, 0, 0x00)>;
+			};
+
+			/omit-if-no-ref/ i2c_slv_scl: i2c-slv-scl {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 3, 1, 0x04)>;
+			};
+
+			/omit-if-no-ref/ uart0_rx_c: uart0-rx-c {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 3, 2, 0x04)>;
+				port = <SRXXX_PORT_PINMUX(0x0, 0, 2, 3)>;
+			};
+
+			/omit-if-no-ref/ gpio_46: gpio-46 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 6, 0, 0x08)>;
+			};
+
+			/omit-if-no-ref/ i3c_slv_sda: i3c-slv-sda {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 6, 1, 0x08)>;
+			};
+
+			/omit-if-no-ref/ gpio_47: gpio-47 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 9, 0, 0x0c)>;
+			};
+
+			/omit-if-no-ref/ i3c_slv_scl: i3c-slv-scl {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 9, 1, 0x0c)>;
+			};
+
+			/omit-if-no-ref/ gpio_25: gpio-25 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 12, 0, 0x10)>;
+			};
+
+			/omit-if-no-ref/ sd0_cmd: sd0-cmd {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 12, 1, 0x10)>;
+			};
+
+			/omit-if-no-ref/ gpio_27: gpio-27 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 15, 0, 0x14)>;
+			};
+
+			/omit-if-no-ref/ sd0_d0: sd0-d0 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 15, 1, 0x14)>;
+			};
+
+			/omit-if-no-ref/ dm0_data_c: dm0-data-c {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 15, 2, 0x14)>;
+				port = <SRXXX_PORT_PINMUX(0x8, 2, 2, 3)>;
+			};
+
+			/omit-if-no-ref/ calib_dly_pwm: calib-dly-pwm {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 15, 4, 0x14)>;
+			};
+
+			/omit-if-no-ref/ uart_lp_rx_b: uart-lp-rx-b {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 15, 5, 0x14)>;
+			};
+
+			/omit-if-no-ref/ gpio_26: gpio-26 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 18, 0, 0x18)>;
+			};
+
+			/omit-if-no-ref/ sd0_clk: sd0-clk {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 18, 1, 0x18)>;
+			};
+
+			/omit-if-no-ref/ dm0_clk_a: dm0-clk-a {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 18, 2, 0x18)>;
+				port = <SRXXX_PORT_PINMUX(0x8, 0, 3, 3)>;
+			};
+
+			/omit-if-no-ref/ trace_clk: trace-clk {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 18, 3, 0x18)>;
+			};
+
+			/omit-if-no-ref/ calib_dly_out: calib-dly-out {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 18, 4, 0x18)>;
+			};
+
+			/omit-if-no-ref/ uart_lp_tx_b: uart-lp-tx-b {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 18, 5, 0x18)>;
+			};
+
+			/omit-if-no-ref/ gpio_28: gpio-28 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 21, 0, 0x1c)>;
+			};
+
+			/omit-if-no-ref/ sd0_d1: sd0-d1 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 21, 1, 0x1c)>;
+			};
+
+			/omit-if-no-ref/ gpio_29: gpio-29 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 24, 0, 0x20)>;
+			};
+
+			/omit-if-no-ref/ sd0_d2: sd0-d2 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 24, 1, 0x20)>;
+			};
+
+			/omit-if-no-ref/ dm1_clk_a: dm1-clk-a {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 24, 2, 0x20)>;
+				port = <SRXXX_PORT_PINMUX(0x8, 4, 0, 1)>;
+			};
+
+			/omit-if-no-ref/ gpio_30: gpio-30 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 27, 0, 0x24)>;
+			};
+
+			/omit-if-no-ref/ sd0_d3: sd0-d3 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 27, 1, 0x24)>;
+			};
+
+			/omit-if-no-ref/ dm1_data_a: dm1-data-a {
+				pinmux = <SRXXX_GLOBAL_PINMUX(0, 27, 2, 0x24)>;
+				port = <SRXXX_PORT_PINMUX(0x8, 5, 0, 1)>;
+			};
+
+			/* XTAL24M_INCNTL: 0x28 */
+
+			/omit-if-no-ref/ camera_mute: camera-mute {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 0, 0, 0x2c)>;
+			};
+
+			/omit-if-no-ref/ audio_mute: audio-mute {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 3, 0, 0x30)>;
+			};
+
+			/omit-if-no-ref/ ciu_vsync_b: ciu-vsync-b {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 3, 1, 0x30)>;
+				port = <SRXXX_PORT_PINMUX(0x10, 0, 1, 1)>;
+			};
+
+			/omit-if-no-ref/ gpio_34: gpio-34 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 6, 0, 0x34)>;
+			};
+
+			/omit-if-no-ref/ sd1_cmd: sd1-cmd {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 6, 1, 0x34)>;
+			};
+
+			/omit-if-no-ref/ jtag_trstn_b: jtag-trstn-b {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 6, 2, 0x34)>;
+				port = <SRXXX_PORT_PINMUX(0xc, 2, 1, 1)>;
+			};
+
+			/omit-if-no-ref/ gpio_35: gpio-35 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 9, 0, 0x38)>;
+			};
+
+			/omit-if-no-ref/ sd1_clk: sd1-clk {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 9, 1, 0x38)>;
+			};
+
+			/omit-if-no-ref/ gpio_36: gpio-36 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 12, 0, 0x3c)>;
+			};
+
+			/omit-if-no-ref/ sd1_d0: sd1-d0 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 12, 1, 0x3c)>;
+			};
+
+			/omit-if-no-ref/ jtag_tdi_b: jtag-tdi-b {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 12, 2, 0x3c)>;
+				port = <SRXXX_PORT_PINMUX(0xc, 1, 1, 1)>;
+			};
+
+			/omit-if-no-ref/ gpio_37: gpio-37 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 15, 0, 0x40)>;
+			};
+
+			/omit-if-no-ref/ sd1_d1: sd1-d1 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 15, 1, 0x40)>;
+			};
+
+			/omit-if-no-ref/ jtag_tdo_b: jtag-tdo-b {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 15, 2, 0x40)>;
+				port = <SRXXX_PORT_PINMUX(0xc, 0, 1, 1)>;
+			};
+
+			/omit-if-no-ref/ gpio_38: gpio-38 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 18, 0, 0x44)>;
+			};
+
+			/omit-if-no-ref/ sd1_d2: sd1-d2 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 18, 1, 0x44)>;
+			};
+
+			/omit-if-no-ref/ gpio_39: gpio-39 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 21, 0, 0x48)>;
+			};
+
+			/omit-if-no-ref/ sd1_d3: sd1-d3 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 21, 1, 0x48)>;
+			};
+
+			/omit-if-no-ref/ gpio_20: gpio-20 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 24, 0, 0x4c)>;
+			};
+
+			/omit-if-no-ref/ i2s_di: i2s-di {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 24, 1, 0x4c)>;
+			};
+
+			/omit-if-no-ref/ trace_data0: trace-data0 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 24, 2, 0x4c)>;
+			};
+
+			/omit-if-no-ref/ dm1_data_b: dm1-data-b {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 24, 3, 0x4c)>;
+				port = <SRXXX_PORT_PINMUX(0x8, 5, 1, 1)>;
+			};
+
+			/omit-if-no-ref/ gpio_19: gpio-19 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 27, 0, 0x50)>;
+			};
+
+			/omit-if-no-ref/ i2s_do: i2s-do {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 27, 1, 0x50)>;
+			};
+
+			/omit-if-no-ref/ trace_data1: trace-data1 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 27, 2, 0x50)>;
+			};
+
+			/omit-if-no-ref/ dm1_clk_b: dm1-clk-b {
+				pinmux = <SRXXX_GLOBAL_PINMUX(4, 27, 3, 0x50)>;
+				port = <SRXXX_PORT_PINMUX(0x8, 4, 1, 1)>;
+			};
+
+			/omit-if-no-ref/ gpio_18: gpio-18 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(8, 0, 0, 0x54)>;
+			};
+
+			/omit-if-no-ref/ i2s_fsync: i2s-fsync {
+				pinmux = <SRXXX_GLOBAL_PINMUX(8, 0, 1, 0x54)>;
+			};
+
+			/omit-if-no-ref/ trace_data2: trace-data2 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(8, 0, 2, 0x54)>;
+			};
+
+			/omit-if-no-ref/ dm_host_data: dm-host-data {
+				pinmux = <SRXXX_GLOBAL_PINMUX(8, 0, 3, 0x54)>;
+			};
+
+			/omit-if-no-ref/ gpio_17: gpio-17 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(8, 3, 0, 0x58)>;
+			};
+
+			/omit-if-no-ref/ i2s_bclk: i2s-bclk {
+				pinmux = <SRXXX_GLOBAL_PINMUX(8, 3, 1, 0x58)>;
+			};
+
+			/omit-if-no-ref/ trace_data3: trace-data3 {
+				pinmux = <SRXXX_GLOBAL_PINMUX(8, 3, 2, 0x58)>;
+			};
+
+			/omit-if-no-ref/ dm_host_clk: dm-host-clk {
+				pinmux = <SRXXX_GLOBAL_PINMUX(8, 3, 3, 0x58)>;
+			};
+
+			/omit-if-no-ref/ xspi_data0: xspi-data0 {
+				pinmux = <SRXXX_FIXED_PINMUX(0x5c)>;
+			};
+
+			/omit-if-no-ref/ xspi_data1: xspi-data1 {
+				pinmux = <SRXXX_FIXED_PINMUX(0x60)>;
+			};
+
+			/omit-if-no-ref/ xspi_data2: xspi-data2 {
+				pinmux = <SRXXX_FIXED_PINMUX(0x64)>;
+			};
+
+			/omit-if-no-ref/ xspi_data3: xspi-data3 {
+				pinmux = <SRXXX_FIXED_PINMUX(0x68)>;
+			};
+
+			/omit-if-no-ref/ xspi_data4: xspi-data4 {
+				pinmux = <SRXXX_FIXED_PINMUX(0x6c)>;
+			};
+
+			/omit-if-no-ref/ xspi_data5: xspi-data5 {
+				pinmux = <SRXXX_FIXED_PINMUX(0x70)>;
+			};
+
+			/omit-if-no-ref/ xspi_data6: xspi-data6 {
+				pinmux = <SRXXX_FIXED_PINMUX(0x74)>;
+			};
+
+			/omit-if-no-ref/ xspi_data7: xspi-data7 {
+				pinmux = <SRXXX_FIXED_PINMUX(0x78)>;
+			};
+
+			/omit-if-no-ref/ xspi_dqs: xspi-dqs {
+				pinmux = <SRXXX_FIXED_PINMUX(0x7c)>;
+			};
+
+			/omit-if-no-ref/ xspi_clk: xspi-clk {
+				pinmux = <SRXXX_FIXED_PINMUX(0x80)>;
+			};
+
+			/omit-if-no-ref/ xspi_clk_n: xspi-clk-n {
+				pinmux = <SRXXX_FIXED_PINMUX(0x84)>;
+			};
+
+			/omit-if-no-ref/ xspi_cs0: xspi-cs0 {
+				pinmux = <SRXXX_FIXED_PINMUX(0x88)>;
+			};
+
+			/omit-if-no-ref/ xspi_cs1: xspi-cs1 {
+				pinmux = <SRXXX_FIXED_PINMUX(0x8c)>;
+			};
+		};
+
+		pinctrl_aon_main: pin-controller@503500c0 { /* AON_MAIN */
+			compatible = "syna,sr100-pinctrl";
+			reg = <0x503500c0 0x8>, <0x503500c8 0x38>,
+			      <0x50330a04 0x18>;
+			reg-names = "pinmux", "pincfg", "port";
+
+			/omit-if-no-ref/ i2c_pmu_scl: i2c-pmu-scl {
+				pinmux = <SRXXX_AON_PINMUX(0, 0, 0, 0x00)>;
+			};
+
+			/omit-if-no-ref/ i2c_pmu_sda: i2c-pmu-sda {
+				pinmux = <SRXXX_AON_PINMUX(0, 3, 0, 0x04)>;
+			};
+
+			/omit-if-no-ref/ gpio_0: gpio-0 {
+				pinmux = <SRXXX_AON_PINMUX(0, 6, 0, 0x08)>;
+			};
+
+			/omit-if-no-ref/ uart0_tx_a: uart0-tx-a {
+				pinmux = <SRXXX_AON_PINMUX(0, 6, 1, 0x08)>;
+			};
+
+			/omit-if-no-ref/ spi_slv_miso_a: spi-slv-miso-a {
+				pinmux = <SRXXX_AON_PINMUX(0, 6, 2, 0x08)>;
+			};
+
+			/omit-if-no-ref/ lp_gpio0: lp-gpio0 {
+				pinmux = <SRXXX_AON_PINMUX(0, 6, 3, 0x08)>;
+			};
+
+			/omit-if-no-ref/ aon_gpo0: aon-gpo0 {
+				pinmux = <SRXXX_AON_PINMUX(0, 6, 5, 0x08)>;
+			};
+
+			/omit-if-no-ref/ gpio_3: gpio-3 {
+				pinmux = <SRXXX_AON_PINMUX(0, 9, 0, 0x0c)>;
+			};
+
+			/omit-if-no-ref/ spi_slv_cs_a: spi-slv-cs-a {
+				pinmux = <SRXXX_AON_PINMUX(0, 9, 1, 0x0c)>;
+				port = <SRXXX_PORT_PINMUX(0x4, 1, 0, 1)>;
+			};
+
+			/omit-if-no-ref/ uart_lp_rx: uart-lp-rx {
+				pinmux = <SRXXX_AON_PINMUX(0, 9, 2, 0x0c)>;
+			};
+
+			/omit-if-no-ref/ sd0_wp: sd0-wp {
+				pinmux = <SRXXX_AON_PINMUX(0, 9, 3, 0x0c)>;
+			};
+
+			/omit-if-no-ref/ lp_gpio3: lp-gpio3 {
+				pinmux = <SRXXX_AON_PINMUX(0, 9, 4, 0x0c)>;
+			};
+
+			/omit-if-no-ref/ aon_gpi1: aon-gpi1 {
+				pinmux = <SRXXX_AON_PINMUX(0, 9, 5, 0x0c)>;
+			};
+
+			/omit-if-no-ref/ gpio_1: gpio-1 {
+				pinmux = <SRXXX_AON_PINMUX(0, 12, 0, 0x10)>;
+			};
+
+			/omit-if-no-ref/ uart0_rx_a: uart0-rx-a {
+				pinmux = <SRXXX_AON_PINMUX(0, 12, 1, 0x10)>;
+				port = <SRXXX_PORT_PINMUX(0x0, 0, 0, 3)>;
+			};
+
+			/omit-if-no-ref/ spi_slv_mosi_a: spi-slv-mosi-a {
+				pinmux = <SRXXX_AON_PINMUX(0, 12, 2, 0x10)>;
+				port = <SRXXX_PORT_PINMUX(0x4, 2, 0, 1)>;
+			};
+
+			/omit-if-no-ref/ lp_gpio1: lp-gpio1 {
+				pinmux = <SRXXX_AON_PINMUX(0, 12, 3, 0x10)>;
+			};
+
+			/omit-if-no-ref/ aon_gpi0: aon-gpi0 {
+				pinmux = <SRXXX_AON_PINMUX(0, 12, 5, 0x10)>;
+			};
+
+			/omit-if-no-ref/ gpio_2: gpio-2 {
+				pinmux = <SRXXX_AON_PINMUX(0, 15, 0, 0x14)>;
+			};
+
+			/omit-if-no-ref/ spi_slv_clk_a: spi-slv-clk-a {
+				pinmux = <SRXXX_AON_PINMUX(0, 15, 1, 0x14)>;
+				port = <SRXXX_PORT_PINMUX(0x4, 0, 0, 1)>;
+			};
+
+			/omit-if-no-ref/ uart_lp_tx: uart-lp-tx {
+				pinmux = <SRXXX_AON_PINMUX(0, 15, 2, 0x14)>;
+			};
+
+			/omit-if-no-ref/ sd0_cdn: sd0-cdn {
+				pinmux = <SRXXX_AON_PINMUX(0, 15, 3, 0x14)>;
+			};
+
+			/omit-if-no-ref/ lp_gpio2: lp-gpio2 {
+				pinmux = <SRXXX_AON_PINMUX(0, 15, 4, 0x14)>;
+			};
+
+			/omit-if-no-ref/ aon_gpo1: aon-gpo1 {
+				pinmux = <SRXXX_AON_PINMUX(0, 15, 5, 0x14)>;
+			};
+
+			/omit-if-no-ref/ reset_n: reset-n {
+				pinmux = <SRXXX_AON_PINMUX(0, 18, 0, 0x18)>;
+			};
+
+			/omit-if-no-ref/ gpio_4: gpio-4 {
+				pinmux = <SRXXX_AON_PINMUX(0, 21, 0, 0x1c)>;
+			};
+
+			/omit-if-no-ref/ ciu_vsync_a: ciu-vsync-a {
+				pinmux = <SRXXX_AON_PINMUX(0, 21, 1, 0x1c)>;
+				port = <SRXXX_PORT_PINMUX(0x10, 0, 0, 1)>;
+			};
+
+			/omit-if-no-ref/ uart0_cts: uart0-cts {
+				pinmux = <SRXXX_AON_PINMUX(0, 21, 3, 0x1c)>;
+			};
+
+			/omit-if-no-ref/ aon_gpi3: aon-gpi3 {
+				pinmux = <SRXXX_AON_PINMUX(0, 21, 5, 0x1c)>;
+			};
+
+			/omit-if-no-ref/ jtag_tdo_a: jtag-tdo-a {
+				pinmux = <SRXXX_AON_PINMUX(0, 24, 0, 0x20)>;
+				port = <SRXXX_PORT_PINMUX(0xc, 0, 0, 1)>;
+			};
+
+			/omit-if-no-ref/ ciu_d2: ciu-d2 {
+				pinmux = <SRXXX_AON_PINMUX(0, 24, 1, 0x20)>;
+			};
+
+			/omit-if-no-ref/ gpio_9: gpio-9 {
+				pinmux = <SRXXX_AON_PINMUX(0, 24, 2, 0x20)>;
+			};
+
+			/omit-if-no-ref/ spi_slv_miso_b: spi-slv-miso-b {
+				pinmux = <SRXXX_AON_PINMUX(0, 24, 3, 0x20)>;
+			};
+
+			/omit-if-no-ref/ aon_camera_trigger: aon-camera-trigger {
+				pinmux = <SRXXX_AON_PINMUX(0, 24, 5, 0x20)>;
+			};
+
+			/omit-if-no-ref/ jtag_tdi_a: jtag-tdi-a {
+				pinmux = <SRXXX_AON_PINMUX(0, 27, 0, 0x24)>;
+				port = <SRXXX_PORT_PINMUX(0xc, 1, 0, 1)>;
+			};
+
+			/omit-if-no-ref/ ciu_d1: ciu-d1 {
+				pinmux = <SRXXX_AON_PINMUX(0, 27, 1, 0x24)>;
+			};
+
+			/omit-if-no-ref/ gpio_8: gpio-8 {
+				pinmux = <SRXXX_AON_PINMUX(0, 27, 2, 0x24)>;
+			};
+
+			/omit-if-no-ref/ spi_slv_cs_b: spi-slv-cs-b {
+				pinmux = <SRXXX_AON_PINMUX(0, 27, 3, 0x24)>;
+				port = <SRXXX_PORT_PINMUX(0x4, 1, 1, 1)>;
+			};
+
+			/omit-if-no-ref/ aon_gpo2: aon-gpo2 {
+				pinmux = <SRXXX_AON_PINMUX(0, 27, 5, 0x24)>;
+			};
+
+			/omit-if-no-ref/ jtag_trstn_a: jtag-trstn-a {
+				pinmux = <SRXXX_AON_PINMUX(4, 0, 0, 0x28)>;
+				port = <SRXXX_PORT_PINMUX(0xc, 2, 0, 1)>;
+			};
+
+			/omit-if-no-ref/ ciu_hsync: ciu-hsync {
+				pinmux = <SRXXX_AON_PINMUX(4, 0, 1, 0x28)>;
+			};
+
+			/omit-if-no-ref/ gpio_5: gpio-5 {
+				pinmux = <SRXXX_AON_PINMUX(4, 0, 2, 0x28)>;
+			};
+
+			/omit-if-no-ref/ uart0_rts: uart0-rts {
+				pinmux = <SRXXX_AON_PINMUX(4, 0, 3, 0x28)>;
+			};
+
+			/omit-if-no-ref/ aon_gpi2: aon-gpi2 {
+				pinmux = <SRXXX_AON_PINMUX(4, 0, 5, 0x28)>;
+			};
+
+			/omit-if-no-ref/ gpio_10: gpio-10 {
+				pinmux = <SRXXX_AON_PINMUX(4, 3, 0, 0x2c)>;
+			};
+
+			/omit-if-no-ref/ ciu_d3: ciu-d3 {
+				pinmux = <SRXXX_AON_PINMUX(4, 3, 1, 0x2c)>;
+			};
+
+			/omit-if-no-ref/ clkout_1: clkout-1 {
+				pinmux = <SRXXX_AON_PINMUX(4, 3, 2, 0x2c)>;
+			};
+
+			/omit-if-no-ref/ dm0_clk_d: dm0-clk-d {
+				pinmux = <SRXXX_AON_PINMUX(4, 3, 3, 0x2c)>;
+				port = <SRXXX_PORT_PINMUX(0x8, 0, 3, 3)>;
+			};
+
+			/omit-if-no-ref/ aon_clkout1: aon-clkout1 {
+				pinmux = <SRXXX_AON_PINMUX(4, 3, 5, 0x2c)>;
+			};
+
+			/omit-if-no-ref/ gpio_40: gpio-40 {
+				pinmux = <SRXXX_AON_PINMUX(4, 6, 0, 0x30)>;
+			};
+
+			/omit-if-no-ref/ clk32k_in: clk32k-in {
+				pinmux = <SRXXX_AON_PINMUX(4, 6, 1, 0x30)>;
+			};
+
+			/omit-if-no-ref/ gpio_41: gpio-41 {
+				pinmux = <SRXXX_AON_PINMUX(4, 9, 0, 0x34)>;
+			};
+
+			/omit-if-no-ref/ clkout_0: clkout-0 {
+				pinmux = <SRXXX_AON_PINMUX(4, 9, 1, 0x34)>;
+			};
+
+			/omit-if-no-ref/ aon_camera_clk: aon-camera-clk {
+				pinmux = <SRXXX_AON_PINMUX(4, 9, 5, 0x34)>;
+			};
+		};
+
+		pinctrl_lps_gear1: pin-controller@b48a00c0 { /* LPS_GEAR1 */
+			compatible = "syna,sr100-pinctrl";
+			reg = <0xb48a00c0 0x8>, <0xb48a0100 0x30>,
+			      <0x50330a04 0x18>;
+			reg-names = "pinmux", "pincfg", "port";
+
+			/omit-if-no-ref/ gpio_16: gpio-16 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 0, 0, 0x00)>;
+			};
+
+			/omit-if-no-ref/ i2c0_ms_sda: i2c0-ms-sda {
+				pinmux = <SRXXX_LPS_PINMUX(0, 0, 1, 0x00)>;
+			};
+
+			/omit-if-no-ref/ i3c_ms_sda: i3c-ms-sda {
+				pinmux = <SRXXX_LPS_PINMUX(0, 0, 2, 0x00)>;
+			};
+
+			/omit-if-no-ref/ dm0_data_c: dm0-data-c {
+				pinmux = <SRXXX_LPS_PINMUX(0, 0, 3, 0x00)>;
+				port = <SRXXX_PORT_PINMUX(0x8, 2, 2, 3)>;
+			};
+
+			/omit-if-no-ref/ gpio_15: gpio-15 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 3, 0, 0x04)>;
+			};
+
+			/omit-if-no-ref/ i2c0_ms_scl: i2c0-ms-scl {
+				pinmux = <SRXXX_LPS_PINMUX(0, 3, 1, 0x04)>;
+			};
+
+			/omit-if-no-ref/ i3c_ms_scl: i3c-ms-scl {
+				pinmux = <SRXXX_LPS_PINMUX(0, 3, 2, 0x04)>;
+			};
+
+			/omit-if-no-ref/ dm0_clk_c: dm0-clk-c {
+				pinmux = <SRXXX_LPS_PINMUX(0, 3, 3, 0x04)>;
+				port = <SRXXX_PORT_PINMUX(0x8, 0, 2, 3)>;
+			};
+
+			/omit-if-no-ref/ gpio_13: gpio-13 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 6, 0, 0x08)>;
+			};
+
+			/omit-if-no-ref/ ciu_d6: ciu-d6 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 6, 1, 0x08)>;
+			};
+
+			/omit-if-no-ref/ dm0_clk_b: dm0-clk-b {
+				pinmux = <SRXXX_LPS_PINMUX(0, 6, 2, 0x08)>;
+				port = <SRXXX_PORT_PINMUX(0x8, 0, 1, 3)>;
+			};
+
+			/omit-if-no-ref/ uart1_tx_b: uart1-tx-b {
+				pinmux = <SRXXX_LPS_PINMUX(0, 6, 3, 0x08)>;
+			};
+
+			/omit-if-no-ref/ gpio_14: gpio-14 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 9, 0, 0x0c)>;
+			};
+
+			/omit-if-no-ref/ ciu_d7: ciu-d7 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 9, 1, 0x0c)>;
+			};
+
+			/omit-if-no-ref/ dm0_data_b: dm0-data-b {
+				pinmux = <SRXXX_LPS_PINMUX(0, 9, 2, 0x0c)>;
+				port = <SRXXX_PORT_PINMUX(0x8, 2, 1, 3)>;
+			};
+
+			/omit-if-no-ref/ uart1_rx_b: uart1-rx-b {
+				pinmux = <SRXXX_LPS_PINMUX(0, 9, 3, 0x0c)>;
+				port = <SRXXX_PORT_PINMUX(0x0, 2, 1, 1)>;
+			};
+
+			/omit-if-no-ref/ gpio_23: gpio-23 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 12, 0, 0x10)>;
+			};
+
+			/omit-if-no-ref/ spi_mstr_mosi: spi-mstr-mosi {
+				pinmux = <SRXXX_LPS_PINMUX(0, 12, 1, 0x10)>;
+			};
+
+			/omit-if-no-ref/ uart1_tx_a: uart1-tx-a {
+				pinmux = <SRXXX_LPS_PINMUX(0, 12, 2, 0x10)>;
+			};
+
+			/omit-if-no-ref/ i2c1_ms_scl: i2c1-ms-scl {
+				pinmux = <SRXXX_LPS_PINMUX(0, 12, 3, 0x10)>;
+				port = <SRXXX_PORT_PINMUX(0x14, 0, 0, 1)>;
+			};
+
+			/omit-if-no-ref/ gpio_22: gpio-22 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 15, 0, 0x14)>;
+			};
+
+			/omit-if-no-ref/ spi_mstr_clk: spi-mstr-clk {
+				pinmux = <SRXXX_LPS_PINMUX(0, 15, 1, 0x14)>;
+			};
+
+			/omit-if-no-ref/ uart0_rx_b: uart0-rx-b {
+				pinmux = <SRXXX_LPS_PINMUX(0, 15, 2, 0x14)>;
+				port = <SRXXX_PORT_PINMUX(0x0, 0, 1, 3)>;
+			};
+
+			/omit-if-no-ref/ ciu_d5: ciu-d5 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 15, 3, 0x14)>;
+			};
+
+			/omit-if-no-ref/ gpio_21: gpio-21 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 18, 0, 0x18)>;
+			};
+
+			/omit-if-no-ref/ spi_mstr_cs: spi-mstr-cs {
+				pinmux = <SRXXX_LPS_PINMUX(0, 18, 1, 0x18)>;
+			};
+
+			/omit-if-no-ref/ uart0_tx_b: uart0-tx-b {
+				pinmux = <SRXXX_LPS_PINMUX(0, 18, 2, 0x18)>;
+			};
+
+			/omit-if-no-ref/ ciu_d4: ciu-d4 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 18, 3, 0x18)>;
+			};
+
+			/omit-if-no-ref/ gpio_24: gpio-24 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 21, 0, 0x1c)>;
+			};
+
+			/omit-if-no-ref/ spi_mstr_miso: spi-mstr-miso {
+				pinmux = <SRXXX_LPS_PINMUX(0, 21, 1, 0x1c)>;
+			};
+
+			/omit-if-no-ref/ uart1_rx_a: uart1-rx-a {
+				pinmux = <SRXXX_LPS_PINMUX(0, 21, 2, 0x1c)>;
+				port = <SRXXX_PORT_PINMUX(0x0, 2, 0, 1)>;
+			};
+
+			/omit-if-no-ref/ i2c1_ms_sda: i2c1-ms-sda {
+				pinmux = <SRXXX_LPS_PINMUX(0, 21, 3, 0x1c)>;
+				port = <SRXXX_PORT_PINMUX(0x14, 1, 0, 1)>;
+			};
+
+			/omit-if-no-ref/ jtag_tms: jtag-tms {
+				pinmux = <SRXXX_LPS_PINMUX(0, 24, 0, 0x20)>;
+			};
+
+			/omit-if-no-ref/ gpio_32: gpio-32 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 24, 1, 0x20)>;
+			};
+
+			/omit-if-no-ref/ jtag_tck: jtag-tck {
+				pinmux = <SRXXX_LPS_PINMUX(0, 27, 0, 0x24)>;
+			};
+
+			/omit-if-no-ref/ gpio_31: gpio-31 {
+				pinmux = <SRXXX_LPS_PINMUX(0, 27, 1, 0x24)>;
+			};
+
+			/omit-if-no-ref/ gpio_6: gpio-6 {
+				pinmux = <SRXXX_LPS_PINMUX(4, 0, 0, 0x28)>;
+			};
+
+			/omit-if-no-ref/ ciu_bclk: ciu-bclk {
+				pinmux = <SRXXX_LPS_PINMUX(4, 0, 1, 0x28)>;
+			};
+
+			/omit-if-no-ref/ spi_dvi_clk: spi-dvi-clk {
+				pinmux = <SRXXX_LPS_PINMUX(4, 0, 2, 0x28)>;
+			};
+
+			/omit-if-no-ref/ spi_slv_clk_b: spi-slv-clk-b {
+				pinmux = <SRXXX_LPS_PINMUX(4, 0, 3, 0x28)>;
+				port = <SRXXX_PORT_PINMUX(0x4, 0, 1, 1)>;
+			};
+
+			/omit-if-no-ref/ gpio_7: gpio-7 {
+				pinmux = <SRXXX_LPS_PINMUX(4, 3, 0, 0x2c)>;
+			};
+
+			/omit-if-no-ref/ ciu_d0: ciu-d0 {
+				pinmux = <SRXXX_LPS_PINMUX(4, 3, 1, 0x2c)>;
+			};
+
+			/omit-if-no-ref/ spi_dvi_si: spi-dvi-si {
+				pinmux = <SRXXX_LPS_PINMUX(4, 3, 2, 0x2c)>;
+			};
+
+			/omit-if-no-ref/ spi_slv_mosi_b: spi-slv-mosi-b {
+				pinmux = <SRXXX_LPS_PINMUX(4, 3, 3, 0x2c)>;
+				port = <SRXXX_PORT_PINMUX(0x4, 2, 1, 1)>;
+			};
+		};
+
+		pinctrl_swire: pin-controller@503307b8 { /* GLOBAL - SWIRE_CTRL */
+			compatible = "syna,sr100-pinctrl";
+			reg = <0x503307b8 0x4>, <0x50330a04 0x18>;
+			reg-names = "pinmux", "port";
+
+			/omit-if-no-ref/ swire_clk: swire-clk {
+				pinmux = <SRXXX_SWIRE_PINMUX(0, 0)>;
+			};
+
+			/omit-if-no-ref/ gpio_42: gpio-42 {
+				pinmux = <SRXXX_SWIRE_PINMUX(0, 1)>;
+			};
+
+			/omit-if-no-ref/ i2c1_ms_scl_b: i2c1-ms-scl-b {
+				pinmux = <SRXXX_SWIRE_PINMUX(24, 1)>;
+				port = <SRXXX_PORT_PINMUX(0x14, 0, 1, 1)>;
+			};
+
+			/omit-if-no-ref/ swire_dat: swire-dat {
+				pinmux = <SRXXX_SWIRE_PINMUX(1, 0)>;
+			};
+
+			/omit-if-no-ref/ gpio_43: gpio-43 {
+				pinmux = <SRXXX_SWIRE_PINMUX(1, 1)>;
+			};
+
+			/omit-if-no-ref/ i2c1_ms_sda_b: i2c1-ms-sda-b {
+				pinmux = <SRXXX_SWIRE_PINMUX(25, 1)>;
+				port = <SRXXX_PORT_PINMUX(0x14, 1, 1, 1)>;
+			};
+		};
+	};
+};

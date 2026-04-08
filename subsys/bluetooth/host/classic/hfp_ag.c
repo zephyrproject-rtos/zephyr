@@ -5167,7 +5167,7 @@ int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id)
 	}
 
 	if (atomic_ptr_get(&ag->sco_conn) != NULL) {
-		LOG_ERR("Audio conenction has been connected");
+		LOG_ERR("Audio connection has been connected");
 		hfp_ag_unlock(ag);
 		return -ECONNREFUSED;
 	}

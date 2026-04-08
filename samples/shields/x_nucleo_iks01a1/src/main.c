@@ -104,19 +104,19 @@ int main(void)
 		       sensor_value_to_double(&hum));
 
 		/* pressure */
-		printf("LPS25HB: Pressure:%.1f kpa\n",
+		printf("LPS25HB: Pressure:%.1f kPa\n",
 		       sensor_value_to_double(&press));
 
 		/* magneto data */
 		printf(
-		 "LIS3MDL: Magnetic field (gauss): x: %.1f, y: %.1f, z: %.1f\n",
+		 "LIS3MDL: Magnetic field (G): x: %.1f, y: %.1f, z: %.1f\n",
 		 sensor_value_to_double(&magn_xyz[0]),
 		 sensor_value_to_double(&magn_xyz[1]),
 		 sensor_value_to_double(&magn_xyz[2]));
 
 		/* acceleration */
 		printf(
-		   "LSM6DS0: Acceleration (m.s-2): x: %.1f, y: %.1f, z: %.1f\n",
+		   "LSM6DS0: Acceleration (m/s^2): x: %.1f, y: %.1f, z: %.1f\n",
 		   sensor_value_to_double(&accel_xyz[0]),
 		   sensor_value_to_double(&accel_xyz[1]),
 		   sensor_value_to_double(&accel_xyz[2]));

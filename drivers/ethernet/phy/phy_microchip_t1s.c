@@ -445,7 +445,7 @@ static int phy_mc_lan867x_revc_config_init(const struct device *dev)
 
 		/* LAN867x Rev.C1/C2 configuration settings are equal to the first 11 configuration
 		 * settings and all the sqi fixup settings from LAN865x Rev.B0/B1. So the 8
-		 * inbetween configuration settings are skipped.
+		 * in between configuration settings are skipped.
 		 */
 		if (i == 10) {
 			i += 8;

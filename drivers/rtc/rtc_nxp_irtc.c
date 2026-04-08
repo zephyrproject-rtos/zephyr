@@ -44,7 +44,7 @@ struct nxp_irtc_data {
  */
 static void nxp_irtc_unlock_registers(RTC_Type *reg)
 {
-	/* Lock the regsiters */
+	/* Lock the registers */
 	while ((reg->STATUS & (uint16_t)RTC_STATUS_WRITE_PROT_EN_MASK) == 0) {
 		*(uint8_t *)(&reg->STATUS) |= RTC_STATUS_WE(0x2);
 	}

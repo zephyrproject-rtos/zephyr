@@ -48,7 +48,7 @@ def test_warnings(caplog):
 
     enums_hpath = hpath('test-bindings/enums.yaml')
     expected_warnings = [
-        f"'oldprop' is marked as deprecated in 'properties:' in {hpath('test-bindings/deprecated.yaml')} for node /test-deprecated.",
+        f"'oldprop' is marked as deprecated in 'properties:' in '{hpath('test-bindings/deprecated.yaml')}' for node /test-deprecated.",
         "unit address and first address in 'reg' (0x1) don't match for /reg-zero-size-cells/node",
         "unit address and first address in 'reg' (0x5) don't match for /reg-ranges/parent/node",
         "unit address and first address in 'reg' (0x30000000200000001) don't match for /reg-nested-ranges/grandparent/parent/node",
@@ -433,7 +433,7 @@ def test_include_filters():
             binding = edtlib.Binding("test-bindings-include/include-invalid-keys.yaml", fname2path)
     value_str = str(e.value)
     assert value_str.startswith(
-        "'include:' in test-bindings-include/include-invalid-keys.yaml should not have these "
+        "'include:' in 'test-bindings-include/include-invalid-keys.yaml' should not have these "
         "unexpected contents: ")
     assert 'bad-key-1' in value_str
     assert 'bad-key-2' in value_str
@@ -443,7 +443,7 @@ def test_include_filters():
             binding = edtlib.Binding("test-bindings-include/include-invalid-type.yaml", fname2path)
     value_str = str(e.value)
     assert value_str.startswith(
-        "'include:' in test-bindings-include/include-invalid-type.yaml "
+        "'include:' in 'test-bindings-include/include-invalid-type.yaml' "
         "should be a string or list, but has type ")
 
     with pytest.raises(edtlib.EDTError) as e:
@@ -452,7 +452,7 @@ def test_include_filters():
     value_str = str(e.value)
     assert value_str.startswith("'include:' element")
     assert value_str.endswith(
-        "in test-bindings-include/include-no-name.yaml should have a 'name' key")
+        "in 'test-bindings-include/include-no-name.yaml' should have a 'name' key")
 
     with from_here():
         binding = edtlib.Binding("test-bindings-include/allowlist.yaml", fname2path)
@@ -1028,6 +1028,15 @@ def test_wrong_props():
         value_str = str(e.value)
         assert value_str.startswith("'wrong-phandle-array-name' in 'properties:'")
         assert value_str.endswith("but no 'specifier-space' was provided.")
+
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding("test-wrong-bindings/wrong-status-default.yaml", None)
+        value_str = str(e.value)
+        assert value_str.startswith("invalid default value 'okay' specified for property "
+                                    "'status' in binding ")
+        assert "test-wrong-bindings/wrong-status-default.yaml" in value_str
+        assert value_str.endswith("; this property's default behavior is "
+                                  "defined in DT Specification §2.3.4 and a default in a binding is invalid")
 
         with pytest.raises(edtlib.EDTError) as e:
             edtlib.Binding("test-wrong-bindings/wrong-address-cells-default.yaml", None)

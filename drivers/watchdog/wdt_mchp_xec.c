@@ -9,6 +9,7 @@
  */
 
 #include <zephyr/irq.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_mchp_xec);
@@ -24,6 +25,7 @@ struct wdt_xec_config {
 	struct wdt_regs *regs;
 	uint8_t girq;
 	uint8_t girq_pos;
+	uint8_t enc_pcr;
 };
 
 struct wdt_xec_data {
@@ -158,11 +160,8 @@ static void wdt_xec_isr(const struct device *dev)
 		data->cb(dev, 0);
 	}
 
-#ifdef CONFIG_SOC_SERIES_MEC172X
-	mchp_soc_ecia_girq_src_clr(cfg->girq, cfg->girq_pos);
-#else
-	MCHP_GIRQ_SRC(MCHP_WDT_GIRQ) = BIT(cfg->girq_pos);
-#endif
+	soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
+
 	regs->IEN &= ~MCHP_WDT_IEN_EVENT_IRQ_EN;
 }
 
@@ -177,15 +176,13 @@ static int wdt_xec_init(const struct device *dev)
 {
 	struct wdt_xec_config const *cfg = dev->config;
 
+	soc_xec_pcr_sleep_en_clear(cfg->enc_pcr);
+
 	if (IS_ENABLED(CONFIG_WDT_DISABLE_AT_BOOT)) {
 		wdt_xec_disable(dev);
 	}
 
-#ifdef CONFIG_SOC_SERIES_MEC172X
-	mchp_soc_ecia_girq_src_en(cfg->girq, cfg->girq_pos);
-#else
-	MCHP_GIRQ_ENSET(MCHP_WDT_GIRQ) = BIT(cfg->girq_pos);
-#endif
+	soc_ecia_girq_ctrl(cfg->girq, cfg->girq_pos, 1);
 
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
@@ -195,10 +192,14 @@ static int wdt_xec_init(const struct device *dev)
 	return 0;
 }
 
+#define DEV_CFG_GIRQ(inst, idx)     MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, idx))
+#define DEV_CFG_GIRQ_POS(inst, idx) MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, idx))
+
 static const struct wdt_xec_config wdt_xec_config_0 = {
 	.regs = (struct wdt_regs *)(DT_INST_REG_ADDR(0)),
-	.girq = DT_INST_PROP_BY_IDX(0, girqs, 0),
-	.girq_pos = DT_INST_PROP_BY_IDX(0, girqs, 1),
+	.girq = DEV_CFG_GIRQ(0, 0),
+	.girq_pos = DEV_CFG_GIRQ_POS(0, 0),
+	.enc_pcr = DT_INST_PROP(0, pcr_scr),
 };
 
 static struct wdt_xec_data wdt_xec_dev_data;

@@ -13,7 +13,7 @@
  * - Populate resistors R286, R19, R246, R242, R123, R239, R124, R125, R236,
  *   R233, and R12
  * - Remove jumper JP30
- * - Set jumper JP40 to postion 1-2, JP38 to 1-2, and JP16 to position 2-3
+ * - Set jumper JP40 to position 1-2, JP38 to 1-2, and JP16 to position 2-3
  */
 
 /*

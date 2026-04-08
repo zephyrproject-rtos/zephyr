@@ -13,6 +13,7 @@
 #include <zephyr/drivers/usb_c/usbc_tc.h>
 #include <zephyr/smf.h>
 #include "usbc_timer.h"
+#include "usbc_config.h"
 
 /**
  * @brief Used in sub-machines for message transmit and receive operation
@@ -209,7 +210,7 @@ struct policy_engine {
 	enum usbc_policy_request_t dpm_request;
 	/** generic variable used for simple in state statemachines */
 	uint32_t submachine;
-#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	/** The Sink made a valid request of the Source if true */
 	bool snk_request_can_be_met;
 	/** Outcome of the Sink request */
@@ -227,7 +228,7 @@ struct policy_engine {
 	 */
 	uint32_t hard_reset_counter;
 
-#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	/**
 	 * This counter tracks the number of times a Source Caps message was
 	 * sent.
@@ -244,21 +245,22 @@ struct policy_engine {
 	/** Time to wait before resending message after WAIT reception */
 	struct usbc_timer_t pd_t_wait_to_resend;
 
-#ifdef CONFIG_USBC_CSM_SINK_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
 	/** tTypeCSinkWaitCap timer */
 	struct usbc_timer_t pd_t_typec_sink_wait_cap;
 	/** tPSTransition timer */
 	struct usbc_timer_t pd_t_ps_transition;
 	/** tSinkRequest timer */
 	struct usbc_timer_t pd_t_sink_request;
-#else
+#endif
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	/** tTypeCSendSourceCap timer */
 	struct usbc_timer_t pd_t_typec_send_source_cap;
 	/** tNoResponse timer */
 	struct usbc_timer_t pd_t_no_response;
 	/** tPSHardReset timer */
 	struct usbc_timer_t pd_t_ps_hard_reset;
-#endif /* CONFIG_USBC_CSM_SINK_ONLY */
+#endif
 };
 
 /**

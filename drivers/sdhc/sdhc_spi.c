@@ -374,7 +374,7 @@ static int sdhc_spi_send_cmd(const struct device *dev, struct sdhc_command *cmd,
 	 */
 
 	/* Note: we can discard CMD data as we send it,
-	 * so resuse the TX buf as RX
+	 * so reuse the TX buf as RX
 	 */
 	struct spi_buf bufs[] = {
 		{

@@ -383,7 +383,7 @@ static int intel_adsp_gpdma_power_off(const struct device *dev)
 	/* Enabling dynamic clock gating */
 	intel_adsp_gpdma_clock_disable(dev);
 
-	/* Relesing DMA ownership*/
+	/* Releasing DMA ownership*/
 	intel_adsp_gpdma_release_ownership(dev);
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	/* Power down */

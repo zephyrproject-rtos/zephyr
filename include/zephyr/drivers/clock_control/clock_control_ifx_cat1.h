@@ -475,3 +475,104 @@ static inline cy_rslt_t ifx_cat1_utils_peri_pclk_assign_divider(en_clk_dst_t clk
 		_clock->channel);
 #endif
 }
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+/**
+ * @brief Pack a PERI instance and group number into a single switch key.
+ *
+ * PSE84 has multiple PERI instances (PERI0, PERI1), each with its own set of
+ * peri clock groups.  This macro combines the two into a unique value for use
+ * in switch statements that map (instance, group) → HF clock index.
+ */
+#define IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(instance, group) (((instance) << 4) | (group))
+
+/**
+ * @brief Map a peripheral group index to the HF clock that sources it.
+ *
+ * The mapping is SoC-specific and fixed in hardware.
+ *
+ * @param peri_group Peripheral group index (or instance|group composite
+ *                   on EDGE family SoCs).
+ * @return HF clock index suitable for Cy_SysClk_ClkHfGetFrequency().
+ */
+static inline uint8_t ifx_cat1_utils_peri_pclk_get_hfclk(uint8_t peri_group)
+{
+	switch (peri_group) {
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 0):
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(1, 4):
+		return CLK_HF0;
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 7):
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(1, 0):
+		return CLK_HF1;
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 3):
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(1, 2):
+		return CLK_HF5;
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 4):
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(1, 3):
+		return CLK_HF6;
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(1, 1):
+		return CLK_HF7;
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 2):
+		return CLK_HF9;
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 1):
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 5):
+		return CLK_HF10;
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 8):
+		return CLK_HF11;
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 6):
+	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 9):
+		return CLK_HF13;
+	default:
+		break;
+	}
+	return -EINVAL;
+}
+
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
+/**
+ * @brief Map a peripheral group index to the HF clock that sources it.
+ *
+ * The mapping is SoC-specific and fixed in hardware.
+ *
+ * @param peri_group Peripheral group index (or instance|group composite
+ *                   on EDGE family SoCs).
+ * @return HF clock index suitable for Cy_SysClk_ClkHfGetFrequency().
+ */
+static inline uint8_t ifx_cat1_utils_peri_pclk_get_hfclk(uint8_t peri_group)
+{
+	switch (peri_group) {
+	case 0:
+	case 2:
+		return CLK_HF0;
+	case 1:
+	case 3:
+		return CLK_HF1;
+	case 4:
+		return CLK_HF2;
+	case 5:
+		return CLK_HF3;
+	case 6:
+		return CLK_HF4;
+	default:
+		break;
+	}
+	return -EINVAL;
+}
+
+#else /* !CONFIG_SOC_FAMILY_INFINEON_EDGE && !CONFIG_SOC_FAMILY_INFINEON_CAT1B */
+/**
+ * @brief Map a peripheral group index to the HF clock that sources it.
+ *
+ * Fallback for SoC families that do not yet implement this mapping.
+ * Always returns -EINVAL.
+ *
+ * @param peri_group Peripheral group index (unused).
+ * @return -EINVAL always.
+ */
+static inline uint8_t ifx_cat1_utils_peri_pclk_get_hfclk(uint8_t peri_group)
+{
+	ARG_UNUSED(peri_group);
+
+	return -EINVAL;
+}
+#endif

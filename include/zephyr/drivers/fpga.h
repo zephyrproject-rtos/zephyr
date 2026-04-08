@@ -43,22 +43,80 @@ enum FPGA_status {
 	FPGA_STATUS_ACTIVE
 };
 
+/**
+ * @def_driverbackendgroup{FPGA,fpga_interface}
+ * @{
+ */
+
+/**
+ * @brief Callback API to read FPGA status.
+ * See fpga_get_status() for argument description
+ */
 typedef enum FPGA_status (*fpga_api_get_status)(const struct device *dev);
+
+/**
+ * @brief Callback API to load a bitstream and program the FPGA.
+ * See fpga_load() for argument description
+ */
 typedef int (*fpga_api_load)(const struct device *dev, uint32_t *image_ptr,
 			     uint32_t img_size);
+
+/**
+ * @brief Callback API to reset the FPGA.
+ * See fpga_reset() for argument description
+ */
 typedef int (*fpga_api_reset)(const struct device *dev);
+
+/**
+ * @brief Callback API to turn the FPGA on.
+ * See fpga_on() for argument description
+ */
 typedef int (*fpga_api_on)(const struct device *dev);
+
+/**
+ * @brief Callback API to turn the FPGA off.
+ * See fpga_off() for argument description
+ */
 typedef int (*fpga_api_off)(const struct device *dev);
+
+/**
+ * @brief Callback API to return information about the FPGA.
+ * See fpga_get_info() for argument description
+ */
 typedef const char *(*fpga_api_get_info)(const struct device *dev);
 
+/**
+ * @driver_ops{FPGA}
+ */
 __subsystem struct fpga_driver_api {
+	/**
+	 * @driver_ops_optional @copybrief fpga_get_status
+	 */
 	fpga_api_get_status get_status;
+	/**
+	 * @driver_ops_optional @copybrief fpga_reset
+	 */
 	fpga_api_reset reset;
+	/**
+	 * @driver_ops_optional @copybrief fpga_load
+	 */
 	fpga_api_load load;
+	/**
+	 * @driver_ops_optional @copybrief fpga_on
+	 */
 	fpga_api_on on;
+	/**
+	 * @driver_ops_optional @copybrief fpga_off
+	 */
 	fpga_api_off off;
+	/**
+	 * @driver_ops_optional @copybrief fpga_get_info
+	 */
 	fpga_api_get_info get_info;
 };
+/**
+ * @}
+ */
 
 /**
  * @brief Read the status of FPGA.

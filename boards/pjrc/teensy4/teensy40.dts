@@ -20,7 +20,7 @@
 	};
 
 	chosen {
-		zephyr,flash-controller = &w25q16jvuxim;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,flash = &w25q16jvuxim;
 		zephyr,sram = &ocram;
 		zephyr,itcm = &itcm;
@@ -46,7 +46,7 @@
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(2)>;
 
 	/* WINBOND flash memory*/
-	w25q16jvuxim: w25q16jvuxim@0 {
+	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(2 * 8)>;
 		reg = <0>;
@@ -54,8 +54,16 @@
 		status = "okay";
 		jedec-id = [ef 40 15];
 
-		erase-block-size = <4096>;
-		write-block-size = <1>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(2)>;
+
+		w25q16jvuxim: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(2)>;
+			erase-block-size = <4096>;
+			write-block-size = <1>;
+		};
 	};
 };
 

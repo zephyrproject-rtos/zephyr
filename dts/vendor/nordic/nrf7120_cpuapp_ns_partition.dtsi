@@ -48,9 +48,9 @@
 	 *             otherwise unused (32 KB)
 	 */
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* This static layout needs to be the same with the upstream TF-M layout in the
 		 * header flash_layout.h of the relevant platform. Any updates in the layout
@@ -58,31 +58,37 @@
 		 */
 
 		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0000000 DT_SIZE_K(512)>;
 		};
 
 		tfm_ps_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
 			label = "tfm-ps";
 			reg = <0x00080000 DT_SIZE_K(16)>;
 		};
 
 		tfm_its_partition: partition@84000 {
+			compatible = "zephyr,mapped-partition";
 			label = "tfm-its";
 			reg = <0x00084000 DT_SIZE_K(16)>;
 		};
 
 		tfm_otp_partition: partition@88000 {
+			compatible = "zephyr,mapped-partition";
 			label = "tfm-otp";
 			reg = <0x00088000 DT_SIZE_K(8)>;
 		};
 
 		slot0_ns_partition: partition@8a000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0-nonsecure";
 			reg = <0x0008a000 DT_SIZE_K(844)>;
 		};
 
 		storage_partition: partition@15d000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00015d000 DT_SIZE_K(32)>;
 		};

@@ -716,7 +716,7 @@ static void ism6hg256x_config_fifo(const struct device *dev, struct trigger_conf
 	ism6hg256x_sflp_game_rotation_set(ctx, PROPERTY_ENABLE);
 
 	/*
-	 * Temporarly set Accel and gyro odr same as sensor fusion LP in order to
+	 * Temporarily set Accel and gyro odr same as sensor fusion LP in order to
 	 * make the SFLP gbias setting effective. Then restore it to saved values.
 	 */
 	switch (sflp_odr) {

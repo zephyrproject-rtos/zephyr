@@ -150,6 +150,38 @@
 			#ipc-config-cells = <3>;
 		};
 
+		canfd0: canfd@52800000 {
+			compatible = "infineon,canfd-controller";
+			reg = <0x52800000 0x1088>, <0x52810000 0x1000>;
+			reg-names = "wrapper", "mram";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			can0: can@52800000 {
+				compatible = "infineon,can";
+				reg = <0x52800000 0x200>, <0x52810000 0x800>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <0x405>;
+				status = "disabled";
+				bosch,mram-cfg = <0x0 15 15 8 8 0 8 8>;
+				interrupts = <99 4>, <100 4>;
+				interrupt-names = "int0", "int1";
+			};
+
+			can1: can@52800200 {
+				compatible = "infineon,can";
+				reg = <0x52800200 0x200>, <0x52810000 0x1000>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <0x406>;
+				status = "disabled";
+				bosch,mram-cfg = <0x800 15 15 8 8 0 8 8>;
+				interrupts = <101 4>, <102 4>;
+				interrupt-names = "int0", "int1";
+			};
+		};
+
 		scb0: scb@52820000 {
 			compatible = "infineon,scb";
 			reg = <0x52820000 0xfd0>;

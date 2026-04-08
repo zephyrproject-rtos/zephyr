@@ -124,7 +124,7 @@ static int mchp_sha_process(sha_registers_t *const regs,
 	if (len == 0) {
 		/* For the empty message, automatic padding is not quired in this driver
 		 * (SHA_MSR.MSGSIZE and SHA_BCR.BYTCNT are configured to 0). The block to
-		 * be processed are the padded part (a one bit, then  '1' followed by zeor
+		 * be processed are the padded part (a one bit, then  '1' followed by zero
 		 * bits) and then the message length.
 		 */
 		regs->SHA_IDATAR[0] = FIRST_WORD_4_PADDING_EMPTY_MSG;

@@ -90,7 +90,7 @@ enum dma_smartbond_burst_len {
 };
 
 /*
- * DMA bus width indicating how many bytes are retrived/written per transfer.
+ * DMA bus width indicating how many bytes are retrieved/written per transfer.
  * Note that the bus width is the same for the source and destination.
  */
 enum dma_smartbond_bus_width {
@@ -289,7 +289,7 @@ static bool dma_channel_src_addr_check_and_adjust(uint32_t channel, uint32_t *sr
 
 	if (IS_QSPIF_CACHED_ADDRESS(phy_address)) {
 		/*
-		 * To achiebe max. perfomance, peripherals should not access the Flash memory
+		 * To achiebe max. performance, peripherals should not access the Flash memory
 		 * through the instruction cache controller (avoid cache misses).
 		 */
 		phy_address += (MCU_QSPIF_M_BASE - MCU_QSPIF_M_CACHED_BASE);
@@ -490,7 +490,7 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	uint32_t src_dst_address;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Inavlid DMA channel index");
+		LOG_ERR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 	regs = DMA_CHN2REG(channel);
@@ -570,7 +570,7 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	}
 
 	if (!dma_channel_update_dreq_mode(cfg->channel_direction, &dma_ctrl_reg)) {
-		LOG_ERR("Inavlid channel direction");
+		LOG_ERR("Invalid channel direction");
 		return -EINVAL;
 	}
 
@@ -655,7 +655,7 @@ static int dma_smartbond_reload(const struct device *dev, uint32_t channel, uint
 	struct channel_regs *regs;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Inavlid DMA channel index");
+		LOG_ERR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 	regs = DMA_CHN2REG(channel);
@@ -717,7 +717,7 @@ static int dma_smartbond_start(const struct device *dev, uint32_t channel)
 	struct dma_smartbond_data *data = dev->data;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Inavlid DMA channel index");
+		LOG_ERR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 	regs = DMA_CHN2REG(channel);
@@ -727,7 +727,7 @@ static int dma_smartbond_start(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	/* Should return succss if the requested channel is already started. */
+	/* Should return success if the requested channel is already started. */
 	if (DMA_CTRL_REG_GET_FIELD(DMA_ON, regs->DMA_CTRL_REG)) {
 		return 0;
 	}
@@ -742,7 +742,7 @@ static int dma_smartbond_stop(const struct device *dev, uint32_t channel)
 	struct channel_regs *regs;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Inavlid DMA channel index");
+		LOG_ERR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 	regs = DMA_CHN2REG(channel);
@@ -760,7 +760,7 @@ static int dma_smartbond_stop(const struct device *dev, uint32_t channel)
 static int dma_smartbond_suspend(const struct device *dev, uint32_t channel)
 {
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Inavlid DMA channel index");
+		LOG_ERR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 
@@ -783,7 +783,7 @@ static int dma_smartbond_suspend(const struct device *dev, uint32_t channel)
 static int dma_smartbond_resume(const struct device *dev, uint32_t channel)
 {
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Inavlid DMA channel index");
+		LOG_ERR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 
@@ -805,7 +805,7 @@ static int dma_smartbond_get_status(const struct device *dev, uint32_t channel,
 	uint32_t dma_ctrl_reg, dma_idx_reg, dma_len_reg;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Inavlid DMA channel index");
+		LOG_ERR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 
@@ -891,7 +891,7 @@ static bool dma_smartbond_chan_filter(const struct device *dev, int channel, voi
 	uint32_t requested_channel;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Inavlid DMA channel index");
+		LOG_ERR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 

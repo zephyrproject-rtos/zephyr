@@ -14,8 +14,15 @@ It provides the following functionalities:
   The APIs is described in
   :zephyr_file:`include/zephyr/usb_c/usbc.h`
 
-Currently the device stack supports implementation of Sink only and Source only
-devices. Dual Role Power (DRP) devices are not yet supported.
+Configuration options
+**********************************************************
+
+The USB-C device stack supports implementation of Sink only, Source only,
+and Dual Role Power (DRP) devices.
+
+- :kconfig:option:`CONFIG_USBC_CSM_SINK_ONLY`: Sink USB-C Connection State Machine
+- :kconfig:option:`CONFIG_USBC_CSM_SOURCE_ONLY`: Source USBC Connection State Machine
+- :kconfig:option:`CONFIG_USBC_CSM_DRP`: Dual Role Power (DRP) USB-C Connection State Machine
 
 :zephyr:code-sample-category:`List<usbc>` of samples for different purposes.
 
@@ -118,6 +125,7 @@ Define the following devicetree, structures and callbacks:
 
 * Devicetree ``usb-c-connector`` node referencing a TCPC
 * Devicetree ``vbus`` node referencing a VBUS measurement device
+* Devicetree ``pwrctrl`` node for VBUS and VCONN power control
 * User defined structure that encapsulates application specific data
 * Policy callbacks
 
@@ -141,6 +149,14 @@ VBUS is measured by a device that's referenced in the devicetree by a
    :end-before: usbc.rst vbus-voltage-divider-adc end
    :linenos:
 
+Power control for VBUS and VCONN can be managed by a device referenced in the
+devicetree by a ``zephyr,usb-c-pwrctrl`` compatible node:
+
+.. literalinclude:: ../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval.overlay
+   :language: dts
+   :start-after: usbc.rst pwrctrl start
+   :end-before: usbc.rst pwrctrl end
+   :linenos:
 
 A user defined structure is defined and later registered with the subsystem and can
 be accessed from callback through an API:
@@ -198,6 +214,30 @@ Start the USB-C subsystem:
    :start-after: usbc.rst usbc start
    :end-before: usbc.rst usbc end
    :linenos:
+
+Implementing a Dual Role Power (DRP) USB-C device
+**************************************************
+
+DRP devices can operate as both Source and Sink, automatically negotiating the
+appropriate role with the port partner. When unattached, the device toggles
+between Source (Rp) and Sink (Rd) CC line advertisements to detect and connect
+with any partner type. Once an attach is detected, the device enters the
+appropriate attached state (Attached.SRC or Attached.SNK) and starts the
+corresponding Policy Engine state machine (PE_SRC or PE_SNK) to negotiate
+power delivery.
+
+Configuration is similar to Source and Sink devices, with the following key
+differences:
+
+* Set ``power-role = "dual"`` in the devicetree ``usb-c-connector`` node
+* Implement callbacks for both Source and Sink operations
+
+The DRP toggle behavior can be configured via Kconfig:
+
+- :kconfig:option:`CONFIG_USBC_DRP_PERIOD_MS`: Toggle period (50-100ms, default 75ms)
+- :kconfig:option:`CONFIG_USBC_DRP_DUTY_CYCLE`: Percentage of time as Source (30-70%, default 50%)
+
+See :zephyr:code-sample:`usb-c-drp` for a complete example.
 
 API reference
 *************

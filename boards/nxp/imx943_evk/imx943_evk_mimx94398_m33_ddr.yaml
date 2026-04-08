@@ -15,4 +15,7 @@ toolchain:
 supported:
   - uart
   - netif:eth
+testing:
+  binaries:
+    - flash.bin
 vendor: nxp

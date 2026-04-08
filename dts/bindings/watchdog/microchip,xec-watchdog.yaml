@@ -3,7 +3,9 @@
 
 description: Microchip XEC watchdog timer
 
-include: base.yaml
+include:
+  - name: base.yaml
+  - name: microchip,dmec-ecia-girq.yaml
 
 compatible: "microchip,xec-watchdog"
 
@@ -14,12 +16,8 @@ properties:
   interrupts:
     required: true
 
-  girqs:
-    type: array
+  pcr-scr:
+    type: int
     required: true
-    description: Array of GIRQ numbers [8:26] and bit positions [0:31].
-
-  pcrs:
-    type: array
-    required: true
-    description: PCR sleep enable register index and bit position.
+    description: |
+      WDT Power Clock Reset(PCR) peripheral index and bit position.

@@ -286,7 +286,7 @@ static void pi3usb9201_client_detect_finish(const struct device *dev, const int 
 		LOG_ERR("failed to clear client detect");
 	}
 
-	/* If DCP mode, disable USB swtich */
+	/* If DCP mode, disable USB switch */
 	if (status & BIT(CHG_DCP)) {
 		enable_usb_data = false;
 	} else {

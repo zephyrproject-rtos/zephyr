@@ -23,6 +23,7 @@
 #include <zephyr/sys/util.h>
 #include <inttypes.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/cache.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
@@ -76,9 +77,8 @@ static struct k_spinlock obj_lock;         /* kobj struct data */
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
-#endif /* CONFIG_DYNAMIC_OBJECTS */
-
 static void clear_perms_cb(struct k_object *ko, void *ctx_ptr);
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 
 const char *otype_to_str(enum k_objects otype)
 {
@@ -344,6 +344,19 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 			return NULL;
 		}
 
+#ifdef CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED
+		/* With kernel coherence enabled, it is possible that the stack
+		 * has been allocated on uncached area. This has an implications on
+		 * performance as memory access is not cached.
+		 * This simply nudges the indicated stack pointer to be inside
+		 * cached area such that the thread object will have its stack
+		 * inside cached area.
+		 */
+		if (sys_cache_is_ptr_uncached(dyn->data)) {
+			dyn->data = sys_cache_cached_ptr_get(dyn->data);
+		}
+#endif /* CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED */
+
 #ifdef CONFIG_GEN_PRIV_STACKS
 		struct z_stack_data *stack_data = (struct z_stack_data *)
 			((uint8_t *)dyn->data + adjusted_size - sizeof(*stack_data));
@@ -478,7 +491,27 @@ void k_object_free(void *obj)
 	k_spin_unlock(&objfree_lock, key);
 
 	if (dyn != NULL) {
-		k_free(dyn->data);
+#ifdef CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED
+		/* We may have nudged the pointer to point to the cached area
+		 * in dynamic_object_create() when we first created the thread
+		 * stack object. So we need to restore the uncached one before
+		 * freeing it.
+		 */
+		if (dyn->kobj.type == K_OBJ_THREAD_STACK_ELEMENT) {
+			uint8_t *stack;
+
+			if (sys_cache_is_ptr_cached(dyn->data)) {
+				stack = sys_cache_uncached_ptr_get(dyn->data);
+			} else {
+				stack = dyn->data;
+			}
+
+			k_free(stack);
+		} else
+#endif /* CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED */
+		{
+			k_free(dyn->data);
+		}
 		k_free(dyn);
 	}
 }
@@ -560,7 +593,7 @@ static unsigned int thread_index_get(struct k_thread *thread)
 	return ko->data.thread_id;
 }
 
-static void unref_check(struct k_object *ko, uintptr_t index)
+static void unref_check(struct k_object *ko, uintptr_t index, bool sched_locked)
 {
 	k_spinlock_key_t key = k_spin_lock(&obj_lock);
 
@@ -588,13 +621,24 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 	 * dynamically allocated resources, require cleanup, or need to be
 	 * marked as uninitialized when all references are gone. What
 	 * specifically needs to happen depends on the object type.
+	 *
+	 * When sched_locked, we use k_free_sched_locked() variants to
+	 * avoid recursive locking of _sched_spinlock (see k_heap_free).
 	 */
 	switch (ko->type) {
 	case K_OBJ_MSGQ:
-		k_msgq_cleanup((struct k_msgq *)ko->name);
+		if (sched_locked) {
+			z_msgq_cleanup_sched_locked((struct k_msgq *)ko->name);
+		} else {
+			k_msgq_cleanup((struct k_msgq *)ko->name);
+		}
 		break;
 	case K_OBJ_STACK:
-		k_stack_cleanup((struct k_stack *)ko->name);
+		if (sched_locked) {
+			z_stack_cleanup_sched_locked((struct k_stack *)ko->name);
+		} else {
+			k_stack_cleanup((struct k_stack *)ko->name);
+		}
 		break;
 	default:
 		/* Nothing to do */
@@ -602,8 +646,13 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 	}
 
 	sys_dlist_remove(&dyn->dobj_list);
-	k_free(dyn->data);
-	k_free(dyn);
+	if (sched_locked) {
+		k_free_sched_locked(dyn->data);
+		k_free_sched_locked(dyn);
+	} else {
+		k_free(dyn->data);
+		k_free(dyn);
+	}
 out:
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 	k_spin_unlock(&obj_lock, key);
@@ -647,15 +696,24 @@ void k_thread_perms_clear(struct k_object *ko, struct k_thread *thread)
 
 	if (index != -1) {
 		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
-		unref_check(ko, index);
+		unref_check(ko, index, false);
 	}
 }
 
+#ifdef CONFIG_DYNAMIC_OBJECTS
 static void clear_perms_cb(struct k_object *ko, void *ctx_ptr)
 {
 	uintptr_t id = (uintptr_t)ctx_ptr;
 
-	unref_check(ko, id);
+	unref_check(ko, id, false);
+}
+#endif
+
+static void clear_perms_sched_locked_cb(struct k_object *ko, void *ctx_ptr)
+{
+	uintptr_t id = (uintptr_t)ctx_ptr;
+
+	unref_check(ko, id, true);
 }
 
 void k_thread_perms_all_clear(struct k_thread *thread)
@@ -663,7 +721,8 @@ void k_thread_perms_all_clear(struct k_thread *thread)
 	uintptr_t index = thread_index_get(thread);
 
 	if ((int)index != -1) {
-		k_object_wordlist_foreach(clear_perms_cb, (void *)index);
+		k_object_wordlist_foreach(clear_perms_sched_locked_cb,
+					 (void *)index);
 	}
 }
 

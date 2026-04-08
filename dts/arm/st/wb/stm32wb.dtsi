@@ -478,6 +478,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-differential-support;
 			st,adc-has-deep-powerdown;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -571,6 +572,13 @@
 			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
 			resets = <&rctl STM32_RESET(AHB2, 16)>;
 			interrupts = <51 0>;
+			status = "disabled";
+		};
+
+		vrefbuf: vrefbuf@40010030 {
+			compatible = "st,stm32-vrefbuf";
+			reg = <0x40010030 0xd0>;
+			ref-voltages = <2048000>, <2500000>;
 			status = "disabled";
 		};
 

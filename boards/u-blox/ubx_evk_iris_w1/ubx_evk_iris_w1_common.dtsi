@@ -29,7 +29,7 @@
 		zephyr,flash = &fm25m6413ibe;
 		zephyr,console = &flexcomm3;
 		zephyr,shell-uart = &flexcomm3;
-		zephyr,flash-controller = &fm25m6413ibe;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,uart-mcumgr = &flexcomm3;
 	};
@@ -108,42 +108,51 @@
 	rx-clock-source-b = <1>;
 
 	/* external flash */
-	fm25m6413ibe: fm25m6413ibe@0 {
+	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(8 * 8)>;
 		status = "okay";
-		erase-block-size = <4096>;
-		write-block-size = <1>;
 		spi-max-frequency = <133000000>;
 
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x18000000 DT_SIZE_M(8)>;
 
-			/*
-			 * Partition sizes must be aligned
-			 * to the flash memory sector size of 4KB.
-			 */
-			boot_partition: partition@0 {
-				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(128)>;
-			};
+		fm25m6413ibe: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(8)>;
+			erase-block-size = <4096>;
+			write-block-size = <1>;
 
-			slot0_partition: partition@20000 {
-				label = "image-0";
-				reg = <0x00020000 DT_SIZE_M(3)>;
-			};
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			slot1_partition: partition@320000 {
-				label = "image-1";
-				reg = <0x00320000 DT_SIZE_M(3)>;
-			};
+				/*
+				 * Partition sizes must be aligned
+				 * to the flash memory sector size of 4KB.
+				 */
+				boot_partition: partition@0 {
+					label = "mcuboot";
+					reg = <0x00000000 DT_SIZE_K(128)>;
+				};
 
-			storage_partition: partition@620000 {
-				label = "storage";
-				reg = <0x00620000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				slot0_partition: partition@20000 {
+					label = "image-0";
+					reg = <0x00020000 DT_SIZE_M(3)>;
+				};
+
+				slot1_partition: partition@320000 {
+					label = "image-1";
+					reg = <0x00320000 DT_SIZE_M(3)>;
+				};
+
+				storage_partition: partition@620000 {
+					label = "storage";
+					reg = <0x00620000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				};
 			};
 		};
 	};

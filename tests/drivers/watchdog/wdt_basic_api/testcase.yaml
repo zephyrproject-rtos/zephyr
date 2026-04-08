@@ -48,6 +48,7 @@ tests:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg.overlay"
     platform_allow:
+      - nucleo_c5a3zg
       - nucleo_f091rc
       - nucleo_f103rb
       - nucleo_f207zg
@@ -67,7 +68,6 @@ tests:
       - nucleo_u575zi_q
       - nucleo_c031c6
       - nucleo_wba55cg
-      - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.stm32wwdg_h7:
@@ -84,6 +84,7 @@ tests:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_iwdg.overlay"
     platform_allow:
+      - nucleo_c5a3zg
       - nucleo_f091rc
       - nucleo_f103rb
       - nucleo_f207zg

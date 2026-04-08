@@ -60,7 +60,7 @@ static int axisram_stm32_init(const struct device *dev)
 /**
  * On other series which have no RAMCFG, whether RAMs are enabled
  * or not can be controlled by changing their "status" in Device Tree.
- * To match this behavior on N6, we check manually during instantation
+ * To match this behavior on N6, we check manually during instantiation
  * of RAMCFG nodes whether they have an enabled child (= RAM node) and
  * perform our own instantiation only if so thanks to COND_CODE.
  */

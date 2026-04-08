@@ -27,7 +27,7 @@
 #define RAMABLE_REGION RAM
 
 /* Region of the irq vectors and boot-vector SP/PC */
-#if defined(CONFIG_ROMSTART_RELOCATION_ROM)
+#if defined(CONFIG_ROMSTART_RELOCATION_ROM) && defined(CONFIG_XIP)
 #define ROMSTART_ADDR CONFIG_ROMSTART_REGION_ADDRESS
 #define ROMSTART_SIZE (CONFIG_ROMSTART_REGION_SIZE * 1K)
 #else
@@ -40,7 +40,7 @@
 #define ROM_END_OFFSET 0
 #endif
 
-#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION)
+#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION) && defined(CONFIG_XIP)
 #define ROM_ADDR (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
 #define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - ROM_END_OFFSET)
 #else

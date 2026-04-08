@@ -11,13 +11,22 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <errno.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
@@ -857,11 +866,18 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 	LOG_DBG("dir %u loc %X", dir, loc);
 }
 
+static void unicast_client_supported_contexts_cb(struct bt_conn *conn,
+						 enum bt_audio_context snk_ctx,
+						 enum bt_audio_context src_ctx)
+{
+	LOG_DBG("Supported snk ctx %u src ctx %u", snk_ctx, src_ctx);
+}
+
 static void unicast_client_available_contexts_cb(struct bt_conn *conn,
 						 enum bt_audio_context snk_ctx,
 						 enum bt_audio_context src_ctx)
 {
-	LOG_DBG("snk ctx %u src ctx %u", snk_ctx, src_ctx);
+	LOG_DBG("Available snk ctx %u src ctx %u", snk_ctx, src_ctx);
 }
 
 static void unicast_client_config_cb(struct bt_bap_stream *stream,
@@ -1082,6 +1098,7 @@ static struct bt_bap_unicast_server_register_param param = {
 
 static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
+	.supported_contexts = unicast_client_supported_contexts_cb,
 	.available_contexts = unicast_client_available_contexts_cb,
 	.config = unicast_client_config_cb,
 	.qos = unicast_client_qos_cb,
