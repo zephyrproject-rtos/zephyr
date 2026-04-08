@@ -44,4 +44,12 @@
 		pin = <PIN_ETHES4_MATCH>;
 		bias-disable;
 	};
+
+	i2c5_scl_default: i2c5_scl_default {
+		pin = <PIN_SCL5 FUNC_SCL5>;
+	};
+
+	i2c5_sda_default: i2c5_sda_default {
+		pin = <PIN_SDA5 FUNC_SDA5>;
+	};
 };
