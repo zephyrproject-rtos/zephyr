@@ -12,7 +12,7 @@
 
 #include "sl_wifi_constants.h"
 
-LOG_MODULE_DECLARE(siwx91x_wifi);
+LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 enum {
 	REQUEST_TWT = 0,
