@@ -7,7 +7,7 @@ import os
 
 from west import log
 
-import zspdx.cmakefileapi
+from . import cmakefileapi
 
 
 def parseReply(replyIndexPath):
@@ -50,7 +50,7 @@ def parseCodemodel(replyDir, codemodelFile):
         with open(codemodelPath) as cmFile:
             js = json.load(cmFile)
 
-            cm = zspdx.cmakefileapi.Codemodel()
+            cm = cmakefileapi.Codemodel()
 
             # for correctness, check kind and version
             kind = js.get("kind", "")
@@ -94,14 +94,14 @@ def parseCodemodel(replyDir, codemodelFile):
         return None
 
 def parseConfig(cfg_dict, replyDir):
-    cfg = zspdx.cmakefileapi.Config()
+    cfg = cmakefileapi.Config()
     cfg.name = cfg_dict.get("name", "")
 
     # parse and add each directory
     dirs_arr = cfg_dict.get("directories", [])
     for dir_dict in dirs_arr:
         if dir_dict != {}:
-            cfgdir = zspdx.cmakefileapi.ConfigDir()
+            cfgdir = cmakefileapi.ConfigDir()
             cfgdir.source = dir_dict.get("source", "")
             cfgdir.build = dir_dict.get("build", "")
             cfgdir.parentIndex = dir_dict.get("parentIndex", -1)
@@ -117,7 +117,7 @@ def parseConfig(cfg_dict, replyDir):
     projects_arr = cfg_dict.get("projects", [])
     for prj_dict in projects_arr:
         if prj_dict != {}:
-            prj = zspdx.cmakefileapi.ConfigProject()
+            prj = cmakefileapi.ConfigProject()
             prj.name = prj_dict.get("name", "")
             prj.parentIndex = prj_dict.get("parentIndex", -1)
             prj.childIndexes = prj_dict.get("childIndexes", [])
@@ -129,7 +129,7 @@ def parseConfig(cfg_dict, replyDir):
     cfgTargets_arr = cfg_dict.get("targets", [])
     for cfgTarget_dict in cfgTargets_arr:
         if cfgTarget_dict != {}:
-            cfgTarget = zspdx.cmakefileapi.ConfigTarget()
+            cfgTarget = cmakefileapi.ConfigTarget()
             cfgTarget.name = cfgTarget_dict.get("name", "")
             cfgTarget.id = cfgTarget_dict.get("id", "")
             cfgTarget.directoryIndex = cfgTarget_dict.get("directoryIndex", -1)
@@ -150,7 +150,7 @@ def parseTarget(targetPath):
         with open(targetPath) as targetFile:
             js = json.load(targetFile)
 
-            target = zspdx.cmakefileapi.Target()
+            target = cmakefileapi.Target()
 
             target.name = js.get("name", "")
             target.id = js.get("id", "")
@@ -196,13 +196,13 @@ def parseTarget(targetPath):
 
 def parseTargetType(targetType):
     return {
-        "EXECUTABLE": zspdx.cmakefileapi.TargetType.EXECUTABLE,
-        "STATIC_LIBRARY": zspdx.cmakefileapi.TargetType.STATIC_LIBRARY,
-        "SHARED_LIBRARY": zspdx.cmakefileapi.TargetType.SHARED_LIBRARY,
-        "MODULE_LIBRARY": zspdx.cmakefileapi.TargetType.MODULE_LIBRARY,
-        "OBJECT_LIBRARY": zspdx.cmakefileapi.TargetType.OBJECT_LIBRARY,
-        "UTILITY": zspdx.cmakefileapi.TargetType.UTILITY,
-    }.get(targetType, zspdx.cmakefileapi.TargetType.UNKNOWN)
+        "EXECUTABLE": cmakefileapi.TargetType.EXECUTABLE,
+        "STATIC_LIBRARY": cmakefileapi.TargetType.STATIC_LIBRARY,
+        "SHARED_LIBRARY": cmakefileapi.TargetType.SHARED_LIBRARY,
+        "MODULE_LIBRARY": cmakefileapi.TargetType.MODULE_LIBRARY,
+        "OBJECT_LIBRARY": cmakefileapi.TargetType.OBJECT_LIBRARY,
+        "UTILITY": cmakefileapi.TargetType.UTILITY,
+    }.get(targetType, cmakefileapi.TargetType.UNKNOWN)
 
 def parseTargetInstall(target, js):
     install_dict = js.get("install", {})
@@ -213,7 +213,7 @@ def parseTargetInstall(target, js):
 
     destinations_arr = install_dict.get("destinations", [])
     for destination_dict in destinations_arr:
-        dest = zspdx.cmakefileapi.TargetInstallDestination()
+        dest = cmakefileapi.TargetInstallDestination()
         dest.path = destination_dict.get("path", "")
         dest.backtrace = destination_dict.get("backtrace", -1)
         target.install_destinations.append(dest)
@@ -229,7 +229,7 @@ def parseTargetLink(target, js):
 
     fragments_arr = link_dict.get("commandFragments", [])
     for fragment_dict in fragments_arr:
-        fragment = zspdx.cmakefileapi.TargetCommandFragment()
+        fragment = cmakefileapi.TargetCommandFragment()
         fragment.fragment = fragment_dict.get("fragment", "")
         fragment.role = fragment_dict.get("role", "")
         target.link_commandFragments.append(fragment)
@@ -242,7 +242,7 @@ def parseTargetArchive(target, js):
 
     fragments_arr = archive_dict.get("commandFragments", [])
     for fragment_dict in fragments_arr:
-        fragment = zspdx.cmakefileapi.TargetCommandFragment()
+        fragment = cmakefileapi.TargetCommandFragment()
         fragment.fragment = fragment_dict.get("fragment", "")
         fragment.role = fragment_dict.get("role", "")
         target.archive_commandFragments.append(fragment)
@@ -250,7 +250,7 @@ def parseTargetArchive(target, js):
 def parseTargetDependencies(target, js):
     dependencies_arr = js.get("dependencies", [])
     for dependency_dict in dependencies_arr:
-        dep = zspdx.cmakefileapi.TargetDependency()
+        dep = cmakefileapi.TargetDependency()
         dep.id = dependency_dict.get("id", "")
         dep.backtrace = dependency_dict.get("backtrace", -1)
         target.dependencies.append(dep)
@@ -258,7 +258,7 @@ def parseTargetDependencies(target, js):
 def parseTargetSources(target, js):
     sources_arr = js.get("sources", [])
     for source_dict in sources_arr:
-        src = zspdx.cmakefileapi.TargetSource()
+        src = cmakefileapi.TargetSource()
         src.path = source_dict.get("path", "")
         src.compileGroupIndex = source_dict.get("compileGroupIndex", -1)
         src.sourceGroupIndex = source_dict.get("sourceGroupIndex", -1)
@@ -269,7 +269,7 @@ def parseTargetSources(target, js):
 def parseTargetSourceGroups(target, js):
     sourceGroups_arr = js.get("sourceGroups", [])
     for sourceGroup_dict in sourceGroups_arr:
-        srcgrp = zspdx.cmakefileapi.TargetSourceGroup()
+        srcgrp = cmakefileapi.TargetSourceGroup()
         srcgrp.name = sourceGroup_dict.get("name", "")
         srcgrp.sourceIndexes = sourceGroup_dict.get("sourceIndexes", [])
         target.sourceGroups.append(srcgrp)
@@ -277,7 +277,7 @@ def parseTargetSourceGroups(target, js):
 def parseTargetCompileGroups(target, js):
     compileGroups_arr = js.get("compileGroups", [])
     for compileGroup_dict in compileGroups_arr:
-        cmpgrp = zspdx.cmakefileapi.TargetCompileGroup()
+        cmpgrp = cmakefileapi.TargetCompileGroup()
         cmpgrp.sourceIndexes = compileGroup_dict.get("sourceIndexes", [])
         cmpgrp.language = compileGroup_dict.get("language", "")
         cmpgrp.sysroot = compileGroup_dict.get("sysroot", "")
@@ -290,7 +290,7 @@ def parseTargetCompileGroups(target, js):
 
         includes_arr = compileGroup_dict.get("includes", [])
         for include_dict in includes_arr:
-            grpInclude = zspdx.cmakefileapi.TargetCompileGroupInclude()
+            grpInclude = cmakefileapi.TargetCompileGroupInclude()
             grpInclude.path = include_dict.get("path", "")
             grpInclude.isSystem = include_dict.get("isSystem", False)
             grpInclude.backtrace = include_dict.get("backtrace", -1)
@@ -298,14 +298,14 @@ def parseTargetCompileGroups(target, js):
 
         precompileHeaders_arr = compileGroup_dict.get("precompileHeaders", [])
         for precompileHeader_dict in precompileHeaders_arr:
-            grpHeader = zspdx.cmakefileapi.TargetCompileGroupPrecompileHeader()
+            grpHeader = cmakefileapi.TargetCompileGroupPrecompileHeader()
             grpHeader.header = precompileHeader_dict.get("header", "")
             grpHeader.backtrace = precompileHeader_dict.get("backtrace", -1)
             cmpgrp.precompileHeaders.append(grpHeader)
 
         defines_arr = compileGroup_dict.get("defines", [])
         for define_dict in defines_arr:
-            grpDefine = zspdx.cmakefileapi.TargetCompileGroupDefine()
+            grpDefine = cmakefileapi.TargetCompileGroupDefine()
             grpDefine.define = define_dict.get("define", "")
             grpDefine.backtrace = define_dict.get("backtrace", -1)
             cmpgrp.defines.append(grpDefine)
@@ -321,7 +321,7 @@ def parseTargetBacktraceGraph(target, js):
 
     nodes_arr = backtraceGraph_dict.get("nodes", [])
     for node_dict in nodes_arr:
-        node = zspdx.cmakefileapi.TargetBacktraceGraphNode()
+        node = cmakefileapi.TargetBacktraceGraphNode()
         node.file = node_dict.get("file", -1)
         node.line = node_dict.get("line", -1)
         node.command = node_dict.get("command", -1)

@@ -10,10 +10,10 @@ import yaml
 from west import log
 from west.util import WestNotFound, west_topdir
 
-import zspdx.spdxids
-from zspdx.cmakecache import parseCMakeCacheFile
-from zspdx.cmakefileapijson import parseReply
-from zspdx.datatypes import (
+from . import spdxids
+from .cmakecache import parseCMakeCacheFile
+from .cmakefileapijson import parseReply
+from .datatypes import (
     Document,
     DocumentConfig,
     File,
@@ -23,7 +23,7 @@ from zspdx.datatypes import (
     RelationshipData,
     RelationshipDataElementType,
 )
-from zspdx.getincludes import getCIncludes
+from .getincludes import getCIncludes
 
 
 # WalkerConfig contains configuration data for the Walker.
@@ -491,7 +491,7 @@ class Walker:
         # create target Package's config
         cfg = PackageConfig()
         cfg.name = cfgTarget.name
-        cfg.spdxID = "SPDXRef-" + zspdx.spdxids.convertToSPDXIDSafe(cfgTarget.name)
+        cfg.spdxID = "SPDXRef-" + spdxids.convertToSPDXIDSafe(cfgTarget.name)
         cfg.relativeBaseDir = self.cm.paths_build
 
         # build Package
@@ -524,7 +524,7 @@ class Walker:
         bf.abspath = artifactPath
         bf.relpath = cfgTarget.target.artifacts[0]
         # can use nameOnDisk b/c it is just the filename w/out directory paths
-        bf.spdxID = zspdx.spdxids.getUniqueFileID(cfgTarget.target.nameOnDisk,
+        bf.spdxID = spdxids.getUniqueFileID(cfgTarget.target.nameOnDisk,
                                                   self.docBuild.timesSeen)
         # don't fill hashes / licenses / rlns now, we'll do that after walking
 
@@ -748,7 +748,7 @@ class Walker:
             sf.abspath = srcAbspath
             sf.relpath = os.path.relpath(srcAbspath, srcPkg.cfg.relativeBaseDir)
             filenameOnly = os.path.split(srcAbspath)[1]
-            sf.spdxID = zspdx.spdxids.getUniqueFileID(filenameOnly, srcDoc.timesSeen)
+            sf.spdxID = spdxids.getUniqueFileID(filenameOnly, srcDoc.timesSeen)
             # don't fill hashes / licenses / rlns now, we'll do that after walking
 
             # add File to Package

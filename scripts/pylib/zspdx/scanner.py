@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from reuse.project import Project
 from west import log
 
-from zspdx.licenses import LICENSES
-from zspdx.util import getHashes
+from .licenses import LICENSES
+from .util import getHashes
 
 
 # ScannerConfig contains settings used to configure how the SPDX

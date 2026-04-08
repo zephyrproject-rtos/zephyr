@@ -7,8 +7,8 @@ from datetime import datetime
 
 from west import log
 
-from zspdx.util import getHashes
-from zspdx.version import SPDX_VERSION_2_3
+from .util import getHashes
+from .version import SPDX_VERSION_2_3
 
 CPE23TYPE_REGEX = (
     r'^cpe:2\.3:[aho\*\-](:(((\?*|\*?)([a-zA-Z0-9\-\._]|(\\[\\\*\?!"#$$%&\'\(\)\+,\/:;<=>@\[\]\^'
