@@ -41,7 +41,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_enable)
 	 * for statistics (semaphores).
 	 */
 
-#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
+#if defined(CONFIG_OBJ_CORE_SEM)
 
 	status = k_obj_core_stats_enable(K_OBJ_CORE(&test_sem));
 	zassert_equal(status, -ENOTSUP,
@@ -76,7 +76,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_disable)
 	 * for statistics (semaphores).
 	 */
 
-#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
+#if defined(CONFIG_OBJ_CORE_SEM)
 	status = k_obj_core_stats_disable(K_OBJ_CORE(&test_sem));
 	zassert_equal(status, -ENOTSUP,
 		      "Expected %d, got %d\n", -ENOTSUP, status);
@@ -111,7 +111,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_reset)
 	 * for statistics (semaphores).
 	 */
 
-#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
+#if defined(CONFIG_OBJ_CORE_SEM)
 	status = k_obj_core_stats_reset(K_OBJ_CORE(&test_sem));
 	zassert_equal(status, -ENOTSUP,
 		      "Expected %d, got %d\n", -ENOTSUP, status);
@@ -146,7 +146,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_query)
 	 * for statistics (semaphores).
 	 */
 
-#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
+#if defined(CONFIG_OBJ_CORE_SEM)
 	status = k_obj_core_stats_query(K_OBJ_CORE(&test_sem), &query,
 					sizeof(struct k_thread_runtime_stats));
 	zassert_equal(status, -ENOTSUP,
@@ -184,7 +184,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_raw)
 	 * for statistics (semaphores).
 	 */
 
-#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
+#if defined(CONFIG_OBJ_CORE_SEM)
 	status = k_obj_core_stats_raw(K_OBJ_CORE(&test_sem),
 				      buffer, sizeof(buffer));
 	zassert_equal(status, -ENOTSUP,
@@ -244,7 +244,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_dereg)
 	 * not have them enabled (semaphores).
 	 */
 
-#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
+#if defined(CONFIG_OBJ_CORE_SEM)
 	status = k_obj_core_stats_deregister(K_OBJ_CORE(&test_sem));
 	zassert_equal(status, -ENOTSUP, "Expected %d, got %d\n", 0, -ENOTSUP);
 #endif
@@ -288,7 +288,7 @@ ZTEST(obj_core_stats_api, test_obj_core_stats_register)
 	 * (which does not currently exist).
 	 */
 
-#if defined(CONFIG_OBJ_CORE_SEMAPHORE)
+#if defined(CONFIG_OBJ_CORE_SEM)
 	status = k_obj_core_stats_register(K_OBJ_CORE(&test_sem),
 					   (void *)0xBAD0BAD1,
 					   42);
