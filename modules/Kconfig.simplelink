@@ -48,6 +48,12 @@ config HAS_CC35XX_SDK
 config HAS_CC27XX_SDK
 	bool
 
+# CC35XX SDK HAL configuration
+config HAS_CC35XX_SDK
+	bool
+
+#====== RCL (Radio Control Layer) ======#
+
 config SIMPLELINK_F3_RADIO_DRIVER
 	bool "Build the RCL driver"
 	depends on HAS_CC23X0_SDK || HAS_CC27XX_SDK
@@ -85,3 +91,76 @@ config RCL_REGULATORY_DOMAIN_RUNTIME_MODIFIABLE
 	default n
 
 endmenu
+
+#====== LogSinkTrace ======#
+
+config SIMPLELINK_LPF3_TRACE
+	bool "LogSinkTrace support"
+	depends on HAS_CC23X0_SDK || HAS_CC27XX_SDK
+	default n
+	help
+	  Enable LogSinkTrace for debugging and tracing purposes
+
+config SIMPLELINK_LPF3_TRACE_CONFIG_PREGEN
+	bool "Use the pre-generated log configurations"
+	depends on SIMPLELINK_LPF3_TRACE
+	default y
+	help
+	  Use the pre-generated log configuration files ti_log_config.[h|c]
+	  under ti/log/zephyr/. Applications can provide their own log
+	  configurations to enable logging in other TI drivers or configure
+	  application-specific log modules.
+
+choice SIMPLELINK_LPF3_TRACE_PRESCALER
+
+	prompt "RF Tracer Prescaler"
+	depends on SIMPLELINK_LPF3_TRACE
+	default SIMPLELINK_LPF3_TRACE_PRESCALER_DIV1
+	help
+	  The divisor that the RF Core main clock is divided by. "Divide by 3",
+	  for example, divides the clock speed by 3. The clock speed of the RF
+	  Tracer may need to be reduced if experiencing signal quality issues
+	  on the tracer signal.
+
+config SIMPLELINK_LPF3_TRACE_PRESCALER_DIV1
+	bool "Divide by 1"
+
+config SIMPLELINK_LPF3_TRACE_PRESCALER_DIV2
+	bool "Divide by 2"
+
+config SIMPLELINK_LPF3_TRACE_PRESCALER_DIV3
+	bool "Divide by 3"
+
+config SIMPLELINK_LPF3_TRACE_PRESCALER_DIV4
+	bool "Divide by 4"
+
+endchoice
+
+choice SIMPLELINK_LPF3_TRACE_MODE
+
+	prompt "RF Tracer Mode"
+	depends on SIMPLELINK_LPF3_TRACE
+	default SIMPLELINK_LPF3_TRACE_MODE_CPU_RADIO
+	help
+		The RF tracer modes allow for selecting the source of the trace
+		messages. The source can be the radio (LRF domain) and/or the
+		system CPU (Applications and other modules).
+
+config SIMPLELINK_LPF3_TRACE_MODE_CPU_ONLY
+	bool "CPU only"
+
+config SIMPLELINK_LPF3_TRACE_MODE_RADIO_ONLY
+	bool "Radio only"
+
+config SIMPLELINK_LPF3_TRACE_MODE_CPU_RADIO
+	bool "CPU and Radio"
+
+endchoice
+
+config SIMPLELINK_LPF3_TRACE_TIMESTAMP
+	bool "Timestamp Enabled"
+	default y
+	depends on SIMPLELINK_LPF3_TRACE
+	help
+	  When timestamps are enabled, the log elements have timestamps
+	  associated with them.
