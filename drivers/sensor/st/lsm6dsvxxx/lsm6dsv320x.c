@@ -98,6 +98,7 @@ static int lsm6dsv320x_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 		}
 
 		data->out_xl = LSM6DSV320X_OUTX_L_A;
+		data->out_gy = LSM6DSV320X_OUTX_L_G;
 	} else if (lsm6dsv320x_is_hg_fs(fs)) { /* 32g/64g/128g/256g/320g */
 		lsm6dsv320x_hg_xl_full_scale_t val = (fs - 4);
 
@@ -106,6 +107,7 @@ static int lsm6dsv320x_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 		}
 
 		data->out_xl = LSM6DSV320X_UI_OUTX_L_A_OIS_HG;
+		data->out_gy = LSM6DSV320X_UI_OUTX_L_G_OIS_EIS;
 	} else {
 		return -EINVAL;
 	}
@@ -560,6 +562,7 @@ static int lsm6dsv320x_init_chip(const struct device *dev)
 	}
 
 	data->out_xl = LSM6DSV320X_OUTX_L_A;
+	data->out_gy = LSM6DSV320X_OUTX_L_G;
 	data->out_tp = LSM6DSV320X_OUT_TEMP_L;
 
 	fs = cfg->accel_range;

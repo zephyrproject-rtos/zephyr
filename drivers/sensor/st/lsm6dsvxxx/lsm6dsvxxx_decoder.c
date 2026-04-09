@@ -132,6 +132,13 @@ static int lsm6dsvxxx_decoder_get_frame_count(const uint8_t *buffer,
 			return 0;
 
 #if defined(CONFIG_LSM6DSVXXX_ENABLE_TEMP)
+		case SENSOR_CHAN_GYRO_X:
+		case SENSOR_CHAN_GYRO_Y:
+		case SENSOR_CHAN_GYRO_Z:
+		case SENSOR_CHAN_GYRO_XYZ:
+			*frame_count = rdata->has_gyro ? 1 : 0;
+			return 0;
+
 		case SENSOR_CHAN_DIE_TEMP:
 			*frame_count = rdata->has_temp ? 1 : 0;
 			return 0;
@@ -636,6 +643,45 @@ static int lsm6dsvxxx_decode_sample(const uint8_t *buffer, struct sensor_chan_sp
 		*fit = 1;
 		return 1;
 	}
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ: {
+		const int32_t scale = gyro_scaler[header->gyro_fs];
+
+		if (edata->has_gyro == 0) {
+			return -ENODATA;
+		}
+
+		struct sensor_three_axis_data *out = data_out;
+		struct sensor_q31_data *out_q31 = data_out;
+
+		out->header.base_timestamp_ns = edata->header.timestamp;
+		out->header.reading_count = 1;
+		out->shift = gyro_bit_shift[header->gyro_fs];
+
+		if (chan_spec.chan_type == SENSOR_CHAN_GYRO_XYZ) {
+			out->readings[0].x =
+			       Q31_SHIFT_MICROVAL(scale * edata->gyro[0], out->shift);
+			out->readings[0].y =
+			       Q31_SHIFT_MICROVAL(scale * edata->gyro[1], out->shift);
+			out->readings[0].z =
+			       Q31_SHIFT_MICROVAL(scale * edata->gyro[2], out->shift);
+		} else if (chan_spec.chan_type == SENSOR_CHAN_GYRO_X) {
+			out_q31->readings[0].value =
+			       Q31_SHIFT_MICROVAL(scale * edata->gyro[0], out->shift);
+		} else if (chan_spec.chan_type == SENSOR_CHAN_GYRO_Y) {
+			out_q31->readings[0].value =
+			       Q31_SHIFT_MICROVAL(scale * edata->gyro[1], out->shift);
+		} else if (chan_spec.chan_type == SENSOR_CHAN_GYRO_Z) {
+			out_q31->readings[0].value =
+			       Q31_SHIFT_MICROVAL(scale * edata->gyro[2], out->shift);
+		} else {
+			return -ENOTSUP;
+		}
+		*fit = 1;
+		return 1;
+	}
 #if defined(CONFIG_LSM6DSVXXX_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP: {
 		int64_t t_uC;
@@ -689,6 +735,10 @@ static int lsm6dsvxxx_decoder_get_size_info(struct sensor_chan_spec chan_spec, s
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ:
 		*base_size = sizeof(struct sensor_three_axis_data);
 		*frame_size = sizeof(struct sensor_three_axis_sample_data);
 		return 0;
