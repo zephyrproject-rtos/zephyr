@@ -128,6 +128,7 @@ struct lan78xx_tx_slot {
 	struct lan78xx_ctx *ctx;
 	struct uhc_transfer *xfer;
 	struct net_buf *buf;
+	struct net_pkt *pkt;
 	atomic_t state;
 	uint8_t index;
 };
@@ -1404,6 +1405,12 @@ static int lan78xx_tx_done(struct usb_device *udev, struct uhc_transfer *xfer)
 			xfer->buf ? (unsigned int)xfer->buf->len : 0u, (unsigned int)xfer->mps);
 	}
 
+	if (slot->pkt != NULL) {
+		net_pkt_unref(slot->pkt);
+		slot->pkt = NULL;
+		xfer->buf = slot->buf;
+	}
+
 	if (xfer->buf) {
 		net_buf_reset(xfer->buf);
 	}
@@ -1503,6 +1510,51 @@ static const struct device *lan78xx_get_phy(const struct device *dev)
 	return NULL;
 }
 
+static int lan78xx_try_zerocopy_tx(struct lan78xx_ctx *ctx, struct lan78xx_tx_slot *slot,
+				   struct net_pkt *pkt, uint32_t wire_len, uint32_t tx_pad)
+{
+	struct net_buf *frag = pkt->frags;
+	struct uhc_transfer *xfer = slot->xfer;
+	uint8_t *hdr;
+	uint32_t tx_cmd_a;
+	int ret;
+
+	if (frag == NULL || frag->frags != NULL || frag->len != wire_len) {
+		return -ENOTSUP;
+	}
+
+	if (net_buf_headroom(frag) < LAN78XX_CMD_HDR_LEN || net_buf_tailroom(frag) < tx_pad) {
+		return -ENOTSUP;
+	}
+
+	tx_cmd_a = (wire_len & LAN78XX_TX_CMD_A_LEN_MASK) | LAN78XX_TX_CMD_A_FCS;
+	hdr = net_buf_push(frag, LAN78XX_CMD_HDR_LEN);
+	sys_put_le32(tx_cmd_a, hdr);
+	sys_put_le32(0u, hdr + sizeof(uint32_t));
+
+	if (tx_pad != 0u) {
+		memset(net_buf_add(frag, tx_pad), 0, tx_pad);
+	}
+
+	xfer->buf = frag;
+	xfer->mps = ctx->ep_mps.bulk_out;
+
+	ret = lan78xx_norm_async_ok(usbh_xfer_enqueue(ctx->udev, xfer));
+	if (ret != 0) {
+		if (tx_pad != 0u) {
+			(void)net_buf_remove_mem(frag, tx_pad);
+		}
+
+		(void)net_buf_pull(frag, LAN78XX_CMD_HDR_LEN);
+		xfer->buf = slot->buf;
+		return ret;
+	}
+
+	slot->pkt = net_pkt_ref(pkt);
+
+	return 0;
+}
+
 static int lan78xx_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct lan78xx_ctx *ctx = dev->data;
@@ -1562,6 +1614,19 @@ static int lan78xx_send(const struct device *dev, struct net_pkt *pkt)
 
 	wire_len = (uint32_t)plen;
 	tx_pad = LAN78XX_TX_PAD(wire_len);
+
+	ret = lan78xx_try_zerocopy_tx(ctx, slot, pkt, wire_len, tx_pad);
+	if (ret == 0) {
+		return 0;
+	}
+
+	if (ret != -ENOTSUP) {
+		LOG_WRN("TX enqueue failed slot=%u ret=%d plen=%u", slot->index, ret,
+			(unsigned int)plen);
+		lan78xx_tx_release_slot(slot);
+		return ret;
+	}
+
 	usb_len = LAN78XX_TX_USB_LEN(wire_len);
 	if (usb_len > nb->size) {
 		LOG_ERR("TX buffer too small usb_len=%u buf_size=%u", (unsigned int)usb_len,
@@ -1570,6 +1635,7 @@ static int lan78xx_send(const struct device *dev, struct net_pkt *pkt)
 		return -ENOMEM;
 	}
 
+	xfer->buf = nb;
 	tx_cmd_a = (wire_len & LAN78XX_TX_CMD_A_LEN_MASK) | LAN78XX_TX_CMD_A_FCS;
 	sys_put_le32(tx_cmd_a, dst + 0);
 	sys_put_le32(0u, dst + 4);
