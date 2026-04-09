@@ -1,0 +1,70 @@
+/*
+ * Device tree overlay for ESP32-S3-BOX-3 mic sample
+ * Increases storage partition size for audio recording
+ */
+
+&flash0 {
+	/delete-node/ partitions;
+	
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		sys_partition: partition@10000 {
+			label = "sys";
+			reg = <0x10000 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x20000 DT_SIZE_K(4096)>;  /* Reduced from 5952KB */
+		};
+
+		slot1_partition: partition@420000 {
+			label = "image-1";
+			reg = <0x420000 DT_SIZE_K(4096)>;  /* Reduced from 5952KB */
+		};
+
+		slot0_appcpu_partition: partition@820000 {
+			label = "image-0-appcpu";
+			reg = <0x820000 DT_SIZE_K(1024)>;  /* Reduced from 1984KB */
+		};
+
+		slot1_appcpu_partition: partition@920000 {
+			label = "image-1-appcpu";
+			reg = <0x920000 DT_SIZE_K(1024)>;  /* Reduced from 1984KB */
+		};
+
+		slot0_lpcore_partition: partition@a20000 {
+			label = "image-0-lpcore";
+			reg = <0xA20000 DT_SIZE_K(32)>;
+		};
+
+		slot1_lpcore_partition: partition@a28000 {
+			label = "image-1-lpcore";
+			reg = <0xA28000 DT_SIZE_K(32)>;
+		};
+
+		/* Increased storage partition: 5MB for audio recordings */
+		storage_partition: partition@a30000 {
+			label = "storage";
+			reg = <0xA30000 DT_SIZE_K(5120)>;  /* 5MB instead of 192KB */
+		};
+
+		scratch_partition: partition@fa0000 {
+			label = "image-scratch";
+			reg = <0xFA0000 DT_SIZE_K(124)>;
+		};
+
+		coredump_partition: partition@fff000 {
+			label = "coredump";
+			reg = <0xFFF000 DT_SIZE_K(4)>;
+		};
+	};
+};

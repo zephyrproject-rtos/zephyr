@@ -22,6 +22,7 @@
 		sw0 = &button0;
 		radar-int = &radar_detect_pin;
 		audio-codec-spk = &es8311;
+		audio-codec-mic = &es7210;
 		audio-i2s = &i2s0;
 	};
 
@@ -75,6 +76,15 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	mute_ctrl_gpio {
+		compatible = "gpio-leds";
+
+		mute_ctrl: mute_ctrl {
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			label = "Audio Mute Control";
+		};
+	};
 };
 
 &usb_serial {
@@ -106,6 +116,15 @@
 		compatible = "everest,es8311";
 		reg = <0x18>;
 		pa-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	es7210: es7210@40 {
+		compatible = "everest,es7210";
+		reg = <0x40>;
+		mclk-freq = <4096000>;
+		mic-mask = <0x03>;
+		mic-gain-db = <24>;
 		status = "okay";
 	};
 };
