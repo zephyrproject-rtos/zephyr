@@ -18,6 +18,8 @@ elseif(CONFIG_SOC_MAX32657)
   set(MAX32_INTERFACE_CFG "jlink.cfg")
 endif()
 
+board_runner_args(openocd --cmd-pre-init
+                  "if { [info exists _ZEPHYR_BOARD_SERIAL] } { adapter serial $_ZEPHYR_BOARD_SERIAL }")
 board_runner_args(openocd --cmd-pre-init "source [find interface/${MAX32_INTERFACE_CFG}]")
 board_runner_args(openocd --cmd-pre-init "source [find target/${MAX32_TARGET_CFG}]")
 board_runner_args(openocd "--target-handle=_CHIPNAME.cpu")
