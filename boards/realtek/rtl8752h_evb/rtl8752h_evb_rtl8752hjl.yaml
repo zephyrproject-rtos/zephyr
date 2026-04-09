@@ -2,7 +2,7 @@ identifier: rtl8752h_evb/rtl8752hjl
 name: RTL8752H-EVB-RTL8752HJL
 type: mcu
 arch: arm
-ram: 70
+ram: 57
 flash: 412
 toolchain:
   - zephyr
