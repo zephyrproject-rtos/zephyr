@@ -107,7 +107,8 @@ static void register_radio_event(uint32_t time, bool unregister)
 			pm_policy_event_unregister(&radio_evt);
 		}
 	} else {
-		value_ms = HAL_RADIO_TIMER_DiffSysTimeMs(time, HAL_RADIO_TIMER_GetCurrentSysTime());
+		value_ms = HAL_RADIO_TIMER_DiffSysTimeMs(HAL_RADIO_TIMER_GetFutureSysTime64(time),
+							 HAL_RADIO_TIMER_GetCurrentSysTime());
 		ticks = k_ms_to_ticks_floor64(value_ms) + k_uptime_ticks();
 		if (first_time) {
 			pm_policy_event_register(&radio_evt, ticks);
@@ -123,7 +124,7 @@ uint8_t BLEPLAT_SetRadioTimerValue(uint32_t Time, uint8_t EventType, uint8_t Cal
 	uint8_t retval;
 
 	retval = HAL_RADIO_TIMER_SetRadioTimerValue(Time, EventType, CalReq);
-	if (IS_ENABLED(CONFIG_PM_DEVICE)) {
+	if (IS_ENABLED(CONFIG_PM_DEVICE) && !retval) {
 		register_radio_event(Time, false);
 	}
 	return retval;
