@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Narek Aydinyan
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip LAN78xx USB-to-Ethernet adapter configuration
+
+compatible: "microchip,lan78xx"
+
+include:
+  - name: ethernet-controller.yaml
+  - name: base.yaml
+
+properties:
+  uhc:
+    type: phandle
+    required: true
+    description: USB host controller used to reach the LAN78xx adapter.
+
+  vid:
+    type: int
+    default: 0x0424
+    description: USB vendor ID to match.
+
+  pid:
+    type: int
+    default: 0x7800
+    description: USB product ID to match.
+
+  alt:
+    type: int
+    default: 0
+    description: Alternate setting to select for the data interface.
+
+  led-enable-mask:
+    type: int
+    default: 0
+    description: |
+      Bitmask of LAN78xx LED outputs to enable in HW_CFG.
+
+      Bit 0 = LED0
+      Bit 1 = LED1
+      Bit 2 = LED2
+      Bit 3 = LED3
+
+      Examples:
+        <0x1> enables LED0
+        <0x2> enables LED1
+        <0x4> enables LED2
+        <0x8> enables LED3
+        <0x3> enables LED0 and LED1
+        <0xf> enables LED0..LED3
