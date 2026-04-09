@@ -65,6 +65,26 @@ if MBEDTLS_SSL_PROTO_TLS1_3
 config MBEDTLS_SSL_SESSION_TICKETS
 	bool "Support for RFC 5077 session tickets in TLS 1.3"
 
+config MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
+	bool "TLS 1.3 middlebox compatibility mode"
+	default n
+	help
+	  Enable TLS 1.3 middlebox compatibility mode as defined in
+	  RFC 8446 appendix D.4. Required for interoperability with
+	  some network middleboxes. Can be disabled to save a small
+	  amount of code and bandwidth if the network path is known.
+
+config MBEDTLS_SSL_EARLY_DATA
+	bool "TLS 1.3 early data (0-RTT) support"
+	depends on MBEDTLS_SSL_SESSION_TICKETS
+	default n
+	help
+	  Enable TLS 1.3 early data (0-RTT) for PSK key exchange
+	  modes. This allows sending application data before the
+	  handshake completes, reducing latency. Requires session
+	  tickets and at least one PSK key exchange mode. Disable
+	  if 0-RTT replay protection is a concern.
+
 endif # MBEDTLS_SSL_PROTO_TLS1_3
 
 if MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
