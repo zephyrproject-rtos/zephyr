@@ -6,9 +6,11 @@
 
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/random/random.h>
+#include <zephyr/logging/log.h>
 #include <psa/crypto.h>
 #include <mbedtls/platform.h>
 
+LOG_MODULE_REGISTER(mbedtls_entropy);
 
 #if defined(CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY) || \
     defined(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
@@ -28,6 +30,7 @@ static int get_random_data(uint8_t *output, size_t output_size, bool allow_non_c
 #endif /* CONFIG_ENTROPY_HAS_DRIVER */
 	if (ret < 0) {
 		if (allow_non_cs) {
+			LOG_WRN("HW entropy unavailable, falling back to non-CSPRNG");
 			sys_rand_get(output, output_size);
 			ret = 0;
 		}
