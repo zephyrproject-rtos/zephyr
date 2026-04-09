@@ -2653,6 +2653,11 @@ class DeviceMmioCheck(ComplianceTest):
     )
 
     def run(self):
+        self.skip(
+            "Check disabled pending documentation and community discussion. "
+            "See https://github.com/zephyrproject-rtos/zephyr/issues/106966"
+        )
+
         for fname in get_files(filter='d'):
             if not fname.startswith('drivers/') or not fname.endswith('.c'):
                 continue
