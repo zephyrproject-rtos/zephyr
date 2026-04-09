@@ -1,0 +1,5 @@
+description: TI Four-Channel 20Gbps DisplayPort 2.1 Linear Redriver
+
+compatible: "ti,displayport-redriver"
+
+include: i2c-device.yaml

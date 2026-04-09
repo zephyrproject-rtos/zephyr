@@ -1,0 +1,6 @@
+&i2c5 {
+	dp_redriver: displayport-redriver@18 {
+		compatible = "ti,displayport-redriver";
+		reg = <0x18>;
+	};
+};
