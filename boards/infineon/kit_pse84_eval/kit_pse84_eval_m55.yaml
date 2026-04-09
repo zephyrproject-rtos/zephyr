@@ -18,6 +18,7 @@ supported:
   - hwinfo
   - pinctrl
   - uart
+  - usbd
   - spi
   - sdhc
   - i2s
