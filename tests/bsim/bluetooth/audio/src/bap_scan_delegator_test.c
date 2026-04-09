@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -802,7 +802,6 @@ static void sync_all_broadcasts(void)
 
 static int common_init(void)
 {
-	struct bt_le_ext_adv *ext_adv;
 	int err;
 
 	err = bt_enable(NULL);
@@ -821,15 +820,12 @@ static int common_init(void)
 
 	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
 
-	setup_connectable_adv(&ext_adv);
-
-	WAIT_FOR_FLAG(flag_connected);
-
 	return 0;
 }
 
 static void test_main_client_sync(void)
 {
+	struct bt_le_ext_adv *ext_adv;
 	int err;
 
 	err = common_init();
@@ -837,6 +833,10 @@ static void test_main_client_sync(void)
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
+
+	setup_connectable_adv(&ext_adv);
+
+	WAIT_FOR_FLAG(flag_connected);
 
 	WAIT_FOR_FLAG(flag_broadcast_source_added);
 	/* Wait for broadcast assistant to request us to sync to PA */
@@ -868,6 +868,7 @@ static void test_main_client_sync(void)
 
 static void test_main_server_sync_client_rem(void)
 {
+	struct bt_le_ext_adv *ext_adv;
 	int err;
 
 	err = common_init();
@@ -875,6 +876,10 @@ static void test_main_server_sync_client_rem(void)
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
+
+	setup_connectable_adv(&ext_adv);
+
+	WAIT_FOR_FLAG(flag_connected);
 
 	bt_le_scan_cb_register(&scan_cb);
 
@@ -917,6 +922,7 @@ static void test_main_server_sync_client_rem(void)
 
 static void test_main_server_sync_server_rem(void)
 {
+	struct bt_le_ext_adv *ext_adv;
 	int err;
 
 	err = common_init();
@@ -924,6 +930,10 @@ static void test_main_server_sync_server_rem(void)
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
+
+	setup_connectable_adv(&ext_adv);
+
+	WAIT_FOR_FLAG(flag_connected);
 
 	bt_le_scan_cb_register(&scan_cb);
 
@@ -965,6 +975,65 @@ static void test_main_server_sync_server_rem(void)
 	PASS("BAP Scan Delegator Server Sync Server Remove passed\n");
 }
 
+static void test_main_notify_bonded(void)
+{
+	struct bt_bap_scan_delegator_add_src_param param;
+	struct bt_le_ext_adv *ext_adv;
+	int err;
+
+	err = common_init();
+	if (err) {
+		FAIL("common init failed (err %d)\n", err);
+		return;
+	}
+
+	setup_connectable_adv(&ext_adv);
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	/* Wait for disconnect to trigger a receive state change while disconnected  */
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	/* Add source with dummy data */
+	bt_addr_le_copy(&param.addr, BT_ADDR_LE_ANY);
+	param.sid = 0x00U;
+	param.pa_state = BT_BAP_PA_STATE_SYNCED;
+	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
+	param.broadcast_id = 0x123456U;
+	param.num_subgroups = 0U;
+
+	err = bt_bap_scan_delegator_add_src(&param);
+	if (err != 0) {
+		FAIL("Failed to add src: err %d\n", err);
+		return;
+	}
+
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		FAIL("Failed to start advertising set (err %d)\n", err);
+
+		err = bt_le_ext_adv_delete(ext_adv);
+		if (err != 0) {
+			FAIL("Failed to delete advertising set (err %d)\n", err);
+			return;
+		}
+
+		ext_adv = NULL;
+
+		return;
+	}
+
+	printk("Advertising started\n");
+
+	/* Wait for reconnect to send notification for bonded devices */
+	WAIT_FOR_FLAG(flag_connected);
+
+	/* Wait for disconnect */
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	PASS("%s\n", __func__);
+}
+
 static const struct bst_test_instance test_scan_delegator[] = {
 	{
 		.test_id = "bap_scan_delegator_client_sync",
@@ -984,8 +1053,13 @@ static const struct bst_test_instance test_scan_delegator[] = {
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_server_rem,
 	},
-	BSTEST_END_MARKER
-};
+	{
+		.test_id = "bap_scan_delegator_notify_bonded",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_notify_bonded,
+	},
+	BSTEST_END_MARKER};
 
 struct bst_test_list *test_scan_delegator_install(struct bst_test_list *tests)
 {

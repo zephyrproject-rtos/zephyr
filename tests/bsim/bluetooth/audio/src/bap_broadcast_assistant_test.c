@@ -20,8 +20,10 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -735,7 +737,7 @@ static void test_bass_remove_source(void)
 	printk("Source removed\n");
 }
 
-static int common_init(void)
+static int common_init(bool bondable)
 {
 	int err;
 
@@ -750,6 +752,7 @@ static int common_init(void)
 	bt_bap_broadcast_assistant_register_cb(&broadcast_assistant_cbs);
 	bt_le_per_adv_sync_cb_register(&sync_callbacks);
 	bt_le_scan_cb_register(&common_scan_cb);
+	bt_set_bondable(bondable);
 
 	printk("Starting scan\n");
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
@@ -799,7 +802,7 @@ static void test_main_client_sync(void)
 {
 	int err;
 
-	err = common_init();
+	err = common_init(true);
 	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return;
@@ -833,7 +836,7 @@ static void test_main_client_sync_incorrect_code(void)
 {
 	int err;
 
-	err = common_init();
+	err = common_init(true);
 	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return;
@@ -864,7 +867,7 @@ static void test_main_server_sync_client_rem(void)
 {
 	int err;
 
-	err = common_init();
+	err = common_init(true);
 	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return;
@@ -899,7 +902,7 @@ static void test_main_server_sync_server_rem(void)
 {
 	int err;
 
-	err = common_init();
+	err = common_init(true);
 	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return;
@@ -921,6 +924,120 @@ static void test_main_server_sync_server_rem(void)
 	}
 
 	PASS("BAP Broadcast Assistant Server Sync Passed\n");
+}
+
+static void test_main_notify_bonded(void)
+{
+	int err;
+
+	err = common_init(true);
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return;
+	}
+
+	/* Disconnect to trigger receive state change */
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+	UNSET_FLAG(flag_recv_state_updated); /* ensure that flag is unset when we reconnect */
+
+	/* Restart scan to reconnect */
+	printk("Starting scan\n");
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+	printk("Scanning successfully started\n");
+
+	WAIT_FOR_FLAG(flag_connected);
+	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+
+	/* Expect a receive state notification */
+	WAIT_FOR_FLAG(flag_recv_state_updated);
+
+	/* Disconnect to trigger test end */
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+
+	err = common_deinit();
+	if (err != 0) {
+		FAIL("Failed to deinitialize resources (err %d)\n", err);
+		return;
+	}
+
+	PASS("%s\n", __func__);
+}
+
+static void test_main_notify_not_bonded(void)
+{
+	int err;
+
+	err = common_init(false);
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return;
+	}
+
+	/* Disconnect to trigger receive state change */
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+	UNSET_FLAG(flag_recv_state_updated); /* ensure that flag is unset when we reconnect */
+
+	/* Restart scan to reconnect */
+	printk("Starting scan\n");
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+	printk("Scanning successfully started\n");
+
+	WAIT_FOR_FLAG(flag_connected);
+	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+
+	/* Do not expect a receive state notification */
+	(void)k_sleep(K_SECONDS(1));
+	if (TEST_FLAG(flag_recv_state_updated)) {
+		FAIL("Received receive state notification for not bonded device\n");
+		return;
+	}
+
+	/* Disconnect to trigger test end */
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+
+	err = common_deinit();
+	if (err != 0) {
+		FAIL("Failed to deinitialize resources (err %d)\n", err);
+		return;
+	}
+
+	PASS("%s\n", __func__);
 }
 
 static const struct bst_test_instance test_bass[] = {
@@ -947,6 +1064,18 @@ static const struct bst_test_instance test_bass[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_server_rem,
+	},
+	{
+		.test_id = "bap_broadcast_assistant_notify_bonded",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_notify_bonded,
+	},
+	{
+		.test_id = "bap_broadcast_assistant_notify_not_bonded",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_notify_not_bonded,
 	},
 	BSTEST_END_MARKER,
 };
