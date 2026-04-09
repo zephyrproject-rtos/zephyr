@@ -1,0 +1,8 @@
+config LP5815
+	bool "LP5815 LED driver"
+	default y
+	depends on DT_HAS_TI_LP5815_ENABLED
+	select I2C
+	help
+	  Enable LED driver for LP5815. LP5815 LED driver has 3 channels.
+	  Each channel can drive up to 25.5 mA per LED.
