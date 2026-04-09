@@ -33,4 +33,14 @@ configdefault SYSTEM_TIMER_RESET_BY_LPM
 
 endif # PM
 
+if MBEDTLS_PSA_CRYPTO_C && SOC_MCXA266 && SOC_MCXA366 && SOC_MCXA577
+
+config PSA_CRYPTO_DRIVER_SGI_PKC
+	bool
+	default y
+	select SGI_PKC
+	select SGI_PKC_PLATFORM_MCXA
+
+endif # MBEDTLS_PSA_CRYPTO_C
+
 endif # SOC_FAMILY_MCXA
