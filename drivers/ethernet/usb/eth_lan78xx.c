@@ -83,27 +83,31 @@ LOG_MODULE_REGISTER(eth_lan78xx, CONFIG_ETHERNET_LOG_LEVEL);
 		    (LAN78XX_TX_ALIGN - 1u)))
 #define LAN78XX_TX_USB_LEN(wire_len) (LAN78XX_CMD_HDR_LEN + (wire_len) + LAN78XX_TX_PAD(wire_len))
 
-#define LAN78XX_DT_RX_BUF_SIZE_DEFAULT 2048u
-#define LAN78XX_CFG_DESC_MAX_LEN       4096u
-#define LAN78XX_DEFAULT_TX_INFLIGHT    4u
-#define LAN78XX_PHY_ADDR_COUNT         32u
-#define LAN78XX_USB_EP_ATTR_MASK       0x03u
-#define LAN78XX_USB_EP_MPS_MASK        0x07FFu
+#define LAN78XX_CFG_RX_BUF_SIZE   CONFIG_ETH_LAN78XX_RX_BUF_SIZE
+#define LAN78XX_CFG_RX_XFERS      CONFIG_ETH_LAN78XX_RX_XFERS
+#define LAN78XX_CFG_TX_INFLIGHT   CONFIG_ETH_LAN78XX_TX_INFLIGHT
+#define LAN78XX_CFG_DESC_MAX_LEN  4096u
+#define LAN78XX_PHY_ADDR_COUNT    32u
+#define LAN78XX_USB_EP_ATTR_MASK  0x03u
+#define LAN78XX_USB_EP_MPS_MASK   0x07FFu
+#define LAN78XX_RX_XFERS_MAX      LAN78XX_CFG_RX_XFERS
+#define LAN78XX_TX_INFLIGHT_MAX   LAN78XX_CFG_TX_INFLIGHT
 
 #define LAN78XX_ETH_FCS_LEN         4u
 #define LAN78XX_REG_ACCESS_LEN      sizeof(uint32_t)
 #define LAN78XX_RX_FRAME_PREFIX_LEN (sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint16_t))
 #define LAN78XX_RX_FRAME_ALIGN      4u
 
+BUILD_ASSERT(LAN78XX_RX_XFERS_MAX >= 1, "ETH_LAN78XX_RX_XFERS must be >= 1");
+BUILD_ASSERT(LAN78XX_TX_INFLIGHT_MAX >= 1, "ETH_LAN78XX_TX_INFLIGHT must be >= 1");
+
 struct lan78xx_config {
 	uint16_t vid;
 	uint16_t pid;
-	uint16_t rx_buf_size;
-	uint8_t rx_xfers;
 	uint32_t link_poll_ms;
 	uint8_t alt_setting;
-	uint8_t tx_inflight;
 	uint8_t led_enable_mask;
+	struct net_eth_mac_config mac_cfg;
 };
 
 struct lan78xx_ctx;
@@ -159,17 +163,18 @@ struct lan78xx_ctx {
 	uint8_t phy_id;
 	bool phy_valid;
 	uint8_t attach_attempt;
+	bool workers_started;
 
 	uint8_t mac[NET_ETH_ADDR_LEN];
 
-	struct lan78xx_rx_slot *rx_slots;
+	struct lan78xx_rx_slot rx_slots[LAN78XX_RX_XFERS_MAX];
 	uint8_t rx_count;
 	atomic_t rx_stopping;
 
 	struct lan78xx_intr_slot intr_slot;
 	atomic_t intr_stopping;
 
-	struct lan78xx_tx_slot *tx_slots;
+	struct lan78xx_tx_slot tx_slots[LAN78XX_TX_INFLIGHT_MAX];
 	uint8_t tx_pool_depth;
 	struct k_sem tx_free_sem;
 	struct k_mutex tx_lock;
@@ -191,20 +196,17 @@ static const uint8_t lan78xx_default_mac_addr[NET_ETH_ADDR_LEN] = {
 };
 
 static int lan78xx_enable_auto_mac_link_mode(struct lan78xx_ctx *ctx);
-
-#define LAN78XX_CFG_VID(inst) DT_INST_PROP_OR(inst, vid, LAN78XX_DFLT_VID)
-#define LAN78XX_CFG_PID(inst) DT_INST_PROP_OR(inst, pid, LAN78XX_DFLT_PID)
+static void lan78xx_mgmt_thread_fn(void *p1, void *p2, void *p3);
+static void lan78xx_io_thread_fn(void *p1, void *p2, void *p3);
 
 #define LAN78XX_CFG(inst)                                                                          \
 	static const struct lan78xx_config lan78xx_cfg_##inst = {                                  \
-		.vid = LAN78XX_CFG_VID(inst),                                                      \
-		.pid = LAN78XX_CFG_PID(inst),                                                      \
-		.rx_buf_size = DT_INST_PROP_OR(inst, rx_buf_size, LAN78XX_DT_RX_BUF_SIZE_DEFAULT), \
-		.rx_xfers = DT_INST_PROP_OR(inst, rx_xfers, 4),                                    \
+		.vid = LAN78XX_DFLT_VID,                                                        \
+		.pid = LAN78XX_DFLT_PID,                                                        \
 		.link_poll_ms = DT_INST_PROP_OR(inst, link_poll_ms, 500),                          \
 		.alt_setting = DT_INST_PROP_OR(inst, alt, 0),                                      \
-		.tx_inflight = DT_INST_PROP_OR(inst, tx_inflight, LAN78XX_DEFAULT_TX_INFLIGHT),    \
 		.led_enable_mask = DT_INST_PROP_OR(inst, led_enable_mask, 0),                      \
+		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                                   \
 	}
 
 LAN78XX_CFG(0);
@@ -275,21 +277,48 @@ static void lan78xx_ensure_valid_mac(struct lan78xx_ctx *ctx)
 	}
 }
 
-static void lan78xx_mac_from_dt(struct lan78xx_ctx *ctx)
+static void lan78xx_mac_load(struct lan78xx_ctx *ctx)
 {
-#if DT_NODE_HAS_PROP(DT_DRV_INST(0), local_mac_address)
-	BUILD_ASSERT(DT_PROP_LEN(DT_DRV_INST(0), local_mac_address) == NET_ETH_ADDR_LEN,
-		     "local-mac-address must be NET_ETH_ADDR_LEN bytes");
+	int ret = net_eth_mac_load(&ctx->cfg->mac_cfg, ctx->mac);
 
-	ctx->mac[0] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 0);
-	ctx->mac[1] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 1);
-	ctx->mac[2] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 2);
-	ctx->mac[3] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 3);
-	ctx->mac[4] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 4);
-	ctx->mac[5] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 5);
-#else
-	lan78xx_set_default_mac(ctx);
-#endif
+	if (ret == -ENODATA) {
+		lan78xx_set_default_mac(ctx);
+	} else if (ret < 0) {
+		LOG_WRN("Could not load MAC from configuration (%d), using default", ret);
+		lan78xx_set_default_mac(ctx);
+	}
+
+	lan78xx_ensure_valid_mac(ctx);
+	if (!lan78xx_mac_is_valid(ctx->mac)) {
+		LOG_WRN("Loaded invalid MAC address, using default");
+		lan78xx_set_default_mac(ctx);
+	}
+}
+
+static void lan78xx_start_workers(struct lan78xx_ctx *ctx)
+{
+	if (ctx->workers_started) {
+		return;
+	}
+
+	k_thread_create(&ctx->io_thread, lan78xx_io_stack_0,
+			K_KERNEL_STACK_SIZEOF(lan78xx_io_stack_0), lan78xx_io_thread_fn, ctx, NULL,
+			NULL, K_PRIO_PREEMPT(CONFIG_ETH_LAN78XX_IO_THREAD_PRIO), 0, K_NO_WAIT);
+	k_thread_name_set(&ctx->io_thread, "lan78xx_io");
+
+	k_thread_create(&ctx->mgmt_thread, lan78xx_mgmt_stack_0,
+			K_KERNEL_STACK_SIZEOF(lan78xx_mgmt_stack_0), lan78xx_mgmt_thread_fn, ctx,
+			NULL, NULL, K_PRIO_PREEMPT(CONFIG_ETH_LAN78XX_MGMT_THREAD_PRIO), 0,
+			K_NO_WAIT);
+	k_thread_name_set(&ctx->mgmt_thread, "lan78xx_mgmt");
+
+	ctx->workers_started = true;
+	if (atomic_get(&ctx->mgmt_flags) != 0) {
+		k_sem_give(&ctx->mgmt_sem);
+	}
+	if (atomic_get(&ctx->rx_stopping) != 0 || atomic_get(&ctx->intr_stopping) != 0) {
+		k_sem_give(&ctx->io_sem);
+	}
 }
 
 static bool lan78xx_phy_id_word_valid(uint16_t value)
@@ -1046,7 +1075,7 @@ static void lan78xx_rx_deliver_frames(struct lan78xx_ctx *ctx, uint8_t *buf, siz
 		len -= sizeof(uint16_t);
 
 		size = rx_cmd_a & LAN78XX_RX_CMD_A_LEN_MASK;
-		if (size < LAN78XX_ETH_FCS_LEN || size > (uint32_t)ctx->cfg->rx_buf_size ||
+		if (size < LAN78XX_ETH_FCS_LEN || size > (uint32_t)LAN78XX_CFG_RX_BUF_SIZE ||
 		    size > len) {
 			return;
 		}
@@ -1130,7 +1159,7 @@ static int lan78xx_rx_rearm_slot(struct lan78xx_ctx *ctx, struct lan78xx_rx_slot
 
 	net_buf_reset(slot->xfer->buf);
 	slot->xfer->mps = ctx->ep_mps.bulk_in;
-	slot->xfer->buf->len = ctx->cfg->rx_buf_size;
+	slot->xfer->buf->len = LAN78XX_CFG_RX_BUF_SIZE;
 
 	ret = lan78xx_norm_async_ok(usbh_xfer_enqueue(ctx->udev, slot->xfer));
 	if (ret == 0) {
@@ -1191,7 +1220,7 @@ static void lan78xx_intr_free(struct lan78xx_ctx *ctx)
 
 static int lan78xx_start_rx(struct lan78xx_ctx *ctx)
 {
-	const uint8_t want = ctx ? ctx->cfg->rx_xfers : 0u;
+	const uint8_t want = LAN78XX_CFG_RX_XFERS;
 
 	if (!ctx || !ctx->udev || ctx->ep_ids.bulk_in == 0u || want == 0u) {
 		return -EINVAL;
@@ -1204,23 +1233,19 @@ static int lan78xx_start_rx(struct lan78xx_ctx *ctx)
 		bool ok = true;
 		uint8_t allocated = 0u;
 
-		k_free(ctx->rx_slots);
-		ctx->rx_slots = NULL;
-		ctx->rx_count = 0u;
-
-		ctx->rx_slots = k_calloc(n, sizeof(*ctx->rx_slots));
-		if (ctx->rx_slots == NULL) {
-			continue;
+		for (uint8_t i = 0; i < want; i++) {
+			ctx->rx_slots[i].ctx = ctx;
+			ctx->rx_slots[i].xfer = NULL;
+			atomic_set(&ctx->rx_slots[i].state, LAN78XX_RX_SLOT_FREE);
 		}
 
 		for (uint8_t i = 0; i < n; i++) {
 			struct lan78xx_rx_slot *slot = &ctx->rx_slots[i];
 			int ret;
 
-			slot->ctx = ctx;
 			ret = lan78xx_alloc_transfer_with_buffer(
 				ctx, ctx->ep_ids.bulk_in, ctx->ep_mps.bulk_in, lan78xx_rx_done,
-				slot, ctx->cfg->rx_buf_size, &slot->xfer);
+				slot, LAN78XX_CFG_RX_BUF_SIZE, &slot->xfer);
 			if (ret != 0) {
 				ok = false;
 				break;
@@ -1234,10 +1259,6 @@ static int lan78xx_start_rx(struct lan78xx_ctx *ctx)
 			for (uint8_t i = 0; i < allocated; i++) {
 				lan78xx_rx_slot_free(ctx, &ctx->rx_slots[i]);
 			}
-
-			k_free(ctx->rx_slots);
-			ctx->rx_slots = NULL;
-			ctx->rx_count = 0u;
 			continue;
 		}
 
@@ -1263,7 +1284,7 @@ static int lan78xx_start_rx(struct lan78xx_ctx *ctx)
 
 static void lan78xx_stop_rx(struct lan78xx_ctx *ctx)
 {
-	if (!ctx || !ctx->rx_slots) {
+	if (!ctx || ctx->rx_count == 0u) {
 		return;
 	}
 
@@ -1397,18 +1418,18 @@ static void lan78xx_tx_pool_deinit(struct lan78xx_ctx *ctx)
 		return;
 	}
 
-	if (ctx->udev && ctx->tx_slots) {
+	if (ctx->udev) {
 		for (uint8_t i = 0; i < ctx->tx_pool_depth; i++) {
-			if (ctx->tx_slots[i].xfer) {
-				(void)usbh_xfer_free(ctx->udev, ctx->tx_slots[i].xfer);
-				ctx->tx_slots[i].xfer = NULL;
-				ctx->tx_slots[i].buf = NULL;
+			struct lan78xx_tx_slot *slot = &ctx->tx_slots[i];
+
+			if (slot->xfer) {
+				(void)usbh_xfer_free(ctx->udev, slot->xfer);
+				slot->xfer = NULL;
+				slot->buf = NULL;
 			}
 		}
 	}
 
-	k_free(ctx->tx_slots);
-	ctx->tx_slots = NULL;
 	ctx->tx_pool_depth = 0u;
 }
 
@@ -1422,18 +1443,12 @@ static int lan78xx_tx_pool_init(struct lan78xx_ctx *ctx)
 		return -EINVAL;
 	}
 
-	if (ctx->tx_slots && ctx->tx_pool_depth != 0u) {
+	if (ctx->tx_pool_depth != 0u) {
 		return 0;
 	}
 
-	depth = (ctx->cfg->tx_inflight != 0u) ? ctx->cfg->tx_inflight : LAN78XX_DEFAULT_TX_INFLIGHT;
+	depth = LAN78XX_CFG_TX_INFLIGHT;
 	ctx->tx_pool_depth = depth;
-
-	ctx->tx_slots = k_calloc(depth, sizeof(ctx->tx_slots[0]));
-	if (ctx->tx_slots == NULL) {
-		ctx->tx_pool_depth = 0u;
-		return -ENOMEM;
-	}
 
 	max_wire = MAX((size_t)LAN78XX_ETH_MAX_NOFCS, (size_t)LAN78XX_ETH_MIN_NOFCS);
 	max_usb = LAN78XX_TX_USB_LEN(max_wire);
@@ -1444,6 +1459,7 @@ static int lan78xx_tx_pool_init(struct lan78xx_ctx *ctx)
 		struct lan78xx_tx_slot *slot = &ctx->tx_slots[i];
 		int ret;
 
+		memset(slot, 0, sizeof(*slot));
 		slot->ctx = ctx;
 		slot->index = i;
 		atomic_set(&slot->state, LAN78XX_TX_SLOT_FREE);
@@ -1465,28 +1481,13 @@ static int lan78xx_tx_pool_init(struct lan78xx_ctx *ctx)
 static void lan78xx_set_carrier(struct lan78xx_ctx *ctx, bool up)
 {
 	ctx->link_up = up;
-
-	if (!ctx->iface) {
-		return;
-	}
+	__ASSERT_NO_MSG(ctx->iface != NULL);
 
 	if (up) {
 		net_eth_carrier_on(ctx->iface);
 	} else {
 		net_eth_carrier_off(ctx->iface);
 	}
-}
-
-static int lan78xx_start(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 0;
-}
-
-static int lan78xx_stop(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 0;
 }
 
 static enum ethernet_hw_caps lan78xx_get_capabilities(const struct device *dev)
@@ -1526,7 +1527,7 @@ static int lan78xx_send(const struct device *dev, struct net_pkt *pkt)
 		return -ENETDOWN;
 	}
 
-	if (!ctx->tx_slots || ctx->tx_pool_depth == 0u) {
+	if (ctx->tx_pool_depth == 0u) {
 		return -EAGAIN;
 	}
 
@@ -1604,19 +1605,14 @@ static void lan78xx_iface_init(struct net_if *iface)
 	struct lan78xx_ctx *ctx = dev->data;
 
 	ctx->iface = iface;
-	net_if_set_default(iface);
-
-	lan78xx_ensure_valid_mac(ctx);
 	net_if_set_link_addr(iface, ctx->mac, NET_ETH_ADDR_LEN, NET_LINK_ETHERNET);
 	ethernet_init(iface);
-	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	lan78xx_start_workers(ctx);
 	lan78xx_set_carrier(ctx, ctx->link_up);
 }
 
 static const struct ethernet_api lan78xx_eth_api = {
 	.iface_api.init = lan78xx_iface_init,
-	.start = lan78xx_start,
-	.stop = lan78xx_stop,
 	.get_capabilities = lan78xx_get_capabilities,
 	.get_phy = lan78xx_get_phy,
 	.send = lan78xx_send,
@@ -1933,7 +1929,7 @@ static void lan78xx_io_thread_fn(void *p1, void *p2, void *p3)
 			lan78xx_service_intr_slot(ctx);
 		}
 
-		if (atomic_get(&ctx->rx_stopping) && ctx->rx_slots) {
+		if (atomic_get(&ctx->rx_stopping) && ctx->rx_count != 0u) {
 			bool all_gone = true;
 
 			for (uint8_t i = 0; i < ctx->rx_count; i++) {
@@ -1944,8 +1940,6 @@ static void lan78xx_io_thread_fn(void *p1, void *p2, void *p3)
 			}
 
 			if (all_gone) {
-				k_free(ctx->rx_slots);
-				ctx->rx_slots = NULL;
 				ctx->rx_count = 0u;
 			}
 		}
@@ -2009,11 +2003,12 @@ static struct usbh_class_api lan78xx_usbh_api = {
 
 static const struct usbh_class_filter lan78xx_usbh_filters[] = {
 	{
-		.vid = LAN78XX_CFG_VID(0),
-		.pid = LAN78XX_CFG_PID(0),
+		.vid = LAN78XX_DFLT_VID,
+		.pid = LAN78XX_DFLT_PID,
 		.flags = USBH_CLASS_MATCH_VID_PID,
 	},
-	{0}};
+	{0}
+};
 
 USBH_DEFINE_CLASS(lan78xx, &lan78xx_usbh_api, NULL, lan78xx_usbh_filters);
 
@@ -2044,15 +2039,27 @@ static int lan78xx_init(const struct device *dev)
 	ctx->phy_id = 0;
 	ctx->phy_valid = false;
 	ctx->attach_attempt = 0;
+	ctx->workers_started = false;
 
-	ctx->rx_slots = NULL;
+	for (size_t i = 0; i < ARRAY_SIZE(ctx->rx_slots); i++) {
+		ctx->rx_slots[i].ctx = ctx;
+		ctx->rx_slots[i].xfer = NULL;
+		atomic_set(&ctx->rx_slots[i].state, LAN78XX_RX_SLOT_FREE);
+	}
 	ctx->rx_count = 0u;
 	atomic_clear(&ctx->rx_stopping);
 
 	memset(&ctx->intr_slot, 0, sizeof(ctx->intr_slot));
+	ctx->intr_slot.ctx = ctx;
 	atomic_clear(&ctx->intr_stopping);
 
-	ctx->tx_slots = NULL;
+	for (size_t i = 0; i < ARRAY_SIZE(ctx->tx_slots); i++) {
+		ctx->tx_slots[i].ctx = ctx;
+		ctx->tx_slots[i].xfer = NULL;
+		ctx->tx_slots[i].buf = NULL;
+		ctx->tx_slots[i].index = (uint8_t)i;
+		atomic_set(&ctx->tx_slots[i].state, LAN78XX_TX_SLOT_FREE);
+	}
 	ctx->tx_pool_depth = 0u;
 
 	ctx->next_link_poll_at = LAN78XX_NO_POLL_SCHEDULED;
@@ -2061,21 +2068,10 @@ static int lan78xx_init(const struct device *dev)
 	k_sem_init(&ctx->mgmt_sem, 0, UINT_MAX);
 	k_sem_init(&ctx->io_sem, 0, UINT_MAX);
 
-	lan78xx_mac_from_dt(ctx);
+	lan78xx_mac_load(ctx);
 	lan78xx_ensure_valid_mac(ctx);
 
 	k_sem_init(&ctx->tx_free_sem, 0, UINT_MAX);
-
-	k_thread_create(&ctx->io_thread, lan78xx_io_stack_0,
-			K_KERNEL_STACK_SIZEOF(lan78xx_io_stack_0), lan78xx_io_thread_fn, ctx, NULL,
-			NULL, K_PRIO_PREEMPT(CONFIG_ETH_LAN78XX_IO_THREAD_PRIO), 0, K_NO_WAIT);
-	k_thread_name_set(&ctx->io_thread, "lan78xx_io");
-
-	k_thread_create(&ctx->mgmt_thread, lan78xx_mgmt_stack_0,
-			K_KERNEL_STACK_SIZEOF(lan78xx_mgmt_stack_0), lan78xx_mgmt_thread_fn, ctx,
-			NULL, NULL, K_PRIO_PREEMPT(CONFIG_ETH_LAN78XX_MGMT_THREAD_PRIO), 0,
-			K_NO_WAIT);
-	k_thread_name_set(&ctx->mgmt_thread, "lan78xx_mgmt");
 
 	return 0;
 }

@@ -7,15 +7,14 @@
 	chosen {
 		zephyr,uhc = &usbotg_hs;
 	};
-
-	lan78xx: ethernet {
-		compatible = "microchip,lan78xx";
-		local-mac-address = [02 00 00 00 00 01];
-		uhc = <&usbotg_hs>;
-		status = "okay";
-	};
 };
 
 &usbotg_hs {
 	dr-mode = "host";
+
+	lan78xx: ethernet {
+		compatible = "microchip,lan78xx";
+		local-mac-address = [02 00 00 00 00 01];
+		status = "okay";
+	};
 };

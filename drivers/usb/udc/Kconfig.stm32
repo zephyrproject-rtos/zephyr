@@ -14,7 +14,6 @@ config UDC_STM32
 	select PINCTRL
 	default y if !USB_HOST_STACK
 	default y if !DT_HAS_ST_STM32_OTGHS_ENABLED
-	default n
 	help
 	  STM32 USB device controller driver.
 

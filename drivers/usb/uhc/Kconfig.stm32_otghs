@@ -5,7 +5,8 @@ config UHC_STM32_OTGHS
 	bool "STM32 OTG HS UHC driver"
 	depends on SOC_SERIES_STM32U5X
 	depends on USB_HOST_STACK
-	default y if DT_HAS_ST_STM32_OTGHS_ENABLED
+	depends on DT_HAS_ST_STM32_OTGHS_ENABLED
+	default y
 
 	select USE_STM32_HAL_HCD
 	select USE_STM32_LL_USB
@@ -39,7 +40,6 @@ config UHC_STM32_OTGHS_DMA
 
 config UHC_STM32_OTGHS_SOF
 	bool "SOF interrupt delivery"
-	default n
 	help
 	  Enable SOF interrupt generation in host mode and allow the HAL
 	  SOF callback path to run.

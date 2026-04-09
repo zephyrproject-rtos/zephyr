@@ -7,7 +7,7 @@ menuconfig ETH_LAN78XX
 	bool "LAN78xx USB Ethernet Controller"
 	default y
 	depends on DT_HAS_MICROCHIP_LAN78XX_ENABLED
-	depends on USB_HOST_STACK
+	select USB_HOST_STACK
 	help
 	  Enable support for Microchip LAN78xx USB Ethernet adapters.
 
@@ -22,6 +22,27 @@ config ETH_LAN78XX_MGMT_STACK_SIZE
 	help
 	  Stack size of the management thread that handles attach, detach,
 	  and link polling.
+
+config ETH_LAN78XX_RX_BUF_SIZE
+	int "LAN78xx USB RX buffer size"
+	default 2048
+	range 512 16384
+	help
+	  Bulk-IN transfer buffer size used by the driver.
+
+config ETH_LAN78XX_RX_XFERS
+	int "LAN78xx queued RX transfers"
+	default 4
+	range 1 16
+	help
+	  Number of concurrent bulk-IN transfers kept queued.
+
+config ETH_LAN78XX_TX_INFLIGHT
+	int "LAN78xx in-flight TX transfers"
+	default 4
+	range 1 16
+	help
+	  Number of concurrent bulk-OUT transfers kept queued.
 
 config ETH_LAN78XX_MGMT_THREAD_PRIO
 	int "LAN78xx management thread priority"
