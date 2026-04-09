@@ -24,7 +24,7 @@
 		pwm-0 = &sc_timer;
 		i2s-codec-tx = &sai0;
 		i2s-tx = &sai0;
-		sdhc0 = &usdhc0;
+		sdhc0 = &usdhc1;
 		rtc = &rtc0;
 		sram-ext = &psram0;
 	};
@@ -457,20 +457,27 @@ zephyr_udc0: &usb0 {
 	tx-cal-45-dm-ohms = <6>;
 };
 
-&usdhc0 {
+/*
+ * USDHC1 is connected to the SD card socket via electronic
+ * switches shared with the M.2 connector. To use the SD card,
+ * set jumper JP65 to 1-2 position to route the SDIO signals
+ * to the SD card socket instead of the M.2 connector.
+ */
+&usdhc1 {
 	status = "okay";
-	pwr-gpios = <&gpio7 12 GPIO_ACTIVE_HIGH>;
+	pwr-gpios = <&gpio7 11 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio7 24 GPIO_ACTIVE_LOW>;
+	no-1-8-v;
+	no-3-3-v;
+	no-3-0-v;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-names = "default";
 
-	mmc {
-		compatible = "zephyr,mmc-disk";
-		disk-name = "SD2";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
 		status = "okay";
 	};
-
-	pinctrl-0 = <&pinmux_usdhc>;
-	pinctrl-names = "default";
-	mmc-hs200-1_8v;
-	mmc-hs400-1_8v;
 };
 
 &wwdt0 {
