@@ -1362,6 +1362,7 @@ static int modem_cellular_on_await_registered_state_leave(struct modem_cellular_
 static int modem_cellular_on_registered_state_enter(struct modem_cellular_data *data)
 {
 	net_if_carrier_on(modem_ppp_get_iface(data->ppp));
+	net_if_dormant_off(modem_ppp_get_iface(data->ppp));
 	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 	return 0;
 }
@@ -1458,7 +1459,6 @@ static int modem_cellular_on_await_ppp_dead_state_leave(struct modem_cellular_da
 	net_if_carrier_off(modem_ppp_get_iface(data->ppp));
 	modem_chat_release(&data->chat);
 	modem_ppp_release(data->ppp);
-	net_if_dormant_off(modem_ppp_get_iface(data->ppp));
 
 	return 0;
 }
