@@ -11,6 +11,7 @@ config UHC_STM32_OTGHS
 	select USE_STM32_LL_USB
 	select USE_STM32_HAL_PWR
 	select USE_STM32_HAL_PWR_EX
+	select STM32_USB_COMMON
 
 	help
 	  USB Host Controller (UHC) driver for STM32U5 OTG HS using

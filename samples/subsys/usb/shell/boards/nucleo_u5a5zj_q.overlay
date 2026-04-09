@@ -8,3 +8,7 @@
 		zephyr,uhc = &usbotg_hs;
 	};
 };
+
+&usbotg_hs {
+	dr-mode = "host";
+};

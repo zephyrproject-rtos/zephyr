@@ -15,3 +15,7 @@
 		status = "okay";
 	};
 };
+
+&usbotg_hs {
+	dr-mode = "host";
+};

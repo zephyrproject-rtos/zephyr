@@ -21,6 +21,33 @@ config STM32_PHY_U5OTGHSPHY
 	help
 	  Enable STM32 U5OTGHS embedded High-Speed PHY driver.
 
+choice STM32_OTGHS_OTG_ROLE
+	prompt "STM32 OTG HS role for dr-mode=\"otg\" nodes"
+	default STM32_OTGHS_OTG_ROLE_HOST if USB_HOST_STACK && !UDC_STM32
+	default STM32_OTGHS_OTG_ROLE_PERIPHERAL if UDC_STM32 && !USB_HOST_STACK
+	default STM32_OTGHS_OTG_ROLE_HOST if USB_HOST_STACK
+	default STM32_OTGHS_OTG_ROLE_PERIPHERAL
+	help
+	  Select which Zephyr USB stack owns STM32 OTG HS controller nodes
+	  whose Devicetree role is declared as dr-mode = "otg".
+
+	  STM32 OTG HS host and device support are implemented by separate
+	  Zephyr drivers today, so only one role can bind to a given OTGHS
+	  node in a single build.
+
+config STM32_OTGHS_OTG_ROLE_HOST
+	bool "Host"
+	help
+	  Bind dr-mode = "otg" STM32 OTG HS nodes to the UHC host driver.
+
+config STM32_OTGHS_OTG_ROLE_PERIPHERAL
+	bool "Peripheral"
+	help
+	  Bind dr-mode = "otg" STM32 OTG HS nodes to the STM32 device
+	  controller driver.
+
+endchoice
+
 module = STM32_USB_COMMON
 module-str = STM32 USB common code
 source "subsys/logging/Kconfig.template.log_config"

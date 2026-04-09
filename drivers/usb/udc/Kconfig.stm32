@@ -12,7 +12,9 @@ config UDC_STM32
 	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
 	select STM32_USB_COMMON
 	select PINCTRL
-	default y
+	default y if !USB_HOST_STACK
+	default y if !DT_HAS_ST_STM32_OTGHS_ENABLED
+	default n
 	help
 	  STM32 USB device controller driver.
 

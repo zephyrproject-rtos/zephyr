@@ -25,3 +25,21 @@ properties:
 
   clocks:
     required: true
+
+  dr-mode:
+    type: string
+    enum:
+      - "host"
+      - "peripheral"
+      - "otg"
+    description: |
+      Select the USB data role exposed by this controller instance.
+
+      "host" instantiates the STM32 OTG HS host controller driver.
+      "peripheral" instantiates the STM32 device controller driver.
+      "otg" marks the controller as dual-role capable and defers the
+      active Zephyr stack selection to the STM32 OTG HS OTG-role Kconfig
+      choice.
+
+      If omitted, Zephyr keeps the historical STM32 OTG HS behavior and
+      treats the controller as peripheral-only.

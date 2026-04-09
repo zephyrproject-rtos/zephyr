@@ -17,6 +17,7 @@
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/usb/uhc.h>
+#include <stm32_usb_common.h>
 
 #include "uhc_common.h"
 #include "uhc_stm32_otghs.h"
@@ -2376,4 +2377,8 @@ static int stm32_driver_preinit(const struct device *dev)
 			      &stm32_otghs_cfg_##n, POST_KERNEL,                                   \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &stm32_uhc_api);
 
-DT_INST_FOREACH_STATUS_OKAY(STM32_OTGHS_INST_DEFINE)
+#define STM32_OTGHS_INST_DEFINE_IF_HOST(n)                                                    \
+	COND_CODE_1(USB_STM32_NODE_HAS_HOST_ROLE(DT_DRV_INST(n)),                             \
+		    (STM32_OTGHS_INST_DEFINE(n)), ())
+
+DT_INST_FOREACH_STATUS_OKAY(STM32_OTGHS_INST_DEFINE_IF_HOST)

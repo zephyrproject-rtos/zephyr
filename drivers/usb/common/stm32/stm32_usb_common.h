@@ -21,6 +21,34 @@
 /* Evaluates to 1 if `usb_node` is High-Speed capable, 0 otherwise. */
 #define USB_STM32_NODE_IS_HS_CAPABLE(usb_node)	DT_NODE_HAS_COMPAT(usb_node, st_stm32_otghs)
 
+/*
+ * STM32 OTG HS role selection.
+ *
+ * Devicetree keeps peripheral as the historical default so existing STM32
+ * OTG HS board DTS files continue to bind to the device stack until they
+ * opt into host or otg role selection explicitly.
+ */
+#define USB_STM32_OTGHS_DR_MODE_HOST		0
+#define USB_STM32_OTGHS_DR_MODE_PERIPHERAL	1
+#define USB_STM32_OTGHS_DR_MODE_OTG		2
+
+#define USB_STM32_NODE_DR_MODE_IDX(usb_node)					\
+	DT_ENUM_IDX_OR(usb_node, dr_mode, USB_STM32_OTGHS_DR_MODE_PERIPHERAL)
+
+#define USB_STM32_NODE_HAS_HOST_ROLE(usb_node)					\
+	UTIL_OR(IS_EQ(USB_STM32_NODE_DR_MODE_IDX(usb_node),			\
+		      USB_STM32_OTGHS_DR_MODE_HOST),				\
+		UTIL_AND(IS_EQ(USB_STM32_NODE_DR_MODE_IDX(usb_node),		\
+			       USB_STM32_OTGHS_DR_MODE_OTG),			\
+			 IS_ENABLED(CONFIG_STM32_OTGHS_OTG_ROLE_HOST)))
+
+#define USB_STM32_NODE_HAS_PERIPHERAL_ROLE(usb_node)				\
+	UTIL_OR(IS_EQ(USB_STM32_NODE_DR_MODE_IDX(usb_node),			\
+		      USB_STM32_OTGHS_DR_MODE_PERIPHERAL),			\
+		UTIL_AND(IS_EQ(USB_STM32_NODE_DR_MODE_IDX(usb_node),		\
+			       USB_STM32_OTGHS_DR_MODE_OTG),			\
+			 IS_ENABLED(CONFIG_STM32_OTGHS_OTG_ROLE_PERIPHERAL)))
+
 /* Evaluates to 1 if PHY of `usb_node` is an ULPI PHY, 0 otherwise. */
 #define USB_STM32_NODE_PHY_IS_ULPI(usb_node)						\
 	UTIL_AND(USB_STM32_NODE_IS_HS_CAPABLE(usb_node),				\
