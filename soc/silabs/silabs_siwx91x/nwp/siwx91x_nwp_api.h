@@ -37,5 +37,7 @@ void siwx91x_nwp_get_firmware_version(const struct device *dev,
 				      struct siwx91x_nwp_version *version);
 int siwx91x_nwp_flash_erase(const struct device *dev, uint32_t dest, size_t len);
 int siwx91x_nwp_flash_write(const struct device *dev, uint32_t dest, const void *buf, size_t len);
+int siwx91x_nwp_fw_upgrade_start(const struct device *dev, const void *hdr);
+int siwx91x_nwp_fw_upgrade_write(const struct device *dev, const void *buf, size_t len);
 
 #endif
