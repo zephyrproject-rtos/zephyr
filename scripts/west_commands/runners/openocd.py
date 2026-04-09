@@ -460,7 +460,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if command in ('attach', 'debug'):
             server_proc = self.popen_ignore_int(server_cmd, stderr=subprocess.DEVNULL)
             try:
-                self.run_client(gdb_cmd)
+                self.check_call_ignore_sigint(gdb_cmd)
             finally:
                 server_proc.terminate()
                 server_proc.wait()

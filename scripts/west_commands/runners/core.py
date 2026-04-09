@@ -897,18 +897,22 @@ class ZephyrBinaryRunner(abc.ABC):
         It's useful to e.g. open a GDB server and client.'''
         server_proc = self.popen_ignore_int(server, **kwargs)
         try:
-            self.run_client(client, **kwargs)
+            self.check_call_ignore_sigint(client, **kwargs)
         finally:
             server_proc.terminate()
             server_proc.wait()
 
-    def run_client(self, client, **kwargs):
-        '''Run a client that handles SIGINT.'''
+    def check_call_ignore_sigint(self, client, **kwargs):
+        '''Run a command that ignores SIGINT.'''
         previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
         try:
             self.check_call(client, **kwargs)
         finally:
             signal.signal(signal.SIGINT, previous)
+
+    def run_client(self, client, **kwargs):
+        self.logger.warning('run_client is deprecated; use check_call_ignore_sigint instead')
+        self.check_call_ignore_sigint(client, **kwargs)
 
     def _log_cmd(self, cmd: list[str]):
         escaped = ' '.join(shlex.quote(s) for s in cmd)
@@ -1016,7 +1020,7 @@ class ZephyrBinaryRunner(abc.ABC):
             # If a `nc` command is available, run it, as it will provide the
             # best support for CONFIG_SHELL_VT100_COMMANDS etc.
             client_cmd = ['nc', host, str(port)]
-            # Note: netcat (nc) does not handle sigint, so cannot use run_client()
+            # Note: netcat (nc) does not handle sigint, so cannot use check_call_ignore_sigint()
             self.check_call(client_cmd)
             return
         else:

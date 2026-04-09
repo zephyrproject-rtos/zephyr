@@ -465,7 +465,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 self.print_gdbserver_message()
                 self.run_server_and_client(server_cmd, client_cmd)
             else:
-                self.run_client(client_cmd)
+                self.check_call_ignore_sigint(client_cmd)
 
     def get_default_flash_commands(self):
         lines = self.pre_script_cmds or [] # Prepend custom script commands
