@@ -4813,9 +4813,11 @@ Realtek Fingerprint Platforms:
 Release:
   status: maintained
   maintainers:
-    - nashif
+    - MaureenHelm
+    - stephanosio
   collaborators:
     - kartben
+    - nashif
   files:
     - VERSION
     - scripts/dump_bugs_pickle.py
@@ -4823,21 +4825,10 @@ Release:
     - LICENSE
     - LICENSES/
     - scripts/release/
-  labels:
-    - "Release"
-
-Release Notes:
-  status: maintained
-  maintainers:
-    - MaureenHelm
-    - stephanosio
-  collaborators:
-    - kartben
-  files:
     - doc/releases/migration-guide-*
     - doc/releases/release-notes-*
   labels:
-    - "Release Notes"
+    - "Release"
 
 Renesas R-Car Platforms:
   status: maintained
