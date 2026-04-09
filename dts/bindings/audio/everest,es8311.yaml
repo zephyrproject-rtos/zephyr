@@ -1,0 +1,68 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ES8311 Low Power Stereo Audio Codec
+
+  The ES8311 is a low-power stereo audio codec with integrated headphone
+  amplifier. It supports I2S/PCM audio interface and I2C control interface.
+  
+  Key features:
+  - Low power consumption
+  - Integrated headphone amplifier
+  - I2S/PCM digital audio interface
+  - I2C control interface
+  - Sample rates: 8kHz to 96kHz
+  - 16/24/32-bit audio data
+  - Built-in microphone bias
+  - Programmable gain control
+
+  Example devicetree configuration:
+
+  &i2c1 {
+    es8311: es8311@18 {
+      compatible = "everest,es8311";
+      reg = <0x18>;
+      reset-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+      pa-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+      mclk-frequency = <12288000>;
+      mic-bias-voltage = <2800>;
+    };
+  };
+
+compatible: "everest,es8311"
+
+include: [i2c-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the codec reset pin. This pin is active low.
+      When asserted, the codec enters reset state and all registers
+      are reset to their default values.
+
+  pa-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the power amplifier enable pin. This pin is active high.
+      When asserted, the external power amplifier is enabled for speaker output.
+
+  mclk-frequency:
+    type: int
+    default: 12288000
+    description: |
+      Master clock frequency in Hz. Common values are:
+      - 12288000 Hz (12.288 MHz) - Standard for 48kHz family sample rates
+      - 11289600 Hz (11.2896 MHz) - Standard for 44.1kHz family sample rates
+      Default is 12.288 MHz which supports 48kHz, 24kHz, 16kHz, 12kHz, 8kHz sample rates.
+
+  mic-bias-voltage:
+    type: int
+    default: 2800
+    description: |
+      Microphone bias voltage in millivolts. Supported values:
+      - 2800 mV (default) - Standard bias voltage for most electret microphones
+      - 2500 mV - Lower bias voltage option
+      - 3300 mV - Higher bias voltage option
+      This voltage is used to power external electret microphones.

@@ -38,6 +38,7 @@ source "subsys/logging/Kconfig.template.log_config"
 # zephyr-keep-sorted-start
 source "drivers/audio/Kconfig.cs43l22"
 source "drivers/audio/Kconfig.da7212"
+source "drivers/audio/Kconfig.es8311"
 source "drivers/audio/Kconfig.max98091"
 source "drivers/audio/Kconfig.pcm1681"
 source "drivers/audio/Kconfig.sf32lb"

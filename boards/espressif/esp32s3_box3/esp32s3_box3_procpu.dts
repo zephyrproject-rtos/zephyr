@@ -21,6 +21,8 @@
 		watchdog0 = &wdt0;
 		sw0 = &button0;
 		radar-int = &radar_detect_pin;
+		audio-codec-spk = &es8311;
+		audio-i2s = &i2s0;
 	};
 
 	chosen {
@@ -29,6 +31,7 @@
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,audio = &i2s0;
 		zephyr,display = &esp32_lcd;
 		zephyr,keyboard-scan = &gt911;
 		zephyr,bt-hci = &esp32_bt_hci;
@@ -42,14 +45,25 @@
 			label = "BOOT Button";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
+		button1: button_1 {
+			gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "MUTE Button";
+			zephyr,code = <INPUT_KEY_1>;
+		};
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
 		lcd_backlight: lcd_backlight {
-			gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>; /* GPIO47 */
+			gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 			label = "LCD Backlight";
+		};
+
+		pa_ctrl: pa_ctrl {
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+			label = "Speaker PA Control";
 		};
 	};
 
@@ -87,6 +101,13 @@
 		irq-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
+
+	es8311: es8311@18 {
+		compatible = "everest,es8311";
+		reg = <0x18>;
+		pa-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
 };
 
 &i2c1 {
@@ -118,7 +139,7 @@
 	esp32_lcd: esp32_lcd@0 {
 		compatible = "espressif,esp32-lcd";
 		reg = <0>;
-		spi-max-frequency = <20000000>; /* 20 MHz */
+		spi-max-frequency = <20000000>;
 		width = <320>;
 		height = <240>;
 		pixel-format = <0>;
@@ -139,6 +160,12 @@
 	filter-noise-thr = <ESP32_TOUCH_FILTER_NOISE_THR_4_8TH>;
 	filter-jitter-step = <4>;
 	filter-smooth-level = <ESP32_TOUCH_FILTER_SMOOTH_MODE_IIR_2>;
+};
+
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
 };
 
 &timer0 {

@@ -1,0 +1,25 @@
+# Copyright (c) 2026 NotioNext LTD.
+# SPDX-License-Identifier: Apache-2.0
+
+config ES8311
+	bool "ES8311 Audio Codec"
+	default y
+	depends on DT_HAS_EVEREST_ES8311_ENABLED
+	depends on I2C
+	depends on GPIO
+	help
+	  Enable driver for ES8311 Audio Codec.
+	  
+	  The ES8311 is a low-power stereo audio codec with integrated
+	  headphone amplifier. It supports I2S/PCM audio interface and
+	  I2C control interface.
+
+if ES8311
+
+config ES8311_INIT_PRIORITY
+	int "ES8311 driver init priority"
+	default 70
+	help
+	  ES8311 driver initialization priority.
+
+endif # ES8311
