@@ -16,4 +16,7 @@ flash: 64
 vendor: arm
 sysbuild: true
 testing:
-  timeout_multiplier: 3
+  # Skip test execution until FVP SMP TLB coherency bug is resolved.
+  # Using a non-existent tag effectively makes this build-only.
+  only_tags:
+    - fvp_corstone1000_smp
