@@ -328,6 +328,110 @@ ZTEST_F(zms, test_zms_gc)
 	}
 }
 
+ZTEST_F(zms, test_zms_cycle_count_input_validation)
+{
+	int err;
+	uint32_t cycles;
+
+	/* zms_get_num_cycles must safely return 0 for NULL or unmounted fs. */
+	zassert_equal(zms_get_num_cycles(NULL), 0, "expected 0 for NULL fs");
+	zassert_equal(zms_get_num_cycles(&fixture->fs), 0, "expected 0 on unmounted fs");
+
+	/* Unmounted filesystem must be rejected. */
+	err = zms_get_sector_num_cycles(&fixture->fs, 0, &cycles);
+	zassert_equal(err, -EACCES, "expected -EACCES on unmounted fs, got %d", err);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* NULL fs / NULL out pointer. */
+	err = zms_get_sector_num_cycles(NULL, 0, &cycles);
+	zassert_equal(err, -EINVAL, "expected -EINVAL for NULL fs, got %d", err);
+
+	err = zms_get_sector_num_cycles(&fixture->fs, 0, NULL);
+	zassert_equal(err, -EINVAL, "expected -EINVAL for NULL cycles, got %d", err);
+
+	/* Sector index out of range. */
+	err = zms_get_sector_num_cycles(&fixture->fs, fixture->fs.sector_count, &cycles);
+	zassert_equal(err, -EINVAL, "expected -EINVAL for out-of-range sector, got %d", err);
+}
+
+ZTEST_F(zms, test_zms_cycle_count_increments)
+{
+	int err;
+	uint32_t base_cycles;
+	uint32_t num_cycles;
+	uint32_t sector_cycles;
+	const uint32_t advances = 9;
+
+	fixture->fs.sector_count = 3;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	base_cycles = zms_get_num_cycles(&fixture->fs);
+
+	/* Each call to zms_sector_use_next advances the active sector by one;
+	 * after sector_count advances every sector has been recycled once and
+	 * the maximum cycle count must have grown by exactly 1.
+	 */
+	for (uint32_t i = 0; i < advances; i++) {
+		err = zms_sector_use_next(&fixture->fs);
+		zassert_true(err == 0, "zms_sector_use_next failed at %u: %d", i, err);
+	}
+
+	num_cycles = zms_get_num_cycles(&fixture->fs);
+	zassert_equal(num_cycles, base_cycles + (advances / fixture->fs.sector_count),
+		      "num_cycles=%u expected=%u (base=%u)", num_cycles,
+		      base_cycles + (advances / fixture->fs.sector_count), base_cycles);
+
+	/* Each individual sector must report a non-zero, in-range cycle count. */
+	for (uint32_t s = 0; s < fixture->fs.sector_count; s++) {
+		err = zms_get_sector_num_cycles(&fixture->fs, s, &sector_cycles);
+		zassert_true(err == 0, "zms_get_sector_num_cycles(%u) failed: %d", s, err);
+		zassert_true(sector_cycles <= num_cycles,
+			     "sector %u cycles=%u exceeds max=%u", s, sector_cycles,
+			     num_cycles);
+	}
+}
+
+ZTEST_F(zms, test_zms_cycle_count_persistence)
+{
+	int err;
+	uint32_t base_cycles;
+	uint32_t num_cycles_before;
+	uint32_t num_cycles_after;
+	const uint32_t advances = 6;
+
+	fixture->fs.sector_count = 3;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	base_cycles = zms_get_num_cycles(&fixture->fs);
+
+	for (uint32_t i = 0; i < advances; i++) {
+		err = zms_sector_use_next(&fixture->fs);
+		zassert_true(err == 0, "zms_sector_use_next failed at %u: %d", i, err);
+	}
+
+	num_cycles_before = zms_get_num_cycles(&fixture->fs);
+	zassert_true(num_cycles_before > base_cycles,
+		     "cycle count did not advance: before=%u base=%u", num_cycles_before,
+		     base_cycles);
+
+	/* Re-mount and ensure the cycle count survives, exercising the
+	 * full_cycle_cnt persistence path fixed in 6aa5edc5/6db9fd35.
+	 */
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount (remount) call failure: %d", err);
+
+	num_cycles_after = zms_get_num_cycles(&fixture->fs);
+	zassert_equal(num_cycles_after, num_cycles_before,
+		      "cycle count not persisted across remount: before=%u after=%u",
+		      num_cycles_before, num_cycles_after);
+}
+
 static void write_content(uint32_t max_id, uint32_t begin, uint32_t end, struct zms_fs *fs)
 {
 	uint8_t buf[32];
@@ -905,7 +1009,7 @@ ZTEST_F(zms, test_zms_cache_gc)
 	 */
 
 	num = num_matching_cache_entries(0ULL << ADDR_SECT_SHIFT, true, &fixture->fs);
-	zassert_equal(num, 0, "not invalidated cache entries aftetr gc");
+	zassert_equal(num, 0, "not invalidated cache entries after gc");
 
 	num = num_matching_cache_entries(2ULL << ADDR_SECT_SHIFT, true, &fixture->fs);
 	zassert_equal(num, 2, "invalid cache content after gc");
