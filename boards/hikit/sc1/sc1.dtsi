@@ -2,6 +2,11 @@
  * Copyright (c) 2022-2023 Marcin Niestroj
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Local additions attribution:
+ * - Yongci <zhuyongci@hotmail.com>
+ * - GitHub Copilot (GPT-5.3-Codex)
+ * - Date: 2026-04-09
  */
 
 #include <st/l5/stm32l562Xe.dtsi>
@@ -18,6 +23,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,rtc = &rtc;
 		zephyr,code-partition = &slot0_partition;
 	};
 
@@ -127,6 +133,17 @@
 		address-width = <8>;
 		timeout = <5>;
 		status = "okay";
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mac_address: mac-address@0 {
+				reg = <0x0 0x6>;
+				#nvmem-cell-cells = <0>;
+			};
+		};
 	};
 };
 
@@ -155,7 +172,8 @@
 		spi-max-frequency = <DT_FREQ_M(32)>;
 		int-gpios = <&gpioa 3 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
-		local-mac-address = [00 08 dc 00 00 01];
+		nvmem-cells = <&mac_address>;
+		nvmem-cell-names = "mac-address";
 		status = "okay";
 	};
 };
