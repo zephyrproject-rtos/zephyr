@@ -22,11 +22,13 @@ function(wiseconnect_get_ram_config node_var out_var)
     message(FATAL_ERROR "Unsupported RAM size config: ${size_kb}KB")
   endif()
 endfunction()
+wiseconnect_get_ram_config("sram0" RAM_MEM_CONFIG)
 
 # Keep these values sync with
 # components/device/silabs/si91x/mcu/core/chip/component/siwg917*.slcc
 zephyr_compile_definitions(
   SL_SI91X_ENABLE_LITTLE_ENDIAN
+  SL_SI91X_SI917_RAM_MEM_CONFIG=${RAM_MEM_CONFIG}
   SLI_CODE_CLASSIFICATION_DISABLE
   SLI_SI91X_MCU_COMMON_FLASH_MODE
   SLI_SI91X_MCU_CONFIG_RADIO_BOARD_VER2
@@ -34,6 +36,7 @@ zephyr_compile_definitions(
   SLI_SI91X_MCU_ENABLE_FLASH_BASED_EXECUTION
   SLI_SI91X_MCU_ENABLE_IPMU_APIS
   SLI_SI91X_MCU_INTERFACE
+  SLI_SI91X_ENABLE_OS
   SLI_SI917
   SLI_SI917B0
 )
@@ -232,10 +235,7 @@ endif() # CONFIG_WIFI_SILABS_SIWX91X
 
 
 if(CONFIG_SILABS_SIWX91X_NWP)
-  wiseconnect_get_ram_config("sram0" RAM_MEM_CONFIG)
   zephyr_compile_definitions(
-    SLI_SI91X_ENABLE_OS
-    SL_SI91X_SI917_RAM_MEM_CONFIG=${RAM_MEM_CONFIG}
     SL_WIFI_COMPONENT_INCLUDED # Depite de the name, required for everything
   )
   zephyr_include_directories(
