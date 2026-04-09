@@ -34,6 +34,8 @@ LOG_MODULE_REGISTER(counter_it51xxx, CONFIG_COUNTER_LOG_LEVEL);
 /* 0x5C (offset 0x2C): External Timer 8 Counter Observation Register */
 #define REG_TIMER_ET8CNTOLR 0x2C
 
+#define ALARM_COUNTER_MAX_TICKS 0xFFFFFF
+
 struct counter_it51xxx_config {
 	struct counter_config_info info;
 	mm_reg_t base;
@@ -121,8 +123,9 @@ static int counter_it51xxx_set_alarm(const struct device *dev, uint8_t chan_id,
 		return -EINVAL;
 	}
 
-	if (alarm_cfg->ticks > sys_read32(config->base + REG_TIMER_ET8CNTLLR)) {
-		LOG_ERR("Alarm timer ticks can't be bigger than top ticks");
+	if (alarm_cfg->ticks > ALARM_COUNTER_MAX_TICKS ||
+	    alarm_cfg->ticks > sys_read32(config->base + REG_TIMER_ET8CNTLLR)) {
+		LOG_ERR("Alarm timer ticks can't be bigger than top ticks or max. alarm value");
 		return -EINVAL;
 	}
 
@@ -256,6 +259,8 @@ static void counter_it51xxx_alarm_isr(const struct device *dev)
 	LOG_DBG("Alarm timer ISR");
 
 	/* Alarm is one-shot, so disable interrupt and callback */
+	counter_it51xxx_alarm_timer_disable(dev);
+
 	if (data->alarm_callback) {
 		alarm_cb = data->alarm_callback;
 		data->alarm_callback = NULL;
@@ -265,8 +270,6 @@ static void counter_it51xxx_alarm_isr(const struct device *dev)
 
 		alarm_cb(dev, 0, ticks, user_data);
 	}
-
-	counter_it51xxx_alarm_timer_disable(dev);
 }
 
 static void counter_it51xxx_top_isr(const struct device *dev)
