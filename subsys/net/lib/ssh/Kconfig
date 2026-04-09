@@ -127,6 +127,15 @@ config SSH_DEFAULT_WELCOME_BANNER
 	help
 	  The Zephyr SSH build version is appended to this string.
 
+config SSH_SHELL
+	bool
+	depends on NET_SHELL
+	select GETOPT_LONG
+	select SHELL_GETOPT
+	select POSIX_C_LIB_EXT
+	depends on DNS_RESOLVER
+	default y
+
 endif
 
 module = SSH

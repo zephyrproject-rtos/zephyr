@@ -62,3 +62,8 @@ if(CONFIG_NET_SHELL_HTTP_CLIENT_HAS_CERTIFICATE)
     ${ZEPHYR_BINARY_DIR}/include/generated/certs.der.inc
   )
 endif()
+
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_SSH_SUPPORTED ssh_shell.c)
+if(CONFIG_SSH_SERVER OR CONFIG_SSH_CLIENT)
+  zephyr_library_sources(ssh_keygen_shell.c)
+endif()
