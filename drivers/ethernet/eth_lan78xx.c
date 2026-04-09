@@ -128,20 +128,27 @@ struct lan78xx_tx_slot {
 	uint8_t index;
 };
 
+struct lan78xx_ep_ids {
+	uint8_t ifnum;
+	uint8_t bulk_in;
+	uint8_t bulk_out;
+	uint8_t intr_in;
+};
+
+struct lan78xx_ep_mps {
+	uint16_t bulk_in;
+	uint16_t bulk_out;
+	uint16_t intr_in;
+};
+
 struct lan78xx_ctx {
 	const struct device *dev;
 	const struct lan78xx_config *cfg;
 	struct net_if *iface;
 	struct usb_device *udev;
 
-	uint8_t ifnum;
-	uint8_t ep_bulk_in;
-	uint8_t ep_bulk_out;
-	uint8_t ep_intr_in;
-
-	uint16_t ep_bulk_in_mps;
-	uint16_t ep_bulk_out_mps;
-	uint16_t ep_intr_in_mps;
+	struct lan78xx_ep_ids ep_ids;
+	struct lan78xx_ep_mps ep_mps;
 
 	bool connected;
 	bool link_up;
@@ -292,8 +299,7 @@ static bool lan78xx_phy_id_word_valid(uint16_t value)
 
 static int lan78xx_alloc_transfer_with_buffer(struct lan78xx_ctx *ctx, uint8_t ep, uint16_t mps,
 					      usbh_udev_cb_t done_cb, void *priv, size_t buf_size,
-					      struct uhc_transfer **out_xfer,
-					      struct net_buf **out_buf)
+					      struct uhc_transfer **out_xfer)
 {
 	struct uhc_transfer *xfer;
 	struct net_buf *buf;
@@ -304,9 +310,6 @@ static int lan78xx_alloc_transfer_with_buffer(struct lan78xx_ctx *ctx, uint8_t e
 	}
 
 	*out_xfer = NULL;
-	if (out_buf != NULL) {
-		*out_buf = NULL;
-	}
 
 	xfer = usbh_xfer_alloc(ctx->udev, ep, done_cb, NULL);
 	if (xfer == NULL) {
@@ -330,9 +333,6 @@ static int lan78xx_alloc_transfer_with_buffer(struct lan78xx_ctx *ctx, uint8_t e
 
 	xfer->priv = priv;
 	*out_xfer = xfer;
-	if (out_buf != NULL) {
-		*out_buf = buf;
-	}
 
 	return 0;
 }
@@ -573,19 +573,117 @@ static int lan78xx_link_is_up(struct lan78xx_ctx *ctx, bool *up)
 	return 0;
 }
 
+struct lan78xx_ep_scan {
+	int cur_if;
+	int found_if;
+	uint8_t bulk_in;
+	uint8_t bulk_out;
+	uint8_t intr_in;
+	uint16_t bulk_in_mps;
+	uint16_t bulk_out_mps;
+	uint16_t intr_in_mps;
+};
+
+static int lan78xx_parse_desc_header(const uint8_t *desc, const uint8_t *end, uint8_t *len,
+				     uint8_t *type)
+{
+	if ((desc + 2u) > end) {
+		return -EINVAL;
+	}
+
+	*len = desc[0];
+	*type = desc[1];
+
+	if ((*len < 2u) || ((desc + *len) > end)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static bool lan78xx_scan_iface_selected(const struct lan78xx_ep_scan *scan)
+{
+	return (scan->found_if >= 0) && (scan->cur_if != scan->found_if);
+}
+
+static bool lan78xx_scan_interface_desc(struct lan78xx_ep_scan *scan, const uint8_t *desc)
+{
+	const struct usb_if_descriptor *ifd = (const struct usb_if_descriptor *)desc;
+
+	scan->cur_if = ifd->bInterfaceNumber;
+	return lan78xx_scan_iface_selected(scan);
+}
+
+static void lan78xx_scan_endpoint_desc(struct lan78xx_ep_scan *scan, const uint8_t *desc)
+{
+	const struct usb_ep_descriptor *epd;
+	uint8_t xfertype;
+	bool in;
+	uint16_t mps;
+
+	if (scan->cur_if < 0 || lan78xx_scan_iface_selected(scan)) {
+		return;
+	}
+
+	epd = (const struct usb_ep_descriptor *)desc;
+	xfertype = epd->bmAttributes & LAN78XX_USB_EP_ATTR_MASK;
+	in = (epd->bEndpointAddress & USB_EP_DIR_IN) != 0u;
+	mps = sys_le16_to_cpu(epd->wMaxPacketSize) & LAN78XX_USB_EP_MPS_MASK;
+
+	if (mps == 0u) {
+		return;
+	}
+
+	if (xfertype == USB_EP_TYPE_BULK) {
+		if (in) {
+			scan->bulk_in = epd->bEndpointAddress;
+			scan->bulk_in_mps = mps;
+		} else {
+			scan->bulk_out = epd->bEndpointAddress;
+			scan->bulk_out_mps = mps;
+		}
+	} else if (xfertype == USB_EP_TYPE_INTERRUPT) {
+		if (in) {
+			scan->intr_in = epd->bEndpointAddress;
+			scan->intr_in_mps = mps;
+		}
+	} else {
+		/* Ignore endpoint types this driver does not use. */
+	}
+
+	if (scan->bulk_in != 0u && scan->bulk_out != 0u && scan->found_if < 0) {
+		scan->found_if = scan->cur_if;
+	}
+}
+
+static int lan78xx_store_scanned_endpoints(struct lan78xx_ctx *ctx,
+					   const struct lan78xx_ep_scan *scan)
+{
+	if ((scan->found_if < 0) || (scan->bulk_in == 0u) || (scan->bulk_out == 0u) ||
+	    (scan->bulk_in_mps == 0u) || (scan->bulk_out_mps == 0u)) {
+		return -ENODEV;
+	}
+
+	ctx->ep_ids.ifnum = (uint8_t)scan->found_if;
+	ctx->ep_ids.bulk_in = scan->bulk_in;
+	ctx->ep_ids.bulk_out = scan->bulk_out;
+	ctx->ep_ids.intr_in = scan->intr_in;
+	ctx->ep_mps.bulk_in = scan->bulk_in_mps;
+	ctx->ep_mps.bulk_out = scan->bulk_out_mps;
+	ctx->ep_mps.intr_in = scan->intr_in_mps;
+
+	return 0;
+}
+
 static int lan78xx_parse_endpoints(struct lan78xx_ctx *ctx)
 {
 	const struct usb_cfg_descriptor *cfg;
 	const uint8_t *p;
 	const uint8_t *end;
-	int cur_if = -1;
-	int found_if = -1;
-	uint8_t ep_in = 0u;
-	uint8_t ep_out = 0u;
-	uint8_t ep_int = 0u;
-	uint16_t ep_in_mps = 0u;
-	uint16_t ep_out_mps = 0u;
-	uint16_t ep_int_mps = 0u;
+	struct lan78xx_ep_scan scan = {
+		.cur_if = -1,
+		.found_if = -1,
+	};
 
 	if (!ctx || !ctx->udev || !ctx->udev->cfg_desc) {
 		return -EAGAIN;
@@ -605,69 +703,41 @@ static int lan78xx_parse_endpoints(struct lan78xx_ctx *ctx)
 	end = p + sys_le16_to_cpu(cfg->wTotalLength);
 
 	while ((p + 2) <= end) {
-		uint8_t len = p[0];
-		uint8_t type = p[1];
+		uint8_t len = 0u;
+		uint8_t type = 0u;
+		bool done = false;
+		int ret = lan78xx_parse_desc_header(p, end, &len, &type);
 
-		if (len < 2u || (p + len) > end) {
+		if (ret != 0) {
 			return -EINVAL;
 		}
 
-		if (type == USB_DESC_INTERFACE) {
-			const struct usb_if_descriptor *ifd = (const struct usb_if_descriptor *)p;
+		switch (type) {
+		case USB_DESC_INTERFACE:
+			done = lan78xx_scan_interface_desc(&scan, p);
+			break;
+		case USB_DESC_ENDPOINT:
+			lan78xx_scan_endpoint_desc(&scan, p);
+			break;
+		default:
+			break;
+		}
 
-			cur_if = ifd->bInterfaceNumber;
-			if (found_if >= 0 && cur_if != found_if) {
-				break;
-			}
-		} else if (type == USB_DESC_ENDPOINT && cur_if >= 0) {
-			const struct usb_ep_descriptor *epd = (const struct usb_ep_descriptor *)p;
-			uint8_t xfertype = epd->bmAttributes & LAN78XX_USB_EP_ATTR_MASK;
-			bool in = (epd->bEndpointAddress & USB_EP_DIR_IN) != 0u;
-			uint16_t mps =
-				sys_le16_to_cpu(epd->wMaxPacketSize) & LAN78XX_USB_EP_MPS_MASK;
-
-			if (mps == 0u) {
-				p += len;
-				continue;
-			}
-
-			if (xfertype == USB_EP_TYPE_BULK) {
-				if (in) {
-					ep_in = epd->bEndpointAddress;
-					ep_in_mps = mps;
-				} else {
-					ep_out = epd->bEndpointAddress;
-					ep_out_mps = mps;
-				}
-			} else if (xfertype == USB_EP_TYPE_INTERRUPT && in) {
-				ep_int = epd->bEndpointAddress;
-				ep_int_mps = mps;
-			}
-
-			if (ep_in != 0u && ep_out != 0u && found_if < 0) {
-				found_if = cur_if;
-			}
+		if (done) {
+			break;
 		}
 
 		p += len;
 	}
 
-	if (found_if < 0 || ep_in == 0u || ep_out == 0u || ep_in_mps == 0u || ep_out_mps == 0u) {
+	if (lan78xx_store_scanned_endpoints(ctx, &scan) != 0) {
 		return -ENODEV;
 	}
 
-	ctx->ifnum = (uint8_t)found_if;
-	ctx->ep_bulk_in = ep_in;
-	ctx->ep_bulk_out = ep_out;
-	ctx->ep_intr_in = ep_int;
-	ctx->ep_bulk_in_mps = ep_in_mps;
-	ctx->ep_bulk_out_mps = ep_out_mps;
-	ctx->ep_intr_in_mps = ep_int_mps;
-
 	LOG_INF("LAN78xx endpoints: if=%u bulk_in=0x%02x mps=%u bulk_out=0x%02x mps=%u "
 		"intr_in=0x%02x mps=%u",
-		ctx->ifnum, ctx->ep_bulk_in, ctx->ep_bulk_in_mps, ctx->ep_bulk_out,
-		ctx->ep_bulk_out_mps, ctx->ep_intr_in, ctx->ep_intr_in_mps);
+		ctx->ep_ids.ifnum, ctx->ep_ids.bulk_in, ctx->ep_mps.bulk_in, ctx->ep_ids.bulk_out,
+		ctx->ep_mps.bulk_out, ctx->ep_ids.intr_in, ctx->ep_mps.intr_in);
 
 	return 0;
 }
@@ -934,6 +1004,25 @@ static int lan78xx_hw_init_retry(struct lan78xx_ctx *ctx)
 	return ret;
 }
 
+static void lan78xx_rx_submit_frame(struct lan78xx_ctx *ctx, uint8_t *buf, uint32_t frame_len)
+{
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, frame_len, AF_UNSPEC, 0, K_NO_WAIT);
+	if (pkt == NULL) {
+		return;
+	}
+
+	if (net_pkt_write(pkt, buf, frame_len) != 0) {
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	if (net_recv_data(ctx->iface, pkt) < 0) {
+		net_pkt_unref(pkt);
+	}
+}
+
 static void lan78xx_rx_deliver_frames(struct lan78xx_ctx *ctx, uint8_t *buf, size_t len)
 {
 	if (!ctx || !ctx->iface) {
@@ -963,21 +1052,7 @@ static void lan78xx_rx_deliver_frames(struct lan78xx_ctx *ctx, uint8_t *buf, siz
 		}
 
 		if ((rx_cmd_a & LAN78XX_RX_CMD_A_RED) == 0u) {
-			uint32_t frame_len = size - LAN78XX_ETH_FCS_LEN;
-			struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, frame_len,
-									   AF_UNSPEC, 0, K_NO_WAIT);
-
-			if (pkt != NULL) {
-				if (net_pkt_write(pkt, buf, frame_len) == 0) {
-					int r = net_recv_data(ctx->iface, pkt);
-
-					if (r < 0) {
-						net_pkt_unref(pkt);
-					}
-				} else {
-					net_pkt_unref(pkt);
-				}
-			}
+			lan78xx_rx_submit_frame(ctx, buf, size - LAN78XX_ETH_FCS_LEN);
 		}
 
 		buf += size;
@@ -1054,7 +1129,7 @@ static int lan78xx_rx_rearm_slot(struct lan78xx_ctx *ctx, struct lan78xx_rx_slot
 	}
 
 	net_buf_reset(slot->xfer->buf);
-	slot->xfer->mps = ctx->ep_bulk_in_mps;
+	slot->xfer->mps = ctx->ep_mps.bulk_in;
 	slot->xfer->buf->len = ctx->cfg->rx_buf_size;
 
 	ret = lan78xx_norm_async_ok(usbh_xfer_enqueue(ctx->udev, slot->xfer));
@@ -1077,7 +1152,7 @@ static int lan78xx_intr_rearm(struct lan78xx_ctx *ctx)
 	}
 
 	net_buf_reset(slot->xfer->buf);
-	slot->xfer->mps = ctx->ep_intr_in_mps;
+	slot->xfer->mps = ctx->ep_mps.intr_in;
 	slot->xfer->buf->len = LAN78XX_INTR_LEN;
 
 	ret = lan78xx_norm_async_ok(usbh_xfer_enqueue(ctx->udev, slot->xfer));
@@ -1118,7 +1193,7 @@ static int lan78xx_start_rx(struct lan78xx_ctx *ctx)
 {
 	const uint8_t want = ctx ? ctx->cfg->rx_xfers : 0u;
 
-	if (!ctx || !ctx->udev || ctx->ep_bulk_in == 0u || want == 0u) {
+	if (!ctx || !ctx->udev || ctx->ep_ids.bulk_in == 0u || want == 0u) {
 		return -EINVAL;
 	}
 
@@ -1144,8 +1219,8 @@ static int lan78xx_start_rx(struct lan78xx_ctx *ctx)
 
 			slot->ctx = ctx;
 			ret = lan78xx_alloc_transfer_with_buffer(
-				ctx, ctx->ep_bulk_in, ctx->ep_bulk_in_mps, lan78xx_rx_done, slot,
-				ctx->cfg->rx_buf_size, &slot->xfer, NULL);
+				ctx, ctx->ep_ids.bulk_in, ctx->ep_mps.bulk_in, lan78xx_rx_done,
+				slot, ctx->cfg->rx_buf_size, &slot->xfer);
 			if (ret != 0) {
 				ok = false;
 				break;
@@ -1220,7 +1295,7 @@ static int lan78xx_start_intr(struct lan78xx_ctx *ctx)
 		return -EINVAL;
 	}
 
-	if (ctx->ep_intr_in == 0u) {
+	if (ctx->ep_ids.intr_in == 0u) {
 		return 0;
 	}
 
@@ -1230,9 +1305,9 @@ static int lan78xx_start_intr(struct lan78xx_ctx *ctx)
 	memset(slot, 0, sizeof(*slot));
 	slot->ctx = ctx;
 
-	ret = lan78xx_alloc_transfer_with_buffer(ctx, ctx->ep_intr_in, ctx->ep_intr_in_mps,
+	ret = lan78xx_alloc_transfer_with_buffer(ctx, ctx->ep_ids.intr_in, ctx->ep_mps.intr_in,
 						 lan78xx_intr_done, slot, LAN78XX_INTR_LEN,
-						 &slot->xfer, NULL);
+						 &slot->xfer);
 	if (ret != 0) {
 		return ret;
 	}
@@ -1343,7 +1418,7 @@ static int lan78xx_tx_pool_init(struct lan78xx_ctx *ctx)
 	size_t max_wire;
 	size_t max_usb;
 
-	if (!ctx || !ctx->udev || ctx->ep_bulk_out == 0u) {
+	if (!ctx || !ctx->udev || ctx->ep_ids.bulk_out == 0u) {
 		return -EINVAL;
 	}
 
@@ -1373,13 +1448,15 @@ static int lan78xx_tx_pool_init(struct lan78xx_ctx *ctx)
 		slot->index = i;
 		atomic_set(&slot->state, LAN78XX_TX_SLOT_FREE);
 
-		ret = lan78xx_alloc_transfer_with_buffer(ctx, ctx->ep_bulk_out,
-							 ctx->ep_bulk_out_mps, lan78xx_tx_done,
-							 slot, max_usb, &slot->xfer, &slot->buf);
+		ret = lan78xx_alloc_transfer_with_buffer(ctx, ctx->ep_ids.bulk_out,
+							 ctx->ep_mps.bulk_out, lan78xx_tx_done,
+							 slot, max_usb, &slot->xfer);
 		if (ret != 0) {
 			lan78xx_tx_pool_deinit(ctx);
 			return ret;
 		}
+
+		slot->buf = slot->xfer->buf;
 	}
 
 	return 0;
@@ -1445,7 +1522,7 @@ static int lan78xx_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	if (!ctx->connected || !ctx->link_up || !ctx->udev || !ctx->iface ||
-	    ctx->ep_bulk_out == 0u) {
+	    ctx->ep_ids.bulk_out == 0u) {
 		return -ENETDOWN;
 	}
 
@@ -1508,7 +1585,7 @@ static int lan78xx_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	nb->len = usb_len;
-	xfer->mps = ctx->ep_bulk_out_mps;
+	xfer->mps = ctx->ep_mps.bulk_out;
 
 	ret = lan78xx_norm_async_ok(usbh_xfer_enqueue(ctx->udev, xfer));
 	if (ret != 0) {
@@ -1634,13 +1711,13 @@ static void lan78xx_disconnect(struct lan78xx_ctx *ctx)
 	}
 
 	ctx->udev = NULL;
-	ctx->ifnum = 0;
-	ctx->ep_bulk_in = 0;
-	ctx->ep_bulk_out = 0;
-	ctx->ep_intr_in = 0;
-	ctx->ep_bulk_in_mps = 0u;
-	ctx->ep_bulk_out_mps = 0u;
-	ctx->ep_intr_in_mps = 0u;
+	ctx->ep_ids.ifnum = 0;
+	ctx->ep_ids.bulk_in = 0;
+	ctx->ep_ids.bulk_out = 0;
+	ctx->ep_ids.intr_in = 0;
+	ctx->ep_mps.bulk_in = 0u;
+	ctx->ep_mps.bulk_out = 0u;
+	ctx->ep_mps.intr_in = 0u;
 }
 
 static void lan78xx_attach_device(struct lan78xx_ctx *ctx)
@@ -1662,7 +1739,7 @@ static void lan78xx_attach_device(struct lan78xx_ctx *ctx)
 
 	ret = lan78xx_parse_endpoints(ctx);
 	if (ret == 0 && ctx->cfg->alt_setting != 0u) {
-		ret = usbh_req_set_alt(ctx->udev, ctx->ifnum, ctx->cfg->alt_setting);
+		ret = usbh_req_set_alt(ctx->udev, ctx->ep_ids.ifnum, ctx->cfg->alt_setting);
 	}
 
 	if (ret != 0) {
@@ -1731,9 +1808,9 @@ static void lan78xx_attach_device(struct lan78xx_ctx *ctx)
 
 	LOG_INF("LAN78xx attached: addr=%u if=%u ep_in=0x%02x mps=%u ep_out=0x%02x mps=%u "
 		"ep_int=0x%02x mps=%u tx_depth=%u rx_count=%u",
-		ctx->udev->addr, ctx->ifnum, ctx->ep_bulk_in, ctx->ep_bulk_in_mps, ctx->ep_bulk_out,
-		ctx->ep_bulk_out_mps, ctx->ep_intr_in, ctx->ep_intr_in_mps, ctx->tx_pool_depth,
-		ctx->rx_count);
+		ctx->udev->addr, ctx->ep_ids.ifnum, ctx->ep_ids.bulk_in, ctx->ep_mps.bulk_in,
+		ctx->ep_ids.bulk_out, ctx->ep_mps.bulk_out, ctx->ep_ids.intr_in,
+		ctx->ep_mps.intr_in, ctx->tx_pool_depth, ctx->rx_count);
 }
 
 static void lan78xx_mgmt_thread_fn(void *p1, void *p2, void *p3)
@@ -1799,8 +1876,12 @@ static void lan78xx_service_rx_slot(struct lan78xx_ctx *ctx, struct lan78xx_rx_s
 		} else {
 			lan78xx_rx_slot_free(ctx, slot);
 		}
-	} else if (state == LAN78XX_RX_SLOT_FREE && atomic_get(&ctx->rx_stopping)) {
+		return;
+	}
+
+	if (state == LAN78XX_RX_SLOT_FREE && atomic_get(&ctx->rx_stopping)) {
 		lan78xx_rx_slot_free(ctx, slot);
+		return;
 	}
 }
 
@@ -1819,8 +1900,12 @@ static void lan78xx_service_intr_slot(struct lan78xx_ctx *ctx)
 		} else {
 			lan78xx_intr_free(ctx);
 		}
-	} else if (state == LAN78XX_INTR_STATE_IDLE && atomic_get(&ctx->intr_stopping)) {
+		return;
+	}
+
+	if (state == LAN78XX_INTR_STATE_IDLE && atomic_get(&ctx->intr_stopping)) {
 		lan78xx_intr_free(ctx);
+		return;
 	}
 }
 
@@ -1944,13 +2029,13 @@ static int lan78xx_init(const struct device *dev)
 	k_mutex_init(&ctx->tx_lock);
 
 	ctx->udev = NULL;
-	ctx->ifnum = 0;
-	ctx->ep_bulk_in = 0;
-	ctx->ep_bulk_out = 0;
-	ctx->ep_intr_in = 0;
-	ctx->ep_bulk_in_mps = 0u;
-	ctx->ep_bulk_out_mps = 0u;
-	ctx->ep_intr_in_mps = 0u;
+	ctx->ep_ids.ifnum = 0;
+	ctx->ep_ids.bulk_in = 0;
+	ctx->ep_ids.bulk_out = 0;
+	ctx->ep_ids.intr_in = 0;
+	ctx->ep_mps.bulk_in = 0u;
+	ctx->ep_mps.bulk_out = 0u;
+	ctx->ep_mps.intr_in = 0u;
 
 	ctx->connected = false;
 	ctx->link_up = false;

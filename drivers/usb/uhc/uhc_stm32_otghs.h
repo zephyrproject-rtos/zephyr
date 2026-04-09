@@ -44,21 +44,21 @@ struct stm32_otghs_chan {
 	uint8_t dev_addr;
 	uint8_t ep;      /* Zephyr endpoint address */
 	uint8_t ep_num;  /* 0..15 */
-	uint8_t ep_type; /* EP_TYPE_* (HAL-compatible) */
+	uint8_t ep_type; /* HAL endpoint type */
 	uint16_t mps;
 	uint8_t dir_in; /* 1 if IN */
 	uint8_t hc_num; /* 0..STM32_OTGHS_MAX_CH-1 */
 };
 
 struct stm32_hc_active {
-	struct uhc_transfer *xfer; /* NULL if idle */
-	uint8_t ep;                /* endpoint address */
-	uint8_t ep_type;           /* EP_TYPE_* */
-	uint8_t dir_in;            /* 1 if IN */
-	uint16_t req_len;          /* requested length */
-	uint16_t buf_off;          /* current buffer offset for resumed transfer */
-	uint16_t halted_cnt;       /* bytes already harvested from halted IN submit */
-	uint16_t mps;              /* max packet size used for packet parity */
+	struct uhc_transfer *xfer;
+	uint8_t ep;
+	uint8_t ep_type;
+	uint8_t dir_in;
+	uint16_t req_len;
+	uint16_t buf_off;
+	uint16_t halted_cnt;
+	uint16_t mps;
 	uint32_t start_ms;
 };
 

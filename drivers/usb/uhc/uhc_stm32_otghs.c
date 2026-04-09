@@ -5,6 +5,7 @@
 
 #define DT_DRV_COMPAT st_stm32_otghs
 
+#include <stddef.h>
 #include <string.h>
 
 #include <zephyr/device.h>
@@ -737,16 +738,24 @@ static uint8_t stm32_bulk_pid_from_hc(struct stm32_otghs_data *d, int hc, bool d
 
 /* Zephyr list helpers */
 
+static struct uhc_transfer *stm32_xfer_from_node(sys_dnode_t *node)
+{
+	return (struct uhc_transfer *)((uint8_t *)node - offsetof(struct uhc_transfer, node));
+}
+
 static struct uhc_transfer *peek_next_ctrl_ep0(const struct device *dev)
 {
 	struct uhc_data *data = dev->data;
-	struct uhc_transfer *x;
+	sys_dnode_t *node;
 
 	if (!data || sys_dlist_is_empty(&data->ctrl_xfers)) {
 		return NULL;
 	}
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, x, node) {
+	for (node = sys_dlist_peek_head(&data->ctrl_xfers); node != NULL;
+	     node = sys_dlist_peek_next(&data->ctrl_xfers, node)) {
+		struct uhc_transfer *x = stm32_xfer_from_node(node);
+
 		if (is_ep0(x)) {
 			return x;
 		}
@@ -757,9 +766,12 @@ static struct uhc_transfer *peek_next_ctrl_ep0(const struct device *dev)
 
 static bool stm32_list_contains_xfer(sys_dlist_t *list, struct uhc_transfer *xfer)
 {
-	struct uhc_transfer *tmp;
+	sys_dnode_t *node;
 
-	SYS_DLIST_FOR_EACH_CONTAINER(list, tmp, node) {
+	for (node = sys_dlist_peek_head(list); node != NULL;
+	     node = sys_dlist_peek_next(list, node)) {
+		struct uhc_transfer *tmp = stm32_xfer_from_node(node);
+
 		if (tmp == xfer) {
 			return true;
 		}
@@ -1349,6 +1361,128 @@ static void stm32_ep0_force_data1_after_setup(struct stm32_otghs_data *d, uint8_
 	hal_exit(d, k);
 }
 
+static uint8_t stm32_ctrl_stage_ep(const struct uhc_transfer *xfer, bool req_in)
+{
+	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
+		return USB_CONTROL_EP_OUT;
+	}
+
+	if (xfer->stage == UHC_CONTROL_STAGE_DATA) {
+		return req_in ? USB_CONTROL_EP_IN : USB_CONTROL_EP_OUT;
+	}
+
+	return req_in ? USB_CONTROL_EP_OUT : USB_CONTROL_EP_IN;
+}
+
+static bool stm32_ctrl_handle_wait_or_error(const struct device *dev, struct stm32_otghs_data *d,
+					    struct stm32_pipe *p, struct uhc_transfer *xfer,
+					    uint8_t hc, HCD_URBStateTypeDef urb_state, bool req_in,
+					    uint32_t hal_cnt)
+{
+	if (stm32_ctrl_needs_sw_retry(d, hc, urb_state, false)) {
+		const int r = stm32_submit_control(d, xfer);
+
+		if (r != 0) {
+			stm32_pipe_finish(dev, p, r);
+		}
+		return true;
+	}
+
+	if (stm32_urb_waiting_on_device(urb_state)) {
+		return true;
+	}
+
+	if (urb_state == URB_NAK_WAIT) {
+		if ((xfer->stage == UHC_CONTROL_STAGE_DATA) && req_in) {
+			const int pr = stm32_control_commit_halted_in(p, hal_cnt);
+
+			if (pr != 0) {
+				stm32_pipe_finish(dev, p, pr);
+				return true;
+			}
+		}
+
+		if ((k_uptime_get_32() - p->start_ms) < STM32_OTGHS_NAK_WAIT_RETRY_MS) {
+			return true;
+		}
+
+		const int r = stm32_resubmit_control_same_hc(d);
+
+		if (r != 0) {
+			stm32_pipe_finish(dev, p, r);
+		}
+		return true;
+	}
+
+	if (urb_state == URB_STALL) {
+		stm32_pipe_finish(dev, p, -EPIPE);
+		return true;
+	}
+
+	if (urb_state != URB_DONE) {
+		stm32_pipe_finish(dev, p, -EIO);
+		return true;
+	}
+
+	return false;
+}
+
+static void stm32_ctrl_complete_setup(const struct device *dev, struct stm32_otghs_data *d,
+				      struct stm32_pipe *p, struct uhc_transfer *xfer,
+				      uint8_t dev_addr, bool has_data)
+{
+	stm32_ep0_force_data1_after_setup(d, dev_addr);
+
+	if (has_data) {
+		if (xfer->buf == NULL) {
+			stm32_pipe_finish(dev, p, -EINVAL);
+			return;
+		}
+		xfer->stage = UHC_CONTROL_STAGE_DATA;
+	} else {
+		xfer->stage = UHC_CONTROL_STAGE_STATUS;
+	}
+
+	const int r = stm32_submit_control(d, xfer);
+
+	if (r != 0) {
+		stm32_pipe_finish(dev, p, r);
+	}
+}
+
+static void stm32_ctrl_maybe_update_ep0_mps(struct stm32_otghs_data *d, struct uhc_transfer *xfer)
+{
+	if ((xfer->buf->len < USB_EP0_MPS_8) || !stm32_is_std_get_device_desc(xfer)) {
+		return;
+	}
+
+	const uint8_t mps0 = xfer->buf->data[STM32_OTGHS_DEVICE_DESC_MPS0_OFFSET];
+
+	if (stm32_ep0_mps_is_valid(mps0)) {
+		d->ep0_mps = mps0;
+	}
+}
+
+static void stm32_ctrl_complete_data(const struct device *dev, struct stm32_otghs_data *d,
+				     struct stm32_pipe *p, struct uhc_transfer *xfer, bool req_in,
+				     uint32_t hal_cnt)
+{
+	if (req_in && (xfer->buf != NULL) && (hal_cnt > 0u)) {
+		const uint32_t add = MIN(hal_cnt, (uint32_t)net_buf_tailroom(xfer->buf));
+
+		(void)net_buf_add(xfer->buf, add);
+		stm32_ctrl_maybe_update_ep0_mps(d, xfer);
+	}
+
+	xfer->stage = UHC_CONTROL_STAGE_STATUS;
+
+	const int r = stm32_submit_control(d, xfer);
+
+	if (r != 0) {
+		stm32_pipe_finish(dev, p, r);
+	}
+}
+
 static void stm32_complete_control_pipe(const struct device *dev, struct stm32_otghs_data *d,
 					struct stm32_pipe *p)
 {
@@ -1362,18 +1496,8 @@ static void stm32_complete_control_pipe(const struct device *dev, struct stm32_o
 	const uint16_t wLength = usb_setup_wlength(xfer);
 	const bool req_in = usb_req_is_in(xfer);
 	const bool has_data = (wLength != 0u);
-
 	const uint16_t mps = stm32_ep0_mps_default(d, xfer);
-
-	uint8_t stage_ep;
-
-	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
-		stage_ep = USB_CONTROL_EP_OUT;
-	} else if (xfer->stage == UHC_CONTROL_STAGE_DATA) {
-		stage_ep = req_in ? USB_CONTROL_EP_IN : USB_CONTROL_EP_OUT;
-	} else {
-		stage_ep = (!req_in) ? USB_CONTROL_EP_IN : USB_CONTROL_EP_OUT;
-	}
+	const uint8_t stage_ep = stm32_ctrl_stage_ep(xfer, req_in);
 
 	const int hc = stm32_find_chan(d, dev_addr, stage_ep, EP_TYPE_CTRL, mps);
 
@@ -1386,94 +1510,18 @@ static void stm32_complete_control_pipe(const struct device *dev, struct stm32_o
 	const uint32_t hal_cnt =
 		stm32_hc_done_bytes(d, (uint8_t)hc, p->len, USB_EP_DIR_IS_IN(stage_ep));
 
-	if (stm32_ctrl_needs_sw_retry(d, (uint8_t)hc, urb_state, false)) {
-		const int r = stm32_submit_control(d, xfer);
-
-		if (r != 0) {
-			stm32_pipe_finish(dev, p, r);
-		}
-		return;
-	}
-
-	if (stm32_urb_waiting_on_device(urb_state)) {
-		return;
-	}
-
-	if (urb_state == URB_NAK_WAIT) {
-		if ((xfer->stage == UHC_CONTROL_STAGE_DATA) && req_in) {
-			const int pr = stm32_control_commit_halted_in(p, hal_cnt);
-
-			if (pr != 0) {
-				stm32_pipe_finish(dev, p, pr);
-				return;
-			}
-		}
-
-		if ((k_uptime_get_32() - p->start_ms) < STM32_OTGHS_NAK_WAIT_RETRY_MS) {
-			return;
-		}
-
-		const int r = stm32_resubmit_control_same_hc(d);
-
-		if (r != 0) {
-			stm32_pipe_finish(dev, p, r);
-		}
-		return;
-	}
-
-	if (urb_state == URB_STALL) {
-		stm32_pipe_finish(dev, p, -EPIPE);
-		return;
-	}
-
-	if (urb_state != URB_DONE) {
-		stm32_pipe_finish(dev, p, -EIO);
+	if (stm32_ctrl_handle_wait_or_error(dev, d, p, xfer, (uint8_t)hc, urb_state, req_in,
+					    hal_cnt)) {
 		return;
 	}
 
 	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
-		stm32_ep0_force_data1_after_setup(d, dev_addr);
-
-		if (has_data) {
-			if (xfer->buf == NULL) {
-				stm32_pipe_finish(dev, p, -EINVAL);
-				return;
-			}
-			xfer->stage = UHC_CONTROL_STAGE_DATA;
-		} else {
-			xfer->stage = UHC_CONTROL_STAGE_STATUS;
-		}
-
-		const int r = stm32_submit_control(d, xfer);
-
-		if (r != 0) {
-			stm32_pipe_finish(dev, p, r);
-		}
+		stm32_ctrl_complete_setup(dev, d, p, xfer, dev_addr, has_data);
 		return;
 	}
 
 	if (xfer->stage == UHC_CONTROL_STAGE_DATA) {
-		if (req_in && (xfer->buf != NULL) && (hal_cnt > 0u)) {
-			const uint32_t add = MIN(hal_cnt, (uint32_t)net_buf_tailroom(xfer->buf));
-			(void)net_buf_add(xfer->buf, add);
-
-			if ((xfer->buf->len >= USB_EP0_MPS_8) &&
-			    stm32_is_std_get_device_desc(xfer)) {
-				const uint8_t mps0 =
-					xfer->buf->data[STM32_OTGHS_DEVICE_DESC_MPS0_OFFSET];
-				if (stm32_ep0_mps_is_valid(mps0)) {
-					d->ep0_mps = mps0;
-				}
-			}
-		}
-
-		xfer->stage = UHC_CONTROL_STAGE_STATUS;
-
-		const int r = stm32_submit_control(d, xfer);
-
-		if (r != 0) {
-			stm32_pipe_finish(dev, p, r);
-		}
+		stm32_ctrl_complete_data(dev, d, p, xfer, req_in, hal_cnt);
 		return;
 	}
 
@@ -1494,6 +1542,131 @@ static void stm32_cancel_all_nonctrl(const struct device *dev, struct stm32_otgh
 	}
 }
 
+static void stm32_nonctrl_apply_out_toggle_fix(struct stm32_otghs_data *d, int hc,
+					       const struct stm32_hc_active *a)
+{
+	if (stm32_dma_enabled(d) || a->dir_in || (a->mps == 0u)) {
+		return;
+	}
+
+	const uint32_t np = ((uint32_t)a->req_len == 0u)
+				    ? 1u
+				    : stm32_packets_from_bytes((uint32_t)a->req_len, a->mps);
+
+	if ((np & 1u) == 0u) {
+		k_spinlock_key_t k = hal_enter(d);
+
+		d->hhcd.hc[hc].toggle_out ^= 1u;
+		hal_exit(d, k);
+	}
+}
+
+static bool stm32_nonctrl_continue_out(const struct device *dev, struct stm32_otghs_data *d,
+				       struct stm32_hc_active *a, int hc)
+{
+	struct uhc_transfer *xfer = a->xfer;
+	const uint32_t total = (uint32_t)xfer->buf->len;
+	const uint32_t next_off = (uint32_t)a->buf_off + (uint32_t)a->req_len;
+
+	if (next_off >= total) {
+		return false;
+	}
+
+	const uint32_t remaining = total - next_off;
+	const uint32_t next_len = stm32_out_submit_len(d, a->ep_type, a->mps, remaining);
+	int r;
+
+	a->buf_off = (uint16_t)next_off;
+	a->req_len = (uint16_t)next_len;
+
+	r = stm32_resubmit_nonctrl_same_hc(d, hc);
+	if (r != 0) {
+		stm32_active_xfer_finish(dev, a, r);
+	}
+
+	return true;
+}
+
+static void stm32_nonctrl_complete_done(const struct device *dev, struct stm32_otghs_data *d,
+					struct stm32_hc_active *a, int hc, uint32_t hal_cnt)
+{
+	struct uhc_transfer *xfer = a->xfer;
+
+	if (a->dir_in && xfer->buf && (hal_cnt > 0u)) {
+		const uint32_t add = MIN(hal_cnt, (uint32_t)net_buf_tailroom(xfer->buf));
+
+		(void)net_buf_add(xfer->buf, add);
+	}
+
+	/*
+	 * STM32 HAL non-DMA toggle tracking bug for OUT transfers only.
+	 *
+	 * OUT (non-DMA): the CHH handler XORs toggle_out exactly once per
+	 * transfer completion regardless of packet count. For even-packet
+	 * transfers the two per-packet flips cancel, so the net toggle must
+	 * be unchanged but HAL has already flipped it once.
+	 *
+	 * IN (non-DMA): HAL already updates toggle_in per packet path.
+	 */
+	stm32_nonctrl_apply_out_toggle_fix(d, hc, a);
+
+	if (!a->dir_in && xfer->buf && stm32_nonctrl_continue_out(dev, d, a, hc)) {
+		return;
+	}
+
+	stm32_active_xfer_finish(dev, a, 0);
+}
+
+static bool stm32_nonctrl_handle_wait_or_error(const struct device *dev, struct stm32_otghs_data *d,
+					       struct stm32_hc_active *a, int hc,
+					       HCD_URBStateTypeDef urb_state, uint32_t hal_cnt)
+{
+	if (stm32_nonctrl_needs_sw_retry(d, (uint8_t)hc, urb_state, false)) {
+		const int r = stm32_resubmit_nonctrl_same_hc(d, hc);
+
+		if (r != 0) {
+			stm32_active_xfer_finish(dev, a, r);
+		}
+		return true;
+	}
+
+	if (stm32_urb_waiting_on_device(urb_state)) {
+		return true;
+	}
+
+	if (urb_state == URB_NAK_WAIT) {
+		const int pr = stm32_nonctrl_commit_halted_in(a, hal_cnt);
+
+		if (pr != 0) {
+			stm32_active_xfer_finish(dev, a, pr);
+			return true;
+		}
+
+		if ((k_uptime_get_32() - a->start_ms) < STM32_OTGHS_NAK_WAIT_RETRY_MS) {
+			return true;
+		}
+
+		const int r = stm32_resubmit_nonctrl_same_hc(d, hc);
+
+		if (r != 0) {
+			stm32_active_xfer_finish(dev, a, r);
+		}
+		return true;
+	}
+
+	if (urb_state == URB_STALL) {
+		stm32_active_xfer_finish(dev, a, -EPIPE);
+		return true;
+	}
+
+	if (urb_state != URB_DONE) {
+		stm32_active_xfer_finish(dev, a, -EIO);
+		return true;
+	}
+
+	return false;
+}
+
 static void stm32_complete_one_hc(const struct device *dev, struct stm32_otghs_data *d, int hc)
 {
 	struct stm32_hc_active *a = &d->hc_act[hc];
@@ -1506,107 +1679,11 @@ static void stm32_complete_one_hc(const struct device *dev, struct stm32_otghs_d
 	const HCD_URBStateTypeDef urb_state = stm32_get_urb_state(d, (uint8_t)hc);
 	const uint32_t hal_cnt = stm32_nonctrl_done_bytes(d, hc, a);
 
-	if (stm32_nonctrl_needs_sw_retry(d, (uint8_t)hc, urb_state, false)) {
-		const int r = stm32_resubmit_nonctrl_same_hc(d, hc);
-
-		if (r != 0) {
-			stm32_active_xfer_finish(dev, a, r);
-		}
+	if (stm32_nonctrl_handle_wait_or_error(dev, d, a, hc, urb_state, hal_cnt)) {
 		return;
 	}
 
-	if (stm32_urb_waiting_on_device(urb_state)) {
-		return;
-	}
-
-	if (urb_state == URB_NAK_WAIT) {
-		const int pr = stm32_nonctrl_commit_halted_in(a, hal_cnt);
-
-		if (pr != 0) {
-			stm32_active_xfer_finish(dev, a, pr);
-			return;
-		}
-
-		if ((k_uptime_get_32() - a->start_ms) < STM32_OTGHS_NAK_WAIT_RETRY_MS) {
-			return;
-		}
-
-		const int r = stm32_resubmit_nonctrl_same_hc(d, hc);
-
-		if (r != 0) {
-			stm32_active_xfer_finish(dev, a, r);
-		}
-		return;
-	}
-
-	if (urb_state == URB_DONE) {
-
-		if (a->dir_in && xfer->buf && (hal_cnt > 0u)) {
-			const uint32_t add = MIN(hal_cnt, (uint32_t)net_buf_tailroom(xfer->buf));
-			(void)net_buf_add(xfer->buf, add);
-		}
-
-		/*
-		 * STM32 HAL non-DMA toggle tracking bug for OUT transfers only.
-		 *
-		 * OUT (non-DMA): the CHH handler XORs toggle_out exactly once per
-		 * transfer completion regardless of packet count.  For even-packet
-		 * transfers the two per-packet flips cancel, so the net toggle must
-		 * be unchanged – but the HAL has already flipped it once.  We undo
-		 * that here.
-		 *
-		 * IN (non-DMA): the HAL already does the right thing.  The GRXSTS
-		 * handler XORs toggle_in for every intermediate full-size packet
-		 * (line ~1934 in stm32u5xx_hal_hcd.c), and the XFRC handler adds
-		 * one final XOR.  The net count equals the actual packet count, so
-		 * no correction is required.  Applying it here corrupts toggle_in
-		 * after every even-packet IN transfer (e.g. any frame > MPS bytes)
-		 * and causes systematic DATA-toggle errors on the next RX.
-		 */
-		if (!stm32_dma_enabled(d) && !a->dir_in && a->mps > 0u) {
-			const uint32_t np =
-				((uint32_t)a->req_len == 0u)
-					? 1u
-					: stm32_packets_from_bytes((uint32_t)a->req_len, a->mps);
-			if ((np & 1u) == 0u) {
-				k_spinlock_key_t k = hal_enter(d);
-
-				d->hhcd.hc[hc].toggle_out ^= 1u;
-				hal_exit(d, k);
-			}
-		}
-
-		if (!a->dir_in && xfer->buf) {
-			const uint32_t total = (uint32_t)xfer->buf->len;
-			const uint32_t next_off = (uint32_t)a->buf_off + (uint32_t)a->req_len;
-
-			if (next_off < total) {
-				const uint32_t remaining = total - next_off;
-				const uint32_t next_len =
-					stm32_out_submit_len(d, a->ep_type, a->mps, remaining);
-				int r;
-
-				a->buf_off = (uint16_t)next_off;
-				a->req_len = (uint16_t)next_len;
-
-				r = stm32_resubmit_nonctrl_same_hc(d, hc);
-				if (r != 0) {
-					stm32_active_xfer_finish(dev, a, r);
-				}
-				return;
-			}
-		}
-
-		stm32_active_xfer_finish(dev, a, 0);
-		return;
-	}
-
-	if (urb_state == URB_STALL) {
-		stm32_active_xfer_finish(dev, a, -EPIPE);
-		return;
-	}
-
-	stm32_active_xfer_finish(dev, a, -EIO);
+	stm32_nonctrl_complete_done(dev, d, a, hc, hal_cnt);
 }
 
 /* Scheduling */
@@ -1620,11 +1697,14 @@ static void stm32_schedule_nonctrl_fill(const struct device *dev, struct stm32_o
 	}
 
 	while (stm32_count_active_nonctrl(d) < STM32_OTGHS_MAX_INFLIGHT_BULK) {
-		struct uhc_transfer *x;
+		sys_dnode_t *node;
 		bool saw_candidate = false;
 		bool made_progress = false;
 
-		SYS_DLIST_FOR_EACH_CONTAINER(&ud->bulk_xfers, x, node) {
+		for (node = sys_dlist_peek_head(&ud->bulk_xfers); node != NULL;
+		     node = sys_dlist_peek_next(&ud->bulk_xfers, node)) {
+			struct uhc_transfer *x = stm32_xfer_from_node(node);
+
 			if (is_ep0(x) || stm32_xfer_is_active(d, x)) {
 				continue;
 			}
@@ -1726,8 +1806,7 @@ static void stm32_periodic_wake_update(struct stm32_otghs_data *d)
 
 static void kick_timer_cb(struct k_timer *t)
 {
-	const struct device *dev = (const struct device *)k_timer_user_data_get(t);
-	struct stm32_otghs_data *d = dev_data(dev);
+	struct stm32_otghs_data *d = (struct stm32_otghs_data *)k_timer_user_data_get(t);
 
 	if (!d->connected || !d->bus_ready) {
 		return;
@@ -1740,10 +1819,18 @@ static void kick_timer_cb(struct k_timer *t)
 
 /* HAL callbacks */
 
+static inline struct stm32_otghs_data *stm32_data_from_hhcd(HCD_HandleTypeDef *hhcd)
+{
+	return (struct stm32_otghs_data *)hhcd->pData;
+}
+
 static inline void stm32_set_event_and_kick(HCD_HandleTypeDef *hhcd, atomic_val_t bit)
 {
-	const struct device *dev = (const struct device *)hhcd->pData;
-	struct stm32_otghs_data *d = dev_data(dev);
+	struct stm32_otghs_data *d = stm32_data_from_hhcd(hhcd);
+
+	if (d == NULL) {
+		return;
+	}
 
 	atomic_or(&d->evt_flags, bit);
 	irq_kick(d);
@@ -1771,8 +1858,11 @@ void HAL_HCD_Disconnect_Callback(HCD_HandleTypeDef *hhcd)
 
 void HAL_HCD_SOF_Callback(HCD_HandleTypeDef *hhcd)
 {
-	const struct device *dev = (const struct device *)hhcd->pData;
-	struct stm32_otghs_data *d = dev_data(dev);
+	struct stm32_otghs_data *d = stm32_data_from_hhcd(hhcd);
+
+	if (d == NULL) {
+		return;
+	}
 
 	if (atomic_get(&d->sof_tick_active) != 0) {
 		irq_kick(d);
@@ -1782,8 +1872,11 @@ void HAL_HCD_SOF_Callback(HCD_HandleTypeDef *hhcd)
 void HAL_HCD_HC_NotifyURBChange_Callback(HCD_HandleTypeDef *hhcd, uint8_t chnum,
 					 HCD_URBStateTypeDef urb_state)
 {
-	const struct device *dev = (const struct device *)hhcd->pData;
-	struct stm32_otghs_data *d = dev_data(dev);
+	struct stm32_otghs_data *d = stm32_data_from_hhcd(hhcd);
+
+	if (d == NULL) {
+		return;
+	}
 
 	/*
 	 * Do not wake the worker for every transient URB_NOTREADY / URB_IDLE /
@@ -1830,6 +1923,131 @@ static void stm32_otghs_isr(const struct device *dev)
 	hal_exit(d, k);
 }
 
+static void stm32_update_speed_from_hal_locked(struct stm32_otghs_data *d)
+{
+	k_spinlock_key_t k = hal_enter(d);
+
+	stm32_update_dev_speed_from_hal(d);
+	hal_exit(d, k);
+}
+
+static bool stm32_thread_handle_disconnect(const struct device *dev, struct stm32_otghs_data *d,
+					   atomic_val_t flags, bool *was_present)
+{
+	if ((flags & (STM32_EVT_DISCONN | STM32_EVT_PDIS)) == 0) {
+		return false;
+	}
+
+	stm32_periodic_wake_stop(d);
+
+	d->connected = false;
+	d->bus_ready = false;
+	d->reset_pending = false;
+	d->ep0_mps = 0u;
+
+	stm32_free_all_channels(d);
+	pipe_cancel_and_return(dev, d, &d->ctrl, -ENODEV);
+	stm32_cancel_all_nonctrl(dev, d, -ENODEV);
+	stm32_toggle_reset_all(d);
+
+	if (*was_present) {
+		uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
+	}
+
+	*was_present = false;
+	return true;
+}
+
+static bool stm32_thread_handle_connect(const struct device *dev, struct stm32_otghs_data *d,
+					atomic_val_t flags, bool *was_present)
+{
+	if ((flags & STM32_EVT_CONN) == 0) {
+		return false;
+	}
+
+	stm32_dump_hprt(d, "EVT:CONNECT");
+
+	d->connected = true;
+	d->bus_ready = false;
+	d->reset_pending = false;
+	d->ep0_mps = USB_EP0_MPS_8;
+	d->zlp_dummy = 0u;
+
+	stm32_periodic_wake_stop(d);
+	stm32_free_all_channels(d);
+	pipe_clear(&d->ctrl);
+	hc_act_clear_all(d);
+	stm32_toggle_reset_all(d);
+	stm32_update_speed_from_hal_locked(d);
+
+#ifdef UHC_EVT_DEV_CONNECTED_HS
+	uhc_submit_event(dev,
+			 (d->speed == HCD_SPEED_HIGH) ? UHC_EVT_DEV_CONNECTED_HS
+						      : UHC_EVT_DEV_CONNECTED_FS,
+			 0);
+#else
+	uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
+#endif
+
+	*was_present = true;
+	return true;
+}
+
+static bool stm32_thread_handle_port_enabled(const struct device *dev, struct stm32_otghs_data *d,
+					     atomic_val_t flags)
+{
+	if ((flags & STM32_EVT_PEN) == 0) {
+		return false;
+	}
+
+	stm32_dump_hprt(d, "EVT:PEN");
+	stm32_update_speed_from_hal_locked(d);
+
+	if (!d->reset_pending) {
+		return false;
+	}
+
+	d->reset_pending = false;
+	k_msleep(STM32_OTGHS_POST_RESET_DELAY_MS);
+
+	d->bus_ready = true;
+	stm32_periodic_wake_update(d);
+
+	uhc_submit_event(dev, UHC_EVT_RESETED, 0);
+	return true;
+}
+
+static bool stm32_thread_handle_reset_fallback(const struct device *dev, struct stm32_otghs_data *d)
+{
+	if (!d->reset_pending) {
+		return false;
+	}
+
+	if ((k_uptime_get_32() - d->reset_start_ms) <= STM32_OTGHS_RESET_FALLBACK_MS) {
+		return false;
+	}
+
+	if ((stm32_read_hprt(d) & USB_OTG_HPRT_PENA) == 0u) {
+		return false;
+	}
+
+	d->reset_pending = false;
+	d->bus_ready = true;
+	stm32_periodic_wake_update(d);
+
+	uhc_submit_event(dev, UHC_EVT_RESETED, 0);
+	return true;
+}
+
+static void stm32_complete_all_nonctrl(const struct device *dev, struct stm32_otghs_data *d)
+{
+	for (uint32_t hc = 0; hc < STM32_OTGHS_MAX_CH; hc++) {
+		if (d->hc_act[hc].xfer != NULL) {
+			stm32_complete_one_hc(dev, d, (int)hc);
+		}
+	}
+}
+
 static void stm32_otghs_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
@@ -1845,109 +2063,22 @@ static void stm32_otghs_thread(void *p1, void *p2, void *p3)
 		uhc_lock_internal(dev, K_FOREVER);
 		const atomic_val_t flags = atomic_set(&d->evt_flags, 0);
 
-		if (flags & (STM32_EVT_DISCONN | STM32_EVT_PDIS)) {
-			stm32_periodic_wake_stop(d);
-
-			d->connected = false;
-			d->bus_ready = false;
-			d->reset_pending = false;
-			d->ep0_mps = 0u;
-
-			stm32_free_all_channels(d);
-			pipe_cancel_and_return(dev, d, &d->ctrl, -ENODEV);
-			stm32_cancel_all_nonctrl(dev, d, -ENODEV);
-			stm32_toggle_reset_all(d);
-
-			if (was_present) {
-				uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
-			}
-
-			was_present = false;
+		if (stm32_thread_handle_disconnect(dev, d, flags, &was_present)) {
 			uhc_unlock_internal(dev);
 			continue;
 		}
 
-		if (flags & STM32_EVT_CONN) {
-			stm32_dump_hprt(d, "EVT:CONNECT");
-
-			d->connected = true;
-			d->bus_ready = false;
-			d->reset_pending = false;
-
-			d->ep0_mps = USB_EP0_MPS_8;
-			d->zlp_dummy = 0u;
-			stm32_periodic_wake_stop(d);
-
-			stm32_free_all_channels(d);
-			pipe_clear(&d->ctrl);
-			hc_act_clear_all(d);
-			stm32_toggle_reset_all(d);
-
-			{
-				k_spinlock_key_t k = hal_enter(d);
-
-				stm32_update_dev_speed_from_hal(d);
-				hal_exit(d, k);
-			}
-
-#ifdef UHC_EVT_DEV_CONNECTED_HS
-			uhc_submit_event(dev,
-					 (d->speed == HCD_SPEED_HIGH) ? UHC_EVT_DEV_CONNECTED_HS
-								      : UHC_EVT_DEV_CONNECTED_FS,
-					 0);
-#else
-			uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
-#endif
-
-			was_present = true;
+		if (stm32_thread_handle_connect(dev, d, flags, &was_present)) {
 			uhc_unlock_internal(dev);
 			k_yield();
 			continue;
 		}
 
-		if (flags & STM32_EVT_PEN) {
-			stm32_dump_hprt(d, "EVT:PEN");
-
-			{
-				k_spinlock_key_t k = hal_enter(d);
-
-				stm32_update_dev_speed_from_hal(d);
-				hal_exit(d, k);
-			}
-
-			if (d->reset_pending) {
-				d->reset_pending = false;
-				k_msleep(STM32_OTGHS_POST_RESET_DELAY_MS);
-
-				d->bus_ready = true;
-				stm32_periodic_wake_update(d);
-
-				uhc_submit_event(dev, UHC_EVT_RESETED, 0);
-
-				uhc_unlock_internal(dev);
-				k_yield();
-				continue;
-			}
-		}
-
-		if (d->reset_pending) {
-			if ((k_uptime_get_32() - d->reset_start_ms) >
-			    STM32_OTGHS_RESET_FALLBACK_MS) {
-				const uint32_t h = stm32_read_hprt(d);
-
-				if (h & USB_OTG_HPRT_PENA) {
-					d->reset_pending = false;
-					d->bus_ready = true;
-
-					stm32_periodic_wake_update(d);
-
-					uhc_submit_event(dev, UHC_EVT_RESETED, 0);
-
-					uhc_unlock_internal(dev);
-					k_yield();
-					continue;
-				}
-			}
+		if (stm32_thread_handle_port_enabled(dev, d, flags) ||
+		    stm32_thread_handle_reset_fallback(dev, d)) {
+			uhc_unlock_internal(dev);
+			k_yield();
+			continue;
 		}
 
 		if (!d->connected || !d->bus_ready) {
@@ -1959,11 +2090,7 @@ static void stm32_otghs_thread(void *p1, void *p2, void *p3)
 			stm32_complete_control_pipe(dev, d, &d->ctrl);
 		}
 
-		for (uint32_t hc = 0; hc < STM32_OTGHS_MAX_CH; hc++) {
-			if (d->hc_act[hc].xfer != NULL) {
-				stm32_complete_one_hc(dev, d, (int)hc);
-			}
-		}
+		stm32_complete_all_nonctrl(dev, d);
 
 		(void)stm32_schedule_xfers(dev, d);
 		stm32_periodic_wake_update(d);
@@ -2083,7 +2210,7 @@ static int stm32_init(const struct device *dev)
 	d->hhcd.Init.vbus_sensing_enable =
 		IS_ENABLED(CONFIG_UHC_STM32_OTGHS_FORCE_VBUS_VALID) ? DISABLE : ENABLE;
 
-	d->hhcd.pData = (void *)dev;
+	d->hhcd.pData = d;
 
 	k_spinlock_key_t k = hal_enter(d);
 	HAL_StatusTypeDef st = HAL_HCD_Init(&d->hhcd);
@@ -2290,7 +2417,7 @@ static int stm32_driver_preinit(const struct device *dev)
 	atomic_set(&d->evt_flags, 0);
 
 	k_timer_init(&d->kick_timer, kick_timer_cb, NULL);
-	k_timer_user_data_set(&d->kick_timer, (void *)dev);
+	k_timer_user_data_set(&d->kick_timer, d);
 
 	if (cfg->pinctrl) {
 		const int ret = pinctrl_apply_state(cfg->pinctrl, PINCTRL_STATE_DEFAULT);
@@ -2377,7 +2504,7 @@ static int stm32_driver_preinit(const struct device *dev)
 			      &stm32_otghs_cfg_##n, POST_KERNEL,                                   \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &stm32_uhc_api);
 
-#define STM32_OTGHS_INST_DEFINE_IF_HOST(n)                                                    \
+#define STM32_OTGHS_INST_DEFINE_IF_HOST(n)                                                         \
 	COND_CODE_1(USB_STM32_NODE_HAS_HOST_ROLE(DT_DRV_INST(n)),                             \
 		    (STM32_OTGHS_INST_DEFINE(n)), ())
 
