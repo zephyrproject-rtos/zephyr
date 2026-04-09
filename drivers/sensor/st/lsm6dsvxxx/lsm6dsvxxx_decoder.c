@@ -131,9 +131,11 @@ static int lsm6dsvxxx_decoder_get_frame_count(const uint8_t *buffer,
 			*frame_count = rdata->has_accel ? 1 : 0;
 			return 0;
 
+#if defined(CONFIG_LSM6DSVXXX_ENABLE_TEMP)
 		case SENSOR_CHAN_DIE_TEMP:
 			*frame_count = rdata->has_temp ? 1 : 0;
 			return 0;
+#endif
 
 		default:
 			*frame_count = 0;
@@ -690,10 +692,12 @@ static int lsm6dsvxxx_decoder_get_size_info(struct sensor_chan_spec chan_spec, s
 		*base_size = sizeof(struct sensor_three_axis_data);
 		*frame_size = sizeof(struct sensor_three_axis_sample_data);
 		return 0;
+#if defined(CONFIG_LSM6DSVXXX_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
 		*base_size = sizeof(struct sensor_q31_data);
 		*frame_size = sizeof(struct sensor_q31_sample_data);
 		return 0;
+#endif
 	default:
 		return -ENOTSUP;
 	}
