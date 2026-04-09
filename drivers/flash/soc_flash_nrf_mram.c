@@ -47,7 +47,123 @@ BUILD_ASSERT((ERASE_BLOCK_SIZE % WRITE_BLOCK_SIZE) == 0,
 
 struct nrf_mram_data_t {
 	uint8_t ironside_se_ver;
+	struct k_mutex nrf_mram_mutex;
 };
+
+/**
+ * Safely probes one MRAM word to detect a BusFault.
+ *
+ * The function temporarily masks fault handling and ignores BusFault escalation
+ * while reading one aligned MRAM word. It then checks and clears BFSR status
+ * bits to determine whether the read faulted.
+ *
+ * @param addr Address to probe. The read is performed on the 16-byte-aligned
+ *             base address that contains this location.
+ *
+ * @retval 0 Read completed without BusFault.
+ * @retval non-zero BusFault was observed during the read.
+ */
+uint32_t nrf_mram_detect_corrupt_word(uint32_t addr)
+{
+	uint32_t rdata;
+	uint32_t faulted;
+	unsigned int irq_lock_key = irq_lock();
+
+	/* Clear any pre-existing BusFault status bits (write-1-to-clear) */
+	SCB->CFSR = SCB_CFSR_BUSFAULTSR_Msk;   /* 0x0000FF00 — entire BFSR byte */
+
+	__set_FAULTMASK(1);
+	SCB->CCR |= SCB_CCR_BFHFNMIGN_Msk;
+
+	/* Ensure that all operations are in effect before doing the risky read */
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+
+	/* Read operation that may fault */
+	rdata = *(volatile uint32_t *)(addr & ~MRAM_WORD_MASK);
+
+	/* DSB ensures the load and any resulting fault status write complete */
+	barrier_dsync_fence_full();
+
+	/* Read fault status BEFORE re-enabling faults */
+	faulted = (SCB->CFSR & SCB_CFSR_BUSFAULTSR_Msk);
+
+	/* Clear whatever was recorded so we don't leave stale status */
+	SCB->CFSR = SCB_CFSR_BUSFAULTSR_Msk;
+
+	__set_FAULTMASK(0);
+	SCB->CCR &= ~SCB_CCR_BFHFNMIGN_Msk;
+
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+
+	irq_unlock(irq_lock_key);
+
+	return faulted;    /* 0 = read succeeded, non-zero = bus fault occurred */
+}
+
+
+/**
+ * Write data to an aligned MRAM word and verify the write succeeded.
+ *
+ * Writes @p len bytes to @p addr and then calls nrf_mram_detect_corrupt_word()
+ * to confirm the write did not leave a corrupted word. The operation is retried
+ * up to CONFIG_NRF_MRAM_MAX_RETRIES times before returning an error.
+ *
+ * @param addr  Destination address. Must be aligned to MRAM_WORD_SIZE (16 bytes).
+ * @param data  Pointer to the source data buffer.
+ * @param len   Number of bytes to write. Must be a multiple of MRAM_WORD_SIZE.
+ *
+ * @retval 0       Write succeeded and no corruption was detected.
+ * @retval -EIO    Write failed after all retries.
+ */
+static int nrf_mram_write_and_verify_word(uint32_t addr, const void *data, size_t len)
+{
+	uint8_t retries = CONFIG_NRF_MRAM_MAX_RETRIES;
+
+	while (retries--) {
+		memcpy((void *)addr, data, len);
+		if (!nrf_mram_detect_corrupt_word(addr)) {
+			return 0;
+		}
+		LOG_ERR("MRAM write verification failed at address 0x%x, retrying... (%u retries "
+			"left)",
+			addr, retries);
+	}
+
+	return -EIO;
+}
+
+/**
+ * Erase an aligned MRAM word region and verify the erase succeeded.
+ *
+ * Fills @p len bytes starting at @p addr with ERASE_VALUE (0xFF) and then
+ * calls nrf_mram_detect_corrupt_word() to confirm the operation did not leave
+ * a corrupted word. The operation is retried up to CONFIG_NRF_MRAM_MAX_RETRIES
+ * times before returning an error.
+ *
+ * @param addr  Destination address. Must be aligned to MRAM_WORD_SIZE (16 bytes).
+ * @param len   Number of bytes to erase. Must be a multiple of MRAM_WORD_SIZE.
+ *
+ * @retval 0       Erase succeeded and no corruption was detected.
+ * @retval -EIO    Erase failed after all retries.
+ */
+static int nrf_mram_erase_and_verify_word(uint32_t addr, size_t len)
+{
+	uint8_t retries = CONFIG_NRF_MRAM_MAX_RETRIES;
+
+	while (retries--) {
+		memset((void *)addr, ERASE_VALUE, len);
+		if (!nrf_mram_detect_corrupt_word(addr)) {
+			return 0;
+		}
+		LOG_ERR("MRAM erase verification failed at address 0x%x, retrying... (%u retries "
+			"left)",
+			addr, retries);
+	}
+
+	return -EIO;
+}
 
 #ifdef CONFIG_MRAM_LATENCY
 static inline bool nrf_mram_ready(uint32_t addr, uint8_t ironside_se_ver)
@@ -118,6 +234,7 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 {
 	struct nrf_mram_data_t *nrf_mram_data = dev->data;
 	uint8_t ironside_se_ver = nrf_mram_data->ironside_se_ver;
+	int ret = 0;
 
 	const uintptr_t addr = validate_and_map_addr(offset, len, true);
 
@@ -126,6 +243,8 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 	}
 
 	LOG_DBG("write: %p:%zu", (void *)addr, len);
+
+	k_mutex_lock(&nrf_mram_data->nrf_mram_mutex, K_FOREVER);
 
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
 #if defined(CONFIG_MRAM_LATENCY)
@@ -136,8 +255,12 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE), ironside_se_ver)) {
 			/* Wait until MRAM controller is ready */
 		}
-		memcpy((void *)(addr + (i * MRAM_WORD_SIZE)),
-		       (void *)((uintptr_t)data + (i * MRAM_WORD_SIZE)), MRAM_WORD_SIZE);
+		ret = nrf_mram_write_and_verify_word(
+			addr + (i * MRAM_WORD_SIZE),
+			(void *)((uintptr_t)data + (i * MRAM_WORD_SIZE)), MRAM_WORD_SIZE);
+		if (ret) {
+			goto unlock;
+		}
 	}
 
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
@@ -146,13 +269,16 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 #endif
 	}
 
-	return 0;
+unlock:
+	k_mutex_unlock(&nrf_mram_data->nrf_mram_mutex);
+	return ret;
 }
 
 static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 {
 	struct nrf_mram_data_t *nrf_mram_data = dev->data;
 	uint8_t ironside_se_ver = nrf_mram_data->ironside_se_ver;
+	int ret = 0;
 
 	const uintptr_t addr = validate_and_map_addr(offset, size, true);
 
@@ -161,6 +287,8 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 	}
 
 	LOG_DBG("erase: %p:%zu", (void *)addr, size);
+
+	k_mutex_lock(&nrf_mram_data->nrf_mram_mutex, K_FOREVER);
 
 	/* Ensure that the mramc banks are powered on */
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
@@ -172,7 +300,10 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE), ironside_se_ver)) {
 			/* Wait until MRAM controller is ready */
 		}
-		memset((void *)(addr + (i * MRAM_WORD_SIZE)), ERASE_VALUE, MRAM_WORD_SIZE);
+		ret = nrf_mram_erase_and_verify_word(addr + (i * MRAM_WORD_SIZE), MRAM_WORD_SIZE);
+		if (ret) {
+			goto unlock;
+		}
 	}
 
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
@@ -181,7 +312,9 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 #endif
 	}
 
-	return 0;
+unlock:
+	k_mutex_unlock(&nrf_mram_data->nrf_mram_mutex);
+	return ret;
 }
 
 static int nrf_mram_get_size(const struct device *dev, uint64_t *size)
@@ -244,6 +377,8 @@ static int nrf_mram_init(const struct device *dev)
 	nrf_mram_data->ironside_se_ver = 0;
 #endif
 	LOG_DBG("Ironside SE version: %u", nrf_mram_data->ironside_se_ver);
+
+	k_mutex_init(&nrf_mram_data->nrf_mram_mutex);
 
 	return 0;
 }
