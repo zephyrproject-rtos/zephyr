@@ -52,6 +52,12 @@ properties:
     description: |
       Maximum page read duration in microseconds.
 
+  plane-select-bit-idx:
+    type: int
+    description: |
+      Bit index within the column address used for plane selection.
+      When set, enables plane select support required by some flash memory devices.
+
   reset-duration-max:
     type: int
     default: 2000

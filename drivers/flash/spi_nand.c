@@ -53,6 +53,10 @@ struct spi_nand_config {
 	const uint8_t *jedec_id;
 	/* Length of the JEDEC ID */
 	uint8_t jedec_id_len;
+	/* Enable the plane select bit control */
+	bool plane_select_en;
+	/* Plane select bit index */
+	uint8_t plane_select_bit_idx;
 };
 
 struct spi_nand_data {
@@ -421,6 +425,7 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 	uint8_t *src_u8 = (void *)src;
 	uint32_t page_address;
 	uint8_t status;
+	off_t offset;
 	int ret = 0;
 
 	if (size == 0) {
@@ -453,11 +458,15 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 		page_address = addr >> config->addr_page_shift;
 		LOG_DBG("Write %d to %06x:000", write_block, page_address);
 
-		/* Copy data to cache (at offset 0) */
+		/* Copy data to cache (at offset 0 with plane select bit if necessary) */
+		offset = 0;
+		if (config->plane_select_en && (addr / config->block_size) % 2) {
+			offset |= 1 << config->plane_select_bit_idx;
+		}
 		ret = spi_nand_access(dev, SPI_NAND_CMD_PROGRAM_LOAD,
 				      NAND_ACCESS_WRITE | NAND_ACCESS_ADDRESSED |
 					      NAND_ACCESS_16BIT_ADDR,
-				      0, src_u8, write_block);
+				      offset, src_u8, write_block);
 		if (ret != 0) {
 			LOG_DBG("Copy to device cache failed (%d)", ret);
 			break;
@@ -994,6 +1003,8 @@ static DEVICE_API(flash, spi_nand_api) = {
 		.addr_page_shift = LOG2(DT_INST_PROP(idx, write_block_size)),                      \
 		.jedec_id = spi_nand_##idx##_jedec_id,                                             \
 		.jedec_id_len = ARRAY_SIZE(spi_nand_##idx##_jedec_id),                             \
+		.plane_select_en = DT_INST_NODE_HAS_PROP(idx, plane_select_bit_idx),               \
+		.plane_select_bit_idx = DT_INST_PROP_OR(idx, plane_select_bit_idx, 0),             \
 		DEFINE_PAGE_LAYOUT(idx)};                                                          \
 	static struct spi_nand_data spi_nand_##idx##_data;                                         \
 	PM_DEVICE_DT_INST_DEFINE(idx, spi_nand_pm_control);                                        \
