@@ -14,8 +14,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_dev, CONFIG_USBH_LOG_LEVEL);
 
-K_MEM_SLAB_DEFINE_STATIC(usb_device_slab, sizeof(struct usb_device),
-			 CONFIG_USBH_USB_DEVICE_MAX, sizeof(void *));
+K_MEM_SLAB_DEFINE_STATIC(usb_device_slab, sizeof(struct usb_device), CONFIG_USBH_USB_DEVICE_MAX,
+			 sizeof(void *));
 
 K_HEAP_DEFINE(usb_device_heap, CONFIG_USBH_USB_DEVICE_HEAP);
 
@@ -125,8 +125,7 @@ enum ep_op {
 	EP_OP_DOWN, /* Disable endpoint and update endpoint pointers */
 };
 
-static void assign_ep_desc_ptr(struct usb_device *const udev,
-			       const uint8_t ep, void *const ptr)
+static void assign_ep_desc_ptr(struct usb_device *const udev, const uint8_t ep, void *const ptr)
 {
 	uint8_t idx = USB_EP_GET_IDX(ep) & 0xF;
 
@@ -137,8 +136,7 @@ static void assign_ep_desc_ptr(struct usb_device *const udev,
 	}
 }
 
-static int handle_ep_op(struct usb_device *const udev,
-			const enum ep_op op, const uint8_t ep,
+static int handle_ep_op(struct usb_device *const udev, const enum ep_op op, const uint8_t ep,
 			struct usb_ep_descriptor *const ep_desc)
 {
 	switch (op) {
@@ -159,8 +157,7 @@ static int handle_ep_op(struct usb_device *const udev,
 	return 0;
 }
 
-static int device_interface_modify(struct usb_device *const udev,
-				   const enum ep_op op,
+static int device_interface_modify(struct usb_device *const udev, const enum ep_op op,
 				   const uint8_t iface, const uint8_t alt)
 {
 	struct usb_cfg_descriptor *cfg_desc = udev->cfg_desc;
@@ -200,19 +197,17 @@ static int device_interface_modify(struct usb_device *const udev,
 				return err;
 			}
 
-			LOG_INF("Modify interface %u ep 0x%02x by op %u",
-				iface, ep_desc->bEndpointAddress, op);
+			LOG_INF("Modify interface %u ep 0x%02x by op %u", iface,
+				ep_desc->bEndpointAddress, op);
 		}
 
 		dhp = (void *)((uint8_t *)dhp + dhp->bLength);
 	}
 
-
 	return found_iface ? 0 : -ENODATA;
 }
 
-int usbh_device_interface_set(struct usb_device *const udev,
-			      const uint8_t iface, const uint8_t alt,
+int usbh_device_interface_set(struct usb_device *const udev, const uint8_t iface, const uint8_t alt,
 			      const bool dry)
 {
 	uint8_t cur_alt;
@@ -409,9 +404,9 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 		goto error;
 	}
 
-	udev->cfg_desc = k_heap_alloc(&usb_device_heap,
-				      cfg_desc.wTotalLength + sizeof(struct usb_desc_header),
-				      K_NO_WAIT);
+	udev->cfg_desc =
+		k_heap_alloc(&usb_device_heap,
+			     cfg_desc.wTotalLength + sizeof(struct usb_desc_header), K_NO_WAIT);
 	if (udev->cfg_desc == NULL) {
 		LOG_ERR("Failed to allocate memory for configuration descriptor");
 		err = -ENOMEM;
@@ -443,8 +438,8 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 		goto error;
 	}
 
-	LOG_INF("Configuration %u bNumInterfaces %u",
-		cfg_desc.bConfigurationValue, cfg_desc.bNumInterfaces);
+	LOG_INF("Configuration %u bNumInterfaces %u", cfg_desc.bConfigurationValue,
+		cfg_desc.bNumInterfaces);
 
 	err = parse_configuration_descriptor(udev);
 	if (err) {
@@ -487,8 +482,7 @@ struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
 	return ctx->root;
 }
 
-void usbh_device_connect(struct usbh_context *const ctx,
-			 struct usb_device *const udev)
+int usbh_device_connect(struct usbh_context *const ctx, struct usb_device *const udev)
 {
 	int err;
 
@@ -499,16 +493,26 @@ void usbh_device_connect(struct usbh_context *const ctx,
 	err = usbh_device_init(udev);
 	if (err != 0) {
 		LOG_ERR("Failed to init new USB device");
+		if (usbh_device_is_root(ctx, udev)) {
+			ctx->root = NULL;
+		}
 		usbh_device_free(udev);
-		return;
+		return err;
 	}
 
 	usbh_class_probe_device(udev);
+
+	return 0;
 }
 
 void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
 {
+	const bool is_root = usbh_device_is_root(ctx, udev);
+
 	usbh_class_remove_all(udev);
+	if (is_root) {
+		ctx->root = NULL;
+	}
 
 	usbh_device_free(udev);
 
@@ -536,7 +540,7 @@ int usbh_device_init(struct usb_device *const udev)
 		err = uhc_bus_reset(uhs_ctx->dev);
 		if (err) {
 			LOG_ERR("Failed to signal bus reset");
-			return err;
+			goto error;
 		}
 	}
 
