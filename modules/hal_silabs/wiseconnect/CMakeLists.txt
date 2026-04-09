@@ -235,10 +235,6 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
   )
 endif() # CONFIG_WIFI_SILABS_SIWX91X
 
-zephyr_library_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE
-  ${WISECONNECT}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
-)
-
 if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_include_directories(
     ${SISDK}/platform/service/sleeptimer/src
