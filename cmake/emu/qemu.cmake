@@ -419,6 +419,12 @@ else()
   add_custom_target(qemu_nvme_disk)
 endif()
 
+if(CONFIG_UHC_OHCI_PCI)
+  list(APPEND QEMU_EXTRA_FLAGS
+    -device pci-ohci,${QEMU_PCI_OHCI_FLAGS}
+  )
+endif()
+
 if(NOT QEMU_PIPE)
   set(QEMU_PIPE_COMMENT "\nTo exit from QEMU enter: 'CTRL+a, x'\n")
 endif()
