@@ -44,6 +44,7 @@ module-str = uhc drv
 source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/usb/uhc/Kconfig.max3421e"
+source "drivers/usb/uhc/Kconfig.ohci"
 source "drivers/usb/uhc/Kconfig.virtual"
 source "drivers/usb/uhc/Kconfig.mcux"
 
