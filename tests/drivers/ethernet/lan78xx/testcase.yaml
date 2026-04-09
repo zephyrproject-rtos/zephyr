@@ -1,0 +1,13 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - ethernet
+    - usb
+
+tests:
+  drivers.ethernet.lan78xx.build:
+    platform_allow:
+      - nucleo_u5a5zj_q
+    integration_platforms:
+      - nucleo_u5a5zj_q
