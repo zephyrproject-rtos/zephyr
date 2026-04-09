@@ -52,7 +52,6 @@ config ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 	bool "Power down digital peripherals in light sleep (EXPERIMENTAL)"
 	depends on ESP32_SOC_PM_SUPPORT_TOP_PD && ESP32_SOC_PAU_SUPPORTED
 	select ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
-	default n
 	help
 	  Allow the main digital (TOP) peripheral power domain to switch off
 	  in light sleep. The PAU and REGDMA hardware save and restore
@@ -76,6 +75,65 @@ config ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 config ESP32_PM_ESP_SLEEP_POWER_DOWN_CPU
 	bool
 	default y if ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+
+config ESP32_TIMER_IN_IRAM
+	bool
+
+config ESP32_PM_SLP_IRAM_OPT
+	bool "Put light sleep path code in internal RAM"
+	select ESP32_TIMER_IN_IRAM
+	help
+	  Places part of the light sleep sequence in IRAM so it can run while the
+	  cache is suspended. Enable when using SPI flash deep power-down or
+	  flash supply power-down in light sleep (options below). Uses roughly
+	  2 KB of IRAM.
+
+config ESP32_SLEEP_POWER_DOWN_FLASH
+	bool "Power down flash supply in light sleep (VDDSDIO path)"
+	depends on ESP32_SOC_PM_SUPPORT_VDDSDIO_PD
+	depends on ESP32_SOC_FLASH_SUPPORTED
+	depends on !ESP_SPIRAM
+	select ESP32_PM_SLP_IRAM_OPT
+	help
+	  Power down the flash supply during light sleep when the hardware allows
+	  (VDDSDIO / flash domain). Higher wake latency and stricter constraints
+	  than SPI command deep power-down. Do not enable with SPIRAM unless the
+	  PSRAM supply is independent (not modeled in Zephyr Kconfig yet).
+
+	  See Espressif sleep documentation for risks and board requirements.
+
+config ESP32_SLEEP_SET_FLASH_DPD
+	bool "SPI flash deep power-down mode in light sleep"
+	depends on ESP32_SOC_FLASH_SUPPORTED
+	depends on !ESP32_SLEEP_POWER_DOWN_FLASH
+	select ESP32_PM_SLP_IRAM_OPT
+	help
+	  Puts the main SPI flash into deep power-down (typically command B9h)
+	  during light sleep when sleep duration is long enough. Saves roughly
+	  10 uA vs standby on many parts. Requires a compatible flash (exit
+	  typically ABh). Tune enter/exit delays from the datasheet.
+
+	  When enabled, the SoC linker script also places clk_utils in IRAM so
+	  MSPI/CPU clock sync after light sleep can run as soon as the cache is
+	  resumed, before HAL releases the flash from deep power-down.
+
+	  Mutually exclusive with "Power down flash supply" above.
+
+config ESP32_SLEEP_SPI_FLASH_ENTER_DPD_MODE_DELAY
+	int "SPI flash enter deep power-down delay (us)"
+	depends on ESP32_SLEEP_SET_FLASH_DPD
+	default 25
+	range 0 100
+	help
+	  Time CS must stay high after the enter-DPD command (tDP in datasheets).
+
+config ESP32_SLEEP_SPI_FLASH_EXIT_DPD_MODE_DELAY
+	int "SPI flash exit deep power-down delay (us)"
+	depends on ESP32_SLEEP_SET_FLASH_DPD
+	default 40
+	range 0 100
+	help
+	  Time CS must stay high after the exit-DPD command (tRES1 in datasheets).
 
 endmenu # Espressif PM Config
 
