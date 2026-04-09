@@ -457,6 +457,12 @@
 			alarms-count = <2>;
 			alrm-exti-line = <17>;
 			status = "disabled";
+
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <32>;
+				status = "disabled";
+			};
 		};
 
 		i2c1: i2c@40005400 {
