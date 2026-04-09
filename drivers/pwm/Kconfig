@@ -142,4 +142,6 @@ source "drivers/pwm/Kconfig.wch"
 
 source "drivers/pwm/Kconfig.ambiq_timer"
 
+source "drivers/pwm/Kconfig.ti_am3352_ecap"
+
 endif # PWM
