@@ -27,13 +27,11 @@ wiseconnect_get_ram_config("sram0" RAM_MEM_CONFIG)
 # Keep these values sync with
 # components/device/silabs/si91x/mcu/core/chip/component/siwg917*.slcc
 zephyr_compile_definitions(
-  SL_SI91X_ENABLE_LITTLE_ENDIAN
   SL_SI91X_SI917_RAM_MEM_CONFIG=${RAM_MEM_CONFIG}
   SLI_CODE_CLASSIFICATION_DISABLE
   SLI_SI91X_MCU_COMMON_FLASH_MODE
   SLI_SI91X_MCU_CONFIG_RADIO_BOARD_VER2
   SLI_SI91X_MCU_CONFIG_RADIO_BOARD_BASE_VER
-  SLI_SI91X_MCU_ENABLE_FLASH_BASED_EXECUTION
   SLI_SI91X_MCU_ENABLE_IPMU_APIS
   SLI_SI91X_MCU_INTERFACE
   SLI_SI91X_ENABLE_OS
@@ -62,13 +60,10 @@ zephyr_include_directories(
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/config
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/cmsis_driver
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/CMSIS/Driver/Include
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/cmsis_driver/config
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/rom_driver/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/inc
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/config
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/inc
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/sl_log/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/config
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/config/psram_device_config/aps6404l_sqrh
@@ -77,18 +72,13 @@ zephyr_include_directories(
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_peripheral_drivers/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/hal/inc
   ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/inc
-  ${WISECONNECT}/components/device/silabs/si91x/wireless/asynchronous_socket/inc
   ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/inc
   ${WISECONNECT}/components/device/silabs/si91x/wireless/firmware_upgrade
   ${WISECONNECT}/components/device/silabs/si91x/wireless/inc
-  ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/inc
   ${WISECONNECT}/components/device/silabs/si91x/wireless/socket/inc
   ${WISECONNECT}/components/protocol/wifi/inc
   ${WISECONNECT}/components/service/network_manager/inc
-  ${WISECONNECT}/components/sli_buffer_manager/inc
-  ${WISECONNECT}/components/sli_wifi_command_engine/inc
   ${WISECONNECT}/components/sli_wifi/inc
-  ${WISECONNECT}/resources/defaults
 )
 
 zephyr_library_sources(
