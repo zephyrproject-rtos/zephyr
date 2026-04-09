@@ -153,3 +153,10 @@ test_als_pt19: test_als-pt19 {
 	io-channels = <&test_adc 0>;
 	load-resistor = <10000>;
 };
+
+test_nordic_nrf_vbat: test_nordic_nrf_vbat {
+	status = "okay";
+	compatible = "nordic,nrf-vbat";
+	io-channels = <&test_adc 0>;
+	invert-voltage;
+};
