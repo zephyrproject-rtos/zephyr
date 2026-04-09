@@ -149,7 +149,7 @@ int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_scan_confi
 		.trigger_level = CONFIG_WIFI_SILABS_SIWX91X_ADV_SCAN_THRESHOLD,
 		.trigger_level_change = CONFIG_WIFI_SILABS_SIWX91X_ADV_RSSI_TOLERANCE_THRESHOLD,
 		.enable_multi_probe = CONFIG_WIFI_SILABS_SIWX91X_ADV_MULTIPROBE,
-		.enable_instant_scan = CONFIG_WIFI_SILABS_SIWX91X_ENABLE_INSTANT_SCAN,
+		.enable_instant_scan = 1,
 	};
 	sl_wifi_roam_configuration_t roam_configuration = {
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_ENABLE_ROAMING
