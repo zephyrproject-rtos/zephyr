@@ -1,10 +1,9 @@
 sample:
   name: USB support shell sample
-common:
-  depends_on:
-    - usbd
 tests:
   sample.usbd.shell:
+    depends_on:
+      - usbd
     integration_platforms:
       - nrf52840dk/nrf52840
       - nrf54h20dk/nrf54h20/cpuapp
@@ -28,4 +27,12 @@ tests:
     tags: usb
     extra_args: CONF_FILE="device_and_host_prj.conf"
     platform_allow: qemu_cortex_m3
+    build_only: true
+  sample.usbh.shell.stm32_otghs:
+    tags: usb
+    extra_args: CONF_FILE="host_prj.conf"
+    platform_allow:
+      - nucleo_u5a5zj_q
+    integration_platforms:
+      - nucleo_u5a5zj_q
     build_only: true

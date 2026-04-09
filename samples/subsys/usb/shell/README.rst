@@ -23,8 +23,8 @@ built like:
    :goals: flash
    :compact:
 
-For the USB host functionality a supported host controller is required,
-currently it is only MAX3421E. The example can be built as follows:
+For the USB host functionality a supported host controller is required.
+The sample can be built with MAX3421E as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/shell
@@ -32,6 +32,16 @@ currently it is only MAX3421E. The example can be built as follows:
    :shield: sparkfun_max3421e
    :gen-args: -DCONFIG_UHC_DRIVER=y -DCONFIG_USB_HOST_STACK=y
    :goals: flash
+   :compact:
+
+The sample can also be built in USB host mode on STM32U5 boards with the
+STM32 OTG HS UHC driver, for example:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/shell
+   :board: nucleo_u5a5zj_q
+   :gen-args: -DCONF_FILE=host_prj.conf
+   :goals: build
    :compact:
 
 It is theoretically possible to build USB support using virtual USB controllers
