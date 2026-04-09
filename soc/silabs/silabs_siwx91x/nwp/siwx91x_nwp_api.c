@@ -171,6 +171,63 @@ int siwx91x_nwp_flash_write(const struct device *dev, uint32_t dest,
 	return status ? -EINVAL : 0;
 }
 
+/* This is a redefintion of sli_si91x_req_fwup_t, but without allocating the full content
+ * field.
+ */
+struct siwx91x_nwp_req_fwup {
+	uint16_t type;
+	uint16_t length;
+	uint8_t content[];
+};
+
+int siwx91x_nwp_fw_upgrade_start(const struct device *dev, const void *hdr)
+{
+	struct siwx91x_nwp_req_fwup params = {
+		.type = SL_FWUP_RPS_HEADER,
+		.length = SLI_RPS_HEADER_SIZE,
+	};
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd2(dev, &params, sizeof(params), hdr, SLI_RPS_HEADER_SIZE,
+				       SLI_WLAN_REQ_FWUP, SLI_WLAN_MGMT_Q, 0, NULL);
+
+	switch (status) {
+	case 0:
+		return 0;
+	case SL_STATUS_SI91X_FW_UPDATE_FAILED:
+		return -EIO;
+	default:
+		return -EINVAL;
+	}
+}
+
+int siwx91x_nwp_fw_upgrade_write(const struct device *dev, const void *buf, size_t len)
+{
+	struct siwx91x_nwp_req_fwup params = {
+		.type = SL_FWUP_RPS_CONTENT,
+		.length = len,
+	};
+	uint32_t status;
+
+	if (len > SLI_MAX_FWUP_CHUNK_SIZE) {
+		return -EINVAL;
+	}
+
+	status = siwx91x_nwp_send_cmd2(dev, &params, sizeof(params), buf, len,
+				      SLI_WLAN_REQ_FWUP, SLI_WLAN_MGMT_Q, 0, NULL);
+
+	switch (status) {
+	case 0:
+		return 0;
+	case SL_STATUS_SI91X_FW_UPDATE_DONE:
+		return 1;
+	case SL_STATUS_SI91X_FW_UPDATE_FAILED:
+		return -EIO;
+	default:
+		return -EINVAL;
+	}
+}
+
 void siwx91x_nwp_feature(const struct device *dev, bool enable_pll)
 {
 	sli_si91x_feature_frame_request params = {
