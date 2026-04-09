@@ -21,6 +21,26 @@
 /* Evaluates to 1 if `usb_node` is High-Speed capable, 0 otherwise. */
 #define USB_STM32_NODE_IS_HS_CAPABLE(usb_node)	DT_NODE_HAS_COMPAT(usb_node, st_stm32_otghs)
 
+/*
+ * STM32 OTGHS stack ownership.
+ *
+ * The Zephyr USB host stack already selects its controller through the
+ * `zephyr,uhc` chosen node, so use that same choice to decide which STM32
+ * OTGHS instance is owned by the host driver. All other STM32 OTGHS nodes
+ * keep the historical peripheral binding.
+ */
+
+#define USB_STM32_NODE_IS_CHOSEN_UHC(usb_node)					\
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_uhc),					\
+		(DT_SAME_NODE(usb_node, DT_CHOSEN(zephyr_uhc))), (0))
+
+#define USB_STM32_NODE_HAS_HOST_ROLE(usb_node)					\
+	UTIL_AND(DT_NODE_HAS_COMPAT(usb_node, st_stm32_otghs),			\
+		 USB_STM32_NODE_IS_CHOSEN_UHC(usb_node))
+
+#define USB_STM32_NODE_HAS_PERIPHERAL_ROLE(usb_node)				\
+	UTIL_NOT(USB_STM32_NODE_HAS_HOST_ROLE(usb_node))
+
 /* Evaluates to 1 if PHY of `usb_node` is an ULPI PHY, 0 otherwise. */
 #define USB_STM32_NODE_PHY_IS_ULPI(usb_node)						\
 	UTIL_AND(USB_STM32_NODE_IS_HS_CAPABLE(usb_node),				\

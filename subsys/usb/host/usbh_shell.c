@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(usbh_shell, CONFIG_USBH_LOG_LEVEL);
 #define FOOBAZ_VREQ_OUT		0x5b
 #define FOOBAZ_VREQ_IN		0x5c
 
-USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
+USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_CHOSEN(zephyr_uhc)));
 static uint8_t vreq_test_buf[1024];
 
 static void print_dev_desc(const struct shell *sh,
