@@ -53,6 +53,10 @@ extern "C" {
 #define MODEM_CELLULAR_MAX_APN_CMDS          (2)
 #define MODEM_CELLULAR_APN_BUF_SIZE          (64)
 
+/* Zephyr networking interface states:
+ *    NET_IF_LOWER_UP: Carrier is on in AWAIT_REGISTERED and REGISTERED
+ *     NET_IF_DORMANT: Interface is dormant in every state except REGISTERED
+ */
 enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_IDLE = 0,
 	MODEM_CELLULAR_STATE_RESET_PULSE,
