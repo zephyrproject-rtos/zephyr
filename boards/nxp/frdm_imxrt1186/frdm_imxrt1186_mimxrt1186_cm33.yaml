@@ -24,4 +24,5 @@ supported:
   - mbox
   - netif:eth
   - i2c
+  - watchdog
 vendor: nxp
