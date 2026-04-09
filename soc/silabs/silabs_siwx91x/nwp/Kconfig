@@ -4,46 +4,46 @@
 config SILABS_SIWX91X_NWP
 	bool "Silabs Network Coprocessor"
 	depends on DT_HAS_SILABS_SIWX91X_NWP_ENABLED
-	select SILABS_SIWX91X_NWP_WISECONNECT
+	select NET_BUF
+	select POLL
 	help
 	  Add support for Network Coprocessor (also named NWP) presents on SiWx91x parts.
 
 config SILABS_SIWX91X_NWP_WISECONNECT
 	bool
-	select CODE_DATA_RELOCATION_SRAM
-	select CMSIS_RTOS_V2
-	select POLL
-	select DYNAMIC_THREAD
-	select THREAD_NAME
-	select THREAD_STACK_INFO
-	select THREAD_MONITOR
-	select INIT_STACKS
+	depends on SILABS_SIWX91X_NWP_BROKEN
+	help
+	  This implementation is no more provided
 
-if SILABS_SIWX91X_NWP_WISECONNECT
+config SILABS_SIWX91X_NWP_BROKEN
+	bool
 
-# Wiseconnect needs more than 1024 bytes of main stack size to initialize
-# (especially with PM)
-configdefault MAIN_STACK_SIZE
-	default 2048
+if SILABS_SIWX91X_NWP
 
-config NUM_PREEMPT_PRIORITIES
-	default 56
-
-config CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT
-	default 2
-
-config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
-	default 1024
-
-config CMSIS_V2_THREAD_MAX_STACK_SIZE
-	default 2048
+module = SIWX91X_NWP
+module-str = siwx91x_nwp
+source "subsys/logging/Kconfig.template.log_config"
 
 config SIWX91X_NWP_INIT_PRIORITY
-	int "SiWx91x Network Processor init priority"
+	int "Init priority"
 	default 39
 	help
 	  Initialization priority of the SiWx91x Network Processor. NWP init must
 	  have a higher priority than services that depend on it, such as Bluetooth,
 	  Wi-Fi and crypto.
+
+config SIWX91X_NWP_THREAD_STACK_SIZE
+	int "Stack size for interrupt handler"
+	default 1536
+	help
+	  Size of the stack used for internal thread which is ran for Network Co-Processor
+	  communication.
+
+config SIWX91X_NWP_THREAD_PRIO
+	int "Priority for interrupt handler"
+	default -15
+	help
+	  Priority level of the internal thread which is ran for Network Co-Processor
+	  communication.
 
 endif

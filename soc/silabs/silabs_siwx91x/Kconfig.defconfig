@@ -10,11 +10,9 @@ configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 	default 32768
 
-# WiseConnect create threads with realtime priority. Default (10kHz) clock tick
-# prevent proper use of the system with these threads.
 configdefault SYS_CLOCK_TICKS_PER_SEC
-	default 128 if !TICKLESS_KERNEL && SILABS_SLEEPTIMER_TIMER
-	default 1024 if SILABS_SLEEPTIMER_TIMER || SILABS_SIWX91X_NWP_WISECONNECT
+	default 128 if SILABS_SLEEPTIMER_TIMER && !TICKLESS_KERNEL
+	default 1024 if SILABS_SLEEPTIMER_TIMER
 
 configdefault CLOCK_CONTROL
 	default y

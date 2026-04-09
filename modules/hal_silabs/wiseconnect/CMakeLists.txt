@@ -42,12 +42,14 @@ zephyr_compile_definitions(
 )
 
 zephyr_include_directories(
+  ${ZEPHYR_BASE}/include/zephyr/portability
   ${SISDK}/platform/common/config
   ${SISDK}/platform/common/inc
   ${SISDK}/platform/emlib/inc
   ${SISDK}/platform/service/mem_pool/inc
   ${SISDK}/platform/service/sleeptimer/config
   ${SISDK}/platform/service/sleeptimer/inc
+  ${WISECONNECT}/components
   # Wiseconnect do not provide generic RTE_Device_917.h. However, all the boards share more-or-less
   # the same definitions. So we could take any of them. In addition, this file is only required for
   # the compilation, but none the symbols are normally used by Zephyr (it is required to compile
@@ -233,48 +235,13 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
   )
 endif() # CONFIG_WIFI_SILABS_SIWX91X
 
+zephyr_compile_definitions_ifdef(CONFIG_SILABS_SIWX91X_NWP
+  SL_WIFI_COMPONENT_INCLUDED # Depite de the name, required to properly mange the NWP clocks
+)
 
-if(CONFIG_SILABS_SIWX91X_NWP_WISECONNECT)
-  zephyr_compile_definitions(
-    SL_WIFI_COMPONENT_INCLUDED # Depite de the name, required for everything
-  )
-  zephyr_include_directories(
-    # FIXME: find why this directory is not included when CMSIS_RTOS_V2=y
-    ${ZEPHYR_BASE}/include/zephyr/portability
-  )
-  zephyr_library_sources(
-    nwp_fw_version.c
-    ${WISECONNECT}/components/common/src/sl_utility.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_rom.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/sli_siwx917_soc.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_platform.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_platform_wireless.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_si91x_bus.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/host_mcu/si91x/siwx917_soc_ncp_host.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/memory/mem_pool_buffer_quota.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sli_wifi_memory_manager.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sli_wifi_power_profile.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sl_rsi_utility.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sl_si91x_driver.c
-    ${WISECONNECT}/components/protocol/wifi/si91x/sl_wifi.c
-    ${WISECONNECT}/components/protocol/wifi/src/sli_wifi_callback_framework.c
-    ${WISECONNECT}/components/protocol/wifi/src/sl_wifi_callback_framework.c
-    ${WISECONNECT}/components/service/network_manager/src/sli_net_common_utility.c
-    ${WISECONNECT}/components/sli_si91x_wifi_event_handler/src/sli_si91x_wifi_event_handler.c
-    ${WISECONNECT}/components/sli_wifi/src/sli_wifi.c
-    ${WISECONNECT}/components/sli_wifi/src/sli_wifi_utility.c
-    ${WISECONNECT}/components/sli_wifi_command_engine/src/sli_wifi_command_engine.c
-  )
-  zephyr_library_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
-  )
-  zephyr_include_directories(.)
-  zephyr_code_relocate(FILES
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
-    LOCATION RAM
-  )
-endif() # CONFIG_SILABS_SIWX91X_NWP_WISECONNECT
+zephyr_library_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
+)
 
 if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_include_directories(

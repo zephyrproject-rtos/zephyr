@@ -1,233 +1,119 @@
 /**
- * @file
- * @brief Network Processor Initialization for SiWx91x.
- *
- * This file contains the initialization routine for the (ThreadArch) network processor
- * on the SiWx91x platform. The component is responsible for setting up the necessary
- * hardware and software components to enable network communication.
- *
  * Copyright (c) 2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #define DT_DRV_COMPAT silabs_siwx91x_nwp
-
-#include <zephyr/kernel.h>
 #include <zephyr/net/wifi.h>
-#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/devicetree.h>
-
+#include <zephyr/drivers/pinctrl.h>
 #include "siwx91x_nwp.h"
-#include "nwp_fw_version.h"
-#include "sl_wifi_callback_framework.h"
+#include "siwx91x_nwp_bus.h"
+#include "siwx91x_nwp_api.h"
+#include "siwx91x_nwp_fw.h"
+#include "siwx91x_nwp_fw_version.h"
+#include "device/silabs/si91x/wireless/ble/inc/sl_si91x_ble.h"
+#include "device/silabs/si91x/mcu/drivers/service/power_manager/inc/sl_si91x_power_manager.h"
+#include "device/silabs/si91x/wireless/ble/inc/rsi_ble_common_config.h"
 
-#include "sl_si91x_ble.h"
-#ifdef CONFIG_BT_SILABS_SIWX91X
-#include "rsi_ble_common_config.h"
-#endif
-#include "sl_si91x_power_manager.h"
-
-#define AP_MAX_NUM_STA 4
-#define SL_SI91X_EXT_FEAT_FRONT_END_MSK (BIT(30) | BIT(29))
-
-LOG_MODULE_REGISTER(siwx91x_nwp);
+LOG_MODULE_REGISTER(siwx91x_nwp, CONFIG_SIWX91X_NWP_LOG_LEVEL);
 
 BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319));
 
-struct siwx91x_nwp_data {
-	uint8_t power_profile;
-	char current_country_code[WIFI_COUNTRY_CODE_LEN];
-};
-
-struct siwx91x_nwp_config {
-	const struct pinctrl_dev_config *pcfg;
-	void (*config_irq)(const struct device *dev);
-	uint32_t stack_size;
-	uint8_t antenna_selection;
-	bool support_1p8v;
-	bool enable_xtal_correction;
-	bool qspi_80mhz_clk;
-	uint32_t clock_frequency;
-};
-
-typedef struct {
-	const char *const *codes;
-	size_t num_codes;
-	sl_wifi_region_code_t region_code;
-	const sli_wifi_set_region_ap_request_t *sdk_reg;
-} region_map_t;
-
-extern const sli_wifi_set_region_ap_request_t default_US_region_2_4GHZ_configurations;
-extern const sli_wifi_set_region_ap_request_t default_EU_region_2_4GHZ_configurations;
-extern const sli_wifi_set_region_ap_request_t default_JP_region_2_4GHZ_configurations;
-extern const sli_wifi_set_region_ap_request_t default_KR_region_2_4GHZ_configurations;
-extern const sli_wifi_set_region_ap_request_t default_SG_region_2_4GHZ_configurations;
-extern const sli_wifi_set_region_ap_request_t default_CN_region_2_4GHZ_configurations;
-
-static const char *const us_codes[] = {
-	"AE", "AR", "AS", "BB", "BM", "BR", "BS", "CA", "CO", "CR", "CU", "CX", "DM", "DO",
-	"EC", "FM", "GD", "GY", "GU", "HN", "HT", "JM", "KY", "LB", "LK", "MH", "MN", "MP",
-	"MO", "MY", "NI", "PA", "PE", "PG", "PH", "PK", "PR", "PW", "PY", "SG", "MX", "SV",
-	"TC", "TH", "TT", "US", "UY", "VE", "VI", "VN", "VU", "00"
-	/* Map "00" (world domain) to US region as using the world domain is not recommended */
-};
-static const char *const eu_codes[] = {
-	"AD", "AF", "AI", "AL", "AM", "AN", "AT", "AW", "AU", "AZ", "BA", "BE", "BG", "BH", "BL",
-	"BT", "BY", "CH", "CY", "CZ", "DE", "DK", "EE", "ES", "FR", "GB", "GE", "GF", "GL", "GP",
-	"GR", "GT", "HK", "HR", "HU", "ID", "IE", "IL", "IN", "IR", "IS", "IT", "JO", "KH", "FI",
-	"KN", "KW", "KZ", "LC", "LI", "LT", "LU", "LV", "MD", "ME", "MK", "MF", "MT", "MV", "MQ",
-	"NL", "NO", "NZ", "OM", "PF", "PL", "PM", "PT", "QA", "RO", "RS", "RU", "SA", "SE", "SI",
-	"SK", "SR", "SY", "TR", "TW", "UA", "UZ", "VC", "WF", "WS", "YE", "RE", "YT"
-};
-static const char *const jp_codes[] = {"BD", "BN", "BO", "CL", "BZ", "JP", "NP"};
-static const char *const kr_codes[] = {"KR", "KP"};
-static const char *const cn_codes[] = {"CN"};
-static const region_map_t region_maps[] = {
-	{us_codes, ARRAY_SIZE(us_codes), SL_WIFI_REGION_US,
-	 &default_US_region_2_4GHZ_configurations},
-	{eu_codes, ARRAY_SIZE(eu_codes), SL_WIFI_REGION_EU,
-	 &default_EU_region_2_4GHZ_configurations},
-	{jp_codes, ARRAY_SIZE(jp_codes), SL_WIFI_REGION_JP,
-	 &default_JP_region_2_4GHZ_configurations},
-	{kr_codes, ARRAY_SIZE(kr_codes), SL_WIFI_REGION_KR,
-	 &default_KR_region_2_4GHZ_configurations},
-	{cn_codes, ARRAY_SIZE(cn_codes), SL_WIFI_REGION_CN,
-	 &default_CN_region_2_4GHZ_configurations},
-};
-
-int siwx91x_store_country_code(const struct device *dev, const char *country_code)
+void siwx91x_nwp_register_wifi(const struct device *dev, const struct siwx91x_nwp_wifi_cb *val)
 {
-	__ASSERT(country_code, "country_code cannot be NULL");
 	struct siwx91x_nwp_data *data = dev->data;
 
-	memcpy(data->current_country_code, country_code, WIFI_COUNTRY_CODE_LEN);
-	return 0;
+	data->wifi = val;
 }
 
-const char *siwx91x_get_country_code(const struct device *dev)
+void siwx91x_nwp_register_bt(const struct device *dev, const struct siwx91x_nwp_bt_cb *val)
 {
-	const struct siwx91x_nwp_data *data = dev->data;
+	struct siwx91x_nwp_data *data = dev->data;
 
-	return data->current_country_code;
+	data->bt = val;
 }
 
-sl_wifi_region_code_t siwx91x_map_country_code_to_region(const char *country_code)
-{
-	__ASSERT(country_code, "country_code cannot be NULL");
-
-	ARRAY_FOR_EACH(region_maps, i) {
-		for (size_t j = 0; j < region_maps[i].num_codes; j++) {
-			if (memcmp(country_code, region_maps[i].codes[j],
-			       WIFI_COUNTRY_CODE_LEN) == 0) {
-				return region_maps[i].region_code;
-			}
-		}
-	}
-	return SL_WIFI_DEFAULT_REGION;
-}
-
-const sli_wifi_set_region_ap_request_t *siwx91x_find_sdk_region_table(uint8_t region_code)
-{
-	ARRAY_FOR_EACH(region_maps, i) {
-		if (region_maps[i].region_code == region_code) {
-			return region_maps[i].sdk_reg;
-		}
-	}
-	return NULL;
-}
-
-static void siwx91x_apply_sram_config(sl_wifi_system_boot_configuration_t *boot_config)
+static void siwx91x_apply_sram_config(sl_wifi_system_boot_configuration_t *params)
 {
 	/* The size does not match exactly because 1 KB is reserved at the start of the RAM */
 	size_t sram_size = DT_REG_SIZE(DT_CHOSEN(zephyr_sram));
 
 	if (sram_size == KB(195)) {
-		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_480K_M4SS_192K;
+		params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_480K_M4SS_192K;
 	} else if (sram_size == KB(255)) {
-		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_416K_M4SS_256K;
+		params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_416K_M4SS_256K;
 	} else if (sram_size == KB(319)) {
-		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_352K_M4SS_320K;
+		params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_352K_M4SS_320K;
 	} else {
 		k_panic();
 	}
 }
 
 static void siwx91x_apply_boot_config(const struct device *dev,
-				      sl_wifi_system_boot_configuration_t *boot_config)
+				      sl_wifi_system_boot_configuration_t *params)
 {
 	const struct siwx91x_nwp_config *cfg = dev->config;
-	struct {
-		bool enabled;
-		uint32_t *target;
-		uint32_t bit;
-	} features[] = {
-		{ cfg->support_1p8v, &boot_config->ext_custom_feature_bit_map,
-		  SL_SI91X_EXT_FEAT_1P8V_SUPPORT },
-		{ !cfg->enable_xtal_correction, &boot_config->ext_custom_feature_bit_map,
-		  SL_SI91X_EXT_FEAT_DISABLE_XTAL_CORRECTION },
-		{ cfg->qspi_80mhz_clk, &boot_config->ext_custom_feature_bit_map,
-		  SL_SI91X_EXT_FEAT_NWP_QSPI_80MHZ_CLK_ENABLE },
-	};
 
-	for (int i = 0; i < ARRAY_SIZE(features); i++) {
-		if (features[i].enabled) {
-			*features[i].target |= features[i].bit;
-		}
+	if (cfg->qspi_80mhz_clk) {
+		params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_NWP_QSPI_80MHZ_CLK_ENABLE;
 	}
-
-	boot_config->ext_custom_feature_bit_map &= ~SL_SI91X_EXT_FEAT_FRONT_END_MSK;
-	boot_config->ext_custom_feature_bit_map |=
-		FIELD_PREP(SL_SI91X_EXT_FEAT_FRONT_END_MSK, cfg->antenna_selection);
+	if (!cfg->enable_xtal_correction) {
+		params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_DISABLE_XTAL_CORRECTION;
+	}
+	if (cfg->support_1p8v) {
+		params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_1P8V_SUPPORT;
+	}
+	params->ext_custom_feature_bit_map |= FIELD_PREP(0x60000000, cfg->antenna_selection);
 }
 
-static void siwx91x_configure_sta_mode(sl_wifi_system_boot_configuration_t *boot_config)
+static void siwx91x_apply_sta_mode(sl_wifi_system_boot_configuration_t *params)
 {
 	const bool wifi_enabled = IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X);
 	const bool bt_enabled = IS_ENABLED(CONFIG_BT_SILABS_SIWX91X);
 
-	boot_config->oper_mode = SL_SI91X_CLIENT_MODE;
+	params->oper_mode = SL_SI91X_CLIENT_MODE;
 
 	if (wifi_enabled) {
-		boot_config->feature_bit_map |= SL_SI91X_FEAT_SECURITY_OPEN;
+		params->feature_bit_map |= SL_SI91X_FEAT_SECURITY_OPEN;
 		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_FEAT_SECURITY_PSK)) {
-			boot_config->feature_bit_map |= SL_SI91X_FEAT_SECURITY_PSK;
+			params->feature_bit_map |= SL_SI91X_FEAT_SECURITY_PSK;
 		}
 		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
-			boot_config->custom_feature_bit_map |=
+			params->custom_feature_bit_map |=
 				SL_SI91X_CUSTOM_FEAT_ROAM_WITH_DEAUTH_OR_NULL_DATA;
 		}
 	}
 
 	if (wifi_enabled && bt_enabled) {
-		boot_config->coex_mode = SL_SI91X_WLAN_BLE_MODE;
+		params->coex_mode = SL_SI91X_WLAN_BLE_MODE;
 	} else if (wifi_enabled) {
-		boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
+		params->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
 	} else if (bt_enabled) {
-		boot_config->coex_mode = SL_SI91X_WLAN_BLE_MODE;
+		params->coex_mode = SL_SI91X_WLAN_BLE_MODE;
 	} else {
 		/*
 		 * Even if neither WiFi or BLE is used we have to specify a Coex mode
 		 */
-		boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
+		params->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
 	}
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
-	boot_config->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
+	params->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_MFP)) {
-		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
+		params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
 	}
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP)) {
-		boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
+		params->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
 	}
 #endif
 
 #ifdef CONFIG_BT_SILABS_SIWX91X
-	boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_BT_CUSTOM_FEAT_ENABLE;
-	boot_config->bt_feature_bit_map |= SL_SI91X_BT_RF_TYPE | SL_SI91X_ENABLE_BLE_PROTOCOL;
-	boot_config->ble_feature_bit_map |=
+	params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_BT_CUSTOM_FEAT_ENABLE;
+	params->bt_feature_bit_map |= SL_SI91X_BT_RF_TYPE | SL_SI91X_ENABLE_BLE_PROTOCOL;
+	params->ble_feature_bit_map |=
 		SL_SI91X_BLE_MAX_NBR_PERIPHERALS(RSI_BLE_MAX_NBR_PERIPHERALS) |
 		SL_SI91X_BLE_MAX_NBR_CENTRALS(RSI_BLE_MAX_NBR_CENTRALS) |
 		SL_SI91X_BLE_MAX_NBR_ATT_SERV(RSI_BLE_MAX_NBR_ATT_SERV) |
@@ -237,7 +123,7 @@ static void siwx91x_configure_sta_mode(sl_wifi_system_boot_configuration_t *boot
 		SL_SI91X_916_BLE_COMPATIBLE_FEAT_ENABLE |
 		SL_SI91X_FEAT_BLE_CUSTOM_FEAT_EXTENSION_VALID;
 
-	boot_config->ble_ext_feature_bit_map |=
+	params->ble_ext_feature_bit_map |=
 		SL_SI91X_BLE_NUM_CONN_EVENTS(RSI_BLE_NUM_CONN_EVENTS) |
 		SL_SI91X_BLE_NUM_REC_BYTES(RSI_BLE_NUM_REC_BYTES) | SL_SI91X_BLE_ENABLE_ADV_EXTN |
 		SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS) |
@@ -245,46 +131,43 @@ static void siwx91x_configure_sta_mode(sl_wifi_system_boot_configuration_t *boot
 #endif
 }
 
-static void siwx91x_configure_ap_mode(sl_wifi_system_boot_configuration_t *boot_config,
-				      bool hidden_ssid, uint8_t max_num_sta)
+static void siwx91x_apply_ap_mode(sl_wifi_system_boot_configuration_t *params,
+				  bool hidden_ssid, uint8_t max_num_sta)
 {
-	boot_config->oper_mode = SL_SI91X_ACCESS_POINT_MODE;
-	boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
-
-	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA)) {
-		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
-	}
-
-	if (hidden_ssid) {
-		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_AP_IN_HIDDEN_MODE;
-	}
-
-	boot_config->custom_feature_bit_map |= SL_WIFI_CUSTOM_FEAT_MAX_NUM_OF_CLIENTS(max_num_sta);
-
 	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
 		LOG_WRN("Bluetooth is not supported in AP mode");
 	}
+
+	params->oper_mode = SL_SI91X_ACCESS_POINT_MODE;
+	params->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_LIMIT_PACKET_BUF_PER_STA)) {
+		params->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_LIMIT_PACKETS_PER_STA;
+	}
+	if (hidden_ssid) {
+		params->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_AP_IN_HIDDEN_MODE;
+	}
+	params->custom_feature_bit_map |= SL_WIFI_CUSTOM_FEAT_MAX_NUM_OF_CLIENTS(max_num_sta);
 }
 
-static void siwx91x_configure_network_stack(sl_wifi_system_boot_configuration_t *boot_config,
-					    uint8_t wifi_oper_mode)
+static void siwx91x_apply_network_features(sl_wifi_system_boot_configuration_t *params,
+					   uint8_t wifi_oper_mode)
 {
 	if (!IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
-		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_BYPASS;
+		params->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_BYPASS;
 		return;
 	}
 
-	boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_ICMP;
-	boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
-	boot_config->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_TOTAL_SELECTS(10);
+	params->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_ICMP;
+	params->ext_tcp_ip_feature_bit_map |= SL_SI91X_EXT_TCP_IP_WINDOW_SCALING;
+	params->ext_tcp_ip_feature_bit_map |= FIELD_PREP(0x0000F000, SIWX91X_MAX_CONCURRENT_SELECT);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_IPV6;
+		params->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_IPV6;
 
 		if (wifi_oper_mode == WIFI_STA_MODE) {
-			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV6_CLIENT;
+			params->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV6_CLIENT;
 		} else if (wifi_oper_mode == WIFI_SOFTAP_MODE) {
-			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV6_SERVER;
+			params->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV6_SERVER;
 		} else {
 			/* No DHCPv6 configuration needed for other modes */
 		}
@@ -292,102 +175,58 @@ static void siwx91x_configure_network_stack(sl_wifi_system_boot_configuration_t 
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		if (wifi_oper_mode == WIFI_STA_MODE) {
-			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV4_CLIENT;
+			params->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV4_CLIENT;
 		} else if (wifi_oper_mode == WIFI_SOFTAP_MODE) {
-			boot_config->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV4_SERVER;
+			params->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_DHCPV4_SERVER;
 		} else {
 			/* No DHCPv4 configuration needed for other modes */
 		}
 	}
 }
 
-static int siwx91x_check_nwp_version(void)
-{
-	sl_wifi_firmware_version_t version;
-	int ret;
-
-	ret = sl_wifi_get_firmware_version(&version);
-	if (ret != SL_STATUS_OK) {
-		return -EINVAL;
-	}
-
-	/* Ignore rom_id:
-	 * the right value is 0x0B but we received 17 in version.rom_id, we suspect a double
-	 * hex->decimal conversion
-	 */
-	if (siwx91x_nwp_fw_expected_version.major != version.major) {
-		return -EINVAL;
-	}
-	if (siwx91x_nwp_fw_expected_version.minor != version.minor) {
-		return -EINVAL;
-	}
-	if (siwx91x_nwp_fw_expected_version.security_version != version.security_version) {
-		return -EINVAL;
-	}
-	if (siwx91x_nwp_fw_expected_version.patch_num != version.patch_num) {
-		return -EINVAL;
-	}
-	if (siwx91x_nwp_fw_expected_version.customer_id != version.customer_id) {
-		LOG_DBG("customer_id diverge: expected %d, actual %d",
-			siwx91x_nwp_fw_expected_version.customer_id, version.customer_id);
-	}
-	if (siwx91x_nwp_fw_expected_version.build_num != version.build_num) {
-		LOG_DBG("build_num diverge: expected %d, actual %d",
-			siwx91x_nwp_fw_expected_version.build_num, version.build_num);
-	}
-
-	return 0;
-}
-
-static int siwx91x_get_nwp_config(const struct device *dev,
-				  sl_wifi_device_configuration_t *get_config,
-				  uint8_t wifi_oper_mode, bool hidden_ssid, uint8_t max_num_sta)
+static int siwx91x_nwp_compute_config(const struct device *dev,
+				      sl_wifi_system_boot_configuration_t *get_config,
+				      bool *enable_pll, uint8_t wifi_oper_mode, bool hidden_ssid,
+				      uint8_t max_num_sta)
 {
 	const struct siwx91x_nwp_config *config = dev->config;
-	sl_wifi_device_configuration_t default_config = {
-		.region_code = siwx91x_map_country_code_to_region(siwx91x_get_country_code(dev)),
-		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
-		.boot_option = LOAD_NWP_FW,
-		.boot_config = {
-			.feature_bit_map = SL_SI91X_FEAT_WPS_DISABLE |
-					   SL_SI91X_FEAT_AGGREGATION |
-					   SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS,
-			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
-			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID |
-						  SL_SI91X_CUSTOM_FEAT_ASYNC_CONNECTION_STATUS,
-			.ext_custom_feature_bit_map = SL_SI91X_EXT_FEAT_XTAL_CLK,
-		},
-		.ta_pool = {
-			.tx_ratio_in_buffer_pool     = 1,
-			.rx_ratio_in_buffer_pool     = 1,
-			.global_ratio_in_buffer_pool = 1
-		}
+	sl_wifi_system_boot_configuration_t boot_config = {
+		.feature_bit_map = SL_SI91X_FEAT_WPS_DISABLE |
+				   SL_SI91X_FEAT_AGGREGATION |
+				   SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS |
+				   SLI_SI91X_FEAT_FW_UPDATE_NEW_CODE,
+		.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
+		.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID |
+					  SL_SI91X_CUSTOM_FEAT_ASYNC_CONNECTION_STATUS,
+		.ext_custom_feature_bit_map = SL_SI91X_EXT_FEAT_XTAL_CLK,
 	};
 
-	sl_wifi_system_boot_configuration_t *boot_config = &default_config.boot_config;
 
 	__ASSERT(get_config, "get_config cannot be NULL");
 	__ASSERT((hidden_ssid == false && max_num_sta == 0) || wifi_oper_mode == WIFI_SOFTAP_MODE,
 		 "hidden_ssid or max_num_sta requires SOFT AP mode");
 
-	if (wifi_oper_mode == WIFI_SOFTAP_MODE && max_num_sta > AP_MAX_NUM_STA) {
-		LOG_ERR("Exceeded maximum supported stations (%d)", AP_MAX_NUM_STA);
+	if (wifi_oper_mode == WIFI_SOFTAP_MODE && max_num_sta > 4) {
+		LOG_ERR("Exceeded maximum supported stations");
 		return -EINVAL;
 	}
 
-	siwx91x_apply_sram_config(boot_config);
-	siwx91x_apply_boot_config(dev, boot_config);
+	siwx91x_apply_sram_config(&boot_config);
+	siwx91x_apply_boot_config(dev, &boot_config);
 
 	/* Apply TA clock configuration based on DT property */
 	switch (config->clock_frequency) {
 	case 80000000:
 		/* no configuration bit needed */
+		*enable_pll = false;
 		break;
 	case 120000000:
-		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_120MHZ;
+		boot_config.custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_120MHZ;
+		*enable_pll = true;
 		break;
 	case 160000000:
-		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_160MHZ;
+		boot_config.custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_160MHZ;
+		*enable_pll = true;
 		break;
 	default:
 		__ASSERT(0, "Corrupted DT configuration");
@@ -396,44 +235,48 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 
 	switch (wifi_oper_mode) {
 	case WIFI_STA_MODE:
-		siwx91x_configure_sta_mode(boot_config);
+		siwx91x_apply_sta_mode(&boot_config);
 		break;
 	case WIFI_SOFTAP_MODE:
-		siwx91x_configure_ap_mode(boot_config, hidden_ssid, max_num_sta);
+		siwx91x_apply_ap_mode(&boot_config, hidden_ssid, max_num_sta);
 		break;
 	default:
 		return -EINVAL;
 	}
-
-	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
-		siwx91x_configure_network_stack(boot_config, wifi_oper_mode);
+	if (boot_config.coex_mode == SL_SI91X_WLAN_BLE_MODE) {
+		*enable_pll = false;
 	}
 
-	memcpy(get_config, &default_config, sizeof(default_config));
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+		siwx91x_apply_network_features(&boot_config, wifi_oper_mode);
+	}
+
+	memcpy(get_config, &boot_config, sizeof(boot_config));
 	return 0;
 }
 
-int siwx91x_nwp_mode_switch(const struct device *dev, uint8_t oper_mode, bool hidden_ssid,
-			    uint8_t max_num_sta)
+int siwx91x_nwp_reset(const struct device *dev, uint8_t oper_mode,
+			bool hidden_ssid, uint8_t max_num_sta)
 {
-	sl_wifi_device_configuration_t nwp_config;
-	int status;
+	sl_wifi_system_boot_configuration_t nwp_config;
+	bool enable_pll = false;
+	int ret;
 
-	status = siwx91x_get_nwp_config(dev, &nwp_config, oper_mode, hidden_ssid, max_num_sta);
-	if (status < 0) {
-		return status;
+	ret = siwx91x_nwp_compute_config(dev, &nwp_config, &enable_pll,
+					 oper_mode, hidden_ssid, max_num_sta);
+	if (ret) {
+		return ret;
 	}
 
-	/* FIXME: Calling sl_wifi_deinit() impacts Bluetooth if coexistence is enabled */
-	status = sl_wifi_deinit();
-	if (status != SL_STATUS_OK) {
-		return -ETIMEDOUT;
-	}
-
-	status = sl_wifi_init(&nwp_config, NULL, sl_wifi_default_event_handler);
-	if (status != SL_STATUS_OK) {
-		return -ETIMEDOUT;
-	}
+	siwx91x_nwp_tx_flush_lock(dev);
+	/* siwx91x_nwp_soft_reset() is not required for the initial boot, but this allow to use the
+	 * same code than for reset.
+	 */
+	siwx91x_nwp_soft_reset(dev);
+	siwx91x_nwp_opermode(dev, &nwp_config);
+	siwx91x_nwp_dynamic_pool(dev, 1, 1, 1);
+	siwx91x_nwp_feature(dev, enable_pll);
+	siwx91x_nwp_tx_unlock(dev);
 
 	return 0;
 }
@@ -473,38 +316,29 @@ int siwx91x_nwp_apply_power_profile(const struct device *dev)
 	return 0;
 }
 
-static int siwx91x_nwp_init(const struct device *dev)
+static int siwx91x_check_nwp_version(const struct device *dev)
 {
-	const struct siwx91x_nwp_config *config = dev->config;
-	struct siwx91x_nwp_data *data = dev->data;
-	sl_wifi_device_configuration_t network_config;
-	int ret;
+	struct siwx91x_nwp_version version;
 
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0 && ret != -ENOENT) {
-		return ret;
-	}
-	if (config->antenna_selection == 2 && ret == -ENOENT) {
-		LOG_WRN("'ext-gpios' expects some pinctrl configuration");
-	}
+	siwx91x_nwp_get_firmware_version(dev, &version);
 
-	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X) || IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
-		data->power_profile = ASSOCIATED_POWER_SAVE;
-	}
+	LOG_INF("Get NWP firmware version: %X.%d.%d.%d.%d.%d.%d",
+		version.rom_id,
+		version.major,
+		version.minor,
+		version.security_version,
+		version.patch_num,
+		version.customer_id,
+		version.build_num);
 
-	siwx91x_get_nwp_config(dev, &network_config, WIFI_STA_MODE, false, 0);
-	/* TODO: If sl_net_*_profile() functions will be needed for WiFi then call
-	 * sl_net_set_profile() here. Currently these are unused.
-	 * Despite its name, this function need to be called even if wifi is not used.
+	/* Ignore rom_id:
+	 * the right value is 0x0B but we received 17 in version.rom_id, we suspect a double
+	 * hex->decimal conversion
 	 */
-	ret = sl_wifi_init(&network_config, NULL, sl_wifi_default_event_handler);
-	if (ret) {
-		return -EINVAL;
-	}
-
-	/* Check if the NWP firmware version is correct */
-	ret = siwx91x_check_nwp_version();
-	if (ret < 0) {
+	if (siwx91x_nwp_fw_expected_version.major != version.major ||
+	    siwx91x_nwp_fw_expected_version.minor != version.minor ||
+	    siwx91x_nwp_fw_expected_version.security_version != version.security_version ||
+	    siwx91x_nwp_fw_expected_version.patch_num != version.patch_num) {
 		LOG_ERR("Unexpected NWP firmware version (expected: %X.%d.%d.%d.%d.%d.%d)",
 			siwx91x_nwp_fw_expected_version.rom_id,
 			siwx91x_nwp_fw_expected_version.major,
@@ -515,7 +349,83 @@ static int siwx91x_nwp_init(const struct device *dev)
 			siwx91x_nwp_fw_expected_version.build_num);
 		return -EINVAL;
 	}
+	if (siwx91x_nwp_fw_expected_version.customer_id != version.customer_id) {
+		LOG_DBG("customer_id diverge: expected %d, actual %d",
+			siwx91x_nwp_fw_expected_version.customer_id, version.customer_id);
+	}
+	if (siwx91x_nwp_fw_expected_version.build_num != version.build_num) {
+		LOG_DBG("build_num diverge: expected %d, actual %d",
+			siwx91x_nwp_fw_expected_version.build_num, version.build_num);
+	}
 
+	return 0;
+}
+
+static int siwx91x_nwp_init(const struct device *dev)
+{
+	const struct siwx91x_nwp_config *config = dev->config;
+	struct siwx91x_nwp_data *data = dev->data;
+	struct net_buf_pool *rx_buf_pool;
+	int ret, i;
+
+	if (!config->rx_pool) {
+		LOG_INF("Use network Rx net_buf pool");
+	}
+	k_sem_init(&data->global_lock, 1, 1);
+	k_sem_init(&data->firmware_ready, 0, 1);
+	k_sem_init(&data->tx_data_complete, 0, 1);
+	k_sem_init(&data->rx_data_complete, 0, 1);
+	k_sem_init(&data->refresh_queues_state, 0, 1);
+	data->cmd_queues[0].id = SLI_WLAN_MGMT_Q;
+	data->cmd_queues[1].id = SLI_WLAN_DATA_Q;
+	data->cmd_queues[2].id = SLI_BT_Q;
+	for (i = 0; i < ARRAY_SIZE(data->cmd_queues); i++) {
+		k_fifo_init(&data->cmd_queues[i].tx_queue);
+		k_sem_init(&data->cmd_queues[i].tx_done, 0, 1);
+		k_mutex_init(&data->cmd_queues[i].sync_frame_in_queue);
+	}
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
+	}
+	if (config->antenna_selection == 2 && ret == -ENOENT) {
+		LOG_WRN("'ext-gpios' expects some pinctrl configuration");
+	}
+
+	config->config_irq(dev);
+#if CONFIG_NET_BUF_DATA_SIZE < SIWX91X_MAX_PAYLOAD_SIZE
+	__ASSERT_NO_MSG(config->rx_pool);
+	rx_buf_pool = config->rx_pool;
+#else
+	__ASSERT_NO_MSG(!config->rx_pool);
+	net_pkt_get_info(NULL, NULL, &rx_buf_pool, NULL);
+#endif
+	k_thread_create(&data->thread_id, config->thread_stack, config->thread_stack_size,
+			siwx91x_nwp_thread, (void *)dev, rx_buf_pool, NULL,
+			config->thread_priority, 0, K_NO_WAIT);
+
+	ret = siwx91x_nwp_fw_boot(dev);
+	if (ret) {
+		return ret;
+	}
+	siwx91x_nwp_fw_reset(dev);
+	ret = k_sem_take(&data->firmware_ready, K_SECONDS(5));
+	if (ret) {
+		return -EIO;
+	}
+	ret = siwx91x_nwp_reset(dev, WIFI_STA_MODE, false, 0);
+	if (ret) {
+		return ret;
+	}
+	ret = siwx91x_check_nwp_version(dev);
+	if (ret) {
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X) || IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+		data->power_profile = ASSOCIATED_POWER_SAVE;
+	}
 	/* WORKAROUND:
 	 * Only set the power profile if Bluetooth is not enabled.
 	 *
@@ -532,8 +442,6 @@ static int siwx91x_nwp_init(const struct device *dev)
 		}
 	}
 
-	config->config_irq(dev);
-
 	return 0;
 }
 
@@ -542,33 +450,52 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 	     "mbed TLS must be initialized after the NWP.");
 #endif
 
+/* Bounce buffer used to flatten fragmented buffers on Tx */
+NET_BUF_POOL_FIXED_DEFINE(siwx91x_nwp_tx_pool, 1, SIWX91X_MAX_PAYLOAD_SIZE, 0, NULL);
+
+/* Bounce buffer for Rx */
+#if CONFIG_NET_BUF_DATA_SIZE < SIWX91X_MAX_PAYLOAD_SIZE
+NET_BUF_POOL_FIXED_DEFINE(siwx91x_nwp_rx_pool, 2, SIWX91X_MAX_PAYLOAD_SIZE, 0, NULL);
+#define SIWX91X_NWP_RX_POOL_PTR &siwx91x_nwp_rx_pool
+#else
+#define SIWX91X_NWP_RX_POOL_PTR NULL
+#endif
+
 #define SIWX91X_NWP_DEFINE(inst)                                                                   \
+	static K_KERNEL_STACK_DEFINE(siwx91x_nwp_thread_stack##inst,                               \
+				     CONFIG_SIWX91X_NWP_THREAD_STACK_SIZE);                        \
                                                                                                    \
-	static void silabs_siwx91x_nwp_irq_configure_##inst(const struct device *dev)              \
+	static void siwx91x_nwp_irq_setup##inst(const struct device *dev)                          \
 	{                                                                                          \
-		ARG_UNUSED(dev);                                                                   \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, nwp_irq, irq),                               \
-			    DT_INST_IRQ_BY_NAME(inst, nwp_irq, priority), IRQ074_Handler, NULL, 0);\
-		irq_enable(DT_INST_IRQ_BY_NAME(inst, nwp_irq, irq));                               \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),                       \
+			    siwx91x_nwp_isr, DEVICE_DT_INST_GET(inst), 0);                         \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
 	};                                                                                         \
                                                                                                    \
-	static struct siwx91x_nwp_data siwx91x_nwp_data_##inst = {                                 \
+	static struct siwx91x_nwp_data siwx91x_nwp_data##inst = {                                  \
 		.power_profile = DEEP_SLEEP_WITH_RAM_RETENTION,                                    \
 	};                                                                                         \
-                                                                                                   \
+												   \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
-	static const struct siwx91x_nwp_config siwx91x_nwp_config_##inst = {                       \
+	static const struct siwx91x_nwp_config siwx91x_nwp_config##inst = {                        \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.config_irq = silabs_siwx91x_nwp_irq_configure_##inst,                             \
+		.config_irq = siwx91x_nwp_irq_setup##inst,                                         \
+		.ta_regs = (struct siwx91x_nwp_ta_regs *)DT_INST_REG_ADDR_BY_NAME(inst, ta),       \
+		.m4_regs = (struct siwx91x_nwp_m4_regs *)DT_INST_REG_ADDR_BY_NAME(inst, m4),       \
 		.support_1p8v = DT_INST_PROP(inst, support_1p8v),                                  \
 		.enable_xtal_correction = DT_INST_PROP(inst, enable_xtal_correction),              \
 		.qspi_80mhz_clk = DT_INST_PROP(inst, qspi_80mhz_clk),                              \
 		.antenna_selection = DT_INST_ENUM_IDX(inst, antenna_selection),                    \
-		.clock_frequency = DT_INST_PROP(inst, clock_frequency)                             \
+		.clock_frequency = DT_INST_PROP(inst, clock_frequency),                            \
+		.rx_pool = SIWX91X_NWP_RX_POOL_PTR,                                                \
+		.tx_pool = &siwx91x_nwp_tx_pool,                                                   \
+		.thread_stack = siwx91x_nwp_thread_stack##inst,                                    \
+		.thread_stack_size = CONFIG_SIWX91X_NWP_THREAD_STACK_SIZE,                         \
+		.thread_priority = CONFIG_SIWX91X_NWP_THREAD_PRIO,                                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &siwx91x_nwp_init, NULL, &siwx91x_nwp_data_##inst,             \
-			      &siwx91x_nwp_config_##inst, POST_KERNEL,                             \
+	DEVICE_DT_INST_DEFINE(inst, &siwx91x_nwp_init, NULL, &siwx91x_nwp_data##inst,              \
+			      &siwx91x_nwp_config##inst, POST_KERNEL,                              \
 			      CONFIG_SIWX91X_NWP_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_NWP_DEFINE)
