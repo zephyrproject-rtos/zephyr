@@ -1,7 +1,12 @@
 # Copyright (c) 2024 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_SILABS_SIWX91X_NWP_WISECONNECT)
-  zephyr_sources(siwx91x_nwp.c)
+if(CONFIG_SILABS_SIWX91X_NWP)
+  zephyr_sources(
+    siwx91x_nwp.c
+    siwx91x_nwp_bus.c
+    siwx91x_nwp_api.c
+    siwx91x_nwp_fw.c
+    siwx91x_nwp_fw_version.c)
   zephyr_include_directories(.)
 endif()
