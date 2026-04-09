@@ -125,7 +125,8 @@ config BT_STM32_IPM
 	select HAS_STM32LIB
 	select BT_HCI_SETUP
 	help
-	  TODO
+	  STM32WB HCI driver using the shared memory transport between
+	  CPU1 and the wireless coprocessor on CPU2.
 
 config BT_STM32WBA
 	bool
