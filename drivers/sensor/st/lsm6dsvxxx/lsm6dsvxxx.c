@@ -196,6 +196,7 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 	edata = (struct lsm6dsvxxx_rtio_data *)buf;
 
 	edata->has_accel = 0;
+	edata->has_gyro = 0;
 	edata->has_temp = 0;
 
 	rc = sensor_clock_get_cycles(&cycles);
@@ -238,12 +239,47 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 			 *
 			 * STMEMSC API equivalent code:
 			 *
-			 *   uint8_t accel_raw[6];
+			 *   int16_t accel_raw[6];
 			 *
 			 *   lsm6dsvxxx_acceleration_raw_get(&dev_ctx, accel_raw);
 			 */
 			rtio_read_regs_async(data->rtio_ctx, data->iodev, data->bus_type,
 					     &outx_regs, iodev_sqe, dev,
+					     lsm6dsvxxx_one_shot_complete_cb);
+			break;
+
+		case SENSOR_CHAN_GYRO_X:
+		case SENSOR_CHAN_GYRO_Y:
+		case SENSOR_CHAN_GYRO_Z:
+		case SENSOR_CHAN_GYRO_XYZ:
+			edata->has_gyro = 1;
+
+			uint8_t gy_addr = lsm6dsvxxx_bus_reg(data->bus_type, data->out_gy);
+			struct rtio_regs outg_regs;
+			struct rtio_regs_list gy_regs_list[] = {
+				{
+					gy_addr,
+					(uint8_t *)edata->gyro,
+					6,
+				},
+			};
+
+			outg_regs.rtio_regs_list = gy_regs_list;
+			outg_regs.rtio_regs_num = ARRAY_SIZE(gy_regs_list);
+
+			/*
+			 * Prepare rtio enabled bus to read LSM6DSVXXX_OUTX_L_G register
+			 * where gyroscope data is available.
+			 * Then lsm6dsvxxx_one_shot_complete_cb callback will be invoked.
+			 *
+			 * STMEMSC API equivalent code:
+			 *
+			 *   int16_t gyro_raw[6];
+			 *
+			 *   lsm6dsvxxx_angular_rate_raw_get(&dev_ctx, gyro_raw);
+			 */
+			rtio_read_regs_async(data->rtio_ctx, data->iodev, data->bus_type,
+					     &outg_regs, iodev_sqe, dev,
 					     lsm6dsvxxx_one_shot_complete_cb);
 			break;
 
