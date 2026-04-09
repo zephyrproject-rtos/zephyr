@@ -556,6 +556,7 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 	LOG_DBG("Configured stream %p, ep %u, dir %u", stream, info.id, info.dir);
 
 	u_stream->conn_id = bt_conn_index(stream->conn);
+	u_stream->ase_id = info.id;
 	u_conn = &connections[u_stream->conn_id];
 
 	stream_state_changed(stream);
