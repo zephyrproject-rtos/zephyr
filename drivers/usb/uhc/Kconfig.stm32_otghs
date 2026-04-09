@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Narek Aydinyan
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_STM32_OTGHS
+	bool "STM32 OTGHS UHC driver"
+	default y
+	depends on SOC_SERIES_STM32U5X
+	depends on DT_HAS_ST_STM32_OTGHS_ENABLED
+
+	select USE_STM32_HAL_HCD
+	select USE_STM32_LL_USB
+	select USE_STM32_HAL_PWR
+	select USE_STM32_HAL_PWR_EX
+	select STM32_USB_COMMON
+
+	help
+	  USB Host Controller (UHC) driver for STM32 OTGHS using HAL HCD.
+
+	  This driver has only been tested on STM32U5.
+
+if UHC_STM32_OTGHS
+
+module = UHC_STM32_OTGHS
+module-str = STM32 OTGHS UHC driver
+source "subsys/logging/Kconfig.template.log_config"
+
+config UHC_STM32_OTGHS_DMA
+	bool "OTGHS host DMA"
+	default y
+	help
+	  Enable the STM32 OTGHS internal DMA engine for host transfers.
+	  This reduces RX FIFO interrupt load and allows BULK OUT transfers to
+	  run through the HAL DMA path.
+
+	  Transfer buffers must also satisfy the STM32 OTGHS DMA alignment
+	  requirements.
+
+	  Disabling this option currently requires STM32 HAL support for the
+	  IN NAK limiter path used by the non-DMA fallback.
+
+config UHC_STM32_OTGHS_SOF
+	bool "SOF interrupt delivery"
+	help
+	  Enable SOF interrupt generation in host mode and allow the HAL
+	  SOF callback path to run.
+
+	  When enabled, the driver can use the 1 kHz SOF tick as the periodic
+	  wake source for HAL-parked URB_NAK_WAIT retries instead of relying
+	  only on a kernel timer.
+
+config UHC_STM32_OTGHS_FORCE_VBUS_VALID
+	bool "Ignore VBUS sensing and force session valid"
+	default y
+	help
+	  Disable hardware VBUS sensing and force a valid host session after
+	  HAL init. Keep this enabled for self-powered downstream devices or
+	  boards without wired host-side VBUS sensing/control.
+
+	  Disable this on boards that provide real OTGHS VBUS sensing and
+	  want the controller to rely on the hardware VBUS path.
+
+endif # UHC_STM32_OTGHS

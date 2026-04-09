@@ -22,7 +22,13 @@ LOG_MODULE_REGISTER(usbh_shell, CONFIG_USBH_LOG_LEVEL);
 #define FOOBAZ_VREQ_OUT		0x5b
 #define FOOBAZ_VREQ_IN		0x5c
 
-USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
+#if DT_HAS_CHOSEN(zephyr_uhc)
+#define USBH_SHELL_UHC_NODE DT_CHOSEN(zephyr_uhc)
+#else
+#define USBH_SHELL_UHC_NODE DT_NODELABEL(zephyr_uhc0)
+#endif
+
+USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(USBH_SHELL_UHC_NODE));
 static uint8_t vreq_test_buf[1024];
 
 static void print_desc_field(const struct shell *sh, int indent,

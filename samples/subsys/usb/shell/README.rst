@@ -29,7 +29,7 @@ built like:
    :compact:
 
 Assuming the board has a supported USB host controller, the example can be
-built like:
+built like. A MAX3421E-based configuration can be built as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/shell
@@ -50,9 +50,24 @@ the example can be built like:
    :goals: flash
    :compact:
 
+The sample can also be built in USB host mode on STM32U5 boards with the
+STM32 OTG HS UHC driver, for example:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/shell
+   :board: nucleo_u5a5zj_q
+   :gen-args: -DFILE_SUFFIX=host
+   :goals: build
+   :compact:
+
 It is theoretically possible to build USB support using virtual USB controllers
-for all platforms, eventually the devicetree overlay has to be adjusted slightly if
-the platform has already defined or not ``zephyr_uhc0`` or ``zephyr_udc0`` nodelabels.
+for all platforms. The host shell now prefers
+``chosen { zephyr,uhc = ...; }`` for controller selection. The provided
+``virtual.overlay`` still instantiates the legacy ``zephyr_uhc0`` and
+``zephyr_udc0`` nodelabels, which remain useful as a fallback and for
+compatibility with older overlays. If the platform already defines USB
+controller nodes, the overlay may need slight adjustments to avoid nodelabel
+clashes or to point ``zephyr,uhc`` at the desired virtual controller.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/shell
