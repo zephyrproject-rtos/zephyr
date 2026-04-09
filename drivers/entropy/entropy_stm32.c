@@ -799,7 +799,9 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 		if (z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID)) {
 			rng_already_acquired = true;
 		}
-		acquire_rng();
+		if (!rng_already_acquired) {
+			acquire_rng();
+		}
 
 		cnt = generate_from_isr(buf, len);
 
