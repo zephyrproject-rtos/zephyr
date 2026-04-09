@@ -13,6 +13,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(LSM6DSVXXX, CONFIG_SENSOR_LOG_LEVEL);
 
+
+void lsm6dsvxxx_stream_irq_handler(const struct device *dev);
+
 void lsm6dsvxxx_gpio_pin_enable(const struct lsm6dsvxxx_config *config,
 				const struct gpio_dt_spec *irq_gpio)
 {
@@ -112,7 +115,12 @@ void lsm6dsvxxx_submit_stream(const struct device *dev, struct rtio_iodev_sqe *i
 	}
 
 	data->streaming_sqe = iodev_sqe;
-
+	
+	if(gpio_pin_get_dt(data->drdy_gpio))
+	{
+		lsm6dsvxxx_stream_irq_handler(data->dev);
+	}
+	
 	lsm6dsvxxx_gpio_pin_enable(config, data->drdy_gpio);
 }
 
