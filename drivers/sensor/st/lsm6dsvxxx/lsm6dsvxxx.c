@@ -393,6 +393,10 @@ static int lsm6dsvxxx_pm_action(const struct device *dev, enum pm_device_action 
 			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),		\
 		   (LSM6DSVXXX_CFG_IRQ(inst)))
 
+/* RTIO sqe/cqe queue size */
+#define LSM6DSVXXX_RTIO_SQE_POLL_SIZE  12
+#define LSM6DSVXXX_RTIO_CQE_POLL_SIZE  12
+
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
@@ -405,7 +409,10 @@ static int lsm6dsvxxx_pm_action(const struct device *dev, enum pm_device_action 
 #define LSM6DSVXXX_SPI_RTIO_DEFINE(inst, prefix)			\
 	SPI_DT_IODEV_DEFINE(prefix##_iodev_##inst,			\
 		DT_DRV_INST(inst), LSM6DSVXXX_SPI_OP);			\
-	RTIO_DEFINE(prefix##_rtio_ctx_##inst, 8, 8);
+	RTIO_DEFINE(prefix##_rtio_ctx_##inst,				\
+			LSM6DSVXXX_RTIO_SQE_POLL_SIZE,			\
+			LSM6DSVXXX_RTIO_CQE_POLL_SIZE);
+
 
 #define LSM6DSVXXX_CONFIG_SPI(inst, prefix)				\
 	{								\
@@ -436,7 +443,9 @@ static int lsm6dsvxxx_pm_action(const struct device *dev, enum pm_device_action 
 
 #define LSM6DSVXXX_I2C_RTIO_DEFINE(inst, prefix)			\
 	I2C_DT_IODEV_DEFINE(prefix##_iodev_##inst, DT_DRV_INST(inst));	\
-	RTIO_DEFINE(prefix##_rtio_ctx_##inst, 8, 8);
+	RTIO_DEFINE(prefix##_rtio_ctx_##inst,				\
+			LSM6DSVXXX_RTIO_SQE_POLL_SIZE,			\
+			LSM6DSVXXX_RTIO_CQE_POLL_SIZE);
 
 #define LSM6DSVXXX_CONFIG_I2C(inst, prefix)				\
 	{								\
@@ -465,7 +474,9 @@ static int lsm6dsvxxx_pm_action(const struct device *dev, enum pm_device_action 
 
 #define LSM6DSVXXX_I3C_RTIO_DEFINE(inst, prefix)				\
 	I3C_DT_IODEV_DEFINE(prefix##_i3c_iodev_##inst, DT_DRV_INST(inst));	\
-	RTIO_DEFINE(prefix##_rtio_ctx_##inst, 8, 8);
+	RTIO_DEFINE(prefix##_rtio_ctx_##inst,					\
+			LSM6DSVXXX_RTIO_SQE_POLL_SIZE,				\
+			LSM6DSVXXX_RTIO_CQE_POLL_SIZE);
 
 #define LSM6DSVXXX_CONFIG_I3C(inst, prefix)						\
 	{										\
