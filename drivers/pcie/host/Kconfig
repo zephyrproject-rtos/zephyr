@@ -30,6 +30,8 @@ if PCIE_CONTROLLER
 
 config PCIE_ECAM
 	bool "Support for PCIe ECAM Controllers"
+	depends on DT_HAS_PCI_HOST_ECAM_GENERIC_ENABLED
+	default y
 	help
 	  Add support for Enhanced Configuration Address Mapping configured
 	  PCIe Controllers allowing all outgoing I/O and MEM TLPs to be mapped
