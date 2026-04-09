@@ -80,6 +80,7 @@ int _getpid(void);
 	#define HEAP_BASE heap_base
 #else /* Not MMU or CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
 	#define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
+	#define USED_RAM_LIMIT_ADDR POINTER_TO_UINT(&__kernel_ram_end)
 
 	#ifdef Z_MALLOC_PARTITION_EXISTS
 		/* Start of malloc arena needs to be aligned per MPU
@@ -112,8 +113,7 @@ int _getpid(void);
 		#define MAX_HEAP_SIZE	(POINTER_TO_UINT(&_heap_sentry) - \
 					 HEAP_BASE)
 	#else
-		#define MAX_HEAP_SIZE	(DT_CHOSEN_SRAM_SIZE - (HEAP_BASE - \
-					 DT_CHOSEN_SRAM_ADDR))
+		#define MAX_HEAP_SIZE	(USED_RAM_LIMIT_ADDR - HEAP_BASE)
 	#endif /* CONFIG_XTENSA */
 #endif
 
