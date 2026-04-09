@@ -1,0 +1,1999 @@
+/*
+ * Copyright (c) 2026 Narek Aydinyan
+ * Copyright (c) 2026 Arayik Gharibyan
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT microchip_lan78xx
+
+#include "eth_lan78xx_priv.h"
+
+#include <errno.h>
+#include <limits.h>
+#include <string.h>
+
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/usb/usb_ch9.h>
+#include <zephyr/usb/usbh.h>
+
+#include <usbh_ch9.h>
+#include <usbh_class.h>
+#include <usbh_device.h>
+
+LOG_MODULE_REGISTER(eth_lan78xx, CONFIG_ETHERNET_LOG_LEVEL);
+
+#define LAN78XX_DFLT_VID      0x0424u
+#define LAN78XX_DFLT_PID      0x7800u
+#define LAN78XX_INTR_LEN      16u
+#define LAN78XX_ETH_MIN_NOFCS 60u
+#define LAN78XX_ETH_MAX_NOFCS 1514u
+
+#define LAN78XX_HW_RESET_TIMEOUT_MS  1000
+#define LAN78XX_PHY_READY_TIMEOUT_MS 1000
+#define LAN78XX_MDIO_TIMEOUT_MS      200
+#define LAN78XX_MDIO_POLL_DELAY_US   1000u
+#define LAN78XX_HW_CFG_POLL_DELAY_US 10000u
+#define LAN78XX_HW_RESET_SETTLE_US   5000u
+#define LAN78XX_FIFO_FLUSH_DELAY_US  1000u
+
+#define LAN78XX_ATTACH_RETRY_MAX          5u
+#define LAN78XX_ATTACH_RETRY_DELAY_MS     50u
+#define LAN78XX_ATTACH_HW_INIT_DELAY_MS   250u
+#define LAN78XX_ATTACH_POST_BIND_DELAY_MS 200u
+#define LAN78XX_HW_INIT_RETRY_COUNT       3
+#define LAN78XX_HW_INIT_RETRY_DELAY_MS    200u
+
+#define LAN78XX_BULK_IN_DLY_DEFAULT 0x2000u
+#define LAN78XX_BURST_CAP_DEFAULT   32u
+
+#define LAN78XX_MGMT_EVT_ATTACH BIT(0)
+#define LAN78XX_MGMT_EVT_DETACH BIT(1)
+#define LAN78XX_MGMT_EVT_WAKE   BIT(2)
+
+#define LAN78XX_NO_POLL_SCHEDULED          (-1LL)
+#define LAN78XX_INITIAL_LINK_POLL_DELAY_MS 2000u
+#define LAN78XX_LINK_POLL_ERROR_DELAY_MS   200u
+#define LAN78XX_TX_WAIT_MS                 10
+
+#define LAN78XX_RX_SLOT_FREE  0u
+#define LAN78XX_RX_SLOT_ARMED 1u
+#define LAN78XX_RX_SLOT_DONE  2u
+
+#define LAN78XX_INTR_STATE_IDLE  0u
+#define LAN78XX_INTR_STATE_ARMED 1u
+#define LAN78XX_INTR_STATE_DONE  2u
+
+#define LAN78XX_TX_SLOT_FREE 0u
+#define LAN78XX_TX_SLOT_BUSY 1u
+
+#define LAN78XX_TX_ALIGN 4u
+#define LAN78XX_TX_PAD(len)                                                                        \
+	((uint32_t)((LAN78XX_TX_ALIGN - ((len) & (LAN78XX_TX_ALIGN - 1u))) &                       \
+		    (LAN78XX_TX_ALIGN - 1u)))
+#define LAN78XX_TX_USB_LEN(wire_len) (LAN78XX_CMD_HDR_LEN + (wire_len) + LAN78XX_TX_PAD(wire_len))
+
+#define LAN78XX_DT_RX_BUF_SIZE_DEFAULT 2048u
+#define LAN78XX_CFG_DESC_MAX_LEN       4096u
+#define LAN78XX_DEFAULT_TX_INFLIGHT    4u
+#define LAN78XX_PHY_ADDR_COUNT         32u
+#define LAN78XX_USB_EP_ATTR_MASK       0x03u
+#define LAN78XX_USB_EP_MPS_MASK        0x07FFu
+
+#define LAN78XX_ETH_FCS_LEN         4u
+#define LAN78XX_REG_ACCESS_LEN      sizeof(uint32_t)
+#define LAN78XX_RX_FRAME_PREFIX_LEN (sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint16_t))
+#define LAN78XX_RX_FRAME_ALIGN      4u
+
+struct lan78xx_config {
+	uint16_t vid;
+	uint16_t pid;
+	uint16_t rx_buf_size;
+	uint8_t rx_xfers;
+	uint32_t link_poll_ms;
+	uint8_t alt_setting;
+	uint8_t tx_inflight;
+	uint8_t led_enable_mask;
+};
+
+struct lan78xx_ctx;
+
+struct lan78xx_rx_slot {
+	struct lan78xx_ctx *ctx;
+	struct uhc_transfer *xfer;
+	atomic_t state;
+};
+
+struct lan78xx_intr_slot {
+	struct lan78xx_ctx *ctx;
+	struct uhc_transfer *xfer;
+	atomic_t state;
+};
+
+struct lan78xx_tx_slot {
+	struct lan78xx_ctx *ctx;
+	struct uhc_transfer *xfer;
+	struct net_buf *buf;
+	atomic_t state;
+	uint8_t index;
+};
+
+struct lan78xx_ctx {
+	const struct device *dev;
+	const struct lan78xx_config *cfg;
+	struct net_if *iface;
+	struct usb_device *udev;
+
+	uint8_t ifnum;
+	uint8_t ep_bulk_in;
+	uint8_t ep_bulk_out;
+	uint8_t ep_intr_in;
+
+	uint16_t ep_bulk_in_mps;
+	uint16_t ep_bulk_out_mps;
+	uint16_t ep_intr_in_mps;
+
+	bool connected;
+	bool link_up;
+	bool ctrl_ok;
+
+	struct k_mutex ctrl_mutex;
+
+	uint8_t phy_id;
+	bool phy_valid;
+	uint8_t attach_attempt;
+
+	uint8_t mac[NET_ETH_ADDR_LEN];
+
+	struct lan78xx_rx_slot *rx_slots;
+	uint8_t rx_count;
+	atomic_t rx_stopping;
+
+	struct lan78xx_intr_slot intr_slot;
+	atomic_t intr_stopping;
+
+	struct lan78xx_tx_slot *tx_slots;
+	uint8_t tx_pool_depth;
+	struct k_sem tx_free_sem;
+	struct k_mutex tx_lock;
+
+	struct k_thread mgmt_thread;
+	struct k_sem mgmt_sem;
+	atomic_t mgmt_flags;
+	int64_t next_link_poll_at;
+
+	struct k_thread io_thread;
+	struct k_sem io_sem;
+};
+
+static K_KERNEL_STACK_DEFINE(lan78xx_mgmt_stack_0, CONFIG_ETH_LAN78XX_MGMT_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(lan78xx_io_stack_0, CONFIG_ETH_LAN78XX_IO_STACK_SIZE);
+
+static const uint8_t lan78xx_default_mac_addr[NET_ETH_ADDR_LEN] = {
+	0x02u, 0x00u, 0x00u, 0x00u, 0x00u, 0x01u,
+};
+
+static int lan78xx_enable_auto_mac_link_mode(struct lan78xx_ctx *ctx);
+
+#define LAN78XX_CFG_VID(inst) DT_INST_PROP_OR(inst, vid, LAN78XX_DFLT_VID)
+#define LAN78XX_CFG_PID(inst) DT_INST_PROP_OR(inst, pid, LAN78XX_DFLT_PID)
+
+#define LAN78XX_CFG(inst)                                                                          \
+	static const struct lan78xx_config lan78xx_cfg_##inst = {                                  \
+		.vid = LAN78XX_CFG_VID(inst),                                                      \
+		.pid = LAN78XX_CFG_PID(inst),                                                      \
+		.rx_buf_size = DT_INST_PROP_OR(inst, rx_buf_size, LAN78XX_DT_RX_BUF_SIZE_DEFAULT), \
+		.rx_xfers = DT_INST_PROP_OR(inst, rx_xfers, 4),                                    \
+		.link_poll_ms = DT_INST_PROP_OR(inst, link_poll_ms, 500),                          \
+		.alt_setting = DT_INST_PROP_OR(inst, alt, 0),                                      \
+		.tx_inflight = DT_INST_PROP_OR(inst, tx_inflight, LAN78XX_DEFAULT_TX_INFLIGHT),    \
+		.led_enable_mask = DT_INST_PROP_OR(inst, led_enable_mask, 0),                      \
+	}
+
+LAN78XX_CFG(0);
+
+static struct lan78xx_ctx lan78xx_ctx_0 = {
+	.cfg = &lan78xx_cfg_0,
+};
+
+static inline int lan78xx_norm_async_ok(int ret)
+{
+	if (ret == 0 || ret == -EINPROGRESS || ret == -EALREADY || ret == EINPROGRESS) {
+		return 0;
+	}
+
+	return ret;
+}
+
+static inline void lan78xx_mgmt_signal(struct lan78xx_ctx *ctx, atomic_val_t flags)
+{
+	atomic_or(&ctx->mgmt_flags, flags);
+	k_sem_give(&ctx->mgmt_sem);
+}
+
+static inline void lan78xx_io_signal(struct lan78xx_ctx *ctx)
+{
+	k_sem_give(&ctx->io_sem);
+}
+
+static bool lan78xx_match_vidpid(const struct lan78xx_ctx *ctx,
+				 const struct usb_device_descriptor *dd)
+{
+	const uint16_t vid = sys_le16_to_cpu(dd->idVendor);
+	const uint16_t pid = sys_le16_to_cpu(dd->idProduct);
+
+	return (vid == ctx->cfg->vid) && (pid == ctx->cfg->pid);
+}
+
+static bool lan78xx_udev_ready(const struct usb_device *udev)
+{
+	return (udev != NULL) && (udev->state == USB_STATE_CONFIGURED) && (udev->actual_cfg != 0) &&
+	       (udev->cfg_desc != NULL);
+}
+
+static void lan78xx_set_default_mac(struct lan78xx_ctx *ctx)
+{
+	memcpy(ctx->mac, lan78xx_default_mac_addr, sizeof(ctx->mac));
+}
+
+static bool lan78xx_mac_is_valid(const uint8_t mac[NET_ETH_ADDR_LEN])
+{
+	if ((mac[0] & 0x01u) != 0u) {
+		return false;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(lan78xx_default_mac_addr); i++) {
+		if (mac[i] != 0x00u) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static void lan78xx_ensure_valid_mac(struct lan78xx_ctx *ctx)
+{
+	if (!lan78xx_mac_is_valid(ctx->mac)) {
+		lan78xx_set_default_mac(ctx);
+	}
+}
+
+static void lan78xx_mac_from_dt(struct lan78xx_ctx *ctx)
+{
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), local_mac_address)
+	BUILD_ASSERT(DT_PROP_LEN(DT_DRV_INST(0), local_mac_address) == NET_ETH_ADDR_LEN,
+		     "local-mac-address must be NET_ETH_ADDR_LEN bytes");
+
+	ctx->mac[0] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 0);
+	ctx->mac[1] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 1);
+	ctx->mac[2] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 2);
+	ctx->mac[3] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 3);
+	ctx->mac[4] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 4);
+	ctx->mac[5] = DT_PROP_BY_IDX(DT_DRV_INST(0), local_mac_address, 5);
+#else
+	lan78xx_set_default_mac(ctx);
+#endif
+}
+
+static bool lan78xx_phy_id_word_valid(uint16_t value)
+{
+	return (value != 0u) && (value != UINT16_MAX);
+}
+
+static int lan78xx_alloc_transfer_with_buffer(struct lan78xx_ctx *ctx, uint8_t ep, uint16_t mps,
+					      usbh_udev_cb_t done_cb, void *priv, size_t buf_size,
+					      struct uhc_transfer **out_xfer,
+					      struct net_buf **out_buf)
+{
+	struct uhc_transfer *xfer;
+	struct net_buf *buf;
+	int ret;
+
+	if (!ctx || !ctx->udev || !out_xfer) {
+		return -EINVAL;
+	}
+
+	*out_xfer = NULL;
+	if (out_buf != NULL) {
+		*out_buf = NULL;
+	}
+
+	xfer = usbh_xfer_alloc(ctx->udev, ep, done_cb, NULL);
+	if (xfer == NULL) {
+		return -ENOMEM;
+	}
+
+	xfer->mps = mps;
+
+	buf = usbh_xfer_buf_alloc(ctx->udev, buf_size);
+	if (buf == NULL) {
+		(void)usbh_xfer_free(ctx->udev, xfer);
+		return -ENOMEM;
+	}
+
+	ret = usbh_xfer_buf_add(ctx->udev, xfer, buf);
+	if (ret != 0) {
+		usbh_xfer_buf_free(ctx->udev, buf);
+		(void)usbh_xfer_free(ctx->udev, xfer);
+		return ret;
+	}
+
+	xfer->priv = priv;
+	*out_xfer = xfer;
+	if (out_buf != NULL) {
+		*out_buf = buf;
+	}
+
+	return 0;
+}
+
+static int lan78xx_read32_nolock(struct lan78xx_ctx *ctx, uint16_t reg, uint32_t *out)
+{
+	struct net_buf *nb;
+	int ret;
+
+	if (!ctx || !out || !ctx->udev) {
+		return -EINVAL;
+	}
+
+	nb = usbh_xfer_buf_alloc(ctx->udev, LAN78XX_REG_ACCESS_LEN);
+	if (nb == NULL) {
+		return -ENOMEM;
+	}
+
+	net_buf_reset(nb);
+	nb->len = LAN78XX_REG_ACCESS_LEN;
+	memset(nb->data, 0, LAN78XX_REG_ACCESS_LEN);
+
+	ret = usbh_req_setup(ctx->udev, LAN78XX_REQTYPE_VENDOR_IN_DEV, LAN78XX_USB_REQ_READ_REG, 0,
+			     reg, LAN78XX_REG_ACCESS_LEN, nb);
+	if (ret == 0) {
+		if (nb->len != LAN78XX_REG_ACCESS_LEN) {
+			ret = -EIO;
+		} else {
+			*out = sys_get_le32(nb->data);
+		}
+	}
+
+	usbh_xfer_buf_free(ctx->udev, nb);
+	return ret;
+}
+
+static int lan78xx_write32_nolock(struct lan78xx_ctx *ctx, uint16_t reg, uint32_t value)
+{
+	struct net_buf *nb;
+	int ret;
+
+	if (!ctx || !ctx->udev) {
+		return -EINVAL;
+	}
+
+	nb = usbh_xfer_buf_alloc(ctx->udev, LAN78XX_REG_ACCESS_LEN);
+	if (nb == NULL) {
+		return -ENOMEM;
+	}
+
+	net_buf_reset(nb);
+	sys_put_le32(value, net_buf_add(nb, LAN78XX_REG_ACCESS_LEN));
+
+	ret = usbh_req_setup(ctx->udev, LAN78XX_REQTYPE_VENDOR_OUT_DEV, LAN78XX_USB_REQ_WRITE_REG,
+			     0, reg, LAN78XX_REG_ACCESS_LEN, nb);
+
+	usbh_xfer_buf_free(ctx->udev, nb);
+	return ret;
+}
+
+static int lan78xx_read32(struct lan78xx_ctx *ctx, uint16_t reg, uint32_t *out)
+{
+	int ret;
+
+	if (!ctx || !ctx->udev) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->ctrl_mutex, K_FOREVER);
+	ret = lan78xx_read32_nolock(ctx, reg, out);
+	k_mutex_unlock(&ctx->ctrl_mutex);
+
+	return ret;
+}
+
+static int lan78xx_write32(struct lan78xx_ctx *ctx, uint16_t reg, uint32_t value)
+{
+	int ret;
+
+	if (!ctx || !ctx->udev) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->ctrl_mutex, K_FOREVER);
+	ret = lan78xx_write32_nolock(ctx, reg, value);
+	k_mutex_unlock(&ctx->ctrl_mutex);
+
+	return ret;
+}
+
+static int lan78xx_update32(struct lan78xx_ctx *ctx, uint16_t reg, uint32_t mask, uint32_t val)
+{
+	uint32_t cur = 0;
+	int ret = lan78xx_read32(ctx, reg, &cur);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	cur = (cur & ~mask) | (val & mask);
+	return lan78xx_write32(ctx, reg, cur);
+}
+
+static int lan78xx_mdio_wait_not_busy_nolock(struct lan78xx_ctx *ctx, int timeout_ms)
+{
+	const int64_t end = k_uptime_get() + timeout_ms;
+	uint32_t v = 0;
+
+	while (k_uptime_get() < end) {
+		int ret = lan78xx_read32_nolock(ctx, LAN78XX_MII_ACC, &v);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		if ((v & LAN78XX_MII_ACC_MII_BUSY) == 0u) {
+			return 0;
+		}
+
+		k_busy_wait(LAN78XX_MDIO_POLL_DELAY_US);
+	}
+
+	return -ETIMEDOUT;
+}
+
+static inline uint32_t lan78xx_mii_acc(uint8_t phy_id, uint8_t reg, bool read)
+{
+	uint32_t v = 0;
+
+	v |= ((uint32_t)phy_id << LAN78XX_MII_ACC_PHY_ADDR_SHIFT) & LAN78XX_MII_ACC_PHY_ADDR_MASK;
+	v |= ((uint32_t)reg << LAN78XX_MII_ACC_REG_SHIFT) & LAN78XX_MII_ACC_REG_MASK;
+
+	if (!read) {
+		v |= LAN78XX_MII_ACC_MII_WRITE;
+	}
+
+	v |= LAN78XX_MII_ACC_MII_BUSY;
+
+	return v;
+}
+
+static int lan78xx_mdio_read16(struct lan78xx_ctx *ctx, uint8_t phy_id, uint8_t reg, uint16_t *out)
+{
+	uint32_t data = 0;
+	int ret;
+
+	if (!ctx || !ctx->udev || !out) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->ctrl_mutex, K_FOREVER);
+
+	ret = lan78xx_mdio_wait_not_busy_nolock(ctx, LAN78XX_MDIO_TIMEOUT_MS);
+	if (ret != 0) {
+		goto out;
+	}
+
+	ret = lan78xx_write32_nolock(ctx, LAN78XX_MII_ACC, lan78xx_mii_acc(phy_id, reg, true));
+	if (ret != 0) {
+		goto out;
+	}
+
+	ret = lan78xx_mdio_wait_not_busy_nolock(ctx, LAN78XX_MDIO_TIMEOUT_MS);
+	if (ret != 0) {
+		goto out;
+	}
+
+	ret = lan78xx_read32_nolock(ctx, LAN78XX_MII_DATA, &data);
+	if (ret != 0) {
+		goto out;
+	}
+
+	*out = (uint16_t)(data & 0xFFFFu);
+
+out:
+	k_mutex_unlock(&ctx->ctrl_mutex);
+	return ret;
+}
+
+static int lan78xx_find_phy(struct lan78xx_ctx *ctx, uint8_t *found)
+{
+	if (!ctx || !ctx->udev || !found) {
+		return -EINVAL;
+	}
+
+	for (uint8_t phy = 0; phy < LAN78XX_PHY_ADDR_COUNT; phy++) {
+		uint16_t id1 = 0;
+		uint16_t id2 = 0;
+
+		if (lan78xx_mdio_read16(ctx, phy, LAN78XX_MII_PHYID1, &id1) != 0) {
+			continue;
+		}
+		if (lan78xx_mdio_read16(ctx, phy, LAN78XX_MII_PHYID2, &id2) != 0) {
+			continue;
+		}
+
+		if (!lan78xx_phy_id_word_valid(id1) || !lan78xx_phy_id_word_valid(id2)) {
+			continue;
+		}
+
+		*found = phy;
+		LOG_INF("Found PHY at %u: ID1=0x%04x ID2=0x%04x", phy, id1, id2);
+		return 0;
+	}
+
+	return -ENODEV;
+}
+
+static int lan78xx_link_is_up(struct lan78xx_ctx *ctx, bool *up)
+{
+	uint16_t bmcr = 0;
+	uint16_t bmsr = 0;
+	int ret;
+
+	if (!ctx || !up || !ctx->udev || !ctx->phy_valid) {
+		return -EINVAL;
+	}
+
+	ret = lan78xx_mdio_read16(ctx, ctx->phy_id, LAN78XX_MII_BMCR, &bmcr);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_mdio_read16(ctx, ctx->phy_id, LAN78XX_MII_BMSR, &bmsr);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_mdio_read16(ctx, ctx->phy_id, LAN78XX_MII_BMSR, &bmsr);
+	if (ret != 0) {
+		return ret;
+	}
+
+	*up = (bmsr & LAN78XX_MII_BMSR_LINK_STATUS) != 0 &&
+	      (((bmcr & LAN78XX_MII_BMCR_AUTONEG_EN) == 0) ||
+	       ((bmsr & LAN78XX_MII_BMSR_AUTONEG_COMPLETE) != 0));
+
+	return 0;
+}
+
+static int lan78xx_parse_endpoints(struct lan78xx_ctx *ctx)
+{
+	const struct usb_cfg_descriptor *cfg;
+	const uint8_t *p;
+	const uint8_t *end;
+	int cur_if = -1;
+	int found_if = -1;
+	uint8_t ep_in = 0u;
+	uint8_t ep_out = 0u;
+	uint8_t ep_int = 0u;
+	uint16_t ep_in_mps = 0u;
+	uint16_t ep_out_mps = 0u;
+	uint16_t ep_int_mps = 0u;
+
+	if (!ctx || !ctx->udev || !ctx->udev->cfg_desc) {
+		return -EAGAIN;
+	}
+
+	p = (const uint8_t *)ctx->udev->cfg_desc;
+	if (p[0] < sizeof(struct usb_cfg_descriptor) || p[1] != USB_DESC_CONFIGURATION) {
+		return -EINVAL;
+	}
+
+	cfg = (const struct usb_cfg_descriptor *)p;
+	if (sys_le16_to_cpu(cfg->wTotalLength) < sizeof(*cfg) ||
+	    sys_le16_to_cpu(cfg->wTotalLength) > LAN78XX_CFG_DESC_MAX_LEN) {
+		return -EINVAL;
+	}
+
+	end = p + sys_le16_to_cpu(cfg->wTotalLength);
+
+	while ((p + 2) <= end) {
+		uint8_t len = p[0];
+		uint8_t type = p[1];
+
+		if (len < 2u || (p + len) > end) {
+			return -EINVAL;
+		}
+
+		if (type == USB_DESC_INTERFACE) {
+			const struct usb_if_descriptor *ifd = (const struct usb_if_descriptor *)p;
+
+			cur_if = ifd->bInterfaceNumber;
+			if (found_if >= 0 && cur_if != found_if) {
+				break;
+			}
+		} else if (type == USB_DESC_ENDPOINT && cur_if >= 0) {
+			const struct usb_ep_descriptor *epd = (const struct usb_ep_descriptor *)p;
+			uint8_t xfertype = epd->bmAttributes & LAN78XX_USB_EP_ATTR_MASK;
+			bool in = (epd->bEndpointAddress & USB_EP_DIR_IN) != 0u;
+			uint16_t mps =
+				sys_le16_to_cpu(epd->wMaxPacketSize) & LAN78XX_USB_EP_MPS_MASK;
+
+			if (mps == 0u) {
+				p += len;
+				continue;
+			}
+
+			if (xfertype == USB_EP_TYPE_BULK) {
+				if (in) {
+					ep_in = epd->bEndpointAddress;
+					ep_in_mps = mps;
+				} else {
+					ep_out = epd->bEndpointAddress;
+					ep_out_mps = mps;
+				}
+			} else if (xfertype == USB_EP_TYPE_INTERRUPT && in) {
+				ep_int = epd->bEndpointAddress;
+				ep_int_mps = mps;
+			}
+
+			if (ep_in != 0u && ep_out != 0u && found_if < 0) {
+				found_if = cur_if;
+			}
+		}
+
+		p += len;
+	}
+
+	if (found_if < 0 || ep_in == 0u || ep_out == 0u || ep_in_mps == 0u || ep_out_mps == 0u) {
+		return -ENODEV;
+	}
+
+	ctx->ifnum = (uint8_t)found_if;
+	ctx->ep_bulk_in = ep_in;
+	ctx->ep_bulk_out = ep_out;
+	ctx->ep_intr_in = ep_int;
+	ctx->ep_bulk_in_mps = ep_in_mps;
+	ctx->ep_bulk_out_mps = ep_out_mps;
+	ctx->ep_intr_in_mps = ep_int_mps;
+
+	LOG_INF("LAN78xx endpoints: if=%u bulk_in=0x%02x mps=%u bulk_out=0x%02x mps=%u "
+		"intr_in=0x%02x mps=%u",
+		ctx->ifnum, ctx->ep_bulk_in, ctx->ep_bulk_in_mps, ctx->ep_bulk_out,
+		ctx->ep_bulk_out_mps, ctx->ep_intr_in, ctx->ep_intr_in_mps);
+
+	return 0;
+}
+
+static int lan78xx_wait_hwcfg_clear(struct lan78xx_ctx *ctx, uint32_t mask, int timeout_ms)
+{
+	uint32_t v = 0;
+	const int64_t end = k_uptime_get() + timeout_ms;
+
+	while (k_uptime_get() < end) {
+		int ret = lan78xx_read32(ctx, LAN78XX_HW_CFG, &v);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		if ((v & mask) == 0u) {
+			return 0;
+		}
+
+		k_busy_wait(LAN78XX_HW_CFG_POLL_DELAY_US);
+	}
+
+	LOG_ERR("timeout waiting HW_CFG clear mask=0x%08x (HW_CFG=0x%08x)", mask, v);
+	return -ETIMEDOUT;
+}
+
+static int lan78xx_hw_reset(struct lan78xx_ctx *ctx)
+{
+	uint32_t hw = 0;
+	int ret = lan78xx_read32(ctx, LAN78XX_HW_CFG, &hw);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_write32(ctx, LAN78XX_HW_CFG, hw | LAN78XX_HW_CFG_LRST);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_wait_hwcfg_clear(ctx, LAN78XX_HW_CFG_LRST, LAN78XX_HW_RESET_TIMEOUT_MS);
+	if (ret != 0) {
+		return ret;
+	}
+
+	k_busy_wait(LAN78XX_HW_RESET_SETTLE_US);
+	return 0;
+}
+
+static uint32_t lan78xx_hwcfg_led_bits_from_mask(uint32_t mask)
+{
+	uint32_t v = 0;
+
+	if ((mask & BIT(0)) != 0u) {
+		v |= LAN78XX_HW_CFG_LED0_EN;
+	}
+	if ((mask & BIT(1)) != 0u) {
+		v |= LAN78XX_HW_CFG_LED1_EN;
+	}
+	if ((mask & BIT(2)) != 0u) {
+		v |= LAN78XX_HW_CFG_LED2_EN;
+	}
+	if ((mask & BIT(3)) != 0u) {
+		v |= LAN78XX_HW_CFG_LED3_EN;
+	}
+
+	return v;
+}
+
+static int lan78xx_enable_led_outputs(struct lan78xx_ctx *ctx)
+{
+	uint32_t hw_cfg;
+	uint32_t led_bits;
+	int ret;
+
+	ret = lan78xx_read32(ctx, LAN78XX_HW_CFG, &hw_cfg);
+	if (ret != 0) {
+		return ret;
+	}
+
+	led_bits = lan78xx_hwcfg_led_bits_from_mask(ctx->cfg->led_enable_mask);
+	if (led_bits == 0U) {
+		return 0;
+	}
+
+	hw_cfg |= led_bits;
+
+	ret = lan78xx_write32(ctx, LAN78XX_HW_CFG, hw_cfg);
+	if (ret == 0) {
+		LOG_INF("Enabled LAN78xx LED outputs mask=0x%x hwcfg_bits=0x%x",
+			ctx->cfg->led_enable_mask, led_bits);
+	}
+
+	return ret;
+}
+
+static int lan78xx_start_data_path(struct lan78xx_ctx *ctx)
+{
+	uint32_t v = 0;
+	int ret;
+
+	ret = lan78xx_read32(ctx, LAN78XX_MAC_TX, &v);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_write32(ctx, LAN78XX_MAC_TX, v | LAN78XX_MAC_TX_TXEN);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_write32(ctx, LAN78XX_FCT_TX_CTL, LAN78XX_FCT_TX_CTL_EN);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_write32(ctx, LAN78XX_FCT_RX_CTL, LAN78XX_FCT_RX_CTL_EN);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_read32(ctx, LAN78XX_MAC_RX, &v);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return lan78xx_write32(ctx, LAN78XX_MAC_RX, v | LAN78XX_MAC_RX_RXEN);
+}
+
+static void lan78xx_flush_fifos(struct lan78xx_ctx *ctx)
+{
+	(void)lan78xx_update32(ctx, LAN78XX_FCT_RX_CTL, LAN78XX_FCT_RX_CTL_RST,
+			       LAN78XX_FCT_RX_CTL_RST);
+	(void)lan78xx_update32(ctx, LAN78XX_FCT_TX_CTL, LAN78XX_FCT_TX_CTL_RST,
+			       LAN78XX_FCT_TX_CTL_RST);
+	k_busy_wait(LAN78XX_FIFO_FLUSH_DELAY_US);
+}
+
+static int lan78xx_hw_init(struct lan78xx_ctx *ctx)
+{
+	uint32_t v = 0;
+	uint32_t lo;
+	uint32_t hi;
+	const int64_t t0 = k_uptime_get();
+	int ret;
+
+	ret = lan78xx_hw_reset(ctx);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_read32(ctx, LAN78XX_HW_CFG, &v);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_write32(ctx, LAN78XX_HW_CFG, v | LAN78XX_HW_CFG_MEF);
+	if (ret != 0) {
+		return ret;
+	}
+
+	(void)lan78xx_write32(ctx, LAN78XX_BULK_IN_DLY, LAN78XX_BULK_IN_DLY_DEFAULT);
+	(void)lan78xx_write32(ctx, LAN78XX_BURST_CAP, LAN78XX_BURST_CAP_DEFAULT);
+
+	ret = lan78xx_read32(ctx, LAN78XX_USB_CFG0, &v);
+	if (ret != 0) {
+		return ret;
+	}
+
+	v |= LAN78XX_USB_CFG0_BCE | LAN78XX_USB_CFG0_BIR;
+
+	ret = lan78xx_write32(ctx, LAN78XX_USB_CFG0, v);
+	if (ret != 0) {
+		return ret;
+	}
+
+	lo = (uint32_t)ctx->mac[0] | ((uint32_t)ctx->mac[1] << 8) | ((uint32_t)ctx->mac[2] << 16) |
+	     ((uint32_t)ctx->mac[3] << 24);
+	hi = (uint32_t)ctx->mac[4] | ((uint32_t)ctx->mac[5] << 8);
+
+	ret = lan78xx_write32(ctx, LAN78XX_RX_ADDRL, lo);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_write32(ctx, LAN78XX_RX_ADDRH, hi);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_read32(ctx, LAN78XX_RFE_CTL, &v);
+	if (ret != 0) {
+		return ret;
+	}
+
+	v |= LAN78XX_RFE_CTL_BCAST_EN | LAN78XX_RFE_CTL_DA_PERFECT | LAN78XX_RFE_CTL_UCAST_EN;
+
+	ret = lan78xx_write32(ctx, LAN78XX_RFE_CTL, v);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_read32(ctx, LAN78XX_PMT_CTL, &v);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = lan78xx_write32(ctx, LAN78XX_PMT_CTL, v | LAN78XX_PMT_CTL_PHY_RST);
+	if (ret != 0) {
+		return ret;
+	}
+
+	do {
+		ret = lan78xx_read32(ctx, LAN78XX_PMT_CTL, &v);
+		if (ret != 0) {
+			return ret;
+		}
+
+		if ((v & LAN78XX_PMT_CTL_PHY_RST) == 0u && (v & LAN78XX_PMT_CTL_READY) != 0u) {
+			break;
+		}
+
+		k_busy_wait(LAN78XX_MDIO_POLL_DELAY_US);
+	} while ((k_uptime_get() - t0) < LAN78XX_PHY_READY_TIMEOUT_MS);
+
+	if ((v & LAN78XX_PMT_CTL_READY) == 0u) {
+		LOG_ERR("PHY not ready (PMT_CTL=0x%08x)", v);
+		return -ETIMEDOUT;
+	}
+
+	ret = lan78xx_enable_auto_mac_link_mode(ctx);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (ctx->cfg->led_enable_mask != 0u) {
+		ret = lan78xx_enable_led_outputs(ctx);
+		if (ret != 0) {
+			LOG_WRN("Failed to enable LED outputs: %d", ret);
+		}
+	}
+
+	return lan78xx_start_data_path(ctx);
+}
+
+static int lan78xx_hw_init_retry(struct lan78xx_ctx *ctx)
+{
+	int ret = -EIO;
+
+	for (int attempt = 0; attempt < LAN78XX_HW_INIT_RETRY_COUNT; attempt++) {
+		if (attempt != 0) {
+			k_msleep(LAN78XX_HW_INIT_RETRY_DELAY_MS);
+		}
+
+		ret = lan78xx_hw_init(ctx);
+		if (ret == 0) {
+			return 0;
+		}
+
+		LOG_WRN("LAN78xx hw init retry %d failed: %d", attempt + 1, ret);
+	}
+
+	return ret;
+}
+
+static void lan78xx_rx_deliver_frames(struct lan78xx_ctx *ctx, uint8_t *buf, size_t len)
+{
+	if (!ctx || !ctx->iface) {
+		return;
+	}
+
+	while (len >= LAN78XX_RX_FRAME_PREFIX_LEN) {
+		uint32_t rx_cmd_a = sys_get_le32(buf);
+		uint32_t size;
+		uint32_t align;
+
+		buf += sizeof(uint32_t);
+		len -= sizeof(uint32_t);
+
+		(void)sys_get_le32(buf);
+		buf += sizeof(uint32_t);
+		len -= sizeof(uint32_t);
+
+		(void)sys_get_le16(buf);
+		buf += sizeof(uint16_t);
+		len -= sizeof(uint16_t);
+
+		size = rx_cmd_a & LAN78XX_RX_CMD_A_LEN_MASK;
+		if (size < LAN78XX_ETH_FCS_LEN || size > (uint32_t)ctx->cfg->rx_buf_size ||
+		    size > len) {
+			return;
+		}
+
+		if ((rx_cmd_a & LAN78XX_RX_CMD_A_RED) == 0u) {
+			uint32_t frame_len = size - LAN78XX_ETH_FCS_LEN;
+			struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, frame_len,
+									   AF_UNSPEC, 0, K_NO_WAIT);
+
+			if (pkt != NULL) {
+				if (net_pkt_write(pkt, buf, frame_len) == 0) {
+					int r = net_recv_data(ctx->iface, pkt);
+
+					if (r < 0) {
+						net_pkt_unref(pkt);
+					}
+				} else {
+					net_pkt_unref(pkt);
+				}
+			}
+		}
+
+		buf += size;
+		len -= size;
+
+		align = (LAN78XX_RX_FRAME_ALIGN -
+			 ((size + LAN78XX_RX_PADDING) % LAN78XX_RX_FRAME_ALIGN)) %
+			LAN78XX_RX_FRAME_ALIGN;
+		if (len < align) {
+			return;
+		}
+
+		buf += align;
+		len -= align;
+	}
+}
+
+static int lan78xx_rx_done(struct usb_device *udev, struct uhc_transfer *xfer)
+{
+	struct lan78xx_rx_slot *slot = xfer ? xfer->priv : NULL;
+	struct lan78xx_ctx *ctx = slot ? slot->ctx : NULL;
+
+	if (!ctx || !udev || !xfer || !xfer->buf) {
+		return 0;
+	}
+
+	if (atomic_get(&ctx->rx_stopping) || ctx->udev != udev) {
+		atomic_set(&slot->state, LAN78XX_RX_SLOT_FREE);
+		lan78xx_io_signal(ctx);
+		return 0;
+	}
+
+	if (xfer->err != 0 && xfer->err != -EAGAIN) {
+		LOG_WRN("RX done err=%d len=%u", xfer->err,
+			xfer->buf ? (unsigned int)xfer->buf->len : 0u);
+	}
+
+	atomic_set(&slot->state, LAN78XX_RX_SLOT_DONE);
+	lan78xx_io_signal(ctx);
+	return 0;
+}
+
+static int lan78xx_intr_done(struct usb_device *udev, struct uhc_transfer *xfer)
+{
+	struct lan78xx_intr_slot *slot = xfer ? xfer->priv : NULL;
+	struct lan78xx_ctx *ctx = slot ? slot->ctx : NULL;
+
+	if (!ctx || !udev || !xfer || !xfer->buf) {
+		return 0;
+	}
+
+	if (atomic_get(&ctx->intr_stopping) || ctx->udev != udev) {
+		atomic_set(&slot->state, LAN78XX_INTR_STATE_IDLE);
+		lan78xx_io_signal(ctx);
+		return 0;
+	}
+
+	if (xfer->err != 0 && xfer->err != -EAGAIN) {
+		LOG_WRN("INTR done err=%d len=%u", xfer->err,
+			xfer->buf ? (unsigned int)xfer->buf->len : 0u);
+	}
+
+	atomic_set(&slot->state, LAN78XX_INTR_STATE_DONE);
+	lan78xx_io_signal(ctx);
+	return 0;
+}
+
+static int lan78xx_rx_rearm_slot(struct lan78xx_ctx *ctx, struct lan78xx_rx_slot *slot)
+{
+	int ret;
+
+	if (!ctx || !slot || !slot->xfer || !slot->xfer->buf || !ctx->udev) {
+		return -EINVAL;
+	}
+
+	net_buf_reset(slot->xfer->buf);
+	slot->xfer->mps = ctx->ep_bulk_in_mps;
+	slot->xfer->buf->len = ctx->cfg->rx_buf_size;
+
+	ret = lan78xx_norm_async_ok(usbh_xfer_enqueue(ctx->udev, slot->xfer));
+	if (ret == 0) {
+		atomic_set(&slot->state, LAN78XX_RX_SLOT_ARMED);
+	} else {
+		atomic_set(&slot->state, LAN78XX_RX_SLOT_FREE);
+	}
+
+	return ret;
+}
+
+static int lan78xx_intr_rearm(struct lan78xx_ctx *ctx)
+{
+	struct lan78xx_intr_slot *slot = &ctx->intr_slot;
+	int ret;
+
+	if (!ctx || !slot->xfer || !slot->xfer->buf || !ctx->udev) {
+		return -EINVAL;
+	}
+
+	net_buf_reset(slot->xfer->buf);
+	slot->xfer->mps = ctx->ep_intr_in_mps;
+	slot->xfer->buf->len = LAN78XX_INTR_LEN;
+
+	ret = lan78xx_norm_async_ok(usbh_xfer_enqueue(ctx->udev, slot->xfer));
+	if (ret == 0) {
+		atomic_set(&slot->state, LAN78XX_INTR_STATE_ARMED);
+	} else {
+		atomic_set(&slot->state, LAN78XX_INTR_STATE_IDLE);
+	}
+
+	return ret;
+}
+
+static void lan78xx_rx_slot_free(struct lan78xx_ctx *ctx, struct lan78xx_rx_slot *slot)
+{
+	if (!ctx || !slot || !slot->xfer || !ctx->udev) {
+		return;
+	}
+
+	(void)usbh_xfer_free(ctx->udev, slot->xfer);
+	slot->xfer = NULL;
+	atomic_set(&slot->state, LAN78XX_RX_SLOT_FREE);
+}
+
+static void lan78xx_intr_free(struct lan78xx_ctx *ctx)
+{
+	struct lan78xx_intr_slot *slot = &ctx->intr_slot;
+
+	if (!ctx || !slot->xfer || !ctx->udev) {
+		return;
+	}
+
+	(void)usbh_xfer_free(ctx->udev, slot->xfer);
+	slot->xfer = NULL;
+	atomic_set(&slot->state, LAN78XX_INTR_STATE_IDLE);
+}
+
+static int lan78xx_start_rx(struct lan78xx_ctx *ctx)
+{
+	const uint8_t want = ctx ? ctx->cfg->rx_xfers : 0u;
+
+	if (!ctx || !ctx->udev || ctx->ep_bulk_in == 0u || want == 0u) {
+		return -EINVAL;
+	}
+
+	atomic_clear(&ctx->rx_stopping);
+	ctx->rx_count = 0u;
+
+	for (uint8_t n = want; n >= 1u; n = (uint8_t)(n / 2u)) {
+		bool ok = true;
+		uint8_t allocated = 0u;
+
+		k_free(ctx->rx_slots);
+		ctx->rx_slots = NULL;
+		ctx->rx_count = 0u;
+
+		ctx->rx_slots = k_calloc(n, sizeof(*ctx->rx_slots));
+		if (ctx->rx_slots == NULL) {
+			continue;
+		}
+
+		for (uint8_t i = 0; i < n; i++) {
+			struct lan78xx_rx_slot *slot = &ctx->rx_slots[i];
+			int ret;
+
+			slot->ctx = ctx;
+			ret = lan78xx_alloc_transfer_with_buffer(
+				ctx, ctx->ep_bulk_in, ctx->ep_bulk_in_mps, lan78xx_rx_done, slot,
+				ctx->cfg->rx_buf_size, &slot->xfer, NULL);
+			if (ret != 0) {
+				ok = false;
+				break;
+			}
+
+			atomic_set(&slot->state, LAN78XX_RX_SLOT_FREE);
+			allocated = (uint8_t)(i + 1u);
+		}
+
+		if (!ok) {
+			for (uint8_t i = 0; i < allocated; i++) {
+				lan78xx_rx_slot_free(ctx, &ctx->rx_slots[i]);
+			}
+
+			k_free(ctx->rx_slots);
+			ctx->rx_slots = NULL;
+			ctx->rx_count = 0u;
+			continue;
+		}
+
+		ctx->rx_count = allocated;
+
+		for (uint8_t i = 0; i < ctx->rx_count; i++) {
+			int ret = lan78xx_rx_rearm_slot(ctx, &ctx->rx_slots[i]);
+
+			if (ret != 0) {
+				return ret;
+			}
+		}
+
+		if (n != want) {
+			LOG_WRN("RX memory tight: using rx_xfers=%u (requested %u)", n, want);
+		}
+
+		return 0;
+	}
+
+	return -ENOMEM;
+}
+
+static void lan78xx_stop_rx(struct lan78xx_ctx *ctx)
+{
+	if (!ctx || !ctx->rx_slots) {
+		return;
+	}
+
+	atomic_set(&ctx->rx_stopping, 1);
+
+	if (ctx->udev) {
+		for (uint8_t i = 0; i < ctx->rx_count; i++) {
+			struct lan78xx_rx_slot *slot = &ctx->rx_slots[i];
+
+			if (!slot->xfer) {
+				continue;
+			}
+
+			if (usbh_xfer_dequeue(ctx->udev, slot->xfer) != 0) {
+				lan78xx_rx_slot_free(ctx, slot);
+			}
+		}
+	}
+
+	lan78xx_io_signal(ctx);
+}
+
+static int lan78xx_start_intr(struct lan78xx_ctx *ctx)
+{
+	struct lan78xx_intr_slot *slot;
+	int ret;
+
+	if (!ctx || !ctx->udev) {
+		return -EINVAL;
+	}
+
+	if (ctx->ep_intr_in == 0u) {
+		return 0;
+	}
+
+	atomic_clear(&ctx->intr_stopping);
+
+	slot = &ctx->intr_slot;
+	memset(slot, 0, sizeof(*slot));
+	slot->ctx = ctx;
+
+	ret = lan78xx_alloc_transfer_with_buffer(ctx, ctx->ep_intr_in, ctx->ep_intr_in_mps,
+						 lan78xx_intr_done, slot, LAN78XX_INTR_LEN,
+						 &slot->xfer, NULL);
+	if (ret != 0) {
+		return ret;
+	}
+
+	atomic_set(&slot->state, LAN78XX_INTR_STATE_IDLE);
+
+	ret = lan78xx_intr_rearm(ctx);
+	if (ret != 0) {
+		lan78xx_intr_free(ctx);
+		return ret;
+	}
+
+	return 0;
+}
+
+static void lan78xx_stop_intr(struct lan78xx_ctx *ctx)
+{
+	struct lan78xx_intr_slot *slot = &ctx->intr_slot;
+
+	if (!ctx || !slot->xfer) {
+		return;
+	}
+
+	atomic_set(&ctx->intr_stopping, 1);
+
+	if (ctx->udev && usbh_xfer_dequeue(ctx->udev, slot->xfer) != 0) {
+		lan78xx_intr_free(ctx);
+	}
+
+	lan78xx_io_signal(ctx);
+}
+
+static struct lan78xx_tx_slot *lan78xx_tx_acquire_slot(struct lan78xx_ctx *ctx)
+{
+	struct lan78xx_tx_slot *slot = NULL;
+
+	k_mutex_lock(&ctx->tx_lock, K_FOREVER);
+	for (uint8_t i = 0; i < ctx->tx_pool_depth; i++) {
+		if (atomic_cas(&ctx->tx_slots[i].state, LAN78XX_TX_SLOT_FREE,
+			       LAN78XX_TX_SLOT_BUSY)) {
+			slot = &ctx->tx_slots[i];
+			break;
+		}
+	}
+	k_mutex_unlock(&ctx->tx_lock);
+
+	return slot;
+}
+
+static void lan78xx_tx_release_slot(struct lan78xx_tx_slot *slot)
+{
+	if (!slot || !slot->ctx) {
+		return;
+	}
+
+	atomic_set(&slot->state, LAN78XX_TX_SLOT_FREE);
+	k_sem_give(&slot->ctx->tx_free_sem);
+}
+
+static int lan78xx_tx_done(struct usb_device *udev, struct uhc_transfer *xfer)
+{
+	struct lan78xx_tx_slot *slot = xfer ? xfer->priv : NULL;
+
+	ARG_UNUSED(udev);
+
+	if (!slot) {
+		LOG_ERR("TX done with null slot");
+		return 0;
+	}
+
+	if (xfer->err != 0 && xfer->err != -ECONNRESET) {
+		LOG_WRN("TX done slot=%u err=%d usb_len=%u mps=%u", slot->index, xfer->err,
+			xfer->buf ? (unsigned int)xfer->buf->len : 0u, (unsigned int)xfer->mps);
+	}
+
+	if (xfer->buf) {
+		net_buf_reset(xfer->buf);
+	}
+
+	lan78xx_tx_release_slot(slot);
+	return 0;
+}
+
+static void lan78xx_tx_pool_deinit(struct lan78xx_ctx *ctx)
+{
+	if (!ctx) {
+		return;
+	}
+
+	if (ctx->udev && ctx->tx_slots) {
+		for (uint8_t i = 0; i < ctx->tx_pool_depth; i++) {
+			if (ctx->tx_slots[i].xfer) {
+				(void)usbh_xfer_free(ctx->udev, ctx->tx_slots[i].xfer);
+				ctx->tx_slots[i].xfer = NULL;
+				ctx->tx_slots[i].buf = NULL;
+			}
+		}
+	}
+
+	k_free(ctx->tx_slots);
+	ctx->tx_slots = NULL;
+	ctx->tx_pool_depth = 0u;
+}
+
+static int lan78xx_tx_pool_init(struct lan78xx_ctx *ctx)
+{
+	uint8_t depth;
+	size_t max_wire;
+	size_t max_usb;
+
+	if (!ctx || !ctx->udev || ctx->ep_bulk_out == 0u) {
+		return -EINVAL;
+	}
+
+	if (ctx->tx_slots && ctx->tx_pool_depth != 0u) {
+		return 0;
+	}
+
+	depth = (ctx->cfg->tx_inflight != 0u) ? ctx->cfg->tx_inflight : LAN78XX_DEFAULT_TX_INFLIGHT;
+	ctx->tx_pool_depth = depth;
+
+	ctx->tx_slots = k_calloc(depth, sizeof(ctx->tx_slots[0]));
+	if (ctx->tx_slots == NULL) {
+		ctx->tx_pool_depth = 0u;
+		return -ENOMEM;
+	}
+
+	max_wire = MAX((size_t)LAN78XX_ETH_MAX_NOFCS, (size_t)LAN78XX_ETH_MIN_NOFCS);
+	max_usb = LAN78XX_TX_USB_LEN(max_wire);
+
+	k_sem_init(&ctx->tx_free_sem, depth, depth);
+
+	for (uint8_t i = 0; i < depth; i++) {
+		struct lan78xx_tx_slot *slot = &ctx->tx_slots[i];
+		int ret;
+
+		slot->ctx = ctx;
+		slot->index = i;
+		atomic_set(&slot->state, LAN78XX_TX_SLOT_FREE);
+
+		ret = lan78xx_alloc_transfer_with_buffer(ctx, ctx->ep_bulk_out,
+							 ctx->ep_bulk_out_mps, lan78xx_tx_done,
+							 slot, max_usb, &slot->xfer, &slot->buf);
+		if (ret != 0) {
+			lan78xx_tx_pool_deinit(ctx);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static void lan78xx_set_carrier(struct lan78xx_ctx *ctx, bool up)
+{
+	ctx->link_up = up;
+
+	if (!ctx->iface) {
+		return;
+	}
+
+	if (up) {
+		net_eth_carrier_on(ctx->iface);
+	} else {
+		net_eth_carrier_off(ctx->iface);
+	}
+}
+
+static int lan78xx_start(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+
+static int lan78xx_stop(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+
+static enum ethernet_hw_caps lan78xx_get_capabilities(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
+}
+
+static const struct device *lan78xx_get_phy(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return NULL;
+}
+
+static int lan78xx_send(const struct device *dev, struct net_pkt *pkt)
+{
+	struct lan78xx_ctx *ctx = dev->data;
+	struct lan78xx_tx_slot *slot;
+	struct net_buf *nb;
+	struct uhc_transfer *xfer;
+	uint8_t *dst;
+	size_t plen;
+	uint32_t wire_len;
+	uint32_t tx_pad;
+	uint32_t usb_len;
+	uint32_t tx_cmd_a;
+	int ret;
+
+	if (!ctx || !pkt) {
+		LOG_ERR("TX invalid ctx=%p pkt=%p", ctx, pkt);
+		return -EINVAL;
+	}
+
+	if (!ctx->connected || !ctx->link_up || !ctx->udev || !ctx->iface ||
+	    ctx->ep_bulk_out == 0u) {
+		return -ENETDOWN;
+	}
+
+	if (!ctx->tx_slots || ctx->tx_pool_depth == 0u) {
+		return -EAGAIN;
+	}
+
+	plen = net_pkt_get_len(pkt);
+	if (plen == 0u || plen > LAN78XX_ETH_MAX_NOFCS) {
+		LOG_ERR("TX invalid plen=%u", (unsigned int)plen);
+		return -EINVAL;
+	}
+
+	if (k_sem_take(&ctx->tx_free_sem, K_MSEC(LAN78XX_TX_WAIT_MS)) != 0) {
+		LOG_WRN("TX busy: no free slot depth=%u", ctx->tx_pool_depth);
+		return -EAGAIN;
+	}
+
+	slot = lan78xx_tx_acquire_slot(ctx);
+	if (!slot || !slot->xfer || !slot->buf) {
+		if (slot) {
+			lan78xx_tx_release_slot(slot);
+		} else {
+			k_sem_give(&ctx->tx_free_sem);
+		}
+
+		LOG_ERR("TX failed acquiring slot slot=%p", slot);
+		return -EIO;
+	}
+
+	nb = slot->buf;
+	xfer = slot->xfer;
+	dst = nb->data;
+
+	net_buf_reset(nb);
+
+	wire_len = (uint32_t)plen;
+	tx_pad = LAN78XX_TX_PAD(wire_len);
+	usb_len = LAN78XX_TX_USB_LEN(wire_len);
+	if (usb_len > nb->size) {
+		LOG_ERR("TX buffer too small usb_len=%u buf_size=%u", (unsigned int)usb_len,
+			(unsigned int)nb->size);
+		lan78xx_tx_release_slot(slot);
+		return -ENOMEM;
+	}
+
+	tx_cmd_a = (wire_len & LAN78XX_TX_CMD_A_LEN_MASK) | LAN78XX_TX_CMD_A_FCS;
+	sys_put_le32(tx_cmd_a, dst + 0);
+	sys_put_le32(0u, dst + 4);
+
+	net_pkt_cursor_init(pkt);
+	if (net_pkt_read(pkt, dst + LAN78XX_CMD_HDR_LEN, plen) != 0) {
+		LOG_ERR("TX net_pkt_read failed");
+		lan78xx_tx_release_slot(slot);
+		return -EIO;
+	}
+
+	if (tx_pad != 0u) {
+		memset(dst + LAN78XX_CMD_HDR_LEN + wire_len, 0, tx_pad);
+	}
+
+	nb->len = usb_len;
+	xfer->mps = ctx->ep_bulk_out_mps;
+
+	ret = lan78xx_norm_async_ok(usbh_xfer_enqueue(ctx->udev, xfer));
+	if (ret != 0) {
+		LOG_WRN("TX enqueue failed slot=%u plen=%u usb_len=%u pad=%u", slot->index,
+			(unsigned int)plen, (unsigned int)usb_len, (unsigned int)tx_pad);
+		lan78xx_tx_release_slot(slot);
+		return ret;
+	}
+
+	return 0;
+}
+
+static void lan78xx_iface_init(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct lan78xx_ctx *ctx = dev->data;
+
+	ctx->iface = iface;
+	net_if_set_default(iface);
+
+	lan78xx_ensure_valid_mac(ctx);
+	net_if_set_link_addr(iface, ctx->mac, NET_ETH_ADDR_LEN, NET_LINK_ETHERNET);
+	ethernet_init(iface);
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	lan78xx_set_carrier(ctx, ctx->link_up);
+}
+
+static const struct ethernet_api lan78xx_eth_api = {
+	.iface_api.init = lan78xx_iface_init,
+	.start = lan78xx_start,
+	.stop = lan78xx_stop,
+	.get_capabilities = lan78xx_get_capabilities,
+	.get_phy = lan78xx_get_phy,
+	.send = lan78xx_send,
+};
+
+static int lan78xx_enable_auto_mac_link_mode(struct lan78xx_ctx *ctx)
+{
+	return lan78xx_update32(ctx, LAN78XX_MAC_CR, LAN78XX_MAC_CR_ASD | LAN78XX_MAC_CR_ADD,
+				LAN78XX_MAC_CR_ASD | LAN78XX_MAC_CR_ADD);
+}
+
+static void lan78xx_on_link_change(struct lan78xx_ctx *ctx, bool up)
+{
+	if (up) {
+		lan78xx_flush_fifos(ctx);
+		(void)lan78xx_start_data_path(ctx);
+	}
+
+	lan78xx_set_carrier(ctx, up);
+}
+
+static void lan78xx_poll_link_state(struct lan78xx_ctx *ctx)
+{
+	bool up = false;
+	int ret = lan78xx_link_is_up(ctx, &up);
+
+	if (ret == 0) {
+		if (up != ctx->link_up) {
+			LOG_INF("Link %s", up ? "UP" : "DOWN");
+			lan78xx_on_link_change(ctx, up);
+		}
+
+		ctx->next_link_poll_at = k_uptime_get() + ctx->cfg->link_poll_ms;
+	} else {
+		ctx->next_link_poll_at = k_uptime_get() + MAX(ctx->cfg->link_poll_ms,
+							      LAN78XX_LINK_POLL_ERROR_DELAY_MS);
+	}
+}
+
+static int lan78xx_probe_control_path(struct lan78xx_ctx *ctx)
+{
+	uint32_t v = 0;
+	bool up = false;
+	int ret = lan78xx_read32(ctx, LAN78XX_ID_REV, &v);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	LOG_INF("ID_REV=0x%08x", v);
+
+	if (!ctx->phy_valid) {
+		uint8_t phy = 0;
+
+		ret = lan78xx_find_phy(ctx, &phy);
+		if (ret != 0) {
+			return ret;
+		}
+
+		ctx->phy_id = phy;
+		ctx->phy_valid = true;
+	}
+
+	ret = lan78xx_link_is_up(ctx, &up);
+	if (ret == 0) {
+		lan78xx_set_carrier(ctx, up);
+	} else {
+		lan78xx_set_carrier(ctx, false);
+	}
+
+	return 0;
+}
+
+static void lan78xx_disconnect(struct lan78xx_ctx *ctx)
+{
+	if (!ctx) {
+		return;
+	}
+
+	ctx->connected = false;
+	ctx->ctrl_ok = false;
+	ctx->phy_id = 0;
+	ctx->phy_valid = false;
+	ctx->next_link_poll_at = LAN78XX_NO_POLL_SCHEDULED;
+
+	lan78xx_set_carrier(ctx, false);
+
+	if (ctx->udev) {
+		lan78xx_stop_intr(ctx);
+		lan78xx_stop_rx(ctx);
+		lan78xx_tx_pool_deinit(ctx);
+	}
+
+	ctx->udev = NULL;
+	ctx->ifnum = 0;
+	ctx->ep_bulk_in = 0;
+	ctx->ep_bulk_out = 0;
+	ctx->ep_intr_in = 0;
+	ctx->ep_bulk_in_mps = 0u;
+	ctx->ep_bulk_out_mps = 0u;
+	ctx->ep_intr_in_mps = 0u;
+}
+
+static void lan78xx_attach_device(struct lan78xx_ctx *ctx)
+{
+	int ret;
+
+	LOG_INF("LAN78xx attach: enter udev=%p connected=%d", ctx->udev, ctx->connected);
+
+	if (!ctx->udev || ctx->connected) {
+		return;
+	}
+
+	ctx->ctrl_ok = false;
+
+	if (!lan78xx_udev_ready(ctx->udev)) {
+		LOG_INF("LAN78xx attach: udev not ready");
+		return;
+	}
+
+	ret = lan78xx_parse_endpoints(ctx);
+	if (ret == 0 && ctx->cfg->alt_setting != 0u) {
+		ret = usbh_req_set_alt(ctx->udev, ctx->ifnum, ctx->cfg->alt_setting);
+	}
+
+	if (ret != 0) {
+		LOG_ERR("LAN78xx attach: endpoint/alt bind failed: %d", ret);
+		lan78xx_disconnect(ctx);
+		return;
+	}
+
+	k_msleep(LAN78XX_ATTACH_POST_BIND_DELAY_MS);
+
+	ret = lan78xx_hw_init_retry(ctx);
+	if (ret != 0) {
+		LOG_ERR("LAN78xx attach: hw init failed: %d", ret);
+		ctx->attach_attempt++;
+		if (ctx->attach_attempt < LAN78XX_ATTACH_RETRY_MAX) {
+			k_msleep(LAN78XX_ATTACH_HW_INIT_DELAY_MS);
+			lan78xx_mgmt_signal(ctx, LAN78XX_MGMT_EVT_ATTACH);
+			return;
+		}
+
+		lan78xx_disconnect(ctx);
+		return;
+	}
+
+	ret = lan78xx_probe_control_path(ctx);
+	if (ret != 0) {
+		ctx->attach_attempt++;
+		LOG_WRN("LAN78xx attach: probe failed ret=%d attempt=%u", ret, ctx->attach_attempt);
+		if (ctx->attach_attempt < LAN78XX_ATTACH_RETRY_MAX) {
+			k_msleep(LAN78XX_ATTACH_RETRY_DELAY_MS);
+			lan78xx_mgmt_signal(ctx, LAN78XX_MGMT_EVT_ATTACH);
+			return;
+		}
+
+		lan78xx_disconnect(ctx);
+		return;
+	}
+
+	ctx->ctrl_ok = true;
+	ctx->attach_attempt = 0;
+
+	ret = lan78xx_start_intr(ctx);
+	if (ret != 0) {
+		LOG_ERR("LAN78xx attach: start_intr failed: %d", ret);
+		lan78xx_disconnect(ctx);
+		return;
+	}
+
+	ret = lan78xx_start_rx(ctx);
+	if (ret != 0) {
+		LOG_ERR("LAN78xx attach: start_rx failed: %d", ret);
+		lan78xx_disconnect(ctx);
+		return;
+	}
+
+	ret = lan78xx_tx_pool_init(ctx);
+	if (ret != 0) {
+		LOG_ERR("LAN78xx attach: tx pool init failed: %d", ret);
+		lan78xx_disconnect(ctx);
+		return;
+	}
+
+	ctx->connected = true;
+	ctx->next_link_poll_at = k_uptime_get() + LAN78XX_INITIAL_LINK_POLL_DELAY_MS;
+	lan78xx_mgmt_signal(ctx, LAN78XX_MGMT_EVT_WAKE);
+
+	LOG_INF("LAN78xx attached: addr=%u if=%u ep_in=0x%02x mps=%u ep_out=0x%02x mps=%u "
+		"ep_int=0x%02x mps=%u tx_depth=%u rx_count=%u",
+		ctx->udev->addr, ctx->ifnum, ctx->ep_bulk_in, ctx->ep_bulk_in_mps, ctx->ep_bulk_out,
+		ctx->ep_bulk_out_mps, ctx->ep_intr_in, ctx->ep_intr_in_mps, ctx->tx_pool_depth,
+		ctx->rx_count);
+}
+
+static void lan78xx_mgmt_thread_fn(void *p1, void *p2, void *p3)
+{
+	struct lan78xx_ctx *ctx = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	for (;;) {
+		k_timeout_t timeout = K_FOREVER;
+		int64_t now = k_uptime_get();
+		atomic_val_t flags;
+
+		if (ctx->connected && ctx->ctrl_ok && ctx->udev &&
+		    ctx->next_link_poll_at != LAN78XX_NO_POLL_SCHEDULED) {
+			if (ctx->next_link_poll_at <= now) {
+				timeout = K_NO_WAIT;
+			} else {
+				timeout = K_MSEC(ctx->next_link_poll_at - now);
+			}
+		}
+
+		(void)k_sem_take(&ctx->mgmt_sem, timeout);
+
+		flags = atomic_set(&ctx->mgmt_flags, 0);
+
+		if ((flags & LAN78XX_MGMT_EVT_DETACH) != 0) {
+			lan78xx_disconnect(ctx);
+			continue;
+		}
+
+		if ((flags & LAN78XX_MGMT_EVT_ATTACH) != 0) {
+			lan78xx_attach_device(ctx);
+		}
+
+		if (ctx->connected && ctx->ctrl_ok && ctx->udev &&
+		    ctx->next_link_poll_at != LAN78XX_NO_POLL_SCHEDULED &&
+		    k_uptime_get() >= ctx->next_link_poll_at) {
+			lan78xx_poll_link_state(ctx);
+		}
+	}
+}
+
+static void lan78xx_service_rx_slot(struct lan78xx_ctx *ctx, struct lan78xx_rx_slot *slot,
+				    uint8_t slot_idx)
+{
+	atomic_val_t state = atomic_get(&slot->state);
+
+	if (state == LAN78XX_RX_SLOT_DONE) {
+		if (!atomic_get(&ctx->rx_stopping) && ctx->udev && slot->xfer->err == 0 &&
+		    slot->xfer->buf && slot->xfer->buf->len > 0 && ctx->connected && ctx->link_up &&
+		    ctx->iface) {
+			lan78xx_rx_deliver_frames(ctx, slot->xfer->buf->data, slot->xfer->buf->len);
+		}
+
+		if (!atomic_get(&ctx->rx_stopping) && ctx->udev) {
+			int ret = lan78xx_rx_rearm_slot(ctx, slot);
+
+			if (ret != 0) {
+				LOG_WRN("RX rearm failed: slot=%u ret=%d", slot_idx, ret);
+			}
+		} else {
+			lan78xx_rx_slot_free(ctx, slot);
+		}
+	} else if (state == LAN78XX_RX_SLOT_FREE && atomic_get(&ctx->rx_stopping)) {
+		lan78xx_rx_slot_free(ctx, slot);
+	}
+}
+
+static void lan78xx_service_intr_slot(struct lan78xx_ctx *ctx)
+{
+	atomic_val_t state = atomic_get(&ctx->intr_slot.state);
+
+	if (state == LAN78XX_INTR_STATE_DONE) {
+		if (!atomic_get(&ctx->intr_stopping) && ctx->udev &&
+		    (ctx->intr_slot.xfer->err == 0 || ctx->intr_slot.xfer->err == -EAGAIN)) {
+			int ret = lan78xx_intr_rearm(ctx);
+
+			if (ret != 0) {
+				LOG_WRN("INTR rearm failed: ret=%d", ret);
+			}
+		} else {
+			lan78xx_intr_free(ctx);
+		}
+	} else if (state == LAN78XX_INTR_STATE_IDLE && atomic_get(&ctx->intr_stopping)) {
+		lan78xx_intr_free(ctx);
+	}
+}
+
+static void lan78xx_io_thread_fn(void *p1, void *p2, void *p3)
+{
+	struct lan78xx_ctx *ctx = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	for (;;) {
+		(void)k_sem_take(&ctx->io_sem, K_FOREVER);
+
+		for (uint8_t i = 0; i < ctx->rx_count; i++) {
+			struct lan78xx_rx_slot *slot = &ctx->rx_slots[i];
+
+			if (!slot->xfer) {
+				continue;
+			}
+
+			lan78xx_service_rx_slot(ctx, slot, i);
+		}
+
+		if (ctx->intr_slot.xfer) {
+			lan78xx_service_intr_slot(ctx);
+		}
+
+		if (atomic_get(&ctx->rx_stopping) && ctx->rx_slots) {
+			bool all_gone = true;
+
+			for (uint8_t i = 0; i < ctx->rx_count; i++) {
+				if (ctx->rx_slots[i].xfer != NULL) {
+					all_gone = false;
+					break;
+				}
+			}
+
+			if (all_gone) {
+				k_free(ctx->rx_slots);
+				ctx->rx_slots = NULL;
+				ctx->rx_count = 0u;
+			}
+		}
+	}
+}
+
+static int lan78xx_usbh_request(struct usbh_class_data *const c_data,
+				struct uhc_transfer *const xfer)
+{
+	ARG_UNUSED(c_data);
+	ARG_UNUSED(xfer);
+	return 0;
+}
+
+static int lan78xx_usbh_init(struct usbh_class_data *const c_data)
+{
+	ARG_UNUSED(c_data);
+
+	LOG_INF("LAN78xx USB host class initialized");
+	return 0;
+}
+
+static int lan78xx_usbh_connected(struct usbh_class_data *const c_data,
+				  struct usb_device *const udev, const uint8_t iface)
+{
+	struct lan78xx_ctx *ctx = &lan78xx_ctx_0;
+
+	ARG_UNUSED(c_data);
+	ARG_UNUSED(iface);
+
+	if (!udev) {
+		return -ENOTSUP;
+	}
+
+	if (!lan78xx_match_vidpid(ctx, &udev->dev_desc)) {
+		return -ENOTSUP;
+	}
+
+	LOG_INF("LAN78xx USB host probe matched addr=%u", udev->addr);
+	ctx->udev = udev;
+	lan78xx_mgmt_signal(ctx, LAN78XX_MGMT_EVT_ATTACH);
+
+	return 0;
+}
+
+static int lan78xx_usbh_removed(struct usbh_class_data *const c_data)
+{
+	ARG_UNUSED(c_data);
+	lan78xx_mgmt_signal(&lan78xx_ctx_0, LAN78XX_MGMT_EVT_DETACH);
+	return 0;
+}
+
+static struct usbh_class_api lan78xx_usbh_api = {
+	.init = lan78xx_usbh_init,
+	.completion_cb = lan78xx_usbh_request,
+	.probe = lan78xx_usbh_connected,
+	.removed = lan78xx_usbh_removed,
+	.suspended = NULL,
+	.resumed = NULL,
+};
+
+static const struct usbh_class_filter lan78xx_usbh_filters[] = {
+	{
+		.vid = LAN78XX_CFG_VID(0),
+		.pid = LAN78XX_CFG_PID(0),
+		.flags = USBH_CLASS_MATCH_VID_PID,
+	},
+	{0}};
+
+USBH_DEFINE_CLASS(lan78xx, &lan78xx_usbh_api, NULL, lan78xx_usbh_filters);
+
+static int lan78xx_init(const struct device *dev)
+{
+	struct lan78xx_ctx *ctx = dev->data;
+
+	ctx->dev = dev;
+
+	LOG_INF("LAN78xx net device init: vid=0x%04x pid=0x%04x", ctx->cfg->vid, ctx->cfg->pid);
+
+	k_mutex_init(&ctx->ctrl_mutex);
+	k_mutex_init(&ctx->tx_lock);
+
+	ctx->udev = NULL;
+	ctx->ifnum = 0;
+	ctx->ep_bulk_in = 0;
+	ctx->ep_bulk_out = 0;
+	ctx->ep_intr_in = 0;
+	ctx->ep_bulk_in_mps = 0u;
+	ctx->ep_bulk_out_mps = 0u;
+	ctx->ep_intr_in_mps = 0u;
+
+	ctx->connected = false;
+	ctx->link_up = false;
+	ctx->ctrl_ok = false;
+
+	ctx->phy_id = 0;
+	ctx->phy_valid = false;
+	ctx->attach_attempt = 0;
+
+	ctx->rx_slots = NULL;
+	ctx->rx_count = 0u;
+	atomic_clear(&ctx->rx_stopping);
+
+	memset(&ctx->intr_slot, 0, sizeof(ctx->intr_slot));
+	atomic_clear(&ctx->intr_stopping);
+
+	ctx->tx_slots = NULL;
+	ctx->tx_pool_depth = 0u;
+
+	ctx->next_link_poll_at = LAN78XX_NO_POLL_SCHEDULED;
+
+	atomic_set(&ctx->mgmt_flags, 0);
+	k_sem_init(&ctx->mgmt_sem, 0, UINT_MAX);
+	k_sem_init(&ctx->io_sem, 0, UINT_MAX);
+
+	lan78xx_mac_from_dt(ctx);
+	lan78xx_ensure_valid_mac(ctx);
+
+	k_sem_init(&ctx->tx_free_sem, 0, UINT_MAX);
+
+	k_thread_create(&ctx->io_thread, lan78xx_io_stack_0,
+			K_KERNEL_STACK_SIZEOF(lan78xx_io_stack_0), lan78xx_io_thread_fn, ctx, NULL,
+			NULL, K_PRIO_PREEMPT(CONFIG_ETH_LAN78XX_IO_THREAD_PRIO), 0, K_NO_WAIT);
+	k_thread_name_set(&ctx->io_thread, "lan78xx_io");
+
+	k_thread_create(&ctx->mgmt_thread, lan78xx_mgmt_stack_0,
+			K_KERNEL_STACK_SIZEOF(lan78xx_mgmt_stack_0), lan78xx_mgmt_thread_fn, ctx,
+			NULL, NULL, K_PRIO_PREEMPT(CONFIG_ETH_LAN78XX_MGMT_THREAD_PRIO), 0,
+			K_NO_WAIT);
+	k_thread_name_set(&ctx->mgmt_thread, "lan78xx_mgmt");
+
+	return 0;
+}
+
+ETH_NET_DEVICE_DT_INST_DEFINE(0, lan78xx_init, NULL, &lan78xx_ctx_0, &lan78xx_cfg_0,
+			      CONFIG_ETH_INIT_PRIORITY, &lan78xx_eth_api, NET_ETH_MTU);

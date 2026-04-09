@@ -1,9 +1,9 @@
 # LAN78xx USB Ethernet Controller configuration options
-#
+
 # Copyright (c) 2026 Narek Aydinyan
 # SPDX-License-Identifier: Apache-2.0
 
-config ETH_LAN78XX
+menuconfig ETH_LAN78XX
 	bool "LAN78xx USB Ethernet Controller"
 	default y
 	depends on DT_HAS_MICROCHIP_LAN78XX_ENABLED
@@ -11,6 +11,37 @@ config ETH_LAN78XX
 	help
 	  Enable support for Microchip LAN78xx USB Ethernet adapters.
 
-	  The driver implementation is expected to live under the Ethernet
-	  driver subsystem even though the device is attached through the
-	  USB host stack.
+	  The driver lives in the Ethernet subsystem even though it reaches
+	  the adapter through the USB host stack.
+
+if ETH_LAN78XX
+
+config ETH_LAN78XX_MGMT_STACK_SIZE
+	int "LAN78xx management thread stack size"
+	default 6144
+	help
+	  Stack size of the management thread that handles attach, detach,
+	  and link polling.
+
+config ETH_LAN78XX_MGMT_THREAD_PRIO
+	int "LAN78xx management thread priority"
+	default 8
+	help
+	  Priority of the management thread that handles attach, detach,
+	  and link polling.
+
+config ETH_LAN78XX_IO_STACK_SIZE
+	int "LAN78xx I/O thread stack size"
+	default 8192
+	help
+	  Stack size of the I/O thread that processes RX completions and
+	  rearms USB transfers.
+
+config ETH_LAN78XX_IO_THREAD_PRIO
+	int "LAN78xx I/O thread priority"
+	default 10
+	help
+	  Priority of the I/O thread that processes RX completions and
+	  rearms USB transfers.
+
+endif # ETH_LAN78XX
