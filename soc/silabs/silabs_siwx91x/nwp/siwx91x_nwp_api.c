@@ -181,6 +181,78 @@ int siwx91x_nwp_disconnect(const struct device *dev)
 	return status ? -EINVAL : 0;
 }
 
+void siwx91x_nwp_ap_config(const struct device *dev, sli_wifi_ap_config_request *params)
+{
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, params, sizeof(*params), SLI_WIFI_REQ_AP_CONFIGURATION,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+int siwx91x_nwp_ap_start(const struct device *dev, const char *ssid, int security_type)
+{
+	sli_wifi_join_request_t params = {
+		/* I believe it does not make sense */
+		// .join_feature_bitmap = SL_WIFI_JOIN_FEAT_LISTEN_INTERVAL_VALID,
+		.power_level = 0x80 | FIELD_PREP(0x5C, 31),
+		/* FIXME: This is already defined in ap_config */
+		.security_type = security_type,
+		.ssid_len = strlen(ssid),
+	};
+	struct net_buf *reply_buf;
+	uint32_t status;
+	uint8_t reply;
+
+	__ASSERT(params.ssid_len < sizeof(params.ssid) - 1, "Corrupted argument");
+	strcpy(params.ssid, ssid);
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_JOIN,
+				      SLI_WLAN_MGMT_Q, 0, &reply_buf);
+	if (status) {
+		return -EINVAL;
+	}
+	__ASSERT(reply_buf, "Corrupted NWP reply");
+
+	net_buf_linearize(&reply, sizeof(uint8_t),
+			  reply_buf, sizeof(struct siwx91x_frame_desc), SIZE_MAX);
+	net_buf_unref(reply_buf);
+	if (reply != 'G') {
+		return -EINVAL;
+	}
+	return 0;
+}
+
+void siwx91x_nwp_ap_stop(const struct device *dev)
+{
+	sli_wifi_disassociation_request_t params = {
+		/* FIXME: the parameter seems ignored, but it would make sense to use
+		 * SL_WIFI_AP_VAP_ID
+		 */
+		.mode_flag = SL_WIFI_CLIENT_VAP_ID,
+	};
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_AP_STOP,
+				   SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+void siwx91x_nwp_sta_disconnect(const struct device *dev,
+				const uint8_t remote[WIFI_MAC_ADDR_LEN])
+{
+	sli_wifi_disassociation_request_t params = {
+		.mode_flag = SL_WIFI_AP_VAP_ID,
+	};
+	uint32_t status;
+
+	memcpy(&params.client_mac_address, remote, WIFI_MAC_ADDR_LEN);
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_DISCONNECT,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
 void siwx91x_nwp_get_bss_info(const struct device *dev, sl_wifi_operational_statistics_t *reply)
 {
 	struct net_buf *reply_buf;
@@ -222,6 +294,23 @@ void siwx91x_nwp_twt_params(const struct device *dev, sl_wifi_twt_request_t *par
 	uint32_t status;
 
 	status = siwx91x_nwp_send_cmd(dev, params, sizeof(*params), SLI_WIFI_REQ_TWT_PARAMS,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+void siwx91x_nwp_set_region_ap(const struct device *dev)
+{
+	sli_wifi_set_region_ap_request_t params = {
+		.set_region_code_from_user_cmd = SET_REGION_CODE_FROM_USER,
+		.country_code = "EU ",
+		.no_of_rules = 1,
+		.channel_info[0].first_channel = 1,
+		.channel_info[0].no_of_channels = 13,
+		.channel_info[0].max_tx_power = 20,
+	};
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_SET_REGION_AP,
 				      SLI_WLAN_MGMT_Q, 0, NULL);
 	__ASSERT(!status, "Corrupted NWP reply");
 }
@@ -284,6 +373,23 @@ void siwx91x_nwp_set_band(const struct device *dev, sl_wifi_band_mode_t band)
 	__ASSERT(band == SL_WIFI_BAND_MODE_2_4GHZ, "Unsupported option");
 
 	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_BAND,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+void siwx91x_nwp_set_ht_caps(const struct device *dev, bool enabled)
+{
+	sli_wifi_request_ap_high_throughput_capability_t params = {
+		.mode_11n_enable = true,
+		.ht_caps_bitmap = SL_WIFI_HT_CAPS_NUM_RX_STBC |
+			SL_WIFI_HT_CAPS_SHORT_GI_20MHZ |
+			SL_WIFI_HT_CAPS_GREENFIELD_EN,
+	};
+	uint32_t status;
+
+	__ASSERT(enabled == true, "Not supported");
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_HT_CAPABILITIES,
 				      SLI_WLAN_MGMT_Q, 0, NULL);
 	__ASSERT(!status, "Corrupted NWP reply");
 }
