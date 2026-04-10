@@ -2401,7 +2401,8 @@ static int dw_i3c_init(const struct device *dev)
 #ifdef CONFIG_I3C_CONTROLLER
 	if (!(ctrl_config->is_secondary)) {
 		/* Perform bus initialization - skip if no I3C devices are known. */
-		if (config->common.dev_list.num_i3c > 0) {
+		if (config->common.dev_list.num_i3c > 0 &&
+		    !(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 			ret = i3c_bus_init(dev, &config->common.dev_list);
 		}
 		/* Bus Initialization Complete, allow HJ ACKs */
@@ -2525,7 +2526,9 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 			.common.dev_list.num_i3c = ARRAY_SIZE(dw_i3c_device_array_##n),            \
 			.common.dev_list.i2c = dw_i3c_i2c_device_array_##n,                        \
 			.common.dev_list.num_i2c = ARRAY_SIZE(dw_i3c_i2c_device_array_##n),        \
-			.common.primary_controller_da = DT_INST_PROP_OR(n, primary_controller_da, 0x00),)) \
+			.common.primary_controller_da =                                            \
+				DT_INST_PROP_OR(n, primary_controller_da, 0x00),                   \
+			.common.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(n),))                  \
 		I3C_DW_PINCTRL_INIT(n)};                                                           \
 	PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_action);                                             \
 	DEVICE_DT_INST_DEFINE(n, dw_i3c_init, PM_DEVICE_DT_INST_GET(n), &dw_i3c_data_##n,          \

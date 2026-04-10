@@ -1219,6 +1219,9 @@ struct i3c_driver_config {
 
 	/** I3C Primary Controller Dynamic Address */
 	uint8_t primary_controller_da;
+
+	/** Driver config flags */
+	uint8_t flags;
 #elif defined(CONFIG_CPP)
        /* Empty struct has size 0 in C, size 1 in C++. Force them to be the same. */
 	uint8_t unused_cpp_size_compatibility;
