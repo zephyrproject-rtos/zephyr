@@ -2,5 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 name: semihost-tracing
+description: Enables CTF tracing using semihosting on a target that supports it.
 append:
   EXTRA_CONF_FILE: semihost-tracing.conf

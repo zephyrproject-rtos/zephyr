@@ -1,4 +1,6 @@
 name: xen_dom0
+description: |
+  Builds Zephyr as a Xen initial domain (Dom0) on compatible platforms.
 append:
   EXTRA_DTC_OVERLAY_FILE: xen_dom0.overlay
   EXTRA_CONF_FILE: xen_dom0.conf

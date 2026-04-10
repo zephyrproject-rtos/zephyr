@@ -1,4 +1,6 @@
 name: hci-uart-native-sim
+description: |
+  Enables hci_uart connected to the host computer with the Native Simulator.
 append:
   EXTRA_CONF_FILE: hci-uart-native-sim.conf
   EXTRA_DTC_OVERLAY_FILE: hci-uart-native-sim.overlay

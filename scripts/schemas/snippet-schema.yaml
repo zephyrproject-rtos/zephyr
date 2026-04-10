@@ -66,6 +66,8 @@ $defs:
 properties:
   name:
     type: string
+  description:
+    type: string
   append:
     $ref: "#/$defs/append-schema"
   boards:

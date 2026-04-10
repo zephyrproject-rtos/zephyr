@@ -1,4 +1,7 @@
 name: nordic-flpr
+description: |
+  Boots Nordic FLPR (Fast Lightweight Peripheral Processor) from application
+  core, executing from SRAM.
 append:
   EXTRA_DTC_OVERLAY_FILE: nordic-flpr.overlay
 
