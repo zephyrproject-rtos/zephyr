@@ -10,3 +10,7 @@ if(CONFIG_SILABS_SIWX91X_NWP)
     siwx91x_nwp_fw_version.c)
   zephyr_include_directories(.)
 endif()
+
+if(CONFIG_SIWX91X_NWP_RELOCATION_SRAM)
+  zephyr_code_relocate(FILES siwx91x_nwp_bus.c LOCATION RAM)
+endif()
