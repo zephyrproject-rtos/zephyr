@@ -25,6 +25,7 @@ struct spi_stm32_config {
 	const struct stm32_pclken *pclken;
 	size_t pclk_len;
 	int datawidth;
+	int fifo_threshold; /* Threshold value (in bytes) */
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	irq_config_func_t irq_config;
 #ifdef CONFIG_SOC_SERIES_STM32H7X
@@ -75,7 +76,7 @@ struct spi_stm32_data {
 	struct spi_context ctx;
 	uint32_t tx_len;
 	uint32_t rx_len;
-	uint8_t fifo_threshold;
+	uint8_t fifo_threshold; /* Threshold value (in data frames) */
 #ifdef CONFIG_SPI_STM32_DMA
 	struct k_sem status_sem;
 	volatile uint32_t status_flags;
