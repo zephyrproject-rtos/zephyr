@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2026 Space Cubics Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+/ {
+	model = "SC-OBC Module V1 IGLOO2 Mi-V";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &tcm0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			clock-frequency = <0>;
+			compatible = "microchip,miv", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "c", "zicsr", "zifencei";
+
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "microchip,miv-soc", "simple-bus";
+		ranges;
+
+		uart0: uart@11001000 {
+			compatible = "microchip,coreuart";
+			reg = <0x11001000 0x1000>;
+			status = "okay";
+			current-speed = <0>;
+			clock-frequency = <0>;
+		};
+
+		plic: interrupt-controller@10000000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			reg = <0x10000000 0x04000000>;
+			riscv,max-priority = <1>;
+			riscv,ndev = <31>;
+		};
+
+		mtimer: timer@1200bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&hlic 7>;
+			reg = <0x1200bff8 0x8 0x12004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			clock-frequency = <25000000>;
+		};
+
+		tcm0: memory@40000000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x40000000 0x10000>;
+		};
+
+		uartlite0: uartlite@8f000000 {
+			compatible = "xlnx,xps-uartlite-1.00.a";
+			interrupt-parent = <&hlic>;
+			interrupts = <2>;
+			reg = <0x8f000000 0x10000>;
+			status = "disabled";
+		};
+	};
+};
