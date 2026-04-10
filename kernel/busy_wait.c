@@ -26,7 +26,13 @@ static inline uint32_t busy_wait_us_to_cyc_ceil32(uint32_t usec, uint32_t hz)
 }
 #endif /* CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE */
 
-void z_impl_k_busy_wait(uint32_t usec_to_wait)
+#if IS_ENABLED(CONFIG_K_BUSY_WAIT_IN_SRAM)
+#define Z_BUSY_WAIT_IMPL_ATTR __ramfunc
+#else
+#define Z_BUSY_WAIT_IMPL_ATTR
+#endif
+
+void Z_BUSY_WAIT_IMPL_ATTR z_impl_k_busy_wait(uint32_t usec_to_wait)
 {
 	SYS_PORT_TRACING_FUNC_ENTER(k_thread, busy_wait, usec_to_wait);
 	if (usec_to_wait == 0U) {
