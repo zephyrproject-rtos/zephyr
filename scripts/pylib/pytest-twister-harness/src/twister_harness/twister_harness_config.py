@@ -150,11 +150,11 @@ class TwisterHarnessConfig:
                 # generates. I think that you need to reimplement support inside the
                 # Twister first and then come back here to fix below added snippet.
 
-                if config.option.device_rtt:
+                if config.option.device_rtt or _dut.use_rtt:
                     rtt_config = RTTConfig.create(
                         build_dir=build_dir,
-                        rtt_runner=config.option.rtt_runner,
-                        id=config.option.device_id or dut.id,
+                        rtt_runner=config.option.rtt_runner or _dut.rtt_runner,
+                        id=config.option.device_id or _dut.id,
                     )
                 else:
                     rtt_config = None

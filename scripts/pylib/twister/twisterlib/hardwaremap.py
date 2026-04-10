@@ -94,7 +94,8 @@ class DUT(HardwareData):
             self._failures.value += value
 
     def __repr__(self):
-        return f"<{self.platform} ({self.product}) on {self.serial}>"
+        comm_type = "RTT" if self.use_rtt else self.serial
+        return f"<{self.platform} ({self.product}) on {comm_type}>"
 
 
 class HardwareMap:
@@ -169,6 +170,7 @@ class HardwareMap:
                                 self.options.platform[0],
                                 self.options.pre_script,
                                 False,
+                                False,
                                 baud=self.options.device_serial_baud,
                                 flash_timeout=self.options.device_flash_timeout,
                                 flash_with_test=self.options.device_flash_with_test,
@@ -179,16 +181,29 @@ class HardwareMap:
                         self.add_device(serial,
                                         platform=None,
                                         pre_script=None,
-                                        is_pty=False)
+                                        is_pty=False,
+                                        uses_rtt=False)
 
             elif self.options.device_serial_pty:
                 self.add_device(self.options.device_serial_pty,
                                 self.options.platform[0],
                                 self.options.pre_script,
                                 True,
+                                False,
                                 flash_timeout=self.options.device_flash_timeout,
                                 flash_with_test=self.options.device_flash_with_test,
                                 flash_before=self.options.flash_before,
+                                )
+            elif self.options.device_rtt:
+                # RTT always requires flashing before connecting to work properly.
+                self.add_device(self.options.device_serial_pty,
+                                self.options.platform[0],
+                                self.options.pre_script,
+                                is_pty=False,
+                                uses_rtt=True,
+                                flash_timeout=self.options.device_flash_timeout,
+                                flash_with_test=self.options.device_flash_with_test,
+                                flash_before=True,
                                 )
 
             # the fixtures given by twister command explicitly should be assigned to each DUT
@@ -215,6 +230,7 @@ class HardwareMap:
         platform,
         pre_script,
         is_pty,
+        uses_rtt,
         baud=None,
         flash_timeout=60,
         flash_with_test=False,
@@ -229,7 +245,9 @@ class HardwareMap:
             flash_with_test=flash_with_test,
             flash_before=flash_before
         )
-        if is_pty:
+        if uses_rtt:
+            device.use_rtt = True
+        elif is_pty:
             device.serial_pty = serial
         else:
             device.serial = serial
@@ -249,7 +267,11 @@ class HardwareMap:
             if flash_with_test is None:
                 flash_with_test = self.options.device_flash_with_test
             serial_pty = dut.get('serial_pty')
+            use_rtt = dut.get('use_rtt')
             flash_before = dut.get('flash_before')
+            if use_rtt:
+                # RTT always requires flashing before connecting to work properly.
+                flash_before = True
             if flash_before is None:
                 flash_before = self.options.flash_before and (not flash_with_test)
             platform = dut.get('platform')
@@ -262,11 +284,12 @@ class HardwareMap:
             id = dut.get('id')
             runner = dut.get('runner')
             runner_params = dut.get('runner_params')
+            rtt_runner = dut.get('rtt_runner')
             serial = dut.get('serial')
             serial_baud = dut.get('serial_baud', None) or dut.get('baud', None)
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
-            connected = dut.get('connected') and ((serial or serial_pty) is not None)
+            connected = dut.get('connected') and ((serial or serial_pty or use_rtt) is not None)
             west_flash_cmd = dut.get('west_flash_cmd', "")
             if not connected:
                 continue
@@ -275,7 +298,9 @@ class HardwareMap:
                               product=product,
                               runner=runner,
                               runner_params=runner_params,
+                              rtt_runner=rtt_runner,
                               id=id,
+                              use_rtt=use_rtt,
                               serial_pty=serial_pty,
                               serial=serial,
                               serial_baud=serial_baud,
@@ -462,7 +487,7 @@ class HardwareMap:
             to_show = self.duts
 
         if not header:
-            header = ["Platform", "ID", "Serial device"]
+            header = ["Platform", "ID", "Communication type"]
         for p in to_show:
             platform = p.platform
             connected = p.connected
@@ -470,7 +495,14 @@ class HardwareMap:
                 continue
 
             if not connected_only or connected:
-                table.append([platform, p.id, p.serial])
+                if p.use_rtt:
+                    comm_type = "RTT"
+                elif p.serial_pty:
+                    comm_type = "PTY"
+                else:
+                    comm_type = f"Serial: {p.serial}"
+
+                table.append([platform, p.id, comm_type])
 
         print(tabulate(table, headers=header, tablefmt="github"))
 
@@ -492,7 +524,8 @@ class HardwareMap:
         for d in self.duts:
             if fixture and fixture not in (f.split(sep=':')[0] for f in d.fixtures):
                 continue
-            if d.platform != device or (d.serial is None and d.serial_pty is None):
+            if d.platform != device or (d.serial is None and d.serial_pty is None and
+                                        d.use_rtt is False):
                 continue
             duts_found.append(d)
 

@@ -509,7 +509,7 @@ class DeviceHandler(Handler):
                 proc.communicate()
                 logger.error(f"{script} timed out")
 
-    def _create_flash_command(self, hardware):
+    def _create_flash_command_from_options(self, hardware):
         flash_command = next(csv.reader([self.options.flash_command]))
 
         command = [flash_command[0]]
@@ -523,9 +523,28 @@ class DeviceHandler(Handler):
 
         return command
 
-    def _create_command(self, runner, hardware):
+    def _create_rtt_command(self, hardware):
+
+        command = ["west", "rtt", "--no-rebuild", "-d", self.build_dir]
+        rtt_runner = hardware.rtt_runner
+
+        if rtt_runner:
+            command.append("--runner")
+            command.append(rtt_runner)
+
+            if rtt_runner in ("jlink", "pyocd", "probe-rs"):
+                board_id = hardware.probe_id or hardware.id
+
+                command.append("--dev-id")
+                command.append(board_id)
+
+        # Since _start_pty expects a string, we need to convert the command list into
+        # one.
+        return " ".join(command)
+
+    def _create_flash_command(self, runner, hardware):
         if self.options.flash_command:
-            return self._create_flash_command(hardware)
+            return self._create_flash_command_from_options(hardware)
 
         command = ["west"]
         command_extra_args = []
@@ -597,18 +616,17 @@ class DeviceHandler(Handler):
 
         return command
 
-    def _terminate_pty(self, ser_pty, ser_pty_process):
-        logger.debug(f"Terminating serial-pty:'{ser_pty}'")
-        terminate_process(ser_pty_process)
+    def _terminate_pty(self, pty_name, pty_process):
+        logger.debug(f"Terminating pty:'{pty_name}'")
+        terminate_process(pty_process)
         try:
-            (stdout, stderr) = ser_pty_process.communicate(timeout=self.get_test_timeout())
-            logger.debug(f"Terminated serial-pty:'{ser_pty}', stdout:'{stdout}', stderr:'{stderr}'")
+            (stdout, stderr) = pty_process.communicate(timeout=self.get_test_timeout())
+            logger.debug(f"Terminated pty:'{pty_name}', stdout:'{stdout}', stderr:'{stderr}'")
         except subprocess.TimeoutExpired:
-            logger.debug(f"Terminated serial-pty:'{ser_pty}'")
-    #
+            logger.debug(f"Terminated pty:'{pty_name}'")
 
     def _create_serial_connection(self, serial_device, hardware_baud,
-                                  flash_timeout, serial_pty, ser_pty_process):
+                                  flash_timeout, pty_name, pty_process):
         try:
             ser = serial.Serial(
                 serial_device,
@@ -620,40 +638,40 @@ class DeviceHandler(Handler):
                 timeout=max(flash_timeout, self.get_test_timeout())
             )
         except serial.SerialException as e:
-            self._handle_serial_exception(e, serial_pty, ser_pty_process)
+            self._handle_serial_exception(e, pty_name, pty_process)
             raise
 
         return ser
 
-    def _handle_serial_exception(self, exception, serial_pty, ser_pty_process):
+    def _handle_serial_exception(self, exception, pty_name, pty_process):
         self.instance.status = TwisterStatus.FAIL
         self.instance.reason = "Serial Device Error"
         logger.error(f"Serial device error: {exception!s}")
 
         self.instance.add_missing_case_status(TwisterStatus.BLOCK, "Serial Device Error")
-        if serial_pty and ser_pty_process:
-            self._terminate_pty(serial_pty, ser_pty_process)
+        if pty_name and pty_process:
+            self._terminate_pty(pty_name, pty_process)
 
-    def _start_serial_pty(self, serial_pty, serial_pty_master):
-        ser_pty_process = None
+    def _start_pty(self, command, pty_master):
+        pty_process = None
         try:
             # Pass environment variables including platform name to serial PTY script
             env = os.environ.copy()
             if hasattr(self, 'instance') and hasattr(self.instance, 'platform'):
                 env['TWISTER_PLATFORM'] = self.instance.platform.name
-            ser_pty_process = subprocess.Popen(
-                re.split('[, ]', serial_pty),
-                stdout=serial_pty_master,
-                stdin=serial_pty_master,
-                stderr=serial_pty_master,
+            pty_process = subprocess.Popen(
+                re.split('[, ]', command),
+                stdout=pty_master,
+                stdin=pty_master,
+                stderr=pty_master,
                 env=env
             )
         except subprocess.CalledProcessError as error:
             logger.error(
-                f"Failed to run subprocess {serial_pty}, error {error.output}"
+                f"Failed to run subprocess {command}, error {error.output}"
             )
 
-        return ser_pty_process
+        return pty_process
 
     def handle(self, harness):
         hardware: CompoundHardwareData = self.instance.reserved_duts[0]
@@ -670,16 +688,21 @@ class DeviceHandler(Handler):
 
         runner = hardware.runner or self.options.west_runner
         serial_pty = hardware.serial_pty
+        use_rtt  = hardware.use_rtt
+        pty_name = None
 
-        if not serial_pty:
-            serial_device = hardware.serial
+        if serial_pty or use_rtt:
+            pty_master, slave = pty.openpty()
+            pty_name = os.ttyname(slave)
+            reason = "RTT" if use_rtt else "serial PTY"
+            logger.debug(f"Using pty {pty_name} for {reason}")
         else:
-            ser_pty_master, slave = pty.openpty()
-            serial_device = os.ttyname(slave)
+            serial_device = hardware.serial
+            logger.debug(
+                f"Using serial device {serial_device} @ {hardware.serial_baud} baud"
+            )
 
-        logger.debug(f"Using serial device {serial_device} @ {hardware.serial_baud} baud")
-
-        command = self._create_command(runner, hardware)
+        flash_command = self._create_flash_command(runner, hardware)
 
         post_flash_script = hardware.post_flash_script
         post_script = hardware.post_script
@@ -689,19 +712,23 @@ class DeviceHandler(Handler):
             flash_timeout += self.get_test_timeout()
 
         serial_port = None
-        ser_pty_process = None
+        pty_process = None
         if hardware.flash_before is False:
             if serial_pty:
-                ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
-            serial_port = serial_device
+                pty_process = self._start_pty(serial_pty, pty_master)
+                serial_port = pty_name
+            else:
+                serial_port = serial_device
 
+        # Open connection to serial device or if using serial pty just create ser object
+        # and open it later.
         try:
             ser = self._create_serial_connection(
                 serial_port,
                 hardware.serial_baud,
                 flash_timeout,
                 serial_pty,
-                ser_pty_process
+                pty_process
             )
         except serial.SerialException:
             return
@@ -714,11 +741,13 @@ class DeviceHandler(Handler):
         t.start()
 
         d_log = f"{self.instance.build_dir}/device.log"
-        logger.debug(f'Flash command: {command}', )
+        logger.debug(f'Flash command: {flash_command}')
         failure_type = Handler.FailureType.NONE
         try:
             stdout = stderr = None
-            with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+            with subprocess.Popen(flash_command,
+                                  stderr=subprocess.PIPE,
+                                  stdout=subprocess.PIPE) as proc:
                 try:
                     (stdout, stderr) = proc.communicate(timeout=flash_timeout)
                     # ignore unencodable unicode chars
@@ -757,13 +786,21 @@ class DeviceHandler(Handler):
         # Connect to device after flashing it
         if hardware.flash_before:
             try:
-                logger.debug(f"Attach serial device {serial_device} @ {hardware.serial_baud} baud")
-                ser.port = serial_device
-
-                if serial_pty:
-                    ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
+                if use_rtt:
+                    rtt_command = self._create_rtt_command(hardware)
+                    pty_process = self._start_pty(rtt_command, pty_master)
+                    logger.debug(f"Start RTT connection on pty {pty_name}")
+                    ser.port = pty_name
+                    ser.open()
+                elif serial_pty:
+                    pty_process = self._start_pty(serial_pty, pty_master)
+                    logger.debug(f"Start serial connection on pty {pty_name}")
+                    ser.port = pty_name
                     ser.open()
                 elif runner == "esp32":
+                    logger.debug(f"Attach serial device {serial_device} @ "
+                        f"{hardware.serial_baud} baud")
+                    ser.port = serial_device
                     # Apply ESP32-specific RTS/DTR reset logic
                     logger.debug("Applying ESP32 RTS/DTR reset sequence")
 
@@ -781,6 +818,9 @@ class DeviceHandler(Handler):
                     # Return to normal boot
                     ser.rts = False
                 else:
+                    logger.debug(f"Attach serial device {serial_device} @ "
+                        f"{hardware.serial_baud} baud")
+                    ser.port = serial_device
                     # Wait for serial port to appear after flashing
                     # To keep dependency between flash_timeout proposed 20% of this value
                     # but not less than 10s. TO keep clarity of measurement,
@@ -794,7 +834,8 @@ class DeviceHandler(Handler):
                     ser.open()
 
             except serial.SerialException as e:
-                self._handle_serial_exception(e, serial_pty, ser_pty_process)
+                name = serial_pty if serial_pty else pty_name
+                self._handle_serial_exception(e, name, pty_process)
                 return
 
         if failure_type != Handler.FailureType.FLASH:
@@ -816,8 +857,9 @@ class DeviceHandler(Handler):
         if ser.isOpen():
             ser.close()
 
-        if serial_pty:
-            self._terminate_pty(serial_pty, ser_pty_process)
+        if serial_pty or use_rtt:
+            name = serial_pty if serial_pty else pty_name
+            self._terminate_pty(name, pty_process)
 
         self.execution_time = time.time() - start_time
 

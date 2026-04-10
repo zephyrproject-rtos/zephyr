@@ -22,6 +22,12 @@ items:
       type: array
       items:
         type: string
+    rtt_runner:
+      type: str
+      required: false
+    use_rtt:
+      type: boolean
+      required: false
     serial_pty:
       type: string
     serial:
