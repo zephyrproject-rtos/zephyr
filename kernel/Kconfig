@@ -904,6 +904,25 @@ config BUSYWAIT_CPU_LOOPS_PER_USEC
 	  system timer support. If accuracy is very important then
 	  implementing arch_busy_wait() should be considered.
 
+config K_BUSY_WAIT_IN_SRAM
+	bool "Place k_busy_wait() implementation in SRAM"
+	depends on ARCH_HAS_RAMFUNC_SUPPORT && XIP
+	help
+	  Link the k_busy_wait() implementation into the .ramfunc region in
+	  SRAM so it can execute while the flash/ROM bus is busy (for example
+	  during erase or program operations).
+
+	  This uses additional SRAM and requires the linker script to support
+	  the .ramfunc section (see also __ramfunc in the Zephyr documentation).
+
+	  Inlined cycle counter reads are placed with this function; any
+	  out-of-line helpers they call (for example the system timer driver)
+	  may still reside in flash unless relocated separately.
+
+	  When ARCH_HAS_CUSTOM_BUSY_WAIT is enabled, arch_busy_wait() is not
+	  part of this option and must be placed in SRAM by the architecture
+	  or board if it may run during flash-busy periods.
+
 menu "Security Options"
 
 config REQUIRES_STACK_CANARIES
