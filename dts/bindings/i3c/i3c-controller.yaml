@@ -61,3 +61,10 @@ properties:
       If true, the I3C bus initialization (i3c_bus_init) will not be
       performed during driver initialization. This allows the application
       to perform bus initialization at a later time.
+
+  disable-hj-at-init:
+    type: boolean
+    description: |
+      If true, Hot-Join ACKs will not be enabled at the end of bus
+      initialization. Hot-Join events will be NACKed until the
+      application explicitly enables them.

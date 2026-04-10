@@ -3708,8 +3708,11 @@ static int cdns_i3c_bus_init(const struct device *dev)
 			ret = i3c_bus_init(dev, &config->common.dev_list);
 		}
 #ifdef CONFIG_I3C_USE_IBI
-		/* Bus Initialization Complete, allow HJ ACKs */
-		sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL), config->base + CTRL);
+		/* Bus Initialization Complete, allow HJ ACKs if not disabled */
+		if (!(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT)) {
+			sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL),
+				    config->base + CTRL);
+		}
 #endif
 	}
 #endif /* CONFIG_I3C_CONTROLLER */
