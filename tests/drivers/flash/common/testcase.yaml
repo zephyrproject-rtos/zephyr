@@ -59,6 +59,12 @@ tests:
     extra_args: EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_soc.conf
     integration_platforms:
       - nrf52840dk/nrf52840
+  drivers.flash.common.sam_qspi:
+    platform_allow: sam_v71_xult/samv71q21
+    extra_args:
+      - EXTRA_CONF_FILE=boards/sam_v71_xult_samv71q21_qspi.conf
+    integration_platforms:
+      - sam_v71_xult/samv71q21
   drivers.flash.common.default:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
