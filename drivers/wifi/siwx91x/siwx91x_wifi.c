@@ -14,6 +14,7 @@
 #include "siwx91x_wifi_ap.h"
 #include "siwx91x_wifi_sta.h"
 #include "siwx91x_wifi_scan.h"
+#include "siwx91x_wifi_socket.h"
 
 LOG_MODULE_REGISTER(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
@@ -23,6 +24,7 @@ BUILD_ASSERT(SLI_WIFI_PSK_LEN == WIFI_PSK_MAX_LEN,
 	     "PSK lengths mismatch");
 BUILD_ASSERT(SLI_WIFI_HARDWARE_ADDRESS_LENGTH == WIFI_MAC_ADDR_LEN,
 	     "Hardware address lengths mismatch");
+#ifndef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 
 static int siwx91x_wifi_get_config(const struct device *dev,
 				   enum ethernet_config_type type,
@@ -36,6 +38,7 @@ static int siwx91x_wifi_get_config(const struct device *dev,
 	 */
 	return 0;
 }
+#endif
 
 static int siwx91x_wifi_mode(const struct device *dev, struct wifi_mode_info *mode)
 {
@@ -95,6 +98,7 @@ static void siwx91x_wifi_iface_init(struct net_if *iface)
 	siwx91x_nwp_set_sta_config(config->nwp_dev);
 	siwx91x_nwp_get_mac_address(config->nwp_dev, mac_addr);
 	net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
+	siwx91x_sock_init(iface);
 	siwx91x_wifi_ethernet_init(iface);
 }
 
@@ -127,8 +131,13 @@ static const struct wifi_mgmt_ops siwx91x_wifi_mgmt = {
 
 static const struct net_wifi_mgmt_offload siwx91x_wifi_api = {
 	.wifi_iface.iface_api.init = siwx91x_wifi_iface_init,
+#ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
+	.wifi_iface.get_type = siwx91x_sock_get_type,
+	.wifi_iface.alloc = siwx91x_sock_alloc,
+#else
 	.wifi_iface.get_config = siwx91x_wifi_get_config,
 	.wifi_iface.send = siwx91x_wifi_send,
+#endif
 	.wifi_mgmt_api = &siwx91x_wifi_mgmt,
 };
 
@@ -140,12 +149,22 @@ static const struct siwx91x_wifi_config siwx91x_wifi_config = {
 
 static struct siwx91x_wifi_data siwx91x_wifi_data = {
 	.nwp_ops.on_scan_results = siwx91x_wifi_on_scan_results,
+#ifndef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
 	.nwp_ops.on_rx = siwx91x_wifi_on_rx,
+#endif
+	.nwp_ops.on_sock_select = siwx91x_sock_on_select,
 	.ap_idle_timeout = UINT8_MAX,
 	.ap_max_num_sta = 4,
 	.ps_exit_strategy = WIFI_PS_EXIT_EVERY_TIM,
 	.ps_wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM,
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0, siwx91x_wifi_init, NULL, &siwx91x_wifi_data, &siwx91x_wifi_config,
-			      CONFIG_WIFI_INIT_PRIORITY, &siwx91x_wifi_api, NET_ETH_MTU);
+#ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, siwx91x_wifi_init, NULL, &siwx91x_wifi_data,
+				  &siwx91x_wifi_config, CONFIG_WIFI_INIT_PRIORITY,
+				  &siwx91x_wifi_api, NET_ETH_MTU);
+#else
+ETH_NET_DEVICE_DT_INST_DEFINE(0, siwx91x_wifi_init, NULL, &siwx91x_wifi_data,
+			      &siwx91x_wifi_config, CONFIG_WIFI_INIT_PRIORITY,
+			      &siwx91x_wifi_api, NET_ETH_MTU);
+#endif

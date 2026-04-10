@@ -65,4 +65,22 @@ void siwx91x_nwp_set_ht_caps(const struct device *dev, bool enabled);
 void siwx91x_nwp_set_config(const struct device *dev, uint16_t type, uint16_t value);
 void siwx91x_nwp_get_mac_address(const struct device *dev, uint8_t mac[NET_ETH_ADDR_LEN]);
 
+/* Socket APIs */
+int siwx91x_nwp_sock_config_ipv4(const struct device *dev, struct net_in_addr *addr,
+				 struct net_in_addr *mask, struct net_in_addr *gw);
+int siwx91x_nwp_sock_config_ipv6(const struct device *dev, struct net_in6_addr *lua,
+				 struct net_in6_addr *gua, int *prefix_len,
+				 struct net_in6_addr *gw);
+int siwx91x_nwp_sock_bind(const struct device *dev, const struct net_sockaddr *local);
+int siwx91x_nwp_sock_connect(const struct device *dev, int sock_type,
+			     const struct net_sockaddr *remote);
+int siwx91x_nwp_sock_listen(const struct device *dev,
+			    const struct net_sockaddr_ptr *local, int backlog);
+int siwx91x_nwp_sock_accept(const struct device *dev, int sockfd,
+			    const struct net_sockaddr_ptr *local, struct net_sockaddr *remote);
+int siwx91x_nwp_sock_close(const struct device *dev, int sockfd);
+int siwx91x_nwp_sock_recv(const struct device *dev, int sockfd, struct net_buf **payload);
+void siwx91x_nwp_sock_select(const struct device *dev, int select_id,
+			     uint32_t read_fds, uint32_t write_fds);
+
 #endif

@@ -5,6 +5,7 @@
  */
 #include "siwx91x_nwp_api.h"
 #include "siwx91x_wifi.h"
+#include "siwx91x_wifi_socket.h"
 
 LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
@@ -81,6 +82,8 @@ int siwx91x_wifi_connect(const struct device *dev, struct wifi_connect_req_param
 		net_if_dormant_off(data->iface);
 	}
 	wifi_mgmt_raise_connect_result_event(data->iface, WIFI_STATUS_CONN_SUCCESS);
+	siwx91x_sock_on_join_ipv4(dev);
+	siwx91x_sock_on_join_ipv6(dev);
 	return 0;
 
 join_fail:

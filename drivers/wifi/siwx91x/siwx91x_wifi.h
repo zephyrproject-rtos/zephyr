@@ -30,6 +30,14 @@ struct siwx91x_wifi_data {
 	unsigned short ps_listen_interval;
 	enum wifi_ps_exit_strategy ps_exit_strategy;
 	enum wifi_ps_wakeup_mode ps_wakeup_mode;
+
+#ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
+	uint32_t sock_bitmap;
+	int sock_id[SLI_NUMBER_OF_SOCKETS];
+	struct k_mutex sock_lock;
+	struct k_event sock_events;
+	uint32_t sock_watch;
+#endif
 };
 
 #endif
