@@ -2688,7 +2688,7 @@ int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink);
 /**
  * @brief Register the Basic Audio Profile Scan Delegator and BASS.
  *
- * Register the scan deligator and Broadcast Audio Scan Service (BASS)
+ * Register the scan delegator and Broadcast Audio Scan Service (BASS)
  * dynamically at runtime.
  *
  * Only one set of callbacks can be registered at any one time, and calling this function multiple
@@ -2703,7 +2703,7 @@ int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb);
 /**
  * @brief unregister the Basic Audio Profile Scan Delegator and BASS.
  *
- * Unregister the scan deligator and Broadcast Audio Scan Service (BASS)
+ * Unregister the scan delegator and Broadcast Audio Scan Service (BASS)
  * dynamically at runtime.
  *
  * @return 0 in case of success or negative value in case of error.

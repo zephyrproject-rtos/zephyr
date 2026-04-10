@@ -595,21 +595,21 @@ static void register_callbacks(void)
 
 	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
 	if (err != 0) {
-		FAIL("Scan deligator register failed (err %d)\n", err);
+		FAIL("Scan delegator register failed (err %d)\n", err);
 
 		return;
 	}
 
 	err = bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 	if (err != 0) {
-		FAIL("Scan deligator register failed (err %d)\n", err);
+		FAIL("Broadcast sink register failed (err %d)\n", err);
 
 		return;
 	}
 
 	err = bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
 	if (err != 0) {
-		FAIL("Scan deligator register failed (err %d)\n", err);
+		FAIL("PA sync cb register failed (err %d)\n", err);
 
 		return;
 	}

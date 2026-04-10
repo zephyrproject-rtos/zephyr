@@ -782,7 +782,7 @@ static void init(void)
 
 		err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
 		if (err != 0) {
-			FAIL("Scan deligator register failed (err %d)\n", err);
+			FAIL("Scan delegator register failed (err %d)\n", err);
 
 			return;
 		}
