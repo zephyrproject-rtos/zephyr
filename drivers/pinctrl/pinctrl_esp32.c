@@ -66,12 +66,12 @@ static inline bool rtc_gpio_is_valid_gpio(uint32_t gpio_num)
 
 static inline bool esp32_pin_is_valid(uint32_t pin)
 {
-	return ((BIT(pin) & SOC_GPIO_VALID_GPIO_MASK) != 0);
+	return ((BIT64(pin) & SOC_GPIO_VALID_GPIO_MASK) != 0);
 }
 
 static inline bool esp32_pin_is_output_capable(uint32_t pin)
 {
-	return ((BIT(pin) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0);
+	return ((BIT64(pin) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0);
 }
 
 static int esp32_pin_apply_config(uint32_t pin, uint32_t flags)
