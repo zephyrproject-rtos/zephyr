@@ -1,6 +1,6 @@
-.. _boards-heltec:
+.. _boards-hikit:
 
-Heltec
+Hikit
 ######
 
 .. toctree::

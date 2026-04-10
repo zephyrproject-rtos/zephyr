@@ -12,10 +12,8 @@ supported:
   - counter
   - gpio
   - i2c
-  - i2s
   - pwm
   - spi
-  - usbd
   - watchdog
   - netif:openthread
 vendor: hikit

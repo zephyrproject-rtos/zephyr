@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include "sc1.dtsi"
+#include "hikit_sc1.dtsi"
 
 / {
 	model = "HiKit SC1";
