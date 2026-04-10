@@ -38,7 +38,6 @@ struct spi_stm32_config {
 	uint32_t fifo_max_transfer_size;
 	uint8_t fifo_size;
 #endif
-	bool fifo_enabled: 1;
 	bool ioswp: 1;
 	bool soft_nss: 1;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
