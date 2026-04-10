@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Narek Aydinyan
+# SPDX-License-Identifier: Apache-2.0
+
+description: LAN78xx MDIO controller node
+
+compatible: "microchip,lan78xx-mdio"
+
+include: mdio-controller.yaml
+
+on-bus: lan78xx

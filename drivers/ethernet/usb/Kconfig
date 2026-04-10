@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Narek Aydinyan
 # SPDX-License-Identifier: Apache-2.0
 
 source "drivers/ethernet/usb/Kconfig.lan78xx"

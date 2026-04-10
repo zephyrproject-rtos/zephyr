@@ -7,6 +7,7 @@ menuconfig ETH_LAN78XX
 	bool "LAN78xx USB Ethernet Controller"
 	default y
 	depends on DT_HAS_MICROCHIP_LAN78XX_ENABLED
+	select MDIO
 	select NET_L2_ETHERNET_RESERVE_HEADER
 	select USB_HOST_STACK
 	help
