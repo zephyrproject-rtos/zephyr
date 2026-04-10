@@ -116,6 +116,7 @@ enum ptp_port_state ptp_state_machine(enum ptp_port_state state,
 		break;
 #endif /* CONFIG_PTP_PRE_TIME_TRANSMITTER_PRESENT */
 	case PTP_PS_TIME_TRANSMITTER:
+	case PTP_PS_GRAND_MASTER:
 		switch (event) {
 		case PTP_EVT_DESIGNATED_DISABLED:
 			new_state = IS_ENABLED(CONFIG_PTP_DISABLED_PRESENT) ?
@@ -124,9 +125,6 @@ enum ptp_port_state ptp_state_machine(enum ptp_port_state state,
 		case PTP_EVT_FAULT_DETECTED:
 			new_state = IS_ENABLED(CONFIG_PTP_FAULTY_PRESENT) ?
 					PTP_PS_FAULTY : new_state;
-			break;
-		case PTP_EVT_RS_GRAND_MASTER:
-			new_state = PTP_PS_GRAND_MASTER;
 			break;
 		case PTP_EVT_RS_PASSIVE:
 			new_state = PTP_PS_PASSIVE;
