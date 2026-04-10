@@ -1098,7 +1098,8 @@ static int i3c_renesas_ra_init(const struct device *dev)
 	}
 
 	/* Check I3C is controller mode and target device exist in device tree */
-	if (config->common.dev_list.num_i3c > 0) {
+	if (config->common.dev_list.num_i3c > 0 &&
+	    !(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 		/* Perform bus initialization */
 		ret = i3c_bus_init(dev, &config->common.dev_list);
 		if (ret) {
@@ -1205,6 +1206,7 @@ static DEVICE_API(i3c, i3c_renesas_ra_api) = {
 		.common.dev_list.i2c = i3c##index##_renesas_ra_i2c_dev_list,                       \
 		.common.dev_list.num_i2c = ARRAY_SIZE(i3c##index##_renesas_ra_i2c_dev_list),       \
 		.common.primary_controller_da = DT_INST_PROP_OR(index, primary_controller_da, 0),  \
+		.common.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(index),                        \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                  \
 		.pclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(index, pclk)),               \
 		.tclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(index, tclk)),               \

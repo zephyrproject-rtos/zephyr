@@ -66,6 +66,25 @@ extern "C" {
 /** @} */
 
 /**
+ * @name I3C driver config flags.
+ * @anchor I3C_CONTROLLER_CONFIG_FLAGS
+ * @{
+ */
+
+/** Disable i3c_bus_init during driver initialization */
+#define I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT		BIT(0)
+
+/** @} */
+
+/**
+ * @brief Get I3C driver config flags from devicetree instance
+ * @param inst Devicetree instance number of the I3C controller
+ */
+#define I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(inst)					\
+	(FIELD_PREP(I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT,				\
+		    DT_INST_PROP(inst, disable_bus_init)))
+
+/**
  * @brief Structure initializer for i3c_device_desc from devicetree
  *
  * This helper macro expands to a static initializer for a <tt>struct
