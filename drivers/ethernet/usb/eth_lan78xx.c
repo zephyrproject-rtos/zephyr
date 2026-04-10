@@ -15,6 +15,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/ethernet/eth_lan78xx.h>
+#include <zephyr/drivers/mdio.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -105,6 +106,8 @@ BUILD_ASSERT(LAN78XX_TX_INFLIGHT_MAX >= 1, "ETH_LAN78XX_TX_INFLIGHT must be >= 1
 struct lan78xx_config {
 	uint8_t alt_setting;
 	uint8_t led_enable_mask;
+	const struct device *mdio;
+	uint8_t phy_addr;
 	struct net_eth_mac_config mac_cfg;
 };
 
@@ -194,10 +197,21 @@ static int lan78xx_enable_auto_mac_link_mode(struct lan78xx_ctx *ctx);
 static void lan78xx_mgmt_thread_fn(void *p1, void *p2, void *p3);
 static void lan78xx_io_thread_fn(void *p1, void *p2, void *p3);
 
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), phy_handle)
+#define LAN78XX_CFG_PHY_NODE DT_INST_PHANDLE(0, phy_handle)
+#define LAN78XX_CFG_MDIO_DEV DEVICE_DT_GET(DT_PARENT(LAN78XX_CFG_PHY_NODE))
+#define LAN78XX_CFG_PHY_ADDR DT_REG_ADDR(LAN78XX_CFG_PHY_NODE)
+#else
+#define LAN78XX_CFG_MDIO_DEV NULL
+#define LAN78XX_CFG_PHY_ADDR 0xFF
+#endif
+
 #define LAN78XX_CFG(inst)                                                                          \
 	static const struct lan78xx_config lan78xx_cfg_##inst = {                                  \
 		.alt_setting = DT_INST_PROP_OR(inst, alt, 0),                                      \
 		.led_enable_mask = DT_INST_PROP_OR(inst, led_enable_mask, 0),                      \
+		.mdio = LAN78XX_CFG_MDIO_DEV,                                                      \
+		.phy_addr = LAN78XX_CFG_PHY_ADDR,                                                  \
 		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                                  \
 	}
 
@@ -574,6 +588,15 @@ out:
 	return ret;
 }
 
+static int lan78xx_mdio_read16(struct lan78xx_ctx *ctx, uint8_t phy_id, uint8_t reg, uint16_t *out)
+{
+	if (!ctx->cfg->mdio || !device_is_ready(ctx->cfg->mdio)) {
+		return -ENODEV;
+	}
+
+	return mdio_read(ctx->cfg->mdio, phy_id, reg, out);
+}
+
 static int lan78xx_find_phy(struct lan78xx_ctx *ctx, uint8_t *found)
 {
 	if (!ctx || !ctx->udev || !found) {
@@ -584,10 +607,10 @@ static int lan78xx_find_phy(struct lan78xx_ctx *ctx, uint8_t *found)
 		uint16_t id1 = 0;
 		uint16_t id2 = 0;
 
-		if (eth_lan78xx_mdio_c22_read(ctx->dev, phy, LAN78XX_MII_PHYID1, &id1) != 0) {
+		if (lan78xx_mdio_read16(ctx, phy, LAN78XX_MII_PHYID1, &id1) != 0) {
 			continue;
 		}
-		if (eth_lan78xx_mdio_c22_read(ctx->dev, phy, LAN78XX_MII_PHYID2, &id2) != 0) {
+		if (lan78xx_mdio_read16(ctx, phy, LAN78XX_MII_PHYID2, &id2) != 0) {
 			continue;
 		}
 
@@ -609,21 +632,25 @@ static int lan78xx_link_is_up(struct lan78xx_ctx *ctx, bool *up)
 	uint16_t bmsr = 0;
 	int ret;
 
-	if (!ctx || !up || !ctx->udev || !ctx->phy_valid) {
+	if (!ctx || !up || !ctx->udev) {
 		return -EINVAL;
 	}
 
-	ret = eth_lan78xx_mdio_c22_read(ctx->dev, ctx->phy_id, LAN78XX_MII_BMCR, &bmcr);
+	if (!ctx->phy_valid) {
+		return -EINVAL;
+	}
+
+	ret = lan78xx_mdio_read16(ctx, ctx->phy_id, LAN78XX_MII_BMCR, &bmcr);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = eth_lan78xx_mdio_c22_read(ctx->dev, ctx->phy_id, LAN78XX_MII_BMSR, &bmsr);
+	ret = lan78xx_mdio_read16(ctx, ctx->phy_id, LAN78XX_MII_BMSR, &bmsr);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = eth_lan78xx_mdio_c22_read(ctx->dev, ctx->phy_id, LAN78XX_MII_BMSR, &bmsr);
+	ret = lan78xx_mdio_read16(ctx, ctx->phy_id, LAN78XX_MII_BMSR, &bmsr);
 	if (ret != 0) {
 		return ret;
 	}
@@ -1771,6 +1798,16 @@ static int lan78xx_probe_control_path(struct lan78xx_ctx *ctx)
 	}
 
 	LOG_INF("ID_REV=0x%08x", v);
+
+	if (!ctx->cfg->mdio || !device_is_ready(ctx->cfg->mdio)) {
+		LOG_ERR("LAN78xx MDIO device is not ready");
+		return -ENODEV;
+	}
+
+	if (ctx->cfg->phy_addr != 0xFFu) {
+		ctx->phy_id = ctx->cfg->phy_addr;
+		ctx->phy_valid = true;
+	}
 
 	if (!ctx->phy_valid) {
 		uint8_t phy = 0;

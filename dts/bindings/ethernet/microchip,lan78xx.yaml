@@ -9,12 +9,9 @@ include:
   - name: ethernet-controller.yaml
   - name: base.yaml
 
-properties:
-  uhc:
-    type: phandle
-    required: true
-    description: USB host controller used to reach the LAN78xx adapter.
+bus: lan78xx
 
+properties:
   vid:
     type: int
     default: 0x0424
