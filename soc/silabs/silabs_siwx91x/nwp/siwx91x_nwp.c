@@ -81,10 +81,6 @@ static void siwx91x_apply_sta_mode(sl_wifi_system_boot_configuration_t *params)
 		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_FEAT_SECURITY_PSK)) {
 			params->feature_bit_map |= SL_SI91X_FEAT_SECURITY_PSK;
 		}
-		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
-			params->custom_feature_bit_map |=
-				SL_SI91X_CUSTOM_FEAT_ROAM_WITH_DEAUTH_OR_NULL_DATA;
-		}
 	}
 
 	if (wifi_enabled && bt_enabled) {
