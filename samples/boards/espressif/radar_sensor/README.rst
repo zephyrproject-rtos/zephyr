@@ -1,34 +1,57 @@
-.. _at581x_radar_sample:
+.. zephyr:code-sample:: at581x_radar_sensor
+   :name: AT581X Radar Motion Detection
+   :relevant-api: sensor_interface gpio_interface
 
-AT581X Radar Sensor Sample
-##########################
+   Demonstrate motion detection using the AT581X microwave radar sensor with GPIO interrupt handling.
 
 Overview
 ********
 
-This sample demonstrates how to use the AT581X radar sensor driver with Zephyr.
-The AT581X is a microwave radar sensor that can detect motion and presence.
+This sample demonstrates how to use the AT581X radar sensor driver for motion detection
+on ESP32-S3 based boards. The AT581X is a microwave radar sensor specifically designed
+for presence and motion detection, not distance measurement.
 
-The sample configures the sensor via I2C and monitors a GPIO pin for detection
-interrupts. When motion is detected, the sensor pulls the interrupt pin low.
+Unlike distance sensors that measure actual distances to objects, the AT581X radar sensor
+detects motion and presence within its detection range. The sensor provides a digital
+output signal that changes state when motion is detected or when the area becomes clear.
+
+The sample configures the sensor via I2C and monitors a GPIO pin for detection state changes.
+When motion is detected, the sensor pulls the interrupt pin low, and when the area clears,
+the pin goes high again.
 
 Requirements
 ************
 
 * ESP32-S3 based board (ESP32S3 DevKitC or ESP32S3 Box3)
-* AT581X radar sensor connected via I2C
-* GPIO pin connected to sensor's detection output
+* AT581X radar sensor module
+* Jumper wires for connections
 
-Hardware Setup
-**************
+Wiring
+******
 
-Connect the AT581X sensor to your ESP32-S3 Box3 board:
+Connect the AT581X sensor to your ESP32-S3 Box3 board as follows:
 
-* VCC: 3.3V
-* GND: Ground
-* SDA: GPIO41 (I2C1 SDA)
-* SCL: GPIO40 (I2C1 SCL)  
-* OUT: GPIO21 (Detection interrupt)
+.. list-table::
+   :header-rows: 1
+
+   * - AT581X Pin
+     - ESP32S3 Box3 Pin
+     - Description
+   * - VCC
+     - 3.3V
+     - Power supply
+   * - GND
+     - Ground
+     - Ground connection
+   * - SDA
+     - GPIO41
+     - I2C1 data line
+   * - SCL
+     - GPIO40
+     - I2C1 clock line
+   * - OUT
+     - GPIO21
+     - Detection output (interrupt)
 
 Building and Running
 ********************
@@ -36,12 +59,14 @@ Building and Running
 Build and flash the sample for ESP32S3 Box3:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/espressif/Radar_sensor
+   :zephyr-app: samples/boards/espressif/radar_sensor
    :board: esp32s3_box3/esp32s3/procpu
    :goals: build flash monitor
 
 Sample Output
 *************
+
+The sample will output detection events to the console:
 
 .. code-block:: console
 
@@ -53,17 +78,32 @@ Sample Output
 Configuration
 *************
 
-The sensor can be configured via device tree properties:
+The sensor behavior can be customized via device tree properties in your board overlay:
+
+.. code-block:: devicetree
+
+   &i2c1 {
+       at581x: at581x@28 {
+           compatible = "andar,at581x";
+           reg = <0x28>;
+           threshold = <150>;        /* Lower for higher sensitivity */
+           gain = <30>;              /* Adjust amplification */
+           base-time-ms = <300>;     /* Faster response time */
+           keep-time-ms = <2000>;    /* Longer detection persistence */
+           status = "okay";
+       };
+   };
+
+Available properties:
 
 * ``threshold``: Detection sensitivity (0-1023, default 200)
 * ``gain``: Amplifier gain (0-255, default 27)  
 * ``base-time-ms``: Base detection time (default 500ms)
 * ``keep-time-ms``: Keep detection time (default 1500ms)
 
-Driver Architecture
-*******************
+References
+**********
 
-This sample uses the proper Zephyr sensor driver located in 
-``drivers/sensor/at581x/`` instead of a custom driver implementation.
-The driver follows Zephyr's sensor API and integrates with the device tree
-system for configuration.
+* `AT581X Datasheet <https://www.andar.com.cn/>`_
+* :ref:`sensor_api`
+* :ref:`gpio_api`

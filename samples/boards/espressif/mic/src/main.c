@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2026 NotioNext Ltd.
+ * Copyright (c) 2026 NotioNext LTD.
  *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/kernel.h>
@@ -19,8 +20,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef CANON_AUDIO_AVAILABLE
-#include "Canon_audio_data.h"
+#ifdef TEST_AUDIO_AVAILABLE
+#include "test_audio.h"
 #endif
 
 LOG_MODULE_REGISTER(esp32s3_box3_demo, LOG_LEVEL_INF);
@@ -95,38 +96,38 @@ static STRUCT_SECTION_ITERABLE(k_mem_slab, rx_mem_slab) =
 /*  Audio test data                                                     */
 /* ------------------------------------------------------------------ */
 
-static int16_t test_audio_data[TX_BLOCK_SIZE / sizeof(int16_t)];
+static int16_t sine_wave_data[TX_BLOCK_SIZE / sizeof(int16_t)];
 
 void generate_sine_wave(void)
 {
-	int n_samples = ARRAY_SIZE(test_audio_data) / 2;
+	int n_samples = ARRAY_SIZE(sine_wave_data) / 2;
 	for (int i = 0; i < n_samples; i++) {
 		float phase = 2.0f * 3.14159f * 1000.0f * i / (float)SAMPLE_RATE;
 		int16_t sample = (int16_t)(25000 * sinf(phase));
-		test_audio_data[i * 2]     = sample;
-		test_audio_data[i * 2 + 1] = sample;
+		sine_wave_data[i * 2]     = sample;
+		sine_wave_data[i * 2 + 1] = sample;
 	}
 	LOG_INF("Generated stereo 1 kHz sine wave (%d samples)", n_samples);
 }
 
 void generate_test_melody(void)
 {
-	int n_samples = ARRAY_SIZE(test_audio_data) / 2;
+	int n_samples = ARRAY_SIZE(sine_wave_data) / 2;
 	int seg = n_samples / 3;
 	const float freqs[3] = { 440.0f, 523.0f, 659.0f };
 	for (int i = 0; i < n_samples; i++) {
 		float f = freqs[i / seg < 3 ? i / seg : 2];
 		float phase = 2.0f * 3.14159f * f * (i % seg) / (float)SAMPLE_RATE;
 		int16_t sample = (int16_t)(20000 * sinf(phase));
-		test_audio_data[i * 2]     = sample;
-		test_audio_data[i * 2 + 1] = sample;
+		sine_wave_data[i * 2]     = sample;
+		sine_wave_data[i * 2 + 1] = sample;
 	}
 	LOG_INF("Generated melody (A4-C5-E5)");
 }
 
 void generate_silence(void)
 {
-	memset(test_audio_data, 0, sizeof(test_audio_data));
+	memset(sine_wave_data, 0, sizeof(sine_wave_data));
 }
 
 /* ------------------------------------------------------------------ */
@@ -187,7 +188,7 @@ static int init_es8311(void)
 		return ret;
 	}
 
-	es8311_set_volume(es8311_dev, 191);
+	es8311_set_volume(es8311_dev, 232);  /* 91% volume (217 + 6% = 232) */
 	es8311_set_mute(es8311_dev, false);
 	es8311_enable(es8311_dev, true);
 
@@ -377,52 +378,6 @@ SHELL_CMD_REGISTER(bincat, NULL, "Binary dump file as hex", cmd_bincat);
 SHELL_CMD_REGISTER(fs, &fs_cmds, "Filesystem commands", NULL);
 
 /* ------------------------------------------------------------------ */
-/*  Playback helper                                                     */
-/* ------------------------------------------------------------------ */
-
-static int play_block(const void *data, size_t len)
-{
-	void *tx_block;
-	int ret;
-
-	ret = k_mem_slab_alloc(&tx_mem_slab, &tx_block, K_MSEC(200));
-	if (ret < 0) return ret;
-
-	memcpy(tx_block, data, MIN(len, TX_BLOCK_SIZE));
-	if (len < TX_BLOCK_SIZE) {
-		memset((uint8_t *)tx_block + len, 0, TX_BLOCK_SIZE - len);
-	}
-
-	ret = i2s_write(i2s_dev, tx_block, TX_BLOCK_SIZE);
-	if (ret < 0) {
-		k_mem_slab_free(&tx_mem_slab, tx_block);
-	}
-	return ret;
-}
-
-static int test_speaker(void)
-{
-	i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
-
-	int ret = play_block(test_audio_data, sizeof(test_audio_data));
-	if (ret < 0) return ret;
-
-	ret = i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_START);
-	if (ret < 0) return ret;
-
-	int64_t end = k_uptime_get() + 2000;
-	while (k_uptime_get() < end) {
-		play_block(test_audio_data, sizeof(test_audio_data));
-		k_sleep(K_MSEC(5));
-	}
-
-	i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
-	k_sleep(K_MSEC(100));
-	i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
-	return 0;
-}
-
-/* ------------------------------------------------------------------ */
 /*  Microphone recording to LittleFS                                    */
 /* ------------------------------------------------------------------ */
 
@@ -584,17 +539,17 @@ static void next_audio_filename(char *buf, size_t len)
 /*  Canon in D (optional)                                               */
 /* ------------------------------------------------------------------ */
 
-#ifdef CANON_AUDIO_AVAILABLE
-static int play_canon_audio(void)
+#ifdef TEST_AUDIO_AVAILABLE
+static int play_test_audio(void)
 {
-	LOG_INF("Playing Canon in D...");
+	LOG_INF("Playing test.mp3...");
 
 	struct i2s_config cfg = {
 		.word_size      = 16,
 		.channels       = 2,
 		.format         = I2S_FMT_DATA_FORMAT_I2S,
 		.options        = I2S_OPT_BIT_CLK_MASTER | I2S_OPT_FRAME_CLK_MASTER,
-		.frame_clk_freq = AUDIO_SAMPLE_RATE,
+		.frame_clk_freq = TEST_AUDIO_SAMPLE_RATE,  /* Use 48kHz from test audio */
 		.mem_slab       = &tx_mem_slab,
 		.block_size     = TX_BLOCK_SIZE,
 		.timeout        = 2000,
@@ -604,11 +559,14 @@ static int play_canon_audio(void)
 	int ret = i2s_configure(i2s_dev, I2S_DIR_TX, &cfg);
 	if (ret < 0) return ret;
 
-	const int16_t *src = audio_data;
-	size_t total = AUDIO_DATA_SIZE / sizeof(int16_t);
+	const int16_t *src = test_audio_data;
+	size_t total = TEST_AUDIO_SAMPLES;
 	size_t samp_per_block = TX_BLOCK_SIZE / sizeof(int16_t);
 	size_t cur = 0;
 	bool started = false;
+
+	LOG_INF("📊 Total samples: %d, Sample rate: %dHz, Duration: ~%dms", 
+		total, TEST_AUDIO_SAMPLE_RATE, (total / 2) * 1000 / TEST_AUDIO_SAMPLE_RATE);
 
 	while (cur < total) {
 		size_t n = MIN(samp_per_block, total - cur);
@@ -628,17 +586,26 @@ static int play_canon_audio(void)
 		if (!started) {
 			i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_START);
 			started = true;
+			LOG_INF("🎵 Test audio playback started!");
 		}
 		cur += n;
+		
+		/* Progress indicator */
+		if (cur % (total / 10) == 0) {
+			int progress = (cur * 100) / total;
+			LOG_INF("🎶 Playback progress: %d%%", progress);
+		}
 	}
 
 	i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
 	k_sleep(K_MSEC(500));
 	i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
 
-	/* Restore 16 kHz */
+	/* Restore 16 kHz for microphone */
 	cfg.frame_clk_freq = SAMPLE_RATE;
 	i2s_configure(i2s_dev, I2S_DIR_TX, &cfg);
+	
+	LOG_INF("🎵 Test audio playback completed!");
 	return 0;
 }
 #endif
@@ -688,26 +655,9 @@ int main(void)
 
 	LOG_INF("Audio system ready — ES8311 speaker + ES7210 microphone");
 
-	/* Brief silence */
-	generate_silence();
-	test_speaker();
-	k_sleep(K_SECONDS(1));
-
-	/* 1 kHz tone */
-	LOG_INF("Playing 1 kHz sine wave...");
-	generate_sine_wave();
-	test_speaker();
-	k_sleep(K_SECONDS(2));
-
-	/* Melody */
-	LOG_INF("Playing melody (A4-C5-E5)...");
-	generate_test_melody();
-	test_speaker();
-	k_sleep(K_SECONDS(2));
-
-#ifdef CANON_AUDIO_AVAILABLE
-	LOG_INF("Playing Canon in D...");
-	play_canon_audio();
+#ifdef TEST_AUDIO_AVAILABLE
+	LOG_INF("Playing test.mp3...");
+	play_test_audio();
 	k_sleep(K_SECONDS(3));
 #endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2026 NotioNext Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */

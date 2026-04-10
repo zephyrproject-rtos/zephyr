@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2026 NotioNext Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 description: Andar AT581X radar sensor
@@ -14,13 +14,20 @@ properties:
     description: |
       Detection threshold value (0-1023).
       Lower values increase sensitivity.
+      Default value of 200 provides balanced sensitivity for typical indoor
+      motion detection applications while minimizing false positives from
+      environmental noise. Adjust lower (100-150) for higher sensitivity
+      in quiet environments or higher (300-400) to reduce false triggers
+      in noisy environments.
 
   gain:
     type: int
     default: 27
     description: |
       Gain setting (0-255).
-      Default value 0x1B (27) provides good performance.
+      Default value 27 (0x1B) is the manufacturer-recommended setting
+      that provides optimal signal amplification for most applications.
+      Lower values reduce sensitivity, higher values may introduce noise.
 
   base-time-ms:
     type: int
@@ -28,6 +35,9 @@ properties:
     description: |
       Base detection time in milliseconds.
       Time before detection signal is asserted.
+      Default 500ms provides good balance between responsiveness and
+      stability, reducing false triggers from brief movements while
+      maintaining quick detection of sustained motion.
 
   keep-time-ms:
     type: int
@@ -35,3 +45,6 @@ properties:
     description: |
       Keep detection time in milliseconds.
       Time to maintain detection signal after motion stops.
+      Default 1500ms ensures detection remains active long enough for
+      typical applications while avoiding excessive power consumption.
+      Increase for applications requiring longer detection persistence.

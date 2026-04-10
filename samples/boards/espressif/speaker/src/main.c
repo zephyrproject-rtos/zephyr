@@ -13,9 +13,8 @@
 #include <math.h>
 #include <string.h>
 
-#ifdef CANON_AUDIO_AVAILABLE
-#include "Canon_audio_data.h"
-#include "Hi_audio_data.h"
+#ifdef TEST_AUDIO_AVAILABLE
+#include "test_audio.h"
 #endif
 
 LOG_MODULE_REGISTER(esp32s3_box3_demo, LOG_LEVEL_INF);
@@ -50,7 +49,7 @@ static STRUCT_SECTION_ITERABLE(k_mem_slab, tx_mem_slab) =
 				WB_UP(BLOCK_SIZE), NUM_BLOCKS);
 
 /* Audio test data - stereo, larger buffer */
-static int16_t test_audio_data[1024];  /* 512 samples * 2 channels */
+static int16_t sine_wave_data[1024];  /* 512 samples * 2 channels */
 
 void generate_sine_wave(void)
 {
@@ -58,8 +57,8 @@ void generate_sine_wave(void)
 		/* Generate 1kHz tone at 22.05kHz sample rate with moderate amplitude */
 		float phase = 2.0f * 3.14159f * 1000.0f * i / 22050.0f;  /* 1kHz at 22.05kHz sample rate */
 		int16_t sample = (int16_t)(20000 * sin(phase));  /* Moderate amplitude to avoid clipping */
-		test_audio_data[i * 2] = sample;     /* Left channel */
-		test_audio_data[i * 2 + 1] = sample; /* Right channel (same as left) */
+		sine_wave_data[i * 2] = sample;     /* Left channel */
+		sine_wave_data[i * 2 + 1] = sample; /* Right channel (same as left) */
 	}
 	LOG_INF("Generated stereo sine wave data (1kHz tone, 512 samples, 2 channels)");
 }
@@ -81,119 +80,33 @@ void generate_test_melody(void)
 		
 		float phase = 2.0f * 3.14159f * frequency * (i % notes_per_sample) / (22050.0f / 3.0f);
 		int16_t sample = (int16_t)(18000 * sin(phase));  /* Moderate amplitude */
-		test_audio_data[i * 2] = sample;     /* Left channel */
-		test_audio_data[i * 2 + 1] = sample; /* Right channel */
+		sine_wave_data[i * 2] = sample;     /* Left channel */
+		sine_wave_data[i * 2 + 1] = sample; /* Right channel */
 	}
 	LOG_INF("Generated test melody (A4-C5-E5, 512 samples, 2 channels)");
 }
 
-#ifdef CANON_AUDIO_AVAILABLE
-int play_hi_audio(void)
+#ifdef TEST_AUDIO_AVAILABLE
+int play_test_audio(void)
 {
 	int ret;
 	void *tx_block;
-	const unsigned char *hi_data = hi_audio_data;
-	size_t total_bytes = hi_audio_data_len;
-	size_t current_byte = 0;
-	
-	LOG_INF("👋 Starting Hi audio playback...");
-	LOG_INF("📊 Total bytes: %d, Block size: %d bytes", total_bytes, BLOCK_SIZE);
-	
-	/* Configure I2S for 44.1kHz */
-	struct i2s_config config = {
-		.word_size = 16,
-		.channels = 2,
-		.format = I2S_FMT_DATA_FORMAT_I2S,
-		.options = I2S_OPT_BIT_CLK_MASTER | I2S_OPT_FRAME_CLK_MASTER,
-		.frame_clk_freq = HI_AUDIO_SAMPLE_RATE,  /* 44.1kHz */
-		.mem_slab = &tx_mem_slab,
-		.block_size = BLOCK_SIZE,
-		.timeout = 1000,
-	};
-
-	ret = i2s_configure(i2s_dev, I2S_DIR_TX, &config);
-	if (ret < 0) {
-		LOG_ERR("Failed to configure I2S for Hi audio: %d", ret);
-		return ret;
-	}
-
-	/* Play audio in chunks */
-	while (current_byte < total_bytes) {
-		size_t bytes_to_copy = MIN(BLOCK_SIZE, total_bytes - current_byte);
-		
-		/* Allocate memory block from slab */
-		ret = k_mem_slab_alloc(&tx_mem_slab, &tx_block, K_MSEC(1000));
-		if (ret < 0) {
-			LOG_ERR("Failed to allocate TX block: %d", ret);
-			break;
-		}
-
-		/* Copy Hi audio data to the allocated block */
-		memcpy(tx_block, &hi_data[current_byte], bytes_to_copy);
-		
-		/* If we have less data than block size, pad with zeros */
-		if (bytes_to_copy < BLOCK_SIZE) {
-			memset((uint8_t*)tx_block + bytes_to_copy, 0, BLOCK_SIZE - bytes_to_copy);
-		}
-
-		/* Send audio data */
-		ret = i2s_write(i2s_dev, tx_block, BLOCK_SIZE);
-		if (ret < 0) {
-			LOG_ERR("Failed to write I2S data: %d", ret);
-			k_mem_slab_free(&tx_mem_slab, tx_block);
-			break;
-		}
-
-		/* Start I2S transmission if this is the first block */
-		if (current_byte == 0) {
-			ret = i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_START);
-			if (ret < 0) {
-				LOG_ERR("Failed to start I2S: %d", ret);
-				k_mem_slab_free(&tx_mem_slab, tx_block);
-				break;
-			}
-			LOG_INF("👋 Hi audio playback started!");
-		}
-
-		current_byte += bytes_to_copy;
-		
-		/* Small delay to prevent overwhelming the I2S buffer */
-		k_sleep(K_MSEC(10));
-	}
-
-	/* Wait for playback to complete */
-	k_sleep(K_MSEC(500));
-
-	/* Stop I2S transmission */
-	ret = i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
-	if (ret < 0) {
-		LOG_DBG("Failed to drop I2S (may be normal): %d", ret);
-	} else {
-		LOG_INF("👋 Hi audio playback completed!");
-	}
-
-	return 0;
-}
-
-int play_canon_audio(void)
-{
-	int ret;
-	void *tx_block;
-	const int16_t *canon_data = audio_data;  /* From Canon_audio_data.c */
-	size_t total_samples = AUDIO_DATA_SIZE / sizeof(int16_t);
+	const int16_t *test_data = test_audio_data;
+	size_t total_samples = TEST_AUDIO_SAMPLES;
 	size_t samples_per_block = BLOCK_SIZE / sizeof(int16_t);
 	size_t current_sample = 0;
 	
-	LOG_INF("🎼 Starting Canon in D playback...");
+	LOG_INF("🎵 Starting test.mp3 playback...");
 	LOG_INF("📊 Total samples: %d, Block size: %d samples", total_samples, samples_per_block);
+	LOG_INF("📊 Sample rate: %dHz, Duration: ~%dms", TEST_AUDIO_SAMPLE_RATE, (total_samples / 2) * 1000 / TEST_AUDIO_SAMPLE_RATE);
 	
-	/* First, reconfigure I2S for 8kHz (Canon audio is sampled at 8kHz) */
+	/* Configure I2S for 48kHz */
 	struct i2s_config config = {
 		.word_size = 16,
 		.channels = 2,
 		.format = I2S_FMT_DATA_FORMAT_I2S,
 		.options = I2S_OPT_BIT_CLK_MASTER | I2S_OPT_FRAME_CLK_MASTER,
-		.frame_clk_freq = AUDIO_SAMPLE_RATE,  /* 8kHz for Canon audio */
+		.frame_clk_freq = TEST_AUDIO_SAMPLE_RATE,  /* Use the actual sample rate from the audio */
 		.mem_slab = &tx_mem_slab,
 		.block_size = BLOCK_SIZE,
 		.timeout = 1000,
@@ -201,7 +114,7 @@ int play_canon_audio(void)
 
 	ret = i2s_configure(i2s_dev, I2S_DIR_TX, &config);
 	if (ret < 0) {
-		LOG_ERR("Failed to reconfigure I2S for Canon audio: %d", ret);
+		LOG_ERR("Failed to configure I2S for test audio: %d", ret);
 		return ret;
 	}
 
@@ -217,8 +130,8 @@ int play_canon_audio(void)
 			break;
 		}
 
-		/* Copy Canon audio data to the allocated block */
-		memcpy(tx_block, &canon_data[current_sample], bytes_to_copy);
+		/* Copy test audio data to the allocated block */
+		memcpy(tx_block, &test_data[current_sample], bytes_to_copy);
 		
 		/* If we have less data than block size, pad with zeros */
 		if (bytes_to_copy < BLOCK_SIZE) {
@@ -241,7 +154,7 @@ int play_canon_audio(void)
 				k_mem_slab_free(&tx_mem_slab, tx_block);
 				break;
 			}
-			LOG_INF("🎵 Canon in D playback started!");
+			LOG_INF("🎵 Test audio playback started!");
 		}
 
 		current_sample += samples_to_copy;
@@ -257,21 +170,14 @@ int play_canon_audio(void)
 	}
 
 	/* Wait for playback to complete */
-	k_sleep(K_MSEC(1000));
+	k_sleep(K_MSEC(500));
 
 	/* Stop I2S transmission */
 	ret = i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
 	if (ret < 0) {
 		LOG_DBG("Failed to drop I2S (may be normal): %d", ret);
 	} else {
-		LOG_INF("🎼 Canon in D playback completed!");
-	}
-
-	/* Reconfigure I2S back to 48kHz for other audio */
-	config.frame_clk_freq = 48000;
-	ret = i2s_configure(i2s_dev, I2S_DIR_TX, &config);
-	if (ret < 0) {
-		LOG_ERR("Failed to reconfigure I2S back to 48kHz: %d", ret);
+		LOG_INF("🎵 Test audio playback completed!");
 	}
 
 	return 0;
@@ -281,7 +187,7 @@ int play_canon_audio(void)
 void generate_silence(void)
 {
 	/* Fill with zeros for silence */
-	memset(test_audio_data, 0, sizeof(test_audio_data));
+	memset(sine_wave_data, 0, sizeof(sine_wave_data));
 	LOG_INF("Generated silence data (512 samples, 2 channels)");
 }
 
@@ -380,12 +286,12 @@ int init_audio(void)
 	}
 	LOG_INF("✓ ES8311 codec initialized (48kHz, 16-bit, stereo, I2S)");
 
-	/* Set volume to 78% (199 out of 255) */
-	ret = es8311_set_volume(es8311_dev, 199);
+	/* Set volume to 85% (217 out of 255) */
+	ret = es8311_set_volume(es8311_dev, 217);
 	if (ret) {
 		LOG_WRN("Failed to set ES8311 volume: %d", ret);
 	} else {
-		LOG_INF("✓ Volume set to 78%% (199/255)");
+		LOG_INF("✓ Volume set to 85%% (217/255)");
 	}
 
 	/* Unmute codec */
@@ -450,7 +356,7 @@ int test_speaker(void)
 	}
 
 	/* Copy sine wave data to the allocated block */
-	memcpy(tx_block, test_audio_data, sizeof(test_audio_data));
+	memcpy(tx_block, sine_wave_data, sizeof(sine_wave_data));
 
 	/* Send audio data first - this queues the data */
 	ret = i2s_write(i2s_dev, tx_block, BLOCK_SIZE);
@@ -511,7 +417,7 @@ int test_silence(void)
 	}
 
 	/* Copy silence data to the allocated block */
-	memcpy(tx_block, test_audio_data, sizeof(test_audio_data));
+	memcpy(tx_block, sine_wave_data, sizeof(sine_wave_data));
 
 	/* Send audio data first - this queues the data */
 	ret = i2s_write(i2s_dev, tx_block, BLOCK_SIZE);
@@ -564,23 +470,17 @@ int main(void)
 
 	LOG_INF("");
 	LOG_INF("🎵 Audio system initialized successfully!");
-	LOG_INF("🔊 Ready for music playback at 48kHz, 78%% volume");
+	LOG_INF("🔊 Ready for music playback at 48kHz, 85%% volume");
 	LOG_INF("");
 
-#ifdef CANON_AUDIO_AVAILABLE
-	/* Play Hi audio first */
-	LOG_INF("▶ Playing Hi audio...");
-	play_hi_audio();
-	LOG_INF("✓ Hi audio playback completed");
-	LOG_INF("");
-	
-	/* Play Canon in D */
-	LOG_INF("▶ Playing Canon in D by Pachelbel...");
-	play_canon_audio();
-	LOG_INF("✓ Music playback completed");
+#ifdef TEST_AUDIO_AVAILABLE
+	/* Play test audio */
+	LOG_INF("▶ Playing test.mp3...");
+	play_test_audio();
+	LOG_INF("✓ Test audio playback completed");
 #else
 	LOG_INF("ℹ No audio file available");
-	LOG_INF("ℹ Add Canon_audio_data.c to enable music playback");
+	LOG_INF("ℹ Add test_audio.c to enable music playback");
 #endif
 
 	LOG_INF("");

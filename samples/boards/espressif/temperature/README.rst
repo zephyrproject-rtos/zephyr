@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: aht30-esp32s3-box3
+.. zephyr:code-sample:: aht30_temperature_humidity
    :name: AHT30 Temperature and Humidity Sensor
    :relevant-api: sensor_interface
 
@@ -8,49 +8,62 @@ Overview
 ********
 
 This sample demonstrates how to read temperature and humidity data from the
-AHT30 sensor that comes with the ESP32-S3 Box 3 sensor accessories dock.
+AHT30 sensor using Zephyr's sensor API. The AHT30 is a high-precision digital
+temperature and humidity sensor that communicates via I2C interface.
 
-The AHT30 sensor is connected via I2C0 interface:
-- **I2C Address**: 0x38
-- **SDA Pin**: GPIO 41
-- **SCL Pin**: GPIO 40
+The application continuously reads sensor data every 5 seconds and displays:
+- Temperature in degrees Celsius (°C) with 0.01°C resolution
+- Relative humidity as percentage (%RH) with 0.01%RH resolution
+- Raw sensor values for debugging purposes
 
-The application reads sensor data every 5 seconds and displays:
-- Temperature in degrees Celsius (°C)
-- Relative humidity as percentage (%RH)
-- Raw sensor values for debugging
+The sample showcases proper sensor initialization, data fetching, and value
+conversion using Zephyr's standardized sensor framework.
 
-Hardware Requirements
-*********************
+Requirements
+************
 
-- ESP32-S3 Box 3 board
-- ESP32-S3 Box 3 sensor accessories dock (with AHT30 sensor)
-- USB cable for programming and power
+* ESP32-S3 Box 3 board
+* ESP32-S3 Box 3 sensor accessories dock (with AHT30 sensor)
+* USB cable for programming and power
 
-Sensor Specifications
-*********************
+Wiring
+******
 
-**AHT30 Sensor Features:**
-- Temperature range: -40°C to +85°C
-- Temperature accuracy: ±0.3°C (typical)
-- Humidity range: 0% to 100% RH
-- Humidity accuracy: ±2% RH (typical)
-- I2C interface with 3.3V supply
-- Low power consumption
+The AHT30 sensor comes pre-wired on the ESP32-S3 Box 3 sensor accessories dock:
+
+.. list-table::
+   :header-rows: 1
+
+   * - AHT30 Pin
+     - ESP32S3 Box3 Pin
+     - Description
+   * - VCC
+     - 3.3V
+     - Power supply
+   * - GND
+     - Ground
+     - Ground connection
+   * - SDA
+     - GPIO41
+     - I2C1 data line
+   * - SCL
+     - GPIO40
+     - I2C1 clock line
 
 Building and Running
 ********************
 
-Build and flash the sample:
+Build and flash the sample for ESP32S3 Box3:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensor/aht30_esp32s3_box3
+   :zephyr-app: samples/boards/espressif/temperature
    :board: esp32s3_box3/esp32s3/procpu
    :goals: build flash monitor
-   :compact:
 
 Sample Output
 *************
+
+The sample will continuously output sensor readings:
 
 .. code-block:: console
 
@@ -67,27 +80,33 @@ Sample Output
    =============================
 
    [00:00:02.125,000] <inf> aht30_sensor: Temperature: 23.45°C, Humidity: 45.67%RH
-   === AHT30 Sensor Reading ===
-   Temperature: 23.48 °C
-   Humidity: 45.71 %RH
-   Raw values - Temp: 23.480000, Humidity: 45.710000
-   =============================
+
+Configuration
+*************
+
+The sensor is configured via device tree in the board definition:
+
+.. code-block:: devicetree
+
+   &i2c1 {
+       aht30: aht30@38 {
+           compatible = "aosong,aht20";
+           reg = <0x38>;
+           status = "okay";
+       };
+   };
 
 Troubleshooting
 ***************
 
-If the sensor doesn't work:
+Common issues and solutions:
 
-1. **Check Hardware Connection**: Ensure the sensor accessories dock is properly connected
-2. **Verify I2C Address**: The AHT30 should appear at address 0x38 on I2C0
-3. **Check Power**: Ensure the sensor dock is receiving 3.3V power
-4. **I2C Bus Issues**: Check for proper pull-up resistors on SDA/SCL lines
-5. **Device Tree**: Verify the sensor is enabled in the device tree
+* **"AHT30 sensor device not ready"**: Check hardware connection and ensure sensor dock is properly connected
+* **"Failed to fetch sensor data"**: Verify I2C communication and check for proper pull-up resistors
+* **Unstable readings**: Allow sensor to stabilize for 2-3 minutes after power-on
 
-**Common Error Messages:**
-- "AHT30 sensor device not ready" - Hardware connection issue
-- "Failed to fetch sensor data" - I2C communication problem
-- "Failed to get temperature/humidity" - Sensor reading error
+References
+**********
 
-The sensor readings should be stable and update every 5 seconds with current
-environmental conditions.
+* `AHT30 Datasheet <https://server4.eca.ir/eshop/AHT30/Aosong_AHT30_en_draft_0c.pdf>`_
+* :ref:`sensor_api`

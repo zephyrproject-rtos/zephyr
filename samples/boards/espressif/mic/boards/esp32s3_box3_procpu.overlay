@@ -1,6 +1,7 @@
 /*
- * Device tree overlay for ESP32-S3-BOX-3 mic sample
- * Increases storage partition size for audio recording
+ * Copyright (c) 2026 NotioNext LTD.
+ *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 &flash0 {

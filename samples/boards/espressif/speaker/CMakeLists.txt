@@ -19,3 +19,10 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Hi_audio_data.c)
     target_sources(app PRIVATE Hi_audio_data.c)
     target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
+
+# Add test audio data if the file exists
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test_audio.c)
+    target_sources(app PRIVATE test_audio.c)
+    target_compile_definitions(app PRIVATE TEST_AUDIO_AVAILABLE=1)
+    target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+endif()

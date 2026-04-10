@@ -6,10 +6,10 @@ project(esp32s3_box3_demo)
 
 target_sources(app PRIVATE src/main.c)
 
-# Add Canon audio data if the file exists
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Canon_audio_data.c)
-    target_sources(app PRIVATE Canon_audio_data.c)
-    target_compile_definitions(app PRIVATE CANON_AUDIO_AVAILABLE=1)
+# Add test audio data if the file exists
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/test_audio.c)
+    target_sources(app PRIVATE test_audio.c)
+    target_compile_definitions(app PRIVATE TEST_AUDIO_AVAILABLE=1)
     target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
