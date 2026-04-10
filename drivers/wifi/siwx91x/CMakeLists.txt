@@ -3,6 +3,7 @@
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X
   siwx91x_wifi.c
+  siwx91x_wifi_ap.c
   siwx91x_wifi_data.c
   siwx91x_wifi_ps.c
   siwx91x_wifi_sta.c
