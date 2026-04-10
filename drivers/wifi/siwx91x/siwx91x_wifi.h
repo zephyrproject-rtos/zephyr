@@ -20,6 +20,12 @@ struct siwx91x_wifi_data {
 	struct net_if *iface;
 	struct siwx91x_nwp_wifi_cb nwp_ops;
 	scan_result_cb_t zephyr_scan_cb;
+
+	bool ps_enabled;
+	unsigned int ps_timeout_ms;
+	unsigned short ps_listen_interval;
+	enum wifi_ps_exit_strategy ps_exit_strategy;
+	enum wifi_ps_wakeup_mode ps_wakeup_mode;
 };
 
 #endif

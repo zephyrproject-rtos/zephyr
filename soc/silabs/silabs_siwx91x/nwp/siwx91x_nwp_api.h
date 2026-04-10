@@ -47,6 +47,10 @@ int siwx91x_nwp_scan(const struct device *dev, uint16_t channel_list, const char
 int siwx91x_nwp_join(const struct device *dev, const char *ssid,
 		     const uint8_t *bssid, int security_type);
 int siwx91x_nwp_disconnect(const struct device *dev);
+void siwx91x_nwp_get_bss_info(const struct device *dev, sl_wifi_operational_statistics_t *info);
+void siwx91x_nwp_ps_disable(const struct device *dev);
+void siwx91x_nwp_ps_enable(const struct device *dev, sli_wifi_power_save_request_t *params);
+void siwx91x_nwp_twt_params(const struct device *dev, sl_wifi_twt_request_t *params);
 void siwx91x_nwp_set_region_sta(const struct device *dev, sl_wifi_region_code_t region_code);
 void siwx91x_nwp_set_psk(const struct device *dev, const char *psk);
 void siwx91x_nwp_set_sta_config(const struct device *dev);

@@ -10,6 +10,7 @@
 #include "siwx91x_nwp_api.h"
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_data.h"
+#include "siwx91x_wifi_ps.h"
 #include "siwx91x_wifi_sta.h"
 #include "siwx91x_wifi_scan.h"
 
@@ -82,6 +83,9 @@ static const struct wifi_mgmt_ops siwx91x_wifi_mgmt = {
 	.scan = siwx91x_wifi_scan,
 	.connect = siwx91x_wifi_connect,
 	.disconnect = siwx91x_wifi_disconnect,
+	.set_twt = siwx91x_wifi_set_twt,
+	.set_power_save	= siwx91x_wifi_set_power_save,
+	.get_power_save_config = siwx91x_wifi_get_power_save_config,
 };
 
 static const struct net_wifi_mgmt_offload siwx91x_wifi_api = {
@@ -100,6 +104,8 @@ static const struct siwx91x_wifi_config siwx91x_wifi_config = {
 static struct siwx91x_wifi_data siwx91x_wifi_data = {
 	.nwp_ops.on_scan_results = siwx91x_wifi_on_scan_results,
 	.nwp_ops.on_rx = siwx91x_wifi_on_rx,
+	.ps_exit_strategy = WIFI_PS_EXIT_EVERY_TIM,
+	.ps_wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM,
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0, siwx91x_wifi_init, NULL, &siwx91x_wifi_data, &siwx91x_wifi_config,
