@@ -4558,9 +4558,9 @@ POSIX API layer:
     - ycsin
   files:
     - include/zephyr/posix/
-    - lib/posix/
-    - tests/posix/
-    - samples/posix/
+    - subsys/portability/posix/
+    - tests/subsys/portability/posix/
+    - samples/subsys/portability/posix/
     - tests/lib/fdtable/
     - doc/services/portability/posix/
   labels:
