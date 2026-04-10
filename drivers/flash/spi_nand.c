@@ -156,15 +156,9 @@ static int spi_nand_access(const struct device *const dev, uint8_t opcode, unsig
 {
 	bool is_addressed = (access & NAND_ACCESS_ADDRESSED) != 0U;
 	bool is_write = (access & NAND_ACCESS_WRITE) != 0U;
-	uint8_t buf[5] = {0};
+	uint8_t buf[6] = {0};
 	uint8_t address_len;
-	struct spi_buf spi_buf[2] = {
-		{
-			.buf = buf,
-			.len = 1,
-		},
-		{.buf = data, .len = length},
-	};
+	size_t tx_len = 1;
 
 	buf[0] = opcode;
 	if (is_addressed) {
@@ -187,21 +181,31 @@ static int spi_nand_access(const struct device *const dev, uint8_t opcode, unsig
 			address_len = 0;
 		}
 		memcpy(&buf[1], &addr32.u8[4 - address_len], address_len);
-		spi_buf[0].len += address_len;
+		tx_len += address_len;
 	}
 
 	if (access & NAND_ACCESS_DUMMY_BYTE) {
-		spi_buf[0].len += 1;
+		tx_len += 1;
 	}
 
+	const struct spi_buf tx_buf[2] = {
+		{.buf = buf, .len = tx_len},
+		{.buf = (!is_write ? NULL : data), .len = length},
+	};
+
+	const struct spi_buf rx_buf[2] = {
+		{.buf = NULL, .len = tx_len},
+		{.buf = data, .len = length},
+	};
+
 	const struct spi_buf_set tx_set = {
-		.buffers = spi_buf,
+		.buffers = tx_buf,
 		/* Non zero length means that data follows opcode, so there are two buffers to tx */
 		.count = (length != 0) ? 2 : 1,
 	};
 
 	const struct spi_buf_set rx_set = {
-		.buffers = spi_buf,
+		.buffers = rx_buf,
 		.count = 2,
 	};
 
@@ -259,6 +263,7 @@ static int spi_nand_get_feature(const struct device *dev, uint8_t reg, uint8_t *
 	struct spi_nand_feature_frame out = {
 		.command = SPI_NAND_CMD_GET_FEATURE,
 		.address = reg,
+		.data = 0,
 	};
 	struct spi_nand_feature_frame in;
 	int ret;
