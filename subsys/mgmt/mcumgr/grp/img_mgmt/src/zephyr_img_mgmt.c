@@ -547,6 +547,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 	const struct device *dev;
 	struct flash_pages_info page;
 	off_t page_offset;
+	size_t img_offset;
 	size_t erase_size;
 
 	if (off != 0) {
@@ -577,9 +578,9 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 		goto end_fa;
 	}
 
+	img_offset = boot_get_image_start_offset(g_img_mgmt_state.area_id);
 	erase_size = page.start_offset + page.size - fa->fa_off;
-	rc = flash_area_flatten(fa, boot_get_image_start_offset(g_img_mgmt_state.area_id),
-				erase_size);
+	rc = flash_area_flatten(fa, img_offset, erase_size - img_offset);
 
 	if (rc != 0) {
 		LOG_ERR("image slot erase of 0x%zx bytes failed (err %d)", erase_size,
