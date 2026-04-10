@@ -11,6 +11,8 @@
 #include <zephyr/drivers/can/transceiver.h>
 #include "r_can_api.h"
 #include "r_canfd.h"
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 LOG_MODULE_REGISTER(can_renesas_ra, CONFIG_CAN_LOG_LEVEL);
 
@@ -189,6 +191,20 @@ extern void canfd_error_isr(void);
 extern void canfd_rx_fifo_isr(void);
 extern void canfd_common_fifo_rx_isr(void);
 extern void canfd_channel_tx_isr(void);
+
+static inline void can_renesas_ra_pm_policy_state_lock_get(const struct device *dev)
+{
+#ifndef CONFIG_PM_DEVICE
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+}
+
+static inline void can_renesas_ra_pm_policy_state_lock_put(const struct device *dev)
+{
+#ifndef CONFIG_PM_DEVICE
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+}
 
 static inline int set_hw_timing_configuration(const struct device *dev,
 					      can_bit_timing_cfg_t *f_timing,
@@ -476,6 +492,8 @@ static int can_renesas_ra_start(const struct device *dev)
 	}
 
 	data->common.started = true;
+	can_renesas_ra_pm_policy_state_lock_get(dev);
+
 end:
 	k_mutex_unlock(&data->inst_mutex);
 	return ret;
@@ -513,6 +531,7 @@ static int can_renesas_ra_stop(const struct device *dev)
 	}
 
 	data->common.started = false;
+	can_renesas_ra_pm_policy_state_lock_put(dev);
 
 end:
 	k_mutex_unlock(&data->inst_mutex);
@@ -1014,6 +1033,89 @@ static int can_renesas_ra_global_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int can_renesas_ra_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct can_renesas_ra_data *data = dev->data;
+	const struct can_renesas_ra_cfg *cfg = dev->config;
+	const can_api_t *can_api = data->fsp_can.p_api;
+	fsp_err_t fsp_err;
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+	{
+		k_mutex_lock(&data->inst_mutex, K_FOREVER);
+
+		/* Do not allow suspend while controller is started */
+		if (data->common.started) {
+			ret = -EBUSY;
+		} else {
+			/* Do not allow suspend while any RX filter is configured */
+			for (uint32_t i = 0; i < cfg->rx_filter_num; i++) {
+				if (data->rx_filter[i].set) {
+					ret = -EBUSY;
+					break;
+				}
+			}
+		}
+
+		k_mutex_unlock(&data->inst_mutex);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		/*
+		 * Enter low-power state according to RA8P1 manual R01UH1064EJ0120
+		 * section 42.10.1 "Enter Software Standby Mode"
+		 */
+
+		/* Set global halt mode request */
+		fsp_err = can_api->modeTransition(data->fsp_can.p_ctrl,
+					  CAN_OPERATION_MODE_GLOBAL_HALT,
+					  data->common.mode);
+
+		__ASSERT(fsp_err == FSP_SUCCESS, "Failed to set CAN module to low power mode");
+		/* Set the global reset mode request */
+		fsp_err = can_api->modeTransition(data->fsp_can.p_ctrl,
+					  CAN_OPERATION_MODE_GLOBAL_RESET,
+					  data->common.mode);
+		__ASSERT(fsp_err == FSP_SUCCESS, "Failed to reset CAN module for low power mode");
+		/* Set the global sleep mode request */
+		fsp_err = can_api->modeTransition(data->fsp_can.p_ctrl,
+					  CAN_OPERATION_MODE_GLOBAL_SLEEP,
+					  data->common.mode);
+		__ASSERT(fsp_err == FSP_SUCCESS, "Failed to set CAN module to low power mode");
+
+		/* Read the CFDGLOCKK register */
+		volatile uint32_t tmp = data->fsp_canfd_ctrl.p_reg->CFDGLOCKK;
+
+		ARG_UNUSED(tmp);
+		break;
+	}
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * After the MCU returns from Software Standby, the CANFD module
+		 * behaves as after a hardware reset. The RA8P1 manual R01UH1064EJ0120
+		 * (section 42.10.2 "Return from Software Standby Mode") requires a
+		 * full re-initialization sequence before communication resumes.
+		 *
+		 * This driver performs that sequence inside R_CANFD_Open(), which is
+		 * called from can_renesas_ra_start() before the controller is started
+		 * again. We also disallow PM_DEVICE_ACTION_SUSPEND while the
+		 * controller is started or while any RX filters are configured, so
+		 * there is no additional hardware work needed on RESUME.
+		 */
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 static DEVICE_API(can, can_renesas_ra_driver_api) = {
 	.get_capabilities = can_renesas_ra_get_capabilities,
 	.start = can_renesas_ra_start,
@@ -1165,7 +1267,10 @@ DT_FOREACH_STATUS_OKAY(renesas_ra_canfd_global, CAN_RENESAS_RA_GLOBAL_DEFINE)
 			},                                                                         \
 		.rx_filter = can_renesas_ra_rx_filter##index,                                      \
 	};                                                                                         \
-	CAN_DEVICE_DT_INST_DEFINE(index, can_renesas_ra_init, NULL, &can_renesas_ra_data##index,   \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(index, can_renesas_ra_pm_action);                                 \
+	CAN_DEVICE_DT_INST_DEFINE(index, can_renesas_ra_init, PM_DEVICE_DT_INST_GET(index),        \
+				  &can_renesas_ra_data##index,                                     \
 				  &can_renesas_ra_cfg##index, POST_KERNEL,                         \
 				  CONFIG_CAN_INIT_PRIORITY, &can_renesas_ra_driver_api);
 
