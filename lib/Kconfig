@@ -21,8 +21,6 @@ source "lib/net_buf/Kconfig"
 
 source "lib/os/Kconfig"
 
-source "lib/posix/Kconfig"
-
 source "lib/smf/Kconfig"
 
 source "lib/acpi/Kconfig"

@@ -82,7 +82,7 @@ config WIFI_NM_WPA_SUPPLICANT_PRIO
 	int "Thread priority of wpa_supplicant"
 	default 0
 
-# Currently we default ZVFS_OPEN_MAX to 16 in lib/posix/Kconfig
+# Currently we default ZVFS_OPEN_MAX to 16 in subsys/portability/posix/Kconfig
 # l2_packet - 1
 # ctrl_iface - 2 * socketpairs = 4(local and global)
 # z_wpa_event_sock - 1 socketpair = 2
