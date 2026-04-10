@@ -235,10 +235,6 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
   )
 endif() # CONFIG_WIFI_SILABS_SIWX91X
 
-zephyr_compile_definitions_ifdef(CONFIG_SILABS_SIWX91X_NWP
-  SL_WIFI_COMPONENT_INCLUDED # Depite de the name, required to properly mange the NWP clocks
-)
-
 zephyr_library_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE
   ${WISECONNECT}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
 )
@@ -277,6 +273,7 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
     SL_SI91X_TICKLESS_MODE
     SL_SLEEP_TIMER
     SLI_WIRELESS_COMPONENT_PRESENT
+    SL_WIFI_COMPONENT_INCLUDED
   )
   zephyr_code_relocate(FILES
     ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/rsi_deepsleep_soc.c
