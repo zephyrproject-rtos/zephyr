@@ -1135,7 +1135,7 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 		goto drop;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
 	net_stats_update_ipv6_nd_sent(iface);
 
 	return 0;
@@ -2063,7 +2063,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 	net_ipv6_nbr_unlock();
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
 	net_stats_update_ipv6_nd_sent(iface);
 
 	return 0;
@@ -2135,7 +2135,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 		goto drop;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
 	net_stats_update_ipv6_nd_sent(iface);
 
 	return 0;
