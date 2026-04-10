@@ -404,4 +404,36 @@ config GEN_UICR_POLICY_MPCCONF_STAGE_VALUE
 	default 0x1730C77F if GEN_UICR_POLICY_MPCCONF_STAGE_NORMAL
 	default 0
 
+config GEN_UICR_SNAPSHOT_REGIONS
+	bool "UICR.SNAPSHOT.REGIONS"
+	depends on SOC_SERIES_NRF54H
+	help
+	  When enabled, the UICR generator will configure the snapshot regions
+	  specified in Kconfig.
+
+if GEN_UICR_SNAPSHOT_REGIONS
+
+index = 0
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 1
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 2
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 3
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 4
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 5
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 6
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+endif # GEN_UICR_SNAPSHOT_REGIONS
+
 endmenu
