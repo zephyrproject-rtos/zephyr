@@ -73,6 +73,8 @@ extern "C" {
 
 /** Disable i3c_bus_init during driver initialization */
 #define I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT		BIT(0)
+/** Disable Hot-Join ACK during driver initialization */
+#define I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT		BIT(1)
 
 /** @} */
 
@@ -82,7 +84,9 @@ extern "C" {
  */
 #define I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(inst)					\
 	(FIELD_PREP(I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT,				\
-		    DT_INST_PROP(inst, disable_bus_init)))
+		    DT_INST_PROP(inst, disable_bus_init)) |				\
+	 FIELD_PREP(I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT,				\
+		    DT_INST_PROP(inst, disable_hj_at_init)))
 
 /**
  * @brief Structure initializer for i3c_device_desc from devicetree
