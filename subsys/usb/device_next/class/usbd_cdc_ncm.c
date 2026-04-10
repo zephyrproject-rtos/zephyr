@@ -840,11 +840,13 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
 
 	if (data_iface == iface && alternate == 0) {
 		atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
+		atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
 		data->tx_seq = 0;
 		data->rx_seq = 0;
 	}
 
 	if (data_iface == iface && alternate == 1) {
+		k_sem_reset(&data->sync_sem);
 		atomic_set_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
 		data->if_state = IF_STATE_INIT;
 		(void)k_work_reschedule(&data->notif_work, K_MSEC(100));
@@ -867,6 +869,9 @@ static void usbd_cdc_ncm_disable(struct usbd_class_data *const c_data)
 
 	atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
 	atomic_clear_bit(&data->state, CDC_NCM_CLASS_SUSPENDED);
+	atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
+	k_sem_give(&data->sync_sem);
+	data->if_state = IF_STATE_INIT;
 
 	LOG_INF("Disabled %s", c_data->name);
 }
