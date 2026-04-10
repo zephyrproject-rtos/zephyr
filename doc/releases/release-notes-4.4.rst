@@ -1707,13 +1707,33 @@ New Samples
   Same as above, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
 
-DeviceTree
+Devicetree
 **********
 
 * Migration guide: :ref:`migration_4.4_devicetree`
+
+* New macros for reg property iteration (:github:`104223`)
+
+  * :c:macro:`DT_FOREACH_REG`
+  * :c:macro:`DT_FOREACH_REG_SEP`
+  * :c:macro:`DT_FOREACH_REG_VARGS`
+  * :c:macro:`DT_FOREACH_REG_SEP_VARGS`
+  * Instance number based variants of each, e.g. :c:macro:`DT_INST_FOREACH_REG`
+
+* Definitions for ``*-map`` related properties (:github:`87595`)
+  provide first-class support for nexus nodes and specifier mappings.
+  See Devicetree Specification v0.4 section 2.5 for more details
+  on these properties.
+
+* New :dtcompatible:`zephyr,mapped-partition` binding and associated
+  APIs for memory-mapped flash partitions. This is a successor to the
+  existing :dtcompatible:`fixed-partitions` binding
+
 * Bindings are no longer allowed to specify any default values for the
   ``status``, ``#address-cells`` and ``#size-cells`` properties.
+
 * :c:macro:`DT_CHILD_BY_UNIT_ADDR_INT`
+
 * :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR_INT`
 
 Kconfig
