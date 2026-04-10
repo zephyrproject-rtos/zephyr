@@ -250,8 +250,10 @@ static int ltr55x_interrupt_set_register(const struct device *dev, bool als_enab
 
 	restore_active = LTR55X_REG_GET(ALS_CONTR, MODE, als_ctrl) != 0;
 	if (restore_active) {
-		rc = i2c_reg_update_byte_dt(bus, LTR55X_ALS_CONTR, LTR55X_ALS_CONTR_MODE_MASK,
-					    LTR55X_REG_SET(ALS_CONTR, MODE, LTR55X_ALS_CONTR_MODE_STAND_BY));
+		rc = i2c_reg_update_byte_dt(bus, LTR55X_ALS_CONTR,
+					    LTR55X_ALS_CONTR_MODE_MASK,
+					    LTR55X_REG_SET(ALS_CONTR, MODE,
+							   LTR55X_ALS_CONTR_MODE_STAND_BY));
 		if (rc < 0) {
 			return rc;
 		}
@@ -265,8 +267,10 @@ static int ltr55x_interrupt_set_register(const struct device *dev, bool als_enab
 		interrupt_cfg);
 
 	if (restore_active) {
-		int restore_rc = i2c_reg_update_byte_dt(bus, LTR55X_ALS_CONTR, LTR55X_ALS_CONTR_MODE_MASK,
-						       LTR55X_REG_SET(ALS_CONTR, MODE, LTR55X_ALS_CONTR_MODE_ACTIVE));
+		int restore_rc = i2c_reg_update_byte_dt(bus, LTR55X_ALS_CONTR,
+							LTR55X_ALS_CONTR_MODE_MASK,
+							LTR55X_REG_SET(ALS_CONTR, MODE,
+								       LTR55X_ALS_CONTR_MODE_ACTIVE));
 
 		if (restore_rc < 0 && rc == 0) {
 			rc = restore_rc;
@@ -384,8 +388,6 @@ static int ltr55x_trigger_set(const struct device *dev, const struct sensor_trig
 	const struct ltr55x_config *cfg = dev->config;
 	struct ltr55x_data *data = dev->data;
 	int rc;
-
-
 
 	if (cfg->int_gpio.port == NULL) {
 		return -ENOTSUP;
