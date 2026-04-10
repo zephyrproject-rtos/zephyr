@@ -25,7 +25,7 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
     ${UOSCORE_UEDHOC_SRC_DIR}/common/print_util.c
   )
 
-  zephyr_library_link_libraries(mbedTLS)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
 
   if(CONFIG_BUILD_WITH_TFM)
     zephyr_library_include_directories(
@@ -63,7 +63,7 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
       ${UOSCORE_UEDHOC_SRC_DIR}/cbor/oscore_info.c
     )
 
-    zephyr_library_link_libraries(mbedTLS)
+    zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
 
   endif() # CONFIG_UOSCORE
 
@@ -123,7 +123,7 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
       ${UOSCORE_UEDHOC_SRC_DIR}/cbor/edhoc_encode_th2.c
     )
 
-    zephyr_library_link_libraries(mbedTLS)
+    zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
 
   endif() # CONFIG_UEDHOC
 

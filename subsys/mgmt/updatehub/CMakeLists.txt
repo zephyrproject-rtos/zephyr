@@ -24,4 +24,4 @@ zephyr_include_directories(
   ${ZEPHYR_BASE}/subsys/mgmt/updatehub/include
 )
 
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
