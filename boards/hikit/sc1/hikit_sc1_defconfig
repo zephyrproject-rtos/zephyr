@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# board-level MAC from EEPROM NVMEM cell
+CONFIG_NVMEM=y
+CONFIG_NVMEM_EEPROM=y
+CONFIG_EEPROM_AT2X_INIT_PRIORITY=55
+
+# console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable thread info in debug logs
+CONFIG_DEBUG_THREAD_INFO=y 

@@ -631,7 +631,16 @@ static int w5500_init(const struct device *dev)
 		return err;
 	}
 
-	(void)net_eth_mac_load(&config->mac_cfg, ctx->mac_addr);
+	err = net_eth_mac_load(&config->mac_cfg, ctx->mac_addr);
+	if ((err < 0) || !net_eth_is_addr_valid((struct net_eth_addr *)ctx->mac_addr)) {
+		LOG_WRN("Failed to load valid MAC from DT/NVMEM (%d), generating random MAC", err);
+		gen_random_mac(ctx->mac_addr, WIZNET_OUI_B0, WIZNET_OUI_B1, WIZNET_OUI_B2);
+	}
+
+	LOG_INF("%s MAC: %02x:%02x:%02x:%02x:%02x:%02x",
+		dev->name,
+		ctx->mac_addr[0], ctx->mac_addr[1], ctx->mac_addr[2],
+		ctx->mac_addr[3], ctx->mac_addr[4], ctx->mac_addr[5]);
 	w5500_set_macaddr(dev);
 	w5500_memory_configure(dev);
 
