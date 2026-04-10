@@ -112,16 +112,6 @@ zephyr_library_sources_ifdef(CONFIG_ADC_SILABS_SIWX91X
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_adc.c
 )
 
-zephyr_compile_definitions_ifdef(CONFIG_BT_SILABS_SIWX91X
-  SLI_SI91X_ENABLE_BLE
-)
-zephyr_library_sources_ifdef(CONFIG_BT_SILABS_SIWX91X
-  ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/rsi_bt_ble.c
-  ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/rsi_common_apis.c
-  ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/rsi_utils.c
-  ${WISECONNECT}/components/device/silabs/si91x/wireless/ble/src/sl_si91x_ble.c
-)
-
 # FIXME: Replace sli_si91x_clock_manager.c by native Zephyr access to the clocks
 if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
   zephyr_compile_definitions(

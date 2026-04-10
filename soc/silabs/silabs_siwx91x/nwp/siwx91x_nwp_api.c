@@ -41,6 +41,7 @@ static uint32_t siwx91x_nwp_send_cmd(const struct device *dev,
 	uint32_t status;
 
 	__ASSERT(!(flags & SIWX91X_FRAME_FLAG_ASYNC), "Invalid call");
+	__ASSERT(!(flags & SIWX91X_FRAME_FLAG_NO_HDR_RESET), "Invalid call");
 	net_buf_frag_add(desc_container, net_buf_ref(data_container));
 	net_buf_unref(data_container);
 
@@ -68,6 +69,7 @@ static uint32_t siwx91x_nwp_send_cmd2(const struct device *dev,
 	uint32_t status;
 
 	__ASSERT(!(flags & SIWX91X_FRAME_FLAG_ASYNC), "Invalid call");
+	__ASSERT(!(flags & SIWX91X_FRAME_FLAG_NO_HDR_RESET), "Invalid call");
 	net_buf_frag_add(desc_container, net_buf_ref(data1_container));
 	net_buf_frag_add(desc_container, net_buf_ref(data2_container));
 	net_buf_unref(data1_container);

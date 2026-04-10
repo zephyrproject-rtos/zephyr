@@ -305,6 +305,10 @@ static void siwx91x_nwp_handle_tx(const struct device *dev, struct siwx91x_nwp_c
 					sizeof(struct siwx91x_frame_desc);
 	}
 	data->tx_desc[1].length = len - sizeof(struct siwx91x_frame_desc);
+	if (flags & SIWX91X_FRAME_FLAG_SHIFT_PAYLOAD_1_BYTE) {
+		data->tx_desc[1].addr += 1;
+		data->tx_desc[1].length -= 1;
+	}
 	LOG_HEXDUMP_DBG(data->tx_desc[0].addr, data->tx_desc[0].length, "nwp tx:");
 	LOG_HEXDUMP_DBG(data->tx_desc[1].addr, MIN(data->tx_desc[1].length, 128), "...");
 	data->tx_desc[0].addr += SIWX91X_NWP_MEMORY_OFFSET_ADDRESS;
@@ -518,7 +522,12 @@ struct net_buf *siwx91x_nwp_send_frame(const struct device *dev, struct net_buf 
 		LOG_DBG("Fragmented frame");
 	}
 
-	memset(desc, 0, sizeof(struct siwx91x_frame_desc));
+	if (!(flags & SIWX91X_FRAME_FLAG_NO_HDR_RESET)) {
+		memset(desc, 0, sizeof(struct siwx91x_frame_desc));
+	}
+	if (flags & SIWX91X_FRAME_FLAG_SHIFT_PAYLOAD_1_BYTE) {
+		len -= 1;
+	}
 	desc->command = command;
 	desc->length_and_queue = FIELD_PREP(0x0FFF, len - sizeof(struct siwx91x_frame_desc));
 	desc->length_and_queue |= FIELD_PREP(0xF000, queue_id);
