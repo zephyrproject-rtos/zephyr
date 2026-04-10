@@ -85,6 +85,18 @@ static uint32_t siwx91x_nwp_send_cmd2(const struct device *dev,
 	return status ? (0x10000 | status) : 0;
 }
 
+/* NWP has a weird way to represent IPv6 addresses */
+static void siwx91x_nwp_convert_ipv6_format(void *out, const void *in)
+{
+	uint32_t *out32 = out;
+	const uint32_t *in32 = in;
+
+	for (int i = 0; i < 4; i++) {
+		out32[i] = __builtin_bswap32(in32[i]);
+	}
+}
+
+
 #define SCAN_FEATURE_QUICK_SCAN       BIT(0)
 #define SCAN_FEATURE_RESULTS_TO_HOST  BIT(1)
 #define SCAN_FEATURE_TX_POWER_MASK    0xF8
@@ -382,14 +394,323 @@ void siwx91x_nwp_set_ht_caps(const struct device *dev, bool enabled)
 	sli_wifi_request_ap_high_throughput_capability_t params = {
 		.mode_11n_enable = true,
 		.ht_caps_bitmap = SL_WIFI_HT_CAPS_NUM_RX_STBC |
-			SL_WIFI_HT_CAPS_SHORT_GI_20MHZ |
-			SL_WIFI_HT_CAPS_GREENFIELD_EN,
+				  SL_WIFI_HT_CAPS_SHORT_GI_20MHZ |
+				  SL_WIFI_HT_CAPS_GREENFIELD_EN,
 	};
 	uint32_t status;
 
 	__ASSERT(enabled == true, "Not supported");
 
 	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_HT_CAPABILITIES,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+int siwx91x_nwp_sock_config_ipv4(const struct device *dev, struct net_in_addr *addr,
+				  struct net_in_addr *mask, struct net_in_addr *gw)
+{
+	sli_si91x_req_ipv4_params_t params = {
+		.dhcp_mode = 1,
+	};
+	sli_si91x_rsp_ipv4_params_t *reply;
+	struct net_buf *reply_buf;
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WLAN_REQ_IPCONFV4,
+				      SLI_WLAN_MGMT_Q, 0, &reply_buf);
+	if (status) {
+		return -EIO;
+	}
+	__ASSERT(reply_buf, "Corrupted NWP reply");
+
+	reply = net_buf_pull(reply_buf, sizeof(struct siwx91x_frame_desc));
+	memcpy(gw, reply->gateway, sizeof(uint32_t));
+	memcpy(addr, reply->ipaddr, sizeof(uint32_t));
+	memcpy(mask, reply->netmask, sizeof(uint32_t));
+	return 0;
+}
+
+int siwx91x_nwp_sock_config_ipv6(const struct device *dev, struct net_in6_addr *lua,
+				 struct net_in6_addr *gua, int *prefix_len, struct net_in6_addr *gw)
+{
+	sli_si91x_req_ipv6_params_t params = {
+		.mode[0] = 1, /* SLAAC donfiguration */
+	};
+	sli_si91x_rsp_ipv6_params_t *reply;
+	struct net_buf *reply_buf;
+	uint32_t status;
+
+	LOG_WRN("IPv6 configuration is known to break NWP");
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WLAN_REQ_IPCONFV6,
+				      SLI_WLAN_MGMT_Q, 0, &reply_buf);
+	if (status) {
+		return -EIO;
+	}
+	__ASSERT(reply_buf, "Corrupted NWP reply");
+
+	reply = net_buf_pull(reply_buf, sizeof(struct siwx91x_frame_desc));
+	siwx91x_nwp_convert_ipv6_format(gua, reply->global_address);
+	siwx91x_nwp_convert_ipv6_format(lua, reply->link_local_address);
+	siwx91x_nwp_convert_ipv6_format(gw, reply->gateway_address);
+	*prefix_len = reply->prefixLength;
+	return 0;
+}
+
+/* Create a UDP server connecttion */
+int siwx91x_nwp_sock_bind(const struct device *dev, const struct net_sockaddr *remote)
+{
+	const struct net_sockaddr_in6 *remote6 = (const struct net_sockaddr_in6 *)remote;
+	const struct net_sockaddr_in *remote4 = (const struct net_sockaddr_in *)remote;
+	/* FIXME: Should we fill vap_id? */
+	sli_si91x_socket_create_request_t params = {
+		.socket_type = SLI_SI91X_SOCKET_UDP_CLIENT, /* For TCP, job is made by listen() */
+		.socket_bitmap = SLI_SI91X_SOCKET_FEAT_SYNCHRONOUS,
+	};
+	sli_si91x_socket_create_response_t *reply;
+	struct net_buf *reply_buf;
+	uint32_t status;
+	int newsockfd;
+
+	switch (remote->sa_family) {
+	case NET_AF_INET:
+		params.ip_version = SL_IPV4_ADDRESS_LENGTH;
+		params.local_port = net_ntohs(remote4->sin_port);
+		break;
+	case NET_AF_INET6:
+		params.ip_version = SL_IPV6_ADDRESS_LENGTH;
+		params.local_port = net_ntohs(remote6->sin6_port);
+		break;
+	default:
+		return -EAFNOSUPPORT;
+	}
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WLAN_REQ_SOCKET_CREATE,
+				      SLI_WLAN_MGMT_Q, 0, &reply_buf);
+	if (status) {
+		return -EIO;
+	}
+	__ASSERT(reply_buf, "Corrupted NWP reply");
+
+	reply = net_buf_pull(reply_buf, sizeof(struct siwx91x_frame_desc));
+	newsockfd = *(uint16_t *)reply->socket_id;
+	net_buf_unref(reply_buf);
+	return newsockfd;
+}
+
+/* Create a TCP server connecttion */
+int siwx91x_nwp_sock_listen(const struct device *dev,
+			    const struct net_sockaddr_ptr *local, int backlog)
+{
+	const struct net_sockaddr_in6_ptr *local6 = (const struct net_sockaddr_in6_ptr *)local;
+	const struct net_sockaddr_in_ptr *local4 = (const struct net_sockaddr_in_ptr *)local;
+	sli_si91x_socket_create_request_t params = {
+		.socket_type = SLI_SI91X_SOCKET_TCP_SERVER,
+		.socket_bitmap = SLI_SI91X_SOCKET_FEAT_SYNCHRONOUS |
+				 SLI_SI91X_SOCKET_FEAT_LTCP_ACCEPT |
+				 SLI_SI91X_SOCKET_FEAT_TCP_RX_WINDOW,
+		.tcp_keepalive_initial_time = SLI_DEFAULT_TCP_KEEP_ALIVE_TIME,
+		.rx_window_size = SLI_TCP_RX_WINDOW_SIZE,
+		.max_tcp_retries_count = SLI_MAX_TCP_RETRY_COUNT,
+		.max_count = backlog,
+	};
+	sli_si91x_socket_create_response_t *reply;
+	struct net_buf *reply_buf;
+	uint32_t status;
+	int newsockfd;
+
+	switch (local->family) {
+	case NET_AF_INET:
+		params.ip_version = SL_IPV4_ADDRESS_LENGTH;
+		params.remote_port = net_ntohs(local4->sin_port);
+		break;
+	case NET_AF_INET6:
+		params.ip_version = SL_IPV6_ADDRESS_LENGTH;
+		params.remote_port = net_ntohs(local6->sin6_port);
+		break;
+	default:
+		return -EAFNOSUPPORT;
+	}
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WLAN_REQ_SOCKET_CREATE,
+				      SLI_WLAN_MGMT_Q, 0, &reply_buf);
+	if (status) {
+		return -EIO;
+	}
+	__ASSERT(reply_buf, "Corrupted NWP reply");
+
+	reply = net_buf_pull(reply_buf, sizeof(struct siwx91x_frame_desc));
+	newsockfd = *(uint16_t *)reply->socket_id;
+	net_buf_unref(reply_buf);
+	return newsockfd;
+}
+
+/* Create a client connection */
+int siwx91x_nwp_sock_connect(const struct device *dev,
+			     int socktype, const struct net_sockaddr *remote)
+{
+	const struct net_sockaddr_in6 *remote6 = (const struct net_sockaddr_in6 *)remote;
+	const struct net_sockaddr_in *remote4 = (const struct net_sockaddr_in *)remote;
+	sli_si91x_socket_create_request_t params = {
+		.socket_bitmap = SLI_SI91X_SOCKET_FEAT_SYNCHRONOUS,
+		.tcp_keepalive_initial_time = SLI_DEFAULT_TCP_KEEP_ALIVE_TIME,
+		.rx_window_size = SLI_TCP_RX_WINDOW_SIZE,
+		.max_tcp_retries_count = SLI_MAX_TCP_RETRY_COUNT,
+	};
+	sli_si91x_socket_create_response_t *reply;
+	struct net_buf *reply_buf;
+	uint32_t status;
+	int newsockfd;
+
+	switch (socktype) {
+	case NET_SOCK_DGRAM:
+		params.socket_type = SLI_SI91X_SOCKET_UDP_CLIENT;
+		break;
+	case NET_SOCK_STREAM:
+		params.socket_type = SLI_SI91X_SOCKET_TCP_CLIENT;
+		break;
+	default:
+		return -EAFNOSUPPORT;
+	}
+
+	switch (remote->sa_family) {
+	case NET_AF_INET:
+		params.ip_version = SL_IPV4_ADDRESS_LENGTH;
+		params.remote_port = net_ntohs(remote4->sin_port);
+		memcpy(&params.dest_ip_addr, &remote4->sin_addr, sizeof(remote4->sin_addr));
+		break;
+	case NET_AF_INET6:
+		params.ip_version = SL_IPV6_ADDRESS_LENGTH;
+		params.remote_port = net_ntohs(remote6->sin6_port);
+		siwx91x_nwp_convert_ipv6_format(&params.dest_ip_addr, &remote6->sin6_addr);
+		break;
+	default:
+		return -EAFNOSUPPORT;
+	}
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WLAN_REQ_SOCKET_CREATE,
+				      SLI_WLAN_MGMT_Q, 0, &reply_buf);
+	if (status) {
+		return -EIO;
+	}
+	__ASSERT(reply_buf, "Corrupted NWP reply");
+
+	reply = net_buf_pull(reply_buf, sizeof(struct siwx91x_frame_desc));
+	newsockfd = *(uint16_t *)reply->socket_id;
+	net_buf_unref(reply_buf);
+	return newsockfd;
+}
+
+int siwx91x_nwp_sock_accept(const struct device *dev, int sockfd,
+			    const struct net_sockaddr_ptr *local, struct net_sockaddr *remote)
+{
+	const struct net_sockaddr_in6_ptr *local6 = (const struct net_sockaddr_in6_ptr *)local;
+	const struct net_sockaddr_in_ptr *local4 = (const struct net_sockaddr_in_ptr *)local;
+	struct net_sockaddr_in6 *remote6 = (struct net_sockaddr_in6 *)remote;
+	struct net_sockaddr_in *remote4 = (struct net_sockaddr_in *)remote;
+	/* FIXME: Check the TCP option are passed to the accepted socket */
+	sli_si91x_socket_accept_request_t params = {
+		.socket_id = sockfd,
+	};
+	sli_si91x_rsp_ltcp_est_t *reply;
+	struct net_buf *reply_buf;
+	uint32_t status;
+	int newsockfd;
+
+	/* FIXME: Why NWP need that infomaiton? */
+	switch (local->family) {
+	case NET_AF_INET:
+		params.source_port = net_ntohs(local4->sin_port);
+		break;
+	case NET_AF_INET6:
+		params.source_port = net_ntohs(local6->sin6_port);
+		break;
+	default:
+		return -EAFNOSUPPORT;
+	}
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WLAN_REQ_SOCKET_ACCEPT,
+				      SLI_WLAN_MGMT_Q, 0, &reply_buf);
+	if (status) {
+		return -EIO;
+	}
+	__ASSERT(reply_buf, "Corrupted NWP reply");
+
+	reply = net_buf_pull(reply_buf, sizeof(struct siwx91x_frame_desc));
+	newsockfd = reply->socket_id;
+	if (!remote) {
+		goto end;
+	}
+	switch (reply->ip_version) {
+	case SL_IPV4_ADDRESS_LENGTH:
+		remote->sa_family = NET_AF_INET;
+		remote4->sin_port = net_ntohs(reply->dest_port);
+		memcpy(&remote4->sin_addr, &reply->dest_ip_addr, sizeof(remote4->sin_addr));
+		break;
+	case SL_IPV6_ADDRESS_LENGTH:
+		remote->sa_family = NET_AF_INET6;
+		remote6->sin6_port = net_ntohs(reply->dest_port);
+		siwx91x_nwp_convert_ipv6_format(&remote6->sin6_addr, &reply->dest_ip_addr);
+	default:
+		__ASSERT(0, "Corrupted frame");
+	}
+end:
+	net_buf_unref(reply_buf);
+	return newsockfd;
+}
+
+int siwx91x_nwp_sock_close(const struct device *dev, int sockfd)
+{
+	sli_si91x_socket_close_request_t params = {
+		.socket_id = sockfd,
+		/* FIXME: what is the purpose of field port_number? */
+		.port_number = 0,
+	};
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WLAN_REQ_SOCKET_CLOSE,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	return status ? -EIO : 0;
+}
+
+int siwx91x_nwp_sock_recv(const struct device *dev, int sockfd, struct net_buf **reply_buf)
+{
+	sli_si91x_req_socket_read_t params = {
+		.socket_id = sockfd,
+	};
+	/* struct is identical for recv and send */
+	sli_si91x_socket_send_request_t *reply;
+	uint32_t status;
+
+	__ASSERT(reply_buf, "Invalid call");
+	sys_put_be32(NET_ETH_MTU, params.requested_bytes);
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WLAN_REQ_SOCKET_READ_DATA,
+				      SLI_WLAN_MGMT_Q, 0, reply_buf);
+	if (status) {
+		return -EIO;
+	}
+	__ASSERT(*reply_buf, "Corrupted NWP reply");
+
+	reply = net_buf_pull(*reply_buf, sizeof(struct siwx91x_frame_desc));
+	net_buf_pull(*reply_buf, reply->data_offset);
+	return 0;
+}
+
+void siwx91x_nwp_sock_select(const struct device *dev, int select_id,
+			     uint32_t read_fds, uint32_t write_fds)
+{
+	sli_si91x_socket_select_req_t params = {
+		.select_id = select_id,
+		.no_timeout = 1,
+		.read_fds.fd_array[0] = read_fds,
+		.write_fds.fd_array[0] = write_fds,
+		.num_fd = 32 - MIN(u32_count_leading_zeros(read_fds),
+				   u32_count_leading_zeros(write_fds)),
+	};
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WLAN_REQ_SELECT_REQUEST,
 				      SLI_WLAN_MGMT_Q, 0, NULL);
 	__ASSERT(!status, "Corrupted NWP reply");
 }
