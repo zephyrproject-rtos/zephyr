@@ -373,10 +373,12 @@ static void usbd_cdc_ecm_update(struct usbd_class_data *const c_data,
 
 	if (data_iface == iface && alternate == 0) {
 		atomic_clear_bit(&data->state, CDC_ECM_DATA_IFACE_ENABLED);
+		atomic_clear_bit(&data->state, CDC_ECM_OUT_ENGAGED);
 		net_if_carrier_off(data->iface);
 	}
 
 	if (data_iface == iface && alternate == 1) {
+		k_sem_reset(&data->sync_sem);
 		atomic_set_bit(&data->state, CDC_ECM_DATA_IFACE_ENABLED);
 
 		if (atomic_test_bit(&data->state, CDC_ECM_IFACE_UP)) {
@@ -404,6 +406,8 @@ static void usbd_cdc_ecm_disable(struct usbd_class_data *const c_data)
 
 	atomic_clear_bit(&data->state, CDC_ECM_DATA_IFACE_ENABLED);
 	atomic_clear_bit(&data->state, CDC_ECM_CLASS_SUSPENDED);
+	atomic_clear_bit(&data->state, CDC_ECM_OUT_ENGAGED);
+	k_sem_give(&data->sync_sem);
 	LOG_INF("Disabled %s", c_data->name);
 }
 
