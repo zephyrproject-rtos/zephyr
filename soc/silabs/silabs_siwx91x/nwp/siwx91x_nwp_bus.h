@@ -16,6 +16,13 @@ struct net_buf;
  * incremented, so the caller can safely call net_buf_unref().
  */
 #define SIWX91X_FRAME_FLAG_ASYNC                BIT(1)
+/* Request to siwx91x_nwp_send_frame() to not erase the 16 first bytes */
+#define SIWX91X_FRAME_FLAG_NO_HDR_RESET         BIT(2)
+/* On Tx, shift the payload (the part after the descriptor) by one byte. This is required by
+ * Bluetooth frame because the HCI command has to be placed in the descriptor part which is in
+ * another fragment
+ */
+#define SIWX91X_FRAME_FLAG_SHIFT_PAYLOAD_1_BYTE BIT(3)
 
 struct net_buf *siwx91x_nwp_send_frame(const struct device *dev, struct net_buf *buf,
 				       uint16_t command, int queue_id, uint8_t flags);
