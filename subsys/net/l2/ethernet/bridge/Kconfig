@@ -55,6 +55,16 @@ config NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES
 	help
 	  How many FDB (Forwarding database) entries supported.
 
+config NET_ETHERNET_BRIDGE_WIFI_AP
+	bool "Wi-Fi Access Point mode support"
+	default y
+	depends on WIFI
+	depends on NET_L2_WIFI_MGMT
+	help
+	  Enable support for adding Wi-Fi network interfaces in Access Point mode.
+	  When this is enabled, promiscuous mode is not required for Wi-Fi AP
+	  interfaces to be added to the network bridge.
+
 module = NET_ETHERNET_BRIDGE
 module-dep = NET_LOG
 module-str = Log level for Ethernet Bridging
