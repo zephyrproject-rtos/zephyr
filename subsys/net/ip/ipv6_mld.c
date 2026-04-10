@@ -125,6 +125,7 @@ static int mld_create_packet(struct net_pkt *pkt, uint16_t count)
 
 static int mld_send(struct net_pkt *pkt)
 {
+	__maybe_unused struct net_if *iface = net_pkt_iface(pkt);
 	int ret;
 
 	net_pkt_cursor_init(pkt);
@@ -132,16 +133,16 @@ static int mld_send(struct net_pkt *pkt)
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
-		net_stats_update_icmp_drop(net_pkt_iface(pkt));
-		net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
+		net_stats_update_icmp_drop(iface);
+		net_stats_update_ipv6_mld_drop(iface);
 
 		net_pkt_unref(pkt);
 
 		return ret;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
-	net_stats_update_ipv6_mld_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
+	net_stats_update_ipv6_mld_sent(iface);
 
 	return 0;
 }
