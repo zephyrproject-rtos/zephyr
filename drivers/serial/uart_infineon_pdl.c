@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation
+ * Copyright (c) 2026 Linumiz
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,7 @@
 
 #define DT_DRV_COMPAT infineon_uart
 
+#include <soc.h>
 #include <string.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/uart.h>
@@ -29,6 +31,8 @@
 #include <cy_sysclk.h>
 
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
+#include <zephyr/drivers/clock_control/clock_control_ifx.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 
 #include <zephyr/logging/log.h>
@@ -107,11 +111,16 @@ struct ifx_cat1_uart_async {
 struct ifx_cat1_uart_data {
 	struct uart_config cfg;
 	struct ifx_cat1_resource_inst hw_resource;
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
 	struct ifx_cat1_clock clock;
+#endif
 #if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#if CONFIG_SOC_FAMILY_INFINEON_TRAVEO
+	struct ifx_clk_peri clk_info;
+#else
 	uint8_t clock_peri_group;
 #endif
-
+#endif
 #if CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb; /* Interrupt Callback */
 	void *irq_cb_data;                    /* Interrupt Callback Arg */
@@ -134,6 +143,9 @@ struct ifx_cat1_uart_config {
 	uint16_t irq_num;
 	uint8_t irq_priority;
 	en_clk_dst_t clk_dst;
+#if CONFIG_SOC_FAMILY_INFINEON_TRAVEO
+	const struct device *clk_dev;
+#endif
 };
 
 typedef void (*ifx_cat1_uart_event_callback_t)(void *callback_arg);
@@ -215,11 +227,11 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 	cy_rslt_t status;
 	struct ifx_cat1_uart_data *data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
-
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
 	uint8_t best_oversample = IFX_UART_OVERSAMPLE_MIN;
 	uint32_t best_difference = UINT32_MAX;
 	uint32_t divider;
-
+#endif
 	uint32_t peri_frequency;
 
 	if (data->baud_rate != baudrate) {
@@ -227,7 +239,18 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 	}
 
 	Cy_SCB_UART_Disable(config->reg_addr, NULL);
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+	peri_frequency = IFX_UART_OVERSAMPLE_MIN * baudrate;
 
+	status = clock_control_set_rate(config->clk_dev, &data->clk_info, &peri_frequency);
+
+	if (status != 0) {
+		return status;
+	}
+
+	Cy_SCB_UART_Enable(config->reg_addr);
+	return 0;
+#else
 #if defined(COMPONENT_CAT1A)
 	peri_frequency = Cy_SysClk_ClkPeriGetFrequency();
 #elif defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) ||                                      \
@@ -305,6 +328,7 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 	Cy_SCB_UART_Enable(config->reg_addr);
 
 	return status;
+#endif
 }
 
 uint32_t ifx_cat1_uart_get_num_in_tx_fifo(const struct device *dev)
@@ -1282,7 +1306,9 @@ static int ifx_cat1_uart_init(const struct device *dev)
 {
 	struct ifx_cat1_uart_data *const data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
 	cy_rslt_t result;
+#endif
 	int ret;
 
 	/* Dedicate SCB HW resource */
@@ -1300,7 +1326,9 @@ static int ifx_cat1_uart_init(const struct device *dev)
 	data->scb_config.rxFifoTriggerLevel = 0;
 	data->scb_config.txFifoTriggerLevel = 1;
 #endif
-
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+	irq_enable(config->irq_num);
+#else
 	/* Connect this SCB to the peripheral clock */
 	result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
 	if (result != CY_RSLT_SUCCESS) {
@@ -1317,11 +1345,11 @@ static int ifx_cat1_uart_init(const struct device *dev)
 	} else {
 		return -ENOTSUP;
 	}
-
 #if (CONFIG_SOC_FAMILY_INFINEON_CAT1C && CONFIG_UART_INTERRUPT_DRIVEN)
 	/* Enable the UART interrupt */
 	enable_sys_int(config->irq_num, config->irq_priority,
 		       (void (*)(const void *))(void *)ifx_cat1_uart_irq_handler, &data->obj);
+#endif
 #endif
 
 	/* Perform initial Uart configuration */
@@ -1455,7 +1483,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 #define UART_DMA_CHANNEL(index, dir, ch_dir, src_data_size, dst_data_size)
 #endif /* CONFIG_UART_ASYNC_API */
 
-#if (CONFIG_SOC_FAMILY_INFINEON_CAT1C)
+#if ((CONFIG_SOC_FAMILY_INFINEON_CAT1C) && !defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO))
 #define IRQ_INFO(n)                                                                                \
 	.irq_num = DT_INST_PROP_BY_IDX(n, system_interrupts, SYS_INT_NUM),                         \
 	.irq_priority = DT_INST_PROP_BY_IDX(n, system_interrupts, SYS_INT_PRI)
@@ -1463,7 +1491,9 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 #define IRQ_INFO(n) .irq_num = DT_INST_IRQN(n), .irq_priority = DT_INST_IRQ(n, priority)
 #endif
 
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#if defined(COMPONENT_CAT1B) ||                                                                    \
+	(defined(COMPONENT_CAT1C) && !defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)) ||               \
+	defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define PERI_INFO(n) .clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),
 #else
 #define PERI_INFO(n)
@@ -1497,6 +1527,13 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
 	},                                                                                         \
 	PERI_INFO(n)
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#define UART_PERI_CLOCK_INIT(n)                                                                    \
+	.clk_info = {                                                                              \
+		.rootclk_id = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, rootclk_id),                        \
+		.divider_type = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, divider_type),                    \
+		.divider_inst = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, divider_inst),                    \
+	},
 #else
 #define UART_PERI_CLOCK_INIT(n)                                                                    \
 	.clock =                                                                                   \
@@ -1507,6 +1544,11 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
 	},                                                                                         \
 	PERI_INFO(n)
+#endif
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#define CLOCK_GET(n) .clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),
+#else
+#define CLOCK_GET(n)
 #endif
 
 #define INFINEON_CAT1_UART_INIT(n)                                                                 \
@@ -1531,7 +1573,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
 		.clk_dst = DT_INST_PROP(n, clk_dst),                                               \
-		IRQ_INFO(n)};                                                                      \
+		CLOCK_GET(n) IRQ_INFO(n)};                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_uart_init##n, NULL, &ifx_cat1_uart##n##_data,           \
 			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
