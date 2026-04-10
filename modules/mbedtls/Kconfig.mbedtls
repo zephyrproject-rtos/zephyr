@@ -65,19 +65,9 @@ if MBEDTLS_SSL_PROTO_TLS1_3
 config MBEDTLS_SSL_SESSION_TICKETS
 	bool "Support for RFC 5077 session tickets in TLS 1.3"
 
-config MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
-	bool "TLS 1.3 middlebox compatibility mode"
-	default n
-	help
-	  Enable TLS 1.3 middlebox compatibility mode as defined in
-	  RFC 8446 appendix D.4. Required for interoperability with
-	  some network middleboxes. Can be disabled to save a small
-	  amount of code and bandwidth if the network path is known.
-
 config MBEDTLS_SSL_EARLY_DATA
 	bool "TLS 1.3 early data (0-RTT) support"
 	depends on MBEDTLS_SSL_SESSION_TICKETS
-	default n
 	help
 	  Enable TLS 1.3 early data (0-RTT) for PSK key exchange
 	  modes. This allows sending application data before the
@@ -85,18 +75,22 @@ config MBEDTLS_SSL_EARLY_DATA
 	  tickets and at least one PSK key exchange mode. Disable
 	  if 0-RTT replay protection is a concern.
 
+config MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
+	bool "TLS 1.3 middlebox compatibility mode"
+	default y
+	help
+	  Enable TLS 1.3 middlebox compatibility mode as defined in
+	  RFC 8446 appendix D.4. Required for interoperability with
+	  some network middleboxes. Can be disabled to save a small
+	  amount of code and bandwidth if the network path is known.
+
 endif # MBEDTLS_SSL_PROTO_TLS1_3
-
-if MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
-
-config MBEDTLS_SSL_ALPN
-	bool "Support for setting the supported Application Layer Protocols"
 
 config MBEDTLS_SSL_ENCRYPT_THEN_MAC
 	bool "Encrypt-then-MAC extension (RFC 7366)"
 	depends on MBEDTLS_SSL_PROTO_TLS1_2
 	depends on MBEDTLS_PSA_CRYPTO_C
-	default n
+	default y
 	help
 	  Enable the Encrypt-then-MAC extension for TLS 1.2
 	  (RFC 7366). This extension replaces the default
@@ -105,30 +99,19 @@ config MBEDTLS_SSL_ENCRYPT_THEN_MAC
 	  padding oracle attacks. Disable only if interoperability
 	  with non-compliant peers is required.
 
-endif # MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
+if MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
 
-config MBEDTLS_SSL_MAX_CONTENT_LEN
-	int "Max payload size for TLS protocol message"
-	default 1500
-	help
-	  The TLS standards mandate max payload size of 16384 bytes. So, for
-	  maximum operability and for general-purpose usage, that value must
-	  be used. For specific usages, that value can be largely decreased.
-	  E.g. for DTLS, payload size is limited by UDP datagram size, and
-	  even for HTTPS REST API, the payload can be limited to max size of
-	  (REST request, REST response, server certificate(s)).
-	  mbedTLS uses this value separate for input and output buffers, so
-	  twice this value will be allocated (on mbedTLS own heap, so the
-	  value of MBEDTLS_HEAP_SIZE should accommodate that).
-	  If MBEDTLS_SSL_IN_CONTENT_LEN or MBEDTLS_SSL_OUT_CONTENT_LEN are
-	  set, they override this value for the respective direction.
+config MBEDTLS_SSL_ALPN
+	bool "Support for setting the supported Application Layer Protocols"
+
+endif # MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
 
 config MBEDTLS_SSL_IN_CONTENT_LEN
 	int "Max payload size for incoming TLS messages"
-	default MBEDTLS_SSL_MAX_CONTENT_LEN
+	default MBEDTLS_SSL_MAX_CONTENT_LEN if MBEDTLS_SSL_MAX_CONTENT_LEN > 0
+	default 1500
 	help
-	  Maximum incoming TLS payload size. Defaults to
-	  MBEDTLS_SSL_MAX_CONTENT_LEN. Set this independently to use
+	  Maximum incoming TLS payload size. Set this independently to use
 	  asymmetric buffer sizes. For example, if your device mostly
 	  sends small requests but receives large responses (e.g. OTA
 	  firmware or server certificates), you can keep a larger input
@@ -136,10 +119,10 @@ config MBEDTLS_SSL_IN_CONTENT_LEN
 
 config MBEDTLS_SSL_OUT_CONTENT_LEN
 	int "Max payload size for outgoing TLS messages"
-	default MBEDTLS_SSL_MAX_CONTENT_LEN
+	default MBEDTLS_SSL_MAX_CONTENT_LEN if MBEDTLS_SSL_MAX_CONTENT_LEN > 0
+	default 1500
 	help
-	  Maximum outgoing TLS payload size. Defaults to
-	  MBEDTLS_SSL_MAX_CONTENT_LEN. Set this independently to use
+	  Maximum outgoing TLS payload size. Set this independently to use
 	  asymmetric buffer sizes. For constrained devices that send
 	  small requests, this can be much smaller than the input buffer.
 

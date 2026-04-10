@@ -74,3 +74,26 @@ config MBEDTLS_HMAC_DRBG_ENABLED
 	select MBEDTLS_HMAC_DRBG_C
 	help
 	  This Kconfig is deprecated. Use MBEDTLS_HMAC_DRBG_C instead.
+
+
+config MBEDTLS_SSL_MAX_CONTENT_LEN
+	int "Max payload size for TLS protocol message [DEPRECATED]"
+	default 0
+	help
+	  Deprecated: use MBEDTLS_SSL_IN_CONTENT_LEN and
+	  MBEDTLS_SSL_OUT_CONTENT_LEN instead for independent control
+	  of incoming and outgoing TLS buffer sizes.
+
+	  The TLS standards mandate max payload size of 16384 bytes. So, for
+	  maximum operability and for general-purpose usage, that value must
+	  be used. For specific usages, that value can be largely decreased.
+	  E.g. for DTLS, payload size is limited by UDP datagram size, and
+	  even for HTTPS REST API, the payload can be limited to max size of
+	  (REST request, REST response, server certificate(s)).
+	  mbedTLS uses this value separate for input and output buffers, so
+	  twice this value will be allocated (on mbedTLS own heap, so the
+	  value of MBEDTLS_HEAP_SIZE should accommodate that).
+
+config MBEDTLS_SSL_MAX_CONTENT_LEN_DEPRECATED
+	def_bool MBEDTLS_SSL_MAX_CONTENT_LEN != 0
+	select DEPRECATED
