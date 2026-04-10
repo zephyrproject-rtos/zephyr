@@ -1,0 +1,169 @@
+/*
+ * Copyright (c) 2026 Linumiz
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/infineon/cat1c/traveo/cyt4dn/system_clocks.dtsi>
+#include <arm/infineon/cat1c/traveo/cyt4dn/cyt4dn.dtsi>
+#include <arm/infineon/cat1c/traveo/cyt4dn/cyt4dn-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		user_led1: user_led1 {
+			label = "LED_1";
+			gpios = <&gpio_prt7 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		user_led2: user_led2 {
+			label = "LED_2";
+			gpios = <&gpio_prt7 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		user_led3: user_led3 {
+			label = "LED_3";
+			gpios = <&gpio_prt7 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&code_flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		m0p_partition: partition_m0p@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "m0p_partition";
+			reg = <0x0 DT_SIZE_K(512)>;
+		};
+
+		m7_0_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
+			label = "m7_0_partition";
+			reg = <0x80000 DT_SIZE_K(2656)>;
+		};
+
+		m7_1_partition: partition@318000 {
+			compatible = "zephyr,mapped-partition";
+			label = "m7_1_partition";
+			reg = <0x318000 DT_SIZE_K(3168)>;
+		};
+	};
+};
+
+uart7: &scb7 {
+	compatible = "infineon,uart";
+	current-speed = <115200>;
+	clocks = <&clk_peri1 15 0 1>;
+
+	/* UART pins */
+	pinctrl-0 = <&p9_0_scb7_uart_rx &p9_1_scb7_uart_tx>;
+	pinctrl-names = "default";
+};
+
+uart9: &scb9 {
+	compatible = "infineon,uart";
+	current-speed = <115200>;
+	clocks = <&clk_peri1 17 0 0>;
+
+	/* UART pins */
+	pinctrl-0 = <&p29_0_scb9_uart_rx &p29_1_scb9_uart_tx>;
+	pinctrl-names = "default";
+};
+
+&gpio_prt7 {
+	status = "okay";
+};
+
+&eco {
+	status = "okay";
+};
+
+&pll0 {
+	status = "okay";
+};
+
+&pll1 {
+	status = "okay";
+};
+
+&pll2 {
+	status = "okay";
+};
+
+&pll3 {
+	status = "okay";
+};
+
+&pll4 {
+	status = "okay";
+};
+
+&pll5 {
+	status = "okay";
+};
+
+&pll6 {
+	status = "okay";
+};
+
+&clk_hf0 {
+	status = "okay";
+};
+
+&clk_hf1 {
+	status = "okay";
+};
+
+&clk_hf2 {
+	status = "okay";
+};
+
+&clk_hf3 {
+	status = "okay";
+};
+
+&clk_hf4 {
+	status = "okay";
+};
+
+&clk_hf5 {
+	status = "okay";
+};
+
+&clk_hf6 {
+	status = "okay";
+};
+
+&clk_hf7 {
+	status = "okay";
+};
+
+&clk_hf8 {
+	status = "okay";
+};
+
+&clk_hf9 {
+	status = "okay";
+};
+
+&clk_hf10 {
+	status = "okay";
+};
+
+&clk_hf11 {
+	status = "okay";
+};
+
+&clk_hf12 {
+	status = "okay";
+};
+
+&clk_peri1 {
+	status = "okay";
+};
