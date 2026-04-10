@@ -1541,11 +1541,19 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	/*
 	 * Only re-enable Hot-Join from targets.
 	 * Target interrupts will be enabled when IBI is enabled.
+	 * Skip if disabled by controller flags.
 	 */
-	i3c_events.events = I3C_CCC_EVT_HJ;
-	ret = i3c_ccc_do_events_all_set(dev, true, &i3c_events);
-	if (ret != 0) {
-		LOG_DBG("Broadcast ENEC was NACK.");
+	{
+		const struct i3c_driver_config *common =
+			(const struct i3c_driver_config *)dev->config;
+
+		if (!(common->flags & I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT)) {
+			i3c_events.events = I3C_CCC_EVT_HJ;
+			ret = i3c_ccc_do_events_all_set(dev, true, &i3c_events);
+			if (ret != 0) {
+				LOG_DBG("Broadcast ENEC was NACK.");
+			}
+		}
 	}
 
 err_out:

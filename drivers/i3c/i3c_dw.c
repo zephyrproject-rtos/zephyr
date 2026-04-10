@@ -2405,9 +2405,12 @@ static int dw_i3c_init(const struct device *dev)
 		    !(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 			ret = i3c_bus_init(dev, &config->common.dev_list);
 		}
-		/* Bus Initialization Complete, allow HJ ACKs */
-		sys_write32(sys_read32(config->regs + DEVICE_CTRL) & ~(DEV_CTRL_HOT_JOIN_NACK),
-			    config->regs + DEVICE_CTRL);
+		/* Bus Initialization Complete, allow HJ ACKs if not disabled */
+		if (!(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT)) {
+			sys_write32(sys_read32(config->regs + DEVICE_CTRL) &
+				    ~(DEV_CTRL_HOT_JOIN_NACK),
+				    config->regs + DEVICE_CTRL);
+		}
 	}
 #endif /* CONFIG_I3C_CONTROLLER */
 

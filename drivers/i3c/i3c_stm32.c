@@ -1547,10 +1547,12 @@ static int i3c_stm32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_I3C_USE_IBI
-	LL_I3C_EnableHJAck(i3c);
-	data->hj_pm_lock = true;
-	(void)pm_device_runtime_get(dev);
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (!(config->drv_cfg.flags & I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT)) {
+		LL_I3C_EnableHJAck(i3c);
+		data->hj_pm_lock = true;
+		(void)pm_device_runtime_get(dev);
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
 #endif
 
 	return 0;
