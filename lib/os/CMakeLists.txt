@@ -9,7 +9,6 @@ zephyr_sources(
   cbprintf_packaged.c
   clock.c
   printk.c
-  thread_entry.c
   )
 
 if(CONFIG_ZVFS)
