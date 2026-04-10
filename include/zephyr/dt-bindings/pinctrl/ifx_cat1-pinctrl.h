@@ -58,6 +58,12 @@
 #define HSIOM_SEL_DS_7                                     (31)
 
 /**
+ * Peripheral and Instance group selection for peripheral dividers
+ * this is required for scb and timers.
+ */
+#define IFX_PERI_GRP_INST_SEL(grpnum, instnum) ((grpnum << 8U) | (instnum << 16U))
+
+/**
  * Macro to set drive mode
  */
 #define DT_CAT1_DRIVE_MODE_INFO(peripheral_signal) \
