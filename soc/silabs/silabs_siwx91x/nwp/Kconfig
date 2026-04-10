@@ -46,4 +46,15 @@ config SIWX91X_NWP_THREAD_PRIO
 	  Priority level of the internal thread which is ran for Network Co-Processor
 	  communication.
 
+config SIWX91X_NWP_RELOCATION_SRAM
+	bool "Relocate communication path in RAM"
+	default y
+	select SRAM_VECTOR_TABLE
+	select SRAM_SW_ISR_TABLE
+	select CODE_DATA_RELOCATION_SRAM
+	help
+	  A performance boost can be achieved by relocating a few functions in RAM. This option
+	  increases the WiFi througput by ~20% while the RAM consumption increase by ~3kB. This
+	  option is usually recommended.
+
 endif
