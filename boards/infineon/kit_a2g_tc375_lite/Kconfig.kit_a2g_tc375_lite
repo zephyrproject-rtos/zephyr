@@ -1,0 +1,12 @@
+# Copyright 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KIT_A2G_TC375_LITE
+	bool "Infineon TC375 LiteKit"
+	select SOC_TC375TP
+
+config TRICORE_CORE_ID
+	int
+	default 0 if BOARD_KIT_A2G_TC375_LITE_TC375TP_CPU0
+	default 1 if BOARD_KIT_A2G_TC375_LITE_TC375TP_CPU1
+	default 2 if BOARD_KIT_A2G_TC375_LITE_TC375TP_CPU2

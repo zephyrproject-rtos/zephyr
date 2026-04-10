@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <infineon/tc3x/tc375tp.dtsi>
+#include "kit_a2g_tc375_lite.dtsi"
+
+/ {
+	model = "Infineon TC375 LiteKit";
+	compatible = "infineon,kit_a2g_tc375_lite", "infineon,tc375tp",
+						"infineon,tc3x";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &dsram0;
+		zephyr,itcm = &psram0;
+		zephyr,console = &asclin0;
+		infineon,system-timer = &stm0;
+	};
+};
+
+&stm0 {
+	status = "okay";
+	freeze;
+};
+
+&p00 {
+	status = "okay";
+};
+
+&asclin0 {
+	status = "okay";
+};

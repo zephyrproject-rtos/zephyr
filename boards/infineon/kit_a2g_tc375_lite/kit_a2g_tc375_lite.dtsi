@@ -1,0 +1,36 @@
+/* Copyright (c) 2024 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "kit_a2g_tc375_lite-pinctrl.dtsi"
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&p00 5 GPIO_ACTIVE_LOW>;
+		};
+		led1: led_1 {
+			gpios = <&p00 6 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+};
+
+arduino_serial: &asclin0 {
+	compatible = "infineon,asclin-uart";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&fosc {
+	clock-frequency = <DT_FREQ_M(20)>;
+	status = "okay";
+};
+
+&p00 {
+	status = "okay";
+};

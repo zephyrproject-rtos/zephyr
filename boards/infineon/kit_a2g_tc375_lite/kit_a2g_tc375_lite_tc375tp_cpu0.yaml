@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kit_a2g_tc375_lite/tc375tp/cpu0
+name: AURIX TC375 LiteKit V2 (CPU0)
+type: mcu
+arch: tricore
+ram: 240
+flash: 3072
+toolchain:
+  - cross-compile
+supported:
+  - gpio
+  - uart
+testing:
+  ignore_tags:
+    - benchmark
+    - cache
+    - cpp
+vendor: infineon
