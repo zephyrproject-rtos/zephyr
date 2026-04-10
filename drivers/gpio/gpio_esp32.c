@@ -90,12 +90,12 @@ struct gpio_esp32_data {
 
 static inline bool gpio_pin_is_valid(uint32_t pin)
 {
-	return ((BIT(pin) & SOC_GPIO_VALID_GPIO_MASK) != 0);
+	return ((BIT64(pin) & SOC_GPIO_VALID_GPIO_MASK) != 0);
 }
 
 static inline bool gpio_pin_is_output_capable(uint32_t pin)
 {
-	return ((BIT(pin) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0);
+	return ((BIT64(pin) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0);
 }
 
 static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
