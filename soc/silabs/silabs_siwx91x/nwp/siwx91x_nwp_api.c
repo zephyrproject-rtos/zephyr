@@ -181,6 +181,51 @@ int siwx91x_nwp_disconnect(const struct device *dev)
 	return status ? -EINVAL : 0;
 }
 
+void siwx91x_nwp_get_bss_info(const struct device *dev, sl_wifi_operational_statistics_t *reply)
+{
+	struct net_buf *reply_buf;
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, NULL, 0, SLI_WIFI_REQ_GET_STATS, SLI_WLAN_MGMT_Q, 0,
+				      &reply_buf);
+	__ASSERT(!status, "Corrupted NWP reply");
+	__ASSERT(reply_buf, "Corrupted NWP reply");
+
+	net_buf_linearize(reply, sizeof(sl_wifi_operational_statistics_t),
+			  reply_buf, sizeof(struct siwx91x_frame_desc), SIZE_MAX);
+	net_buf_unref(reply_buf);
+}
+
+void siwx91x_nwp_ps_disable(const struct device *dev)
+{
+	sli_wifi_power_save_request_t params = { };
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, &params, sizeof(params), SLI_WIFI_REQ_PWRMODE,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+void siwx91x_nwp_ps_enable(const struct device *dev, sli_wifi_power_save_request_t *params)
+{
+	uint32_t status;
+
+	__ASSERT(params->power_mode != 0, "Prefer siwx91x_nwp_disable_ps()");
+
+	status = siwx91x_nwp_send_cmd(dev, params, sizeof(*params), SLI_WIFI_REQ_PWRMODE,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
+void siwx91x_nwp_twt_params(const struct device *dev, sl_wifi_twt_request_t *params)
+{
+	uint32_t status;
+
+	status = siwx91x_nwp_send_cmd(dev, params, sizeof(*params), SLI_WIFI_REQ_TWT_PARAMS,
+				      SLI_WLAN_MGMT_Q, 0, NULL);
+	__ASSERT(!status, "Corrupted NWP reply");
+}
+
 void siwx91x_nwp_set_region_sta(const struct device *dev, sl_wifi_region_code_t region_code)
 {
 	sli_wifi_set_region_request_t params = {
