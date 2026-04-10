@@ -569,7 +569,8 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 		goto end_fa;
 	}
 
-	page_offset = fa->fa_off + num_bytes - 1;
+	page_offset = fa->fa_off + boot_get_image_start_offset(g_img_mgmt_state.area_id) +
+		      num_bytes - 1;
 	rc = flash_get_page_info_by_offs(dev, page_offset, &page);
 	if (rc != 0) {
 		LOG_ERR("bad offset (0x%lx)", (long)page_offset);
@@ -578,12 +579,11 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 	}
 
 	erase_size = page.start_offset + page.size - fa->fa_off;
-	rc = flash_area_flatten(fa, boot_get_image_start_offset(g_img_mgmt_state.area_id),
-				erase_size);
+	rc = flash_area_flatten(fa, 0, erase_size);
 
 	if (rc != 0) {
 		LOG_ERR("image slot erase of 0x%zx bytes failed (err %d)", erase_size,
-				rc);
+			rc);
 		rc = IMG_MGMT_ERR_FLASH_ERASE_FAILED;
 		goto end_fa;
 	}
