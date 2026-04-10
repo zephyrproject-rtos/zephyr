@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_1
+name: KIT T2G_C2D6M LITE (M7_1)
+type: mcu
+arch: arm
+ram: 256
+flash: 3168
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+vendor: infineon
