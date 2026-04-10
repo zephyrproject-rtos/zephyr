@@ -305,6 +305,15 @@ New APIs and options
 
   * Added new DMA driver (:dtcompatible:`nxp,4ch-dma`) (:github:`97841`).
 
+* DSP
+
+  * :c:func:`zdsp_sin_q15`
+  * :c:func:`zdsp_sin_q31`
+  * :c:func:`zdsp_sin_f32`
+  * :c:func:`zdsp_cos_q15`
+  * :c:func:`zdsp_cos_q31`
+  * :c:func:`zdsp_cos_f32`
+
 * Display
 
   * :kconfig:option:`SSD1325_DEFAULT_CONTRAST`
