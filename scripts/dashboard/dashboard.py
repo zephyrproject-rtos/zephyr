@@ -389,6 +389,7 @@ class ZephyrDashboard:
             str(self.elf_file),
             '-z',
             str(self.zephyr_base.absolute()),
+            f'--workspace={self.topdir}',
             '--json',
             str(self.output_path / '{target}_report.json'),
             '--quiet',
