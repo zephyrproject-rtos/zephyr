@@ -14,6 +14,7 @@
 #include "r_gpt_cfg.h"
 #include <zephyr/logging/log.h>
 #include <stdio.h>
+#include <zephyr/pm/device.h>
 
 #ifdef CONFIG_RENESAS_RA_ELC
 #include <zephyr/drivers/misc/interconn/renesas_elc/renesas_elc.h>
@@ -482,6 +483,27 @@ static int pwm_renesas_ra_manage_event_callback(const struct device *dev,
 }
 #endif /* CONFIG_PWM_EVENT */
 
+#ifdef CONFIG_PM_DEVICE
+static int pwm_renesas_ra_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct pwm_renesas_ra_data *data = dev->data;
+	fsp_err_t fsp_err = FSP_SUCCESS;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		fsp_err = R_GPT_Close(&data->fsp_ctrl);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		fsp_err = R_GPT_Open(&data->fsp_ctrl, &data->fsp_cfg);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return (fsp_err == FSP_SUCCESS) ? 0 : -EIO;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(pwm, pwm_renesas_ra_driver_api) = {
 	.get_cycles_per_sec = pwm_renesas_ra_get_cycles_per_sec,
 	.set_cycles = pwm_renesas_ra_set_cycles,
@@ -682,7 +704,9 @@ static int pwm_renesas_ra_init(const struct device *dev)
 		}                                                                                  \
 		return 0;                                                                          \
 	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(index, pwm_renesas_ra_init_##index, NULL,                            \
+												   \
+	PM_DEVICE_DT_INST_DEFINE(index, pwm_renesas_ra_pm_action);				   \
+	DEVICE_DT_INST_DEFINE(index, pwm_renesas_ra_init_##index, PM_DEVICE_DT_INST_GET(index),    \
 			      &pwm_renesas_ra_data_##index, &pwm_renesas_ra_config_##index,        \
 			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_renesas_ra_driver_api);
 
