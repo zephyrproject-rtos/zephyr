@@ -42,7 +42,40 @@ static int ltr55x_check_device_id(const struct ltr55x_config *cfg)
 	return 0;
 }
 
-static int ltr55x_init_interrupt_registers(const struct device *dev)
+static int ltr55x_read_data(const struct ltr55x_config *cfg, enum sensor_channel chan,
+			    struct ltr55x_data *data)
+{
+	const struct i2c_dt_spec *bus = &cfg->bus;
+	const bool need_als = (chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_LIGHT);
+	const bool need_ps = (cfg->part_id == LTR55X_PART_ID_VALUE) &&
+			     ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_PROX));
+	const size_t read_als_ps = (LTR55X_PS_DATA1 + 1) - LTR55X_ALS_DATA_CH1_0;
+	const size_t read_als_only = (LTR55X_ALS_DATA_CH0_1 + 1) - LTR55X_ALS_DATA_CH1_0;
+	const size_t read_size =
+		(cfg->part_id == LTR55X_PART_ID_VALUE) ? read_als_ps : read_als_only;
+	uint8_t reg = LTR55X_ALS_DATA_CH1_0;
+	uint8_t buff[read_als_ps];
+	int rc;
+
+	rc = i2c_write_read_dt(bus, &reg, sizeof(reg), buff, read_size);
+	if (rc < 0) {
+		LOG_ERR("Failed to read ALS data registers");
+		return rc;
+	}
+
+	if (need_als) {
+		data->als_ch1 = sys_get_le16(buff);
+		data->als_ch0 = sys_get_le16(buff + 2);
+	}
+
+	if (need_ps) {
+		data->ps_ch0 = sys_get_le16(buff + 5) & LTR55X_PS_DATA_MASK;
+	}
+
+	return 0;
+}
+
+static int ltr55x_init_ps_interrupt_registers(const struct device *dev)
 {
 	const struct ltr55x_config *cfg = dev->config;
 	const struct i2c_dt_spec *bus = &cfg->bus;
@@ -129,39 +162,42 @@ static int ltr55x_init_als_registers(const struct device *dev)
 	return 0;
 }
 
-static int ltr55x_init(const struct device *dev)
+static int ltr55x_update_als_threshold_registers(const struct device *dev)
 {
 	const struct ltr55x_config *cfg = dev->config;
+	const struct i2c_dt_spec *bus = &cfg->bus;
+	struct ltr55x_data *data = dev->data;
+	uint8_t buf[4];
 	int rc;
 
-	if (!i2c_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("I2C bus not ready");
-		return -ENODEV;
+	sys_put_le16(data->als_upper_threshold, &buf[0]);
+	sys_put_le16(data->als_lower_threshold, &buf[2]);
+
+	rc = i2c_burst_write_dt(bus, LTR55X_ALS_THRES_UP_0, buf, sizeof(buf));
+	if (rc < 0) {
+		LOG_ERR("Failed to set ALS threshold: %d", rc);
+		return rc;
 	}
 
-	/* Wait for sensor startup */
-	k_sleep(K_MSEC(LTR55X_INIT_STARTUP_MS));
+	return 0;
+}
 
-	rc = ltr55x_check_device_id(cfg);
+static int ltr55x_init_als_interrupt_registers(const struct device *dev)
+{
+	const struct ltr55x_config *cfg = dev->config;
+	const struct i2c_dt_spec *bus = &cfg->bus;
+	int rc;
+
+	rc = ltr55x_update_als_threshold_registers(dev);
 	if (rc < 0) {
 		return rc;
 	}
 
-	if (cfg->part_id == LTR55X_PART_ID_VALUE) {
-		rc = ltr55x_init_interrupt_registers(dev);
-		if (rc < 0) {
-			return rc;
-		}
-
-		rc = ltr55x_init_ps_registers(dev);
-		if (rc < 0) {
-			return rc;
-		}
-	}
-
-	/* Init register to enable sensor to active mode */
-	rc = ltr55x_init_als_registers(dev);
+	rc = i2c_reg_update_byte_dt(
+		bus, LTR55X_INTERRUPT_PERSIST, LTR55X_INTERRUPT_PERSIST_ALS_MASK,
+		LTR55X_REG_SET(INTERRUPT_PERSIST, ALS, cfg->als_interrupt_persist - 1));
 	if (rc < 0) {
+		LOG_ERR("Failed to set ALS interrupt persist: %d", rc);
 		return rc;
 	}
 
@@ -196,38 +232,191 @@ static int ltr55x_check_data_ready(const struct ltr55x_config *cfg, enum sensor_
 	return 0;
 }
 
-static int ltr55x_read_data(const struct ltr55x_config *cfg, enum sensor_channel chan,
-			    struct ltr55x_data *data)
+#ifdef CONFIG_LITEON_LTR_TRIGGER_ALS
+
+static int ltr55x_interrupt_set_register(const struct device *dev, bool als_enable)
 {
+	const struct ltr55x_config *cfg = dev->config;
 	const struct i2c_dt_spec *bus = &cfg->bus;
-	const bool need_als = (chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_LIGHT);
-	const bool need_ps = (cfg->part_id == LTR55X_PART_ID_VALUE) &&
-			     ((chan == SENSOR_CHAN_ALL) || (chan == SENSOR_CHAN_PROX));
-	const size_t read_als_ps = (LTR55X_PS_DATA1 + 1) - LTR55X_ALS_DATA_CH1_0;
-	const size_t read_als_only = (LTR55X_ALS_DATA_CH0_1 + 1) - LTR55X_ALS_DATA_CH1_0;
-	const size_t read_size =
-		(cfg->part_id == LTR55X_PART_ID_VALUE) ? read_als_ps : read_als_only;
-	uint8_t reg = LTR55X_ALS_DATA_CH1_0;
-	uint8_t buff[read_als_ps];
+	uint8_t als_ctrl;
+	uint8_t interrupt_cfg;
+	bool restore_active;
 	int rc;
 
-	rc = i2c_write_read_dt(bus, &reg, sizeof(reg), buff, read_size);
+	rc = i2c_reg_read_byte_dt(bus, LTR55X_ALS_CONTR, &als_ctrl);
 	if (rc < 0) {
-		LOG_ERR("Failed to read ALS data registers");
 		return rc;
 	}
 
-	if (need_als) {
-		data->als_ch1 = sys_get_le16(buff);
-		data->als_ch0 = sys_get_le16(buff + 2);
+	restore_active = LTR55X_REG_GET(ALS_CONTR, MODE, als_ctrl) != 0;
+	if (restore_active) {
+		rc = i2c_reg_update_byte_dt(bus, LTR55X_ALS_CONTR, LTR55X_ALS_CONTR_MODE_MASK,
+					    LTR55X_REG_SET(ALS_CONTR, MODE, LTR55X_ALS_CONTR_MODE_STAND_BY));
+		if (rc < 0) {
+			return rc;
+		}
 	}
 
-	if (need_ps) {
-		data->ps_ch0 = sys_get_le16(buff + 5) & LTR55X_PS_DATA_MASK;
+	interrupt_cfg = LTR55X_REG_SET(INTERRUPT, ALS, als_enable) |
+			LTR55X_REG_SET(INTERRUPT, POLARITY,
+				       (cfg->int_gpio.dt_flags & GPIO_ACTIVE_LOW) == 0U);
+	rc = i2c_reg_update_byte_dt(
+		bus, LTR55X_INTERRUPT, LTR55X_INTERRUPT_ALS_MASK | LTR55X_INTERRUPT_POLARITY_MASK,
+		interrupt_cfg);
+
+	if (restore_active) {
+		int restore_rc = i2c_reg_update_byte_dt(bus, LTR55X_ALS_CONTR, LTR55X_ALS_CONTR_MODE_MASK,
+						       LTR55X_REG_SET(ALS_CONTR, MODE, LTR55X_ALS_CONTR_MODE_ACTIVE));
+
+		if (restore_rc < 0 && rc == 0) {
+			rc = restore_rc;
+		}
+	}
+
+	return rc;
+}
+
+static void ltr55x_gpio_callback(const struct device *port, struct gpio_callback *cb, uint32_t pins)
+{
+	struct ltr55x_data *data = CONTAINER_OF(cb, struct ltr55x_data, gpio_cb);
+	const struct ltr55x_config *cfg = data->dev->config;
+
+	ARG_UNUSED(port);
+
+	if ((pins & BIT(cfg->int_gpio.pin)) == 0U) {
+		return;
+	}
+
+	gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
+	k_work_submit(&data->work);
+}
+
+static void ltr55x_handle_interrupt(struct k_work *work)
+{
+	struct ltr55x_data *data = CONTAINER_OF(work, struct ltr55x_data, work);
+	const struct device *dev = data->dev;
+	const struct ltr55x_config *cfg = dev->config;
+	sensor_trigger_handler_t handler;
+	const struct sensor_trigger *trigger;
+	uint8_t status;
+	int rc;
+
+	rc = i2c_reg_read_byte_dt(&cfg->bus, LTR55X_ALS_PS_STATUS, &status);
+	if (rc < 0) {
+		LOG_ERR("Failed to read interrupt status: %d", rc);
+		goto out;
+	}
+
+	if (!LTR55X_REG_GET(ALS_PS_STATUS, ALS_INTR_STATUS, status)) {
+		goto out;
+	}
+
+	/* Read ALS data after interrupt to refresh cached sample and clear latched status. */
+	rc = ltr55x_read_data(cfg, SENSOR_CHAN_LIGHT, data);
+	if (rc < 0) {
+		LOG_ERR("Failed to update ALS data after interrupt: %d", rc);
+		goto out;
+	}
+
+	k_mutex_lock(&data->trigger_mutex, K_FOREVER);
+	handler = data->als_handler;
+	trigger = data->als_trigger;
+	k_mutex_unlock(&data->trigger_mutex);
+
+	if (handler != NULL) {
+		handler(dev, trigger);
+	}
+
+out:
+	k_mutex_lock(&data->trigger_mutex, K_FOREVER);
+	handler = data->als_handler;
+	k_mutex_unlock(&data->trigger_mutex);
+
+	if (handler != NULL) {
+		gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	}
+}
+
+static int ltr55x_trigger_init(const struct device *dev)
+{
+	const struct ltr55x_config *cfg = dev->config;
+	struct ltr55x_data *data = dev->data;
+	int rc;
+
+	if (cfg->int_gpio.port == NULL) {
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
+		LOG_ERR("Interrupt GPIO not ready");
+		return -ENODEV;
+	}
+
+	rc = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
+	if (rc < 0) {
+		LOG_ERR("Failed to configure interrupt GPIO: %d", rc);
+		return rc;
+	}
+
+	rc = gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
+	if (rc < 0) {
+		LOG_ERR("Failed to disable interrupt GPIO: %d", rc);
+		return rc;
+	}
+
+	gpio_init_callback(&data->gpio_cb, ltr55x_gpio_callback, BIT(cfg->int_gpio.pin));
+
+	rc = gpio_add_callback(cfg->int_gpio.port, &data->gpio_cb);
+	if (rc < 0) {
+		LOG_ERR("Failed to add interrupt callback: %d", rc);
+		return rc;
+	}
+
+	k_work_init(&data->work, ltr55x_handle_interrupt);
+	k_mutex_init(&data->trigger_mutex);
+
+	return 0;
+}
+
+static int ltr55x_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			      sensor_trigger_handler_t handler)
+{
+	const struct ltr55x_config *cfg = dev->config;
+	struct ltr55x_data *data = dev->data;
+	int rc;
+
+
+
+	if (cfg->int_gpio.port == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (trig->type != SENSOR_TRIG_THRESHOLD || trig->chan != SENSOR_CHAN_LIGHT) {
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&data->trigger_mutex, K_FOREVER);
+	data->als_handler = handler;
+	data->als_trigger = handler ? trig : NULL;
+	k_mutex_unlock(&data->trigger_mutex);
+
+	rc = ltr55x_interrupt_set_register(dev, handler != NULL);
+	if (rc < 0) {
+		LOG_ERR("Failed to configure ALS interrupt source: %d", rc);
+		return rc;
+	}
+
+	rc = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
+					     handler ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE);
+	if (rc < 0) {
+		LOG_ERR("Failed to configure GPIO interrupt: %d", rc);
+		return rc;
 	}
 
 	return 0;
 }
+#endif /* CONFIG_LITEON_LTR_TRIGGER_ALS */
+
 
 static bool ltr55x_is_channel_supported(const struct ltr55x_config *cfg, enum sensor_channel chan)
 {
@@ -399,7 +588,100 @@ static int ltr55x_channel_get(const struct device *dev, enum sensor_channel chan
 	return ret;
 }
 
+static int ltr55x_attr_set(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, const struct sensor_value *val)
+{
+	struct ltr55x_data *data = dev->data;
+	int32_t threshold;
+
+	if (chan != SENSOR_CHAN_LIGHT) {
+		return -ENOTSUP;
+	}
+
+	/* val2 is not used for threshold attributes, so it must be zero. */
+	if (val->val2 != 0) {
+		return -EINVAL;
+	}
+
+	threshold = val->val1;
+	if (threshold < 0 || threshold > UINT16_MAX) {
+		return -EINVAL;
+	}
+
+	if (attr == SENSOR_ATTR_UPPER_THRESH) {
+		data->als_upper_threshold = (uint16_t)threshold;
+	} else if (attr == SENSOR_ATTR_LOWER_THRESH) {
+		data->als_lower_threshold = (uint16_t)threshold;
+	} else {
+		return -ENOTSUP;
+	}
+
+	if (data->als_lower_threshold > data->als_upper_threshold) {
+		return -EINVAL;
+	}
+
+	return ltr55x_update_als_threshold_registers(dev);
+}
+
+static int ltr55x_init(const struct device *dev)
+{
+	const struct ltr55x_config *cfg = dev->config;
+	struct ltr55x_data *data = dev->data;
+	int rc;
+
+	data->dev = dev;
+
+	if (!i2c_is_ready_dt(&cfg->bus)) {
+		LOG_ERR("I2C bus not ready");
+		return -ENODEV;
+	}
+
+	/* Wait for sensor startup */
+	k_sleep(K_MSEC(LTR55X_INIT_STARTUP_MS));
+
+	rc = ltr55x_check_device_id(cfg);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (cfg->part_id == LTR55X_PART_ID_VALUE) {
+		rc = ltr55x_init_ps_interrupt_registers(dev);
+		if (rc < 0) {
+			return rc;
+		}
+
+		rc = ltr55x_init_ps_registers(dev);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	rc = ltr55x_init_als_interrupt_registers(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* Init register to enable sensor to active mode */
+	rc = ltr55x_init_als_registers(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+#ifdef CONFIG_LITEON_LTR_TRIGGER_ALS
+	rc = ltr55x_trigger_init(dev);
+	if (rc < 0) {
+		return rc;
+	}
+#endif
+
+	return 0;
+}
+
 static DEVICE_API(sensor, ltr55x_driver_api) = {
+	.attr_set = ltr55x_attr_set,
+#ifdef CONFIG_LITEON_LTR_TRIGGER_ALS
+	.trigger_set = ltr55x_trigger_set,
+#endif
 	.sample_fetch = ltr55x_sample_fetch,
 	.channel_get = ltr55x_channel_get,
 };
@@ -421,13 +703,24 @@ static DEVICE_API(sensor, ltr55x_driver_api) = {
 	BUILD_ASSERT(DT_PROP_OR(node_id, ps_lower_threshold, 0) <= LTR55X_PS_DATA_MAX);            \
 	BUILD_ASSERT(DT_PROP_OR(node_id, ps_lower_threshold, 0) <=                                 \
 		     DT_PROP_OR(node_id, ps_upper_threshold, LTR55X_PS_DATA_MAX));                 \
+	BUILD_ASSERT(DT_PROP_OR(node_id, als_lower_threshold, 0) <= UINT16_MAX);                   \
+	BUILD_ASSERT(DT_PROP_OR(node_id, als_upper_threshold, UINT16_MAX) <= UINT16_MAX);          \
+	BUILD_ASSERT(DT_PROP_OR(node_id, als_lower_threshold, 0) <=                                \
+		     DT_PROP_OR(node_id, als_upper_threshold, UINT16_MAX));                         \
+	BUILD_ASSERT(DT_PROP_OR(node_id, als_interrupt_persist, 1) >= 1);                          \
+	BUILD_ASSERT(DT_PROP_OR(node_id, als_interrupt_persist, 1) <=                              \
+		     LTR55X_INTERRUPT_PERSIST_ALS_MASK + 1);                                        \
 	static struct ltr55x_data ltr55x_data_##node_id = {                                        \
+		.als_upper_threshold = DT_PROP_OR(node_id, als_upper_threshold, UINT16_MAX),        \
+		.als_lower_threshold = DT_PROP_OR(node_id, als_lower_threshold, 0),                 \
 		.ps_offset = DT_PROP_OR(node_id, ps_offset, 0),                                    \
 		.ps_upper_threshold = DT_PROP_OR(node_id, ps_upper_threshold, LTR55X_PS_DATA_MAX), \
 		.ps_lower_threshold = DT_PROP_OR(node_id, ps_lower_threshold, 0),                  \
 	};                                                                                         \
 	static const struct ltr55x_config ltr55x_config_##node_id = {                              \
 		.bus = I2C_DT_SPEC_GET(node_id),                                                   \
+		.int_gpio = GPIO_DT_SPEC_GET_OR(node_id, int_gpios, {0}),                          \
+		.als_interrupt_persist = DT_PROP_OR(node_id, als_interrupt_persist, 1),            \
 		.part_id = partid,                                                                 \
 		.als_gain = LTR55X_ALS_GAIN_REG(node_id),                                          \
 		.als_integration_time = LTR55X_ALS_INT_TIME_REG(node_id),                          \
@@ -444,8 +737,10 @@ static DEVICE_API(sensor, ltr55x_driver_api) = {
 				&ltr55x_config_##node_id, POST_KERNEL,                             \
 				CONFIG_SENSOR_INIT_PRIORITY, &ltr55x_driver_api);
 
+#define DEFINE_LTR303(node_id) DEFINE_LTRXXX(node_id, LTR303_PART_ID_VALUE)
 #define DEFINE_LTR329(node_id) DEFINE_LTRXXX(node_id, LTR329_PART_ID_VALUE)
 #define DEFINE_LTR55X(node_id) DEFINE_LTRXXX(node_id, LTR55X_PART_ID_VALUE)
 
+DT_FOREACH_STATUS_OKAY(liteon_ltr303, DEFINE_LTR303)
 DT_FOREACH_STATUS_OKAY(liteon_ltr329, DEFINE_LTR329)
 DT_FOREACH_STATUS_OKAY(liteon_ltr553, DEFINE_LTR55X)
