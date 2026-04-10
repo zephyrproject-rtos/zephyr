@@ -7,12 +7,10 @@ menuconfig ETH_LAN78XX
 	bool "LAN78xx USB Ethernet Controller"
 	default y
 	depends on DT_HAS_MICROCHIP_LAN78XX_ENABLED
+	select NET_L2_ETHERNET_RESERVE_HEADER
 	select USB_HOST_STACK
 	help
 	  Enable support for Microchip LAN78xx USB Ethernet adapters.
-
-	  The driver lives in the Ethernet subsystem even though it reaches
-	  the adapter through the USB host stack.
 
 if ETH_LAN78XX
 
@@ -22,6 +20,13 @@ config ETH_LAN78XX_MGMT_STACK_SIZE
 	help
 	  Stack size of the management thread that handles attach, detach,
 	  and link polling.
+
+config ETH_LAN78XX_LINK_POLL_MS
+	int "LAN78xx link poll interval (ms)"
+	default 500
+	range 50 60000
+	help
+	  Periodic PHY/link status poll interval.
 
 config ETH_LAN78XX_RX_BUF_SIZE
 	int "LAN78xx USB RX buffer size"

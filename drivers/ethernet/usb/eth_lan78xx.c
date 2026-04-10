@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/ethernet/eth_lan78xx.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -61,7 +62,6 @@ LOG_MODULE_REGISTER(eth_lan78xx, CONFIG_ETHERNET_LOG_LEVEL);
 #define LAN78XX_MGMT_EVT_DETACH BIT(1)
 #define LAN78XX_MGMT_EVT_WAKE   BIT(2)
 
-#define LAN78XX_NO_POLL_SCHEDULED          (-1LL)
 #define LAN78XX_INITIAL_LINK_POLL_DELAY_MS 2000u
 #define LAN78XX_LINK_POLL_ERROR_DELAY_MS   200u
 #define LAN78XX_TX_WAIT_MS                 10
@@ -180,7 +180,8 @@ struct lan78xx_ctx {
 	struct k_thread mgmt_thread;
 	struct k_sem mgmt_sem;
 	atomic_t mgmt_flags;
-	int64_t next_link_poll_at;
+	k_timepoint_t next_link_poll_tp;
+	bool link_poll_armed;
 
 	struct k_thread io_thread;
 	struct k_sem io_sem;
@@ -224,6 +225,17 @@ static inline void lan78xx_mgmt_signal(struct lan78xx_ctx *ctx, atomic_val_t fla
 static inline void lan78xx_io_signal(struct lan78xx_ctx *ctx)
 {
 	k_sem_give(&ctx->io_sem);
+}
+
+static inline void lan78xx_schedule_link_poll(struct lan78xx_ctx *ctx, k_timeout_t delay)
+{
+	ctx->next_link_poll_tp = sys_timepoint_calc(delay);
+	ctx->link_poll_armed = true;
+}
+
+static inline void lan78xx_cancel_link_poll(struct lan78xx_ctx *ctx)
+{
+	ctx->link_poll_armed = false;
 }
 
 static bool lan78xx_match_vidpid(const struct usb_device_descriptor *dd)
@@ -442,10 +454,10 @@ static int lan78xx_update32(struct lan78xx_ctx *ctx, uint16_t reg, uint32_t mask
 
 static int lan78xx_mdio_wait_not_busy_nolock(struct lan78xx_ctx *ctx, int timeout_ms)
 {
-	const int64_t end = k_uptime_get() + timeout_ms;
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(timeout_ms));
 	uint32_t v = 0;
 
-	while (k_uptime_get() < end) {
+	while (!sys_timepoint_expired(end)) {
 		int ret = lan78xx_read32_nolock(ctx, LAN78XX_MII_ACC, &v);
 
 		if (ret != 0) {
@@ -456,7 +468,7 @@ static int lan78xx_mdio_wait_not_busy_nolock(struct lan78xx_ctx *ctx, int timeou
 			return 0;
 		}
 
-		k_busy_wait(LAN78XX_MDIO_POLL_DELAY_US);
+		k_sleep(K_USEC(LAN78XX_MDIO_POLL_DELAY_US));
 	}
 
 	return -ETIMEDOUT;
@@ -478,12 +490,19 @@ static inline uint32_t lan78xx_mii_acc(uint8_t phy_id, uint8_t reg, bool read)
 	return v;
 }
 
-static int lan78xx_mdio_read16(struct lan78xx_ctx *ctx, uint8_t phy_id, uint8_t reg, uint16_t *out)
+int eth_lan78xx_mdio_c22_read(const struct device *dev, uint8_t prtad, uint8_t regad,
+			      uint16_t *data)
 {
-	uint32_t data = 0;
+	struct lan78xx_ctx *ctx;
+	uint32_t data32 = 0;
 	int ret;
 
-	if (!ctx || !ctx->udev || !out) {
+	if (!dev || !data) {
+		return -EINVAL;
+	}
+
+	ctx = dev->data;
+	if (!ctx || !ctx->udev) {
 		return -EINVAL;
 	}
 
@@ -494,7 +513,7 @@ static int lan78xx_mdio_read16(struct lan78xx_ctx *ctx, uint8_t phy_id, uint8_t 
 		goto out;
 	}
 
-	ret = lan78xx_write32_nolock(ctx, LAN78XX_MII_ACC, lan78xx_mii_acc(phy_id, reg, true));
+	ret = lan78xx_write32_nolock(ctx, LAN78XX_MII_ACC, lan78xx_mii_acc(prtad, regad, true));
 	if (ret != 0) {
 		goto out;
 	}
@@ -504,12 +523,51 @@ static int lan78xx_mdio_read16(struct lan78xx_ctx *ctx, uint8_t phy_id, uint8_t 
 		goto out;
 	}
 
-	ret = lan78xx_read32_nolock(ctx, LAN78XX_MII_DATA, &data);
+	ret = lan78xx_read32_nolock(ctx, LAN78XX_MII_DATA, &data32);
 	if (ret != 0) {
 		goto out;
 	}
 
-	*out = (uint16_t)(data & 0xFFFFu);
+	*data = (uint16_t)(data32 & 0xFFFFu);
+
+out:
+	k_mutex_unlock(&ctx->ctrl_mutex);
+	return ret;
+}
+
+int eth_lan78xx_mdio_c22_write(const struct device *dev, uint8_t prtad, uint8_t regad,
+			       uint16_t data)
+{
+	struct lan78xx_ctx *ctx;
+	int ret;
+
+	if (!dev) {
+		return -EINVAL;
+	}
+
+	ctx = dev->data;
+	if (!ctx || !ctx->udev) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&ctx->ctrl_mutex, K_FOREVER);
+
+	ret = lan78xx_mdio_wait_not_busy_nolock(ctx, LAN78XX_MDIO_TIMEOUT_MS);
+	if (ret != 0) {
+		goto out;
+	}
+
+	ret = lan78xx_write32_nolock(ctx, LAN78XX_MII_DATA, data);
+	if (ret != 0) {
+		goto out;
+	}
+
+	ret = lan78xx_write32_nolock(ctx, LAN78XX_MII_ACC, lan78xx_mii_acc(prtad, regad, false));
+	if (ret != 0) {
+		goto out;
+	}
+
+	ret = lan78xx_mdio_wait_not_busy_nolock(ctx, LAN78XX_MDIO_TIMEOUT_MS);
 
 out:
 	k_mutex_unlock(&ctx->ctrl_mutex);
@@ -526,10 +584,10 @@ static int lan78xx_find_phy(struct lan78xx_ctx *ctx, uint8_t *found)
 		uint16_t id1 = 0;
 		uint16_t id2 = 0;
 
-		if (lan78xx_mdio_read16(ctx, phy, LAN78XX_MII_PHYID1, &id1) != 0) {
+		if (eth_lan78xx_mdio_c22_read(ctx->dev, phy, LAN78XX_MII_PHYID1, &id1) != 0) {
 			continue;
 		}
-		if (lan78xx_mdio_read16(ctx, phy, LAN78XX_MII_PHYID2, &id2) != 0) {
+		if (eth_lan78xx_mdio_c22_read(ctx->dev, phy, LAN78XX_MII_PHYID2, &id2) != 0) {
 			continue;
 		}
 
@@ -555,17 +613,17 @@ static int lan78xx_link_is_up(struct lan78xx_ctx *ctx, bool *up)
 		return -EINVAL;
 	}
 
-	ret = lan78xx_mdio_read16(ctx, ctx->phy_id, LAN78XX_MII_BMCR, &bmcr);
+	ret = eth_lan78xx_mdio_c22_read(ctx->dev, ctx->phy_id, LAN78XX_MII_BMCR, &bmcr);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = lan78xx_mdio_read16(ctx, ctx->phy_id, LAN78XX_MII_BMSR, &bmsr);
+	ret = eth_lan78xx_mdio_c22_read(ctx->dev, ctx->phy_id, LAN78XX_MII_BMSR, &bmsr);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = lan78xx_mdio_read16(ctx, ctx->phy_id, LAN78XX_MII_BMSR, &bmsr);
+	ret = eth_lan78xx_mdio_c22_read(ctx->dev, ctx->phy_id, LAN78XX_MII_BMSR, &bmsr);
 	if (ret != 0) {
 		return ret;
 	}
@@ -878,7 +936,7 @@ static int lan78xx_hw_init(struct lan78xx_ctx *ctx)
 	uint32_t v = 0;
 	uint32_t lo;
 	uint32_t hi;
-	const int64_t t0 = k_uptime_get();
+	k_timepoint_t phy_ready_deadline = sys_timepoint_calc(K_MSEC(LAN78XX_PHY_READY_TIMEOUT_MS));
 	int ret;
 
 	ret = lan78xx_hw_reset(ctx);
@@ -957,8 +1015,8 @@ static int lan78xx_hw_init(struct lan78xx_ctx *ctx)
 			break;
 		}
 
-		k_busy_wait(LAN78XX_MDIO_POLL_DELAY_US);
-	} while ((k_uptime_get() - t0) < LAN78XX_PHY_READY_TIMEOUT_MS);
+		k_sleep(K_USEC(LAN78XX_MDIO_POLL_DELAY_US));
+	} while (!sys_timepoint_expired(phy_ready_deadline));
 
 	if ((v & LAN78XX_PMT_CTL_READY) == 0u) {
 		LOG_ERR("PHY not ready (PMT_CTL=0x%08x)", v);
@@ -1695,10 +1753,10 @@ static void lan78xx_poll_link_state(struct lan78xx_ctx *ctx)
 			lan78xx_on_link_change(ctx, up);
 		}
 
-		ctx->next_link_poll_at = k_uptime_get() + LAN78XX_CFG_LINK_POLL_MS;
+		lan78xx_schedule_link_poll(ctx, K_MSEC(LAN78XX_CFG_LINK_POLL_MS));
 	} else {
-		ctx->next_link_poll_at = k_uptime_get() + MAX(LAN78XX_CFG_LINK_POLL_MS,
-							      LAN78XX_LINK_POLL_ERROR_DELAY_MS);
+		lan78xx_schedule_link_poll(ctx, K_MSEC(MAX(LAN78XX_CFG_LINK_POLL_MS,
+							   LAN78XX_LINK_POLL_ERROR_DELAY_MS)));
 	}
 }
 
@@ -1746,7 +1804,7 @@ static void lan78xx_disconnect(struct lan78xx_ctx *ctx)
 	ctx->ctrl_ok = false;
 	ctx->phy_id = 0;
 	ctx->phy_valid = false;
-	ctx->next_link_poll_at = LAN78XX_NO_POLL_SCHEDULED;
+	lan78xx_cancel_link_poll(ctx);
 
 	lan78xx_set_carrier(ctx, false);
 
@@ -1849,7 +1907,7 @@ static void lan78xx_attach_device(struct lan78xx_ctx *ctx)
 	}
 
 	ctx->connected = true;
-	ctx->next_link_poll_at = k_uptime_get() + LAN78XX_INITIAL_LINK_POLL_DELAY_MS;
+	lan78xx_schedule_link_poll(ctx, K_MSEC(LAN78XX_INITIAL_LINK_POLL_DELAY_MS));
 	lan78xx_mgmt_signal(ctx, LAN78XX_MGMT_EVT_WAKE);
 
 	LOG_INF("LAN78xx attached: addr=%u if=%u ep_in=0x%02x mps=%u ep_out=0x%02x mps=%u "
@@ -1868,16 +1926,10 @@ static void lan78xx_mgmt_thread_fn(void *p1, void *p2, void *p3)
 
 	for (;;) {
 		k_timeout_t timeout = K_FOREVER;
-		int64_t now = k_uptime_get();
 		atomic_val_t flags;
 
-		if (ctx->connected && ctx->ctrl_ok && ctx->udev &&
-		    ctx->next_link_poll_at != LAN78XX_NO_POLL_SCHEDULED) {
-			if (ctx->next_link_poll_at <= now) {
-				timeout = K_NO_WAIT;
-			} else {
-				timeout = K_MSEC(ctx->next_link_poll_at - now);
-			}
+		if (ctx->connected && ctx->ctrl_ok && ctx->udev && ctx->link_poll_armed) {
+			timeout = sys_timepoint_timeout(ctx->next_link_poll_tp);
 		}
 
 		(void)k_sem_take(&ctx->mgmt_sem, timeout);
@@ -1893,9 +1945,8 @@ static void lan78xx_mgmt_thread_fn(void *p1, void *p2, void *p3)
 			lan78xx_attach_device(ctx);
 		}
 
-		if (ctx->connected && ctx->ctrl_ok && ctx->udev &&
-		    ctx->next_link_poll_at != LAN78XX_NO_POLL_SCHEDULED &&
-		    k_uptime_get() >= ctx->next_link_poll_at) {
+		if (ctx->connected && ctx->ctrl_ok && ctx->udev && ctx->link_poll_armed &&
+		    sys_timepoint_expired(ctx->next_link_poll_tp)) {
 			lan78xx_poll_link_state(ctx);
 		}
 	}
@@ -2111,7 +2162,7 @@ static int lan78xx_init(const struct device *dev)
 	}
 	ctx->tx_pool_depth = 0u;
 
-	ctx->next_link_poll_at = LAN78XX_NO_POLL_SCHEDULED;
+	ctx->link_poll_armed = false;
 
 	atomic_set(&ctx->mgmt_flags, 0);
 	k_sem_init(&ctx->mgmt_sem, 0, UINT_MAX);
