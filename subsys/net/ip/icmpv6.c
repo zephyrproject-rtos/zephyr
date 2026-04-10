@@ -104,6 +104,7 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 {
 	struct net_pkt *reply = NULL;
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
+	struct net_if *iface = net_pkt_iface(pkt);
 	const struct in6_addr *src;
 	int16_t payload_len;
 
@@ -121,7 +122,7 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	reply = net_pkt_alloc_with_buffer(net_pkt_iface(pkt), payload_len,
+	reply = net_pkt_alloc_with_buffer(iface, payload_len,
 					  AF_INET6, IPPROTO_ICMPV6,
 					  PKT_WAIT_TIME);
 	if (!reply) {
@@ -130,7 +131,7 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 	}
 
 	if (net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst)) {
-		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
+		src = net_if_ipv6_select_src_addr(iface,
 						  (struct in6_addr *)ip_hdr->src);
 
 		if (net_ipv6_is_addr_unspecified(src)) {
@@ -173,7 +174,7 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(reply));
+	net_stats_update_icmp_sent(iface);
 
 	return 0;
 
@@ -182,7 +183,7 @@ drop:
 		net_pkt_unref(reply);
 	}
 
-	net_stats_update_icmp_drop(net_pkt_iface(pkt));
+	net_stats_update_icmp_drop(iface);
 
 	return -EIO;
 }
@@ -192,6 +193,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	int err = -EIO;
+	struct net_if *iface = net_pkt_iface(orig);
 	struct net_ipv6_hdr *ip_hdr;
 	const struct in6_addr *src;
 	struct net_pkt *pkt;
@@ -233,7 +235,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 		copy_len = net_pkt_get_len(orig);
 	}
 
-	pkt = net_pkt_alloc_with_buffer(net_pkt_iface(orig),
+	pkt = net_pkt_alloc_with_buffer(iface,
 					net_pkt_lladdr_src(orig)->len * 2 +
 					copy_len + NET_ICMPV6_UNUSED_LEN,
 					AF_INET6, IPPROTO_ICMPV6,
@@ -283,7 +285,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
 
 	if (net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst)) {
-		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
+		src = net_if_ipv6_select_src_addr(iface,
 						  (struct in6_addr *)ip_hdr->dst);
 	} else {
 		src = (struct in6_addr *)ip_hdr->dst;
@@ -320,7 +322,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 		net_sprint_ipv6_addr(&ip_hdr->src));
 
 	if (net_send_data(pkt) >= 0) {
-		net_stats_update_icmp_sent(net_pkt_iface(pkt));
+		net_stats_update_icmp_sent(iface);
 		return 0;
 	}
 
@@ -328,7 +330,7 @@ drop:
 	net_pkt_unref(pkt);
 
 drop_no_pkt:
-	net_stats_update_icmp_drop(net_pkt_iface(orig));
+	net_stats_update_icmp_drop(iface);
 
 	return err;
 }
