@@ -203,6 +203,7 @@ config MBEDTLS_SHELL
 
 config APP_LINK_WITH_MBEDTLS
 	bool "Link 'app' with MBEDTLS"
+	depends on MBEDTLS_BUILTIN
 	default y
 	help
 	  Add MBEDTLS header files to the 'app' include path. It may be

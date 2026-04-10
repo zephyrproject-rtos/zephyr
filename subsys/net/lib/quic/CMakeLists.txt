@@ -6,4 +6,4 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/lib/sockets)
 
 zephyr_library_sources_ifdef(CONFIG_QUIC quic.c)
 
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)

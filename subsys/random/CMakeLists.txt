@@ -26,5 +26,5 @@ endif()
 
 if(CONFIG_CTR_DRBG_CSPRNG_GENERATOR OR CONFIG_PSA_CSPRNG_GENERATOR)
 zephyr_library_sources(random_psa.c)
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
 endif()

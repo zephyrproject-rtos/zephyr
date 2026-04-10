@@ -55,4 +55,4 @@ zephyr_library_sources_ifdef(
   pbap.c
   )
 
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
