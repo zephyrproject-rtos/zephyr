@@ -48,17 +48,25 @@ if SILABS_SIWX91X_NWP
 configdefault MAIN_STACK_SIZE
 	default 2048
 
-config NUM_PREEMPT_PRIORITIES
+configdefault NUM_PREEMPT_PRIORITIES
 	default 56
 
-config CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT
+configdefault CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT
 	default 2
 
-config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
+configdefault CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
 	default 1024
 
-config CMSIS_V2_THREAD_MAX_STACK_SIZE
+configdefault CMSIS_V2_THREAD_MAX_STACK_SIZE
 	default 2048
+
+endif
+
+if BT_SILABS_SIWX91X
+
+# SiWx917 BLE controller currently does not support HCI Command: Host Number of Completed Packets
+configdefault BT_HCI_ACL_FLOW_CONTROL
+	default n
 
 # Match the controller's buffer count
 configdefault BT_BUF_ACL_TX_COUNT
