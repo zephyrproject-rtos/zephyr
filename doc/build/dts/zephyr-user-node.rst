@@ -7,7 +7,8 @@ The ``/zephyr,user`` node
 Zephyr's devicetree scripts handle the ``/zephyr,user`` node as a special case:
 you can put essentially arbitrary properties inside it and retrieve their
 values without having to write a binding. It is meant as a convenient container
-when only a few simple properties are needed.
+when only a few simple properties are needed. The type is inferred from the
+values assigned to the property.
 
 .. note::
 
@@ -96,6 +97,11 @@ GPIOs
 
 The ``/zephyr,user`` node is a convenient place to store application-specific
 GPIOs that you want to be able to reconfigure with a devicetree overlay.
+
+.. note::
+
+   All properties with a value containing at least one phandle and a number will
+   be inferred as a phandle-array. example ``<&adc0 1>``.
 
 For example, with this devicetree overlay:
 
