@@ -88,6 +88,7 @@ set(eraseprotect_args)
 set(approtect_args)
 set(protectedmem_args)
 set(periphconf_args)
+set(snapshot_args)
 set(mpcconf_args)
 set(wdtstart_args)
 set(periphconf_elfs)
@@ -364,6 +365,19 @@ if(CONFIG_GEN_UICR_POLICY_MPCCONF_STAGE_INIT OR CONFIG_GEN_UICR_POLICY_MPCCONF_S
   list(APPEND policy_args --policy-mpcconf-stage ${CONFIG_GEN_UICR_POLICY_MPCCONF_STAGE_VALUE})
 endif()
 
+# Handle SNAPSHOT configuration (indices 0..6 match Kconfig.template.gen_uicr_snapshot_region)
+if(CONFIG_GEN_UICR_SNAPSHOT_REGIONS)
+  foreach(snapshot_region_idx RANGE 0 6)
+    if(CONFIG_GEN_UICR_SNAPSHOT_REGION_${snapshot_region_idx})
+      list(APPEND snapshot_args
+        --snapshot-region
+        ${CONFIG_GEN_UICR_SNAPSHOT_REGION_${snapshot_region_idx}_ADDRESS}
+        ${CONFIG_GEN_UICR_SNAPSHOT_REGION_${snapshot_region_idx}_SIZE_BYTES}
+      )
+    endif()
+  endforeach()
+endif()
+
 set(periphconf_check_base_cmd
   ${CMAKE_COMMAND} -E env ZEPHYR_BASE=${ZEPHYR_BASE}
   ${PYTHON_EXECUTABLE} ${IRONSIDE_SUPPORT_DIR}/se/tool/ironside/__main__.py
@@ -448,6 +462,7 @@ add_custom_command(
           ${protectedmem_args}
           ${secondary_args}
           ${policy_args}
+          ${snapshot_args}
   ${periphconf_validate_build_command}
   ${secondary_periphconf_validate_build_command}
   DEPENDS ${gen_uicr_depends}
