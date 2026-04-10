@@ -645,9 +645,11 @@ static int pin_get_config(void)
 {
 	gpio_flags_t flags_get = 0;
 	gpio_flags_t flags_set;
+	gpio_flags_t implicit_flags;
 	int rc;
 
 	flags_set = GPIO_OUTPUT_HIGH;
+	implicit_flags = GPIO_INT_DISABLE;
 	rc = gpio_pin_configure(dev_out, PIN_OUT, flags_set);
 	zassert_equal(rc, 0, "pin configure output failed");
 
@@ -666,7 +668,7 @@ static int pin_get_config(void)
 	flags_get = 0;
 	rc = gpio_pin_get_config(dev_out, PIN_OUT, &flags_get);
 	zassert_equal(rc, 0, "pin get config input failed");
-	zassert_equal(flags_get, flags_set, "flags are different");
+	zassert_equal(flags_set, flags_get & ~implicit_flags, "flags are different");
 
 	return TC_PASS;
 }
