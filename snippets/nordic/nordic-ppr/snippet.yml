@@ -1,4 +1,5 @@
 name: nordic-ppr
+description: Boots Nordic PPR (Peripheral Processor) from another core.
 append:
   EXTRA_DTC_OVERLAY_FILE: nordic-ppr.overlay
 

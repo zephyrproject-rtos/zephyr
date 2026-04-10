@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 name: espressif-flash-4M
+description: Selects the 4MB SPI flash variant of the ESP32 chips.
 
 boards:
   /.*/esp32/.*/:

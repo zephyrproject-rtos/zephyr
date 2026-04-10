@@ -1,4 +1,7 @@
 name: nordic-ppr-xip
+description: |
+  Boots Nordic PPR (Peripheral Processor) from another core, executing in place
+  from MRAM.
 append:
   EXTRA_DTC_OVERLAY_FILE: nordic-ppr-xip.overlay
 
