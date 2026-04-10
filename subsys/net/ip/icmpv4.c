@@ -420,6 +420,7 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 {
 	struct net_pkt *reply = NULL;
 	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
+	struct net_if *iface = net_pkt_iface(pkt);
 	struct in_addr req_src, req_dst;
 	const struct in_addr *src;
 	int16_t payload_len;
@@ -447,7 +448,7 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	reply = net_pkt_alloc_with_buffer(net_pkt_iface(pkt),
+	reply = net_pkt_alloc_with_buffer(iface,
 					  net_pkt_ipv4_opts_len(pkt) +
 					  payload_len,
 					  AF_INET, IPPROTO_ICMP,
@@ -458,8 +459,8 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 	}
 
 	if (net_ipv4_is_addr_mcast(&req_dst) ||
-	    net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &req_dst)) {
-		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt), &req_src);
+	    net_ipv4_is_addr_bcast(iface, &req_dst)) {
+		src = net_if_ipv4_select_src_addr(iface, &req_src);
 
 		if (net_ipv4_is_addr_unspecified(src)) {
 			NET_DBG("DROP: No src address match");
@@ -499,7 +500,7 @@ static int icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(reply));
+	net_stats_update_icmp_sent(iface);
 
 	return 0;
 drop:
@@ -507,7 +508,7 @@ drop:
 		net_pkt_unref(reply);
 	}
 
-	net_stats_update_icmp_drop(net_pkt_iface(pkt));
+	net_stats_update_icmp_drop(iface);
 
 	return -EIO;
 }
@@ -516,6 +517,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	int err = -EIO;
+	struct net_if *iface = net_pkt_iface(orig);
 	struct net_ipv4_hdr *ip_hdr;
 	struct in_addr orig_src, orig_dst;
 	struct net_pkt *pkt;
@@ -545,7 +547,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 	net_ipv4_addr_copy_raw(orig_src.s4_addr, ip_hdr->src);
 	net_ipv4_addr_copy_raw(orig_dst.s4_addr, ip_hdr->dst);
 
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(orig), &orig_dst)) {
+	if (net_ipv4_is_addr_bcast(iface, &orig_dst)) {
 		/* We should not send an error to packet that
 		 * were sent to broadcast
 		 */
@@ -565,7 +567,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 		copy_len = 0;
 	}
 
-	pkt = net_pkt_alloc_with_buffer(net_pkt_iface(orig),
+	pkt = net_pkt_alloc_with_buffer(iface,
 					copy_len + NET_ICMPV4_UNUSED_LEN,
 					AF_INET, IPPROTO_ICMP,
 					PKT_WAIT_TIME);
@@ -594,7 +596,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 		net_sprint_ipv4_addr(&orig_src));
 
 	if (net_try_send_data(pkt, K_NO_WAIT) >= 0) {
-		net_stats_update_icmp_sent(net_pkt_iface(orig));
+		net_stats_update_icmp_sent(iface);
 		return 0;
 	}
 
@@ -602,7 +604,7 @@ drop:
 	net_pkt_unref(pkt);
 
 drop_no_pkt:
-	net_stats_update_icmp_drop(net_pkt_iface(orig));
+	net_stats_update_icmp_drop(iface);
 
 	return err;
 
