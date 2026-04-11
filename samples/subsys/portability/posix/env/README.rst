@@ -18,7 +18,7 @@ Building and Running
 This project outputs to the console. It can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/posix/env
+   :zephyr-app: samples/subsys/portability/posix/env
    :host-os: unix
    :board: qemu_riscv32
    :goals: run

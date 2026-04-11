@@ -26,7 +26,7 @@ Building and Running
 This project outputs to the console. It can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/posix/gettimeofday
+   :zephyr-app: samples/subsys/portability/posix/gettimeofday
    :host-os: unix
    :board: qemu_x86
    :goals: run
@@ -36,9 +36,9 @@ For comparison, to build directly for your host OS if it is POSIX compliant (for
 
 .. code-block:: console
 
-   cd samples/posix/gettimeofday
+   cd samples/subsys/portability/posix/gettimeofday
    make -f Makefile.host
 
-The make output file will be located in samples/posix/gettimeofday/build.
+The make output file will be located in samples/subsys/portability/posix/gettimeofday/build.
 
 .. _gettimeofday(): https://pubs.opengroup.org/onlinepubs/009604599/functions/gettimeofday.html
