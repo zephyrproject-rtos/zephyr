@@ -426,11 +426,11 @@ class Pytest(Harness):
 
         if handler.type_str == 'device':
             self._generate_parameters_for_hardware(handler)
-            self.pytest_params.duts = self.instance.reserved_duts
         else:
             for fixture in handler.options.fixture:
                 self.pytest_params.twister_fixtures.append(fixture)
 
+        self.pytest_params.duts = self.instance.reserved_duts
         self.pytest_params.required_builds = self.instance.required_build_dirs
 
         if handler.options.extra_test_args and handler.type_str == 'native':

@@ -24,6 +24,7 @@ from twisterlib.error import BuildError
 from twisterlib.harness import Pytest
 from twisterlib.runner import CMake, ExecutionCounter, FilterBuilder, ProjectBuilder, TwisterRunner
 from twisterlib.statuses import TwisterStatus
+from twisterlib.testsuitedata import HarnessConfig
 
 # pylint: disable=no-name-in-module
 from . import ZEPHYR_BASE
@@ -1503,6 +1504,7 @@ def test_projectbuilder_process(
     instance_mock.handler = mock.Mock()
     instance_mock.handler.ready = instance_handler_ready
     instance_mock.testsuite.harness = 'test'
+    instance_mock.testsuite.harness_config = HarnessConfig()
     instance_mock.required_applications = []
     env_mock = mock.Mock()
 
