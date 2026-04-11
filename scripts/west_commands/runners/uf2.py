@@ -21,9 +21,10 @@ except ImportError:
 class UF2BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for copying to UF2 USB-MSC mounts.'''
 
-    def __init__(self, cfg, board_id=None):
+    def __init__(self, cfg, board_id=None, dev_id=None):
         super().__init__(cfg)
         self.board_id = board_id
+        self.dev_id = dev_id
 
     @classmethod
     def name(cls):
@@ -31,7 +32,7 @@ class UF2BinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'})
+        return RunnerCaps(commands={'flash'}, dev_id=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -40,7 +41,7 @@ class UF2BinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
-        return UF2BinaryRunner(cfg, board_id=args.board_id)
+        return UF2BinaryRunner(cfg, board_id=args.board_id, dev_id=args.dev_id)
 
     @staticmethod
     def get_uf2_info_path(part) -> Path:
@@ -88,6 +89,10 @@ class UF2BinaryRunner(ZephyrBinaryRunner):
         copy(self.cfg.uf2_file, part.mountpoint)
 
     def do_run(self, command, **kwargs):
+        if self.dev_id:
+            self.logger.warning('--dev-id %s is not used by the UF2 runner '
+                                'and will be ignored', self.dev_id)
+
         if MISSING_PSUTIL:
             raise RuntimeError(
                 'could not import psutil; something may be wrong with the '
