@@ -16,6 +16,7 @@
 #include <time.h>
 
 #include <zephyr/device.h>
+#include <zephyr/data/json.h>
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/rtc.h>
@@ -85,10 +86,10 @@ LOG_MODULE_REGISTER(envdaq, LOG_LEVEL_INF);
 #define LED_THREAD_STACK_SIZE 1024
 #define LED_THREAD_PRIORITY 11
 
-#define MQTT_THREAD_STACK_SIZE 6144
+#define MQTT_THREAD_STACK_SIZE 4096
 #define MQTT_THREAD_PRIORITY 6
 
-#define STATUS_THREAD_STACK_SIZE 2048
+#define STATUS_THREAD_STACK_SIZE 3072
 #define STATUS_THREAD_PRIORITY 7
 
 #define DHT_THREAD_STACK_SIZE 1536
@@ -146,8 +147,7 @@ static char mqtt_status_topic[96];
 static char mqtt_subscription_topic[96];
 static struct mqtt_topic mqtt_sub_topic;
 static struct mqtt_subscription_list mqtt_sub_list;
-static int64_t mqtt_control_bucket_sec = -1;
-static int64_t mqtt_control_best_delta_sec = INT64_MAX;
+static int64_t mqtt_control_last_timestamp = INT64_MIN;
 static uint32_t mqtt_pubcomp_count;
 static int64_t mqtt_pubcomp_last_info_ms;
 static int64_t mqtt_setup_warn_ms;
@@ -182,6 +182,55 @@ static char control_latest_msg[192];
 static bool control_latest_valid;
 K_MUTEX_DEFINE(control_msg_lock);
 static int64_t control_stale_warn_ms;
+
+struct envdaq_control_sets {
+	bool relay;
+};
+
+struct envdaq_control_message {
+	int64_t timestamp;
+	struct envdaq_control_sets sets;
+};
+
+struct envdaq_status_data {
+	bool relay;
+	struct json_obj_token lux;
+	char lux_buf[16];
+	bool lux_valid;
+	float temperature;
+	bool temperature_valid;
+	float humidity;
+	bool humidity_valid;
+};
+
+struct envdaq_status_payload {
+	int64_t timestamp;
+	struct envdaq_status_data status;
+};
+
+static const struct json_obj_descr envdaq_control_sets_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct envdaq_control_sets, relay, JSON_TOK_TRUE),
+};
+
+static const struct json_obj_descr envdaq_control_message_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct envdaq_control_message, timestamp, JSON_TOK_INT64),
+	JSON_OBJ_DESCR_OBJECT(struct envdaq_control_message, sets, envdaq_control_sets_descr),
+};
+
+static const struct json_obj_descr envdaq_status_data_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct envdaq_status_data, relay, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM(struct envdaq_status_data, lux, JSON_TOK_FLOAT),
+	JSON_OBJ_DESCR_PRIM(struct envdaq_status_data, lux_valid, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM(struct envdaq_status_data, temperature, JSON_TOK_FLOAT_FP),
+	JSON_OBJ_DESCR_PRIM(struct envdaq_status_data, temperature_valid, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM(struct envdaq_status_data, humidity, JSON_TOK_FLOAT_FP),
+	JSON_OBJ_DESCR_PRIM(struct envdaq_status_data, humidity_valid, JSON_TOK_TRUE),
+};
+
+static const struct json_obj_descr envdaq_status_payload_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct envdaq_status_payload, timestamp, JSON_TOK_INT64),
+	JSON_OBJ_DESCR_OBJECT(struct envdaq_status_payload, status, envdaq_status_data_descr),
+};
 
 struct app_config {
 	uint8_t device_id[EEPROM_DEVICE_ID_LEN];
@@ -726,6 +775,48 @@ static void envdaq_format_sensor_2dp(const struct sensor_value *value, char *out
 	snprintk(out, out_len, "%d.%02d", value->val1, frac);
 }
 
+static float envdaq_sensor_to_float(const struct sensor_value *value)
+{
+	return (float)value->val1 + ((float)value->val2 / 1000000.0f);
+}
+
+static int32_t envdaq_sensor_to_centi(const struct sensor_value *value)
+{
+	int64_t centi;
+	int32_t frac = value->val2;
+
+	if (frac < 0) {
+		frac = -frac;
+		frac = (frac + 5000) / 10000;
+		centi = ((int64_t)value->val1 * 100) - frac;
+	} else {
+		frac = (frac + 5000) / 10000;
+		centi = ((int64_t)value->val1 * 100) + frac;
+	}
+
+	if (centi > INT32_MAX) {
+		return INT32_MAX;
+	}
+
+	if (centi < INT32_MIN) {
+		return INT32_MIN;
+	}
+
+	return (int32_t)centi;
+}
+
+static void envdaq_format_centi_json(int32_t centi, char *buf, size_t buf_len)
+{
+	int32_t whole = centi / 100;
+	int32_t frac = centi % 100;
+
+	if (frac < 0) {
+		frac = -frac;
+	}
+
+	snprintk(buf, buf_len, "%d.%02d", whole, frac);
+}
+
 static int envdaq_read_relay_state(void)
 {
 	int relay_state = gpio_pin_get_dt(&relay);
@@ -949,42 +1040,71 @@ static void envdaq_time_sync_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static void envdaq_build_payload_json(char *out, size_t out_len)
+static int envdaq_build_payload_json(char *out, size_t out_len)
 {
+	struct envdaq_status_payload payload = {
+		.timestamp = (int64_t)time(NULL),
+		.status = {
+			.relay = envdaq_read_relay_state() ? true : false,
+			.lux = { 0 },
+			.lux_buf = "0.00",
+			.lux_valid = false,
+			.temperature = 0,
+			.temperature_valid = false,
+			.humidity = 0,
+			.humidity_valid = false,
+		},
+	};
 	struct sensor_value lux = { 0 };
 	struct sensor_value temp = { 0 };
 	struct sensor_value humidity = { 0 };
-	char lux_str[24] = "null";
-	char temp_str[24] = "null";
-	char humidity_str[24] = "null";
-	const char *relay_state = envdaq_read_relay_state() ? "on" : "off";
-	time_t now = time(NULL);
+	int32_t lux_centi;
+	int ret;
+
+	payload.status.lux.start = payload.status.lux_buf;
+	payload.status.lux.length = strlen(payload.status.lux_buf);
 
 	if (device_is_ready(light_dev) && sensor_sample_fetch(light_dev) == 0 &&
 	    sensor_channel_get(light_dev, SENSOR_CHAN_LIGHT, &lux) == 0) {
-		envdaq_format_sensor_2dp(&lux, lux_str, sizeof(lux_str));
+		lux_centi = envdaq_sensor_to_centi(&lux);
+		envdaq_format_centi_json(lux_centi,
+					 payload.status.lux_buf,
+					 sizeof(payload.status.lux_buf));
+		payload.status.lux.start = payload.status.lux_buf;
+		payload.status.lux.length = strlen(payload.status.lux_buf);
+		payload.status.lux_valid = true;
 	}
 
 	k_mutex_lock(&dht_cache_lock, K_FOREVER);
 	if (dht_temp_valid) {
 		temp = dht_temp_cache;
-		envdaq_format_sensor_2dp(&temp, temp_str, sizeof(temp_str));
+		payload.status.temperature = envdaq_sensor_to_float(&temp);
+		payload.status.temperature_valid = true;
 	}
 
 	if (dht_humidity_valid) {
 		humidity = dht_humidity_cache;
-		envdaq_format_sensor_2dp(&humidity, humidity_str, sizeof(humidity_str));
+		payload.status.humidity = envdaq_sensor_to_float(&humidity);
+		payload.status.humidity_valid = true;
 	}
 	k_mutex_unlock(&dht_cache_lock);
 
-	snprintk(out, out_len,
-		 "{\"timestamp\":%lld,\"status\":{\"relay\":\"%s\",\"lux\":%s,\"temperature\":%s,\"humidity\":%s}}",
-		 (long long)now, relay_state, lux_str, temp_str, humidity_str);
+	ret = json_obj_encode_buf(envdaq_status_payload_descr,
+				  ARRAY_SIZE(envdaq_status_payload_descr),
+				  &payload,
+				  out,
+				  out_len);
+	if (ret < 0) {
+		LOG_WRN("Status JSON encode failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 static int envdaq_mqtt_publish_status(void)
 {
-	static char payload[256];
+	static char payload[320];
 	struct mqtt_publish_param param = { 0 };
 	int ret;
 
@@ -995,7 +1115,10 @@ static int envdaq_mqtt_publish_status(void)
 		goto out;
 	}
 
-	envdaq_build_payload_json(payload, sizeof(payload));
+	ret = envdaq_build_payload_json(payload, sizeof(payload));
+	if (ret < 0) {
+		goto out;
+	}
 
 	param.message.topic.topic.utf8 = (uint8_t *)mqtt_status_topic;
 	param.message.topic.topic.size = strlen(mqtt_status_topic);
@@ -1019,71 +1142,50 @@ out:
 	return ret;
 }
 
-static bool envdaq_extract_timestamp(const char *msg, int64_t *timestamp)
+static int envdaq_parse_control_message(char *msg, int64_t *timestamp, int *relay_set)
 {
-	const char *p = strstr(msg, "\"timestamp\"");
-	char *endptr;
+	struct envdaq_control_message decoded = { 0 };
+	int64_t parsed_fields;
+	const int64_t required_fields = BIT(0) | BIT(1);
 
-	if (p == NULL) {
-		return false;
+	*timestamp = 0;
+	*relay_set = 0;
+
+	if ((strstr(msg, "\"timestamp\"") == NULL) || (strstr(msg, "\"relay\"") == NULL)) {
+		return -EINVAL;
 	}
 
-	p = strchr(p, ':');
-	if (p == NULL) {
-		return false;
+	parsed_fields = json_obj_parse(msg,
+				      strlen(msg),
+				      envdaq_control_message_descr,
+				      ARRAY_SIZE(envdaq_control_message_descr),
+				      &decoded);
+	if (parsed_fields < 0) {
+		return (int)parsed_fields;
 	}
 
-	p++;
-	while ((*p == ' ') || (*p == '\t')) {
-		p++;
+	if ((parsed_fields & required_fields) != required_fields) {
+		return -EINVAL;
 	}
 
-	*timestamp = strtoll(p, &endptr, 10);
-	return endptr != p;
+	*timestamp = decoded.timestamp;
+	*relay_set = decoded.sets.relay ? 1 : 0;
+
+	return 0;
 }
 
-static int envdaq_extract_relay_set(const char *msg)
+static void envdaq_apply_relay_from_message(char *msg)
 {
-	const char *sets = strstr(msg, "\"sets\"");
-	const char *relay_key;
-
-	if (sets == NULL) {
-		return -1;
-	}
-
-	relay_key = strstr(sets, "\"relay\"");
-	if (relay_key == NULL) {
-		return -1;
-	}
-
-	if ((strstr(relay_key, "\"relay\":\"on\"") != NULL) ||
-	    (strstr(relay_key, "\"relay\": \"on\"") != NULL)) {
-		return 1;
-	}
-
-	if ((strstr(relay_key, "\"relay\":\"off\"") != NULL) ||
-	    (strstr(relay_key, "\"relay\": \"off\"") != NULL)) {
-		return 0;
-	}
-
-	return -1;
-}
-
-static void envdaq_apply_relay_from_message(const char *msg)
-{
-	int relay_set;
-	int64_t timestamp;
+	int relay_set = 0;
+	int64_t timestamp = 0;
 	time_t now;
 	int64_t delta;
 	int64_t uptime_now;
+	int ret;
 
-	relay_set = envdaq_extract_relay_set(msg);
-	if (relay_set < 0) {
-		return;
-	}
-
-	if (!envdaq_extract_timestamp(msg, &timestamp)) {
-		LOG_WRN("Ignore control without timestamp");
+	ret = envdaq_parse_control_message(msg, &timestamp, &relay_set);
+	if (ret < 0) {
+		LOG_WRN("Ignore control with invalid JSON payload: %d", ret);
 		return;
 	}
 
@@ -1103,16 +1205,14 @@ static void envdaq_apply_relay_from_message(const char *msg)
 		return;
 	}
 
-	if (mqtt_control_bucket_sec != ((int64_t)now / 60)) {
-		mqtt_control_bucket_sec = (int64_t)now / 60;
-		mqtt_control_best_delta_sec = INT64_MAX;
-	}
-
-	if (delta > mqtt_control_best_delta_sec) {
+	if (timestamp < mqtt_control_last_timestamp) {
+		LOG_WRN("Ignore out-of-order control ts=%lld last=%lld",
+			(long long)timestamp,
+			(long long)mqtt_control_last_timestamp);
 		return;
 	}
 
-	mqtt_control_best_delta_sec = delta;
+	mqtt_control_last_timestamp = timestamp;
 	envdaq_request_relay_state(relay_set);
 }
 
