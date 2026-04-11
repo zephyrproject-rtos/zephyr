@@ -478,9 +478,24 @@ New APIs and options
 
 * Display
 
-  * :kconfig:option:`SSD1325_DEFAULT_CONTRAST`
-  * :kconfig:option:`SSD1325_CONV_BUFFER_LINES`
+  * :c:func:`display_register_event_cb` and :c:func:`display_unregister_event_cb`.
+  * :kconfig:option:`CONFIG_SSD1325_DEFAULT_CONTRAST`
+  * :kconfig:option:`CONFIG_SSD1325_CONV_BUFFER_LINES`
   * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_XRGB_8888`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_888`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ABGR_8888`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGBA_8888`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGRA_8888`
+  * :c:enumerator:`PIXEL_FORMAT_XRGB_8888`
+  * :c:enumerator:`PIXEL_FORMAT_BGR_888`
+  * :c:enumerator:`PIXEL_FORMAT_ABGR_8888`
+  * :c:enumerator:`PIXEL_FORMAT_RGBA_8888`
+  * :c:enumerator:`PIXEL_FORMAT_BGRA_8888`
+  * :c:macro:`PANEL_PIXEL_FORMAT_XRGB_8888`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_ROUNDED_MASK`
+  * :kconfig:option:`CONFIG_SDL_DISPLAY_ROUNDED_MASK_COLOR`
+  * ``serial-vcom-inversion`` and ``serial-vcom-interval`` properties of :dtcompatible:`sharp,ls0xx`.
+  * :kconfig:option:`CONFIG_LS0XX_VCOM_THREAD_PRIO`
 
 * Ethernet
 
