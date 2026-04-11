@@ -32,6 +32,10 @@
 #define PANEL_PIXEL_FORMAT_L_8       (0x1 << 6)
 #define PANEL_PIXEL_FORMAT_AL_88     (0x1 << 7)
 #define PANEL_PIXEL_FORMAT_XRGB_8888 (0x1 << 8) /**< 32-bit ARGB */
+#define PANEL_PIXEL_FORMAT_BGR_888   (0x1 << 9)
+#define PANEL_PIXEL_FORMAT_ABGR_8888 (0x1 << 10)
+#define PANEL_PIXEL_FORMAT_RGBA_8888 (0x1 << 11)
+#define PANEL_PIXEL_FORMAT_BGRA_8888 (0x1 << 12)
 
 /**
  * @}
