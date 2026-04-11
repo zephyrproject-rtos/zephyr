@@ -1,0 +1,167 @@
+/*
+ * Copyright (c) 2025 Waveshare
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f407Xg.dtsi>
+#include <st/f4/stm32f407z(e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Waveshare Port407Z";
+	compatible = "waveshare,port407z";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_1: led_1 {
+			gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+			label = "User LED1";
+		};
+
+		led_2: led_2 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "User LED2";
+		};
+
+		led_3: led_3 {
+			gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+			label = "User LED3";
+		};
+
+		led_4: led_4 {
+			gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+			label = "User LED4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button_1: button_1 {
+			label = "User button 1";
+			gpios = <&gpiof 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button_2: button_2 {
+			label = "User button 2";
+			gpios = <&gpiof 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		button_3: button_3 {
+			label = "User button 3";
+			gpios = <&gpiof 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		joystick_enter: joystick_enter {
+			label = "User joystick ENTER";
+			gpios = <&gpioe 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		joystick_right: joystick_right {
+			label = "User joystick RIGHT";
+			gpios = <&gpioe 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+
+		joystick_up: joystick_up {
+			label = "User joystick UP";
+			gpios = <&gpioe 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		joystick_down: joystick_down {
+			label = "User joystick DOWN";
+			gpios = <&gpioe 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		joystick_left: joystick_left {
+			label = "User joystick LEFT";
+			gpios = <&gpioe 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+	};
+
+	aliases {
+		led0 = &led_1;
+		led1 = &led_2;
+		led2 = &led_3;
+		led3 = &led_4;
+		sw0 = &button_1;
+		sw1 = &button_2;
+		sw2 = &button_3;
+		watchdog0 = &iwdg;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&clk_lse {
+	clock-frequency = <32768>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <4>;
+	mul-n = <168>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_sda_pb7 &i2c1_scl_pb6>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_sda_pf0 &i2c2_scl_pf1>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&iwdg {
+	status = "okay";
+};
