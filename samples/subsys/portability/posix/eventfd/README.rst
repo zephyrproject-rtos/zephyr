@@ -16,7 +16,7 @@ Building and Running
 This project outputs to the console. It can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/posix/eventfd
+   :zephyr-app: samples/subsys/portability/posix/eventfd
    :host-os: unix
    :board: qemu_x86
    :goals: run
@@ -26,10 +26,10 @@ For comparison, to build directly for your host OS if it is POSIX compliant (for
 
 .. code-block:: console
 
-   cd samples/posix/eventfd
+   cd samples/subsys/portability/posix/eventfd
    make -f Makefile.host
 
-The make output file will be located in samples/posix/eventfd/build.
+The make output file will be located in samples/subsys/portability/posix/eventfd/build.
 
 Sample Output
 =============

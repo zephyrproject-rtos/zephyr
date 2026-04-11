@@ -8,7 +8,7 @@ Overview
 
 This sample implements Zephyr's :zephyr:code-sample:`dining-philosophers` sample using the
 :ref:`POSIX API <posix_support>`. The source code for this sample can be found under
-:file:`samples/posix/philosophers`.
+:file:`samples/subsys/portability/posix/philosophers`.
 
 Building and Running
 ********************
@@ -16,7 +16,7 @@ Building and Running
 This project outputs to the console. It can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/posix/philosophers
+   :zephyr-app: samples/subsys/portability/posix/philosophers
    :host-os: unix
    :board: qemu_riscv64
    :goals: run
