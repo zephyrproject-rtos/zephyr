@@ -38,6 +38,7 @@ from twisterlib.error import (
     StatusAttributeError,
     TwisterException,
 )
+from twisterlib.hardwaredata import CompoundHardwareData
 from twisterlib.hardwareutil import HardwareReservationManager
 from twisterlib.log_helper import setup_logging
 from twisterlib.statuses import TwisterStatus
@@ -1914,6 +1915,11 @@ class ProjectBuilder(FilterBuilder):
 
         else:
             # No hardware reservation needed for non-device handlers
+            for _ in range(1 + len(self.testsuite.harness_config.required_devices)):
+                self.instance.reserved_duts.append(
+                    CompoundHardwareData(platform=self.instance.platform.name)
+                )
+            self.instance.update_reserved_duts_with_required_applications()
             yield True
 
 

@@ -319,8 +319,15 @@ class TestInstance:
                 testsuite_runnable = all(f in set(cli_fixtures) for f in fixture)
 
             elif self.testsuite.harness_config.required_devices:
-                # Multi-DUT only supported for device testing
-                testsuite_runnable = False
+                # Multi-DUT also allowed for native_sim, but not allowed to use different platforms
+                # in required devices
+                if simulator and simulator.name == 'native':
+                    for req_dev in self.testsuite.harness_config.required_devices:
+                        if req_dev.platform and req_dev.platform != self.platform.name:
+                            testsuite_runnable = False
+                            break
+                else:
+                    testsuite_runnable = False
 
         return testsuite_runnable and target_ready
 
