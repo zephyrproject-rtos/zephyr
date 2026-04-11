@@ -488,32 +488,39 @@ Display
 
 * For ILI9341 controller, display mirroring configuration has been updated to conform with
   the described behavior of the sample ``samples/drivers/display``. (:github:`99267`).
+  This change causes mirroring issues on some display panels, which will have a proper fix in the
+  v4.4.1 release. (:github:`106862`)
 
-* The ``PIXEL_FORMAT_BGR_565`` pixel format has been renamed to
-  :c:macro:`PIXEL_FORMAT_RGB_565X` to correctly reflect that it is a
-  byte-swapped version of RGB_565, not a channel-swapped format.
-  Applications using ``PIXEL_FORMAT_BGR_565`` must update to use
-  :c:macro:`PIXEL_FORMAT_RGB_565X`. (:github:`99276`)
+* The ``PIXEL_FORMAT_BGR_565`` pixel format (and its corresponding devicetree macro
+  ``PANEL_PIXEL_FORMAT_BGR_565``) has been renamed to :c:enumerator:`PIXEL_FORMAT_RGB_565X`
+  (and :c:macro:`PANEL_PIXEL_FORMAT_RGB_565X`) to correctly reflect that it is a byte-swapped
+  version of RGB-565, not a swapped Red-Blue channels format. (:github:`99276`)
+  Applications and libraries using ``PIXEL_FORMAT_BGR_565`` to denote byte-swapped RGB-565 must
+  update to use :c:enumerator:`PIXEL_FORMAT_RGB_565X`.
 
-* The devicetree macro ``PANEL_PIXEL_FORMAT_BGR_565`` has been renamed to
-  :c:macro:`PANEL_PIXEL_FORMAT_RGB_565X`. (:github:`99276`)
+* The Kconfig options ``CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565`` and
+  ``CONFIG_ST7789V_BGR565`` have been renamed to
+  :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X` and
+  :kconfig:option:`CONFIG_ST7789V_RGB565X` respectively. (:github:`99276`)
 
-* The Kconfig options ``SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565`` and
-  ``ST7789V_BGR565`` have been renamed to
-  :kconfig:option:`SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X` and :kconfig:option:`ST7789V_RGB565X`
-  respectively. (:github:`99276`)
+* ``CONFIG_SSD1327`` symbol has been renamed to :kconfig:option:`CONFIG_SSD1327_5` to include
+  ``SSD1325`` as well.
 
-* ``CONFIG_SSD1327`` symbol has been renamed to :kconfig:option:`CONFIG_SSD1327_5` to include ``SSD1325`` as well.
-
-* ``solomon,ssd1327fb`` devicetree compatible has been renamed :dtcompatible:`solomon,ssd1327`
-  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
-
-* ``solomon,ssd1306fb`` and ``solomon,ssd1309fb`` devicetree compatibles has been renamed
-  :dtcompatible:`solomon,ssd1306` and :dtcompatible:`solomon,ssd1309` respectively,
-  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
+* ``solomon,ssd1327fb``, ``solomon,ssd1306fb`` and ``solomon,ssd1309fb`` devicetree compatibles
+  have been renamed :dtcompatible:`solomon,ssd1327`, :dtcompatible:`solomon,ssd1306` and
+  :dtcompatible:`solomon,ssd1309` respectively, to harmonize with other display controllers and
+  eliminate the zephyr-irrelevant ``fb`` suffix.
 
 * The NXP eLCDIF controller (:dtcompatible:`nxp,imx-elcdif`) now correctly advertises support for
   :c:macro:`PIXEL_FORMAT_XRGB_8888` instead of :c:macro:`PIXEL_FORMAT_ARGB_8888`.
+
+* ``waveshare,7inch-dsi-lcd-c`` devicetree compatible has been replaced by
+  :dtcompatible:`waveshare,dsi2dpi`, and ``CONFIG_WAVESHARE_7INCH_DSI_LCD_C`` option has been
+  replaced by :kconfig:option:`CONFIG_WAVESHARE_DSI2DPI`. (:github:`100140`)
+
+* Boards using STM32 LTDC display controller must update their devicetree to have
+  :c:macro:`PANEL_PIXEL_FORMAT_RGB_888` as ``pixel-format`` in :dtcompatible:`st,stm32-ltdc` node.
+  (:github:`99277`)
 
 DMA
 ===
