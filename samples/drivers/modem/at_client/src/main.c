@@ -15,6 +15,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/modem/backend/uart.h>
 #include <zephyr/modem/pipe.h>
@@ -24,6 +25,9 @@ LOG_MODULE_REGISTER(at_client, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #define DEV_CONSOLE DEVICE_DT_GET(DT_CHOSEN(zephyr_console))
 #define DEV_MODEM   DEVICE_DT_GET(DT_CHOSEN(zephyr_modem_uart))
+
+static const struct gpio_dt_spec mdm_power =
+	GPIO_DT_SPEC_GET(DT_NODELABEL(modem), mdm_power_gpios);
 
 #define UART_RX_BUF_SIZE    128
 #define UART_TX_BUF_SIZE    128
@@ -71,6 +75,33 @@ static void modem_pipe_event_handler(struct modem_pipe *pipe, enum modem_pipe_ev
 	default:
 		break;
 	}
+}
+
+static int modem_power_toggle(void)
+{
+	int ret;
+
+	if (!gpio_is_ready_dt(&mdm_power)) {
+		LOG_ERR("Modem power GPIO not ready");
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&mdm_power, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure modem power GPIO: %d", ret);
+		return ret;
+	}
+
+	/* Assert power pin active (low, open-drain) for 1.5 s to toggle modem */
+	k_sleep(K_MSEC(100));
+	gpio_pin_set_dt(&mdm_power, 1);
+	k_sleep(K_MSEC(1500));
+	gpio_pin_set_dt(&mdm_power, 0);
+
+	/* Wait for modem to complete boot sequence */
+	k_sleep(K_MSEC(5000));
+	LOG_INF("Modem power toggled");
+	return 0;
 }
 
 static int init_modem_pipe(void)
@@ -141,6 +172,13 @@ int main(void)
 	/* Register console uart_pipe for receiving */
 	uart_pipe_register(buf_rx_console, sizeof(buf_rx_console), console_recv_cb);
 	LOG_INF("Console UART pipe registered");
+
+	/* Turn on modem power before opening pipes */
+	ret = modem_power_toggle();
+	if (ret < 0) {
+		LOG_ERR("Failed to toggle modem power: %d", ret);
+		return ret;
+	}
 
 	/* Initialize modem pipe */
 	ret = init_modem_pipe();
