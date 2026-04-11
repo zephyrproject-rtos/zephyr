@@ -10,4 +10,4 @@ target_sources(app PRIVATE ${app_sources})
 
 target_compile_options(app PRIVATE -U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)
 target_compile_options(app PRIVATE -U_XOPEN_SOURCE -D_XOPEN_SOURCE=700)
-target_include_directories(app PRIVATE ${ZEPHYR_BASE}/lib/posix/options)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/portability/posix/options)
