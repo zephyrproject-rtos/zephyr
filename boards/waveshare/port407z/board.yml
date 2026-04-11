@@ -1,6 +1,6 @@
 board:
   name: waveshare_port407z
-  full_name: Port407Z
+  full_name: Waveshare Port407Z
   vendor: waveshare
   socs:
     - name: stm32f407xx
