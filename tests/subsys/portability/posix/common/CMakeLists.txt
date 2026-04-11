@@ -5,9 +5,9 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(posix_common)
 
 FILE(GLOB app_sources src/*.c)
-zephyr_include_directories(${ZEPHYR_BASE}/lib/posix)
+zephyr_include_directories(${ZEPHYR_BASE}/subsys/portability/posix)
 
 target_sources(app PRIVATE ${app_sources})
 
 target_compile_options(app PRIVATE -U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)
-target_include_directories(app PRIVATE ${ZEPHYR_BASE}/lib/posix/options)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/portability/posix/options)

@@ -26,7 +26,7 @@ ZTEST(xsi_single_process, test_putenv)
 			 * accepted by setenv() and subsequently putenv().
 			 *
 			 * See also tests/posix/single_process/src/env.c
-			 * See also lib/posix/shell/env.c:101
+			 * See also subsys/portability/posix/shell/env.c:101
 			 */
 		};
 
