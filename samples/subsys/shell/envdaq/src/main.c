@@ -807,14 +807,15 @@ static int32_t envdaq_sensor_to_centi(const struct sensor_value *value)
 
 static void envdaq_format_centi_json(int32_t centi, char *buf, size_t buf_len)
 {
-	int32_t whole = centi / 100;
-	int32_t frac = centi % 100;
-
-	if (frac < 0) {
-		frac = -frac;
+	bool negative = centi < 0;
+	int64_t abs_centi = negative ? -(int64_t)centi : (int64_t)centi;
+	int32_t whole = (int32_t)(abs_centi / 100);
+	int32_t frac = (int32_t)(abs_centi % 100);
+	if (negative) {
+		snprintk(buf, buf_len, "-%d.%02d", whole, frac);
+	} else {
+		snprintk(buf, buf_len, "%d.%02d", whole, frac);
 	}
-
-	snprintk(buf, buf_len, "%d.%02d", whole, frac);
 }
 
 static int envdaq_read_relay_state(void)
