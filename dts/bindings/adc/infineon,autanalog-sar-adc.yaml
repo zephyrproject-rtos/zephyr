@@ -128,6 +128,30 @@ properties:
     description: |
       Enable channel number identifier for data stored in FIFO.
 
+  lp-mode:
+    type: boolean
+    description: |
+      Enable Low Power (LP) mode for the SAR ADC. In LP mode the ADC is clocked
+      from the LPOSC at 4.096 MHz instead of CLK_HF and only MUX channels
+      (channel IDs >= 8) can be used. The maximum throughput in LP mode is
+      200 ksps. LP mode is available in both Active and Deep Sleep power modes.
+
+      When lp-mode is set the parent AutAnalog MFD basic-mode STT automatically
+      enters LP operation for the AC states. LP mode is also activated if any
+      other AutAnalog child peripheral (DAC, CTB, PTCOMP, PRB) sets lp-mode.
+      In advanced mode (ac-states), use the per-state ac-lp-mode property
+      instead.
+
+  lp-diff-en:
+    type: boolean
+    description: |
+      Enable differential mode for the LP channel. When set, the LP sampler
+      operates in differential mode measuring the difference between the
+      positive and negative MUX inputs. Required for accurate die temperature
+      measurement in LP mode.
+
+      Only effective when lp-mode is also set.
+
 child-binding:
   properties:
     mux-buf-bypass:
