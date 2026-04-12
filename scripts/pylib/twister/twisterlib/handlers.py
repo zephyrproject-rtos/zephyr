@@ -302,18 +302,38 @@ class BinaryHandler(Handler):
             uart = ""
             # os.path.join cannot be used on a Mock object, so we are
             # explicitly checking the type
-            if isinstance(self.instance.platform, Platform):
-                for board_dir in self.options.board_root:
-                    path = os.path.join(Path(board_dir).parent, self.instance.platform.resc)
-                    if os.path.exists(path):
-                        resc = path
-                        break
-                uart = self.instance.platform.uart
-                command = ["renode-test",
-                            "--variable", "KEYWORDS:" + keywords,
-                            "--variable", "ELF:@" + elf,
-                            "--variable", "RESC:@" + resc,
-                            "--variable", "UART:" + uart]
+            plat = self.instance.platform
+            if isinstance(plat, Platform):
+                if plat.resc:
+                    for board_dir in self.options.board_root:
+                        path = os.path.join(Path(board_dir).parent, plat.resc)
+                        if os.path.exists(path):
+                            resc = path
+                            break
+                uart = plat.uart
+                sim = plat.simulator_by_name(None)
+                if resc:
+                    # Renode-based robot test (existing behavior)
+                    command = ["renode-test",
+                                "--variable", "KEYWORDS:" + keywords,
+                                "--variable", "ELF:@" + elf,
+                                "--variable", "RESC:@" + resc,
+                                "--variable", "UART:" + uart]
+                elif sim.name in ['native']:
+                    # native_sim support
+                    binary = os.path.join(self.build_dir, "zephyr", "zephyr.exe")
+                    robot_dir = os.path.join(ZEPHYR_BASE, 'tests', 'robot')
+                    native_keywords = os.path.join(robot_dir, 'common_native.robot')
+                    command = ["robot",
+                               "--pythonpath", robot_dir,
+                               "--outputdir", self.build_dir,
+                               "--variable", "KEYWORDS:" + native_keywords,
+                               "--variable", "ELF:@" + elf,
+                               "--variable", "BINARY:" + binary,
+                               "--variable", "BUILD_DIR:" + self.build_dir]
+                else:
+                    raise ValueError(f"Unsupported platform for robot test: {plat.name}")
+
         elif self.call_make_run:
             if self.options.sim_name:
                 target = f"run_{self.options.sim_name}"
@@ -655,7 +675,67 @@ class DeviceHandler(Handler):
 
         return ser_pty_process
 
+    def _handle_robot_test(self, harness, hardware, command, serial_device, serial_pty,
+                            post_flash_script, post_script, script_param, flash_timeout):
+        """Flash device and run Robot Framework test directly without serial monitoring."""
+        start_time = time.time()
+        d_log = f"{self.instance.build_dir}/device.log"
+        logger.debug(f'Flash command: {command}')
+        failure_type = Handler.FailureType.NONE
+        stderr = b""
+
+        try:
+            with subprocess.Popen(
+                command, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+            ) as proc:
+                try:
+                    stdout, stderr = proc.communicate(timeout=flash_timeout)
+                    logger.debug(stdout.decode(errors="ignore"))
+                    if proc.returncode != 0:
+                        self.instance.status = TwisterStatus.ERROR
+                        self.instance.reason = "Device issue (Flash error?)"
+                        failure_type = Handler.FailureType.FLASH
+                        with open(d_log, "w") as dlog_fp:
+                            dlog_fp.write(stderr.decode())
+                except subprocess.TimeoutExpired:
+                    logger.warning("Flash operation timed out.")
+                    self.terminate(proc)
+                    proc.communicate()
+                    self.instance.status = TwisterStatus.ERROR
+                    self.instance.reason = "Device issue (Flash timeout)"
+                    failure_type = Handler.FailureType.FLASH
+        except subprocess.CalledProcessError:
+            self.instance.status = TwisterStatus.ERROR
+            self.instance.reason = "Device issue (Flash error)"
+            failure_type = Handler.FailureType.FLASH
+
+        if stderr:
+            with open(d_log, "w") as dlog_fp:
+                dlog_fp.write(stderr.decode())
+
+        if post_flash_script:
+            timeout = 30
+            if script_param:
+                timeout = script_param.get("post_flash_timeout", timeout)
+            self.run_custom_script(post_flash_script, timeout)
+
+        self.execution_time = time.time() - start_time
+
+        if failure_type == Handler.FailureType.NONE:
+            robot_command = ["robot",
+                             "--variable", f"SERIAL:{serial_device}",
+                             "--variable", f"BAUD:{hardware.serial_baud}",
+                             "--variable", f"BUILD_DIR:{self.build_dir}"]
+            harness.run_robot_test(robot_command, self)
+
+        if post_script:
+            timeout = 30
+            if script_param:
+                timeout = script_param.get("post_script_timeout", timeout)
+            self.run_custom_script(post_script, timeout)
+
     def handle(self, harness):
+        robot_test = getattr(harness, "is_robot_test", False)
         hardware: CompoundHardwareData = self.instance.reserved_duts[0]
 
         # Run pre-script BEFORE starting serial PTY to avoid conflicts
@@ -687,6 +767,15 @@ class DeviceHandler(Handler):
         flash_timeout = hardware.flash_timeout
         if hardware.flash_with_test:
             flash_timeout += self.get_test_timeout()
+
+        if robot_test:
+            # For robot tests: flash the device, then hand off to Robot Framework
+            # directly. Robot Framework will open the serial port itself.
+            self._handle_robot_test(
+                harness, hardware, command, serial_device, serial_pty,
+                post_flash_script, post_script, script_param, flash_timeout
+            )
+            return
 
         serial_port = None
         ser_pty_process = None
