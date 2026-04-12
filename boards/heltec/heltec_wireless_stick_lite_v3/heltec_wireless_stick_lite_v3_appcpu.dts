@@ -1,12 +1,13 @@
 /*
  * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 /dts-v1/;
 
 #include <espressif/esp32s3/esp32s3_appcpu.dtsi>
-#include <espressif/partitions_0x0_amp.dtsi>
+#include <espressif/partitions_0x0_amp_8M.dtsi>
 
 / {
 	model = "Heltec Wireless Stick Lite V3 APPCPU";
@@ -21,8 +22,12 @@
 	};
 };
 
+&slot0_appcpu_partition {
+	compatible = "zephyr,mapped-partition";
+};
+
 &flash0 {
-	reg = <0x0 DT_SIZE_M(4)>;
+	reg = <0x0 DT_SIZE_M(8)>;
 };
 
 &trng0 {
