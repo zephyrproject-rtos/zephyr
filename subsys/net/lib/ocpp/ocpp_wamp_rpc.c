@@ -18,6 +18,13 @@ int ocpp_send_to_server(struct ocpp_wamp_rpc_msg *snd, k_timeout_t timeout)
 
 	switch (snd->msg[OCPP_WAMP_RPC_TYPE_IDX]) {
 	case OCPP_WAMP_RPC_REQ:
+		/* To make sure static analysis won't generate false positive
+		 * test to ensure sndlock and rspsig has been initialized by the
+		 * calling functions.
+		 */
+		if (snd->sndlock == NULL || snd->rspsig == NULL) {
+			return -EINVAL;
+		}
 		/* ocpp spec - allow only one active call at a time
 		 * release lock on response received from CS or timeout
 		 */

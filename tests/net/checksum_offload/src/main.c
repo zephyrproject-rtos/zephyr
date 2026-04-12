@@ -918,6 +918,8 @@ ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v4_icmp_frag)
 static void test_fragment_rx_udp(struct net_pkt *pkt,
 				 union net_proto_header *proto_hdr)
 {
+	uint16_t out_chksum = 0;
+	int ret;
 	size_t hdr_offset = net_pkt_ip_hdr_len(pkt) +
 			    net_pkt_ip_opts_len(pkt) +
 			    sizeof(struct net_udp_hdr);
@@ -927,7 +929,10 @@ static void test_fragment_rx_udp(struct net_pkt *pkt,
 	 * regardless.
 	 */
 	zassert_not_equal(proto_hdr->udp->chksum, 0, "Checksum is not set");
-	zassert_equal(net_calc_verify_chksum_udp(pkt), 0, "Incorrect checksum");
+
+	ret = net_calc_verify_chksum_udp(pkt, &out_chksum);
+	zassert_equal(ret, 0, "Calculation failed");
+	zassert_equal(out_chksum, 0, "Incorrect checksum");
 
 	/* Verify that packet content has not been altered */
 	net_pkt_read(pkt, verify_buf, data_len);
@@ -941,13 +946,18 @@ static void recv_cb_offload_disabled(struct net_context *context,
 				     int status,
 				     void *user_data)
 {
+	uint16_t out_chksum = 0;
+	int ret;
+
 	zassert_not_null(proto_hdr->udp, "UDP header missing");
 
 	if (verify_fragment) {
 		test_fragment_rx_udp(pkt, proto_hdr);
 	} else {
 		zassert_not_equal(proto_hdr->udp->chksum, 0, "Checksum is not set");
-		zassert_equal(net_calc_verify_chksum_udp(pkt), 0, "Incorrect checksum");
+		ret = net_calc_verify_chksum_udp(pkt, &out_chksum);
+		zassert_equal(ret, 0, "Calculation failed");
+		zassert_equal(out_chksum, 0, "Incorrect checksum");
 	}
 
 	if (net_pkt_family(pkt) == NET_AF_INET) {
@@ -1169,6 +1179,8 @@ static enum net_verdict icmp_handler(struct net_icmp_ctx *ctx,
 				     void *user_data)
 {
 	struct k_sem *wait_data = user_data;
+	uint16_t chksum = 0;
+	int ret;
 
 	size_t hdr_offset = net_pkt_ip_hdr_len(pkt) +
 			    net_pkt_ip_opts_len(pkt) +
@@ -1182,9 +1194,13 @@ static enum net_verdict icmp_handler(struct net_icmp_ctx *ctx,
 	zassert_not_equal(icmp_hdr->chksum, 0, "Checksum is not set");
 
 	if (test_proto == NET_IPPROTO_ICMPV6) {
-		zassert_equal(net_calc_chksum_icmpv6(pkt), 0, "Incorrect checksum");
+		ret = net_calc_chksum_icmpv6(pkt, &chksum);
+		zassert_equal(ret, 0, "Calculation failed");
+		zassert_equal(chksum, 0, "Incorrect checksum");
 	} else {
-		zassert_equal(net_calc_chksum_icmpv4(pkt), 0, "Incorrect checksum");
+		ret = net_calc_chksum_icmpv4(pkt, &chksum);
+		zassert_equal(ret, 0, "Calculation failed");
+		zassert_equal(chksum, 0, "Incorrect checksum");
 	}
 
 	/* Verify that packet content has not been altered */

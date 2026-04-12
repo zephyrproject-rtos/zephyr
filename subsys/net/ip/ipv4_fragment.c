@@ -144,6 +144,8 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 	struct net_pkt *pkt;
 	struct net_buf *last;
 	int i;
+	int ret;
+	uint16_t chksum = 0;
 
 	k_work_cancel_delayable(&reass->timer);
 
@@ -201,7 +203,13 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 	ipv4_hdr->offset[0] = 0;
 	ipv4_hdr->offset[1] = 0;
 	ipv4_hdr->chksum = 0;
-	ipv4_hdr->chksum = net_calc_chksum_ipv4(pkt);
+
+	ret = net_calc_chksum_ipv4(pkt, &chksum);
+	if (ret < 0) {
+		goto error;
+	}
+
+	ipv4_hdr->chksum = chksum;
 
 	net_pkt_set_data(pkt, &ipv4_access);
 	net_pkt_set_ip_reassembled(pkt, true);
@@ -428,6 +436,7 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 	struct net_pkt_cursor cur;
 	struct net_pkt_cursor cur_pkt;
 	uint16_t offset_pkt;
+	uint16_t chksum = 0;
 
 	frag_pkt = net_pkt_alloc_with_buffer(net_pkt_iface(pkt), fit_len +
 					     net_pkt_ip_hdr_len(pkt),
@@ -483,7 +492,13 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 	ipv4_hdr->len = net_htons((fit_len + net_pkt_ip_hdr_len(pkt)));
 
 	ipv4_hdr->chksum = 0;
-	ipv4_hdr->chksum = net_calc_chksum_ipv4(frag_pkt);
+
+	ret = net_calc_chksum_ipv4(frag_pkt, &chksum);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	ipv4_hdr->chksum = chksum;
 
 	net_pkt_set_chksum_done(frag_pkt, true);
 

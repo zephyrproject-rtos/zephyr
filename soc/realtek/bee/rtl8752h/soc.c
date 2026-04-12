@@ -27,6 +27,7 @@ typedef bool (*BOOL_PATCH_FUNC)(void);
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
+#ifdef CONFIG_BT
 static void rtl8752h_bt_controller_init(void)
 {
 	BOOL_PATCH_FUNC bt_controller_entry;
@@ -42,6 +43,7 @@ static void rtl8752h_bt_controller_init(void)
 		LOG_ERR("Failed to load Realtek Bee BT Controller ROM.");
 	}
 }
+#endif
 
 /*
  * Sync ROM-initialized ISRs with Zephyr by wrapping them via z_isr_install.
@@ -150,7 +152,9 @@ void soc_late_init_hook(void)
 	/* Initialize HW AES mutex. */
 	hw_aes_create_mutex();
 
+#ifdef CONFIG_BT
 	rtl8752h_bt_controller_init();
+#endif
 
 	/* [Phase 2] ISR Restoration:
 	 * Register ROM-installed ISRs to Zephyr and restore _isr_wrapper.

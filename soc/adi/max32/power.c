@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,6 @@
 #include <zephyr/arch/common/pm_s2ram.h>
 
 #include <mxc_device.h>
-#include <mcr_regs.h>
 #include <wrap_max32_lp.h>
 #include <wrap_max32_sys.h>
 

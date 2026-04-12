@@ -51,6 +51,42 @@ enum frag_transport_commands {
 	FRAG_TRANSPORT_CMD_DATA_FRAGMENT = 0x08,
 };
 
+/* FragStatus packet structure */
+struct frag_transport_session_status_req {
+	uint8_t param;
+} __packed;
+
+/* FragSessionSetupReq packet structure */
+struct frag_transport_setup_req {
+	uint8_t frag_session;
+	uint16_t nb_frag;
+	uint8_t frag_size;
+	uint8_t control;
+	uint8_t padding;
+	uint32_t descriptor;
+} __packed;
+
+enum frag_transport_setup_ans_status {
+	SETUP_ANS_ENCODING_UNSUPPORTED = BIT(0),
+	SETUP_ANS_NOT_ENOUGH_MEMORY = BIT(1),
+	SETUP_ANS_INDEX_NOT_SUPPORTED = BIT(2),
+	SETUP_ANS_WRONG_DESCRIPTOR = BIT(3),
+};
+
+/* FragSessionDeleteReq packet structure */
+struct frag_transport_delete_req {
+	uint8_t param;
+} __packed;
+
+enum frag_transport_delete_ans_status {
+	DELETE_ANS_INDEX_NOT_SUPPORTED = BIT(2),
+};
+
+/* Downlink data header structure */
+struct frag_transport_data_header {
+	uint16_t frag_index_n;
+} __packed;
+
 struct frag_transport_context {
 	/** Stores if a session is active */
 	bool is_active;
@@ -129,9 +165,13 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			tx_buf[tx_pos++] = FRAG_TRANSPORT_VERSION;
 			break;
 		case FRAG_TRANSPORT_CMD_FRAG_STATUS: {
-			uint8_t frag_status = rx_buf[rx_pos++] & 0x07;
+			const struct frag_transport_session_status_req *req =
+				(const void *)(rx_buf + rx_pos);
+			uint8_t frag_status = req->param & 0x07;
 			uint8_t participants = frag_status & 0x01;
 			uint8_t index = frag_status >> 1;
+
+			rx_pos += sizeof(*req);
 
 			LOG_DBG("FragSessionStatusReq index %d, participants: %u", index,
 				participants);
@@ -162,23 +202,23 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			break;
 		}
 		case FRAG_TRANSPORT_CMD_FRAG_SESSION_SETUP: {
-			uint8_t frag_session = rx_buf[rx_pos++] & 0x3F;
+			const struct frag_transport_setup_req *req =
+				(const void *)(rx_buf + rx_pos);
+			uint8_t frag_session = req->frag_session & 0x3F;
 			uint8_t index = frag_session >> 4;
 			uint8_t status = index << 6;
+
+			rx_pos += sizeof(*req);
 
 			if (!ctx.is_active || ctx.frag_index == index) {
 				ctx.frag_session = frag_session;
 				ctx.nb_frag_received = 0;
 
-				ctx.nb_frag = sys_get_le16(rx_buf + rx_pos);
-				rx_pos += sizeof(uint16_t);
-
-				ctx.frag_size = rx_buf[rx_pos++];
-				ctx.control = rx_buf[rx_pos++];
-				ctx.padding = rx_buf[rx_pos++];
-
-				ctx.descriptor = sys_get_le32(rx_buf + rx_pos);
-				rx_pos += sizeof(uint32_t);
+				ctx.nb_frag = req->nb_frag;
+				ctx.frag_size = req->frag_size;
+				ctx.control = req->control;
+				ctx.padding = req->padding;
+				ctx.descriptor = req->descriptor;
 
 				LOG_INF("FragSessionSetupReq index %d, nb_frag: %u, frag_size: %u, "
 					"padding: %u, control: 0x%x, descriptor: 0x%.8x",
@@ -186,7 +226,7 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 					ctx.descriptor);
 			} else {
 				/* FragIndex unsupported */
-				status |= BIT(2);
+				status |= SETUP_ANS_INDEX_NOT_SUPPORTED;
 
 				LOG_WRN("FragSessionSetupReq failed. Session %u still active",
 					ctx.frag_index);
@@ -194,18 +234,18 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 
 			if (ctx.frag_algo > 0) {
 				/* FragAlgo unsupported */
-				status |= BIT(0);
+				status |= SETUP_ANS_ENCODING_UNSUPPORTED;
 			}
 
 			if (ctx.nb_frag > FRAG_MAX_NB || ctx.frag_size > FRAG_MAX_SIZE) {
 				/* Not enough memory */
-				status |= BIT(1);
+				status |= SETUP_ANS_NOT_ENOUGH_MEMORY;
 			}
 
 #ifdef CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH
 			if (ctx.nb_frag * ctx.frag_size > FragDecoderGetMaxFileSize()) {
 				/* Not enough memory */
-				status |= BIT(1);
+				status |= SETUP_ANS_NOT_ENOUGH_MEMORY;
 			}
 #endif
 
@@ -214,7 +254,7 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 
 				if (rc < 0) {
 					/* Wrong Descriptor */
-					status |= BIT(3);
+					status |= SETUP_ANS_WRONG_DESCRIPTOR;
 				}
 			}
 
@@ -244,14 +284,21 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			break;
 		}
 		case FRAG_TRANSPORT_CMD_FRAG_SESSION_DELETE: {
-			uint8_t index = rx_buf[rx_pos++] & 0x03;
+			const struct frag_transport_delete_req *req =
+				(const void *)(rx_buf + rx_pos);
+			uint8_t index = req->param & 0x03;
 			uint8_t status = 0x00;
+
+			rx_pos += sizeof(*req);
 
 			status |= index;
 			if (!ctx.is_active || ctx.frag_index != index) {
+				LOG_WRN("FragSessionDeleteReq invalid session (%d, %d)",
+					ctx.is_active, index);
 				/* Session does not exist */
-				status |= BIT(2);
+				status |= DELETE_ANS_INDEX_NOT_SUPPORTED;
 			} else {
+				LOG_INF("FragSessionDeleteReq index %d", index);
 				ctx.is_active = false;
 			}
 
@@ -260,14 +307,13 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			break;
 		}
 		case FRAG_TRANSPORT_CMD_DATA_FRAGMENT: {
+			const struct frag_transport_data_header *hdr =
+				(const void *)(rx_buf + rx_pos);
+			uint16_t frag_counter = hdr->frag_index_n & 0x3FFF;
+			uint8_t index = (hdr->frag_index_n >> 14) & 0x03;
+
+			rx_pos += sizeof(*hdr);
 			ctx.nb_frag_received++;
-
-			uint16_t frag_index_n = sys_get_le16(rx_buf + rx_pos);
-
-			rx_pos += 2;
-
-			uint16_t frag_counter = frag_index_n & 0x3FFF;
-			uint8_t index = (frag_index_n >> 14) & 0x03;
 
 			if (!ctx.is_active || index != ctx.frag_index) {
 				LOG_DBG("DataFragment received for inactive session %u", index);

@@ -86,7 +86,13 @@ config HAS_FLASH_LOAD_OFFSET
 	  This option is selected by targets having a FLASH_LOAD_OFFSET
 	  and FLASH_LOAD_SIZE.
 
-if HAS_FLASH_LOAD_OFFSET
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_COMPAT_Z_MAPPED_PARTITION := zephyr,mapped-partition
+DT_HAS_MAPPED_PARTITION := $(dt_node_has_compat,$(dt_chosen_path,$(DT_CHOSEN_Z_CODE_PARTITION)),$(DT_COMPAT_Z_MAPPED_PARTITION))
+
+if HAS_FLASH_LOAD_OFFSET || $(DT_HAS_MAPPED_PARTITION)
 
 config USE_DT_CODE_PARTITION
 	bool "Link application into /chosen/zephyr,code-partition from devicetree"
@@ -96,14 +102,9 @@ config USE_DT_CODE_PARTITION
 	  When this is disabled, the flash load offset and size can be set manually
 	  below.
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
-DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_Z_MAPPED_PARTITION := zephyr,mapped-partition
-
 config FLASH_USES_MAPPED_PARTITION
 	bool
-	default $(dt_node_has_compat,$(dt_chosen_path,$(DT_CHOSEN_Z_CODE_PARTITION)),$(DT_COMPAT_Z_MAPPED_PARTITION))
+	default $(DT_HAS_MAPPED_PARTITION)
 	depends on USE_DT_CODE_PARTITION
 	help
 	  Temporary Kconfig to indicate if underlying chosen chosen flash partition uses the
@@ -124,6 +125,8 @@ config FLASH_CODE_PARTITION_USING_FIXED_PARTITIONS
 
 	  Support for this will be deprecated and requires that your files be updated correctly for
 	  a future release, check the Zephyr 4.4 migration notes.
+
+if !FLASH_USES_MAPPED_PARTITION
 
 config FLASH_LOAD_OFFSET
 	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
@@ -151,7 +154,9 @@ config FLASH_LOAD_SIZE
 
 	  If unsure, leave at the default value 0.
 
-endif # HAS_FLASH_LOAD_OFFSET
+endif # !FLASH_USES_MAPPED_PARTITION
+
+endif # HAS_FLASH_LOAD_OFFSET || $(DT_HAS_MAPPED_PARTITION)
 
 config ROM_START_OFFSET
 	hex

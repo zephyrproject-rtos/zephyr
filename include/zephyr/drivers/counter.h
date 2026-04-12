@@ -292,62 +292,157 @@ struct counter_top_cfg_64 {
 	uint32_t flags;
 };
 
+/**
+ * @def_driverbackendgroup{Counter,counter_interface}
+ * @{
+ */
+
+/** @brief Callback API to start the counter. */
 typedef int (*counter_api_start)(const struct device *dev);
+/** @brief Callback API to stop the counter. */
 typedef int (*counter_api_stop)(const struct device *dev);
+/** @brief Callback API to get the current counter value. */
 typedef int (*counter_api_get_value)(const struct device *dev, uint32_t *ticks);
+/** @brief Callback API to reset the counter to the initial value. */
 typedef int (*counter_api_reset)(const struct device *dev);
+/** @brief Callback API to set the current counter value. */
 typedef int (*counter_api_set_value)(const struct device *dev, uint32_t ticks);
+/** @brief Callback API to set a single shot alarm on a channel. */
 typedef int (*counter_api_set_alarm)(const struct device *dev, uint8_t chan_id,
 				     const struct counter_alarm_cfg *alarm_cfg);
+/** @brief Callback API to cancel an alarm on a channel. */
 typedef int (*counter_api_cancel_alarm)(const struct device *dev, uint8_t chan_id);
+/** @brief Callback API to set the counter top value. */
 typedef int (*counter_api_set_top_value)(const struct device *dev,
 					 const struct counter_top_cfg *cfg);
+/** @brief Callback API to get pending counter interrupts. */
 typedef uint32_t (*counter_api_get_pending_int)(const struct device *dev);
+/** @brief Callback API to retrieve the current top value. */
 typedef uint32_t (*counter_api_get_top_value)(const struct device *dev);
+/** @brief Callback API to retrieve the guard period in ticks. */
 typedef uint32_t (*counter_api_get_guard_period)(const struct device *dev, uint32_t flags);
+/** @brief Callback API to set the guard period in ticks. */
 typedef int (*counter_api_set_guard_period)(const struct device *dev, uint32_t ticks,
 					    uint32_t flags);
+/** @brief Callback API to get the counter frequency in Hz. */
 typedef uint32_t (*counter_api_get_freq)(const struct device *dev);
+/** @brief Callback API to get the counter frequency in Hz (64 bits). */
 typedef uint64_t (*counter_api_get_freq_64)(const struct device *dev);
 
+/** @brief Callback API to get the current counter value (64 bits). */
 typedef int (*counter_api_get_value_64)(const struct device *dev, uint64_t *ticks);
+/** @brief Callback API to set the current counter value (64 bits). */
 typedef int (*counter_api_set_value_64)(const struct device *dev, uint64_t ticks);
+/** @brief Callback API to set a single shot alarm on a channel (64 bits). */
 typedef int (*counter_api_set_alarm_64)(const struct device *dev, uint8_t chan_id,
 					const struct counter_alarm_cfg_64 *alarm_cfg);
+/** @brief Callback API to retrieve the guard period in ticks (64 bits). */
 typedef uint64_t (*counter_api_get_guard_period_64)(const struct device *dev, uint32_t flags);
+/** @brief Callback API to set the guard period in ticks (64 bits). */
 typedef int (*counter_api_set_guard_period_64)(const struct device *dev, uint64_t ticks,
 					       uint32_t flags);
+/** @brief Callback API to retrieve the current top value (64 bits). */
 typedef uint64_t (*counter_api_get_top_value_64)(const struct device *dev);
+/** @brief Callback API to set the counter top value (64 bits). */
 typedef int (*counter_api_set_top_value_64)(const struct device *dev,
 					    const struct counter_top_cfg_64 *cfg);
 
+/**
+ * @driver_ops{Counter}
+ */
 __subsystem struct counter_driver_api {
+	/**
+	 * @driver_ops_mandatory @copybrief counter_start
+	 */
 	counter_api_start start;
+	/**
+	 * @driver_ops_mandatory @copybrief counter_stop
+	 */
 	counter_api_stop stop;
+	/**
+	 * @driver_ops_mandatory @copybrief counter_get_value
+	 */
 	counter_api_get_value get_value;
+	/**
+	 * @driver_ops_optional @copybrief counter_reset
+	 */
 	counter_api_reset reset;
+	/**
+	 * @driver_ops_optional @copybrief counter_set_value
+	 */
 	counter_api_set_value set_value;
+	/**
+	 * @driver_ops_mandatory @copybrief counter_set_channel_alarm
+	 */
 	counter_api_set_alarm set_alarm;
+	/**
+	 * @driver_ops_mandatory @copybrief counter_cancel_channel_alarm
+	 */
 	counter_api_cancel_alarm cancel_alarm;
+	/**
+	 * @driver_ops_mandatory @copybrief counter_set_top_value
+	 */
 	counter_api_set_top_value set_top_value;
+	/**
+	 * @driver_ops_mandatory @copybrief counter_get_pending_int
+	 */
 	counter_api_get_pending_int get_pending_int;
+	/**
+	 * @driver_ops_mandatory @copybrief counter_get_top_value
+	 */
 	counter_api_get_top_value get_top_value;
+	/**
+	 * @driver_ops_optional @copybrief counter_get_guard_period
+	 */
 	counter_api_get_guard_period get_guard_period;
+	/**
+	 * @driver_ops_optional @copybrief counter_set_guard_period
+	 */
 	counter_api_set_guard_period set_guard_period;
+	/**
+	 * @driver_ops_optional @copybrief counter_get_frequency
+	 */
 	counter_api_get_freq get_freq;
 #ifdef CONFIG_COUNTER_64BITS_FREQ
+	/**
+	 * @driver_ops_optional @copybrief counter_get_frequency_64
+	 */
 	counter_api_get_freq_64 get_freq_64;
 #endif /* CONFIG_COUNTER_64BITS_FREQ */
 #ifdef CONFIG_COUNTER_64BITS_TICKS
+	/**
+	 * @driver_ops_optional @copybrief counter_get_value_64
+	 */
 	counter_api_get_value_64 get_value_64;
+	/**
+	 * @driver_ops_optional @copybrief counter_set_value_64
+	 */
 	counter_api_set_value_64 set_value_64;
+	/**
+	 * @driver_ops_mandatory @copybrief counter_set_channel_alarm_64
+	 */
 	counter_api_set_alarm_64 set_alarm_64;
+	/**
+	 * @driver_ops_optional @copybrief counter_get_guard_period_64
+	 */
 	counter_api_get_guard_period_64 get_guard_period_64;
+	/**
+	 * @driver_ops_optional @copybrief counter_set_guard_period_64
+	 */
 	counter_api_set_guard_period_64 set_guard_period_64;
+	/**
+	 * @driver_ops_mandatory @copybrief counter_get_top_value_64
+	 */
 	counter_api_get_top_value_64 get_top_value_64;
+	/**
+	 * @driver_ops_mandatory @copybrief counter_set_top_value_64
+	 */
 	counter_api_set_top_value_64 set_top_value_64;
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
 };
+/**
+ * @}
+ */
 
 /**
  * @brief Function to check if counter is counting up.

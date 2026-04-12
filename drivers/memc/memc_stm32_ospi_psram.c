@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(memc_stm32_ospi_psram, CONFIG_MEMC_LOG_LEVEL);
 #define STM32_OSPI_NODE DT_INST_PARENT(0)
 
 #ifdef CONFIG_SHARED_MULTI_HEAP
-static const struct shared_multi_heap_region smh_psram = {
+static struct shared_multi_heap_region smh_psram = {
 	.addr = DT_REG_ADDR(DT_NODELABEL(psram)),
 	.size = DT_REG_SIZE(DT_NODELABEL(psram)),
 	.attr = SMH_REG_ATTR_EXTERNAL,

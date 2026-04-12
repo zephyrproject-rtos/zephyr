@@ -75,6 +75,7 @@ config OPENRISC
 	select BIG_ENDIAN
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	help
 	  OpenRISC architecture
 
@@ -439,6 +440,17 @@ config DYNAMIC_OBJECTS
 	  Objects allocated in this way can be freed with a supervisor-only
 	  API call, or when the number of references to that object drops to
 	  zero.
+
+config DYNAMIC_OBJECTS_FORCE_STACK_CACHED
+	bool "Force allocated thread stack objects to be in cached area"
+	default y
+	depends on USERSPACE
+	depends on KERNEL_COHERENCE
+	help
+	  With kernel coherence enabled, it is possible that the stack has been
+	  allocated on uncached area, which has performance implications.
+	  If this is enabled, the stack pointer will be forcibly converted to be
+	  in cached area.
 
 config NOCACHE_MEMORY
 	bool "Support for uncached memory"

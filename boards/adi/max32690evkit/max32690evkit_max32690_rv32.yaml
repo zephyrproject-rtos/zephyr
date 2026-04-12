@@ -9,5 +9,6 @@ supported:
   - gpio
   - serial
   - flash
+  - spi
 ram: 128
 flash: 256

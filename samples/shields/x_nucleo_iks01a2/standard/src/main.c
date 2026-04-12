@@ -139,7 +139,7 @@ int main(void)
 		       sensor_value_to_double(&hum));
 
 		/* pressure */
-		printf("LPS22HB: Pressure:%.3f kpa\n",
+		printf("LPS22HB: Pressure:%.3f kPa\n",
 		       sensor_value_to_double(&press));
 
 		/* lps22hb temperature */
@@ -147,13 +147,13 @@ int main(void)
 		       sensor_value_to_double(&temp2));
 
 		/* lsm6dsl accel */
-		printf("LSM6DSL: Accel (m.s-2): x: %.1f, y: %.1f, z: %.1f\n",
+		printf("LSM6DSL: Accel (m/s^2): x: %.1f, y: %.1f, z: %.1f\n",
 		       sensor_value_to_double(&accel1[0]),
 		       sensor_value_to_double(&accel1[1]),
 		       sensor_value_to_double(&accel1[2]));
 
 		/* lsm6dsl gyro */
-		printf("LSM6DSL: Gyro (dps): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSL: Gyro (rad/s): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&gyro[0]),
 		       sensor_value_to_double(&gyro[1]),
 		       sensor_value_to_double(&gyro[2]));
@@ -163,13 +163,13 @@ int main(void)
 #endif
 
 		/* lsm303agr accel */
-		printf("LSM303AGR: Accel (m.s-2): x: %.1f, y: %.1f, z: %.1f\n",
+		printf("LSM303AGR: Accel (m/s^2): x: %.1f, y: %.1f, z: %.1f\n",
 		       sensor_value_to_double(&accel2[0]),
 		       sensor_value_to_double(&accel2[1]),
 		       sensor_value_to_double(&accel2[2]));
 
 		/* lsm303agr magn */
-		printf("LSM303AGR: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM303AGR: Magn (G): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&magn[0]),
 		       sensor_value_to_double(&magn[1]),
 		       sensor_value_to_double(&magn[2]));

@@ -6,4 +6,5 @@
 
 &gpt1 {
 	status = "okay";
+	run-mode = "free-run";
 };

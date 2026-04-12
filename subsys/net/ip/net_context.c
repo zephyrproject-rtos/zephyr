@@ -2260,8 +2260,15 @@ static int context_setup_raw_ip_packet(net_sa_family_t family,
 
 		if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt),
 						 NET_IF_CHECKSUM_IPV4_HEADER)) {
+			uint16_t chksum = 0;
+
 			ipv4_hdr->chksum = 0;
-			ipv4_hdr->chksum = net_calc_chksum_ipv4(pkt);
+			ret = net_calc_chksum_ipv4(pkt, &chksum);
+			if (ret < 0) {
+				return ret;
+			}
+
+			ipv4_hdr->chksum = chksum;
 			net_pkt_set_data(pkt, &ipv4_access);
 		}
 

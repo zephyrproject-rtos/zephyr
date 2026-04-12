@@ -156,7 +156,7 @@ int main(void)
 
 #if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
 		/* lsm6dsl external magn */
-		sprintf(out_str, "magn x:%f gauss y:%f gauss z:%f gauss",
+		sprintf(out_str, "magn x:%f G y:%f G z:%f G",
 							   sensor_value_to_double(&magn_x_out),
 							   sensor_value_to_double(&magn_y_out),
 							   sensor_value_to_double(&magn_z_out));

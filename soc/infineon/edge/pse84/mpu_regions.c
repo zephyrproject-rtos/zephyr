@@ -8,7 +8,6 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
-
 /* We are expected to give *CONFIG_SIZE* in KB, but REGION_ATTR
  * expects bytes, so we multiply by 1024 to convert.
  */
@@ -23,7 +22,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY(
 		"SRAM",
 		CONFIG_SRAM_BASE_ADDRESS,
-		REGION_RAM_ATTR_WITH_EXEC(
+		REGION_RAM_ATTR(
 			CONFIG_SRAM_BASE_ADDRESS,
 			CONFIG_SRAM_SIZE * 1024)),
 
@@ -34,6 +33,24 @@ static const struct arm_mpu_region mpu_regions[] = {
 		REGION_RAM_NOCACHE_ATTR(
 			DT_REG_ADDR(DT_NODELABEL(m33_allocatable_shared)),
 			DT_REG_SIZE(DT_NODELABEL(m33_allocatable_shared)))),
+#endif
+
+#if DT_NODE_EXISTS(DT_NODELABEL(m33s_code))
+	MPU_REGION_ENTRY(
+		"M33S_CODE",
+		DT_REG_ADDR(DT_NODELABEL(m33s_code)),
+		REGION_RAM_ATTR_WITH_EXEC(
+			DT_REG_ADDR(DT_NODELABEL(m33s_code)),
+			DT_REG_SIZE(DT_NODELABEL(m33s_code)))),
+#endif
+
+#if DT_NODE_EXISTS(DT_NODELABEL(m33_code))
+	MPU_REGION_ENTRY(
+		"M33_CODE",
+		DT_REG_ADDR(DT_NODELABEL(m33_code)),
+		REGION_RAM_ATTR_WITH_EXEC(
+			DT_REG_ADDR(DT_NODELABEL(m33_code)),
+			DT_REG_SIZE(DT_NODELABEL(m33_code)))),
 #endif
 
 #if DT_NODE_EXISTS(DT_NODELABEL(itcm))

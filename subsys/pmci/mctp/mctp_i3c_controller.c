@@ -140,13 +140,22 @@ int mctp_i3c_controller_start(struct mctp_binding *binding)
 			b->endpoint_i3c_devs[i],
 			b->endpoint_i3c_devs[i]->pid,
 			b->endpoint_i3c_devs[i]->bcr);
+		/* Assign the callback before enabling IBI to avoid a race where
+		 * the target raises an IBI between i3c_ibi_enable() and the
+		 * callback assignment, which would cause a fault on a NULL or
+		 * uninitialized function pointer.
+		 */
+		b->endpoint_i3c_devs[i]->ibi_cb = mctp_i3c_ibi_cb;
 		rc = i3c_ibi_enable(b->endpoint_i3c_devs[i]);
 		if (rc != 0) {
-			LOG_WRN("Could not enable IBI for I3C PID %llx",
-				(uint64_t)b->endpoint_i3c_devs[i]->pid);
-			continue;
+			/* Log but do not clear ibi_cb: IBI may already be
+			 * enabled from a previous mctp_register_bus call on
+			 * this binding (e.g. across test iterations), in which
+			 * case the callback must remain set.
+			 */
+			LOG_WRN("Could not enable IBI for I3C PID %llx (rc=%d)",
+				(uint64_t)b->endpoint_i3c_devs[i]->pid, rc);
 		}
-		b->endpoint_i3c_devs[i]->ibi_cb = mctp_i3c_ibi_cb;
 	}
 
 	mctp_binding_set_tx_enabled(binding, true);

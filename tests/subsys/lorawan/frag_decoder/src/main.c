@@ -23,10 +23,22 @@
 	(DIV_ROUND_UP(UNCODED_FRAGS * CONFIG_LORAWAN_FRAG_TRANSPORT_MAX_REDUNDANCY, 100))
 #define PADDING (UNCODED_FRAGS * FRAG_SIZE - FIRMWARE_SIZE)
 
-#define CMD_FRAG_SESSION_SETUP (0x02)
-#define CMD_DATA_FRAGMENT      (0x08)
-#define FRAG_TRANSPORT_PORT    (201)
-#define FRAG_SESSION_INDEX     (1)
+#define CMD_FRAG_SESSION_SETUP  (0x02)
+#define CMD_FRAG_SESSION_DELETE (0x03)
+#define CMD_DATA_FRAGMENT       (0x08)
+#define FRAG_TRANSPORT_PORT     (201)
+#define FRAG_SESSION_INDEX      (1)
+
+enum frag_transport_setup_ans_status {
+	SETUP_ANS_ENCODING_UNSUPPORTED = BIT(0),
+	SETUP_ANS_NOT_ENOUGH_MEMORY = BIT(1),
+	SETUP_ANS_INDEX_NOT_SUPPORTED = BIT(2),
+	SETUP_ANS_WRONG_DESCRIPTOR = BIT(3),
+};
+
+enum frag_transport_delete_ans_status {
+	DELETE_ANS_INDEX_NOT_SUPPORTED = BIT(2),
+};
 
 #define TARGET_IMAGE_AREA PARTITION_ID(slot1_partition)
 
@@ -39,6 +51,7 @@ static uint8_t fw_coded[(UNCODED_FRAGS + REDUNDANT_FRAGS) * FRAG_SIZE];
 static const struct flash_area *fa;
 
 static struct k_sem fuota_finished_sem;
+static struct k_sem response_rx_sem;
 
 static void fuota_finished(void)
 {
@@ -57,6 +70,25 @@ uint8_t frag_session_setup_req[] = {
 	0x00,
 	0x00,
 	0x00,
+};
+
+uint8_t frag_session_setup_bad_req[] = {
+	CMD_FRAG_SESSION_SETUP,
+	0x1f,
+	UNCODED_FRAGS & 0xFF,
+	(UNCODED_FRAGS >> 8) & 0xFF,
+	FRAG_SIZE,
+	0x31,
+	PADDING,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+};
+
+uint8_t frag_session_delete_req[] = {
+	CMD_FRAG_SESSION_DELETE,
+	FRAG_SESSION_INDEX,
 };
 
 static void run_test(size_t lost_packets, bool expected_success)
@@ -141,6 +173,57 @@ ZTEST(frag_decoder, test_frag_transport_lose_more_than_max_redundancy)
 	run_test(REDUNDANT_FRAGS + 1, false);
 }
 
+static void multi_packet_response_cb(uint8_t port, uint8_t len, const uint8_t *data)
+{
+	/* Fragmented transport port number */
+	zassert_equal(201, port);
+	zassert_equal(8, len);
+
+	/* Failing setup request */
+	zassert_equal(CMD_FRAG_SESSION_SETUP, data[0]);
+	zassert_true(data[1] & SETUP_ANS_ENCODING_UNSUPPORTED);
+
+	/* Passing setup request */
+	zassert_equal(CMD_FRAG_SESSION_SETUP, data[2]);
+	zassert_false(data[3] & SETUP_ANS_ENCODING_UNSUPPORTED);
+
+	/* Passing delete request */
+	zassert_equal(CMD_FRAG_SESSION_DELETE, data[4]);
+	zassert_false(data[5] & DELETE_ANS_INDEX_NOT_SUPPORTED);
+
+	/* Failing setup request */
+	zassert_equal(CMD_FRAG_SESSION_DELETE, data[6]);
+	zassert_true(data[7] & DELETE_ANS_INDEX_NOT_SUPPORTED);
+
+	/* Unblock test */
+	k_sem_give(&response_rx_sem);
+}
+
+ZTEST(frag_decoder, test_frag_multi_packet)
+{
+	uint8_t buf[256]; /* maximum size of one LoRaWAN message */
+	size_t total_size = 0;
+
+	lorawan_emul_register_uplink_callback(multi_packet_response_cb);
+
+	/* Construct a combined packet to test error and multi-packet handling */
+	memcpy(buf + total_size, frag_session_setup_bad_req, sizeof(frag_session_setup_bad_req));
+	total_size += sizeof(frag_session_setup_bad_req);
+	memcpy(buf + total_size, frag_session_setup_req, sizeof(frag_session_setup_req));
+	total_size += sizeof(frag_session_setup_req);
+	memcpy(buf + total_size, frag_session_delete_req, sizeof(frag_session_delete_req));
+	total_size += sizeof(frag_session_delete_req);
+	memcpy(buf + total_size, frag_session_delete_req, sizeof(frag_session_delete_req));
+	total_size += sizeof(frag_session_delete_req);
+	zassert_true(total_size <= sizeof(buf));
+
+	/* Send the packet */
+	lorawan_emul_send_downlink(FRAG_TRANSPORT_PORT, false, 0, 0, total_size, buf);
+
+	/* Wait for the response (validation done in callback) */
+	zassert_equal(0, k_sem_take(&response_rx_sem, K_SECONDS(1)));
+}
+
 static void *frag_decoder_setup(void)
 {
 	const struct device *lora_dev = DEVICE_DT_GET(DT_ALIAS(lora0));
@@ -156,6 +239,7 @@ static void *frag_decoder_setup(void)
 	zassert_equal(ret, 0, "creating coded data failed: %d", ret);
 
 	k_sem_init(&fuota_finished_sem, 0, 1);
+	k_sem_init(&response_rx_sem, 0, 1);
 
 	ret = flash_area_open(TARGET_IMAGE_AREA, &fa);
 	zassert_equal(ret, 0, "opening flash area failed: %d", ret);
@@ -173,4 +257,10 @@ static void *frag_decoder_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(frag_decoder, NULL, frag_decoder_setup, NULL, NULL, NULL);
+static void frag_decoder_test_init(void *context)
+{
+	/* Reset any uplink callbacks */
+	lorawan_emul_register_uplink_callback(NULL);
+}
+
+ZTEST_SUITE(frag_decoder, NULL, frag_decoder_setup, frag_decoder_test_init, NULL, NULL);

@@ -70,7 +70,9 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 		return NET_CONTINUE;
 	}
 
-	net_pkt_skip(pkt, sizeof(*icmp_echo));
+	if (net_pkt_skip(pkt, sizeof(*icmp_echo)) < 0) {
+		return NET_DROP;
+	}
 
 	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
 		if (net_pkt_read_be32(pkt, &cycles)) {
@@ -155,8 +157,9 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 		return NET_CONTINUE;
 	}
 
-
-	net_pkt_skip(pkt, sizeof(*icmp_echo));
+	if (net_pkt_skip(pkt, sizeof(*icmp_echo)) < 0) {
+		return NET_DROP;
+	}
 
 	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
 		if (net_pkt_read_be32(pkt, &cycles)) {

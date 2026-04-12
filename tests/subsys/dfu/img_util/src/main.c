@@ -13,11 +13,8 @@
 #define SLOT0_PARTITION		slot0_partition
 #define SLOT1_PARTITION		slot1_partition
 
-#define PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
-	DT_SAME_NODE(PARTITION_NODE_MTD(DT_CHOSEN(zephyr_code_partition)),                   \
-		PARTITION_MTD(label)) &&                                                     \
-	(PARTITION_OFFSET(label) <= CONFIG_FLASH_LOAD_OFFSET &&                              \
-	 PARTITION_OFFSET(label) + PARTITION_SIZE(label) > CONFIG_FLASH_LOAD_OFFSET)
+#define PARTITION_IS_RUNNING_APP_PARTITION(label)				\
+	DT_SAME_NODE(DT_CHOSEN(zephyr_code_partition), DT_NODELABEL(label))
 
 #if PARTITION_IS_RUNNING_APP_PARTITION(slot0_partition)
 #define UPLOAD_PARTITION_ID	PARTITION_ID(SLOT1_PARTITION)

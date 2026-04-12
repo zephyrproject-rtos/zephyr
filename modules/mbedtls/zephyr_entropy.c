@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/entropy.h>
 #include <zephyr/random/random.h>
 #include <psa/crypto.h>
 #include <mbedtls/platform.h>
@@ -11,24 +12,30 @@
 
 #if defined(CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY) || \
     defined(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
+
 static int get_random_data(uint8_t *output, size_t output_size, bool allow_non_cs)
 {
 	int ret = -EINVAL;
 
-#if defined(CONFIG_CSPRNG_ENABLED)
-	ret = sys_csrand_get(output, output_size);
-	if (ret == 0) {
-		return 0;
-	}
-#endif /* CONFIG_CSPRNG_ENABLED */
+#if defined(CONFIG_ENTROPY_HAS_DRIVER)
+	static const struct device *const entropy_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 
-	if (allow_non_cs) {
-		sys_rand_get(output, output_size);
-		ret = 0;
+	if (!device_is_ready(entropy_dev)) {
+		return -ENODEV;
+	}
+
+	ret = entropy_get_entropy(entropy_dev, output, output_size);
+#endif /* CONFIG_ENTROPY_HAS_DRIVER */
+	if (ret < 0) {
+		if (allow_non_cs) {
+			sys_rand_get(output, output_size);
+			ret = 0;
+		}
 	}
 
 	return ret;
 }
+
 #endif /* CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY || CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG */
 
 #if defined(CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY)

@@ -916,7 +916,10 @@ static inline uint8_t *net_buf_simple_tail(const struct net_buf_simple *buf)
  *
  * @return Number of bytes available in the beginning of the buffer.
  */
-size_t net_buf_simple_headroom(const struct net_buf_simple *buf);
+static inline size_t net_buf_simple_headroom(const struct net_buf_simple *buf)
+{
+	return buf->data - buf->__buf;
+}
 
 /**
  * @brief Check buffer tailroom.
@@ -927,7 +930,10 @@ size_t net_buf_simple_headroom(const struct net_buf_simple *buf);
  *
  * @return Number of bytes available at the end of the buffer.
  */
-size_t net_buf_simple_tailroom(const struct net_buf_simple *buf);
+static inline size_t net_buf_simple_tailroom(const struct net_buf_simple *buf)
+{
+	return buf->size - net_buf_simple_headroom(buf) - buf->len;
+}
 
 /**
  * @brief Check maximum net_buf_simple::len value.
@@ -938,7 +944,10 @@ size_t net_buf_simple_tailroom(const struct net_buf_simple *buf);
  *
  * @return Number of bytes usable behind the net_buf_simple::data pointer.
  */
-uint16_t net_buf_simple_max_len(const struct net_buf_simple *buf);
+static inline uint16_t net_buf_simple_max_len(const struct net_buf_simple *buf)
+{
+	return buf->size - net_buf_simple_headroom(buf);
+}
 
 /**
  * @brief Parsing state of a buffer.

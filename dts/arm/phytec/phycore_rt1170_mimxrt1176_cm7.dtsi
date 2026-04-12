@@ -13,7 +13,7 @@
 		zephyr,sram = &sdram0;
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
-		zephyr,flash-controller = &mx25u12832f;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,flash = &mx25u12832f;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,cpu1-region = &ocram;

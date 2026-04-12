@@ -289,9 +289,8 @@ config NET_TC_THREAD_COOPERATIVE
 	  With co-operative threads, the thread cannot be pre-empted.
 
 config NET_TC_THREAD_PREEMPTIVE
-	bool "Use pre-emptive TX/RX threads [EXPERIMENTAL]"
+	bool "Use pre-emptive TX/RX threads"
 	depends on PREEMPT_ENABLED
-	select EXPERIMENTAL
 	help
 	  With pre-emptive threads, the thread can be pre-empted.
 

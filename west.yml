@@ -147,7 +147,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: fc36ee1f5118caa62d9c151cf2e47c193d18d926
+      revision: 44545c0b31a765c702132f22e797271c3f111eae
       path: modules/hal/adi
       groups:
         - hal
@@ -172,7 +172,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: cbf74978350266a45edbfb4508553a3990341dd2
+      revision: b7953b8019361d09e613f7011d2ccc41b984d087
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 72b2bca6488dda83f99ca1daea6916d0235e5d25
+      revision: 44fd3d44b15cb75f80a25b4679f91d2787e28664
       path: modules/hal/nordic
       groups:
         - hal
@@ -213,7 +213,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: cbf42f141066d999441696d12c206fc38929f3ea
+      revision: 2c2f28ac333e995d7279777409817c4b4f92c1ec
       path: modules/hal/nxp
       groups:
         - hal
@@ -324,13 +324,13 @@ manifest:
       revision: 85aa60d18b3d5e5588d7b247abf90198f07c8a63
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: a83ab39d828981ca1fd8a62e335a73556d35c123
+      revision: a3e190fe44c78d1ba67f55979e1257328cc7d0d8
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mbedtls-3.6 # Required for TF-M build until we bump it to v2.3
       repo-path: mbedtls
-      revision: 93344a458295c891f71fe31beaa3a3a8d8057790
+      revision: a00e23de17b6b0a0de28e180cb186da6f0008836
       path: modules/crypto/mbedtls-3.6
       groups:
         - crypto
@@ -345,7 +345,7 @@ manifest:
         - debug
       revision: 5a9d6055b62edc54566d6d0034d9daec91749b98
     - name: mldsa-native
-      revision: a2be3a55efafa398f094dd347d3ef43d99182b47
+      revision: 3fc19982839305d305071f0de0c540bc9c9bea8a
       path: modules/crypto/mldsa-native
       groups:
         - crypto
@@ -395,7 +395,7 @@ manifest:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: b84929dde09b2e88d8d6c3581e6473ffa7bfe14f
+      revision: dc575a2ddcc8cb16275d24c42a52eaf79ebe2231
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto

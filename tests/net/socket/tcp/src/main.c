@@ -1263,6 +1263,60 @@ ZTEST(net_socket_tcp, test_async_connect)
 	test_context_cleanup();
 }
 
+ZTEST(net_socket_tcp, test_async_connect_socket_close)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in c_saddr;
+	struct net_sockaddr_in s_saddr;
+	struct zsock_pollfd poll_fds[1];
+	int poll_rc;
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+	test_fcntl(c_sock, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
+	test_fcntl(s_sock, ZVFS_F_SETFL, ZVFS_O_NONBLOCK);
+
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	/* Drop all packets so that initial SYN is lost */
+	loopback_set_packet_drop_ratio(1.0f);
+
+	/* And start async TCP handshake */
+	zassert_equal(zsock_connect(c_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr)),
+		      -1,
+		      "connect shouldn't complete right away");
+	zassert_equal(errno, EINPROGRESS,
+		      "connect should be in progress, got %i", errno);
+
+	/* Add small delay to let other threads run */
+	k_msleep(THREAD_SLEEP);
+
+	/* Close client socket during the async handshake and restore the
+	 * communication
+	 */
+	test_close(c_sock);
+	restore_packet_loss_ratio();
+
+	/* Monitor server socket for incoming connections - no new connection
+	 * should be established
+	 */
+	poll_fds[0].fd = s_sock;
+	poll_fds[0].events = ZSOCK_POLLIN;
+	poll_rc = zsock_poll(poll_fds, 1, 500);
+	zassert_equal(poll_rc, 0, "poll should return 0, got %i", poll_rc);
+
+	new_sock = zsock_accept(s_sock, NULL, 0);
+	zassert_equal(new_sock, -1, "non-blocking zsock_accept() should've failed");
+	zassert_equal(errno, EAGAIN, "expected EAGAIN on zsock_accept()");
+
+	test_close(s_sock);
+
+	test_context_cleanup();
+}
+
 #define TCP_CLOSE_FAILURE_TIMEOUT 90000
 
 ZTEST(net_socket_tcp, test_z_close_obstructed)

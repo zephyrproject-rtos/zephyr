@@ -130,15 +130,15 @@
 				zephyr,memory-region = "SRAMLP_ULP";
 			};
 
-			ulp_shm: memory@3bf0 {
+			ulp_shm: memory@3c00 {
 				compatible = "zephyr,memory-region", "mmio-sram";
-				reg = <0x3bf0 0x10>;
+				reg = <0x3c00 0x10>;
 				zephyr,memory-region = "SRAMLP_ULP_SHM";
 			};
 
-			lp_rtc: memory@3c00 {
+			lp_rtc: memory@3c10 {
 				compatible = "zephyr,memory-region", "mmio-sram";
-				reg = <0x3c00 0xf8>;
+				reg = <0x3c10 0xe8>;
 				zephyr,memory-region = "SRAMLP_RTC";
 			};
 

@@ -54,6 +54,8 @@ int net_icmpv4_finalize(struct net_pkt *pkt, bool force_chksum)
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
+	int ret;
+	uint16_t chksum = 0;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_HDR_OPTIONS)) {
 		if (net_pkt_skip(pkt, net_pkt_ipv4_opts_len(pkt))) {
@@ -69,7 +71,13 @@ int net_icmpv4_finalize(struct net_pkt *pkt, bool force_chksum)
 	icmp_hdr->chksum = 0U;
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_ICMP) ||
 		force_chksum) {
-		icmp_hdr->chksum = net_calc_chksum_icmpv4(pkt);
+
+		ret = net_calc_chksum_icmpv4(pkt, &chksum);
+		if (ret < 0) {
+			return ret;
+		}
+
+		icmp_hdr->chksum = chksum;
 		net_pkt_set_chksum_done(pkt, true);
 	}
 
@@ -620,6 +628,8 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
 	enum net_verdict verdict;
+	int ret;
+	uint16_t chksum = 0;
 
 	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
@@ -629,8 +639,10 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 
 	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_ICMP) ||
 	    net_pkt_is_ip_reassembled(pkt)) {
-		if (net_calc_chksum_icmpv4(pkt) != 0U) {
-			NET_DBG("DROP: Invalid checksum");
+
+		ret = net_calc_chksum_icmpv4(pkt, &chksum);
+		if (ret < 0 || chksum != 0U) {
+			NET_DBG("DROP: Invalid checksum or error %d", ret);
 			goto drop;
 		}
 	}

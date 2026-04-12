@@ -5,11 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-import sys
 
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-if not ZEPHYR_BASE:
-    sys.exit("$ZEPHYR_BASE environment variable undefined")
+from twisterlib import ZEPHYR_BASE
 
 # Use this for internal comparisons; that's what canonicalization is
 # for. Don't use it when invoking other components of the build system

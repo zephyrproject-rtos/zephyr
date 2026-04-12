@@ -48,6 +48,13 @@ devicetree:
 .. literalinclude:: devicetree_bindings.txt
    :language: dts
 
+The reg property is an array containing:
+
+* The offset in the memory in which we are creating the cell,
+* The size of the cell, in bytes.
+
+``#nvmem-cell-cells`` describes the number of property items in the phandle,
+see :ref:`dt-bindings-cells`, typically set to zero.
 
 A consumer can then reference the NVMEM cells like this:
 

@@ -185,6 +185,11 @@ Boards
   Zephyr is expected to execute in the non-secure state of the processor, the board or project
   must explicitly enable :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NON_SECURE`.
 
+* The following WCH SoC Kconfigs have been renamed. Kconfig/CMake/code
+  needs to be updated if they reference the old Kconfigs:
+
+  * ``CONFIG_SOC_SERIES_CH32V00X`` with :kconfig:option:`CONFIG_SOC_SERIES_QINGKE_V2C`
+
 Device Drivers and Devicetree
 *****************************
 
@@ -570,6 +575,9 @@ Ethernet
   * :dtcompatible:`wiznet,w5500` (:github:`100919`)
   * :dtcompatible:`snps,designware-ethernet` (:github:`105090`)
 
+  MAC address should now be set as a child node of a :dtcompatible:`nvmem-layout`.
+  See the documentation of :ref:`MAC address configuration <mac_address_config>`.
+
 * The ``fixed-link`` property has been removed from :dtcompatible:`ethernet-phy`. Use
   the new :dtcompatible:`ethernet-phy-fixed-link` compatible instead, if that functionality
   is needed. There you need to specify the fixed link parameters using the ``default-speeds``
@@ -802,6 +810,20 @@ NXP
   On Kinetis KE1xF, this overlay is also required when
   :kconfig:option:`CONFIG_PM` is enabled.
 
+* :dtcompatible:`nxp,imx-flexspi-nor` compatible nodes now have
+  a :dtcompatible:`soc-nv-flash` compatible child node to describe
+  the flash memory. The ``nxp,imx-flexspi-nor`` node acts as the
+  flash controller (renamed to ``flash-controller@0``),
+  and ``erase-block-size``, ``write-block-size`` properties, as well
+  as ``partitions`` node, are moved into the flash chip node.
+  Out-of-tree boards must update their devicetrees accordingly.
+
+* ``zephyr,flash`` chosen property must point to the
+  :dtcompatible:`soc-nv-flash` compatible node.
+  * ``zephyr,flash-controller`` chosen property must point to the
+  :dtcompatible:`nxp,imx-flexspi-nor` compatible node.
+  * A ``ranges`` property is required on the controller node.
+
 QSPI
 ====
 
@@ -985,6 +1007,11 @@ STM32
   is now selected automatically based on devicetree configuration: instances with either of
   the ``cs-gpios`` or new ``st,soft-nss`` property operate in "Soft NSS" mode, while all other
   instances operate in "Hard NSS" mode.
+
+* To ensure that the SPI is functional at any frequency, all SPI pins are now configured with a
+  ``very-high-speed`` slew-rate by default. This may result in higher power consumption.
+  The slew-rate value can be overridden in board's dts or in overlays to a slower speed in order to
+  decrease power consumption.
 
 * :kconfig:option:`CONFIG_NUM_IRQS` is computed automatically based on active (``status = "okay";``)
   devices by using the new ``dt_highest_controller_irq_number`` Kconfig preprocessor function.
@@ -1359,6 +1386,11 @@ Management
     :kconfig:option:`CONFIG_UART_MCUMGR` must now also be selected, this has changed to be
     ``depends on`` rather than ``select``.
 
+Random
+======
+
+* ``CONFIG_CSPRNG_AVAILABLE`` has been renamed to :kconfig:option:`CONFIG_ENTROPY_NODE_ENABLED`.
+
 Tracing
 ========
 
@@ -1389,6 +1421,89 @@ HostAP
 * Kconfig :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` is now
   enabled by default.
 
+Mbed TLS
+========
+
+* Mbed TLS has been upgraded to version 4.1.0. From now on this repo will only include TLS
+  and X.509, while crypto support was moved to TF-PSA-Crypto. A new west module
+  has been introduced for the latter and it's based on upstream release 1.1.0.
+  TF-M continues to build with Mbed TLS 3.6.5.
+  Crypto-wise there are many changes introduced with this change, so it's strongly
+  suggested to take a look to the official `Mbed TLS 3.x to TF-PSA-Crypto 1.x migration guide
+  <https://github.com/Mbed-TLS/TF-PSA-Crypto/blob/development/docs/1.0-migration-guide.md>`.
+
+* ``CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR`` has been renamed to
+  :kconfig:option:`CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY`.
+
+* ``CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT`` has been replaced by the underlying options it used
+  to enable: :kconfig:option:`CONFIG_MBEDTLS_PEM_PARSE_C`,
+  :kconfig:option:`CONFIG_MBEDTLS_PEM_WRITE_C` and :kconfig:option:`CONFIG_MBEDTLS_BASE64_C`.
+
+* ``CONFIG_MBEDTLS_SERVER_NAME_INDICATION`` has been renamed to
+  :kconfig:option:`CONFIG_MBEDTLS_SSL_SERVER_NAME_INDICATION`.
+
+* ``CONFIG_MBEDTLS_TEST`` has been renamed to :kconfig:option:`CONFIG_MBEDTLS_DEBUG_C`.
+
+* The following PSA related Kconfig symbols have been removed as they are no longer
+  supported by TF-PSA-Crypto:
+
+  * ``CONFIG_PSA_WANT_KEY_TYPE_DES``
+  * ``CONFIG_PSA_WANT_ECC_SECP_R1_192``
+  * ``CONFIG_PSA_WANT_ECC_SECP_K1_192``
+  * ``CONFIG_PSA_WANT_ECC_SECP_R1_224``
+
+* The following Mbed TLS Kconfig symbols have been removed:
+
+  * ``CONFIG_CUSTOM_MBEDTLS_CFG_FILE``
+  * ``CONFIG_MBEDTLS_CHACHAPOLY_AEAD_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_AES_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CAMELLIA_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CCM_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_CHACHA20_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_DES_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_GCM_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_CBC_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_CTR_ENABLED``
+  * ``CONFIG_MBEDTLS_CIPHER_MODE_XTS_ENABLED``
+  * ``CONFIG_MBEDTLS_CMAC``
+  * ``CONFIG_MBEDTLS_DHM_C``
+  * ``CONFIG_MBEDTLS_ECDH_C``
+  * ``CONFIG_MBEDTLS_ECDSA_C``
+  * ``CONFIG_MBEDTLS_ECDSA_DETERMINISTIC``
+  * ``CONFIG_MBEDTLS_ECJPAKE_C``
+  * ``CONFIG_MBEDTLS_ECP_ALL_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_C``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP256R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP384R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_BP512R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_CURVE25519_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_CURVE448_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP192K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP192R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP224K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP224R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP256K1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP384R1_ENABLED``
+  * ``CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED``
+  * ``CONFIG_MBEDTLS_GENPRIME_ENABLED``
+  * ``CONFIG_MBEDTLS_HKDF_C``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_ENABLED``
+  * ``CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED``
+  * ``CONFIG_MBEDTLS_MD5``
+  * ``CONFIG_MBEDTLS_PKCS1_V15``
+  * ``CONFIG_MBEDTLS_PKCS1_V21``
+  * ``CONFIG_MBEDTLS_POLY1305``
+  * ``CONFIG_MBEDTLS_RSA_C``
+  * ``CONFIG_MBEDTLS_SHA1``
+  * ``CONFIG_MBEDTLS_SHA224``
+  * ``CONFIG_MBEDTLS_SHA256``
+  * ``CONFIG_MBEDTLS_SHA384``
+  * ``CONFIG_MBEDTLS_SHA512``
+  * ``CONFIG_MBEDTLS_USE_PSA_CRYPTO``
+
 OpenThread
 ==========
 
@@ -1410,6 +1525,11 @@ OpenThread
   for Secure Storage (Settings, ZMS, or a custom one) to be configured.
 
 * :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` is now enabled by default.
+
+* Following Mbed TLS bump to version 4.1.0, legacy crypto support is no longer available
+  in Zephyr. Therefore ``CONFIG_OPENTHREAD_CRYPTO_LEGACY_MBEDTLS_CONFIG`` has been removed.
+  :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA_CONFIG` was already the default choice for
+  crypto support and it is now the only supported crypto option.
 
 Trusted Firmware-M
 ==================

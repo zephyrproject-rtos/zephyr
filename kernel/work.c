@@ -610,11 +610,28 @@ static void work_timeout_handler(struct _timeout *record)
 	k_work_handler_t handler = NULL;
 	const char *name;
 	const char *space = " ";
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	K_SPINLOCK(&lock) {
-		work = queue->work;
-		handler = work->handler;
+	work = queue->work;
+	handler = work->handler;
+
+	/*
+	 * The work item may be running on a different CPU than the timeout
+	 * handler. This necessitates two conditions be checked.
+	 *  1. Did the work item finish before the timeout handler got to run?
+	 *  2. Was the timeout handler canceled while it was pending?
+	 * If the work thread starts a new work item before this handler wins
+	 * the spinlock, the finished flag is reset but the handler can still
+	 * detect if the timeout was aborted by work_timeout_stop_locked().
+	 */
+
+	if ((queue->finished) || (z_is_timeout_handler_canceled(record))) {
+		k_spin_unlock(&lock, key);
+		return;
 	}
+	queue->finished = true;
+
+	k_spin_unlock(&lock, key);
 
 	name = k_thread_name_get(queue->thread_id);
 	if (name == NULL) {
@@ -630,6 +647,8 @@ static void work_timeout_handler(struct _timeout *record)
 
 static void work_timeout_start_locked(struct k_work_q *queue, struct k_work *work)
 {
+	queue->finished = false;
+
 	if (K_TIMEOUT_EQ(queue->work_timeout, K_FOREVER)) {
 		return;
 	}
@@ -744,7 +763,20 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		key = k_spin_lock(&lock);
 
 #if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+		if (queue->finished) {
+			/*
+			 * The work item timeout handler has flagged this work
+			 * thread for taking too long and is going to abort it.
+			 * Do not proceed to the next work item.
+			 */
+			k_spin_unlock(&lock, key);
+			while (1) {
+				k_sleep(K_FOREVER);
+			}
+			CODE_UNREACHABLE;
+		}
 		work_timeout_stop_locked(queue);
+		queue->finished = true;
 #endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 
 		flag_clear(&work->flags, K_WORK_RUNNING_BIT);
@@ -756,7 +788,8 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		}
 
 		flag_clear(&queue->flags, K_WORK_QUEUE_BUSY_BIT);
-		yield = !flag_test(&queue->flags, K_WORK_QUEUE_NO_YIELD_BIT);
+		yield = (!flag_test(&queue->flags, K_WORK_QUEUE_NO_YIELD_BIT) &&
+			 !sys_slist_is_empty(&queue->pending));
 		k_spin_unlock(&lock, key);
 
 		/* Optionally yield to prevent the work queue from
@@ -970,6 +1003,20 @@ static void work_timeout(struct _timeout *to)
 	struct k_work *wp = &dw->work;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	struct k_work_q *queue = NULL;
+
+	/*
+	 * If the timeout handler has been canceled between the point in time
+	 * when sys_clock_announce() called it and this handler wins <lock>
+	 * then there is nothing to do. As the current lock is required to be
+	 * held before _this_ timeout can be aborted, it is safe to test for
+	 * the cancellation of the handler without explicitly holding the
+	 * timeout lock.
+	 */
+
+	if (z_is_timeout_handler_canceled(to)) {
+		k_spin_unlock(&lock, key);
+		return;
+	}
 
 	/* If the work is still marked delayed (should be) then clear that
 	 * state and submit it to the queue.  If successful the queue will be

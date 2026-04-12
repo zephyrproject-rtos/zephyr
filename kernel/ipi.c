@@ -71,12 +71,15 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 
 void signal_pending_ipi(void)
 {
-	/* Synchronization note: you might think we need to lock these
-	 * two steps, but an IPI is idempotent.  It's OK if we do it
-	 * twice.  All we require is that if a CPU sees the flag true,
-	 * it is guaranteed to send the IPI, and if a core sets
-	 * pending_ipi, the IPI will be sent the next time through
-	 * this code.
+	/* Note: with directed IPIs, arch_sched_directed_ipi() skips the
+	 * calling CPU, so if a CPU consumes its own pending bit the IPI
+	 * is silently dropped. When rescheduling, callers must ensure
+	 * that signal_pending_ipi() is invoked while the scheduler lock is
+	 * still held. Holding the lock ensures the scheduling decision and
+	 * IPI dispatch are atomic: either a concurrent flag_ipi() lands
+	 * before the lock is acquired (and the CPU sees the new thread),
+	 * or it lands after the lock is released (and the other CPU
+	 * dispatches the IPI).
 	 */
 
 #if defined(CONFIG_SCHED_IPI_SUPPORTED)

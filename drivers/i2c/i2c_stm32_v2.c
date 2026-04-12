@@ -400,7 +400,7 @@ int i2c_stm32_target_register(const struct device *dev,
 
 	if (!data->target_cfg) {
 		data->target_cfg = config;
-		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
 			LL_I2C_SetOwnAddress1(i2c, config->address, LL_I2C_OWNADDRESS1_10BIT);
 			LOG_DBG("i2c: target #1 registered with 10-bit address");
 		} else {
@@ -414,7 +414,7 @@ int i2c_stm32_target_register(const struct device *dev,
 	} else {
 		data->target2_cfg = config;
 
-		if (data->target2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		if (data->target2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
 			return -EINVAL;
 		}
 		LL_I2C_SetOwnAddress2(i2c, config->address << 1U,
@@ -1051,9 +1051,9 @@ static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
  */
 #define I2C_LOOP_SCLH();						\
 	if ((tscl >= clk_min) &&					\
-		(tscl <= clk_max) &&					\
-		(tscl_h >= i2c_stm32_charac[i2c_speed].hscl_min) &&	\
-		(ti2cclk < tscl_h)) {					\
+	    (tscl <= clk_max) &&					\
+	    (tscl_h >= i2c_stm32_charac[i2c_speed].hscl_min) &&		\
+	    (ti2cclk < tscl_h)) {					\
 									\
 		int32_t error = (int32_t)tscl - (int32_t)ti2cspeed;	\
 									\
@@ -1116,7 +1116,7 @@ uint32_t i2c_compute_scll_sclh(uint32_t clock_src_freq, uint32_t i2c_speed)
 			 * tI2CCLK < (tLOW - tfilters) / 4 and tI2CCLK < tHIGH
 			 */
 			if ((tscl_l > i2c_stm32_charac[i2c_speed].lscl_min) &&
-				(ti2cclk < ((tscl_l - tafdel_min - dnf_delay) / 4U))) {
+			    (ti2cclk < ((tscl_l - tafdel_min - dnf_delay) / 4U))) {
 				for (sclh = 0; sclh < I2C_STM32_SCLH_MAX; sclh++) {
 					/*
 					 * tHIGH(min) <= tAF(min) + tDNF +
@@ -1148,7 +1148,7 @@ uint32_t i2c_compute_scll_sclh(uint32_t clock_src_freq, uint32_t i2c_speed)
 #define I2C_LOOP_SDADEL();								\
 											\
 	if ((tsdadel >= (uint32_t)tsdadel_min) &&					\
-		(tsdadel <= (uint32_t)tsdadel_max)) {					\
+	    (tsdadel <= (uint32_t)tsdadel_max)) {					\
 		if (presc != prev_presc) {						\
 			i2c_valid_timing[i2c_valid_timing_nbr].presc = presc;		\
 			i2c_valid_timing[i2c_valid_timing_nbr].tscldel = scldel;	\
@@ -1242,7 +1242,26 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 	uint32_t timing = 0U;
 	uint32_t idx;
 	uint32_t speed = 0U;
-	uint32_t i2c_freq = cfg->bitrate;
+	uint32_t i2c_freq;
+
+	switch (I2C_SPEED_GET(data->dev_config)) {
+	case I2C_SPEED_DT:
+		i2c_freq = cfg->bitrate;
+		break;
+	case I2C_SPEED_STANDARD:
+		i2c_freq = I2C_BITRATE_STANDARD;
+		break;
+	case I2C_SPEED_FAST:
+		i2c_freq = I2C_BITRATE_FAST;
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		i2c_freq = I2C_BITRATE_FAST_PLUS;
+		break;
+	default:
+		LOG_ERR("i2c: speed ID %u (I2C_SPEED_*) not supported",
+			I2C_SPEED_GET(data->dev_config));
+		return -EINVAL;
+	}
 
 	/* Reset valid timing count at the beginning of each new computation */
 	i2c_valid_timing_nbr = 0;
@@ -1250,7 +1269,7 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 	if ((clock != 0U) && (i2c_freq != 0U)) {
 		for (speed = 0 ; speed <= (uint32_t)I2C_STM32_SPEED_FREQ_FAST_PLUS ; speed++) {
 			if ((i2c_freq >= i2c_stm32_charac[speed].freq_min) &&
-				(i2c_freq <= i2c_stm32_charac[speed].freq_max)) {
+			    (i2c_freq <= i2c_stm32_charac[speed].freq_max)) {
 				i2c_compute_presc_scldel_sdadel(clock, speed);
 				idx = i2c_compute_scll_sclh(clock, speed);
 				if (idx < I2C_STM32_VALID_TIMING_NBR) {
@@ -1292,8 +1311,8 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 		const struct i2c_config_timing *preset = &cfg->timings[i];
 		uint32_t speed = i2c_map_dt_bitrate(preset->i2c_speed);
 
-		if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config))
-		   && (preset->periph_clock == clock)) {
+		if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config)) &&
+		    (preset->periph_clock == clock)) {
 			/*  Found a matching periph clock and i2c speed */
 			LL_I2C_SetTiming(i2c, preset->timing_setting);
 			return 0;

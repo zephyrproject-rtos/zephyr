@@ -126,8 +126,24 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG((((size_t)stack) % XCHAL_DCACHE_LINESIZE) == 0);
-	__ASSERT_NO_MSG((((size_t)stack_ptr) % XCHAL_DCACHE_LINESIZE) == 0);
-	sys_cache_data_flush_and_invd_range(stack, (char *)stack_ptr - (char *)stack);
+
+	/* Here, we need to commit the changes made thus far in the stack,
+	 * so that if the thread starts on another CPU, it will have
+	 * current data. Also, we need to invalidate the cache on this CPU
+	 * or else it would contain stale data when the thread comes back
+	 * to this CPU to run.
+	 *
+	 * Note that the incoming stack_ptr points to an already modified
+	 * stack where the kernel thread setup routine has already put
+	 * data above it. So we need to add back the delta to include
+	 * all modified data.
+	 */
+	size_t flush_sz = (size_t)stack_ptr - (size_t)stack;
+
+	flush_sz += (size_t)thread->stack_info.delta;
+	flush_sz = ROUND_UP(flush_sz, XCHAL_DCACHE_LINESIZE);
+
+	sys_cache_data_flush_and_invd_range(stack, flush_sz);
 #endif
 }
 
