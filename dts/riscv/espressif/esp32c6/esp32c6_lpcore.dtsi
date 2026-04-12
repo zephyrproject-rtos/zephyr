@@ -99,7 +99,7 @@
 
 		lp_uart: uart@600b1400 {
 			compatible = "espressif,esp32-lpuart";
-			reg = <0x600b1400 DT_SIZE_K(4)>;
+			reg = <0x600b1400 DT_SIZE_K(1)>;
 			status = "disabled";
 		};
 
@@ -107,7 +107,7 @@
 			compatible = "espressif,esp32-lpgpio";
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x600b2000 DT_SIZE_K(4)>;
+			reg = <0x600b2000 DT_SIZE_K(1)>;
 			ngpios = <8>;
 		};
 	};
