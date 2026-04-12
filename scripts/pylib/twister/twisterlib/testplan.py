@@ -1016,7 +1016,12 @@ class TestPlan:
 
                 if ts.harness:
                     sim = plat.simulator_by_name(self.options.sim_name)
-                    if ts.harness == 'robot' and not (sim and sim.name in ['renode', 'native']):
+                    robot_targets = [
+                        'renode',
+                        'native',
+                        'qemu'
+                    ]
+                    if ts.harness == 'robot' and not (sim and sim.name in robot_targets):
                         instance.add_filter(
                             "No robot support for the selected platform",
                             Filters.SKIP

@@ -1137,9 +1137,28 @@ class QEMUHandler(Handler):
         return command
 
     def handle(self, harness):
-        self.run = True
+        robot_test = getattr(harness, "is_robot_test", False)
 
         domain_build_dir = self.get_default_domain_build_dir()
+
+        if robot_test:
+            # Robot Framework manages QEMU startup via QemuSimLibrary.
+            # QEMU_PIPE is already baked into the build as <build_dir>/qemu-fifo,
+            # so the library only needs BUILD_DIR and GENERATOR_CMD to start QEMU.
+            robot_dir = os.path.join(ZEPHYR_BASE, 'tests', 'robot')
+            qemu_keywords = os.path.join(robot_dir, 'common_qemu.robot')
+            robot_command = [
+                "robot",
+                "--pythonpath", robot_dir,
+                "--outputdir", self.build_dir,
+                "--variable", "KEYWORDS:" + qemu_keywords,
+                "--variable", "BUILD_DIR:" + domain_build_dir,
+                "--variable", "GENERATOR_CMD:" + (self.generator_cmd or "cmake"),
+            ]
+            harness.run_robot_test(robot_command, self)
+            return
+
+        self.run = True
 
         command = self._create_command(domain_build_dir)
 
