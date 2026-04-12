@@ -47,7 +47,6 @@ from git.exc import BadName
 
 VERSION_COMMIT_RE = re.compile(r".*-g([a-f0-9]{12})$")
 PLAN_HEADERS = ['name', 'feature', 'board', 'application', 'options', 'suite_name']
-TESTSUITE_FILENAME = { 'tests': 'testcase.yaml', 'samples': 'sample.yaml' }
 FOOTPRINT_FILES = { 'ROM': 'rom.json', 'RAM': 'ram.json' }
 RESULT_FILENAME = 'twister_footprint.json'
 HWMv2_LEVELS = 3
@@ -214,23 +213,6 @@ def main():
             continue
 
         suite_name = test_name_sep.join([plan[r_plan][n] if n in plan[r_plan] else '' for n in test_name_parts])
-
-        # Just some sanity checks of the 'application' in the current ZEPHYR_BASE
-        if args.testsuite_check:
-            suite_type = plan[r_plan]['application'].split('/')
-            if len(suite_type) and suite_type[0] in TESTSUITE_FILENAME:
-                suite_conf_name = TESTSUITE_FILENAME[suite_type[0]]
-            else:
-                logging.error(f"unknown app type to get configuration in '{report_path}'")
-                errors += 1
-                continue
-
-            suite_conf_fname = os.path.join(zephyr_base, plan[r_plan]['application'], suite_conf_name)
-            if not os.path.isfile(suite_conf_fname):
-                logging.error(f"test configuration not found for '{report_path}' at '{suite_conf_fname}'")
-                errors += 1
-                continue
-
 
         # Check SHA presence in the current ZEPHYR_BASE
         sha_match = VERSION_COMMIT_RE.search(data_id['version'])
