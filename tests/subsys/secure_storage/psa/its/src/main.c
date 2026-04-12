@@ -9,10 +9,10 @@
 
 /* The flash must be erased after this test suite is run for the write-once entry test to pass. */
 #if !defined(CONFIG_BUILD_WITH_TFM) && defined(CONFIG_FLASH_PAGE_LAYOUT) &&                        \
-	PARTITION_EXISTS(DT_NODELABEL(storage_partition))
+	PARTITION_EXISTS(storage_partition)
 static int erase_flash(void)
 {
-	const struct device *const fdev = PARTITION_MTD(storage_partition);
+	const struct device *const fdev = PARTITION_DEVICE(storage_partition);
 	int rc;
 
 	rc = flash_flatten(fdev, PARTITION_OFFSET(storage_partition),
