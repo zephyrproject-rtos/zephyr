@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
 
 import edtlib_logger
 from devicetree import edtlib
+from gen_driver_kconfig_dts import write_kconfig_dts
 
 
 def main():
@@ -60,6 +61,8 @@ def main():
     with open(args.dts_out, "w", encoding="utf-8") as f:
         print(edt.dts_source, file=f)
 
+    write_kconfig_dts(set(edt.compat2nodes.keys()), args.kconfig_out)
+
     write_pickled_edt(edt, args.edt_pickle_out)
 
 
@@ -82,6 +85,8 @@ def parse_args() -> argparse.Namespace:
                              "as a debugging aid)")
     parser.add_argument("--edt-pickle-out",
                         help="path to write pickled edtlib.EDT object to", required=True)
+    parser.add_argument("--kconfig-out", required=True,
+                        help="path to write Kconfig.dts to")
     parser.add_argument("--vendor-prefixes", action='append', default=[],
                         help="vendor-prefixes.txt path; used for validation; "
                              "may be given multiple times")

@@ -319,6 +319,7 @@ function(dts_edt_pickle)
     --workspace-dir ${gen_edt_workspace_dir}
     --dts-out ${ZEPHYR_DTS}.new # for debugging and dtc
     --edt-pickle-out ${EDT_PICKLE}.new
+    --kconfig-out ${DTS_KCONFIG}.new
     ${EXTRA_GEN_EDT_ARGS}
   )
 
@@ -329,9 +330,11 @@ function(dts_edt_pickle)
   )
   zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
   zephyr_file_copy(${EDT_PICKLE}.new ${EDT_PICKLE} ONLY_IF_DIFFERENT)
-  file(REMOVE ${ZEPHYR_DTS}.new ${EDT_PICKLE}.new)
+  zephyr_file_copy(${DTS_KCONFIG}.new ${DTS_KCONFIG} ONLY_IF_DIFFERENT)
+  file(REMOVE ${ZEPHYR_DTS}.new ${EDT_PICKLE}.new ${DTS_KCONFIG}.new)
   message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
   message(STATUS "Generated pickled edt: ${EDT_PICKLE}")
+  message(STATUS "Generated Kconfig.dts: ${DTS_KCONFIG}")
 endfunction()
 
 function(dts_gen_defines)
@@ -353,23 +356,6 @@ function(dts_gen_defines)
   zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
   file(REMOVE ${DEVICETREE_GENERATED_H}.new)
   message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")
-endfunction()
-
-function(dts_gen_driver_kconfig)
-  #
-  # Run GEN_DRIVER_KCONFIG_SCRIPT.
-  #
-
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${GEN_DRIVER_KCONFIG_SCRIPT}
-    --kconfig-out ${DTS_KCONFIG}
-    --bindings-dirs ${CACHED_DTS_ROOT_BINDINGS}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    RESULT_VARIABLE ret
-  )
-  if(NOT "${ret}" STREQUAL "0")
-    message(FATAL_ERROR "gen_driver_kconfig_dts.py failed with return code: ${ret}")
-  endif()
 endfunction()
 
 function(dts_import)
@@ -438,7 +424,6 @@ macro(dts_init)
   dts_configuration_files()
   dts_edt_pickle()
   dts_gen_defines()
-  dts_gen_driver_kconfig()
   dts_import()
   dts_dtc()
   dts_build_info_output()
