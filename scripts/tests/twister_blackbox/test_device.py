@@ -13,7 +13,7 @@ import sys
 import re
 
 # pylint: disable=no-name-in-module
-from conftest import TEST_DATA, suite_filename_mock
+from conftest import TEST_DATA, test_filename_mock
 from twisterlib.testplan import TestPlan
 from twisterlib.twister_main import main as twister_main
 
@@ -24,7 +24,7 @@ class TestDevice:
         'seed',
         [1234, 4321, 1324],
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_seed(self, capfd, out_path, seed):
         test_platforms = ['native_sim']
         path = os.path.join(TEST_DATA, 'tests', 'seed_native_sim')

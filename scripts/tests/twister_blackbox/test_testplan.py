@@ -12,7 +12,7 @@ import pytest
 import json
 
 # pylint: disable=no-name-in-module
-from conftest import TEST_DATA, suite_filename_mock
+from conftest import TEST_DATA, test_filename_mock
 from twisterlib.testplan import TestPlan
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.twister_main import main as twister_main
@@ -43,7 +43,7 @@ class TestTestPlan:
         TESTDATA_1,
         ids=['valid', 'not found']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_subtest(self, out_path, test, expected_exception, expected_subtest_count):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
@@ -74,7 +74,7 @@ class TestTestPlan:
         TESTDATA_2,
         ids=['buildable', 'runnable']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_filter(self, out_path, filter, expected_count):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
@@ -103,8 +103,8 @@ class TestTestPlan:
         TESTDATA_3,
         ids=['integration', 'no integration']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
-    @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', '')
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', '')
     def test_integration(self, out_path, integration, expected_count):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')

@@ -11,14 +11,14 @@ import os
 import json
 
 # pylint: disable=no-name-in-module
-from conftest import TEST_DATA, suite_filename_mock, clear_log_in_test
+from conftest import TEST_DATA, test_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 from twisterlib.twister_main import main as twister_main
 
 
 class TestTestlist:
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_save_tests(self, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')

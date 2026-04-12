@@ -18,13 +18,13 @@ from conftest import (
     TEST_DATA,
     ZEPHYR_BASE,
     clear_log_in_test,
-    sample_filename_mock,
-    suite_filename_mock
+    test_filename_mock,
+    test_filename_mock
 )
 from twisterlib.testplan import TestPlan
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
 class TestPrintOuts:
     TESTDATA_1 = [
         (
@@ -465,7 +465,7 @@ class TestPrintOuts:
 
         assert str(sys_exit.value) == '0'
 
-    @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', sample_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_size(self, capfd, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')

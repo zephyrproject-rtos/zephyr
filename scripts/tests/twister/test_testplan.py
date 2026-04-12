@@ -38,8 +38,7 @@ def mock_twister_env():
 def test_testplan_add_testsuites_short(class_testplan):
     """ Testing add_testcase function of Testsuite class in twister """
     # Test 1: Check the list of testsuites after calling add testsuites function is as expected
-    class_testplan.SAMPLE_FILENAME = 'test_sample_app.yaml'
-    class_testplan.TESTSUITE_FILENAME = 'test_data.yaml'
+    class_testplan.TEST_DEFINITION_FILENAME = ['test_sample_app.yaml', 'test_data.yaml']
     class_testplan.add_testsuites()
 
     tests_rel_dir = 'scripts/tests/twister/test_data/testsuites/tests/'
@@ -438,7 +437,7 @@ def test_quarantine_short(class_testplan, platforms_list, test_data,
     class_testplan.options.all = True
     class_testplan.platforms = platforms_list
     class_testplan.platform_names = [p.name for p in platforms_list]
-    class_testplan.TESTSUITE_FILENAME = 'test_data.yaml'
+    class_testplan.TEST_DEFINITION_FILENAME = 'test_data.yaml'
     class_testplan.add_testsuites()
 
     quarantine_list = [
@@ -1316,7 +1315,7 @@ def test_testplan_add_testsuites(tmp_path, testsuite_filter, use_alt_root, detai
     # │ ├ wrong_test
     # │ │ └ testcase.yaml
     # │ ├ good_sample
-    # │ │ └ sample.yaml
+    # │ │ └ tests.yaml
     # │ ├ duplicate_test
     # │ │ └ testcase.yaml
     # │ └ others
