@@ -379,7 +379,7 @@ class BinaryHandler(Handler):
         return env
 
     def handle(self, harness):
-        robot_test = getattr(harness, "is_robot_test", False)
+        robot_test = getattr(harness, "is_robot_test", False) is True
 
         command = self._create_command(robot_test)
 
@@ -735,7 +735,7 @@ class DeviceHandler(Handler):
             self.run_custom_script(post_script, timeout)
 
     def handle(self, harness):
-        robot_test = getattr(harness, "is_robot_test", False)
+        robot_test = getattr(harness, "is_robot_test", False) is True
         hardware: CompoundHardwareData = self.instance.reserved_duts[0]
 
         # Run pre-script BEFORE starting serial PTY to avoid conflicts
@@ -1137,7 +1137,7 @@ class QEMUHandler(Handler):
         return command
 
     def handle(self, harness):
-        robot_test = getattr(harness, "is_robot_test", False)
+        robot_test = getattr(harness, "is_robot_test", False) is True
 
         domain_build_dir = self.get_default_domain_build_dir()
 
