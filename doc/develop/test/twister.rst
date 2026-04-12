@@ -239,10 +239,10 @@ env:
 Tests
 *****
 
-Tests are detected by the presence of a ``testcase.yaml`` or a ``sample.yaml``
-files in the application's project directory. This test application
-configuration file may contain one or more entries in the ``tests:`` section each
-identifying a Test Scenario.
+Tests are detected by the presence of a ``tests.yaml`` (``sample.yaml`` and
+``testcase.yaml`` support is deprecated) files in the application's project
+directory.  This test application configuration file may contain one or more
+entries in the ``tests:`` section each identifying a Test Scenario.
 
 .. _twister_test_project_diagram:
 
@@ -292,8 +292,8 @@ Test Scenario, Test Suite, and Test Case names must follow to these basic rules:
      ``<Test Scenario identifier>.<Ztest suite name>.<Ztest test name>``
 
    * **Standalone tests and samples**:
-     a Test Scenario identifier from the corresponding ``testcase.yaml`` (or
-     ``sample.yaml``) file where the last section signifies the standalone
+     a Test Scenario identifier from the corresponding ``tests.yaml`` file where
+     the last section signifies the standalone
      Test Case name, for example: ``debug.coredump.logging_backend``.
 
 
@@ -1652,8 +1652,7 @@ This mode is used in continuous integration (CI) and other automated
 environments used to give developers fast feedback on changes. The mode can
 be activated using the ``--integration`` option of twister and narrows down
 the scope of builds and tests if applicable to platforms defined under the
-integration keyword in the test configuration file (``testcase.yaml`` and
-``sample.yaml``).
+integration keyword in the test configuration file (``tests.yaml``).
 
 
 Running tests on custom emulator
