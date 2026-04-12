@@ -214,3 +214,11 @@ void *z_thread_malloc(size_t size)
 {
 	return z_thread_alloc_helper(0, size, sys_heap_noalign_alloc);
 }
+
+/*
+ * There is no guarantee that functions in kheap.c are being used,
+ * meaning the linker may not pull it in at all. Yet we need the
+ * static heaps to be initialized and that is done in that file.
+ * Make sure it is pulled in at least for that; the rest will be GC'd.
+ */
+static void *const __used kheap_ref = k_heap_init;
