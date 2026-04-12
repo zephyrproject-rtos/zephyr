@@ -135,13 +135,12 @@ class Build(Forceable):
                            help='''run build system target TARGET
                            (try "-t usage")''')
         group.add_argument('-T', '--test-item',
-                           help='''Build based on test data in testcase.yaml
-                           or sample.yaml. If source directory is not used
-                           an argument has to be defined as
-                           SOURCE_PATH/TEST_NAME.
-                           E.g. samples/hello_world/sample.basic.helloworld.
-                           If source directory is passed
-                           then "TEST_NAME" is enough.''')
+                           help='''Build based on test data in test definition
+                           file. If source directory is not used an argument
+                           has to be defined as SOURCE_PATH/TEST_NAME.  E.g.
+                           samples/hello_world/sample.basic.helloworld.  If
+                           source directory is passed then "TEST_NAME" is
+                           enough.''')
         group.add_argument('-o', '--build-opt', default=[], action='append',
                            help='''options to pass to the build tool
                            (make or ninja); may be given more than once''')
@@ -254,7 +253,7 @@ class Build(Forceable):
 
         board, origin = self._find_board()
 
-        # Parse testcase.yaml or sample.yaml files for additional options.
+        # Parse test definition file for additional options.
         if self.args.test_item:
             # we get path + testitem
             item = os.path.basename(self.args.test_item)
@@ -335,7 +334,8 @@ class Build(Forceable):
 
     def _parse_test_item(self, test_item, board):
         found_test_metadata = False
-        for yp in ['sample.yaml', 'testcase.yaml']:
+        # keep sample.yaml and testcase.yaml until we completely switch to tests.yaml
+        for yp in ['tests.yaml', 'sample.yaml', 'testcase.yaml']:
             yf = os.path.join(self.args.source_dir, yp)
             if not os.path.exists(yf):
                 continue
