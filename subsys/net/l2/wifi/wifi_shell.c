@@ -82,6 +82,12 @@ static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
 static struct net_mgmt_event_callback wifi_shell_scan_cb;
 static struct wifi_reg_chan_info chan_info[MAX_REG_CHAN_NUM];
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+static bool wifi_shell_roaming_enabled =
+	IS_ENABLED(CONFIG_WIFI_SHELL_ROAMING_AUTO_TRIGGER);
+static uint8_t wifi_shell_roaming_btm_reason = CONFIG_WIFI_SHELL_ROAMING_BTM_QUERY_REASON;
+#endif
+
 static K_MUTEX_DEFINE(wifi_ap_sta_list_lock);
 struct wifi_ap_sta_node {
 	bool valid;
@@ -514,6 +520,10 @@ static void handle_wifi_signal_change(struct net_mgmt_event_callback *cb, struct
 	const struct shell *sh = context.sh;
 	int ret;
 
+	if (!wifi_shell_roaming_enabled) {
+		return;
+	}
+
 	ret = net_mgmt(NET_REQUEST_WIFI_START_ROAMING, iface, NULL, 0);
 	if (ret) {
 		PR_WARNING("Start roaming failed\n");
@@ -528,6 +538,10 @@ static void handle_wifi_neighbor_rep_complete(struct net_mgmt_event_callback *cb
 {
 	const struct shell *sh = context.sh;
 	int ret;
+
+	if (!wifi_shell_roaming_enabled) {
+		return;
+	}
 
 	ret = net_mgmt(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE, iface, NULL, 0);
 	if (ret) {
@@ -2472,6 +2486,82 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+static int cmd_wifi_roaming(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	long value;
+	int ret;
+
+	context.sh = sh;
+
+	if (iface == NULL) {
+		return -ENOEXEC;
+	}
+
+	if (argc == 1 || !strncasecmp(argv[1], "status", 6)) {
+		PR("Roaming auto trigger: %s\n",
+		   wifi_shell_roaming_enabled ? "enabled" : "disabled");
+		PR("Roaming BTM query reason: %u\n", wifi_shell_roaming_btm_reason);
+		return 0;
+	}
+
+	if (!strncasecmp(argv[1], "enable", 6)) {
+		wifi_shell_roaming_enabled = true;
+		PR("Roaming auto trigger enabled\n");
+		return 0;
+	}
+
+	if (!strncasecmp(argv[1], "disable", 7)) {
+		wifi_shell_roaming_enabled = false;
+		PR("Roaming auto trigger disabled\n");
+		return 0;
+	}
+
+	if (!strncasecmp(argv[1], "start", 5)) {
+		ret = net_mgmt(NET_REQUEST_WIFI_START_ROAMING, iface, NULL, 0);
+		if (ret) {
+			PR_WARNING("Start roaming failed: %s\n", strerror(-ret));
+			return -ENOEXEC;
+		}
+
+		PR("Start roaming requested\n");
+		return 0;
+	}
+
+	if (!strncasecmp(argv[1], "btm_query", 9)) {
+		uint8_t query_reason;
+
+		if (argc != 3) {
+			shell_help(sh);
+			return -ENOEXEC;
+		}
+
+		if (!parse_number(sh, &value, argv[2], "query_reason",
+				  WIFI_BTM_QUERY_REASON_UNSPECIFIED,
+				  WIFI_BTM_QUERY_REASON_LEAVING_ESS)) {
+			return -EINVAL;
+		}
+
+		query_reason = value;
+		wifi_shell_roaming_btm_reason = query_reason;
+
+		ret = net_mgmt(NET_REQUEST_WIFI_BTM_QUERY, iface,
+			       &query_reason, sizeof(query_reason));
+		if (ret) {
+			PR_WARNING("BTM query failed: %s\n", strerror(-ret));
+			return -ENOEXEC;
+		}
+
+		PR("Roaming BTM query requested (reason=%u)\n", query_reason);
+		return 0;
+	}
+
+	shell_help(sh);
+	return -ENOEXEC;
+}
+#endif
+
 static int cmd_wifi_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
@@ -4413,6 +4503,19 @@ SHELL_SUBCMD_ADD((wifi), 11v_btm_query, NULL,
 			    "<reason code for BSS transition management query>"),
 		 cmd_wifi_btm_query,
 		 2, 2);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+SHELL_SUBCMD_ADD((wifi), roaming, NULL,
+		 SHELL_HELP("Control Wi-Fi roaming",
+			    "[-i, --iface=<interface index>]\n"
+			    "[status | enable | disable | start | btm_query <reason>]\n"
+			    "status: show roaming shell status\n"
+			    "enable/disable: control automatic roaming trigger from events\n"
+			    "start: trigger roaming immediately\n"
+			    "btm_query: trigger BTM query with reason code"),
+		 cmd_wifi_roaming,
+		 1, 3);
+#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_ap,

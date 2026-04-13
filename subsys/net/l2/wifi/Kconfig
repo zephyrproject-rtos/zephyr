@@ -72,6 +72,25 @@ config WIFI_SHELL_MAX_AP_STA
 	  This option defines the maximum number of APs and STAs that can be managed
 	  in Wi-Fi shell.
 
+config WIFI_SHELL_ROAMING_AUTO_TRIGGER
+	bool "Enable automatic roaming trigger in Wi-Fi shell"
+	default y
+	depends on NET_L2_WIFI_SHELL
+	depends on WIFI_NM_WPA_SUPPLICANT_ROAMING
+	help
+	  Enable automatic roaming trigger from roaming-related Wi-Fi events.
+	  Disable this if roaming should be started manually from the shell.
+
+config WIFI_SHELL_ROAMING_BTM_QUERY_REASON
+	int "Default BTM query reason used by Wi-Fi shell roaming command"
+	range 0 16
+	default 16
+	depends on NET_L2_WIFI_SHELL
+	depends on WIFI_NM_WPA_SUPPLICANT_ROAMING
+	help
+	  Default BTM query reason code used by the Wi-Fi shell roaming command.
+	  Valid values follow enum wifi_btm_query_reason.
+
 config WIFI_P2P_MAX_PEERS
 	int "Maximum number of P2P peers that can be returned in a single query"
 	depends on WIFI_NM_WPA_SUPPLICANT_P2P
