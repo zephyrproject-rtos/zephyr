@@ -27,9 +27,9 @@ recommended starting point is either the **latest stable release** or the
    :reversed:
 
    release-notes-3.7
-   release-notes-4.[2-5]
+   release-notes-4.[3-5]
    migration-guide-3.7
-   migration-guide-4.[2-5]
+   migration-guide-4.[3-5]
 
 .. note::
    | The next planned release is **Zephyr 4.5**, targeted for **October 2026**.
@@ -56,12 +56,6 @@ recommended starting point is either the **latest stable release** or the
       - Stable
       - * :doc:`Release Notes <release-notes-4.3>`
         * :doc:`Migration Guide <migration-guide-4.3>`
-    * - `Zephyr 4.2.0`_
-      - 2025-07-18
-      - 2026-03-20
-      - Stable
-      - * :doc:`Release Notes <release-notes-4.2>`
-        * :doc:`Migration Guide <migration-guide-4.2>`
     * - `Zephyr 3.7.0 (LTS3)`_
       - 2024-07-26
       - 2029-07-27
@@ -220,6 +214,5 @@ to be able to understand the context of the change.
 .. _`Zephyr 1.14.1 (LTS1)`: https://docs.zephyrproject.org/1.14.1/
 .. _`Zephyr 2.7.6 (LTS2)`: https://docs.zephyrproject.org/2.7.6/
 .. _`Zephyr 3.7.0 (LTS3)`: https://docs.zephyrproject.org/3.7.0/
-.. _`Zephyr 4.2.0`: https://docs.zephyrproject.org/4.2.0/
 .. _`Zephyr 4.3.0`: https://docs.zephyrproject.org/4.3.0/
 .. _`Zephyr 4.4.0`: https://docs.zephyrproject.org/4.4.0/
