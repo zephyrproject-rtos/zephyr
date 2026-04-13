@@ -975,6 +975,7 @@
 			interrupt-names = "common";
 			clocks = <&ccm IMX_CCM_CAN_CLK 0x68 14>;
 			number-of-mb = <64>;
+			timing-registers = "ctrl1";
 			status = "disabled";
 		};
 
@@ -985,6 +986,7 @@
 			interrupt-names = "common";
 			clocks = <&ccm IMX_CCM_CAN_CLK 0x68 18>;
 			number-of-mb = <64>;
+			timing-registers = "ctrl1";
 			status = "disabled";
 		};
 
@@ -995,6 +997,7 @@
 			interrupt-names = "common";
 			clocks = <&ccm IMX_CCM_CAN_CLK 0x84 6>;
 			number-of-mb = <64>;
+			timing-registers = "cbt";
 			status = "disabled";
 		};
 

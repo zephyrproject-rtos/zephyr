@@ -208,6 +208,7 @@
 			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <64>;
+			timing-registers = "cbt";
 			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
@@ -224,6 +225,7 @@
 			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <64>;
+			timing-registers = "cbt";
 			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";

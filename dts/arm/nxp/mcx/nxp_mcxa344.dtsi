@@ -285,6 +285,7 @@
 			interrupt-names = "common";
 			clocks = <&syscon MCUX_FLEXCAN0_CLK>;
 			number-of-mb = <32>;
+			timing-registers = "encbt";
 			status = "disabled";
 		};
 
