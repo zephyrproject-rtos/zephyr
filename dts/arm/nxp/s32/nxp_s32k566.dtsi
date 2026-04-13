@@ -552,6 +552,7 @@
 			reg = <0x42174000 0x4000>;
 			clocks = <&clock NXP_S32_LPE_FLEXCAN_PE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -561,6 +562,7 @@
 			reg = <0x40290000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN0_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -570,6 +572,7 @@
 			reg = <0x40294000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN1_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -579,6 +582,7 @@
 			reg = <0x40298000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN2_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -588,6 +592,7 @@
 			reg = <0x4029c000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN3_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -597,6 +602,7 @@
 			reg = <0x402a0000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN4_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -606,6 +612,7 @@
 			reg = <0x402a4000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN5_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -615,6 +622,7 @@
 			reg = <0x402a8000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN6_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -624,6 +632,7 @@
 			reg = <0x402ac000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN7_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -633,6 +642,7 @@
 			reg = <0x406b0000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN8_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -642,6 +652,7 @@
 			reg = <0x406b4000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN9_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -651,6 +662,7 @@
 			reg = <0x406ac000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN10_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -660,6 +672,7 @@
 			reg = <0x4089c000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN11_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -669,6 +682,7 @@
 			reg = <0x408a0000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN12_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -678,6 +692,7 @@
 			reg = <0x408a4000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN13_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -687,6 +702,7 @@
 			reg = <0x408a8000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN14_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -696,6 +712,7 @@
 			reg = <0x408ac000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN15_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 			status = "disabled";
 		};
@@ -705,6 +722,7 @@
 			reg = <0x408b0000 0x4000>;
 			clocks = <&clock NXP_S32_FLEXCAN16_PE_NOGATE_CLK>;
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			interrupt-names = "ored", "ored_0_96_mb";
 		};
 

@@ -60,6 +60,39 @@ properties:
       If this property is not set, the default maximum number of RX filters set via Kconfig will be
       used instead.
 
+  timing-registers:
+    type: string
+    required: true
+    enum:
+      - "ctrl1"
+      - "cbt"
+      - "encbt"
+    description: |
+      Specifies which bit timing registers are used on this FlexCAN instance:
+      - "ctrl1": CTRL1 register (CAN classic)
+      - "cbt": CBT, FDCBT and FDCTRL registers (CAN classic and CAN FD)
+      - "encbt": ENCBT, EDCBT, EPRS and ETDC registers (CAN classic and CAN FD)
+
+      The "ctrl1" option is used for FlexCAN instances that only support CAN classic and have
+      basic bit timing configuration via the CTRL1 register.
+
+      The "cbt" option is used for FlexCAN instances that support CAN classic and CAN FD
+      with bit timing registers CBT (CAN Bit Timing) for arbitration phase, FDCBT
+      (CAN FD Bit Timing) for data phase timing configuration, and FDCTRL (CAN FD Control)
+      for Transceiver Delay Compensation.
+
+      The "encbt" option is used for FlexCAN instances that support CAN classic and CAN FD
+      with enhanced bit timing registers ENCBT (Enhanced Nominal CAN Bit Timing), EDCBT
+      (Enhanced Data Phase CAN Bit Timing), EPRS (Enhanced CAN Bit Timing Prescalers) and
+      ETDC (Enhanced Transceiver Delay Compensation).
+      These registers provide extended timing ranges and do not have a separate propagation
+      segment (prop_seg is always 0).
+
+      Before changing this property from its default value, consult the SoC reference manual
+      to determine which bit timing registers are supported by the specific FlexCAN instance.
+      Using an incorrect register type will cause the driver to access non-existent registers,
+      leading to improper timing configuration and communication failures.
+
 examples:
   - |
     flexcan0: can@40024000 {
@@ -72,6 +105,7 @@ examples:
       clock-names = "clksrc1";
       clk-source = <1>;
       number-of-mb = <16>;
+      timing-registers = "ctrl1";
       pinctrl-0 = <&pinmux_flexcan0>;
       pinctrl-names = "default";
 
