@@ -67,6 +67,16 @@
 			status = "okay";
 		};
 
+		mbox0: mbox@fe00b880 {
+			compatible = "brcm,bcm2711-mbox";
+			reg = <0xfe00b880 0x40>;
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@fe200000 {
 			compatible = "brcm,bcm2711-pinctrl";
 			reg = <0xfe200000 0xf4>;
