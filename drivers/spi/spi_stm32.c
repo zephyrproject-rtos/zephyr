@@ -1656,95 +1656,6 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 }
 #endif /* !CONFIG_SPI_RTIO */
 
-static int transceive(const struct device *dev,
-		      const struct spi_config *config,
-		      const struct spi_buf_set *tx_bufs,
-		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous,
-		      spi_callback_t cb,
-		      void *userdata)
-{
-	struct spi_stm32_data *data = dev->data;
-	int ret;
-
-	if (tx_bufs == NULL && rx_bufs == NULL) {
-		return 0;
-	}
-
-	if (!IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT) && asynchronous) {
-		return -ENOTSUP;
-	}
-
-	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
-
-	spi_stm32_pm_policy_state_lock_get(dev);
-
-#ifdef CONFIG_SPI_RTIO
-	ret = spi_rtio_transceive(data->rtio_ctx, config, tx_bufs, rx_bufs);
-#else /* CONFIG_SPI_RTIO */
-	const struct spi_stm32_config *cfg = dev->config;
-	SPI_TypeDef *spi = cfg->spi;
-
-	ret = spi_stm32_configure(dev, config, tx_bufs != NULL);
-	if (ret != 0) {
-		goto end;
-	}
-
-	/* Set buffers info */
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, bits2bytes(config->operation));
-
-	if (!spi_stm32_transfer_ongoing(data)) {
-		goto end;
-	}
-
-	uint32_t transfer_dir = ll_get_transfer_direction(spi);
-
-	ret = spi_stm32_set_transfer_size(dev, config, tx_bufs, rx_bufs);
-	if (ret != 0) {
-		goto end;
-	}
-
-	spi_stm32_msg_start(dev, rx_bufs == NULL);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	do {
-		ret = spi_context_wait_for_completion(&data->ctx);
-
-		if (ret == 0 && transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
-			ret = spi_stm32_half_duplex_switch_to_receive(cfg, data);
-			transfer_dir = ll_get_transfer_direction(spi);
-		}
-	} while (ret == 0 && spi_stm32_transfer_ongoing(data) &&
-		 transfer_dir != STM32_SPI_FULL_DUPLEX);
-#else /* CONFIG_SPI_STM32_INTERRUPT */
-	while (ret == 0 && spi_stm32_transfer_ongoing(data)) {
-		ret = spi_stm32_shift_frames(spi, data);
-
-		if (ret == 0 && transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
-			ret = spi_stm32_half_duplex_switch_to_receive(cfg, data);
-			transfer_dir = ll_get_transfer_direction(spi);
-		}
-	}
-
-	spi_stm32_complete(dev, ret);
-
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&data->ctx) && ret == 0) {
-		ret = data->ctx.recv_frames;
-	}
-#endif /* CONFIG_SPI_SLAVE */
-
-#endif /* CONFIG_SPI_STM32_INTERRUPT */
-
-end:
-#endif /* CONFIG_SPI_RTIO */
-	spi_stm32_pm_policy_state_lock_put(dev);
-
-	spi_context_release(&data->ctx, ret);
-
-	return ret;
-}
-
 #if defined(CONFIG_SPI_STM32_DMA)
 #if !defined(CONFIG_SPI_RTIO)
 
@@ -1992,53 +1903,19 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 
 #if !defined(CONFIG_SPI_RTIO)
 static int transceive_dma(const struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs,
-			  bool asynchronous,
-			  spi_callback_t cb,
-			  void *userdata)
+			  const struct spi_config *config)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
 	SPI_TypeDef *spi = cfg->spi;
 	struct dma_config *rx_cfg = &data->dma_rx.dma_cfg, *tx_cfg = &data->dma_tx.dma_cfg;
+	uint32_t transfer_dir = ll_get_transfer_direction(spi);
 	size_t dma_len;
 	int ret;
 	int err;
 	uint8_t dfs = bits2bytes(config->operation);
 
-	if (tx_bufs == NULL && rx_bufs == NULL) {
-		return 0;
-	}
-
-#ifdef CONFIG_DCACHE
-	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
-	    (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
-		LOG_ERR("SPI DMA transfers not supported on cached memory");
-		return -ENOTSUP;
-	}
-#endif /* CONFIG_DCACHE */
-
-	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
-
-	spi_stm32_pm_policy_state_lock_get(dev);
-
 	k_sem_reset(&data->status_sem);
-
-	ret = spi_stm32_configure(dev, config, tx_bufs != NULL);
-	if (ret != 0) {
-		goto end;
-	}
-
-	uint32_t transfer_dir = ll_get_transfer_direction(spi);
-
-	/* Set buffers info */
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, dfs);
-
-	if (!spi_stm32_transfer_ongoing(data)) {
-		goto end;
-	}
 
 	rx_cfg->source_data_size = rx_cfg->source_burst_length = dfs;
 	rx_cfg->dest_data_size = rx_cfg->dest_burst_length = dfs;
@@ -2074,9 +1951,8 @@ static int transceive_dma(const struct device *dev,
 		}
 
 #ifdef CONFIG_SPI_ASYNC
-		if (asynchronous) {
-			ret = spi_context_wait_for_completion(&data->ctx);
-			goto release;
+		if (data->ctx.asynchronous) {
+			return spi_context_wait_for_completion(&data->ctx);
 		}
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -2135,31 +2011,138 @@ static int transceive_dma(const struct device *dev,
 	}
 #endif /* CONFIG_SPI_SLAVE */
 
-end:
-	spi_stm32_pm_policy_state_lock_put(dev);
-
-#ifdef CONFIG_SPI_ASYNC
-release:
-#endif /* CONFIG_SPI_ASYNC */
-	spi_context_release(&data->ctx, ret);
-
 	return ret;
 }
 #endif /* !CONFIG_SPI_RTIO */
 #endif /* CONFIG_SPI_STM32_DMA */
+
+static int transceive(const struct device *dev,
+		      const struct spi_config *config,
+		      const struct spi_buf_set *tx_bufs,
+		      const struct spi_buf_set *rx_bufs,
+		      bool asynchronous,
+		      spi_callback_t cb,
+		      void *userdata)
+{
+	struct spi_stm32_data *data = dev->data;
+	int ret;
+#ifdef CONFIG_SPI_STM32_DMA
+	bool use_dma = (data->dma_tx.dma_dev != NULL) &&
+		       (data->dma_rx.dma_dev != NULL);
+#else /* CONFIG_SPI_STM32_DMA */
+	bool use_dma = false;
+#endif /* CONFIG_SPI_STM32_DMA */
+
+	if (tx_bufs == NULL && rx_bufs == NULL) {
+		return 0;
+	}
+
+	if (asynchronous &&
+	    !IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT) &&
+	    (!IS_ENABLED(CONFIG_SPI_STM32_DMA) || !use_dma)) {
+		LOG_ERR("Asynchronous transfer needs interrupts or DMA");
+		return -ENOTSUP;
+	}
+
+#if defined(CONFIG_DCACHE) && defined(CONFIG_SPI_STM32_DMA) && !defined(CONFIG_SPI_RTIO)
+	if (use_dma &&
+	    ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
+	     (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs)))) {
+		LOG_ERR("SPI DMA transfers not supported on cached memory");
+		return -ENOTSUP;
+	}
+#endif /* CONFIG_DCACHE && CONFIG_SPI_STM32_DMA && !CONFIG_SPI_RTIO */
+
+	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
+
+	spi_stm32_pm_policy_state_lock_get(dev);
+
+#ifdef CONFIG_SPI_RTIO
+	ret = spi_rtio_transceive(data->rtio_ctx, config, tx_bufs, rx_bufs);
+#else /* CONFIG_SPI_RTIO */
+	const struct spi_stm32_config *cfg = dev->config;
+	SPI_TypeDef *spi = cfg->spi;
+
+	ret = spi_stm32_configure(dev, config, tx_bufs != NULL);
+	if (ret != 0) {
+		goto end;
+	}
+
+	/* Set buffers info */
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, bits2bytes(config->operation));
+
+	if (!spi_stm32_transfer_ongoing(data)) {
+		goto end;
+	}
+
+#ifdef CONFIG_SPI_STM32_DMA
+	if (use_dma) {
+		ret = transceive_dma(dev, config);
+#ifdef CONFIG_SPI_ASYNC
+		if (ret == 0 && asynchronous) {
+			goto release;
+		}
+#endif /* CONFIG_SPI_ASYNC */
+		goto end;
+	}
+#endif /* CONFIG_SPI_STM32_DMA */
+
+	uint32_t transfer_dir = ll_get_transfer_direction(spi);
+
+	ret = spi_stm32_set_transfer_size(dev, config, tx_bufs, rx_bufs);
+	if (ret != 0) {
+		goto end;
+	}
+
+	spi_stm32_msg_start(dev, rx_bufs == NULL);
+
+#ifdef CONFIG_SPI_STM32_INTERRUPT
+	do {
+		ret = spi_context_wait_for_completion(&data->ctx);
+
+		if (ret == 0 && transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
+			ret = spi_stm32_half_duplex_switch_to_receive(cfg, data);
+			transfer_dir = ll_get_transfer_direction(spi);
+		}
+	} while (ret == 0 && spi_stm32_transfer_ongoing(data) &&
+		 transfer_dir != STM32_SPI_FULL_DUPLEX);
+#else /* CONFIG_SPI_STM32_INTERRUPT */
+	while (ret == 0 && spi_stm32_transfer_ongoing(data)) {
+		ret = spi_stm32_shift_frames(spi, data);
+
+		if (ret == 0 && transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
+			ret = spi_stm32_half_duplex_switch_to_receive(cfg, data);
+			transfer_dir = ll_get_transfer_direction(spi);
+		}
+	}
+
+	spi_stm32_complete(dev, ret);
+
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(&data->ctx) && ret == 0) {
+		ret = data->ctx.recv_frames;
+	}
+#endif /* CONFIG_SPI_SLAVE */
+
+#endif /* CONFIG_SPI_STM32_INTERRUPT */
+
+end:
+#endif /* CONFIG_SPI_RTIO */
+	spi_stm32_pm_policy_state_lock_put(dev);
+
+#if defined(CONFIG_SPI_STM32_DMA) && defined(CONFIG_SPI_ASYNC)
+release:
+#endif /* CONFIG_SPI_STM32_DMA && CONFIG_SPI_ASYNC */
+	spi_context_release(&data->ctx, ret);
+
+	return ret;
+}
 
 static int spi_stm32_transceive_sync(const struct device *dev,
 				     const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs)
 {
-#if defined(CONFIG_SPI_STM32_DMA) && !defined(CONFIG_SPI_RTIO)
-	struct spi_stm32_data *data = dev->data;
-
-	if ((data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL)) {
-		return transceive_dma(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
-	}
-#endif /* CONFIG_SPI_STM32_DMA && !CONFIG_SPI_RTIO */
 	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
@@ -2171,13 +2154,6 @@ static int spi_stm32_transceive_async(const struct device *dev,
 				      spi_callback_t cb,
 				      void *userdata)
 {
-#ifdef CONFIG_SPI_STM32_DMA
-	struct spi_stm32_data *data = dev->data;
-
-	if ((data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL)) {
-		return transceive_dma(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
-	}
-#endif /* CONFIG_SPI_STM32_DMA */
 	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
