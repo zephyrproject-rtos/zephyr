@@ -814,6 +814,10 @@ static void send_notification_work(struct k_work *work)
 	data = CONTAINER_OF(notif_work, struct cdc_ncm_eth_data, notif_work);
 	dev = usbd_class_get_private(data->c_data);
 
+	if (!atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED)) {
+		return;
+	}
+
 	if (atomic_test_bit(&data->state, CDC_NCM_IFACE_UP)) {
 		ret = ncm_send_notification_sequence(dev);
 	} else {
@@ -840,6 +844,7 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
 
 	if (data_iface == iface && alternate == 0) {
 		atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
+		(void)k_work_cancel_delayable(&data->notif_work);
 		data->tx_seq = 0;
 		data->rx_seq = 0;
 	}
