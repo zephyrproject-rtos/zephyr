@@ -95,6 +95,9 @@ Major enhancements with this release include:
   - A new display driver for QEMU targets simplifies development of display-based applications in
     environments where the native simulator is unavailable.
 
+  - A new heap hardening mechanism (:kconfig:option:`CONFIG_SYS_HEAP_HARDENING`) provides multiple
+    levels of runtime protection against heap corruption.
+
   - New :ref:`scope-based cleanup helpers <cleanup_api>` provide :abbr:`RAII (Resource Acquisition
     Is Initialization)`/defer-style automatic cleanup in C when leaving scope.
 
@@ -425,6 +428,10 @@ New APIs and options
     * Introduced Alert Notification Service (ANS) :kconfig:option:`CONFIG_BT_ANS`
 
 * Build system
+
+  * Added ``zephyr_constants_library()`` CMake function for generating
+    headers with build-time constants derived from C struct layouts
+    (:github:`104861`).
 
   * Added :ref:`slot1-partition <snippet-slot1-partition>` snippet.
 
@@ -1891,6 +1898,12 @@ Kernel
 
 * Dropped CONFIG_SCHED_DUMB and CONFIG_WAITQ_DUMB options which were deprecated
   in Zephyr 4.2.0
+
+* Added tiered heap hardening with :kconfig:option:`CONFIG_SYS_HEAP_HARDENING`
+  (Basic, Moderate, Full, Extreme) providing progressive levels of runtime
+  corruption detection for :c:func:`sys_heap_alloc` and :c:func:`sys_heap_free`,
+  including double-free detection, neighbor consistency checks, and optional
+  per-chunk canaries (:github:`104999`).
 
 * :ref:`cleanup_api`
 
