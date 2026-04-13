@@ -33,7 +33,7 @@ static struct gpio_callback callback_struct;
 
 DEFINE_FFF_GLOBALS;
 
-uint8_t ite_intc_get_irq_num(void)
+ite_irq_t ite_intc_get_irq_num(void)
 {
 	return posix_get_current_irq();
 }

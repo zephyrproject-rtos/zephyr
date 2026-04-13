@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(intc_it8xxx2_v2, LOG_LEVEL_DBG);
 #define IVECT_OFFSET_WITH_IRQ       0x10
 
 /* Interrupt number of INTC module */
-static uint8_t intc_irq;
+static ite_irq_t intc_irq;
 static uint8_t ier_setting[IT8XXX2_INTC_GROUP_CNT];
 
 void ite_intc_save_and_disable_interrupts(void)
@@ -175,7 +175,7 @@ int __soc_ram_code ite_intc_irq_is_enable(unsigned int irq)
 	return IS_MASK_SET(IT8XXX2_INTC_IER(group), BIT(index));
 }
 
-uint8_t __soc_ram_code ite_intc_get_irq_num(void)
+ite_irq_t __soc_ram_code ite_intc_get_irq_num(void)
 {
 	return intc_irq;
 }
