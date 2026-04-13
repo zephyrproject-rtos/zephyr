@@ -1,7 +1,7 @@
 archs:
   - name: arc
     path: arc
-    full_name: Synopsys DesignWare ARC
+    full_name: ARC
   - name: arm
     path: arm
     full_name: ARM
