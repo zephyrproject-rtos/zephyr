@@ -58,6 +58,7 @@
 #include "host/classic/shell/bredr.h"
 #endif
 
+static bool bt_shell_initialized;
 static bool no_settings_load;
 
 uint8_t selected_id = BT_ID_DEFAULT;
@@ -1416,12 +1417,19 @@ static struct bt_le_per_adv_sync_cb per_adv_sync_cb = {
 
 static void bt_ready(int err)
 {
-	if (err) {
+	if (err == -EALREADY) {
+		bt_shell_print("Bluetooth already initialized");
+	} else if (err) {
 		bt_shell_error("Bluetooth init failed (err %d)", err);
 		return;
+	} else {
+		bt_shell_print("Bluetooth initialized");
 	}
 
-	bt_shell_print("Bluetooth initialized");
+	if (bt_shell_initialized) {
+		bt_shell_print("Bluetooth shell already initialized");
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_SETTINGS) && !no_settings_load) {
 		settings_load();
@@ -1447,6 +1455,10 @@ static void bt_ready(int err)
 #if defined(CONFIG_BT_SMP)
 	bt_conn_auth_info_cb_register(&auth_info_cb);
 #endif /* CONFIG_BT_SMP */
+
+	bt_shell_print("Bluetooth shell initialized");
+
+	bt_shell_initialized = true;
 }
 
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
@@ -1472,7 +1484,14 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		bt_ready(err);
 	} else {
 		err = bt_enable(bt_ready);
-		if (err) {
+		/* Bluetooth may already be enabled if the application called bt_enable().
+		 * In that case bt_enable() skips the callback, so call bt_ready()
+		 * manually to finish the bt shell setup.
+		 */
+		if (err == -EALREADY) {
+			bt_ready(err);
+			err = 0;
+		} else if (err) {
 			shell_error(sh, "Bluetooth init failed (err %d)", err);
 		}
 	}
@@ -1482,6 +1501,15 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_disable(const struct shell *sh, size_t argc, char *argv[])
 {
+	bt_shell_initialized = false;
+
+#if defined(CONFIG_BT_CONN)
+	if (default_conn) {
+		bt_conn_unref(default_conn);
+		default_conn = NULL;
+	}
+#endif /* CONFIG_BT_CONN */
+
 	return bt_disable();
 }
 
