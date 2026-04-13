@@ -16,6 +16,9 @@ tests:
       - ucans32k1sic
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mimxrt1170_evk@A/mimxrt1176/cm4
+      - mimxrt1170_evk@B/mimxrt1176/cm4
+      - mimxrt1160_evk/mimxrt1166/cm4
   kernel.memory_protection.userspace.gap_filling.arc:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
     arch_allow: arc
