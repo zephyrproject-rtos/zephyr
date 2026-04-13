@@ -121,12 +121,14 @@ static int print_adc_stream(const struct device *adc, struct rtio_iodev *local_i
 			/* Decode all available ADC sample frames */
 			for (int i = 0; i < frame_count; i++) {
 				decoder->decode(buf, channel, &adc_fit, 1, &adc_data);
-				printk("ADC data for %s channel %d (%" PRIq(6) ") %lluns\n",
-				adc->name, channel,
-				PRIq_arg(adc_data.readings[0].value, 6, adc_data.shift),
-				(adc_data.header.base_timestamp_ns
-				+ adc_data.readings[0].timestamp_delta));
 			}
+
+			/* Print only the last value to reduce output */
+			printk("ADC data for %s channel %d: %u samples (%" PRIq(6) ") %lluns\n",
+			       adc->name, channel, frame_count,
+			       PRIq_arg(adc_data.readings[0].value, 6, adc_data.shift),
+			       (adc_data.header.base_timestamp_ns +
+				adc_data.readings[0].timestamp_delta));
 		}
 
 		rtio_release_buffer(&adc_ctx, buf, buf_len);
