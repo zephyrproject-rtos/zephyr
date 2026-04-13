@@ -1272,7 +1272,8 @@ static void spi_stm32_isr(const struct device *dev)
 
 	uint32_t transfer_dir = ll_get_transfer_direction(spi);
 
-	if (((transfer_dir == STM32_SPI_FULL_DUPLEX) && !spi_stm32_transfer_ongoing(data)) ||
+	if (((transfer_dir == STM32_SPI_FULL_DUPLEX) && !spi_stm32_transfer_ongoing(data) &&
+	     !ll_spi_is_busy(spi)) ||
 	    ((transfer_dir == STM32_SPI_HALF_DUPLEX_TX) && !spi_context_tx_on(&data->ctx)) ||
 	    ((transfer_dir == STM32_SPI_HALF_DUPLEX_RX) && !spi_context_rx_on(&data->ctx))) {
 		spi_stm32_complete(dev, err);
@@ -1696,11 +1697,9 @@ static int transceive(const struct device *dev,
 	uint32_t transfer_dir = ll_get_transfer_direction(spi);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
-		ret = spi_stm32_set_transfer_size(dev, config, tx_bufs, rx_bufs);
-		if (ret != 0) {
-			goto end;
-		}
+	ret = spi_stm32_set_transfer_size(dev, config, tx_bufs, rx_bufs);
+	if (ret != 0) {
+		goto end;
 	}
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
