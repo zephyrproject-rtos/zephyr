@@ -141,6 +141,7 @@
 				 <&scg KINETIS_SCG_CORESYS_CLK>;
 			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
+			timing-registers = "cbt";
 			status = "disabled";
 		};
 
@@ -153,6 +154,7 @@
 				 <&scg KINETIS_SCG_CORESYS_CLK>;
 			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
+			timing-registers = "cbt";
 			status = "disabled";
 		};
 
@@ -187,6 +189,7 @@
 				 <&scg KINETIS_SCG_CORESYS_CLK>;
 			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
+			timing-registers = "cbt";
 			status = "disabled";
 		};
 
