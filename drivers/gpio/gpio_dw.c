@@ -455,6 +455,24 @@ static int gpio_dw_initialize(const struct device *port)
 
 	DEVICE_MMIO_NAMED_MAP(port, gpio_mmio, K_MEM_CACHE_NONE);
 
+	/* Reset GPIO only if reset controller driver is supported */
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+	int ret;
+
+	if (config->reset.dev != NULL) {
+		if (!device_is_ready(config->reset.dev)) {
+			LOG_ERR("Reset controller device not ready");
+			return -ENODEV;
+		}
+
+		ret = reset_line_toggle_dt(&config->reset);
+		if (ret != 0) {
+			LOG_ERR("GPIO reset failed");
+			return ret;
+		}
+	}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets) */
+
 	if (dw_interrupt_support(config)) {
 
 		base_addr = dw_base_to_block_base(dw_get_base(port));
@@ -483,6 +501,9 @@ static int gpio_dw_initialize(const struct device *port)
 			    DEVICE_DT_INST_GET(n), INST_IRQ_FLAGS(n));				\
 		irq_enable(DT_INST_IRQN_BY_IDX(n, idx));					\
 
+#define GPIO_DW_RESET_SPEC_INIT(n)								\
+	.reset = RESET_DT_SPEC_INST_GET(n),							\
+
 #define GPIO_DW_INIT(n)										\
 	static void gpio_config_##n##_irq(const struct device *port)				\
 	{											\
@@ -496,6 +517,8 @@ static int gpio_dw_initialize(const struct device *port)
 		.irq_num = COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0), (DT_INST_IRQN(n)), (0)),	\
 		.ngpios = DT_INST_PROP(n, ngpios),						\
 		.config_func = gpio_config_##n##_irq,						\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),					\
+			(GPIO_DW_RESET_SPEC_INIT(n)))						\
 	};											\
 												\
 	static struct gpio_dw_runtime gpio_##n##_runtime;					\
