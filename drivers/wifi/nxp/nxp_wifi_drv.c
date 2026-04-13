@@ -282,12 +282,14 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 			return 0;
 		}
 
+#ifdef CONFIG_NXP_WIFI_SOFTAP_DHCP_SERVER
 		if (net_dhcpv4_server_start(g_uap.netif, &base_addr) < 0) {
 			LOG_ERR("DHCP Server start failed");
 			return 0;
 		}
 
 		LOG_DBG("DHCP Server started successfully");
+#endif
 		s_nxp_wifi_UapActivated = true;
 #ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 		wifi_mgmt_raise_ap_enable_result_event(g_uap.netif, WIFI_STATUS_AP_SUCCESS);
@@ -366,8 +368,10 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 			net_if_ipv4_addr_rm(g_uap.netif, &dhcps_addr4);
 		}
 
+#ifdef CONFIG_NXP_WIFI_SOFTAP_DHCP_SERVER
 		net_dhcpv4_server_stop(g_uap.netif);
 		LOG_DBG("DHCP Server stopped successfully");
+#endif
 		s_nxp_wifi_UapActivated = false;
 #ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 		wifi_mgmt_raise_ap_disable_result_event(g_uap.netif, WIFI_STATUS_AP_SUCCESS);
