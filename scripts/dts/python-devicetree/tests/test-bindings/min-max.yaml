@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Property min/max range test
+
+compatible: "min-max"
+
+properties:
+  int-with-min:
+    type: int
+    min: 5
+
+  int-with-max:
+    type: int
+    max: 100
+
+  int-with-range:
+    type: int
+    min: 0
+    max: 100
+
+  array-with-range:
+    type: array
+    min: 0
+    max: 50
+
+  no-range:
+    type: int
