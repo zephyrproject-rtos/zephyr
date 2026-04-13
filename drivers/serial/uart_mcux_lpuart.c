@@ -1582,53 +1582,72 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 #endif /* CONFIG_UART_MCUX_LPUART_ISR_SUPPORT */
 
 #if LPUART_ASYNC_ENABLE
-#define TX_DMA_CONFIG(id)								       \
-	.tx_dma_config = {								       \
-		.dma_dev =								       \
-			DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)),		       \
-		.dma_channel =								       \
-			DT_INST_DMAS_CELL_BY_NAME(id, tx, mux),				       \
-		.dma_cfg = {								       \
-			.source_burst_length = 1,					       \
-			.dest_burst_length = 1,						       \
-			.source_data_size = 1,						       \
-			.dest_data_size = 1,						       \
-			.complete_callback_en = 1,					       \
-			.error_callback_dis = 0,					       \
-			.block_count = 1,						       \
-			.head_block =							       \
-				&mcux_lpuart_##id##_data.async.tx_dma_params.active_dma_block, \
-			.channel_direction = MEMORY_TO_PERIPHERAL,			       \
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(				       \
-				id, tx, source),					       \
-			.dma_callback = dma_callback,					       \
-			.user_data = (void *)DEVICE_DT_INST_GET(id)			       \
-		},									       \
-	},
-#define RX_DMA_CONFIG(id)								       \
-	.rx_dma_config = {								       \
-		.dma_dev =								       \
-			DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)),		       \
-		.dma_channel =								       \
-			DT_INST_DMAS_CELL_BY_NAME(id, rx, mux),				       \
-		.dma_cfg = {								       \
-			.source_burst_length = 1,					       \
-			.dest_burst_length = 1,						       \
-			.source_data_size = 1,						       \
-			.dest_data_size = 1,						       \
-			.complete_callback_en = 1,					       \
-			.error_callback_dis = 0,					       \
-			.block_count = 1,						       \
-			.head_block =							       \
-				&mcux_lpuart_##id##_data.async.rx_dma_params.active_dma_block, \
-			.channel_direction = PERIPHERAL_TO_MEMORY,			       \
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(				       \
-				id, rx, source),					       \
-			.dma_callback = dma_callback,					       \
-			.user_data = (void *)DEVICE_DT_INST_GET(id),			       \
-			.cyclic = 1,							       \
-		},									       \
-	},
+/*
+ * DMA controller cell naming differs between NXP DMA IPs:
+ * - nxp,mcux-edma uses cells: <mux source>
+ * - nxp,4ch-dma uses cells: <channel source>
+ */
+#define MCUX_LPUART_DMA_CHANNEL_CELL(id, dir) \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_DMAS_CTLR_BY_NAME(id, dir), nxp_4ch_dma), \
+		(DT_INST_DMAS_CELL_BY_NAME(id, dir, channel)), \
+		(DT_INST_DMAS_CELL_BY_NAME(id, dir, mux)))
+
+/* True when this UART instance uses the MCX 4-channel DMA controller. */
+#define MCUX_LPUART_DMA_IS_4CH(id, dir) \
+	DT_NODE_HAS_COMPAT(DT_INST_DMAS_CTLR_BY_NAME(id, dir), nxp_4ch_dma)
+
+#define MCUX_LPUART_HAS_DMA(id) DT_INST_NODE_HAS_PROP(id, dmas)
+
+#define TX_DMA_CONFIG(id)									\
+	COND_CODE_1(MCUX_LPUART_HAS_DMA(id), (							\
+		.tx_dma_config = {								\
+			.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, tx)),		\
+			.dma_channel = MCUX_LPUART_DMA_CHANNEL_CELL(id, tx),			\
+			.dma_cfg = {								\
+				.source_burst_length = 1,					\
+				.dest_burst_length = 1,						\
+				.source_data_size = 1,						\
+				.dest_data_size = 1,						\
+				.complete_callback_en = 1,					\
+				.error_callback_dis = 0,					\
+				.block_count = 1,						\
+				.head_block =							\
+					&mcux_lpuart_##id##_data.async.tx_dma_params.		\
+						active_dma_block,				\
+				.channel_direction = MEMORY_TO_PERIPHERAL,			\
+				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(				\
+					id, tx, source),					\
+				.dma_callback = dma_callback,					\
+				.user_data = (void *)DEVICE_DT_INST_GET(id)			\
+			},									\
+		},										\
+	), ())
+
+#define RX_DMA_CONFIG(id)									\
+	COND_CODE_1(MCUX_LPUART_HAS_DMA(id), (							\
+		.rx_dma_config = {								\
+			.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(id, rx)),		\
+			.dma_channel = MCUX_LPUART_DMA_CHANNEL_CELL(id, rx),			\
+			.dma_cfg = {								\
+				.source_burst_length = 1,					\
+				.dest_burst_length = 1,						\
+				.source_data_size = 1,						\
+				.dest_data_size = 1,						\
+				.complete_callback_en = 1,					\
+				.error_callback_dis = 0,					\
+				.block_count = 1,						\
+				.head_block =							\
+					&mcux_lpuart_##id##_data.async.rx_dma_params.		\
+						active_dma_block,				\
+				.channel_direction = PERIPHERAL_TO_MEMORY,			\
+				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(				\
+					id, rx, source),					\
+				.dma_callback = dma_callback,					\
+				.user_data = (void *)DEVICE_DT_INST_GET(id),			\
+				.cyclic = 1,							\
+			},									\
+		},										\
+	), ())
 #else
 #define RX_DMA_CONFIG(n)
 #define TX_DMA_CONFIG(n)
