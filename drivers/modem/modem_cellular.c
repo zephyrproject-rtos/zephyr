@@ -1446,11 +1446,17 @@ static int modem_cellular_on_await_ppp_dead_state_enter(struct modem_cellular_da
 static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_data *data,
 						 enum modem_cellular_event evt)
 {
+	const struct modem_cellular_config *config =
+		(const struct modem_cellular_config *)data->dev->config;
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_RING:
 		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
+		/* Wait for the channel to return to AT mode after PPP termination */
+		modem_cellular_start_timer(data, K_MSEC(config->reset_pulse_duration_ms));
+		break;
+	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 		break;
 	default:
