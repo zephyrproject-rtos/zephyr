@@ -59,6 +59,7 @@ tests:
       - sam_e54_xpro
       - pic32cx_sg41_cult
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_f091rc
       - nucleo_g071rb
       - nucleo_g474re
