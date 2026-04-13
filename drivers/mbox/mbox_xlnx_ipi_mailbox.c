@@ -343,7 +343,7 @@ static DEVICE_API(mbox, mbox_xlnx_ipi_driver_api) = {
 		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(idx, DEVICE_DT_GET, (,))\
 	};\
 	static void mbox_xlnx_ipi_##idx##_irq_config_func(void);\
-	const static struct mbox_xlnx_ipi_parent_config mbox_xlnx_ipi_##idx##_pconfig = {\
+	static const struct mbox_xlnx_ipi_parent_config mbox_xlnx_ipi_##idx##_pconfig = {\
 		.reg_base = DT_REG_ADDR_BY_NAME(DT_DRV_INST(idx), ctrl),\
 		.msg_base = (uint8_t *)DT_REG_ADDR_BY_NAME_OR(DT_DRV_INST(idx), msg, NULL),\
 		.ipi_id = DT_INST_PROP(idx, xlnx_ipi_id),\
