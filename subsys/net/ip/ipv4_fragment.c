@@ -211,7 +211,10 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 
 	ipv4_hdr->chksum = chksum;
 
-	net_pkt_set_data(pkt, &ipv4_access);
+	ret = net_pkt_set_data(pkt, &ipv4_access);
+	if (ret < 0) {
+		goto error;
+	}
 
 	net_pkt_set_ip_reassembled(pkt, true);
 
@@ -503,7 +506,10 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 
 	net_pkt_set_chksum_done(frag_pkt, true);
 
-	net_pkt_set_data(frag_pkt, &ipv4_access);
+	ret = net_pkt_set_data(frag_pkt, &ipv4_access);
+	if (ret < 0) {
+		goto fail;
+	}
 
 	net_pkt_set_overwrite(frag_pkt, false);
 	net_pkt_cursor_restore(frag_pkt, &cur);

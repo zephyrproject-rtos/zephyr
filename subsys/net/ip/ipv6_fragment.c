@@ -342,7 +342,10 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	ipv6.hdr->len = net_htons(len);
 
-	net_pkt_set_data(pkt, &ipv6_access);
+	ret = net_pkt_set_data(pkt, &ipv6_access);
+	if (ret < 0) {
+		goto error;
+	}
 
 	net_pkt_set_ip_reassembled(pkt, true);
 

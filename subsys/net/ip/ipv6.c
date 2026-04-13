@@ -120,6 +120,7 @@ int net_ipv6_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_ipv6_hdr *ipv6_hdr;
+	int ret;
 
 	net_pkt_set_overwrite(pkt, true);
 
@@ -137,7 +138,10 @@ int net_ipv6_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 		ipv6_hdr->nexthdr = next_header_proto;
 	}
 
-	net_pkt_set_data(pkt, &ipv6_access);
+	ret = net_pkt_set_data(pkt, &ipv6_access);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (net_pkt_ipv6_next_hdr(pkt) != 255U &&
 	    net_pkt_skip(pkt, net_pkt_ipv6_ext_len(pkt))) {

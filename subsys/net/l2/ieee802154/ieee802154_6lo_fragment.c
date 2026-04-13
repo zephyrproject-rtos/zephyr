@@ -227,21 +227,25 @@ static inline uint16_t get_datagram_tag(uint8_t *ptr)
 	return (ptr[0] << 8) | ptr[1];
 }
 
-static void update_protocol_header_lengths(struct net_pkt *pkt, uint16_t size)
+static int update_protocol_header_lengths(struct net_pkt *pkt, uint16_t size)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_ipv6_hdr *ipv6;
+	int ret;
 
 	ipv6 = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (!ipv6) {
 		NET_ERR("Could not get IPv6 header");
-		return;
+		return -ENOBUFS;
 	}
 
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 	ipv6->len = net_htons(size - NET_IPV6H_LEN);
 
-	net_pkt_set_data(pkt, &ipv6_access);
+	ret = net_pkt_set_data(pkt, &ipv6_access);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (ipv6->nexthdr == NET_IPPROTO_UDP) {
 		NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
@@ -250,11 +254,17 @@ static void update_protocol_header_lengths(struct net_pkt *pkt, uint16_t size)
 		udp = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 		if (udp) {
 			udp->len = net_htons(size - NET_IPV6H_LEN);
-			net_pkt_set_data(pkt, &udp_access);
+			ret = net_pkt_set_data(pkt, &udp_access);
+			if (ret < 0) {
+				return ret;
+			}
 		} else {
 			NET_ERR("Could not get UDP header");
+			return -ENOBUFS;
 		}
 	}
+
+	return 0;
 }
 
 static inline void clear_reass_cache(uint16_t size, uint16_t tag)
@@ -487,6 +497,7 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 	uint16_t size;
 	uint16_t tag;
 	uint8_t type;
+	int ret;
 
 	frag = pkt->buffer;
 	type = get_datagram_type(frag->data);
@@ -554,7 +565,11 @@ static inline enum net_verdict fragment_add_to_cache(struct net_pkt *pkt)
 
 		net_pkt_cursor_init(pkt);
 
-		update_protocol_header_lengths(pkt, size);
+		ret = update_protocol_header_lengths(pkt, size);
+		if (ret < 0) {
+			NET_ERR("Failed to update header lengths");
+			return NET_DROP;
+		}
 
 		net_pkt_cursor_init(pkt);
 
