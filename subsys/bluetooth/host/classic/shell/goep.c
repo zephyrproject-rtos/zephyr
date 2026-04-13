@@ -34,6 +34,8 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_MAX_CONN, BT_RFCOMM_BUF_SIZE(GOEP_M
 static uint8_t add_head_buffer[GOEP_MOPL];
 
 struct bt_goep_app {
+	struct bt_goep_transport_v1 goep_transport_v1;
+	struct bt_goep_transport_v2 goep_transport_v2;
 	struct bt_goep goep;
 	struct bt_obex_client client;
 	struct bt_obex_server server;
@@ -266,6 +268,9 @@ static int rfcomm_accept(struct bt_conn *conn, struct bt_goep_transport_rfcomm_s
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
+	g_app->goep_transport_v1.goep = &g_app->goep;
+	g_app->goep.v1 = &g_app->goep_transport_v1;
+	g_app->goep.v2 = NULL;
 	*goep = &g_app->goep;
 	return 0;
 }
@@ -318,6 +323,9 @@ static int cmd_connect_rfcomm(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
+	g_app->goep_transport_v1.goep = &g_app->goep;
+	g_app->goep.v1 = &g_app->goep_transport_v1;
+	g_app->goep.v2 = NULL;
 
 	err = bt_goep_transport_rfcomm_connect(default_conn, &g_app->goep, channel);
 	if (err != 0) {
@@ -365,6 +373,9 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_goep_transport_l2cap_ser
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
+	g_app->goep_transport_v2.goep = &g_app->goep;
+	g_app->goep.v2 = &g_app->goep_transport_v2;
+	g_app->goep.v1 = NULL;
 	*goep = &g_app->goep;
 	return 0;
 }
@@ -417,6 +428,9 @@ static int cmd_connect_l2cap(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
+	g_app->goep_transport_v2.goep = &g_app->goep;
+	g_app->goep.v2 = &g_app->goep_transport_v2;
+	g_app->goep.v1 = NULL;
 
 	err = bt_goep_transport_l2cap_connect(default_conn, &g_app->goep, psm);
 	if (err != 0) {
