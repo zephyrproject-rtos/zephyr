@@ -114,13 +114,23 @@ static int bip_rfcomm_accept(struct bt_conn *conn, struct bt_goep_transport_rfco
 
 	err = bip_server->accept(conn, bip_server, &bip);
 	if (err != 0) {
+		LOG_WRN("Incoming connection rejected");
 		return err;
 	}
-	*goep = &bip->goep;
+
+	if (bip == NULL || bip->ops == NULL) {
+		LOG_ERR("Invalid bip instance");
+		return -EINVAL;
+	}
+
 	bip->role = BT_BIP_ROLE_RESPONDER;
 	bip->goep.transport_ops = &bip_rfcomm_ops;
+	bip->goep_v1.goep = &bip->goep;
+	bip->goep.v1 = &bip->goep_v1;
+	bip->goep.v2 = NULL;
 	atomic_set(&bip->_transport_state, BT_BIP_TRANSPORT_STATE_CONNECTING);
 
+	*goep = &bip->goep;
 	return 0;
 }
 
@@ -149,6 +159,9 @@ int bt_bip_rfcomm_connect(struct bt_conn *conn, struct bt_bip *bip, uint8_t chan
 
 	bip->role = BT_BIP_ROLE_INITIATOR;
 	bip->goep.transport_ops = &bip_rfcomm_ops;
+	bip->goep_v1.goep = &bip->goep;
+	bip->goep.v1 = &bip->goep_v1;
+	bip->goep.v2 = NULL;
 	atomic_set(&bip->_transport_state, BT_BIP_TRANSPORT_STATE_CONNECTING);
 
 	err = bt_goep_transport_rfcomm_connect(conn, &bip->goep, channel);
@@ -256,11 +269,14 @@ static int bip_l2cap_accept(struct bt_conn *conn, struct bt_goep_transport_l2cap
 		return -EINVAL;
 	}
 
-	bip->goep.transport_ops = &bip_l2cap_ops;
-	*goep = &bip->goep;
 	bip->role = BT_BIP_ROLE_RESPONDER;
+	bip->goep.transport_ops = &bip_l2cap_ops;
+	bip->goep_v2.goep = &bip->goep;
+	bip->goep.v2 = &bip->goep_v2;
+	bip->goep.v1 = NULL;
 	atomic_set(&bip->_transport_state, BT_BIP_TRANSPORT_STATE_CONNECTING);
 
+	*goep = &bip->goep;
 	return 0;
 }
 
@@ -289,6 +305,9 @@ int bt_bip_l2cap_connect(struct bt_conn *conn, struct bt_bip *bip, uint16_t psm)
 
 	bip->role = BT_BIP_ROLE_INITIATOR;
 	bip->goep.transport_ops = &bip_l2cap_ops;
+	bip->goep_v2.goep = &bip->goep;
+	bip->goep.v2 = &bip->goep_v2;
+	bip->goep.v1 = NULL;
 	atomic_set(&bip->_transport_state, BT_BIP_TRANSPORT_STATE_CONNECTING);
 
 	err = bt_goep_transport_l2cap_connect(conn, &bip->goep, psm);

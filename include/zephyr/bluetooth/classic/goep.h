@@ -1,7 +1,7 @@
 /* goep.h - Bluetooth Generic Object Exchange Profile handling */
 
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,22 +84,30 @@ enum __packed bt_goep_transport_state {
 	BT_GOEP_TRANSPORT_DISCONNECTING,
 };
 
+/** @brief GOEP structure.
+ *
+ * @note Transport version selection and lifetime rules:
+ *       - Exactly one of @ref bt_goep::v1 or @ref bt_goep::v2 shall be set (non-NULL) for an
+ *         active session.
+ *       - The pointed-to @ref bt_goep_v1 / @ref bt_goep_v2 instance must remain valid (address
+ *         stable) for the entire lifetime of the transport connection, because the Bluetooth host
+ *         stack uses CONTAINER_OF() on the embedded RFCOMM/L2CAP objects in asynchronous callbacks.
+ *       - The version-specific object must have its @ref bt_goep_v1::goep / @ref bt_goep_v2::goep
+ *         back-pointer initialized to the parent @ref bt_goep before calling any of the GOEP
+ *         transport connect/register APIs.
+ */
 struct bt_goep {
-	/** @internal To be used for transport */
-	union {
-		struct bt_rfcomm_dlc dlc;
-		struct bt_l2cap_br_chan chan;
-	} _transport;
-
-	/** @internal Peer GOEP Version
+	/** @brief To be used for transport v1.
 	 *
-	 *  false - Peer supports GOEP v1.1. The GOEP transport is based on RFCOMM.
-	 *  `dlc` is used as transport.
-	 *
-	 *  true - peer supports GOEP v2.0 or later. The GOEP transport is based on L2CAP.
-	 *  `chan` is used as transport.
+	 * Must be NULL when using transport v2.
 	 */
-	bool _goep_v2;
+	struct bt_goep_v1 *v1;
+
+	/** @brief To be used for transport v2.
+	 *
+	 * Must be NULL when using transport v1.
+	 */
+	struct bt_goep_v2 *v2;
 
 	/** @internal connection handle */
 	struct bt_conn *_acl;
@@ -116,6 +124,36 @@ struct bt_goep {
 
 	/** @brief OBEX object */
 	struct bt_obex obex;
+};
+
+/** @brief GOEP v1.1 structure. */
+struct bt_goep_v1 {
+	/** @brief RFCOMM DLC used for transport */
+	struct bt_rfcomm_dlc dlc;
+
+	/** @brief Back-pointer to parent GOEP object
+	 *
+	 *  This must be initialized to point to the parent @ref bt_goep structure before
+	 *  calling any GOEP transport connect/register APIs. The parent @ref bt_goep must
+	 *  have its @ref bt_goep::v1 field pointing to this structure and @ref bt_goep::v2
+	 *  set to NULL for a valid GOEP v1.1 session.
+	 */
+	struct bt_goep *goep;
+};
+
+/** @brief GOEP v2 structure. */
+struct bt_goep_v2 {
+	/** @brief L2CAP BR/EDR channel used for transport */
+	struct bt_l2cap_br_chan chan;
+
+	/** @brief Back-pointer to parent GOEP object
+	 *
+	 *  This must be initialized to point to the parent @ref bt_goep structure before
+	 *  calling any GOEP transport connect/register APIs. The parent @ref bt_goep must
+	 *  have its @ref bt_goep::v2 field pointing to this structure and @ref bt_goep::v1
+	 *  set to NULL for a valid GOEP v2.0 session.
+	 */
+	struct bt_goep *goep;
 };
 
 /**
@@ -150,6 +188,15 @@ struct bt_goep_transport_rfcomm_server {
 	 *
 	 *  @warning It is the responsibility of the caller to zero out the parent of the GOEP
 	 *  object.
+	 *
+	 *  @note The accept callback must initialize the returned GOEP instance as follows:
+	 *        - Set @ref bt_goep::transport_ops to a valid operations table.
+	 *        - The field @ref bt_goep::v1 should be passed with the pointed-to @ref bt_goep_v1
+	 *          instance must remain valid (address stable) for the entire lifetime of the
+	 *          transport connection. And @ref bt_goep::v2 should be set to NULL.
+	 *        - Initialize the back-pointer in the version-specific object
+	 *          @ref bt_goep_v1::goep to point at the parent @ref bt_goep.
+	 *        The version-specific object must remain valid for the lifetime of the transport.
 	 *
 	 *  @param conn The connection that is requesting authorization.
 	 *  @param server Pointer to the server structure this callback relates to.
@@ -197,6 +244,15 @@ int bt_goep_transport_rfcomm_server_register(struct bt_goep_transport_rfcomm_ser
  *  peer device.
  *
  *  @warning It is the responsibility of the caller to zero out the parent of the GOEP object.
+ *
+ *  @note The accept callback must initialize the returned GOEP instance as follows:
+ *        - Set @ref bt_goep::transport_ops to a valid operations table.
+ *        - The field @ref bt_goep::v1 should be passed with the pointed-to @ref bt_goep_v1
+ *          instance must remain valid (address stable) for the entire lifetime of the
+ *          transport connection. And @ref bt_goep::v2 should be set to NULL.
+ *        - Initialize the back-pointer in the version-specific object
+ *          @ref bt_goep_v1::goep to point at the parent @ref bt_goep.
+ *        The version-specific object must remain valid for the lifetime of the transport.
  *
  *  @param conn Connection object.
  *  @param goep GOEP object.
@@ -253,6 +309,15 @@ struct bt_goep_transport_l2cap_server {
 	 *  @warning It is the responsibility of the caller to zero out the parent of the GOEP
 	 *  object.
 	 *
+	 *  @note The accept callback must initialize the returned GOEP instance as follows:
+	 *        - Set @ref bt_goep::transport_ops to a valid operations table.
+	 *        - The field @ref bt_goep::v2 should be passed with the pointed-to @ref bt_goep_v2
+	 *          instance must remain valid (address stable) for the entire lifetime of the
+	 *          transport connection. And @ref bt_goep::v1 should be set to NULL.
+	 *        - Initialize the back-pointer in the version-specific object
+	 *          @ref bt_goep_v2::goep to point at the parent @ref bt_goep.
+	 *        The version-specific object must remain valid for the lifetime of the transport.
+	 *
 	 *  @param conn The connection that is requesting authorization.
 	 *  @param server Pointer to the server structure this callback relates to.
 	 *  @param goep Pointer to received the allocated GOEP object.
@@ -303,6 +368,15 @@ int bt_goep_transport_l2cap_server_register(struct bt_goep_transport_l2cap_serve
  *  device.
  *
  *  @warning It is the responsibility of the caller to zero out the parent of the GOEP object.
+ *
+ *  @note The accept callback must initialize the returned GOEP instance as follows:
+ *        - Set @ref bt_goep::transport_ops to a valid operations table.
+ *        - The field @ref bt_goep::v2 should be passed with the pointed-to @ref bt_goep_v2
+ *          instance must remain valid (address stable) for the entire lifetime of the
+ *          transport connection. And @ref bt_goep::v1 should be set to NULL.
+ *        - Initialize the back-pointer in the version-specific object
+ *          @ref bt_goep_v2::goep to point at the parent @ref bt_goep.
+ *        The version-specific object must remain valid for the lifetime of the transport.
  *
  *  @param conn Connection object.
  *  @param goep GOEP object.
