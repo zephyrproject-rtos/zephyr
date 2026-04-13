@@ -37,6 +37,11 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/net/wifi_certs.h>
 #endif
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
+#include "utils/common.h"
+#include "sha1.h"
+#endif
+
 #define WIFI_SHELL_MODULE "wifi"
 
 #define WIFI_SHELL_MGMT_EVENTS (            \
@@ -633,6 +638,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"ssid", sys_getopt_required_argument, 0, 's'},
 		{"passphrase", sys_getopt_required_argument, 0, 'p'},
 		{"key-mgmt", sys_getopt_required_argument, 0, 'k'},
+		{"pbkdf2", sys_getopt_no_argument, 0, 'D'},
 		{"ieee-80211w", sys_getopt_required_argument, 0, 'w'},
 		{"bssid", sys_getopt_required_argument, 0, 'm'},
 		{"band", sys_getopt_required_argument, 0, 'b'},
@@ -725,6 +731,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'p':
 			params->psk = state->optarg;
 			params->psk_length = strlen(params->psk);
+			break;
+		case 'D':
+			params->psk_is_pbkdf2 = true;
 			break;
 		case 'c':
 			channel = strtol(state->optarg, &endptr, 10);
@@ -1001,6 +1010,35 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	if (params->ignore_broadcast_ssid > 2) {
 		PR_ERROR("Invalid ignore_broadcast_ssid value\n");
 		return -EINVAL;
+	}
+
+	if (params->psk_is_pbkdf2) {
+		/* params->security also required, but hard to enumerate exhaustively */
+		if (params->psk == NULL) {
+			PR_ERROR("--pbkdf2 requires a PSK\n");
+			return -EINVAL;
+		}
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
+		static uint8_t pbkdf2_precomputed[WIFI_PSK_MAX_LEN + 1];
+		uint32_t start_ms = k_uptime_get_32();
+
+		/* Precompute the PBKDF2 output */
+		PR("Starting computation of PBKDF2 output\n");
+		ret = pbkdf2_sha1(params->psk, params->ssid, params->ssid_length, 4096,
+					pbkdf2_precomputed, sizeof(pbkdf2_precomputed));
+		if (ret < 0) {
+			PR_ERROR("PBKDF2 computation failed (%d)\n", ret);
+			return ret;
+		}
+		PR("PBKDF2 computation complete in %u ms\n", k_uptime_get_32() - start_ms);
+
+		/* Overwrite PSK string with the precomputed PBKDF2 output */
+		params->psk = pbkdf2_precomputed;
+		params->psk_length = WIFI_PSK_PBKDF2_KEY_LEN;
+#else
+		PR_ERROR("PBKDF2 computation only supported with WPA Supplicant\n");
+		return -ENOSYS;
+#endif
 	}
 
 	return 0;
@@ -4571,6 +4609,7 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 			    "7:EAP-TLS, 8:WEP, 9:WPA-PSK, 10:WPA-Auto-Personal, 11:DPP, "
 			    "12:EAP-PEAP-MSCHAPv2, 13:EAP-PEAP-GTC, 14:EAP-TTLS-MSCHAPv2, "
 			    "15:EAP-PEAP-TLS, 20:SAE-EXT-KEY, 21:WEP-OPEN, 22:WEP-SHARED\n"
+			    "[--pbkdf2] Precompute PBKDF2 credentials (valid only for WPA2)\n"
 			    "[-w, --ieee-80211w]: MFP (optional: needs security type to be "
 			    "specified): 0:Disable, 1:Optional, 2:Required\n"
 			    "[-m, --bssid]: MAC address of the AP (BSSID)\n"
@@ -4597,7 +4636,7 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 			    "[-x, --server-cert-domain-suffix]: Domain name suffixes for "
 			    "server certificate match"),
 		 cmd_wifi_connect,
-		 2, 46);
+		 2, 47);
 
 SHELL_SUBCMD_ADD((wifi), disconnect, NULL,
 		 SHELL_HELP("Disconnect from the Wi-Fi AP",
