@@ -1427,11 +1427,8 @@ static int mcux_lpuart_config_get(const struct device *dev, struct uart_config *
 static int mcux_lpuart_configure(const struct device *dev,
 				 const struct uart_config *cfg)
 {
-	/* Make sure that RSRC is de-asserted otherwise deinit will hang. */
-	get_base(dev)->CTRL &= ~LPUART_CTRL_RSRC_MASK;
-
-	/* disable LPUART */
-	LPUART_Deinit(get_base(dev));
+	/* Disable Transmitter and Receiver */
+	get_base(dev)->CTRL &= ~(LPUART_CTRL_TE_MASK | LPUART_CTRL_RE_MASK);
 
 	int ret = mcux_lpuart_configure_init(dev, cfg);
 	if (ret) {
