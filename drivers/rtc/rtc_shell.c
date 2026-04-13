@@ -5,9 +5,14 @@
  *
  */
 
+/* _POSIX_C_SOURCE is required to expose gmtime_r declaration in glibc headers */
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/rtc.h>
+#include <zephyr/sys/timeutil.h>
 #include <time.h>
 #include <stdlib.h>
 
@@ -146,6 +151,27 @@ static char *strptime(const char *s, const char *format, struct tm *tm_time)
 	}
 }
 
+static int derive_wday(const char *format, struct tm *tm_time)
+{
+	if (format != format_iso8601 && format != format_date) {
+		return 0;
+	}
+
+	struct tm *volatile local_tm = tm_time;
+	time_t t = timeutil_timegm(local_tm);
+
+	if (t == (time_t)-1) {
+		return -EINVAL;
+	}
+
+	struct tm tmp;
+
+	gmtime_r(&t, &tmp);
+	local_tm->tm_wday = tmp.tm_wday;
+
+	return 0;
+}
+
 static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev = shell_device_get_binding(argv[1]);
@@ -177,6 +203,12 @@ static int cmd_set(const struct shell *sh, size_t argc, char **argv)
 
 	if (!parseRes || *parseRes != '\0') {
 		shell_error(sh, "Error in argument format");
+		return -EINVAL;
+	}
+
+	/* Derive weekday from parsed datetime */
+	if (derive_wday(format, tm_time) != 0) {
+		shell_error(sh, "Error in time");
 		return -EINVAL;
 	}
 
