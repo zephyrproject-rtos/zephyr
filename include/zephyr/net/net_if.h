@@ -670,8 +670,13 @@ typedef int (*net_socket_create_t)(int, int, int);
  * Because of the strong relationship between a device driver and such
  * network interface, each net_if_dev should be instantiated by one of the
  * network device init macros found in net_if.h.
+ *
+ * All the members are internal and should not be accessed directly.
  */
 struct net_if_dev {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	/** The actually device driver instance the net_if is related to */
 	const struct device *dev;
 
@@ -719,6 +724,9 @@ struct net_if_dev {
 	 * The value is in milliseconds since boot.
 	 */
 	int64_t oper_state_change_time;
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /**
@@ -727,8 +735,12 @@ struct net_if_dev {
  * Used to handle a network interface on top of a net_if_dev instance.
  * There can be many net_if instance against the same net_if_dev instance.
  *
+ * All the members are internal and should not be accessed directly.
  */
 struct net_if {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	/** The net_if_dev instance the net_if is related to */
 	struct net_if_dev *if_dev;
 
@@ -771,6 +783,9 @@ struct net_if {
 
 	/** Unused bit flags (ignore) */
 	uint8_t _unused : 6;
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 };
 
 /** @cond INTERNAL_HIDDEN */
