@@ -5,26 +5,23 @@
 import atexit
 import contextlib
 import os
-import re
 import subprocess
 import threading
 import time
 
+from SimLibraryBase import SimLibraryBase
 
-class QemuSimLibrary:
+
+class QemuSimLibrary(SimLibraryBase):
     """Keyword library that starts QEMU via the Zephyr build system and provides
     UART-like interaction over the named FIFOs that Zephyr's QEMU target sets up
     (QEMU_PIPE=<build_dir>/qemu-fifo, so FIFOs are <build_dir>/qemu-fifo.in/.out).
     """
 
-    ROBOT_LIBRARY_SCOPE = 'SUITE'
-
     def __init__(self):
+        super().__init__()
         self._qemu_thread = None
         self._fifo_in_fp = None
-        self._buffer = ''
-        self._lock = threading.Lock()
-        self._reader = None
 
     def start_qemu(self, build_dir, generator_cmd):
         """Create FIFOs and start QEMU via ``generator_cmd -C build_dir run``.
@@ -87,13 +84,8 @@ class QemuSimLibrary:
                 data = fp.read(256)
                 if not data:
                     break
-                text = re.sub(
-                    r'\x1b\[[0-9;]*[mABCDEFGHJKSTfhilmnsu]',
-                    '',
-                    data.decode('utf-8', errors='replace'),
-                )
                 with self._lock:
-                    self._buffer += text
+                    self._buffer += self._strip_ansi(data)
             except OSError:
                 break
 
@@ -103,36 +95,6 @@ class QemuSimLibrary:
             raise RuntimeError('QEMU is not running')
         self._fifo_in_fp.write((text + '\n').encode())
         self._fifo_in_fp.flush()
-
-    def wait_for_output(self, pattern, timeout=15):
-        """Wait until *pattern* (regex) appears in QEMU's serial output."""
-        end_time = time.time() + float(timeout)
-        regex = re.compile(pattern, re.MULTILINE)
-        while time.time() < end_time:
-            with self._lock:
-                m = regex.search(self._buffer)
-                if m:
-                    return m.group(0)
-            time.sleep(0.05)
-        with self._lock:
-            captured = self._buffer
-        raise AssertionError(
-            f"Pattern '{pattern}' not found within {timeout}s.\nCaptured output:\n{captured}"
-        )
-
-    def wait_for_literal_output(self, text, timeout=15):
-        """Wait until the literal *text* string appears in QEMU's serial output."""
-        end_time = time.time() + float(timeout)
-        while time.time() < end_time:
-            with self._lock:
-                if text in self._buffer:
-                    return text
-            time.sleep(0.05)
-        with self._lock:
-            captured = self._buffer
-        raise AssertionError(
-            f"Text '{text}' not found within {timeout}s.\nCaptured output:\n{captured}"
-        )
 
     def stop_qemu(self):
         """Close FIFOs; the QEMU process exits naturally when FIFOs are closed."""
