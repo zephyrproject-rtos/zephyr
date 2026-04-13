@@ -28,6 +28,43 @@ usual:
    :board: m2s010_mkr_kit/m2s010
    :goals: build
 
+Clock Configuration
+===================
+
+The current SmartFusion2 port does not program the MSS clock tree from Zephyr.
+The actual CPU and peripheral clocks must already be configured in the
+SmartFusion2 hardware design, for example in the MSS/Libero configuration used
+to build the board image.
+
+In Zephyr, the software-visible CPU frequency is taken from the devicetree CPU
+node:
+
+- ``&cpu0 { clock-frequency = <...>; }``
+
+That value is then used to derive:
+
+- ``CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC``
+- the ``SystemCoreClock`` variable used by the SmartFusion2 SoC port
+
+The SmartFusion2-specific clock-controller node is currently used for UART
+clocking, while the remaining peripherals still use their local devicetree
+frequency properties. If the hardware clock configuration changes, update the
+devicetree to match the real board configuration. For example, an application
+overlay can override the CPU and peripheral clock description values:
+
+.. code-block:: dts
+
+   &cpu0 {
+      clock-frequency = <80000000>;
+   };
+
+   &clkc {
+      clock-frequencies = <80000000 40000000>;
+   };
+
+The devicetree values must describe the real hardware clocks. Changing them in
+Zephyr alone does not reprogram the SmartFusion2 clock hardware.
+
 Flashing
 ========
 
@@ -83,11 +120,6 @@ can be enabled incrementally as Zephyr drivers are upstreamed:
 - PDMA
 - timers and watchdog
 - CAN and RTC
-- Ethernet MAC and USB
-- SYSREG helper blocks
-
-Supported Features
-==================
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

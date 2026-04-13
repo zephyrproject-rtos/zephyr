@@ -5,4 +5,13 @@ description: SmartFusion2 H2F interrupt controller block
 
 compatible: "microchip,smartfusion2-h2f-irqctrl"
 
-include: microchip,smartfusion2-common.yaml
+include:
+  - microchip,smartfusion2-common.yaml
+  - interrupt-controller.yaml
+
+properties:
+  "#interrupt-cells":
+    const: 1
+
+interrupt-cells:
+  - irq

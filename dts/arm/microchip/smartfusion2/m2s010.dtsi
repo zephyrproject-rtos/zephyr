@@ -4,6 +4,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/microchip-smartfusion2-clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/microchip-smartfusion2-irq.h>
 
 / {
@@ -21,10 +22,11 @@
 		};
 	};
 
-	base_clk: base-clock {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <50000000>;
+	clkc: clock-controller {
+		compatible = "microchip,smartfusion2-clock";
+		#clock-cells = <1>;
+		clock-frequencies = <100000000 50000000>;
+		clock-output-names = "cpu", "mss-peripheral";
 	};
 
 	sram0: memory@20000000 {
@@ -41,22 +43,22 @@
 		dma: dma@40003000 {
 			compatible = "microchip,smartfusion2-dma";
 			reg = <0x40003000 0x1000>;
-			interrupts = <M2S_IRQ_DMA IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <M2S_IRQ_DMA 4>;
 			status = "disabled";
 		};
 
 		timers: timers@40004000 {
 			compatible = "microchip,smartfusion2-timers";
 			reg = <0x40004000 0x1000>;
-			interrupts = <M2S_IRQ_TIMER1 IRQ_TYPE_LEVEL_HIGH>,
-				     <M2S_IRQ_TIMER2 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <M2S_IRQ_TIMER1 4>,
+				     <M2S_IRQ_TIMER2 4>;
 			status = "disabled";
 		};
 
 		watchdog: watchdog@40005000 {
 			compatible = "microchip,smartfusion2-watchdog";
 			reg = <0x40005000 0x1000>;
-			interrupts = <M2S_IRQ_WDOG IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <M2S_IRQ_WDOG 4>;
 			status = "disabled";
 		};
 
@@ -82,109 +84,100 @@
 		uart0: serial@40000000 {
 			compatible = "ns16550";
 			reg = <0x40000000 0x1000>;
-			clock-frequency = <50000000>;
+			clocks = <&clkc SMARTFUSION2_CLOCK_MSS_PERIPHERAL>;
 			current-speed = <115200>;
-			interrupts = <M2S_IRQ_UART0 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <M2S_IRQ_UART0 4>;
 			reg-shift = <2>;
 			status = "disabled";
 		};
 
-		uart1: serial@40001000 {
+		uart1: serial@40010000 {
 			compatible = "ns16550";
-			reg = <0x40001000 0x1000>;
-			clock-frequency = <50000000>;
+			reg = <0x40010000 0x1000>;
+			clocks = <&clkc SMARTFUSION2_CLOCK_MSS_PERIPHERAL>;
 			current-speed = <115200>;
-			interrupts = <M2S_IRQ_UART1 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <M2S_IRQ_UART1 4>;
 			reg-shift = <2>;
 			status = "disabled";
 		};
 
-		spi0: spi@40002000 {
+		spi0: spi@40001000 {
 			compatible = "microchip,mpfs-spi";
-			reg = <0x40002000 0x1000>;
-			interrupts = <M2S_IRQ_SPI0 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&base_clk>;
+			reg = <0x40001000 0x1000>;
+			interrupts = <M2S_IRQ_SPI0 4>;
 			clock-frequency = <50000000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-		i2c0: i2c@40012000 {
+		i2c0: i2c@40002000 {
+			compatible = "microchip,mpfs-i2c";
+			reg = <0x40002000 0x1000>;
+			interrupts = <M2S_IRQ_I2C0_MAIN 4>,
+				     <M2S_IRQ_I2C0_ALERT 4>,
+				     <M2S_IRQ_I2C0_SUS 4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <100000>;
+			status = "disabled";
+		};
+
+		spi1: spi@40011000 {
+			compatible = "microchip,mpfs-spi";
+			reg = <0x40011000 0x1000>;
+			interrupts = <M2S_IRQ_SPI1 4>;
+			clock-frequency = <50000000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40012000 {
 			compatible = "microchip,mpfs-i2c";
 			reg = <0x40012000 0x1000>;
-			interrupts = <M2S_IRQ_I2C0_MAIN IRQ_TYPE_LEVEL_HIGH>,
-				     <M2S_IRQ_I2C0_ALERT IRQ_TYPE_LEVEL_HIGH>,
-				     <M2S_IRQ_I2C0_SUS IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <M2S_IRQ_I2C1_MAIN 4>,
+				     <M2S_IRQ_I2C1_ALERT 4>,
+				     <M2S_IRQ_I2C1_SUS 4>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clock-frequency = <100000>;
 			status = "disabled";
 		};
 
-		spi1: spi@4000a000 {
-			compatible = "microchip,mpfs-spi";
-			reg = <0x4000a000 0x1000>;
-			interrupts = <M2S_IRQ_SPI1 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&base_clk>;
-			clock-frequency = <50000000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		i2c1: i2c@4001a000 {
-			compatible = "microchip,mpfs-i2c";
-			reg = <0x4001a000 0x1000>;
-			interrupts = <M2S_IRQ_I2C1_MAIN IRQ_TYPE_LEVEL_HIGH>,
-				     <M2S_IRQ_I2C1_ALERT IRQ_TYPE_LEVEL_HIGH>,
-				     <M2S_IRQ_I2C1_SUS IRQ_TYPE_LEVEL_HIGH>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clock-frequency = <100000>;
-			status = "disabled";
-		};
-
-		eth0: ethernet@40003000 {
+		eth0: ethernet@40041000 {
 			compatible = "microchip,smartfusion2-ethernet";
-			reg = <0x40003000 0x1000>;
-			interrupts = <M2S_IRQ_MAC0 IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0x40041000 0x1000>;
+			interrupts = <M2S_IRQ_MAC0 4>;
 			status = "disabled";
 		};
 
 		usb: usb@40043000 {
 			compatible = "microchip,smartfusion2-usb";
 			reg = <0x40043000 0x1000>;
-			interrupts = <M2S_IRQ_USB_DMA IRQ_TYPE_LEVEL_HIGH>,
-				     <M2S_IRQ_USB_MC IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <M2S_IRQ_USB_DMA 4>,
+				     <M2S_IRQ_USB_MC 4>;
 			status = "disabled";
 		};
 
-		can0: can@40014000 {
-			compatible = "microchip,smartfusion2-can";
-			reg = <0x40014000 0x1000>;
-			interrupts = <M2S_IRQ_CAN0 IRQ_TYPE_LEVEL_HIGH>;
-			status = "disabled";
-		};
-
-		can1: can@40015000 {
+		can0: can@40015000 {
 			compatible = "microchip,smartfusion2-can";
 			reg = <0x40015000 0x1000>;
-			interrupts = <M2S_IRQ_CAN1 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <M2S_IRQ_CAN0 4>;
 			status = "disabled";
 		};
 
-		rtc: rtc@40004000 {
+		rtc: rtc@40017000 {
 			compatible = "microchip,smartfusion2-rtc";
-			reg = <0x40004000 0x1000>;
-			interrupts = <M2S_IRQ_RTC_WAKEUP IRQ_TYPE_LEVEL_HIGH>,
-				     <M2S_IRQ_RTC_MATCH IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0x40017000 0x1000>;
+			interrupts = <M2S_IRQ_RTC_WAKEUP 4>,
+				     <M2S_IRQ_RTC_MATCH 4>;
 			status = "disabled";
 		};
 
-		f2h_irqctrl: interrupt-controller@40009000 {
+		f2h_irqctrl: interrupt-controller@40006000 {
 			compatible = "microchip,smartfusion2-h2f-irqctrl";
-			reg = <0x40009000 0x1000>;
+			reg = <0x40006000 0xa000>;
 			interrupt-controller;
 			#address-cells = <0>;
 			#interrupt-cells = <1>;

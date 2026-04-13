@@ -9,39 +9,29 @@
  */
 
 #include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/clock/microchip-smartfusion2-clock.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/sys_io.h>
 #include <soc.h>
 
-uint32_t SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+#define SMARTFUSION2_CPU_CLOCK_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
-/**
- * @brief Compute a system register address from its block-relative offset.
- *
- * @param offset Register offset from the SYSREG base.
- *
- * @return Absolute memory-mapped register address.
- */
+BUILD_ASSERT(SMARTFUSION2_CPU_CLOCK_FREQ ==
+	     DT_PROP_BY_IDX(DT_NODELABEL(clkc), clock_frequencies, SMARTFUSION2_CLOCK_CPU),
+	     "cpu0 clock-frequency must match the SmartFusion2 clock controller CPU output");
+
+uint32_t SystemCoreClock = SMARTFUSION2_CPU_CLOCK_FREQ;
+
 static inline mem_addr_t smartfusion2_sysreg_reg(uint32_t offset)
 {
 	return SMARTFUSION2_SYSREG_BASE + offset;
 }
 
-/**
- * @brief Perform SmartFusion2 device-specific early initialization.
- */
-void SystemInit(void)
+static void smartfusion2_init(void)
 {
 	uint32_t facc1_cr;
-	uint32_t device_version;
 
 	SCB->CCR |= SCB_CCR_STKALIGN_Msk;
-
-	device_version = sys_read32(
-		smartfusion2_sysreg_reg(SMARTFUSION2_SYSREG_DEVICE_VERSION_OFFSET));
-	if (device_version != SMARTFUSION2_M2S050_REV_A_DEVICE_VERSION) {
-		return;
-	}
 
 	facc1_cr = sys_read32(
 		smartfusion2_sysreg_reg(SMARTFUSION2_SYSREG_MSSDDR_FACC1_CR_OFFSET));
@@ -51,23 +41,14 @@ void SystemInit(void)
 		smartfusion2_sysreg_reg(SMARTFUSION2_SYSREG_MSSDDR_FACC1_CR_OFFSET));
 }
 
-/**
- * @brief Update the exported system core clock value.
- */
-void SystemCoreClockUpdate(void)
-{
-	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
-}
-
-/**
- * @brief Release resets for peripherals enabled in the devicetree.
- */
 static void smartfusion2_release_peripheral_resets(void)
 {
 	uint32_t reset_mask = 0U;
 
-	sys_write32(0U,
-		smartfusion2_sysreg_reg(SMARTFUSION2_SYSREG_WDOG_CR_OFFSET));
+	if (!DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(watchdog))) {
+		sys_write32(0U,
+			smartfusion2_sysreg_reg(SMARTFUSION2_SYSREG_WDOG_CR_OFFSET));
+	}
 
 	if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dma))) {
 		reset_mask |= SMARTFUSION2_SYSREG_PDMA_SOFTRESET_MASK;
@@ -127,12 +108,8 @@ static void smartfusion2_release_peripheral_resets(void)
 		smartfusion2_sysreg_reg(SMARTFUSION2_SYSREG_SOFT_RST_CR_OFFSET));
 }
 
-/**
- * @brief Run the Zephyr SoC early initialization hook.
- */
 void soc_early_init_hook(void)
 {
-	SystemInit();
-	SystemCoreClockUpdate();
+	smartfusion2_init();
 	smartfusion2_release_peripheral_resets();
 }

@@ -7,6 +7,6 @@ config NUM_IRQS
 	default 82
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 100000000
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
 endif

@@ -8,21 +8,12 @@
  * @brief Public SoC declarations for the SmartFusion2 M2S010 port.
  */
 
-#ifndef _SOC_H_
-#define _SOC_H_
-
-#include <cmsis_core_m_defaults.h>
-#include <soc_registers.h>
+#ifndef SOC_MICROCHIP_SMARTFUSION2_M2S010_SOC_H_
+#define SOC_MICROCHIP_SMARTFUSION2_M2S010_SOC_H_
 
 #ifndef _ASMLANGUAGE
-/** System core clock value exported for CMSIS-compatible code. */
-extern uint32_t SystemCoreClock;
-
-/** Initialize core platform state before Zephyr drivers start. */
-void SystemInit(void);
-
-/** Refresh the exported SystemCoreClock value. */
-void SystemCoreClockUpdate(void);
+#include <cmsis_core_m_defaults.h>
+#include <soc_registers.h>
 #endif
 
-#endif
+#endif /* SOC_MICROCHIP_SMARTFUSION2_M2S010_SOC_H_ */
