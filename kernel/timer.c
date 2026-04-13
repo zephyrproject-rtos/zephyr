@@ -74,20 +74,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	/* In sys_clock_announce(), when a timeout expires, it is first removed
-	 * from the timeout list, then its expiration handler is called (with
-	 * unlocked interrupts). For kernel timers, the expiration handler is
-	 * this function. Usually, the timeout structure related to the timer
-	 * that is handled here will not be linked to the timeout list at this
-	 * point. But it may happen that before this function is executed and
-	 * interrupts are locked again, a given timer gets restarted from an
-	 * interrupt context that has a priority higher than the system timer
-	 * interrupt. Then, the timeout structure for this timer will turn out
-	 * to be linked to the timeout list. And in such case, since the timer
-	 * was restarted, its expiration handler should not be executed then,
-	 * so the function exits immediately.
-	 */
-	if (sys_dnode_is_linked(&t->node)) {
+	if (z_is_timeout_handler_canceled(t)) {
 		k_spin_unlock(&lock, key);
 		return;
 	}
@@ -128,12 +115,14 @@ void z_timer_expiration_handler(struct _timeout *t)
 
 	/* invoke timer expiry function */
 	if (timer->expiry_fn != NULL) {
+		k_timer_expiry_t expiry_fn = timer->expiry_fn;
+
 		/* Unlock for user handler. */
 		k_spin_unlock(&lock, key);
 
 		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, expiry, timer);
 
-		timer->expiry_fn(timer);
+		expiry_fn(timer);
 
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, expiry, timer);
 
@@ -256,9 +245,12 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
 	bool inactive = (z_abort_timeout(&timer->timeout) != 0);
 
 	if (inactive) {
+		k_spin_unlock(&lock, key);
 		return;
 	}
 
@@ -266,19 +258,28 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 
 	if (timer->stop_fn != NULL) {
 		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, stop_fn_expiry, timer);
+		k_spin_unlock(&lock, key);
 
 		timer->stop_fn(timer);
+
+		key = k_spin_lock(&lock);
 
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, stop_fn_expiry, timer);
 	}
 
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		struct k_thread *pending_thread = z_unpend1_no_timeout(&timer->wait_q);
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_spin_unlock(&lock, key);
+		return;
 
-		if (pending_thread != NULL) {
-			z_ready_thread(pending_thread);
-			z_reschedule_unlocked();
-		}
+	}
+
+	struct k_thread *pending_thread = z_unpend1_no_timeout(&timer->wait_q);
+
+	if (pending_thread != NULL) {
+		z_ready_thread(pending_thread);
+		z_reschedule(&lock, key);
+	} else {
+		k_spin_unlock(&lock, key);
 	}
 }
 

@@ -176,4 +176,4 @@ static int init_nrfs(void)
 
 SYS_INIT(init_manager, PRE_KERNEL_1, 0);
 /* Needs to be initialized after IPC and nrfs. */
-SYS_INIT(init_nrfs, POST_KERNEL, UTIL_INC(UTIL_INC(CONFIG_NRFS_BACKEND_IPC_SERVICE_INIT_PRIO)));
+SYS_INIT(init_nrfs, POST_KERNEL, UTIL_INC(CONFIG_NRFS_BACKEND_IPC_SERVICE_INIT_PRIO));
