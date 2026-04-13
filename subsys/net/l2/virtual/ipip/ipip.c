@@ -295,6 +295,7 @@ static enum net_verdict interface_recv(struct net_if *iface,
 	struct ipip_context *ctx = net_if_get_device(iface)->data;
 	struct net_pkt_cursor hdr_start;
 	uint8_t iptype;
+	int ret;
 
 	net_pkt_cursor_backup(pkt, &hdr_start);
 
@@ -369,7 +370,10 @@ static enum net_verdict interface_recv(struct net_if *iface,
 		 * RFC4213 chapter 3.3
 		 */
 		hdr->hop_limit--;
-		(void)net_pkt_set_data(pkt, &access);
+		ret = net_pkt_set_data(pkt, &access);
+		if (ret < 0) {
+			return NET_DROP;
+		}
 
 		net_pkt_set_iface(pkt, iface);
 
@@ -419,7 +423,10 @@ static enum net_verdict interface_recv(struct net_if *iface,
 
 		hdr->chksum = ~sum;
 
-		(void)net_pkt_set_data(pkt, &access);
+		ret = net_pkt_set_data(pkt, &access);
+		if (ret < 0) {
+			return NET_DROP;
+		}
 
 		net_pkt_set_iface(pkt, iface);
 
