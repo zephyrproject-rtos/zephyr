@@ -986,7 +986,7 @@
 				reg = <0 DT_SIZE_K(4076)>;
 				ranges = <0x0 0 DT_SIZE_K(4076)>;
 				erase-block-size = <4096>;
-				write-block-size = <4>;
+				write-block-size = <16>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};

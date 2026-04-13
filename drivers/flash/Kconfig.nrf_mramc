@@ -25,3 +25,15 @@ config SOC_FLASH_NRF_MRAMC_FLUSH_CACHE
 	help
 	  Enables invalidation of the MRAM cache after write and erase operations to
 	  ensure data read consistency.
+
+config NRF_MRAMC_MAX_RETRIES
+	int "Maximum number of retries for MRAM write/erase operations"
+	default 20
+	range 0 255
+	depends on SOC_FLASH_NRF_MRAMC
+	help
+	  This option sets the maximum number of retry attempts for MRAM
+	  write and erase operations when verification fails. Each retry
+	  attempts to rewrite or re-erase the data to ensure reliability.
+	  Higher values increase reliability but may impact performance
+	  in case of persistent failures.
