@@ -1,0 +1,14 @@
+sample:
+  name: Basic Async RX
+  description: |
+    Simple application that receives data on UART1 RX and outputs to console.
+  platforms: lp_mspm0g3507
+
+tests:
+  sample.drivers.uart.basic_async_rx:
+    tags: uart
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "RX enabled and listening on PA18"

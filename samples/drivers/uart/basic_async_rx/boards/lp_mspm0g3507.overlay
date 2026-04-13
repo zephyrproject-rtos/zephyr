@@ -1,0 +1,9 @@
+/* UART overlay for Basic Async RX test */
+
+/* Configure UART1 for RX on PA18 */
+&uart1 {
+    status = "okay";
+    current-speed = <400000>;
+    pinctrl-0 = <&uart1_tx_pa17 &uart1_rx_pa18>;
+    pinctrl-names = "default";
+};
