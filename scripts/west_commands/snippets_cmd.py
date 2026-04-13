@@ -6,6 +6,7 @@ import argparse
 import os
 import re
 import shutil
+import subprocess
 import sys
 import textwrap
 from pathlib import Path
@@ -15,8 +16,7 @@ from west.commands import WestCommand
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
-import zephyr_module
-from snippets import find_snippets_in_roots
+from snippets import Snippet, find_snippets_in_roots, load_snippet_yml
 
 
 class Snippets(WestCommand):
@@ -86,17 +86,45 @@ class Snippets(WestCommand):
         else:
             name_re = None
 
-        # User-supplied --snippet-root values come first, then auto-discovered roots.
-        auto_roots = [ZEPHYR_BASE]
+        # Use the CMake package helper to get the list of all snippets found
+        # in the system.
+        cmake_cmd = [
+            'cmake',
+            '-S',
+            'samples/hello_world/',
+            '-B',
+            'build',
+            '-DBOARD=native_sim',
+            '-DMODULES=snippets',
+            '-DPRINT_VAR=SNIPPET_PATHS',
+            '-P',
+            './cmake/package_helper.cmake',
+        ]
 
-        for module in zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest):
-            snippet_root = module.meta.get('build', {}).get('settings', {}).get('snippet_root')
-            if snippet_root is not None:
-                auto_roots.append(Path(module.project) / snippet_root)
+        result = subprocess.run(
+            cmake_cmd,
+            capture_output=True,
+            text=True,
+            cwd=ZEPHYR_BASE,
+        )
 
-        args.snippet_roots += auto_roots
+        snippet_paths = []
+        for line in (result.stdout).splitlines():
+            m = re.match(r'^-- SNIPPET_PATHS:\s*(.*)', line)
+            if m:
+                snippet_paths = [Path(p) for p in m.group(1).strip().split(';') if p]
+                break
 
-        snippets = find_snippets_in_roots(requested_snippets=[], snippet_roots=args.snippet_roots)
+        # Initialize the Snippets using any provided extra roots.
+        snippets = find_snippets_in_roots(None, args.snippet_roots)
+
+        for snippet_yml in snippet_paths:
+            snippet_data = load_snippet_yml(snippet_yml)
+            name = snippet_data['name']
+            if name not in snippets:
+                snippets[name] = Snippet(name=name)
+            snippets[name].process_data(snippet_yml, snippet_data, False)
+
         filtered = [
             snippet
             for _, snippet in snippets.items()
