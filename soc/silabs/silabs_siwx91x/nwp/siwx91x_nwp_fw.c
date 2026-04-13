@@ -9,11 +9,7 @@
 
 LOG_MODULE_DECLARE(siwx91x_nwp, CONFIG_SIWX91X_NWP_LOG_LEVEL);
 
-/* Replace SLI_WIFI_REGISTER_VALID, SLI_HOST_INTERACT_REG_VALID, SLI_HOST_INTERACT_REG_VALID_FW.
- * Used for bootloader_out and dma_desc_tx registers
- */
 #define SIWX91X_NWP_FW_REGISTER_VALID     0xAB
-#define SIWX91X_NWP_FW_REGISTER_VALID_FW  0xA0
 
 static int siwx91x_nwp_fw_wait_ready(const struct device *dev)
 {
@@ -40,7 +36,7 @@ static int siwx91x_nwp_fw_load(const struct device *dev)
 	const struct siwx91x_nwp_config *config = dev->config;
 	uint16_t val;
 
-	/* config->dma_desc_tx is also the input register for the bootloader */
+	/* config->dma_desc_tx is also the input register (bootloader_in) for the bootloader */
 	config->ta_regs->dma_desc_tx = (void *)(FIELD_PREP(0xFF00, SIWX91X_NWP_FW_REGISTER_VALID) |
 						FIELD_PREP(0x00FF, LOAD_NWP_FW));
 	val = (uint16_t)config->ta_regs->bootloader_out;
@@ -50,6 +46,12 @@ static int siwx91x_nwp_fw_load(const struct device *dev)
 	if (FIELD_GET(0x00FF, val) == SLI_INVALID_OPTION) {
 		return -EIO;
 	}
+
+	/* Firmware reset some bits (not all) on boot. We can use this information. */
+	while (FIELD_GET(0xF000, (uint32_t)config->ta_regs->dma_desc_tx) != 0) {
+		; /* empty */
+	}
+
 	return 0;
 }
 
@@ -84,12 +86,6 @@ int siwx91x_nwp_fw_boot(const struct device *dev)
 		return ret;
 	}
 
-	if (!(M4_ULP_SLP_STATUS_REG & MCU_ULP_WAKEUP)) {
-		while ((uint32_t)config->ta_regs->dma_desc_tx &
-		       FIELD_PREP(0xFF00, SIWX91X_NWP_FW_REGISTER_VALID_FW)) {
-			; /* empty */
-		}
-	}
 	return 0;
 }
 
