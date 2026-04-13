@@ -422,6 +422,26 @@ static inline int gpio_dw_manage_callback(const struct device *port,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_dw_port_get_direction(const struct device *port, gpio_port_pins_t map,
+				gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	mem_addr_t base_addr = dw_base_to_block_base(dw_get_base(port));
+	uint32_t dir_port = dw_get_dir_port(dw_get_base(port));
+	gpio_port_pins_t gpio_dir_status = dw_read(base_addr, dir_port);
+
+	if (inputs != NULL) {
+		*inputs = ~gpio_dir_status & map;
+	}
+
+	if (outputs != NULL) {
+		*outputs = gpio_dir_status & map;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 static void gpio_dw_isr(const struct device *port)
 {
@@ -446,6 +466,9 @@ static DEVICE_API(gpio, api_funcs) = {
 	.port_toggle_bits = gpio_dw_port_toggle_bits,
 	.pin_interrupt_configure = gpio_dw_pin_interrupt_configure,
 	.manage_callback = gpio_dw_manage_callback,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_dw_port_get_direction,
+#endif
 };
 
 static int gpio_dw_initialize(const struct device *port)
