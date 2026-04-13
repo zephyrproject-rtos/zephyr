@@ -188,7 +188,7 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 	       (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM)) {
 		used_descs++;
 
-		if (desc_iter->RDES0.FirstDescriptor) {
+		if (desc_iter->RDES0.FirstDescriptor && first_desc == NULL) {
 			first_desc = desc_iter;
 		}
 
