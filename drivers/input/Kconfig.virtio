@@ -1,0 +1,42 @@
+# Copyright 2026 Markus Becker
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_VIRTIO
+	bool "VirtIO Input driver"
+	default y
+	depends on DT_HAS_VIRTIO_INPUT_ENABLED
+	select VIRTIO
+	help
+	  Enable the VirtIO input device driver.  Supports keyboard, mouse and
+	  tablet devices presented by QEMU as virtio-keyboard-pci,
+	  virtio-mouse-pci, or virtio-tablet-pci.
+
+	  The driver uses Zephyr's VIRTIO transport API (drivers/virtio) and
+	  publishes events through the Zephyr input subsystem.
+
+	  The DT node for this driver must be a child of a virtio,pci node.
+
+if INPUT_VIRTIO
+
+config INPUT_VIRTIO_QUEUE_SIZE
+	int "VirtIO input eventq depth"
+	default 16
+	range 4 256
+	help
+	  Number of descriptors to allocate for the eventq virtqueue.  Each
+	  descriptor holds one struct virtio_input_event (8 bytes).  The
+	  device fills them with input events and returns them via the used
+	  ring; the driver immediately recycles each one.
+
+	  The negotiated size will be min(this value, device-reported maximum).
+	  QEMU typically advertises a maximum of 128.
+
+config INPUT_VIRTIO_LOG_LEVEL
+	int "VirtIO input driver log level"
+	default 3
+	range 0 4
+	help
+	  Log verbosity for the virtio_input driver module.
+	  0=OFF 1=ERROR 2=WARNING 3=INFO 4=DEBUG
+
+endif # INPUT_VIRTIO

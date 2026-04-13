@@ -14,7 +14,10 @@ LOG_MODULE_REGISTER(virtio_common, CONFIG_VIRTIO_LOG_LEVEL);
 
 void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue_count)
 {
-	if (isr_status & VIRTIO_QUEUE_INTERRUPT) {
+	/* TODO: The ISR status for input events does not have VIRTIO_QUEUE_INTERRUPT set.
+	 *       Cleared in PCI???
+	 */
+	/* if (isr_status & VIRTIO_QUEUE_INTERRUPT) { */
 		for (int i = 0; i < virtqueue_count; i++) {
 			struct virtq *vq = virtio_get_virtqueue(dev, i);
 			uint16_t used_idx = sys_le16_to_cpu(vq->used->idx);
@@ -64,7 +67,7 @@ void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue
 				}
 			}
 		}
-	}
+	/* } */
 	if (isr_status & VIRTIO_DEVICE_CONFIGURATION_INTERRUPT) {
 		LOG_ERR("device configuration change interrupt is currently unsupported");
 	}

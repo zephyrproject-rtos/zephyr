@@ -72,12 +72,17 @@ if(CONFIG_ENTROPY_VIRTIO)
   set(QEMU_VIRTIO_ENTROPY_FLAGS -device virtio-rng-pci)
 endif()
 
+if(CONFIG_INPUT_VIRTIO)
+  set(QEMU_VIRTIO_TABLET_PCI_FLAGS -device virtio-tablet-pci,addr=05.0,id=input0 -display default,show-cursor=on)
+endif()
+
 set(QEMU_FLAGS_${ARCH}
   -m ${QEMU_MEMORY_SIZE_MB}
   -cpu ${QEMU_CPU_TYPE_${ARCH}}${QEMU_CPU_FLAGS}
   -machine q35
   -device isa-debug-exit,iobase=0xf4,iosize=0x04
   ${QEMU_VIRTIO_ENTROPY_FLAGS}
+  ${QEMU_VIRTIO_TABLET_PCI_FLAGS}
   ${REBOOT_FLAG}
   )
 

@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 20262, Markus Becker
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&virtio_input_tablet>;
+		status = "okay";
+	};
+};
+
+#include <zephyr/dt-bindings/pcie/pcie.h>
+
+&pcie0 {
+	virtio_tablet_pci: virtio_tablet_pci {
+		compatible = "virtio,pci";
+		vendor-id = <0x1af4>;
+		device-id = <0x1052>;
+		status = "okay";
+		interrupts = <0xa 0x100 0x3>;
+		interrupt-parent = <&intc>;
+
+		virtio_input_tablet: virtio-input-tablet {
+			compatible = "virtio,input";
+			status = "okay";
+		};
+	};
+};

@@ -54,6 +54,20 @@ static void lv_btn_click_callback(lv_event_t *e)
 	count = 0;
 }
 
+void setup_cursor(void)
+{
+	lv_obj_t *cursor_obj = lv_obj_create(lv_scr_act());
+
+	lv_obj_set_size(cursor_obj, 10, 10);
+	lv_obj_set_style_bg_color(cursor_obj, lv_color_hex(0xFF0000), 0);
+	lv_obj_set_style_radius(cursor_obj, LV_RADIUS_CIRCLE, 0);
+	lv_obj_clear_flag(cursor_obj, LV_OBJ_FLAG_CLICKABLE);
+
+	lv_indev_t *indev = lv_indev_get_next(NULL);
+
+	lv_indev_set_cursor(indev, cursor_obj);
+}
+
 int main(void)
 {
 	char count_str[11] = {0};
@@ -132,6 +146,8 @@ int main(void)
 		lv_obj_add_event_cb(hello_world_button, lv_btn_click_callback, LV_EVENT_CLICKED,
 				    NULL);
 		hello_world_label = lv_label_create(hello_world_button);
+
+		setup_cursor();
 	} else {
 		hello_world_label = lv_label_create(lv_screen_active());
 	}

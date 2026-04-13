@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Zephyr Project
+# SPDX-License-Identifier: Apache-2.0
+#
+# VirtIO Input device binding
+#
+# The virtio-input device ID is 18 (0x12), giving compatible "virtio,device18".
+# However, a more descriptive compatible string "virtio,input" is used here
+# to match the DT_DRV_COMPAT in the driver and to mirror the Linux convention.
+# The virtio,pci binding already handles the PCI device discovery; this binding
+# describes the device-class child node.
+
+description: |
+  VirtIO Input device (virtio-input, device ID 18).
+
+  Supports keyboard, mouse and tablet input devices as emulated by QEMU's
+  virtio-keyboard-pci, virtio-mouse-pci and virtio-tablet-pci machine models.
+
+  The node must be a child of a virtio,pci node.  QEMU automatically presents
+  the device once virtio-keyboard-pci or virtio-mouse-pci is added to the
+  QEMU command line (done by board.cmake when CONFIG_INPUT_VIRTIO=y).
+
+  Example (in a board overlay):
+
+    &virtio0 {
+        virtio_input0: virtio-input {
+            compatible = "virtio,input";
+            status = "okay";
+        };
+    };
+
+compatible: "virtio,input"
+
+include: base.yaml
