@@ -49,6 +49,13 @@ Build System
 Kernel
 ******
 
+* Heap hardening support has been implemented by adding a build time generated
+  ``zephyr/heap_constants.h`` file that is now included from ``kernel.h``. This
+  may create a build race condition for downstream application built as a cmake
+  library where cmake may try to build them before the header file is
+  generated, these may need an extra ``add_dependencies(${lib} zephyr_generated_headers)``
+  entry in cmake, see :github:`106439` for mode details.
+
 Boards
 ******
 
