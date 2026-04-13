@@ -1247,10 +1247,17 @@ static int mcux_lpuart_configure_async(const struct device *dev)
 	 * receive into with rx_enable
 	 */
 	uart_config.enableRx = false;
+
+#if defined(FSL_FEATURE_LPUART_HAS_FIFO) && FSL_FEATURE_LPUART_HAS_FIFO
 	/* Clearing the fifo of any junk received before the async rx enable was called */
 	while (LPUART_GetRxFifoCount(get_base(dev)) > 0) {
 		LPUART_ReadByte(get_base(dev));
 	}
+#else
+	while ((LPUART_GetStatusFlags(get_base(dev)) & kLPUART_RxDataRegFullFlag) != 0U) {
+		LPUART_ReadByte(get_base(dev));
+	}
+#endif
 
 	return 0;
 }
