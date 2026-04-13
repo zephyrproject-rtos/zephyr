@@ -654,7 +654,11 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &icmp_access);
+	ret = net_pkt_acknowledge_data(pkt, &icmp_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	NET_DBG("ICMPv4 packet received type %d code %d",
 		icmp_hdr->type, icmp_hdr->code);
@@ -729,7 +733,11 @@ static enum net_verdict icmpv4_handle_dst_unreach(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &dst_unreach_access);
+	ret = net_pkt_acknowledge_data(pkt, &dst_unreach_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	mtu = net_ntohs(dest_unreach_hdr->mtu);
 

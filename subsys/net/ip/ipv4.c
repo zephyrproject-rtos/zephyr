@@ -263,6 +263,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	uint8_t hdr_len;
 	uint8_t opts_len;
 	int pkt_len;
+	int ret;
 
 #if defined(CONFIG_NET_L2_IPIP)
 	struct net_pkt_cursor hdr_start;
@@ -343,7 +344,6 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER)) {
 		uint16_t chksum = 0;
-		int ret;
 
 		ret = net_calc_chksum_ipv4(pkt, &chksum);
 		if (ret < 0 || chksum != 0U) {
@@ -390,7 +390,11 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		}
 	}
 
-	net_pkt_acknowledge_data(pkt, &ipv4_access);
+	ret = net_pkt_acknowledge_data(pkt, &ipv4_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	if (opts_len) {
 		/* Only few options are handled in EchoRequest, rest skipped */

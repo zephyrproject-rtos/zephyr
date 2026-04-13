@@ -480,7 +480,11 @@ static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &mld_access);
+	ret = net_pkt_acknowledge_data(pkt, &mld_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	dbg_addr_recv("Multicast Listener Query", &ip_hdr->src, &ip_hdr->dst);
 
