@@ -118,8 +118,8 @@ static void mbox_xlnx_ipi_isr(const struct device *pdev)
 
 		/* Read the message if buffered IPI */
 		if ((pcfg->msg_base != NULL) && (cdev_conf->msg_base != NULL)) {
-			off = (mem_addr_t)pcfg->msg_base + IPI_REQ_OFF;
-			off += (cdev_conf->remote_ipi_id) * IPI_BUF_STRIDE;
+			off = (mem_addr_t)cdev_conf->msg_base + IPI_REQ_OFF;
+			off += (pcfg->ipi_id) * IPI_BUF_STRIDE;
 			buf_ptr = (uint8_t *)ipi_msg_buf;
 			for (buf_idx = 0; buf_idx < IPI_MAX_MSG_BYTES; buf_idx += 4) {
 				*(uint32_t *)(buf_ptr + buf_idx) = sys_read32(off + buf_idx);
