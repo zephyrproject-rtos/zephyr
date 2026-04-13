@@ -156,6 +156,9 @@ API Changes
 ..
   Only removed, deprecated and new APIs. Changes go in migration guide.
 
+Removed APIs and options
+========================
+
 * Architectures
 
   * Xtensa
@@ -169,21 +172,16 @@ API Changes
 
 * Bluetooth
 
+  * ``CONFIG_BT_TBS_SUPPORTED_FEATURES``
+
+  * The deprecated ``bt_hci_cmd_create()`` function was removed. It has been replaced by
+    :c:func:`bt_hci_cmd_alloc`.
+
   * Controller
 
     * :kconfig:option:`CONFIG_BT_CTLR_ADV_AUX_SET`, :kconfig:option:`CONFIG_BT_CTLR_ADV_SYNC_SET`
       and :kconfig:option:`CONFIG_BT_CTLR_ADV_DATA_BUF_MAX` no longer require
       :kconfig:option:`CONFIG_BT_CTLR_ADVANCED_FEATURES`
-
-Removed APIs and options
-========================
-
-* Bluetooth
-
-  * ``CONFIG_BT_TBS_SUPPORTED_FEATURES``
-
-  * The deprecated ``bt_hci_cmd_create()`` function was removed. It has been replaced by
-    :c:func:`bt_hci_cmd_alloc`.
 
 * Mbed TLS
 
