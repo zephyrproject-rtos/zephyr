@@ -249,7 +249,8 @@ static void uart_mcumgr_setup(const struct device *uart)
 {
 	uart_callback_set(uart, uart_mcumgr_async, NULL);
 
-	uart_rx_enable(uart, async_buffer[0], sizeof(async_buffer[0]), 0);
+	uart_rx_enable(uart, async_buffer[0], sizeof(async_buffer[0]),
+		       CONFIG_UART_CONSOLE_MCUMGR_ASYNC_RX_TIMEOUT_US);
 }
 #else
 static void uart_mcumgr_setup(const struct device *uart)
