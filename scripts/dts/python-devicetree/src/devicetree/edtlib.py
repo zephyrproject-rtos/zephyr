@@ -77,7 +77,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NoReturn, Optional, Union
+from typing import TYPE_CHECKING, Any, NoReturn, Optional, TypeGuard, Union
 
 import yaml
 
@@ -495,7 +495,7 @@ class Binding:
 
         ok_prop_keys = {"description", "type", "required",
                         "enum", "const", "default", "deprecated",
-                        "specifier-space"}
+                        "specifier-space", "min", "max"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
@@ -585,6 +585,14 @@ class PropertySpec:
 
     specifier_space:
       The specifier space for the property as given in the binding, or None.
+
+    min:
+      The minimum value the property may take as given in the binding, or None.
+      Only applicable to 'int' and 'array' type properties.
+
+    max:
+      The maximum value the property may take as given in the binding, or None.
+      Only applicable to 'int' and 'array' type properties.
     """
 
     def __init__(self, name: str, binding: Binding):
@@ -670,6 +678,16 @@ class PropertySpec:
     def specifier_space(self) -> Optional[str]:
         "See the class docstring"
         return self._raw.get("specifier-space")
+
+    @property
+    def min(self) -> Optional[int]:
+        "See the class docstring"
+        return self._raw.get("min")
+
+    @property
+    def max(self) -> Optional[int]:
+        "See the class docstring"
+        return self._raw.get("max")
 
     def _check_special_properties(self):
         # Add checks for properties which have special meaning
@@ -1744,6 +1762,22 @@ class Node:
                 _err(f"value of property '{name}' on {self.path} in "
                     f"{self.edt.dts_path} ({subval!r}) is not in 'enum' list in "
                     f"{self.binding_path} ({enum!r})")
+
+        prop_min = prop_spec.min
+        prop_max = prop_spec.max
+        if prop_min is not None or prop_max is not None:
+            for subval in val if isinstance(val, list) else [val]:
+                if not _is_plain_int(subval):
+                    _err(f"'min:'/'max:' on property '{name}' on {self.path} "
+                         f"requires an integer value, got {subval!r}")
+                if prop_min is not None and subval < prop_min:
+                    _err(f"value of property '{name}' on {self.path} in "
+                         f"{self.edt.dts_path} ({subval!r}) is less than the "
+                         f"'min' value in {self.binding_path} ({prop_min!r})")
+                if prop_max is not None and subval > prop_max:
+                    _err(f"value of property '{name}' on {self.path} in "
+                         f"{self.edt.dts_path} ({subval!r}) is greater than the "
+                         f"'max' value in {self.binding_path} ({prop_max!r})")
 
         const = prop_spec.const
         if const is not None and val != const:
@@ -2968,15 +3002,24 @@ def _binding_include(loader, node):
     _binding_inc_error("unrecognised node type in !include statement")
 
 
+def _is_plain_int(val: Any) -> TypeGuard[int]:
+    # bool is a subclass of int in Python; this rejects booleans so that
+    # YAML values like 'true' are not silently accepted as integers.
+    return isinstance(val, int) and not isinstance(val, bool)
+
+
 def _check_prop_by_type(prop_name: str,
                         options: dict,
                         binding_path: Optional[str]) -> None:
     # Binding._check_properties() helper. Checks 'type:', 'default:',
-    # 'const:' and # 'specifier-space:' for the property named 'prop_name'
+    # 'const:', 'specifier-space:', 'min:' and 'max:' for the property
+    # named 'prop_name'
 
     prop_type = options.get("type")
     default = options.get("default")
     const = options.get("const")
+    min_val = options.get("min")
+    max_val = options.get("max")
 
     if prop_type is None:
         _err(f"missing 'type:' for '{prop_name}' in 'properties' in "
@@ -3009,6 +3052,38 @@ def _check_prop_by_type(prop_name: str,
         _err(f"const in '{binding_path}' for property '{prop_name}' "
              f"has type '{prop_type}', expected one of " +
              ", ".join(const_types))
+
+    if min_val is not None or max_val is not None:
+        if prop_type not in {"int", "array"}:
+            _err(f"'min:'/'max:' in '{binding_path}' for '{prop_name}' "
+                 "requires 'type: int' or 'type: array', "
+                 f"but has type '{prop_type}'")
+
+        if "enum" in options:
+            _err(f"'min:'/'max:' cannot be combined with 'enum:' "
+                 f"for '{prop_name}' in '{binding_path}'")
+
+        if min_val is not None and not _is_plain_int(min_val):
+            _err(f"'min:' for '{prop_name}' in '{binding_path}' "
+                 "is not an integer")
+
+        if max_val is not None and not _is_plain_int(max_val):
+            _err(f"'max:' for '{prop_name}' in '{binding_path}' "
+                 "is not an integer")
+
+        if (min_val is not None and max_val is not None
+                and min_val > max_val):
+            _err(f"'min:' ({min_val}) > 'max:' ({max_val}) "
+                 f"for '{prop_name}' in '{binding_path}'")
+
+        if const is not None:
+            for subval in const if isinstance(const, list) else [const]:
+                if min_val is not None and subval < min_val:
+                    _err(f"'const: {const}' for '{prop_name}' in "
+                         f"'{binding_path}' is less than 'min: {min_val}'")
+                if max_val is not None and subval > max_val:
+                    _err(f"'const: {const}' for '{prop_name}' in "
+                         f"'{binding_path}' is greater than 'max: {max_val}'")
 
     # Check default
 
@@ -3051,6 +3126,15 @@ def _check_prop_by_type(prop_name: str,
         _err(f"'default: {default}' is invalid for '{prop_name}' "
              f"in 'properties:' in '{binding_path}', "
              f"which has type {prop_type}")
+
+    if min_val is not None or max_val is not None:
+        for subval in default if isinstance(default, list) else [default]:
+            if min_val is not None and subval < min_val:
+                _err(f"'default: {default}' for '{prop_name}' in "
+                     f"'{binding_path}' is less than 'min: {min_val}'")
+            if max_val is not None and subval > max_val:
+                _err(f"'default: {default}' for '{prop_name}' in "
+                     f"'{binding_path}' is greater than 'max: {max_val}'")
 
 
 def _translate(addr: int, node: dtlib_Node) -> int:
