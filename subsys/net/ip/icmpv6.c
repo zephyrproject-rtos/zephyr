@@ -228,7 +228,11 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 						      struct net_icmp_hdr);
 		struct net_icmp_hdr *icmp_hdr;
 
-		net_pkt_acknowledge_data(orig, &ipv6_access);
+		ret = net_pkt_acknowledge_data(orig, &ipv6_access);
+		if (ret < 0) {
+			err = ret;
+			goto drop_no_pkt;
+		}
 
 		icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(
 							orig, &icmpv6_access);
@@ -363,6 +367,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
 	enum net_verdict verdict;
+	int ret;
 
 	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
@@ -374,7 +379,6 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV6_ICMP) ||
 	    net_pkt_is_ip_reassembled(pkt)) {
 		uint16_t chksum = 0;
-		int ret;
 
 		ret = net_calc_chksum_icmpv6(pkt, &chksum);
 		if (ret < 0 || chksum != 0U) {
@@ -383,7 +387,11 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 		}
 	}
 
-	net_pkt_acknowledge_data(pkt, &icmp_access);
+	ret = net_pkt_acknowledge_data(pkt, &icmp_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	NET_DBG("ICMPv6 %s received type %d code %d",
 		net_icmpv6_type2str(icmp_hdr->type),

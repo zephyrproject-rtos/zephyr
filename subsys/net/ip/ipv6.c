@@ -502,6 +502,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 	struct net_if_mcast_addr *if_mcast_addr;
 	union net_ip_header ip;
 	int pkt_len;
+	int ret;
 
 #if defined(CONFIG_NET_L2_IPIP)
 	struct net_pkt_cursor hdr_start;
@@ -668,7 +669,11 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 		}
 	}
 
-	net_pkt_acknowledge_data(pkt, &ipv6_access);
+	ret = net_pkt_acknowledge_data(pkt, &ipv6_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	current_hdr = hdr->nexthdr;
 	ext_bitmap = extension_to_bitmap(current_hdr, ext_bitmap);

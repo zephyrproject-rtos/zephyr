@@ -491,13 +491,17 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	if (version == IGMPV3) {
-		net_pkt_acknowledge_data(pkt, &igmpv3_access);
+		ret = net_pkt_acknowledge_data(pkt, &igmpv3_access);
 	} else {
 #endif
-		net_pkt_acknowledge_data(pkt, &igmpv2_access);
+		ret = net_pkt_acknowledge_data(pkt, &igmpv2_access);
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	}
 #endif
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	dbg_addr_recv("Internet Group Management Protocol", &ip_hdr->src, &ip_hdr->dst);
 
