@@ -1,7 +1,7 @@
 .. _snippet-wifi-credentials:
 
-Wi-Fi Credentials Snippet (wifi-credential)
-###########################################
+Wi-Fi Credentials Snippet (wifi-credentials)
+############################################
 
 .. code-block:: console
 
