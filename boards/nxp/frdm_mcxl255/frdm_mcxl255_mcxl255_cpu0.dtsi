@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		rtc = &rtc;
 	};
 
 	leds {
@@ -95,6 +96,10 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_aon_lpuart0>;
 	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
 };
 
 &systick {
