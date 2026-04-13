@@ -262,6 +262,14 @@ static int can_check_bitrate_tolerance(uint32_t br_err_min, uint32_t bitrate)
 }
 
 /**
+ * @brief Return the absolute difference between two unsigned 32-bit values.
+ */
+static inline uint32_t abs_diff_u32(uint32_t a, uint32_t b)
+{
+	return (a > b) ? (a - b) : (b - a);
+}
+
+/**
  * @brief Internal function for calculating CAN timing parameters.
  *
  * @param dev        Pointer to the device structure for the driver instance.
@@ -342,8 +350,7 @@ static int can_calc_timing_internal(const struct device *dev, struct can_timing 
 		/* Actual bitrate for this (prescaler, total_tq) pair */
 		real_br = (uint32_t)(core_clock /
 				     ((uint64_t)prescaler * total_tq));
-		br_err = (real_br > bitrate) ? (real_br - bitrate)
-					      : (bitrate - real_br);
+		br_err = abs_diff_u32(real_br, bitrate);
 
 		/* PRIMARY: skip if bitrate is strictly worse */
 		if (br_err > br_err_min) {
