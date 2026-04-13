@@ -11,14 +11,20 @@
 
 #define DT_DRV_COMPAT infineon_autanalog_sar_adc
 
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/dt-bindings/adc/infineon-autanalog-sar.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/adc/infineon_autanalog_sar.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <infineon_autanalog.h>
+
+#ifdef CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM
+#include <zephyr/rtio/rtio.h>
+#endif
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -44,6 +50,60 @@ LOG_MODULE_REGISTER(ifx_autanalog_sar_adc, CONFIG_ADC_LOG_LEVEL);
 
 /* LPOSC frequency used in LP mode (4.096 MHz) */
 #define IFX_AUTANALOG_SAR_LPOSC_FREQ_HZ 4096000
+
+/* AC State Transition Table indices used by this driver (see the basic STT defined
+ * in the MFD): state 2 triggers the SAR conversion, after which the AC walks to its
+ * STOP state.
+ */
+#define IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE 2
+
+#ifdef CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM
+/* Maximum number of channels that can be streamed simultaneously (max number of FIFOs) */
+#define IFX_AUTANALOG_SAR_STREAM_MAX_CHANNELS 8
+
+/* Bounded wait for the SAR to finish the single STOP scan commanded when a stream
+ * is stopped and then power down.  A single LP/HS conversion completes in a few
+ * tens of microseconds, so this only ever spins for one scan; it is not an open
+ * ended poll on an unconditionally-running (continuous mode) SAR.
+ */
+#define IFX_AUTANALOG_SAR_STREAM_STOP_POLL_US 10
+#define IFX_AUTANALOG_SAR_STREAM_STOP_RETRIES 100
+
+/* Fractional bits carried in the precomputed q31 scale factor (see
+ * ifx_stream_compute_q31_scale()) so that the per-sample decode is a single multiply
+ * and a right shift instead of a 64-bit division.
+ */
+#define IFX_AUTANALOG_SAR_Q31_SCALE_FRAC 16
+
+/**
+ * @brief Private header placed at the start of each RTIO buffer for stream data.
+ *
+ * Layout: [header][chan_info × num_channels][int32_t raw_samples[]]
+ */
+struct ifx_autanalog_sar_stream_header {
+	uint64_t timestamp_ns;
+	/* Precomputed q31 volts-per-LSB, scaled by 2^IFX_AUTANALOG_SAR_Q31_SCALE_FRAC. */
+	int32_t q31_scale;
+	uint16_t vref_mv;
+	uint8_t trigger;
+	uint8_t num_channels;
+	uint8_t resolution;
+	uint8_t empty;
+	/* q31 shift (integer bits) reported to the consumer via adc_data::shift. */
+	int8_t shift;
+	/* Non-zero when the raw codes are bipolar (LP differential): code 0x000 maps to
+	 * -Vref, mid-scale (0x800) to 0 V and 0xFFF to +Vref, so the decoder re-centers the
+	 * unsigned code around mid-scale before applying q31_scale.
+	 */
+	uint8_t bipolar;
+};
+
+struct ifx_autanalog_sar_stream_chan_info {
+	uint8_t channel_id;
+	uint8_t fifo_buf_idx;
+	uint16_t sample_count;
+};
+#endif /* CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM */
 
 /* clang-format off */
 
@@ -163,6 +223,48 @@ struct ifx_autanalog_sar_adc_data {
 	/* FIFO watermark callback */
 	adc_ifx_autanalog_sar_fifo_callback_t fifo_callback;
 	void *fifo_callback_user_data;
+
+#ifdef CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM
+	/* Stream state */
+	struct rtio_iodev_sqe *stream_sqe;
+	bool streaming;
+	/* Set when the FIFO level interrupt(s) have been masked because the handler could
+	 * not drain the FIFO into an RTIO buffer (either no pending sqe, or the buffer pool
+	 * was momentarily exhausted).  The level interrupt is level-sensitive, so it must be
+	 * masked to avoid an ISR storm and re-enabled once a fresh sqe and buffer are
+	 * available.
+	 */
+	bool stream_level_irq_masked;
+	uint8_t stream_num_channels;
+	/* Precomputed q31 conversion factor and shift used by the stream decoder. */
+	int32_t stream_q31_scale;
+	int8_t stream_q31_shift;
+	struct {
+		uint8_t channel_id;
+		uint8_t fifo_buf_idx; /* 0-based FIFO buffer index (fifo_sel - 1) */
+	} stream_channels[IFX_AUTANALOG_SAR_STREAM_MAX_CHANNELS];
+#endif /* CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM */
+};
+
+/* FIFO interrupt status arrays used to map buffer index to status bits */
+static const uint32_t fifo_level_masks[8] = {
+	CY_AUTANALOG_INT_FIFO_LEVEL0, CY_AUTANALOG_INT_FIFO_LEVEL1, CY_AUTANALOG_INT_FIFO_LEVEL2,
+	CY_AUTANALOG_INT_FIFO_LEVEL3, CY_AUTANALOG_INT_FIFO_LEVEL4, CY_AUTANALOG_INT_FIFO_LEVEL5,
+	CY_AUTANALOG_INT_FIFO_LEVEL6, CY_AUTANALOG_INT_FIFO_LEVEL7,
+};
+
+static const uint32_t fifo_overflow_masks[8] = {
+	CY_AUTANALOG_INT_FIFO_OVERFLOW0, CY_AUTANALOG_INT_FIFO_OVERFLOW1,
+	CY_AUTANALOG_INT_FIFO_OVERFLOW2, CY_AUTANALOG_INT_FIFO_OVERFLOW3,
+	CY_AUTANALOG_INT_FIFO_OVERFLOW4, CY_AUTANALOG_INT_FIFO_OVERFLOW5,
+	CY_AUTANALOG_INT_FIFO_OVERFLOW6, CY_AUTANALOG_INT_FIFO_OVERFLOW7,
+};
+
+static const uint32_t fifo_underflow_masks[8] = {
+	CY_AUTANALOG_INT_FIFO_UNDERFLOW0, CY_AUTANALOG_INT_FIFO_UNDERFLOW1,
+	CY_AUTANALOG_INT_FIFO_UNDERFLOW2, CY_AUTANALOG_INT_FIFO_UNDERFLOW3,
+	CY_AUTANALOG_INT_FIFO_UNDERFLOW4, CY_AUTANALOG_INT_FIFO_UNDERFLOW5,
+	CY_AUTANALOG_INT_FIFO_UNDERFLOW6, CY_AUTANALOG_INT_FIFO_UNDERFLOW7,
 };
 
 /**
@@ -612,7 +714,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	 * State 2 is the SAR sampling state.
 	 * State 3 jumps back to state 1
 	 */
-	Cy_AutAnalog_OverrideControllerState(2);
+	Cy_AutAnalog_OverrideControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
 	ifx_autanalog_start_autonomous_control(cfg->mfd);
 
 #if defined(CONFIG_ADC_ASYNC)
@@ -668,6 +770,18 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 static int start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
 	struct ifx_autanalog_sar_adc_data *data = dev->data;
+
+#ifdef CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM
+	/* Reads and streaming share the single SAR sequencer and the Autonomous
+	 * Controller, so they are mutually exclusive.  Reject a read while a stream
+	 * is active instead of failing later with an opaque -EBUSY from the AC; the
+	 * caller must stop the stream (adc_ifx_autanalog_sar_stream_stop()) first.
+	 */
+	if (data->streaming) {
+		LOG_ERR("ADC is streaming; stop the stream before reading");
+		return -EBUSY;
+	}
+#endif
 
 	if (sequence->buffer_size < (sizeof(int32_t) * POPCOUNT(sequence->channels))) {
 		LOG_ERR("Buffer too small");
@@ -751,12 +865,23 @@ static void ifx_autanalog_sar_adc_isr(const struct device *dev)
  * The FIFO has its own dedicated interrupt line that is separate from
  * the main autanalog interrupt.
  */
+#ifdef CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM
+static void ifx_autanalog_sar_stream_fifo_handler(const struct device *dev, uint32_t fifo_status);
+#endif
+
 static void ifx_autanalog_sar_fifo_isr(const struct device *dev)
 {
 	struct ifx_autanalog_sar_adc_data *data = dev->data;
 	uint32_t fifo_status = Cy_AutAnalog_FIFO_GetInterruptStatusMasked(0);
 
 	Cy_AutAnalog_FIFO_ClearInterrupt(0, fifo_status);
+
+#ifdef CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM
+	if (data->streaming) {
+		ifx_autanalog_sar_stream_fifo_handler(dev, fifo_status);
+		return;
+	}
+#endif
 
 	/* The callback is expected to have drained the FIFO below the
 	 * watermark so the level interrupt will not immediately re-fire.
@@ -1186,6 +1311,52 @@ static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 	return ifx_autanalog_sar_setup_gpio_channel(data, channel_cfg, sample_time_idx);
 } /* ifx_autanalog_sar_adc_channel_setup() */
 
+#ifdef CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM
+/**
+ * @brief Precompute the q31 scale factor and shift used by the stream decoder.
+ *
+ * The decoder converts each raw SAR count to a q31 voltage with a single multiply and
+ * shift: value = (scale_q * raw) >> IFX_AUTANALOG_SAR_Q31_SCALE_FRAC.  Because Vref, the
+ * resolution and the operating mode are all fixed at build time, the otherwise costly
+ * division is performed once here rather than for every sample in the decode loop.
+ *
+ * Both Low Power modes span the full +/- Vref conversion range, i.e. twice the High
+ * Speed single-ended full scale, so the volts-per-LSB doubles.  This mirrors the
+ * diffSARdiv factor applied by Cy_AutAnalog_SAR_CountsTo_uVolts().
+ *
+ * @param vref_mv Reference voltage in millivolts.
+ * @param lp_mode True if the ADC runs in Low Power mode.
+ * @param resolution Effective bit resolution of the raw samples.
+ * @param scale_q Output: q31 volts-per-LSB scaled by 2^IFX_AUTANALOG_SAR_Q31_SCALE_FRAC.
+ * @param shift Output: q31 shift (integer bits) reported via adc_data::shift.
+ */
+static void ifx_stream_compute_q31_scale(uint16_t vref_mv, bool lp_mode, uint8_t resolution,
+					 int32_t *scale_q, int8_t *shift)
+{
+	uint32_t fs_mv = lp_mode ? (uint32_t)vref_mv * 2U : vref_mv;
+	uint32_t scale = BIT(resolution);
+	uint32_t sensitivity_uv =
+		(uint32_t)((uint64_t)fs_mv * (scale - 1U) * 1000U / scale / scale);
+	int8_t sh = 1;
+	uint32_t v = fs_mv;
+	int64_t s;
+
+	while (v > 1U) {
+		v /= 2U;
+		sh++;
+	}
+
+	/* q31 volts-per-LSB = 2^(31 - shift) * sensitivity_uv / 1e6, kept with
+	 * IFX_AUTANALOG_SAR_Q31_SCALE_FRAC extra fractional bits so the per-sample decode
+	 * needs only a multiply and a right shift.
+	 */
+	s = (((int64_t)1 << (31 - sh)) * (int64_t)sensitivity_uv)
+	    << IFX_AUTANALOG_SAR_Q31_SCALE_FRAC;
+	*scale_q = (int32_t)(s / 1000000);
+	*shift = sh;
+}
+#endif /* CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM */
+
 /**
  * @brief Initialize the ADC driver
  *
@@ -1229,6 +1400,15 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 		}
 	}
 
+#ifdef CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM
+	/* Precompute the q31 scale/shift for the stream decoder once, using the build-time
+	 * Vref, resolution and operating mode, so the per-sample decode avoids a division.
+	 */
+	ifx_stream_compute_q31_scale(adc_ref_internal(dev), cfg->lp_mode,
+				     ADC_AUTANALOG_SAR_RESOLUTION, &data->stream_q31_scale,
+				     &data->stream_q31_shift);
+#endif /* CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM */
+
 	/* Initialize the pdl data structures based on the device tree configuration, then
 	 * use Infineon PDL APIs to initialize the ADC.
 	 */
@@ -1250,24 +1430,6 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 
 	/* Configure FIFO interrupts if FIFO is enabled */
 	if (cfg->fifo_enabled) {
-		static const uint32_t fifo_level_masks[] = {
-			CY_AUTANALOG_INT_FIFO_LEVEL0, CY_AUTANALOG_INT_FIFO_LEVEL1,
-			CY_AUTANALOG_INT_FIFO_LEVEL2, CY_AUTANALOG_INT_FIFO_LEVEL3,
-			CY_AUTANALOG_INT_FIFO_LEVEL4, CY_AUTANALOG_INT_FIFO_LEVEL5,
-			CY_AUTANALOG_INT_FIFO_LEVEL6, CY_AUTANALOG_INT_FIFO_LEVEL7,
-		};
-		static const uint32_t fifo_overflow_masks[] = {
-			CY_AUTANALOG_INT_FIFO_OVERFLOW0, CY_AUTANALOG_INT_FIFO_OVERFLOW1,
-			CY_AUTANALOG_INT_FIFO_OVERFLOW2, CY_AUTANALOG_INT_FIFO_OVERFLOW3,
-			CY_AUTANALOG_INT_FIFO_OVERFLOW4, CY_AUTANALOG_INT_FIFO_OVERFLOW5,
-			CY_AUTANALOG_INT_FIFO_OVERFLOW6, CY_AUTANALOG_INT_FIFO_OVERFLOW7,
-		};
-		static const uint32_t fifo_underflow_masks[] = {
-			CY_AUTANALOG_INT_FIFO_UNDERFLOW0, CY_AUTANALOG_INT_FIFO_UNDERFLOW1,
-			CY_AUTANALOG_INT_FIFO_UNDERFLOW2, CY_AUTANALOG_INT_FIFO_UNDERFLOW3,
-			CY_AUTANALOG_INT_FIFO_UNDERFLOW4, CY_AUTANALOG_INT_FIFO_UNDERFLOW5,
-			CY_AUTANALOG_INT_FIFO_UNDERFLOW6, CY_AUTANALOG_INT_FIFO_UNDERFLOW7,
-		};
 		uint32_t fifo_int_mask = 0;
 
 		for (uint8_t i = 0; i < CY_AUTANALOG_FIFO_BUFS_NUM; i++) {
@@ -1417,7 +1579,613 @@ int adc_ifx_autanalog_sar_fifo_set_callback(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM
+
+/**
+ * @brief Compute the RTIO buffer header size (aligned to 4 bytes)
+ */
+static inline uint32_t ifx_stream_header_size(uint8_t num_channels)
+{
+	uint32_t size = sizeof(struct ifx_autanalog_sar_stream_header) +
+			num_channels * sizeof(struct ifx_autanalog_sar_stream_chan_info);
+
+	return (size + 3) & ~3u;
+}
+
+/**
+ * @brief Drain a single FIFO buffer.
+ */
+static void ifx_stream_drain_fifo(uint8_t buf_idx)
+{
+	/* Snapshot the fill level once, then drain that many words with single-word
+	 * register reads.  Cy_AutAnalog_FIFO_ReadWord() skips the per-call GetSize()
+	 * bounds check that Cy_AutAnalog_FIFO_ReadData() performs, which matters because
+	 * this can run in FIFO ISR context.  A buffer holds at most 512 words (the
+	 * unsplit FIFO), so the loop is bounded; any samples the still-running SAR pushes
+	 * after the snapshot are handled by the next FIFO interrupt.
+	 */
+	uint16_t count = Cy_AutAnalog_FIFO_GetSize(0, buf_idx);
+
+	while (count-- > 0U) {
+		(void)Cy_AutAnalog_FIFO_ReadWord(0, buf_idx);
+	}
+}
+
+/**
+ * @brief Read a FIFO buffer into the stream frame or drain it.
+ */
+static void ifx_stream_consume_fifo(uint8_t buf_idx, uint16_t sample_count, int32_t **samples,
+				    bool drop_data)
+{
+	if (sample_count == 0) {
+		return;
+	}
+
+	if (!drop_data) {
+		Cy_AutAnalog_FIFO_ReadData(0, buf_idx, sample_count, *samples);
+		*samples += sample_count;
+	} else {
+		ifx_stream_drain_fifo(buf_idx);
+	}
+}
+
+/**
+ * @brief Determine the actual trigger type from the FIFO interrupt status.
+ *
+ * Checks the status bits for any FIFO buffer used by the stream.
+ * If any overflow bit is set, the trigger is FIFO_FULL; if any
+ * level bit is set, it is FIFO_WATERMARK.
+ */
+static enum adc_trigger_type ifx_stream_classify_trigger(struct ifx_autanalog_sar_adc_data *data,
+							 uint32_t fifo_status)
+{
+	for (uint8_t i = 0; i < data->stream_num_channels; i++) {
+		uint8_t buf = data->stream_channels[i].fifo_buf_idx;
+
+		if (fifo_status & fifo_overflow_masks[buf]) {
+			return ADC_TRIG_FIFO_FULL;
+		}
+	}
+	for (uint8_t i = 0; i < data->stream_num_channels; i++) {
+		uint8_t buf = data->stream_channels[i].fifo_buf_idx;
+
+		if (fifo_status & fifo_level_masks[buf]) {
+			return ADC_TRIG_FIFO_WATERMARK;
+		}
+	}
+	/* Fallback — should not happen if we are called from the ISR */
+	return ADC_TRIG_FIFO_WATERMARK;
+}
+
+/**
+ * @brief Look up the data_opt for a given trigger type in the read config.
+ *
+ * If the trigger is not listed, default to INCLUDE so data is not silently dropped.
+ */
+static enum adc_stream_data_opt
+ifx_stream_data_opt_for_trigger(const struct adc_read_config *read_cfg,
+				enum adc_trigger_type trigger)
+{
+	for (size_t i = 0; i < read_cfg->trigger_cnt; i++) {
+		if (read_cfg->triggers[i].trigger == trigger) {
+			return read_cfg->triggers[i].opt;
+		}
+	}
+	return ADC_STREAM_DATA_INCLUDE;
+}
+
+/**
+ * @brief Compute the combined FIFO level interrupt mask for the streamed channels.
+ */
+static uint32_t ifx_stream_level_mask(struct ifx_autanalog_sar_adc_data *data)
+{
+	uint32_t mask = 0;
+
+	for (uint8_t i = 0; i < data->stream_num_channels; i++) {
+		mask |= fifo_level_masks[data->stream_channels[i].fifo_buf_idx];
+	}
+	return mask;
+}
+
+/**
+ * @brief Handle FIFO data for an active stream
+ *
+ * Called from FIFO ISR context when streaming is active.  Drains all FIFO
+ * buffers that are mapped to streamed channels, encodes the data into an
+ * RTIO buffer, and completes the pending iodev sqe.
+ */
+static void ifx_autanalog_sar_stream_fifo_handler(const struct device *dev, uint32_t fifo_status)
+{
+	struct ifx_autanalog_sar_adc_data *data = dev->data;
+	const struct ifx_autanalog_sar_adc_config *cfg = dev->config;
+	struct rtio_iodev_sqe *sqe = data->stream_sqe;
+	uint64_t timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
+
+	if (sqe == NULL) {
+		/* No pending sqe yet — leave data in the hardware FIFO.  The FIFO level
+		 * interrupt is level-sensitive and stays asserted while the FIFO is above
+		 * the watermark, so mask it here to stop it re-firing in a tight loop and
+		 * starving the consumer thread.  The next stream re-submission re-enables
+		 * the mask and delivers the accumulated samples.
+		 */
+		Cy_AutAnalog_FIFO_ClearInterruptMask(0, ifx_stream_level_mask(data));
+		data->stream_level_irq_masked = true;
+		return;
+	}
+
+	data->stream_sqe = NULL;
+
+	uint8_t num_ch = data->stream_num_channels;
+	uint16_t counts[IFX_AUTANALOG_SAR_STREAM_MAX_CHANNELS];
+	uint16_t total_samples = 0;
+
+	/* Gather FIFO fill levels for each streamed channel */
+	for (uint8_t i = 0; i < num_ch; i++) {
+		counts[i] = Cy_AutAnalog_FIFO_GetSize(0, data->stream_channels[i].fifo_buf_idx);
+		total_samples += counts[i];
+	}
+
+	/* Determine actual trigger from the FIFO interrupt status bits */
+	enum adc_trigger_type trigger = ifx_stream_classify_trigger(data, fifo_status);
+
+	/* Look up data_opt for the trigger that actually fired */
+	const struct adc_read_config *read_cfg = sqe->sqe.iodev->data;
+	enum adc_stream_data_opt data_opt = ifx_stream_data_opt_for_trigger(read_cfg, trigger);
+	bool drop_data = (data_opt == ADC_STREAM_DATA_DROP || data_opt == ADC_STREAM_DATA_NOP);
+
+	/* Calculate buffer size */
+	uint32_t hdr_size = ifx_stream_header_size(num_ch);
+	uint32_t data_size = drop_data ? 0 : (total_samples * sizeof(int32_t));
+	uint32_t buf_size = hdr_size + data_size;
+
+	uint8_t *buf;
+	uint32_t buf_len;
+
+	if (rtio_sqe_rx_buf(sqe, buf_size, buf_size, &buf, &buf_len) != 0) {
+		/* The RTIO buffer pool is momentarily exhausted, so there is nowhere to
+		 * move the FIFO data yet.  This is transient backpressure, not a fatal
+		 * condition, so the stream is not terminated: leave the data in the
+		 * hardware FIFO and put the sqe back so the next FIFO interrupt retries
+		 * once the application releases buffers.  The level interrupt is
+		 * level-sensitive, so mask it to avoid an ISR storm while the FIFO stays
+		 * above the watermark; the overflow interrupt stays enabled to drive the
+		 * retry.  If the application never catches up, the resulting hardware
+		 * overrun surfaces to the consumer as an ADC_TRIG_FIFO_FULL frame (the
+		 * trigger the stream registers for) rather than as an error.
+		 */
+		Cy_AutAnalog_FIFO_ClearInterruptMask(0, ifx_stream_level_mask(data));
+		data->stream_level_irq_masked = true;
+		data->stream_sqe = sqe;
+		return;
+	}
+
+	/* Fill header */
+	struct ifx_autanalog_sar_stream_header *hdr = (struct ifx_autanalog_sar_stream_header *)buf;
+
+	hdr->timestamp_ns = timestamp;
+	hdr->q31_scale = data->stream_q31_scale;
+	hdr->shift = data->stream_q31_shift;
+	hdr->vref_mv = adc_ref_internal(dev);
+	hdr->trigger = (uint8_t)trigger;
+	hdr->num_channels = num_ch;
+	/* Effective resolution of the FIFO words.  Plain SAR conversions are 12-bit;
+	 * when hardware averaging (accEn) is enabled with shift_mode set, results are
+	 * 16-bit and this must be updated to match so the decoder scales correctly.
+	 */
+	hdr->resolution = ADC_AUTANALOG_SAR_RESOLUTION;
+	hdr->empty = drop_data ? 1 : 0;
+	/* LP differential produces bipolar codes centred on mid-scale
+	 * The decoder subtracts mid-scale before scaling.  HS and LP
+	 * single-ended codes are unipolar (zero code = 0 V).
+	 */
+	hdr->bipolar = (cfg->lp_mode && cfg->lp_diff_en) ? 1 : 0;
+
+	/* Fill per-channel info */
+	struct ifx_autanalog_sar_stream_chan_info *chan_info =
+		(struct ifx_autanalog_sar_stream_chan_info
+			 *)(buf + sizeof(struct ifx_autanalog_sar_stream_header));
+
+	int32_t *samples = (int32_t *)(buf + hdr_size);
+
+	for (uint8_t i = 0; i < num_ch; i++) {
+		chan_info[i].channel_id = data->stream_channels[i].channel_id;
+		chan_info[i].fifo_buf_idx = data->stream_channels[i].fifo_buf_idx;
+		chan_info[i].sample_count = counts[i];
+
+		ifx_stream_consume_fifo(data->stream_channels[i].fifo_buf_idx, counts[i], &samples,
+					drop_data);
+	}
+
+	rtio_iodev_sqe_ok(sqe, 0);
+}
+
+/**
+ * @brief Submit handler for ADC streaming via RTIO
+ *
+ * Sets up continuous ADC conversion with FIFO-based data collection.
+ * On first call, configures the sequencer for continuous mode and starts
+ * the ADC.  On subsequent calls (multishot re-submissions), just stores
+ * the new sqe for the FIFO ISR.
+ */
+static void ifx_autanalog_sar_submit_stream(const struct device *dev,
+					    struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct ifx_autanalog_sar_adc_data *data = dev->data;
+	const struct ifx_autanalog_sar_adc_config *cfg = dev->config;
+	const struct adc_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
+	cy_stc_autanalog_state_t ac_state;
+
+	if (!cfg->fifo_enabled) {
+		LOG_ERR("Stream requires FIFO to be enabled in device tree");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+		return;
+	}
+
+	/* With fifo-chan-id the FIFO packs the channel ID into each word, so a bulk
+	 * Cy_AutAnalog_FIFO_ReadData() no longer yields a plain sample value.  The stream
+	 * already reports the channel via the per-channel info (one channel per FIFO buffer
+	 * is enforced below), so the embedded ID is redundant and would corrupt the decoded
+	 * value.  Reject the combination instead of silently producing bad data.
+	 */
+	if (cfg->fifo_chan_id) {
+		LOG_ERR("Streaming is not supported with fifo-chan-id enabled");
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+		return;
+	}
+
+	/* Store the sqe for the FIFO ISR.  Guard the store with an interrupt lock so
+	 * the FIFO ISR (which reads and clears data->stream_sqe) cannot observe a torn
+	 * hand-off, mirroring the locking done in adc_ifx_autanalog_sar_stream_stop().
+	 */
+	unsigned int key = irq_lock();
+
+	data->stream_sqe = iodev_sqe;
+	/* If the FIFO level interrupt was masked because a previous handler could not
+	 * drain the FIFO, re-enable it now that a fresh sqe is available.  The level
+	 * interrupt is still asserted (FIFO above watermark), so it re-fires as soon as
+	 * the mask is restored and the accumulated samples are delivered.
+	 */
+	if (data->stream_level_irq_masked) {
+		uint32_t fifo_int_mask = Cy_AutAnalog_FIFO_GetInterruptMask(0);
+
+		Cy_AutAnalog_FIFO_SetInterruptMask(0, fifo_int_mask | ifx_stream_level_mask(data));
+		data->stream_level_irq_masked = false;
+	}
+	irq_unlock(key);
+
+	/* If already streaming, the ADC is running continuously;
+	 * just await the next FIFO interrupt.
+	 */
+	if (data->streaming) {
+		return;
+	}
+
+	Cy_AutAnalog_GetControllerState(&ac_state);
+	if (ac_state.ac.status == CY_AUTANALOG_AC_STATUS_RUNNING) {
+		LOG_ERR("Autonomous Controller is busy");
+		data->stream_sqe = NULL;
+		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
+		return;
+	}
+
+	/* Build channel-to-FIFO mapping from the sequence channel mask */
+	const struct adc_sequence *sequence = read_cfg->sequence;
+
+	if (sequence == NULL || sequence->channels == 0) {
+		LOG_ERR("Stream sequence not configured");
+		data->stream_sqe = NULL;
+		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+		return;
+	}
+
+	data->stream_num_channels = 0;
+	uint8_t fifo_seen_mask = 0; /* Track FIFO buffers already in use */
+
+	for (uint8_t i = 0; i < IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS; i++) {
+		if ((sequence->channels & BIT(i)) == 0) {
+			continue;
+		}
+
+		uint8_t fifo_sel = data->autanalog_channel_cfg[i].fifo_sel;
+
+		if (fifo_sel == 0) {
+			LOG_ERR("Channel %d not routed to FIFO (missing fifo-sel)", i);
+			data->stream_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+			return;
+		}
+
+		uint8_t buf_idx = fifo_sel - 1;
+
+		if (fifo_seen_mask & BIT(buf_idx)) {
+			LOG_ERR("Channels sharing FIFO buffer %d not supported for streaming",
+				buf_idx);
+			data->stream_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+			return;
+		}
+		fifo_seen_mask |= BIT(buf_idx);
+
+		if (data->stream_num_channels >= IFX_AUTANALOG_SAR_STREAM_MAX_CHANNELS) {
+			LOG_ERR("Too many stream channels");
+			data->stream_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+			return;
+		}
+
+		data->stream_channels[data->stream_num_channels].channel_id = i;
+		data->stream_channels[data->stream_num_channels].fifo_buf_idx = buf_idx;
+		data->stream_num_channels++;
+	}
+
+	/* Configure the sequencer for continuous mode */
+	if (cfg->lp_mode) {
+		if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
+			LOG_ERR("Error building LP ADC sequencer for stream");
+			data->stream_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+			return;
+		}
+
+		/* Set to continuous mode: loop back to start after each conversion */
+		data->pdl_adc_seq_lp_cfg_obj[0].nextAction =
+			CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+
+		uint32_t result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
+			0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS, &data->pdl_adc_seq_lp_cfg_obj[0]);
+
+		if (result_status != CY_AUTANALOG_SUCCESS) {
+			LOG_ERR("Failed to load LP sequencer for stream: %u",
+				(unsigned int)result_status);
+			data->stream_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -EIO);
+			return;
+		}
+	} else {
+		if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
+			LOG_ERR("Error building ADC sequencer for stream");
+			data->stream_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+			return;
+		}
+
+		/* Set to continuous mode: loop back to start after each conversion */
+		data->pdl_adc_seq_hs_cfg_obj[0].nextAction =
+			CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+
+		uint32_t result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
+			0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS, &data->pdl_adc_seq_hs_cfg_obj[0]);
+
+		if (result_status != CY_AUTANALOG_SUCCESS) {
+			LOG_ERR("Failed to load sequencer for stream: %u",
+				(unsigned int)result_status);
+			data->stream_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -EIO);
+			return;
+		}
+	}
+
+	/* Re-enable the FIFO level interrupt for this stream's channels. Restore under
+	 * interrupt lock so the ISR cannot observe a partial state transition.
+	 */
+	key = irq_lock();
+	Cy_AutAnalog_FIFO_SetInterruptMask(0, Cy_AutAnalog_FIFO_GetInterruptMask(0) |
+						      ifx_stream_level_mask(data));
+
+	/* State 0 is used for LP/HS mode selection and peripheral power up.
+	 * State 1 is the stop/reconfiguration state.
+	 * State 2 is the SAR sampling state.
+	 * State 3 jumps back to state 1
+	 */
+	data->streaming = true;
+	irq_unlock(key);
+	Cy_AutAnalog_OverrideControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
+	ifx_autanalog_start_autonomous_control(cfg->mfd);
+
+	LOG_DBG("ADC stream started with %d channels", data->stream_num_channels);
+}
+
+int adc_ifx_autanalog_sar_stream_stop(const struct device *dev)
+{
+	struct ifx_autanalog_sar_adc_data *data = dev->data;
+	const struct ifx_autanalog_sar_adc_config *cfg = dev->config;
+	struct rtio_iodev_sqe *sqe;
+	unsigned int key;
+	int ret = 0;
+
+	if (!data->streaming) {
+		return -EALREADY;
+	}
+
+	/* Stop it the only way the hardware allows: switch the sequencer back to
+	 * single-shot (nextAction = STOP), then re-trigger the AC from the SAR
+	 * sampling state.  The AC runs one more SAR scan, now using the STOP
+	 * sequencer, after which the SAR powers down and the AC walks back to its
+	 * STOP state.
+	 */
+	if (cfg->lp_mode) {
+		data->pdl_adc_seq_lp_cfg_obj[0].nextAction =
+			CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+		(void)Cy_AutAnalog_SAR_LoadLPseqTable(0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS,
+						      &data->pdl_adc_seq_lp_cfg_obj[0]);
+	} else {
+		data->pdl_adc_seq_hs_cfg_obj[0].nextAction =
+			CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+		(void)Cy_AutAnalog_SAR_LoadHSseqTable(0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS,
+						      &data->pdl_adc_seq_hs_cfg_obj[0]);
+	}
+
+	/* Clear the streaming state under an interrupt lock so the final STOP scan's
+	 * FIFO interrupt (below) is handled on the non-streaming path and cannot touch
+	 * the SQE we are about to release. The hardware FIFO is intentionally left intact.
+	 */
+	key = irq_lock();
+	data->stream_level_irq_masked = false;
+	sqe = data->stream_sqe;
+	data->stream_sqe = NULL;
+	data->streaming = false;
+	data->stream_num_channels = 0;
+	irq_unlock(key);
+
+	/* Re-trigger the AC from the SAR sampling state so it issues one final scan
+	 * with the STOP sequencer and then halts.  Safe because the AC is not RUNNING
+	 * during streaming (it self-stopped after kicking off the continuous scan).
+	 */
+	Cy_AutAnalog_RunControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
+	ifx_autanalog_start_autonomous_control(cfg->mfd);
+
+	/* Wait for the single STOP scan to complete and the SAR to power down,
+	 * so a subsequent adc_read() does not race the in-flight conversion.
+	 * This is a deterministic single-conversion wait.
+	 */
+	for (int i = 0; i < IFX_AUTANALOG_SAR_STREAM_STOP_RETRIES; i++) {
+		if (!Cy_AutAnalog_SAR_IsBusy(0)) {
+			break;
+		}
+		k_busy_wait(IFX_AUTANALOG_SAR_STREAM_STOP_POLL_US);
+	}
+	if (Cy_AutAnalog_SAR_IsBusy(0)) {
+		LOG_WRN("SAR did not go idle after stream stop");
+		ret = -EBUSY;
+	}
+
+	/* Terminate the in-flight multishot SQE (if any) so RTIO does not stall.
+	 * The caller is expected to have cancelled the stream's multishot handle
+	 * (rtio_sqe_cancel) before calling this, so it will not be resubmitted.
+	 */
+	if (sqe != NULL) {
+		rtio_iodev_sqe_err(sqe, -ECANCELED);
+	}
+
+	LOG_DBG("ADC stream stopped");
+	return ret;
+}
+
+/* ---- Decoder implementation ---- */
+static int ifx_autanalog_sar_decoder_get_frame_count(const uint8_t *buffer, uint32_t channel,
+						     uint16_t *frame_count)
+{
+	const struct ifx_autanalog_sar_stream_header *hdr =
+		(const struct ifx_autanalog_sar_stream_header *)buffer;
+
+	if (hdr->empty) {
+		*frame_count = 0;
+		return 0;
+	}
+
+	if (channel >= hdr->num_channels) {
+		return -ENOTSUP;
+	}
+
+	const struct ifx_autanalog_sar_stream_chan_info *chan_info =
+		(const struct ifx_autanalog_sar_stream_chan_info
+			 *)(buffer + sizeof(struct ifx_autanalog_sar_stream_header));
+
+	*frame_count = chan_info[channel].sample_count;
+	return 0;
+}
+
+static int ifx_autanalog_sar_decoder_decode(const uint8_t *buffer, uint32_t channel, uint32_t *fit,
+					    uint16_t max_count, void *data_out)
+{
+	const struct ifx_autanalog_sar_stream_header *hdr =
+		(const struct ifx_autanalog_sar_stream_header *)buffer;
+	struct adc_data *out = (struct adc_data *)data_out;
+
+	if (hdr->empty || channel >= hdr->num_channels) {
+		return -ENODATA;
+	}
+
+	const struct ifx_autanalog_sar_stream_chan_info *chan_info =
+		(const struct ifx_autanalog_sar_stream_chan_info
+			 *)(buffer + sizeof(struct ifx_autanalog_sar_stream_header));
+
+	uint16_t sample_count = chan_info[channel].sample_count;
+
+	if (*fit >= sample_count) {
+		return 0; /* No more frames */
+	}
+
+	/* Find sample data offset: sum counts of prior channels */
+	uint32_t hdr_size = ifx_stream_header_size(hdr->num_channels);
+	uint32_t sample_offset = 0;
+
+	for (uint32_t i = 0; i < channel; i++) {
+		sample_offset += chan_info[i].sample_count;
+	}
+
+	const int32_t *samples = (const int32_t *)(buffer + hdr_size);
+	int32_t scale_q = hdr->q31_scale;
+	/* LP differential codes are bipolar: subtract mid-scale so code 0x800 decodes to
+	 * 0 V and codes below it become negative (E84 TRM section 37.3.2.5).  Unipolar
+	 * (HS / LP single-ended) codes use a zero offset.
+	 */
+	int32_t zero_code = hdr->bipolar ? (int32_t)BIT(hdr->resolution - 1) : 0;
+	uint16_t count = 0;
+
+	memset(out, 0, sizeof(*out));
+	out->header.base_timestamp_ns = hdr->timestamp_ns;
+	out->shift = hdr->shift;
+
+	/* Honor the decoder contract: decode up to max_count frames in a single call,
+	 * filling consecutive readings[] entries.  The caller sizes data_out for max_count
+	 * readings via get_size_info().  All samples in a frame share the buffer timestamp,
+	 * so the per-reading delta is left at 0.
+	 */
+	while (count < max_count && *fit < sample_count) {
+		int32_t raw = samples[sample_offset + *fit] - zero_code;
+
+		out->readings[count].timestamp_delta = 0;
+		/* Single multiply and shift; the q31 scale was precomputed at init. */
+		out->readings[count].value =
+			(q31_t)(((int64_t)scale_q * raw) >> IFX_AUTANALOG_SAR_Q31_SCALE_FRAC);
+		count++;
+		(*fit)++;
+	}
+
+	out->header.reading_count = count;
+
+	return count;
+}
+
+static bool ifx_autanalog_sar_decoder_has_trigger(const uint8_t *buffer,
+						  enum adc_trigger_type trigger)
+{
+	const struct ifx_autanalog_sar_stream_header *hdr =
+		(const struct ifx_autanalog_sar_stream_header *)buffer;
+
+	switch (trigger) {
+	case ADC_TRIG_FIFO_WATERMARK:
+	case ADC_TRIG_FIFO_FULL:
+		return hdr->trigger == (uint8_t)trigger;
+	default:
+		return false;
+	}
+}
+
+ADC_DECODER_API_DT_DEFINE() = {
+	.get_frame_count = ifx_autanalog_sar_decoder_get_frame_count,
+	.decode = ifx_autanalog_sar_decoder_decode,
+	.has_trigger = ifx_autanalog_sar_decoder_has_trigger,
+};
+
+static int ifx_autanalog_sar_get_decoder(const struct device *dev,
+					 const struct adc_decoder_api **api)
+{
+	ARG_UNUSED(dev);
+	*api = &ADC_DECODER_NAME();
+	return 0;
+}
+
+#endif /* CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM */
+
 /* clang-format off */
+
+#define ADC_IFX_AUTANALOG_SAR_STREAM_API(n)                                                        \
+	IF_ENABLED(CONFIG_ADC_INFINEON_AUTANALOG_SAR_STREAM, (                                     \
+		.submit = ifx_autanalog_sar_submit_stream,                                         \
+		.get_decoder = ifx_autanalog_sar_get_decoder,                                      \
+	))
 
 #ifdef CONFIG_ADC_ASYNC
 #define ADC_IFX_AUTANALOG_SAR_DRIVER_API(n)                                                        \
@@ -1426,6 +2194,7 @@ int adc_ifx_autanalog_sar_fifo_set_callback(const struct device *dev,
 		.read = ifx_autanalog_sar_adc_read,                                                \
 		.read_async = ifx_autanalog_sar_adc_read_async,                                    \
 		.ref_internal = DT_INST_PROP(n, vref_mv),                                          \
+		ADC_IFX_AUTANALOG_SAR_STREAM_API(n)                                                \
 	};
 #else
 #define ADC_IFX_AUTANALOG_SAR_DRIVER_API(n)                                                        \
@@ -1433,6 +2202,7 @@ int adc_ifx_autanalog_sar_fifo_set_callback(const struct device *dev,
 		.channel_setup = ifx_autanalog_sar_adc_channel_setup,                              \
 		.read = ifx_autanalog_sar_adc_read,                                                \
 		.ref_internal = DT_INST_PROP(n, vref_mv),                                          \
+		ADC_IFX_AUTANALOG_SAR_STREAM_API(n)                                                \
 	};
 #endif /* CONFIG_ADC_ASYNC */
 
