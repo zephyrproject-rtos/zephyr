@@ -262,6 +262,120 @@ void ifx_cat1_i2c_register_callback(const struct device *dev,
 	data->irq_cause = 0;
 }
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+/* Packs a (peri-instance, peri-group) pair into a single uint8_t key,
+ * matching the macro used in uart_infineon_pdl.c and spi_infineon_pdl.c.
+ */
+#define IFX_CAT1_INSTANCE_GROUP(instance, group) (((instance) << 4) | (group))
+
+/* Map peri group to the HF clock index that drives it on PSE84.
+ * Mirrors ifx_cat1_get_hfclk_for_peri_group() in uart_infineon_pdl.c.
+ */
+static uint8_t _i2c_get_hfclk_for_peri_group(uint8_t peri_group)
+{
+#if defined(CONFIG_SOC_SERIES_PSE84)
+	switch (peri_group) {
+	case IFX_CAT1_INSTANCE_GROUP(0, 0):
+	case IFX_CAT1_INSTANCE_GROUP(1, 4):
+		return 0;
+	case IFX_CAT1_INSTANCE_GROUP(0, 7):
+	case IFX_CAT1_INSTANCE_GROUP(1, 0):
+		return 1;
+	case IFX_CAT1_INSTANCE_GROUP(0, 3):
+	case IFX_CAT1_INSTANCE_GROUP(1, 2):
+		return 5;
+	case IFX_CAT1_INSTANCE_GROUP(0, 4):
+	case IFX_CAT1_INSTANCE_GROUP(1, 3):
+		return 6;
+	case IFX_CAT1_INSTANCE_GROUP(1, 1):
+		return 7;
+	case IFX_CAT1_INSTANCE_GROUP(0, 2):
+		return 9;
+	case IFX_CAT1_INSTANCE_GROUP(0, 1):
+	case IFX_CAT1_INSTANCE_GROUP(0, 5):
+		return 10;
+	case IFX_CAT1_INSTANCE_GROUP(0, 8):
+		return 11;
+	case IFX_CAT1_INSTANCE_GROUP(0, 6):
+	case IFX_CAT1_INSTANCE_GROUP(0, 9):
+		return 13;
+	default:
+		break;
+	}
+#endif
+	return 0;
+}
+
+/*
+ * Set the peri clock divider for I2C on PSOC Edge so that the SCB input clock
+ * falls in the range required by Cy_SCB_I2C_SetDataRate().
+ *
+ * Target peri frequencies (from the PDL API Reference Guide for PSOC Edge):
+ *   Controller 100 kHz:  [1.55, 3.2]  MHz -> 2 MHz
+ *   Controller 400 kHz:  [7.82, 10]   MHz -> 8.5 MHz
+ *   Controller 1 MHz:    [14.32, 25.8] MHz -> 20 MHz
+ *   Target     100 kHz:  [1.55, 12.8] MHz -> 6 MHz
+ *   Target     400 kHz:  [7.82, 15.38] MHz -> 12 MHz
+ *   Target     1 MHz:    [15.84, 89.0] MHz -> 50 MHz
+ */
+static int _i2c_set_peri_divider_edge(const struct device *dev, uint32_t freq, bool is_target_mode)
+{
+#define _EDGE_SCB_I2C_PERI_CTRL_STD   2000000UL  /* controller, 100 kHz */
+#define _EDGE_SCB_I2C_PERI_CTRL_FST   8500000UL  /* controller, 400 kHz */
+#define _EDGE_SCB_I2C_PERI_CTRL_FSTP  20000000UL /* controller, 1 MHz   */
+#define _EDGE_SCB_I2C_PERI_TGT_STD    6000000UL  /* target, 100 kHz     */
+#define _EDGE_SCB_I2C_PERI_TGT_FST    12000000UL /* target, 400 kHz     */
+#define _EDGE_SCB_I2C_PERI_TGT_FSTP   50000000UL /* target, 1 MHz       */
+
+	struct ifx_cat1_i2c_data *data = dev->data;
+	const struct ifx_cat1_i2c_config *const config = dev->config;
+	CySCB_Type *base = config->base;
+	uint32_t peri_freq = 0;
+	uint32_t source_freq;
+	uint32_t div_value;
+	cy_rslt_t status;
+
+	if (freq <= CY_SCB_I2C_STD_DATA_RATE) {
+		peri_freq = is_target_mode ? _EDGE_SCB_I2C_PERI_TGT_STD
+					   : _EDGE_SCB_I2C_PERI_CTRL_STD;
+	} else if (freq <= CY_SCB_I2C_FST_DATA_RATE) {
+		peri_freq = is_target_mode ? _EDGE_SCB_I2C_PERI_TGT_FST
+					   : _EDGE_SCB_I2C_PERI_CTRL_FST;
+	} else if (freq <= CY_SCB_I2C_FSTP_DATA_RATE) {
+		peri_freq = is_target_mode ? _EDGE_SCB_I2C_PERI_TGT_FSTP
+					   : _EDGE_SCB_I2C_PERI_CTRL_FSTP;
+	}
+
+	if (peri_freq == 0) {
+		return -EINVAL;
+	}
+
+	source_freq = Cy_SysClk_ClkHfGetFrequency(
+		_i2c_get_hfclk_for_peri_group(data->clock_peri_group));
+	if (source_freq == 0) {
+		return -EIO;
+	}
+
+	div_value = source_freq / peri_freq;
+	if (div_value == 0) {
+		div_value = 1;
+	}
+
+	status = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &data->clock, div_value - 1);
+	if (status != CY_RSLT_SUCCESS) {
+		return -EIO;
+	}
+
+	ifx_cat1_utils_peri_pclk_enable_divider(config->clk_dst, &data->clock);
+
+	uint32_t actual_peri_freq = ifx_cat1_utils_peri_pclk_get_frequency(
+		config->clk_dst, &data->clock);
+
+	Cy_SCB_I2C_SetDataRate(base, freq, actual_peri_freq);
+	return 0;
+}
+#endif /* CONFIG_SOC_FAMILY_INFINEON_EDGE */
+
 #ifdef USE_I2C_SET_PERI_DIVIDER
 uint32_t _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_slave)
 {
@@ -509,8 +623,16 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 #ifdef USE_I2C_SET_PERI_DIVIDER
 	_i2c_set_peri_divider(dev, CAT1_I2C_SPEED_STANDARD_HZ,
 			      (data->scb_config.i2cMode == CY_SCB_I2C_SLAVE));
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+	if (_i2c_set_peri_divider_edge(dev, data->frequencyhal_hz,
+				      (data->scb_config.i2cMode == CY_SCB_I2C_SLAVE)) != 0) {
+		LOG_ERR("Failed to configure I2C peripheral clock divider");
+		k_sem_give(&data->operation_sem);
+		return -EIO;
+	}
 #elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-	if (_i2c_set_peri_divider_psoc4(dev, data->frequencyhal_hz, is_target_mode) != 0) {
+	if (_i2c_set_peri_divider_psoc4(dev, data->frequencyhal_hz,
+				       (data->scb_config.i2cMode == CY_SCB_I2C_SLAVE)) != 0) {
 		LOG_ERR("Failed to configure I2C peripheral clock divider");
 		k_sem_give(&data->operation_sem);
 		return -EIO;
