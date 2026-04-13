@@ -15,6 +15,7 @@ historical purposes.
 Release Notes
 *************
 
+* :zephyr_file:`Zephyr 4.2 Release Notes <doc/releases/release-notes-4.2.rst>`
 * :zephyr_file:`Zephyr 4.1 Release Notes <doc/releases/release-notes-4.1.rst>`
 * :zephyr_file:`Zephyr 4.0 Release Notes <doc/releases/release-notes-4.0.rst>`
 * :zephyr_file:`Zephyr 3.6 Release Notes <doc/releases/release-notes-3.6.rst>`
@@ -48,6 +49,7 @@ Release Notes
 Migration Guides
 ****************
 
+* :zephyr_file:`Zephyr 4.2 Migration Guide <doc/releases/migration-guide-4.2.rst>`
 * :zephyr_file:`Zephyr 4.1 Migration Guide <doc/releases/migration-guide-4.1.rst>`
 * :zephyr_file:`Zephyr 4.0 Migration Guide <doc/releases/migration-guide-4.0.rst>`
 * :zephyr_file:`Zephyr 3.6 Migration Guide <doc/releases/migration-guide-3.6.rst>`
