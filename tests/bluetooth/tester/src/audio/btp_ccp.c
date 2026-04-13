@@ -41,9 +41,12 @@ static uint8_t ccp_supported_commands(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static void tbs_client_discovered_ev(int err, uint8_t tbs_count, bool gtbs_found)
+static void tbs_client_discovered_ev(const struct bt_conn *conn, int err, uint8_t tbs_count,
+				     bool gtbs_found)
 {
 	struct btp_ccp_discovered_ev ev;
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
 	ev.status = sys_cpu_to_le32(err);
 	ev.tbs_count = tbs_count;
@@ -52,7 +55,7 @@ static void tbs_client_discovered_ev(int err, uint8_t tbs_count, bool gtbs_found
 	tester_event(BTP_SERVICE_ID_CCP, BTP_CCP_EV_DISCOVERED, &ev, sizeof(ev));
 }
 
-static void tbs_chrc_handles_ev(const struct bt_tbs_instance *tbs_inst)
+static void tbs_chrc_handles_ev(const struct bt_conn *conn, const struct bt_tbs_instance *tbs_inst)
 {
 	struct btp_ccp_chrc_handles_ev ev;
 
@@ -60,6 +63,8 @@ static void tbs_chrc_handles_ev(const struct bt_tbs_instance *tbs_inst)
 		LOG_ERR("Could not generate event for NULL TBS inst");
 		return;
 	}
+
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 
 	ev.provider_name = sys_cpu_to_le16(tbs_inst->name_sub_params.value_handle);
 	ev.bearer_uci = sys_cpu_to_le16(tbs_inst->bearer_uci_handle);
@@ -146,15 +151,15 @@ static void tbs_client_discover_cb(struct bt_conn *conn, int err, uint8_t tbs_co
 
 	LOG_DBG("Discovered TBS - err (%u) GTBS (%u)", err, gtbs_found);
 
-	tbs_client_discovered_ev(err, tbs_count, gtbs_found);
+	tbs_client_discovered_ev(conn, err, tbs_count, gtbs_found);
 
 	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS) && gtbs_found) {
-		tbs_chrc_handles_ev(bt_tbs_client_get_by_index(conn, BT_TBS_GTBS_INDEX));
+		tbs_chrc_handles_ev(conn, bt_tbs_client_get_by_index(conn, BT_TBS_GTBS_INDEX));
 	}
 
 	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_TBS)) {
 		for (uint8_t i = 0U; i < tbs_count; i++) {
-			tbs_chrc_handles_ev(bt_tbs_client_get_by_index(conn, i));
+			tbs_chrc_handles_ev(conn, bt_tbs_client_get_by_index(conn, i));
 		}
 	}
 }
