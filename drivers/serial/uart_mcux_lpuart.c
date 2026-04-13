@@ -616,7 +616,7 @@ static int mcux_lpuart_rx_disable(const struct device *dev)
 
 	/* No active RX buffer, cannot disable */
 	if (!data->async.rx_dma_params.buf) {
-		LOG_ERR("No buffers to release from RX DMA!");
+		LOG_DBG("No buffers to release from RX DMA!");
 	} else {
 		mcux_lpuart_async_rx_flush(dev);
 		async_evt_rx_buf_release(dev);
