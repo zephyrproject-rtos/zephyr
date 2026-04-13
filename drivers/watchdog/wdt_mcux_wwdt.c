@@ -171,18 +171,20 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	}
 
 	/*
-	 * The user callback is only invoked from the WWDT warning interrupt.
-	 * If CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG is 0, the warning interrupt
-	 * is disabled (no warningValue programmed), so a callback would never fire.
-	 * Reject this configuration to avoid a silent no-op.
+	 * A non-zero warning configuration triggers the callback before expiry.
+	 * For WDT_FLAG_RESET_NONE, leaving warningValue at 0 preserves the
+	 * callback-at-expiry behavior used by callback-only flows.
+	 * Other reset modes still require an early warning callback.
 	 */
 	if (cfg->callback) {
 		if (CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0) {
 			data->callback = cfg->callback;
 			data->wwdt_config.warningValue =
 				CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG;
+		} else if ((cfg->flags & WDT_FLAG_RESET_MASK) == WDT_FLAG_RESET_NONE) {
+			data->callback = cfg->callback;
 		} else {
-			LOG_ERR("Warning interrupt callback requires "
+			LOG_ERR("Callback without warning requires WDT_FLAG_RESET_NONE or "
 				"CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0");
 			return -ENOTSUP;
 		}
