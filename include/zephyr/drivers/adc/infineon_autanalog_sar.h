@@ -201,6 +201,31 @@ int adc_ifx_autanalog_sar_fifo_set_callback(const struct device *dev,
 					    adc_ifx_autanalog_sar_fifo_callback_t callback,
 					    void *user_data);
 
+/**
+ * @brief Stop an active RTIO ADC stream and tear down its software state.
+ *
+ * Switches the SAR sequencer back to single-shot mode and halts the
+ * free-running (continuous) SAR.  It clears the streaming state and
+ * terminates the in-flight RTIO submission (if any) with -ECANCELED.  After this
+ * returns, the SAR is idle and the shared sequencer is free for a subsequent
+ * adc_read(), and streaming can be restarted with a fresh adc_stream() call.
+ *
+ * The hardware FIFO is left intact: any samples already captured are preserved,
+ * so an application can stop and later resume streaming without losing data.  A
+ * one-shot adc_read() reads the result registers rather than the FIFO, so the
+ * retained samples do not affect it.
+ *
+ * The caller must cancel the stream's multishot SQE handle (rtio_sqe_cancel())
+ * before calling this function so RTIO does not resubmit and restart the stream.
+ *
+ * @param dev  ADC device (infineon,autanalog-sar-adc instance).
+ *
+ * @retval 0 on success.
+ * @retval -EALREADY if no stream is currently active.
+ * @retval -EBUSY if the SAR did not return to idle after the final conversion.
+ */
+int adc_ifx_autanalog_sar_stream_stop(const struct device *dev);
+
 /** @} */
 
 #ifdef __cplusplus
