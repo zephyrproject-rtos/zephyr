@@ -71,64 +71,54 @@ static void siwx91x_apply_boot_config(const struct device *dev,
 
 static void siwx91x_apply_sta_mode(sl_wifi_system_boot_configuration_t *params)
 {
-	const bool wifi_enabled = IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X);
-	const bool bt_enabled = IS_ENABLED(CONFIG_BT_SILABS_SIWX91X);
-
 	params->oper_mode = SL_SI91X_CLIENT_MODE;
 
-	if (wifi_enabled) {
-		params->feature_bit_map |= SL_SI91X_FEAT_SECURITY_OPEN;
-		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_FEAT_SECURITY_PSK)) {
-			params->feature_bit_map |= SL_SI91X_FEAT_SECURITY_PSK;
-		}
+	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+		/* Use Wifi/BLE coex even if only BLE is requested */
 		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
 			params->custom_feature_bit_map |=
 				SL_SI91X_CUSTOM_FEAT_ROAM_WITH_DEAUTH_OR_NULL_DATA;
 		}
-	}
-
-	if (wifi_enabled && bt_enabled) {
-		params->coex_mode = SL_SI91X_WLAN_BLE_MODE;
-	} else if (wifi_enabled) {
-		params->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
-	} else if (bt_enabled) {
 		params->coex_mode = SL_SI91X_WLAN_BLE_MODE;
 	} else {
-		/*
-		 * Even if neither WiFi or BLE is used we have to specify a Coex mode
-		 */
+		/* Use Wifi even if no radio are reqeuired */
 		params->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
 	}
 
-#ifdef CONFIG_WIFI_SILABS_SIWX91X
-	params->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
-	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_MFP)) {
-		params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+		params->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
+		params->feature_bit_map |= SL_SI91X_FEAT_SECURITY_OPEN;
+		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_FEAT_SECURITY_PSK)) {
+			params->feature_bit_map |= SL_SI91X_FEAT_SECURITY_PSK;
+		}
+		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_MFP)) {
+			params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
+		}
+		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP)) {
+			params->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
+		}
 	}
-	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP)) {
-		params->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
+
+	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+		params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_BT_CUSTOM_FEAT_ENABLE;
+		params->bt_feature_bit_map |= SL_SI91X_BT_RF_TYPE | SL_SI91X_ENABLE_BLE_PROTOCOL;
+		params->ble_feature_bit_map |=
+			SL_SI91X_BLE_MAX_NBR_PERIPHERALS(RSI_BLE_MAX_NBR_PERIPHERALS) |
+			SL_SI91X_BLE_MAX_NBR_CENTRALS(RSI_BLE_MAX_NBR_CENTRALS) |
+			SL_SI91X_BLE_MAX_NBR_ATT_SERV(RSI_BLE_MAX_NBR_ATT_SERV) |
+			SL_SI91X_BLE_MAX_NBR_ATT_REC(RSI_BLE_MAX_NBR_ATT_REC) |
+			SL_SI91X_BLE_PWR_INX(RSI_BLE_PWR_INX) |
+			SL_SI91X_BLE_PWR_SAVE_OPTIONS(RSI_BLE_PWR_SAVE_OPTIONS) |
+			SL_SI91X_916_BLE_COMPATIBLE_FEAT_ENABLE |
+			SL_SI91X_FEAT_BLE_CUSTOM_FEAT_EXTENSION_VALID;
+
+		params->ble_ext_feature_bit_map |=
+			SL_SI91X_BLE_NUM_CONN_EVENTS(RSI_BLE_NUM_CONN_EVENTS) |
+			SL_SI91X_BLE_NUM_REC_BYTES(RSI_BLE_NUM_REC_BYTES) |
+			SL_SI91X_BLE_ENABLE_ADV_EXTN |
+			SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS) |
+			SL_SI91X_BT_BLE_STACK_BYPASS_ENABLE;
 	}
-#endif
-
-#ifdef CONFIG_BT_SILABS_SIWX91X
-	params->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_BT_CUSTOM_FEAT_ENABLE;
-	params->bt_feature_bit_map |= SL_SI91X_BT_RF_TYPE | SL_SI91X_ENABLE_BLE_PROTOCOL;
-	params->ble_feature_bit_map |=
-		SL_SI91X_BLE_MAX_NBR_PERIPHERALS(RSI_BLE_MAX_NBR_PERIPHERALS) |
-		SL_SI91X_BLE_MAX_NBR_CENTRALS(RSI_BLE_MAX_NBR_CENTRALS) |
-		SL_SI91X_BLE_MAX_NBR_ATT_SERV(RSI_BLE_MAX_NBR_ATT_SERV) |
-		SL_SI91X_BLE_MAX_NBR_ATT_REC(RSI_BLE_MAX_NBR_ATT_REC) |
-		SL_SI91X_BLE_PWR_INX(RSI_BLE_PWR_INX) |
-		SL_SI91X_BLE_PWR_SAVE_OPTIONS(RSI_BLE_PWR_SAVE_OPTIONS) |
-		SL_SI91X_916_BLE_COMPATIBLE_FEAT_ENABLE |
-		SL_SI91X_FEAT_BLE_CUSTOM_FEAT_EXTENSION_VALID;
-
-	params->ble_ext_feature_bit_map |=
-		SL_SI91X_BLE_NUM_CONN_EVENTS(RSI_BLE_NUM_CONN_EVENTS) |
-		SL_SI91X_BLE_NUM_REC_BYTES(RSI_BLE_NUM_REC_BYTES) | SL_SI91X_BLE_ENABLE_ADV_EXTN |
-		SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS) |
-		SL_SI91X_BT_BLE_STACK_BYPASS_ENABLE;
-#endif
 }
 
 static void siwx91x_apply_ap_mode(sl_wifi_system_boot_configuration_t *params,
@@ -152,6 +142,9 @@ static void siwx91x_apply_ap_mode(sl_wifi_system_boot_configuration_t *params,
 static void siwx91x_apply_network_features(sl_wifi_system_boot_configuration_t *params,
 					   uint8_t wifi_oper_mode)
 {
+	if (!IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+		return;
+	}
 	if (!IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
 		params->tcp_ip_feature_bit_map |= SL_SI91X_TCP_IP_FEAT_BYPASS;
 		return;
@@ -244,10 +237,7 @@ static int siwx91x_nwp_compute_config(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
-		siwx91x_apply_network_features(&boot_config, wifi_oper_mode);
-	}
-
+	siwx91x_apply_network_features(&boot_config, wifi_oper_mode);
 	memcpy(get_config, &boot_config, sizeof(boot_config));
 	return 0;
 }
