@@ -1,0 +1,15 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dut: &lpuart1 {
+	status = "okay";
+
+	/* RX: dma channel 2, source 4; TX: dma channel 3, source 5 */
+	dmas = <&dma 2 4>, <&dma 3 5>;
+	dma-names = "rx", "tx";
+
+	nxp,loopback;
+};
