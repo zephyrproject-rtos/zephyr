@@ -17,6 +17,7 @@ if(CONFIG_MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
   )
   set(MBEDTLS_PRIVATE_INCLUDE_PATH "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/mbedtls/private")
   set(legacy_headers
+    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/aes.h
     ${MBEDTLS_PRIVATE_INCLUDE_PATH}/bignum.h
     ${MBEDTLS_PRIVATE_INCLUDE_PATH}/cipher.h
     ${MBEDTLS_PRIVATE_INCLUDE_PATH}/cmac.h
@@ -28,6 +29,13 @@ if(CONFIG_MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
     ${MBEDTLS_PRIVATE_INCLUDE_PATH}/rsa.h
   )
   file(COPY ${legacy_headers} DESTINATION ${CMAKE_BINARY_DIR}/legacy-mbedtls-headers/mbedtls/)
+  if(CONFIG_MCUBOOT)
+    set(MBEDTLS_BUILTIN_SRC_PATH "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/src")
+    set(legacy_headers
+      ${MBEDTLS_BUILTIN_SRC_PATH}/rsa_alt_helpers.h
+    )
+    file(COPY ${legacy_headers} DESTINATION ${CMAKE_BINARY_DIR}/legacy-mbedtls-headers/)
+  endif()
   target_include_directories(mbedTLS INTERFACE
     ${CMAKE_BINARY_DIR}/legacy-mbedtls-headers/
   )
