@@ -1137,7 +1137,7 @@ Robot
 =====
 
 The ``robot`` harness is used to execute Robot Framework test suites
-in the Renode simulation framework.
+in simulation target (Qemu, Native Simulator, Renode).
 
 robot_testsuite: <robot file path> (default empty)
     Specify one or more paths to a file containing a Robot Framework test suite to be run.
@@ -2146,10 +2146,13 @@ details.
 
 Robot Framework Tests
 *********************
-Zephyr supports `Robot Framework <https://robotframework.org/>`_ as one of solutions for automated testing.
+Zephyr supports `Robot Framework <https://robotframework.org/>`_ as one of solutions for
+automated testing.
 
-Robot files allow you to express interactive test scenarios in human-readable text format and execute them in simulation or against hardware.
-At this moment Zephyr integration supports running Robot tests in the `Renode <https://renode.io/>`_ simulation framework.
+Robot files allow you to express interactive test scenarios in human-readable text format
+and execute them in simulation or against hardware.
+At this moment Zephyr integration supports running Robot tests in the
+`Renode <https://renode.io/>`_ simulation framework, QEMU and Native Simulator.
 
 To execute a Robot test suite with twister, run the following command:
 
