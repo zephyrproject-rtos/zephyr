@@ -111,6 +111,7 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	struct net_ipv4_hdr *ipv4_hdr;
+	int ret;
 
 	net_pkt_set_overwrite(pkt, true);
 
@@ -131,7 +132,6 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 	ipv4_hdr->proto = next_header_proto;
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER)) {
-		int ret;
 		uint16_t chksum = 0;
 
 		ipv4_hdr->chksum = 0;
@@ -143,7 +143,11 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 		ipv4_hdr->chksum = chksum;
 	}
 
-	net_pkt_set_data(pkt, &ipv4_access);
+	ret = net_pkt_set_data(pkt, &ipv4_access);
+	if (ret < 0) {
+		return ret;
+	}
+
 	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&

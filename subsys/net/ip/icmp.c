@@ -182,7 +182,10 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 	echo_req->identifier = net_htons(params->identifier);
 	echo_req->sequence   = net_htons(params->sequence);
 
-	net_pkt_set_data(pkt, &icmpv4_access);
+	ret = net_pkt_set_data(pkt, &icmpv4_access);
+	if (ret < 0) {
+		goto drop;
+	}
 
 	if (params->data != NULL && params->data_size > 0) {
 		ret = net_pkt_write(pkt, params->data, params->data_size);
@@ -315,7 +318,10 @@ static int send_icmpv6_echo_request(struct net_icmp_ctx *ctx,
 	echo_req->identifier = net_htons(params->identifier);
 	echo_req->sequence   = net_htons(params->sequence);
 
-	net_pkt_set_data(pkt, &icmpv6_access);
+	ret = net_pkt_set_data(pkt, &icmpv6_access);
+	if (ret < 0) {
+		goto drop;
+	}
 
 	if (params->data != NULL && params->data_size > 0) {
 		ret = net_pkt_write(pkt, params->data, params->data_size);

@@ -2269,7 +2269,10 @@ static int context_setup_raw_ip_packet(net_sa_family_t family,
 			}
 
 			ipv4_hdr->chksum = chksum;
-			net_pkt_set_data(pkt, &ipv4_access);
+			ret = net_pkt_set_data(pkt, &ipv4_access);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
