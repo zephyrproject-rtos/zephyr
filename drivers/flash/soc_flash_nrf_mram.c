@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(flash_nrf_mram, CONFIG_FLASH_LOG_LEVEL);
 #define ERASE_VALUE 0xff
 
 BUILD_ASSERT(MRAM_START > 0, "nordic,mram: start address expected to be non-zero");
+BUILD_ASSERT((WRITE_BLOCK_SIZE % MRAM_WORD_SIZE) == 0,
+	     "write-block-size expected to be a multiple of MRAM_WORD_SIZE");
 BUILD_ASSERT((ERASE_BLOCK_SIZE % WRITE_BLOCK_SIZE) == 0,
 	     "erase-block-size expected to be a multiple of write-block-size");
 
@@ -55,33 +57,6 @@ static uintptr_t validate_and_map_addr(off_t offset, size_t len, bool must_align
 	}
 
 	return addr;
-}
-
-/**
- * @param[in] addr_end  Last modified MRAM address (not inclusive).
- */
-static void commit_changes(uintptr_t addr_end)
-{
-	/* Barrier following our last write. */
-	barrier_dmem_fence_full();
-
-	if ((WRITE_BLOCK_SIZE & MRAM_WORD_MASK) == 0 || (addr_end & MRAM_WORD_MASK) == 0) {
-		/* Our last operation was MRAM word-aligned, so we're done.
-		 * Note: if WRITE_BLOCK_SIZE is a multiple of MRAM_WORD_SIZE,
-		 * then this was already checked in validate_and_map_addr().
-		 */
-		return;
-	}
-
-	/* Get the most significant byte (MSB) of the last MRAM word we were modifying.
-	 * Writing to this byte makes the MRAM controller commit other pending writes to that word.
-	 */
-	addr_end |= MRAM_WORD_MASK;
-
-	/* Issue a dummy write, since we didn't have anything to write here.
-	 * Doing this lets us finalize our changes before we exit the driver API.
-	 */
-	sys_write8(sys_read8(addr_end), addr_end);
 }
 
 static int nrf_mram_read(const struct device *dev, off_t offset, void *data, size_t len)
@@ -114,7 +89,6 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 	LOG_DBG("write: %p:%zu", (void *)addr, len);
 
 	memcpy((void *)addr, data, len);
-	commit_changes(addr + len);
 
 	return 0;
 }
@@ -132,7 +106,6 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 	LOG_DBG("erase: %p:%zu", (void *)addr, size);
 
 	memset((void *)addr, ERASE_VALUE, size);
-	commit_changes(addr + size);
 
 	return 0;
 }
