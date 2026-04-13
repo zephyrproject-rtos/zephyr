@@ -567,11 +567,6 @@ struct net_if_ipv4_autoconf {
 };
 #endif /* CONFIG_NET_IPV4_AUTO */
 
-/** @cond INTERNAL_HIDDEN */
-/* We always need to have at least one IP config */
-#define NET_IF_MAX_CONFIGS 1
-/** @endcond */
-
 /**
  * @brief Network interface IP address configuration.
  */
@@ -3499,7 +3494,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 				       void *user_data);
 #endif /* CONFIG_NET_STATISTICS_VIA_PROMETHEUS */
 
-#define NET_IF_INIT(dev_id, sfx, _l2, _mtu, _num_configs)		\
+#define NET_IF_INIT(dev_id, sfx, _l2, _mtu)				\
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
 				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_id)),			\
@@ -3508,14 +3503,10 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 		.mtu = _mtu,						\
 		.flags = {BIT(NET_IF_LOWER_UP)},			\
 	};								\
-	static Z_DECL_ALIGN(struct net_if)				\
-		       NET_IF_GET_NAME(dev_id, sfx)[_num_configs]	\
-		       __used __noasan __in_section(_net_if, static,	\
-					   dev_id) = {			\
-		[0 ... (_num_configs - 1)] = {				\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
-			NET_IF_CONFIG_INIT				\
-		}							\
+	static STRUCT_SECTION_ITERABLE(net_if,				\
+				NET_IF_GET_NAME(dev_id, sfx)) = {	\
+		.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),		\
+		NET_IF_CONFIG_INIT					\
 	};								\
 	IF_ENABLED(CONFIG_NET_STATISTICS_VIA_PROMETHEUS,		\
 		   (static PROMETHEUS_COLLECTOR_DEFINE(			\
@@ -3534,14 +3525,10 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 		.l2 = &(NET_L2_GET_NAME(OFFLOADED_NETDEV)),		\
 		.flags = {BIT(NET_IF_LOWER_UP)},			\
 	};								\
-	static Z_DECL_ALIGN(struct net_if)				\
-		NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS]	\
-		       __used __noasan __in_section(_net_if, static,	\
-					   dev_id) = {			\
-		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
-			NET_IF_CONFIG_INIT				\
-		}							\
+	static STRUCT_SECTION_ITERABLE(net_if,				\
+				NET_IF_GET_NAME(dev_id, sfx)) = {	\
+		.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),		\
+		NET_IF_CONFIG_INIT					\
 	};								\
 	IF_ENABLED(CONFIG_NET_STATISTICS_VIA_PROMETHEUS,		\
 		   (static PROMETHEUS_COLLECTOR_DEFINE(			\
@@ -3565,7 +3552,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  * @param dev_id Device ID provided to `NET_IF_INIT` or `NET_IF_OFFLOAD_INIT`
  */
 #define NET_IF_DECLARE(dev_id, inst) \
-	static struct net_if NET_IF_GET_NAME(dev_id, inst)[NET_IF_MAX_CONFIGS]
+	static struct net_if NET_IF_GET_NAME(dev_id, inst)
 
 #define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
 				   init_fn, pm, data, config, prio,	\
@@ -3576,7 +3563,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
 	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
+	NET_IF_INIT(dev_id, instance, l2, mtu)
 
 #define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
 			  config, prio, api, l2, l2_ctx_type, mtu)	\
