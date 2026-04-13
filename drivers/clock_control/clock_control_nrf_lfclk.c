@@ -332,8 +332,11 @@ static int lfclk_init(const struct device *dev)
 
 	lfosc_mode = nrf_bicr_lfosc_mode_get(BICR);
 
-	if (lfosc_mode == NRF_BICR_LFOSC_MODE_UNCONFIGURED ||
-	    lfosc_mode == NRF_BICR_LFOSC_MODE_DISABLED) {
+	if (lfosc_mode == NRF_BICR_LFOSC_MODE_UNCONFIGURED
+#if NRF_BICR_HAS_LFOSC_LFXOCONFIG_DISABLED
+	    || lfosc_mode == NRF_BICR_LFOSC_MODE_DISABLED
+#endif
+	) {
 		dev_data->max_accuracy = LFCLK_HFXO_ACCURACY;
 	} else {
 		ret = lfosc_get_accuracy(&dev_data->max_accuracy);
@@ -343,6 +346,7 @@ static int lfclk_init(const struct device *dev)
 		}
 
 		switch (lfosc_mode) {
+#if NRF_BICR_HAS_LFOSC_LFXOCONFIG_CRYSTAL
 		case NRF_BICR_LFOSC_MODE_CRYSTAL:
 			clock_option = &clock_options[dev_data->clock_options_cnt];
 			clock_option->accuracy = dev_data->max_accuracy;
@@ -356,7 +360,25 @@ static int lfclk_init(const struct device *dev)
 			clock_option->src = NRFS_CLOCK_SRC_LFCLK_XO_PIERCE_HP;
 			dev_data->clock_options_cnt++;
 			break;
-
+#endif
+#if NRF_BICR_HAS_LFOSC_LFXOCONFIG_PIERCE
+		case NRF_BICR_LFOSC_MODE_PIERCE:
+			clock_option = &clock_options[dev_data->clock_options_cnt];
+			clock_option->accuracy = dev_data->max_accuracy;
+			clock_option->precision = 0;
+			clock_option->src = NRFS_CLOCK_SRC_LFCLK_XO_PIERCE;
+			dev_data->clock_options_cnt++;
+			break;
+#endif
+#if NRF_BICR_HAS_LFOSC_LFXOCONFIG_PIXO
+		case NRF_BICR_LFOSC_MODE_PIXO:
+			clock_option = &clock_options[dev_data->clock_options_cnt];
+			clock_option->accuracy = dev_data->max_accuracy;
+			clock_option->precision = 0;
+			clock_option->src = NRFS_CLOCK_SRC_LFCLK_XO_PIXO;
+			dev_data->clock_options_cnt++;
+			break;
+#endif
 		case NRF_BICR_LFOSC_MODE_EXTSINE:
 			clock_option = &clock_options[dev_data->clock_options_cnt];
 			clock_option->accuracy = dev_data->max_accuracy;
