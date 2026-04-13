@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP ENET QoS PTP (Precision Time Protocol) Clock
+
+compatible: "nxp,enet-qos-ptp-clock"
+
+include: ["base.yaml"]
