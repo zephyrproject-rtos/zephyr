@@ -1647,65 +1647,6 @@ void shell_fprintf_error(const struct shell *sh, const char *fmt, ...)
 	va_end(args);
 }
 
-void shell_hexdump_line(const struct shell *sh, unsigned int offset,
-			const uint8_t *data, size_t len)
-{
-	__ASSERT_NO_MSG(sh);
-
-	int i;
-
-	shell_fprintf_normal(sh, "%08X: ", offset);
-
-	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
-		if (i > 0 && !(i % 8)) {
-			shell_fprintf_normal(sh, " ");
-		}
-
-		if (i < len) {
-			shell_fprintf_normal(sh, "%02x ",
-					     data[i] & 0xFF);
-		} else {
-			shell_fprintf_normal(sh, "   ");
-		}
-	}
-
-	shell_fprintf_normal(sh, "|");
-
-	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
-		if (i > 0 && !(i % 8)) {
-			shell_fprintf_normal(sh, " ");
-		}
-
-		if (i < len) {
-			char c = data[i];
-
-			shell_fprintf_normal(sh, "%c",
-					     isprint((int)c) != 0 ? c : '.');
-		} else {
-			shell_fprintf_normal(sh, " ");
-		}
-	}
-
-	shell_print(sh, "|");
-}
-
-void shell_hexdump(const struct shell *sh, const uint8_t *data, size_t len)
-{
-	__ASSERT_NO_MSG(sh);
-
-	const uint8_t *p = data;
-	size_t line_len;
-
-	while (len) {
-		line_len = MIN(len, SHELL_HEXDUMP_BYTES_IN_LINE);
-
-		shell_hexdump_line(sh, p - data, p, line_len);
-
-		len -= line_len;
-		p += line_len;
-	}
-}
-
 int shell_prompt_change(const struct shell *sh, const char *prompt)
 {
 #if defined(CONFIG_SHELL_PROMPT_CHANGE) && CONFIG_SHELL_PROMPT_CHANGE
