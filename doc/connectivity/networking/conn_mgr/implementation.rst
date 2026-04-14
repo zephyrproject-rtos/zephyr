@@ -223,6 +223,11 @@ In other words, the connectivity implementation should not give up on the connec
 
 Instead, the connectivity implementation should asynchronously wait for valid connection parameters to be configured, either indefinitely, or until the configured :ref:`connectivity timeout <conn_mgr_control_timeouts>` elapses.
 
+An exception to this is if the network interface has been configured as non-persistent and the connectivity implementation defines an implementation for :c:member:`conn_mgr_conn_api.has_connection_config`.
+
+In this case, to reduce power consumption and prevent unnecessary state transitions, :c:func:`conn_mgr_if_connect` will exit early without bringing the interface up if :c:member:`conn_mgr_conn_api.has_connection_config` returns
+``false``. The :c:enum:`NET_EVENT_CONN_IF_NO_CONFIGURATION` event will be emitted to notify subscribers of the misconfiguration.
+
 .. _conn_mgr_impl_guidelines_iface_state_reporting:
 
 *Implement iface state reporting*
