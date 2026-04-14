@@ -61,6 +61,11 @@ if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
     zephyr_library_compile_definitions(COMPONENT_SECURE_DEVICE)
   endif()
 
+  if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_NONSECURE)
+    # Use non secure device in cy_device_headers
+    zephyr_library_compile_definitions(COMPONENT_NON_SECURE_DEVICE)
+  endif()
+
   zephyr_library_compile_definitions_ifdef(CONFIG_CPU_CORTEX_M33 COMPONENT_CM33)
   zephyr_library_compile_definitions_ifdef(CONFIG_CPU_CORTEX_M33 CORE_NAME_CM33_0)
   zephyr_library_compile_definitions_ifdef(CONFIG_CPU_CORTEX_M55 COMPONENT_CM55)
