@@ -1256,7 +1256,7 @@ static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
 	struct sx126x_data *data = dev->data;
 	int ret;
 
-	if (atomic_get(&data->state) != SX126X_REST_STATE) {
+	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_TX)) {
 		return -EBUSY;
 	}
 
@@ -1264,25 +1264,20 @@ static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
 
 	ret = sx126x_ensure_ready(dev);
 	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
-		return ret;
+		goto out_unlock;
 	}
 
 	/* Set frequency */
 	ret = sx126x_set_rf_frequency(dev, frequency);
 	if (ret < 0) {
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
+		goto out_sleep;
 	}
 
 	/* Set PA config and TX power */
 	ret = sx126x_hal_configure_tx_params(dev, tx_power, frequency,
 						SX126X_RAMP_200_US);
 	if (ret < 0) {
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
+		goto out_sleep;
 	}
 
 	/* Enable antenna and TX path */
@@ -1291,9 +1286,7 @@ static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
 	/* Start CW transmission */
 	ret = sx126x_hal_write_cmd(dev, SX126X_CMD_SET_TX_CONTINUOUS_WAVE, NULL, 0);
 	if (ret < 0) {
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
+		goto out_sleep;
 	}
 
 	k_mutex_unlock(&data->lock);
@@ -1304,10 +1297,14 @@ static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
 	/* Stop CW */
 	k_mutex_lock(&data->lock, K_FOREVER);
 	sx126x_set_standby(dev, SX126X_STANDBY_RC);
-	sx126x_set_sleep(dev);
-	k_mutex_unlock(&data->lock);
 
-	return 0;
+out_sleep:
+	sx126x_set_sleep(dev);
+out_unlock:
+	k_mutex_unlock(&data->lock);
+	atomic_set(&data->state, SX126X_REST_STATE);
+
+	return ret;
 }
 
 static DEVICE_API(lora, sx126x_lora_api) = {
