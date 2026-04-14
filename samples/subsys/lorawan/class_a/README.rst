@@ -21,6 +21,7 @@ The following commands build and flash the sample.
    :zephyr-app: samples/subsys/lorawan/class_a
    :board: nucleo_wl55jc
    :goals: build flash
+   :west-args: -p always
    :compact:
 
 Important Notes for Multiple Runs
