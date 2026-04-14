@@ -6,9 +6,49 @@
 #ifndef INCLUDE_ZEPHYR_DT_BINDINGS_PINCTRL_SILABS_SIWX91X_PINCTRL_H_
 #define INCLUDE_ZEPHYR_DT_BINDINGS_PINCTRL_SILABS_SIWX91X_PINCTRL_H_
 
+/**
+ * @file
+ * @brief Devicetree pin control helpers for Silicon Labs SiWx91x
+ * @ingroup pinctrl_siwx91x
+ */
+
 #include <zephyr/dt-bindings/pinctrl/silabs-pinctrl-siwx91x.h>
 
-/* clang-format off */
+/**
+ * @addtogroup silabs_pinctrl Silicon Labs pin control helpers
+ * @ingroup devicetree-pinctrl
+ */
+
+/**
+ * @defgroup pinctrl_siwx91x Silicon Labs SiWx91x pin control helpers
+ * @brief Macros for pin control configuration of Silicon Labs SiWx91x
+ * @ingroup silabs_pinctrl
+ *
+ * The macros follow the following naming convention:
+ * @c \<PERIPHERAL\>\_\<SIGNAL\>\_\<PIN\>.
+ *
+ * For example, @c USART0_TX_PC0 corresponds to the @c TX signal of @c USART0
+ * mapped to routing port @c C pin @c 0.
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
+ *
+ * &pinctrl {
+ *         ulpuart_default: ulpuart_default {
+ *                  out {
+ *                            pinmux = <ULPUART_TX_ULP11>;
+ *                  };
+ *                  in {
+ *                           pinmux = <ULPUART_RX_ULP9>;
+ *                  };
+ *         };
+ * };
+ * @endcode
+ *
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 #define AGPIO_ULP0           SIWX91X_GPIO(0xFF, 7, 0xFF, 4, 0,  0)
 #define AGPIO_ULP1           SIWX91X_GPIO(0xFF, 7, 0xFF, 4, 0,  1)
@@ -618,7 +658,9 @@
 #define WIFI_ANT1_ULP4       SIWX91X_GPIO(0xFF, 6, 0xFF, 4, 0,  4)
 #define WIFI_ANT2_ULP5       SIWX91X_GPIO(0xFF, 6, 0xFF, 4, 0,  5)
 
-/* clang-format on */
+/** @endcond */
+
+/** @} */
 
 /* The following definitions are duplicates of signals that are also
  * available on the same pins using other GPIO modes.
@@ -628,4 +670,4 @@
  * #define PWM_1L_ULP0          SIWX91X_GPIO(8, 6, 22, 4, 0, 0)
  */
 
-#endif /* INCLUDE_ZEPHYR_DT_BINDINGS_PINCTRL_SILABS_SIWX91X_PINCTRL_H_ */
+#endif
