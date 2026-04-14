@@ -1,0 +1,46 @@
+common:
+  tags: posix
+  min_ram: 64
+  timeout: 240
+  platform_key:
+    - arch
+    - simulation
+  filter: not CONFIG_NATIVE_LIBC
+tests:
+  posix.threads_base:
+    filter: CONFIG_ARCH_POSIX
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_POSIX_THREADS=y
+  posix.threads_base.tls:
+    platform_exclude:
+      - intel_ehl_crb
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=n
+      - CONFIG_THREAD_LOCAL_STORAGE=y
+  posix.threads_base.tls.newlib:
+    platform_exclude:
+      - intel_ehl_crb
+      - lpcxpresso55s06
+    filter:
+      TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and
+      CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_THREAD_LOCAL_STORAGE=y
+  posix.threads_base.dynamic_stack:
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD=y
+      - CONFIG_THREAD_STACK_INFO=y
+      - CONFIG_HEAP_MEM_POOL_SIZE=16384
+      - CONFIG_POSIX_THREAD_KEYS_MAX=2048
+      - CONFIG_TEST_EXTRA_STACK_SIZE=16384
+  posix.threads_base.static_stack:
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD=n
+      - CONFIG_THREAD_STACK_INFO=n

@@ -38,7 +38,7 @@ static void *normal_mutex_entry(void *p1)
 static void *recursive_mutex_entry(void *p1)
 {
 	zassert_false(pthread_mutex_lock(&mutex), "mutex is not taken");
-	zassert_false(pthread_mutex_lock(&mutex), "mutex is not taken 2nd time");
+	zassert_false(pthread_mutex_lock(&mutex), "mutex is not taken 2nd time"); /* NOSONAR */
 	TC_PRINT("recursive mutex lock is taken\n");
 	zassert_false(pthread_mutex_unlock(&mutex), "mutex is not unlocked");
 	zassert_false(pthread_mutex_unlock(&mutex), "mutex is not unlocked");
