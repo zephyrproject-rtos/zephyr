@@ -597,6 +597,7 @@ static void test_server_enable_expect_error(struct bt_bap_stream *stream)
 	zassert_false(err == 0, "bt_bap_stream_enable unexpected success");
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 static void test_server_receiver_stop_ready_expect_error(struct bt_bap_stream *stream)
 {
 	int err;
@@ -604,10 +605,10 @@ static void test_server_receiver_stop_ready_expect_error(struct bt_bap_stream *s
 	err = bt_bap_stream_stop(stream);
 	zassert_false(err == 0, "bt_bap_stream_stop unexpected success");
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 #else
 #define test_server_config_qos_expect_error(...)
 #define test_server_enable_expect_error(...)
-#define test_server_receiver_stop_ready_expect_error(...)
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
 static void test_server_update_metadata_expect_error(struct bt_bap_stream *stream)
@@ -637,7 +638,9 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_sink_state_codec_configur
 	test_server_enable_expect_error(stream);
 	test_server_receiver_start_ready_expect_error(stream);
 	test_server_disable_expect_error(stream);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	test_server_receiver_stop_ready_expect_error(stream);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 	test_server_update_metadata_expect_error(stream);
 }
 
@@ -656,7 +659,9 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_sink_state_qos_configured
 	test_server_enable_expect_error(stream);
 	test_server_receiver_start_ready_expect_error(stream);
 	test_server_disable_expect_error(stream);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	test_server_receiver_stop_ready_expect_error(stream);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 	test_server_update_metadata_expect_error(stream);
 }
 
@@ -674,7 +679,9 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_sink_state_enabling)
 	test_server_config_codec_expect_error(stream);
 	test_server_config_qos_expect_error(stream);
 	test_server_enable_expect_error(stream);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	test_server_receiver_stop_ready_expect_error(stream);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 }
 
 ZTEST_F(test_ase_state_transition_invalid, test_server_sink_state_streaming)
@@ -693,7 +700,9 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_sink_state_streaming)
 	test_server_config_qos_expect_error(stream);
 	test_server_enable_expect_error(stream);
 	test_server_receiver_start_ready_expect_error(stream);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	test_server_receiver_stop_ready_expect_error(stream);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 }
 
 ZTEST_F(test_ase_state_transition_invalid, test_server_sink_state_releasing)
@@ -714,7 +723,9 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_sink_state_releasing)
 	test_server_enable_expect_error(stream);
 	test_server_receiver_start_ready_expect_error(stream);
 	test_server_disable_expect_error(stream);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	test_server_receiver_stop_ready_expect_error(stream);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 	test_server_update_metadata_expect_error(stream);
 }
 
@@ -733,7 +744,9 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_codec_config
 	test_server_enable_expect_error(stream);
 	test_server_receiver_start_ready_expect_error(stream);
 	test_server_disable_expect_error(stream);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	test_server_receiver_stop_ready_expect_error(stream);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 	test_server_update_metadata_expect_error(stream);
 }
 
@@ -752,7 +765,9 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_qos_configur
 	test_server_enable_expect_error(stream);
 	test_server_receiver_start_ready_expect_error(stream);
 	test_server_disable_expect_error(stream);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	test_server_receiver_stop_ready_expect_error(stream);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 	test_server_update_metadata_expect_error(stream);
 }
 
@@ -770,7 +785,9 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_enabling)
 	test_server_config_codec_expect_error(stream);
 	test_server_config_qos_expect_error(stream);
 	test_server_enable_expect_error(stream);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	test_server_receiver_stop_ready_expect_error(stream);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 }
 
 ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_streaming)
@@ -789,7 +806,9 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_streaming)
 	test_server_config_qos_expect_error(stream);
 	test_server_enable_expect_error(stream);
 	test_server_receiver_start_ready_expect_error(stream);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	test_server_receiver_stop_ready_expect_error(stream);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 }
 
 ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_disabling)
@@ -809,7 +828,9 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_disabling)
 	test_server_enable_expect_error(stream);
 	test_server_receiver_start_ready_expect_error(stream);
 	test_server_disable_expect_error(stream);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	test_server_receiver_stop_ready_expect_error(stream);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 	test_server_update_metadata_expect_error(stream);
 }
 
@@ -831,6 +852,8 @@ ZTEST_F(test_ase_state_transition_invalid, test_server_source_state_releasing)
 	test_server_enable_expect_error(stream);
 	test_server_receiver_start_ready_expect_error(stream);
 	test_server_disable_expect_error(stream);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	test_server_receiver_stop_ready_expect_error(stream);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 	test_server_update_metadata_expect_error(stream);
 }

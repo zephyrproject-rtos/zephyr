@@ -104,11 +104,13 @@ static const struct btp_handler ascs_handlers[] = {
 		.expect_len = sizeof(struct btp_ascs_receiver_start_ready_cmd),
 		.func = btp_ascs_receiver_start_ready,
 	},
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	{
 		.opcode = BTP_ASCS_RECEIVER_STOP_READY,
 		.expect_len = sizeof(struct btp_ascs_receiver_stop_ready_cmd),
 		.func = btp_ascs_receiver_stop_ready,
 	},
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 	{
 		.opcode = BTP_ASCS_DISABLE,
 		.expect_len = sizeof(struct btp_ascs_disable_cmd),

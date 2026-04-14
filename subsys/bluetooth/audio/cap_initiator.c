@@ -13,7 +13,6 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
-#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -1341,7 +1340,7 @@ cap_initiator_unicast_audio_configure(struct bt_cap_common_proc *active_proc,
 				      const struct bt_cap_unicast_audio_start_param *param)
 {
 	struct bt_cap_initiator_proc_param *proc_param;
-	const struct bt_audio_codec_cfg *codec_cfg;
+	struct bt_audio_codec_cfg *codec_cfg;
 	struct bt_bap_stream *bap_stream;
 	struct bt_bap_ep *ep;
 	struct bt_conn *conn;
@@ -1504,9 +1503,9 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 	}
 
 	if (!bt_cap_common_proc_is_done()) {
-		const struct bt_audio_codec_cfg *codec_cfg;
 		struct bt_cap_stream *next_cap_stream;
 		struct bt_bap_stream *next_bap_stream;
+		struct bt_audio_codec_cfg *codec_cfg;
 		struct bt_conn *conn;
 		struct bt_bap_ep *ep;
 		int err;
@@ -1662,7 +1661,6 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 
 	if (bt_cap_common_proc_is_type(BT_CAP_COMMON_PROC_TYPE_START)) {
 		struct bt_cap_initiator_proc_param *proc_param;
-		const struct bt_audio_codec_cfg *codec_cfg;
 		struct bt_cap_stream *next_cap_stream;
 		struct bt_bap_stream *bap_stream;
 		int err;
@@ -1692,9 +1690,8 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 		active_proc->proc_initiated_cnt++;
 		proc_param->in_progress = true;
 
-		codec_cfg = proc_param->start.codec_cfg;
-
-		err = bt_bap_stream_enable(bap_stream, codec_cfg->meta, codec_cfg->meta_len);
+		err = bt_bap_stream_enable(bap_stream, bap_stream->codec_cfg->meta,
+					   bap_stream->codec_cfg->meta_len);
 		if (err != 0) {
 			LOG_DBG("Failed to enable stream %p: %d", next_cap_stream, err);
 
@@ -1768,7 +1765,6 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 	}
 
 	if (!bt_cap_common_proc_is_done()) {
-		const struct bt_audio_codec_cfg *codec_cfg;
 		struct bt_cap_stream *next_cap_stream;
 		struct bt_bap_stream *next_bap_stream;
 
@@ -1778,11 +1774,10 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 		next_bap_stream = &next_cap_stream->bap_stream;
 
 		active_proc->proc_initiated_cnt++;
-
 		proc_param->in_progress = true;
-		codec_cfg = proc_param->start.codec_cfg;
 
-		err = bt_bap_stream_enable(next_bap_stream, codec_cfg->meta, codec_cfg->meta_len);
+		err = bt_bap_stream_enable(next_bap_stream, next_bap_stream->codec_cfg->meta,
+					   next_bap_stream->codec_cfg->meta_len);
 		if (err != 0) {
 			LOG_DBG("Failed to enable stream %p: %d", next_cap_stream, err);
 
@@ -2462,9 +2457,10 @@ int cap_initiator_unicast_audio_stop(struct bt_cap_common_proc *active_proc,
 
 		err = bt_bap_stream_disable(bap_stream);
 		if (err != 0) {
-			LOG_DBG("Failed to disable bap_stream %p: %d", proc_param->stream, err);
+			LOG_DBG("Failed to disable bap_stream %p: %d",
+				proc_param->stream, err);
 		}
-	} else if (can_stop) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC) && can_stop) {
 		struct bt_cap_initiator_proc_param *proc_param;
 		struct bt_bap_stream *bap_stream;
 
@@ -2479,7 +2475,8 @@ int cap_initiator_unicast_audio_stop(struct bt_cap_common_proc *active_proc,
 
 		err = bt_bap_stream_stop(bap_stream);
 		if (err != 0) {
-			LOG_DBG("Failed to stop bap_stream %p: %d", proc_param->stream, err);
+			LOG_DBG("Failed to stop bap_stream %p: %d",
+				proc_param->stream, err);
 		}
 	} else {
 		struct bt_cap_initiator_proc_param *proc_param;
@@ -2496,7 +2493,8 @@ int cap_initiator_unicast_audio_stop(struct bt_cap_common_proc *active_proc,
 
 		err = bt_bap_stream_release(bap_stream);
 		if (err != 0) {
-			LOG_DBG("Failed to release bap_stream %p: %d", proc_param->stream, err);
+			LOG_DBG("Failed to release bap_stream %p: %d",
+				proc_param->stream, err);
 		}
 	}
 
@@ -2585,11 +2583,8 @@ void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
 		} else {
 			bt_cap_common_unlock_proc();
 		}
-	} else {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)) {
 		struct bt_cap_initiator_proc_param *proc_param;
-		struct bt_cap_stream *next_cap_stream;
-		struct bt_bap_stream *next_bap_stream;
-		int err;
 
 		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_STOP);
 
@@ -2597,16 +2592,17 @@ void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
 		if (proc_param == NULL) {
 			bt_cap_common_unlock_proc();
 
-			/* If proc_param is NULL then this step is a no-op and we can skip to the
-			 * next step
-			 */
-			bt_cap_initiator_stopped(active_proc->proc_param.initiator[0].stream);
+			/* proc_param NULL: no-op for this step; go to next step */
+			bt_cap_initiator_stopped(
+				active_proc->proc_param.initiator[0].stream);
 
 			return;
 		}
 
-		next_cap_stream = proc_param->stream;
-		next_bap_stream = &next_cap_stream->bap_stream;
+		struct bt_cap_stream *next_cap_stream = proc_param->stream;
+		struct bt_bap_stream *next_bap_stream = &next_cap_stream->bap_stream;
+		int err;
+
 		active_proc->proc_initiated_cnt++;
 		proc_param->in_progress = true;
 
@@ -2614,12 +2610,31 @@ void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
 		if (err != 0) {
 			LOG_DBG("Failed to stop stream %p: %d", next_cap_stream, err);
 
-			bt_cap_common_abort_proc(next_bap_stream->conn, err);
-			cap_initiator_unicast_audio_proc_complete(active_proc);
+			bt_cap_common_abort_proc(next_bap_stream->conn,
+						 err);
+			cap_initiator_unicast_audio_proc_complete(
+				active_proc);
 		} else {
 			/* else wait for server notification*/
 			bt_cap_common_unlock_proc();
 		}
+	} else {
+		struct bt_cap_initiator_proc_param *proc_param;
+
+		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_RELEASE);
+
+		proc_param = get_next_proc_param(active_proc);
+		if (proc_param == NULL) {
+			/* If proc_param is NULL then this step is a no-op and we can
+			 * finish the procedure
+			 */
+			cap_initiator_unicast_audio_proc_complete(active_proc);
+
+			return;
+		}
+
+		/* Wait for bt_cap_initiator_qos_configured */
+		bt_cap_common_unlock_proc();
 	}
 }
 
@@ -2665,26 +2680,45 @@ void bt_cap_initiator_stopped(struct bt_cap_stream *cap_stream)
 
 	if (!bt_cap_common_proc_is_done()) {
 		struct bt_cap_initiator_proc_param *proc_param;
-		struct bt_cap_stream *next_cap_stream;
-		struct bt_bap_stream *next_bap_stream;
-		int err;
 
 		proc_param = get_next_proc_param(active_proc);
 		if (proc_param != NULL) {
-			next_cap_stream = proc_param->stream;
-			next_bap_stream = &next_cap_stream->bap_stream;
+			struct bt_cap_stream *next_cap_stream = proc_param->stream;
+			struct bt_bap_stream *next_bap_stream = &next_cap_stream->bap_stream;
+			int err;
 
 			active_proc->proc_initiated_cnt++;
 			proc_param->in_progress = true;
 
-			err = bt_bap_stream_stop(next_bap_stream);
-			if (err != 0) {
-				LOG_DBG("Failed to stop stream %p: %d", next_cap_stream, err);
+			if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)) {
+				err = bt_bap_stream_stop(next_bap_stream);
+				if (err != 0) {
+					LOG_DBG("Failed to stop stream %p: %d",
+						next_cap_stream, err);
 
-				bt_cap_common_abort_proc(next_bap_stream->conn, err);
-				cap_initiator_unicast_audio_proc_complete(active_proc);
+					bt_cap_common_abort_proc(next_bap_stream->conn,
+								 err);
+					cap_initiator_unicast_audio_proc_complete(
+						active_proc);
 
-				return;
+					return;
+				}
+			} else {
+				/* Receiver Stop Ready applies to source ASE; use release. */
+				bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_RELEASE);
+
+				err = bt_bap_stream_release(next_bap_stream);
+				if (err != 0) {
+					LOG_DBG("Failed to release stream %p: %d",
+						next_cap_stream, err);
+
+					bt_cap_common_abort_proc(next_bap_stream->conn,
+								 err);
+					cap_initiator_unicast_audio_proc_complete(
+						active_proc);
+
+					return;
+				}
 			}
 		} /* else await notification from server */
 	} else {

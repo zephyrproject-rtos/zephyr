@@ -922,6 +922,7 @@ static void unicast_client_enable_cb(struct bt_bap_stream *stream,
 						     : BTP_ASCS_STATUS_FAILED);
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 static void unicast_client_start_cb(struct bt_bap_stream *stream,
 				    enum bt_bap_ascs_rsp_code rsp_code,
 				    enum bt_bap_ascs_reason reason)
@@ -948,7 +949,8 @@ static void unicast_client_start_cb(struct bt_bap_stream *stream,
 	}
 }
 
-static void unicast_client_stop_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
+static void unicast_client_stop_cb(struct bt_bap_stream *stream,
+				   enum bt_bap_ascs_rsp_code rsp_code,
 				   enum bt_bap_ascs_reason reason)
 {
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
@@ -960,6 +962,7 @@ static void unicast_client_stop_cb(struct bt_bap_stream *stream, enum bt_bap_asc
 						     ? BTP_ASCS_STATUS_SUCCESS
 						     : BTP_ASCS_STATUS_FAILED);
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 static void unicast_client_disable_cb(struct bt_bap_stream *stream,
 				      enum bt_bap_ascs_rsp_code rsp_code,
@@ -1104,8 +1107,10 @@ static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.config = unicast_client_config_cb,
 	.qos = unicast_client_qos_cb,
 	.enable = unicast_client_enable_cb,
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	.start = unicast_client_start_cb,
 	.stop = unicast_client_stop_cb,
+#endif /* defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC) */
 	.disable = unicast_client_disable_cb,
 	.metadata = unicast_client_metadata_cb,
 	.release = unicast_client_release_cb,
@@ -1195,7 +1200,8 @@ static uint8_t client_add_ase_to_cis(struct btp_bap_unicast_connection *u_conn, 
 	return 0;
 }
 
-static int client_unicast_group_param_set(struct btp_bap_unicast_connection *u_conn, uint8_t cig_id,
+static int client_unicast_group_param_set(
+	struct btp_bap_unicast_connection *u_conn, uint8_t cig_id,
 	struct bt_bap_unicast_group_stream_pair_param *pair_params,
 	struct bt_bap_unicast_group_stream_param **stream_param_ptr)
 {
@@ -1739,6 +1745,7 @@ uint8_t btp_ascs_receiver_start_ready(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 uint8_t btp_ascs_receiver_stop_ready(const void *cmd, uint16_t cmd_len,
 				     void *rsp, uint16_t *rsp_len)
 {
@@ -1757,10 +1764,10 @@ uint8_t btp_ascs_receiver_stop_ready(const void *cmd, uint16_t cmd_len,
 	}
 
 	u_conn = &connections[bt_conn_index(conn)];
-	bt_conn_unref(conn);
 
 	stream = btp_bap_unicast_stream_find(u_conn, cp->ase_id);
 	if (stream == NULL) {
+		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1768,6 +1775,7 @@ uint8_t btp_ascs_receiver_stop_ready(const void *cmd, uint16_t cmd_len,
 	err = bt_bap_stream_stop(stream_unicast_to_bap(stream));
 	if (err != 0) {
 		LOG_DBG("Could not stop stream: %d", err);
+		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1777,6 +1785,7 @@ uint8_t btp_ascs_receiver_stop_ready(const void *cmd, uint16_t cmd_len,
 		err = bt_conn_get_info(conn, &conn_info);
 		if (err != 0) {
 			LOG_ERR("Failed to get conn info: %d", err);
+			bt_conn_unref(conn);
 			return BTP_STATUS_FAILED;
 		}
 
@@ -1787,8 +1796,10 @@ uint8_t btp_ascs_receiver_stop_ready(const void *cmd, uint16_t cmd_len,
 		}
 	}
 
+	bt_conn_unref(conn);
 	return BTP_STATUS_SUCCESS;
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 uint8_t btp_ascs_release(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
@@ -1807,10 +1818,10 @@ uint8_t btp_ascs_release(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 	}
 
 	u_conn = &connections[bt_conn_index(conn)];
-	bt_conn_unref(conn);
 
 	stream = btp_bap_unicast_stream_find(u_conn, cp->ase_id);
 	if (stream == NULL) {
+		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1818,6 +1829,7 @@ uint8_t btp_ascs_release(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 	err = bt_bap_stream_release(stream_unicast_to_bap(stream));
 	if (err != 0) {
 		LOG_DBG("Unable to release stream, err %d", err);
+		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1827,6 +1839,7 @@ uint8_t btp_ascs_release(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 		err = bt_conn_get_info(conn, &conn_info);
 		if (err != 0) {
 			LOG_ERR("Failed to get conn info: %d", err);
+			bt_conn_unref(conn);
 			return BTP_STATUS_FAILED;
 		}
 
@@ -1838,6 +1851,7 @@ uint8_t btp_ascs_release(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 		}
 	}
 
+	bt_conn_unref(conn);
 	return BTP_STATUS_SUCCESS;
 }
 
@@ -1863,10 +1877,10 @@ uint8_t btp_ascs_update_metadata(const void *cmd, uint16_t cmd_len,
 	}
 
 	u_conn = &connections[bt_conn_index(conn)];
-	bt_conn_unref(conn);
 
 	stream = btp_bap_unicast_stream_find(u_conn, cp->ase_id);
 	if (stream == NULL) {
+		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1874,6 +1888,7 @@ uint8_t btp_ascs_update_metadata(const void *cmd, uint16_t cmd_len,
 	err = bt_bap_stream_metadata(stream_unicast_to_bap(stream), meta, ARRAY_SIZE(meta));
 	if (err != 0) {
 		LOG_DBG("Failed to update stream metadata, err %d", err);
+		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1883,6 +1898,7 @@ uint8_t btp_ascs_update_metadata(const void *cmd, uint16_t cmd_len,
 		err = bt_conn_get_info(conn, &conn_info);
 		if (err != 0) {
 			LOG_ERR("Failed to get conn info: %d", err);
+			bt_conn_unref(conn);
 			return BTP_STATUS_FAILED;
 		}
 
@@ -1894,6 +1910,7 @@ uint8_t btp_ascs_update_metadata(const void *cmd, uint16_t cmd_len,
 		}
 	}
 
+	bt_conn_unref(conn);
 	return BTP_STATUS_SUCCESS;
 }
 
