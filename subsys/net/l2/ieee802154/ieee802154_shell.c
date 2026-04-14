@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_ieee802154_shell, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ieee802154_mgmt.h>
 
-#include "ieee802154_frame.h"
+#include <zephyr/net/ieee802154_frame.h>
 
 #define EXT_ADDR_STR_SIZE sizeof("xx:xx:xx:xx:xx:xx:xx:xx")
 #define EXT_ADDR_STR_LEN (EXT_ADDR_STR_SIZE - 1U)
