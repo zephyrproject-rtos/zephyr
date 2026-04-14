@@ -18,7 +18,10 @@ import os
 
 import pytest
 from spdx_tools.spdx.model.checksum import ChecksumAlgorithm
-from spdx_tools.spdx.model.package import PackagePurpose
+from spdx_tools.spdx.model.package import (
+    ExternalPackageRefCategory,
+    PackagePurpose,
+)
 from spdx_tools.spdx.model.relationship import RelationshipType
 
 # File name constants (as they appear in SPDX documents)
@@ -348,6 +351,75 @@ class TestModulesDocument:
             assert pkg.spdx_id.startswith("SPDXRef-"), (
                 f"modules-deps.spdx: package '{pkg.name}' has invalid spdx_id '{pkg.spdx_id}'"
             )
+
+    def test_packages_purl_format(self, modules_doc):
+        """Test that purl external refs in module packages use valid format.
+
+        When modules lack a security block, purl is built from remote+revision.
+        Format: pkg:<type>/<namespace>/<name> or pkg:<type>/<namespace>/<name>@<version>
+        """
+        if len(modules_doc.packages) == 0:
+            pytest.skip("No packages in modules-deps.spdx")
+        purl_refs = []
+        for pkg in modules_doc.packages:
+            for ext_ref in pkg.external_references:
+                if (
+                    ext_ref.category == ExternalPackageRefCategory.PACKAGE_MANAGER
+                    and ext_ref.reference_type == "purl"
+                ):
+                    purl_refs.append((pkg.name, ext_ref.locator))
+        if not purl_refs:
+            pytest.skip("No purl external refs in modules-deps.spdx")
+        for pkg_name, locator in purl_refs:
+            # Basic purl structure: pkg:type/namespace/name or pkg:type/namespace/name@version
+            assert locator.startswith("pkg:") and "/" in locator[4:].split("@", 1)[0], (
+                f"modules-deps.spdx: package '{pkg_name}' purl has invalid format: '{locator}'"
+            )
+
+    def test_packages_match_manifest_purl_and_version(self, modules_doc, west_manifest):
+        """Test that module packages have purl and/or version from zephyr meta (commit 185d762).
+
+        Uses west manifest to get projects with remote+revision. Validates that
+        modules-deps packages for manifest projects have at least purl OR version
+        (purl from remote when no security block; version from revision).
+        """
+        if west_manifest is None:
+            pytest.skip("Not in a west workspace? (west manifest unavailable)")
+        if len(modules_doc.packages) == 0:
+            pytest.skip("No packages in modules-deps.spdx")
+
+        manifest_projects = {}
+        for proj in west_manifest.projects:
+            if proj.name == "manifest" or not proj.url:
+                continue
+            manifest_projects[proj.name] = (proj.url, proj.revision)
+
+        # Map package name (X-deps) -> module name (X)
+        pkg_to_module = {p.name: p.name.removesuffix("-deps") for p in modules_doc.packages}
+
+        errors = []
+        for pkg in modules_doc.packages:
+            module_name = pkg_to_module.get(pkg.name)
+            if not module_name or module_name not in manifest_projects:
+                continue
+            url, revision = manifest_projects[module_name]
+
+            purl_refs = [
+                r.locator
+                for r in pkg.external_references
+                if r.category == ExternalPackageRefCategory.PACKAGE_MANAGER
+                and r.reference_type == "purl"
+            ]
+            has_purl = len(purl_refs) > 0
+            has_version = bool(pkg.version)
+
+            if not has_purl and not has_version:
+                errors.append(
+                    f"package '{pkg.name}': expected purl or version from manifest "
+                    f"(url={url[:50]}..., rev={revision})"
+                )
+
+        assert not errors, "modules-deps.spdx: " + "; ".join(errors[:5])
 
 
 class TestCrossReferences:
