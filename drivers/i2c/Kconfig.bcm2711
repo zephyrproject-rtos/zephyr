@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_BCM2711
+	bool "Broadcom BCM2711 I2C controller"
+	default y
+	depends on DT_HAS_BRCM_BCM2711_I2C_ENABLED
+	help
+	  Enable support for Broadcom BCM2711 I2C controller.
+
+config I2C_BCM2711_BUS_RECOVERY
+	bool "Bus recovery support"
+	depends on I2C_BCM2711
+	select I2C_BITBANG
+	help
+	  Enable BCM2711 driver bus recovery support via GPIO bitbanging.
