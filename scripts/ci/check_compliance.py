@@ -22,7 +22,25 @@ from collections.abc import Iterable
 from itertools import takewhile
 from pathlib import Path, PurePath
 
-import magic
+try:
+    import magic
+except ImportError:
+    if sys.platform != 'win32':
+        raise
+    # python-magic-bin bundles libmagic.dll under <magic_pkg>/libmagic/, but
+    # python-magic's loader.py (ahupp/python-magic@0fb1922d) only searches
+    # PATH and cwd — that subdirectory was never added. Prepend it to PATH so
+    # ctypes.util.find_library() can resolve the DLL.
+    # See: https://github.com/zephyrproject-rtos/zephyr/issues/101181
+    #      https://github.com/ahupp/python-magic/pull/294 (upstream fix pending)
+    from importlib.util import find_spec
+
+    spec = find_spec('magic')
+    if spec and spec.origin:
+        dll_dir = Path(spec.origin).parent / 'libmagic'
+        if dll_dir.is_dir():
+            os.environ['PATH'] = str(dll_dir) + os.pathsep + os.environ.get('PATH', '')
+    import magic
 import unidiff
 import yaml
 from dotenv import load_dotenv
