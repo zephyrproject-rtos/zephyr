@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Linumiz
+# Author: Sri Surya <srisurya@linumiz.com>
+
+# TI Tiva C TM4C123x Series
+
+config SOC_SERIES_TM4C123X
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select PINCTRL
+	select HAS_TIVAWARE
+	select BUILD_OUTPUT_HEX
+	select SOC_EARLY_INIT_HOOK
