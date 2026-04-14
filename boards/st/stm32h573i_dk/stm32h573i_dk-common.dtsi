@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
@@ -134,7 +135,7 @@
 					vdvs = <0x20>;
 					mdac = <0x00>;
 					gamma = <0x01>;
-					colmod = <0x05>;
+					pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
 					lcm = <0x2c>;
 					porch-param = [0c 0c 00 33 33];
 					cmd2en-param = [5a 69 02 00];
