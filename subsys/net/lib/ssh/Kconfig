@@ -138,6 +138,14 @@ config SSH_SHELL
 
 endif
 
+config SSH_SERVER_SHELL_COUNT
+	int "SSH shell max channels (per transport)"
+	depends on SSH_SHELL && SSH_SERVER
+	default 1
+	help
+	  This tells how many simultaneous SSH shell connections
+	  are possible from the peer when we are the server.
+
 module = SSH
 module-dep = NET_LOG
 module-str = Log level for SSH library
