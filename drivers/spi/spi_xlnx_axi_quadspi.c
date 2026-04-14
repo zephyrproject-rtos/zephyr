@@ -97,6 +97,7 @@ struct xlnx_quadspi_config {
 struct xlnx_quadspi_data {
 	struct spi_context ctx;
 	struct k_event dtr_empty;
+	bool is_extended_read;
 };
 
 static inline uint32_t xlnx_quadspi_read32(const struct device *dev,
@@ -265,8 +266,17 @@ static bool xlnx_quadspi_start_tx(const struct device *dev)
 		xlnx_quadspi_write32(dev, spicr, SPICR_OFFSET);
 	}
 
-	/* We can only see as far as the current rx buffer */
-	xfer_len = spi_context_longest_current_buf(ctx);
+	xfer_len = ctx->tx_len;
+
+	if (!spi_context_tx_buf_on(ctx)) {
+		xfer_len = ctx->rx_len;
+		data->is_extended_read = false;
+	} else if (data->is_extended_read && ctx->current_tx->bus_width > 1) {
+		xfer_len = *(const uint8_t *)(ctx->tx_buf) * ctx->current_tx->bus_width / 8;
+		ctx->tx_buf = NULL;
+	} else {
+		;
+	}
 
 	/* Write TX data */
 	while (xfer_len--) {
@@ -348,23 +358,25 @@ static void xlnx_quadspi_read_fifo(const struct device *dev)
 	while (!(spisr & SPISR_RX_EMPTY)) {
 		uint32_t drr = xlnx_quadspi_read32(dev, SPI_DRR_OFFSET);
 
-		if (spi_context_rx_buf_on(ctx)) {
-			switch (config->num_xfer_bytes) {
-			case 1:
-				UNALIGNED_PUT(drr, (uint8_t *)ctx->rx_buf);
-				break;
-			case 2:
-				UNALIGNED_PUT(drr, (uint16_t *)ctx->rx_buf);
-				break;
-			case 4:
-				UNALIGNED_PUT(drr, (uint32_t *)ctx->rx_buf);
-				break;
-			default:
-				__ASSERT(0, "unsupported num_xfer_bytes");
+		if (!data->is_extended_read) {
+			if (spi_context_rx_buf_on(ctx)) {
+				switch (config->num_xfer_bytes) {
+				case 1:
+					UNALIGNED_PUT(drr, (uint8_t *)ctx->rx_buf);
+					break;
+				case 2:
+					UNALIGNED_PUT(drr, (uint16_t *)ctx->rx_buf);
+					break;
+				case 4:
+					UNALIGNED_PUT(drr, (uint32_t *)ctx->rx_buf);
+					break;
+				default:
+					__ASSERT(0, "unsupported num_xfer_bytes");
+				}
 			}
-		}
 
-		spi_context_update_rx(ctx, config->num_xfer_bytes, 1);
+			spi_context_update_rx(ctx, config->num_xfer_bytes, 1);
+		}
 
 		if (--rx_fifo_words == 0) {
 			spisr = xlnx_quadspi_read32(dev, SPISR_OFFSET);
@@ -394,6 +406,11 @@ static int xlnx_quadspi_transceive(const struct device *dev,
 		goto out;
 	}
 
+	if (rx_bufs && rx_bufs->count == 1) {
+		data->is_extended_read = true;
+	} else {
+		data->is_extended_read = false;
+	}
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs,
 				  config->num_xfer_bytes);
 
@@ -615,6 +632,7 @@ static DEVICE_API(spi, xlnx_quadspi_driver_api) = {
 	static struct xlnx_quadspi_data xlnx_quadspi_data_##n = {                                  \
 		SPI_CONTEXT_INIT_LOCK(xlnx_quadspi_data_##n, ctx),                                 \
 		SPI_CONTEXT_INIT_SYNC(xlnx_quadspi_data_##n, ctx),                                 \
+		. is_extended_read = false,                                                        \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
                                                                                                    \
 	SPI_DEVICE_DT_INST_DEFINE(n, &xlnx_quadspi_init, NULL, &xlnx_quadspi_data_##n,             \
