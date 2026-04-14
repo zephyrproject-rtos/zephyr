@@ -1714,3 +1714,29 @@ static int eth_net_device_init_fn(const struct device *dev)
 	USBH_DEFINE_CLASS(cdc_ecm_c_data_##x, &usbh_cdc_ecm_api, &cdc_ecm_ctx_##x, cdc_ecm_filters)
 
 LISTIFY(CONFIG_USBH_CDC_ECM_INSTANCES_COUNT, USBH_CDC_ECM_DEVICE_DEFINE, (;), _);
+
+#if DT_HAS_CHOSEN(zephyr_uhc)
+USBH_CONTROLLER_DEFINE(cdc_ecm_uhs_ctx, DEVICE_DT_GET(DT_CHOSEN(zephyr_uhc)));
+
+static int cdc_ecm_usbh_start(void)
+{
+	int ret;
+
+	ret = usbh_init(&cdc_ecm_uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to init USB host: %d", ret);
+		return ret;
+	}
+
+	ret = usbh_enable(&cdc_ecm_uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB host: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+/* Just directly after iface init */
+SYS_INIT(cdc_ecm_usbh_start, APPLICATION, 91);
+#endif /* DT_HAS_CHOSEN(zephyr_uhc) */
