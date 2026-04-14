@@ -81,8 +81,9 @@ Major enhancements with this release include:
   :kconfig:option:`CONFIG_USE_SWITCH`, delivers significant performance improvements.
 
 **NAND flash support**
-  Added a new Flash Translation Layer (FTL) disk driver providing wear leveling and bad block
-  management, enabling NAND flash memories to be utilized as standard disk devices.
+  A new Flash Translation Layer (FTL) disk driver (:dtcompatible:`zephyr,ftl-dhara`) provides wear
+  leveling and bad block management and enables NAND flash memories to be utilized as standard disk
+  devices.
 
 **Developer experience improvements**
   This release adds several new tools and improvements to development and testing workflows:
