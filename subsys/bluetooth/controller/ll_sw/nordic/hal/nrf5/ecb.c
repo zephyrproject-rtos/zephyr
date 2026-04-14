@@ -92,14 +92,11 @@ static void do_ecb(struct ecb_param *ep)
 		while ((NRF_ECB->EVENTS_ENDECB == 0) &&
 		       (NRF_ECB->EVENTS_ERRORECB == 0) &&
 		       (NRF_ECB->ECBDATAPTR != 0)) {
-#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
-			k_busy_wait(10);
-#else
+			Z_SPIN_DELAY(10);
 			/* FIXME: use cpu_sleep(), but that will need interrupt
 			 *        wake up source and hence necessary appropriate
 			 *        code.
 			 */
-#endif
 		}
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
 	} while ((NRF_ECB->EVENTS_ERRORECB != 0) || (NRF_ECB->ECBDATAPTR == 0));
@@ -291,11 +288,7 @@ int ecb_ut(void)
 	e->context = &context;
 	ecb_encrypt_nonblocking(e);
 	do {
-#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
-		k_busy_wait(10);
-#else
 		cpu_sleep();
-#endif
 	} while (!context.done);
 
 	if (context.status != 0U) {
