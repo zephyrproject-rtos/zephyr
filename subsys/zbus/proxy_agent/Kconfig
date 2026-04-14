@@ -57,6 +57,23 @@ source "subsys/logging/Kconfig.template.log_config"
 
 endif # ZBUS_PROXY_AGENT_IPC
 
+menuconfig ZBUS_PROXY_AGENT_UART
+	bool "ZBus proxy agent UART backend"
+	select COBS
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enables the ZBus proxy agent UART backend, allowing communication between
+	  domains over UART using COBS framed messages.
+
+if ZBUS_PROXY_AGENT_UART
+
+module = ZBUS_PROXY_AGENT_UART
+module-str = zbus_proxy_agent_uart
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ZBUS_PROXY_AGENT_UART
+
 module = ZBUS_PROXY_AGENT
 module-str = zbus_proxy_agent
 source "subsys/logging/Kconfig.template.log_config"

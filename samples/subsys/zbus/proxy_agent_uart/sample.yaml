@@ -1,0 +1,8 @@
+sample:
+  name: UART Forwarder
+  description: Sample application demonstrating zbus proxy forwarding over a dedicated UART link.
+tests:
+  sample.zbus.proxy_agent_uart.nrf54l15_cpuapp:
+    build_only: true
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
