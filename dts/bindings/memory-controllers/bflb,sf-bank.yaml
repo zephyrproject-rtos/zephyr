@@ -4,7 +4,8 @@
 title: Serial Flash Controller Bank
 
 description: |
-  Bouffalolab Serial Flash Controller Bank
+  Bouffalolab Serial Flash Controller Bank.
+  Not necessarily a flash chip.
 
 compatible: "bflb,sf-bank"
 

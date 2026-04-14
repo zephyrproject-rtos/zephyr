@@ -5,7 +5,9 @@ title: Serial Flash controller
 
 description: |
   The Bouffalolab Serial Flash controller controls two banks of SPI devices.
-  The second bank can be writable.
+  Unlike the name indicate, it is not limited to serial flashes,
+  and the second bank can execute memory-mapped writes and allows PSRAMs and other byte-addressable
+  devices to be used optimally.
   Using banks other than the embedded flash require pinctrl settings.
 
 compatible: "bflb,sf-controller"
