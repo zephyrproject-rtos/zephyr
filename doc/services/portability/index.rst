@@ -17,3 +17,4 @@ supported by the Zephyr RTOS.
    posix/index.rst
    cmsis_rtos_v1.rst
    cmsis_rtos_v2.rst
+   freertos.rst
