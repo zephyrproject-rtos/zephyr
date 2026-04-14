@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Linumiz
+# Author: Sri Surya <srisurya@linumiz.com>
+
+config PINCTRL_TIVA_C
+	bool "TI Tiva C Series pinctrl driver"
+	default y
+	depends on DT_HAS_TI_TIVA_C_PINCTRL_ENABLED
+	help
+	  Enable pin controller support for TI Tiva C Series
+	  (TM4C123G, TM4C129x) microcontrollers.
+	  Uses TivaWare driverlib GPIOPinConfigure() and GPIOPinType*().
