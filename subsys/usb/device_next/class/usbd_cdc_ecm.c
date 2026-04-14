@@ -819,9 +819,12 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 
 #define USBD_CDC_ECM_DT_DEVICE_DEFINE(n)					\
 	CDC_ECM_DEFINE_DESCRIPTOR(n);						\
-	USBD_DESC_STRING_DEFINE(mac_desc_data_##n,				\
-				DT_INST_PROP(n, remote_mac_address),		\
-				USBD_DUT_STRING_INTERFACE);			\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, remote_mac_address),		\
+		(USBD_DESC_STRING_DEFINE(mac_desc_data_##n,			\
+					 DT_INST_PROP(n, remote_mac_address),	\
+					 USBD_DUT_STRING_INTERFACE);),		\
+		(USBD_DESC_MAC_ADDRESS_DEFINE(mac_desc_data_##n,		\
+					      eth_data_##n.mac_addr);))		\
 										\
 	USBD_DEFINE_CLASS(cdc_ecm_##n,						\
 			  &usbd_cdc_ecm_api,					\

@@ -53,6 +53,13 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* The ``remote-mac-address`` devicetree property on the ``zephyr,cdc-ecm-ethernet``
+  and ``zephyr,cdc-ncm-ethernet`` nodes is deprecated. The host-side MAC advertised
+  via the ``iMACAddress`` string descriptor is now derived at runtime from the
+  local MAC address by flipping the U/L bit, and tracks runtime changes to the
+  local MAC. Boards that set this property continue to work unchanged; new
+  designs should omit it.
+
 New APIs and options
 ====================
 ..
@@ -62,6 +69,12 @@ New APIs and options
   instead.
 
 .. zephyr-keep-sorted-start re(^\* \w)
+
+* :c:macro:`USBD_DESC_MAC_ADDRESS_DEFINE` — define a CDC ``iMACAddress`` string
+  descriptor backed by a live MAC address buffer; the host-side MAC is derived
+  on demand at ``GET_DESCRIPTOR`` time from the current local MAC by flipping
+  the U/L bit, removing the need to keep a separately-rendered descriptor
+  string in sync with runtime MAC address changes.
 
 .. zephyr-keep-sorted-stop
 

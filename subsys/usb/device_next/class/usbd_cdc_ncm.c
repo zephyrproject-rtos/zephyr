@@ -1379,9 +1379,12 @@ const static struct usb_desc_header *cdc_ncm_hs_desc_##n[] = {			\
 
 #define USBD_CDC_NCM_DT_DEVICE_DEFINE(n)					\
 	CDC_NCM_DEFINE_DESCRIPTOR(n);						\
-	USBD_DESC_STRING_DEFINE(mac_desc_data_##n,				\
-				DT_INST_PROP(n, remote_mac_address),		\
-				USBD_DUT_STRING_INTERFACE);			\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, remote_mac_address),		\
+		(USBD_DESC_STRING_DEFINE(mac_desc_data_##n,			\
+					 DT_INST_PROP(n, remote_mac_address),	\
+					 USBD_DUT_STRING_INTERFACE);),		\
+		(USBD_DESC_MAC_ADDRESS_DEFINE(mac_desc_data_##n,		\
+					      eth_data_##n.mac_addr);))		\
 										\
 	USBD_DEFINE_CLASS(cdc_ncm_##n,						\
 			  &usbd_cdc_ncm_api,					\

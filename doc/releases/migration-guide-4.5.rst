@@ -44,6 +44,17 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
+USB
+===
+
+* The ``remote-mac-address`` devicetree property on ``zephyr,cdc-ecm-ethernet``
+  and ``zephyr,cdc-ncm-ethernet`` nodes is deprecated. New designs should omit
+  the property; the host-side MAC advertised via the ``iMACAddress`` string
+  descriptor is then derived at runtime from the local MAC by flipping the U/L
+  bit, and tracks subsequent runtime changes to the local MAC (for example via
+  :c:macro:`NET_REQUEST_ETHERNET_SET_MAC_ADDRESS`). Overlays that continue to
+  set the property keep the previous build-time-baked behaviour for backward
+  compatibility but emit a devicetree deprecation warning.
 
 .. zephyr-keep-sorted-stop
 
