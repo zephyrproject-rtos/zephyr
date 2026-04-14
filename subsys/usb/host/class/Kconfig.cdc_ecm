@@ -11,6 +11,13 @@ config USBH_CDC_ECM_CLASS
 
 if USBH_CDC_ECM_CLASS
 
+config ETH_NIC_MODEL
+	string
+	default "usb-net"
+	help
+	  Tells what Qemu network model to use. This value is given as
+	  a parameter to -nic qemu command line option.
+
 config USBH_CDC_ECM_ETH_DRV_NAME
 	string "USB CDC-ECM ethernet interface name"
 	default "zeth"

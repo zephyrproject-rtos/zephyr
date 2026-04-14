@@ -82,7 +82,6 @@ struct usbh_cdc_ecm_ctx {
 	struct usbh_cdc_ecm_xfer_list queued_xfers;
 	bool available;
 	bool auto_restart_rx_xfer;
-	bool link_state;
 	uint32_t upload_speed;
 	uint32_t download_speed;
 	struct k_mutex mutex;
@@ -995,9 +994,7 @@ static int usbh_cdc_ecm_xfer_comm_in_cb(struct usb_device *const udev,
 	struct usbh_cdc_ecm_xfer_cb_priv *cb_priv = xfer->priv;
 	struct usbh_cdc_ecm_ctx *ctx = cb_priv->ctx;
 	struct usb_setup_packet *notif;
-	struct net_if *eth_iface;
 	uint32_t *link_speeds;
-	bool link_state;
 	bool trigger_next = false;
 	int ret = 0;
 	int restart_err;
@@ -1017,16 +1014,14 @@ static int usbh_cdc_ecm_xfer_comm_in_cb(struct usb_device *const udev,
 			goto restart_transfer;
 		}
 
-		k_mutex_lock(&ctx->mutex, K_FOREVER);
 		if (sys_le16_to_cpu(notif->wValue) == 1) {
-			ctx->link_state = true;
+			net_eth_carrier_on(ctx->eth_iface);
 		} else if (sys_le16_to_cpu(notif->wValue) == 0) {
-			ctx->link_state = false;
+			net_eth_carrier_off(ctx->eth_iface);
 		} else {
 			LOG_WRN("unknown CDC Network Connection value 0x%02x",
 				sys_le16_to_cpu(notif->wValue));
 		}
-		k_mutex_unlock(&ctx->mutex);
 		break;
 	case USB_CDC_CONNECTION_SPEED_CHANGE:
 		if (xfer->buf->len != (sizeof(struct usb_setup_packet) + 8)) {
@@ -1035,20 +1030,13 @@ static int usbh_cdc_ecm_xfer_comm_in_cb(struct usb_device *const udev,
 		}
 
 		k_mutex_lock(&ctx->mutex, K_FOREVER);
-		link_state = ctx->link_state;
-		eth_iface = ctx->eth_iface;
 		link_speeds = (uint32_t *)(notif + 1);
 		ctx->download_speed = sys_le32_to_cpu(link_speeds[0]);
 		ctx->upload_speed = sys_le32_to_cpu(link_speeds[1]);
 		LOG_INF("network link %s, speed [UL %u bps / DL %u bps]",
-			ctx->link_state ? "up" : "down", ctx->upload_speed, ctx->download_speed);
+			net_if_is_carrier_ok(ctx->eth_iface) ? "up" : "down", ctx->upload_speed,
+			ctx->download_speed);
 		k_mutex_unlock(&ctx->mutex);
-
-		if (link_state) {
-			net_eth_carrier_on(eth_iface);
-		} else {
-			net_eth_carrier_off(eth_iface);
-		}
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -1338,7 +1326,6 @@ static int usbh_cdc_ecm_probe(struct usbh_class_data *const c_data, struct usb_d
 	eth_iface = ctx->eth_iface;
 	ctx->available = false;
 	ctx->auto_restart_rx_xfer = false;
-	ctx->link_state = false;
 	ctx->upload_speed = 0;
 	ctx->download_speed = 0;
 	k_mutex_unlock(&ctx->mutex);
