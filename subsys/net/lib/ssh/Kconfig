@@ -138,6 +138,18 @@ config SSH_SHELL
 
 endif
 
+config SSH_DEFAULT_INFO_BANNER
+	string "Default SSH info banner"
+	depends on SSH_SERVER
+	default "To exit press 'Enter' then '~' then '.' (i.e. enter tilde dot)"
+	help
+	  This is printed after the welcome banner.
+
+config SSH_HAS_INFO_BANNER
+	bool
+	default y if SSH_DEFAULT_INFO_BANNER != ""
+	depends on SSH_SERVER
+
 config SSH_SERVER_SHELL_COUNT
 	int "SSH shell max channels (per transport)"
 	depends on SSH_SHELL && SSH_SERVER

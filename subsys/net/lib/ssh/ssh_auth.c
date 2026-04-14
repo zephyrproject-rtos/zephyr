@@ -10,7 +10,7 @@ LOG_MODULE_DECLARE(ssh, CONFIG_SSH_LOG_LEVEL);
 
 #include "ssh_auth.h"
 
-#define ZEPHYR_SSH_BANNER (CONFIG_SSH_DEFAULT_WELCOME_BANNER ZEPHYR_SSH_VERSION)
+#define ZEPHYR_SSH_BANNER CONFIG_SSH_DEFAULT_WELCOME_BANNER ZEPHYR_SSH_VERSION
 
 #ifdef CONFIG_SSH_SERVER
 static int send_userauth_failure(struct ssh_transport *transport, bool partial_success);
@@ -501,7 +501,13 @@ static int send_userauth_success(struct ssh_transport *transport)
 
 static int send_userauth_banner(struct ssh_transport *transport)
 {
-	static const struct ssh_string zephyr_ssh_banner = SSH_STRING_LITERAL(ZEPHYR_SSH_BANNER);
+#if defined(CONFIG_SSH_HAS_INFO_BANNER)
+#define INFO_BANNER "\n" CONFIG_SSH_DEFAULT_INFO_BANNER
+#else
+#define INFO_BANNER ""
+#endif
+	static const struct ssh_string zephyr_ssh_banner =
+		SSH_STRING_LITERAL(ZEPHYR_SSH_BANNER INFO_BANNER);
 	static const struct ssh_string language_tag = SSH_STRING_LITERAL("");
 	int ret;
 
