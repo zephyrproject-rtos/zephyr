@@ -100,16 +100,20 @@ enum unicast_client_flag {
 };
 
 static struct unicast_client {
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)
 	struct bt_bap_unicast_client_ep snks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK */
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	struct bt_bap_unicast_client_ep srcs[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 	struct bt_gatt_subscribe_params cp_subscribe;
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)
 	struct bt_gatt_subscribe_params snk_loc_subscribe;
+#endif /* defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) */
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	struct bt_gatt_subscribe_params src_loc_subscribe;
+#endif /* defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC) */
 	struct bt_gatt_subscribe_params avail_ctx_subscribe;
 	struct bt_gatt_subscribe_params supp_ctx_subscribe;
 
@@ -124,7 +128,9 @@ static struct unicast_client {
 	struct bt_gatt_discover_params supp_ctx_cc_disc;
 
 	/* Discovery parameters */
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) && defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	enum bt_audio_dir dir;
+#endif
 	union {
 		struct bt_gatt_read_params read_params;
 		struct bt_gatt_discover_params disc_params;
@@ -140,6 +146,25 @@ static struct unicast_client {
 	ATOMIC_DEFINE(flags, UNICAST_CLIENT_FLAG_NUM_FLAGS);
 } uni_cli_insts[CONFIG_BT_MAX_CONN];
 
+static inline enum bt_audio_dir unicast_client_get_dir(const struct unicast_client *client)
+{
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) && \
+	defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
+	return client->dir;
+#elif defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)
+	ARG_UNUSED(client);
+
+	return BT_AUDIO_DIR_SINK;
+#elif defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
+	ARG_UNUSED(client);
+
+	return BT_AUDIO_DIR_SOURCE;
+#else
+/* Unicast client requires at least one ASE direction (Kconfig enforces this). */
+#error "BAP Unicast client requires at least one supported ASE direction"
+#endif
+}
+
 static sys_slist_t unicast_client_cbs = SYS_SLIST_STATIC_INIT(&unicast_client_cbs);
 
 /* TODO: Move the functions to avoid these prototypes */
@@ -147,7 +172,9 @@ static int unicast_client_ep_set_metadata(struct bt_bap_ep *ep, void *data, uint
 
 static int unicast_client_ep_set_codec_cfg(struct bt_bap_ep *ep, uint8_t id, uint16_t cid,
 					   uint16_t vid, void *data, uint8_t len);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 static int unicast_client_ep_start(struct bt_bap_ep *ep, struct net_buf_simple *buf);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 static int unicast_client_ase_discover(struct bt_conn *conn, uint16_t start_handle);
 
@@ -157,6 +184,7 @@ static void delayed_ase_read_handler(struct k_work *work);
 static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_simple *buf,
 					 bool is_notification);
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 static int unicast_client_send_start(struct bt_bap_ep *ep)
 {
 	if (ep->receiver_ready != true || ep->dir != BT_AUDIO_DIR_SOURCE) {
@@ -194,18 +222,17 @@ static int unicast_client_send_start(struct bt_bap_ep *ep)
 
 	return 0;
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 static void unicast_client_ep_idle_state(struct bt_bap_ep *ep);
 
 static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn, uint8_t id)
 {
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 || CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) || defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	const uint8_t conn_index = bt_conn_index(conn);
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 ||                                        \
-	* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0                                           \
-	*/
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK || CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)
 	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[conn_index].snks); i++) {
 		const struct bt_bap_unicast_client_ep *client_ep =
 			&uni_cli_insts[conn_index].snks[i];
@@ -214,9 +241,9 @@ static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn, u
 			return client_ep->ep.stream;
 		}
 	}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK */
 
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts[conn_index].srcs); i++) {
 		const struct bt_bap_unicast_client_ep *client_ep =
 			&uni_cli_insts[conn_index].srcs[i];
@@ -225,7 +252,7 @@ static struct bt_bap_stream *audio_stream_by_ep_id(const struct bt_conn *conn, u
 			return client_ep->ep.stream;
 		}
 	}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 	return NULL;
 }
@@ -635,7 +662,7 @@ static void unicast_client_notify_pac_record(struct bt_conn *conn,
 {
 	const struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 	struct bt_bap_unicast_client_cb *listener, *next;
-	const enum bt_audio_dir dir = client->dir;
+	const enum bt_audio_dir dir = unicast_client_get_dir(client);
 
 	/* TBD: Since the PAC records are optionally notifiable we may want to supply the
 	 * index and total count of records in the callback, so that it easier for the
@@ -653,7 +680,7 @@ static void unicast_client_notify_endpoint(struct bt_conn *conn, struct bt_bap_e
 {
 	const struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 	struct bt_bap_unicast_client_cb *listener, *next;
-	const enum bt_audio_dir dir = client->dir;
+	const enum bt_audio_dir dir = unicast_client_get_dir(client);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
 		if (listener->endpoint != NULL) {
@@ -666,10 +693,12 @@ static void unicast_client_discover_complete(struct bt_conn *conn, int err)
 {
 	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 	struct bt_bap_unicast_client_cb *listener, *next;
-	const enum bt_audio_dir dir = client->dir;
+	const enum bt_audio_dir dir = unicast_client_get_dir(client);
 
 	/* Discover complete - Reset discovery values */
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) && defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	client->dir = 0U;
+#endif
 	reset_att_buf(client);
 	atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 
@@ -719,6 +748,7 @@ static void unicast_client_notify_ep_enable(struct bt_bap_stream *stream,
 	}
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 static void unicast_client_notify_ep_start(struct bt_bap_stream *stream,
 					   enum bt_bap_ascs_rsp_code rsp_code,
 					   enum bt_bap_ascs_reason reason)
@@ -744,6 +774,7 @@ static void unicast_client_notify_ep_stop(struct bt_bap_stream *stream,
 		}
 	}
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 static void unicast_client_notify_ep_disable(struct bt_bap_stream *stream,
 					     enum bt_bap_ascs_rsp_code rsp_code,
@@ -1148,9 +1179,9 @@ static void unicast_client_ep_streaming_state(struct bt_bap_ep *ep, struct net_b
 
 	unicast_client_ep_set_metadata(ep, metadata, stream_status->metadata_len);
 
-	/* Notify upper layer
-	 *
-	 * If the state did not change then only the metadata was changed
+	/* If there is a state change (i.e. going from non-streaming to streaming) we setup the data
+	 * path and notify the upper layers with the started callback, and if there is no state
+	 * change then that indicates that it is just a metadata update
 	 */
 	if (state_changed) {
 		/* Setup the ISO data path when the stream is started. We could do it earlier when
@@ -1524,15 +1555,19 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 		case BT_ASCS_ENABLE_OP:
 			unicast_client_notify_ep_enable(stream, ase_rsp->code, ase_rsp->reason);
 			break;
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 		case BT_ASCS_START_OP:
 			unicast_client_notify_ep_start(stream, ase_rsp->code, ase_rsp->reason);
 			break;
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 		case BT_ASCS_DISABLE_OP:
 			unicast_client_notify_ep_disable(stream, ase_rsp->code, ase_rsp->reason);
 			break;
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 		case BT_ASCS_STOP_OP:
 			unicast_client_notify_ep_stop(stream, ase_rsp->code, ase_rsp->reason);
 			break;
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 		case BT_ASCS_METADATA_OP:
 			unicast_client_notify_ep_metadata(stream, ase_rsp->code, ase_rsp->reason);
 			break;
@@ -1552,6 +1587,7 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 			}
 			break;
 		default:
+			LOG_DBG("Unexpected response opcode 0x%02X", rsp->op);
 			break;
 		}
 	}
@@ -1615,9 +1651,10 @@ static uint8_t unicast_client_ase_ntf_read_func(struct bt_conn *conn, uint8_t er
 	reset_att_buf(client);
 	atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 
-	ep = unicast_client_ep_get(conn, client->dir, handle);
+	ep = unicast_client_ep_get(conn, unicast_client_get_dir(client), handle);
 	if (!ep) {
-		LOG_DBG("Unknown %s ep for handle 0x%04X", bt_audio_dir_str(client->dir), handle);
+		LOG_DBG("Unknown %s ep for handle 0x%04X",
+			bt_audio_dir_str(unicast_client_get_dir(client)), handle);
 	} else {
 		/* Set reason in case this exits the streaming state, unless already set */
 		if (ep->reason == BT_HCI_ERR_SUCCESS) {
@@ -2135,7 +2172,9 @@ static void unicast_client_ep_reset(struct bt_conn *conn, uint8_t reason)
 
 	client = &uni_cli_insts[index];
 	atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) && defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	client->dir = 0U;
+#endif
 	reset_att_buf(client);
 }
 
@@ -3408,6 +3447,7 @@ int bt_bap_unicast_client_connect(struct bt_bap_stream *stream)
 	return -EBADMSG;
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep *ep = stream->ep;
@@ -3442,6 +3482,7 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 
 	return 0;
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 {
@@ -3475,6 +3516,7 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 	return bt_bap_unicast_client_ep_send(stream->conn, ep, buf);
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep *ep = stream->ep;
@@ -3525,6 +3567,7 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 
 	return 0;
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 {
@@ -3666,7 +3709,7 @@ static uint8_t unicast_client_ase_read_func(struct bt_conn *conn, uint8_t err,
 		goto fail;
 	}
 
-	ep = unicast_client_ep_get(conn, client->dir, handle);
+	ep = unicast_client_ep_get(conn, unicast_client_get_dir(client), handle);
 	if (!ep) {
 		/* The BAP spec declares that the unicast client shall subscribe to all ASEs.
 		 * In case that we cannot support this due to memory restrictions, we should
@@ -3708,13 +3751,15 @@ static bool any_ases_found(const struct unicast_client *client)
 	 * found we can just check the first index
 	 */
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-	if (client->dir == BT_AUDIO_DIR_SINK && client->snks[0].handle == BAP_HANDLE_UNUSED) {
+	if (unicast_client_get_dir(client) == BT_AUDIO_DIR_SINK &&
+	    client->snks[0].handle == BAP_HANDLE_UNUSED) {
 		LOG_DBG("No sink ASEs found");
 		return false;
 	}
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-	if (client->dir == BT_AUDIO_DIR_SOURCE && client->srcs[0].handle == BAP_HANDLE_UNUSED) {
+	if (unicast_client_get_dir(client) == BT_AUDIO_DIR_SOURCE &&
+	    client->srcs[0].handle == BAP_HANDLE_UNUSED) {
 		LOG_DBG("No source ASEs found");
 		return false;
 	}
@@ -3723,7 +3768,8 @@ static bool any_ases_found(const struct unicast_client *client)
 	return true;
 }
 
-static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
+					      const struct bt_gatt_attr *attr,
 					      struct bt_gatt_discover_params *discover)
 {
 	struct unicast_client *client;
@@ -3753,7 +3799,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn, const struct
 	memset(discover, 0, sizeof(*discover));
 
 	LOG_DBG("conn %p attr %p handle 0x%04x dir %s", conn, attr, value_handle,
-		bt_audio_dir_str(client->dir));
+		bt_audio_dir_str(unicast_client_get_dir(client)));
 
 	client->read_params.func = unicast_client_ase_read_func;
 	client->read_params.handle_count = 1U;
@@ -3776,9 +3822,9 @@ static int unicast_client_ase_discover(struct bt_conn *conn, uint16_t start_hand
 
 	LOG_DBG("conn %p ", conn);
 
-	if (client->dir == BT_AUDIO_DIR_SINK) {
+	if (unicast_client_get_dir(client) == BT_AUDIO_DIR_SINK) {
 		client->disc_params.uuid = ase_snk_uuid;
-	} else if (client->dir == BT_AUDIO_DIR_SOURCE) {
+	} else if (unicast_client_get_dir(client) == BT_AUDIO_DIR_SOURCE) {
 		client->disc_params.uuid = ase_src_uuid;
 	} else {
 		return -EINVAL;
@@ -3985,7 +4031,7 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn, uint
 
 	if (err != 0 || data == NULL || length != sizeof(location)) {
 		LOG_DBG("Unable to read PACS location for dir %s: %u, %p, %u",
-			bt_audio_dir_str(client->dir), err, data, length);
+			bt_audio_dir_str(unicast_client_get_dir(client)), err, data, length);
 
 		if (err == BT_ATT_ERR_SUCCESS) {
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
@@ -3999,9 +4045,10 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn, uint
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 	location = net_buf_simple_pull_le32(&buf);
 
-	LOG_DBG("dir %s loc %X", bt_audio_dir_str(client->dir), location);
+	LOG_DBG("dir %s loc %X", bt_audio_dir_str(unicast_client_get_dir(client)), location);
 
-	unicast_client_notify_location(conn, client->dir, (enum bt_audio_location)location);
+	unicast_client_notify_location(conn, unicast_client_get_dir(client),
+				       (enum bt_audio_location)location);
 
 	/* Read available contexts */
 	cb_err = unicast_client_pacs_avail_ctx_discover(conn);
@@ -4035,11 +4082,20 @@ static uint8_t unicast_client_pacs_location_notify_cb(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
+	dir = (enum bt_audio_dir)0;
+
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)
 	if (params == &uni_cli_insts[bt_conn_index(conn)].snk_loc_subscribe) {
 		dir = BT_AUDIO_DIR_SINK;
-	} else if (params == &uni_cli_insts[bt_conn_index(conn)].src_loc_subscribe) {
+	}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK */
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
+	if (params == &uni_cli_insts[bt_conn_index(conn)].src_loc_subscribe) {
 		dir = BT_AUDIO_DIR_SOURCE;
-	} else {
+	}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
+
+	if (PAC_DIR_UNUSED(dir)) {
 		LOG_ERR("Invalid notification");
 
 		return BT_GATT_ITER_CONTINUE;
@@ -4100,12 +4156,23 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 
 	if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 		const struct unicast_client *client = &uni_cli_insts[index];
-		struct bt_gatt_subscribe_params *sub_params;
+		struct bt_gatt_subscribe_params *sub_params = NULL;
 
-		if (client->dir == BT_AUDIO_DIR_SINK) {
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)
+		if (unicast_client_get_dir(client) == BT_AUDIO_DIR_SINK) {
 			sub_params = &uni_cli_insts[index].snk_loc_subscribe;
-		} else {
+		}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK */
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
+		if (unicast_client_get_dir(client) == BT_AUDIO_DIR_SOURCE) {
 			sub_params = &uni_cli_insts[index].src_loc_subscribe;
+		}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
+
+		if (sub_params == NULL) {
+			LOG_ERR("Could not find subscribe params for dir %s",
+				bt_audio_dir_str(unicast_client_get_dir(client)));
+			return BT_GATT_ITER_STOP;
 		}
 
 		if (sub_params->value_handle == 0) {
@@ -4139,11 +4206,11 @@ static int unicast_client_pacs_location_discover(struct bt_conn *conn)
 {
 	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 
-	LOG_DBG("conn %p dir %s", conn, bt_audio_dir_str(client->dir));
+	LOG_DBG("conn %p dir %s", conn, bt_audio_dir_str(unicast_client_get_dir(client)));
 
-	if (client->dir == BT_AUDIO_DIR_SINK) {
+	if (unicast_client_get_dir(client) == BT_AUDIO_DIR_SINK) {
 		client->disc_params.uuid = pacs_snk_loc_uuid;
-	} else if (client->dir == BT_AUDIO_DIR_SOURCE) {
+	} else if (unicast_client_get_dir(client) == BT_AUDIO_DIR_SOURCE) {
 		client->disc_params.uuid = pacs_src_loc_uuid;
 	} else {
 		return -EINVAL;
@@ -4157,7 +4224,8 @@ static int unicast_client_pacs_location_discover(struct bt_conn *conn)
 	return bt_gatt_discover(conn, &client->disc_params);
 }
 
-static void unicast_client_notify_supp_contexts(struct bt_conn *conn, enum bt_audio_context snk_ctx,
+static void unicast_client_notify_supp_contexts(struct bt_conn *conn,
+						enum bt_audio_context snk_ctx,
 						enum bt_audio_context src_ctx)
 {
 	struct bt_bap_unicast_client_cb *listener, *next;
@@ -4469,7 +4537,8 @@ fail:
 	return BT_GATT_ITER_STOP;
 }
 
-static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
+					      const struct bt_gatt_attr *attr,
 					      struct bt_gatt_discover_params *discover)
 {
 	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
@@ -4478,7 +4547,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn, const struct
 	int err;
 
 	if (attr == NULL) {
-		LOG_DBG("Unable to find %s PAC", bt_audio_dir_str(client->dir));
+		LOG_DBG("Unable to find %s PAC", bt_audio_dir_str(unicast_client_get_dir(client)));
 
 		unicast_client_discover_complete(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 
@@ -4490,7 +4559,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn, const struct
 	memset(discover, 0, sizeof(*discover));
 
 	LOG_DBG("conn %p attr %p handle 0x%04x dir %s", conn, attr, value_handle,
-		bt_audio_dir_str(client->dir));
+		bt_audio_dir_str(unicast_client_get_dir(client)));
 
 	/* TODO: Subscribe to PAC */
 
@@ -4549,18 +4618,32 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 		return -EINVAL;
 	}
 
+	if (dir != BT_AUDIO_DIR_SINK && dir != BT_AUDIO_DIR_SOURCE) {
+		LOG_DBG("Invalid dir: %u", dir);
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) && dir == BT_AUDIO_DIR_SINK) {
+		/* Sink supported and requested */
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC) &&
+		   dir == BT_AUDIO_DIR_SOURCE) {
+		/* Source supported and requested */
+	} else {
+		LOG_DBG("Unsupported direction %s for this build", bt_audio_dir_str(dir));
+		return -ENOTSUP;
+	}
+
 	client = &uni_cli_insts[bt_conn_index(conn)];
 	if (atomic_test_and_set_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY)) {
 		LOG_DBG("Client connection is busy");
 		return -EBUSY;
 	}
 
-	if (dir == BT_AUDIO_DIR_SINK) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) && dir == BT_AUDIO_DIR_SINK) {
 		client->disc_params.uuid = snk_uuid;
-	} else if (dir == BT_AUDIO_DIR_SOURCE) {
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC) &&
+		   dir == BT_AUDIO_DIR_SOURCE) {
 		client->disc_params.uuid = src_uuid;
-	} else {
-		return -EINVAL;
 	}
 
 	client->disc_params.func = unicast_client_pac_discover_cb;
@@ -4568,6 +4651,9 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 	client->disc_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	client->disc_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) && defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
+	client->dir = dir;
+#endif
 	err = bt_gatt_discover(conn, &client->disc_params);
 	if (err != 0) {
 		atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
@@ -4581,7 +4667,6 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 		return -ENOEXEC;
 	}
 
-	client->dir = dir;
 
 	return 0;
 }

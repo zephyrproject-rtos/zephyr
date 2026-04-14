@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -28,10 +29,26 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t m
 
 int bt_bap_unicast_client_disable(struct bt_bap_stream *stream);
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 int bt_bap_unicast_client_start(struct bt_bap_stream *stream);
+#else
+static inline int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
+{
+	ARG_UNUSED(stream);
+	return -EOPNOTSUPP;
+}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 int bt_bap_unicast_client_connect(struct bt_bap_stream *stream);
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 int bt_bap_unicast_client_stop(struct bt_bap_stream *stream);
+#else
+static inline int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
+{
+	ARG_UNUSED(stream);
+	return -EOPNOTSUPP;
+}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 int bt_bap_unicast_client_release(struct bt_bap_stream *stream);
 
