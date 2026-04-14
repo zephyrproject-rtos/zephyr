@@ -48,8 +48,4 @@ config SPI_MAX32_RTIO_CQ_SIZE
 
 endif # SPI_MAX32_RTIO
 
-config SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
-	bool
-	default y if SOC_MAX32666_CPU0
-
 endif # SPI_MAX32
