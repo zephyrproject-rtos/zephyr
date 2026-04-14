@@ -1312,3 +1312,66 @@ Rationale
   .. _gmtime_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/gmtime_r.html
   .. _strnlen(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
   .. _strtok_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strtok.html
+
+.. _coding_guideline_device_mmio:
+
+Rule A.6: Device MMIO Register Access
+======================================
+Severity
+  Required
+
+Description
+  Drivers that access memory-mapped I/O (MMIO) registers shall use the
+  Device MMIO API (``DEVICE_MMIO_ROM``, ``DEVICE_MMIO_RAM``,
+  ``DEVICE_MMIO_MAP``, ``DEVICE_MMIO_GET``) instead of storing raw physical
+  addresses obtained from ``DT_REG_ADDR()`` or ``DT_INST_REG_ADDR()`` in
+  their configuration structures.
+
+  The following pattern is **not permitted** in new drivers:
+
+  .. code-block:: C
+
+     /* Wrong: stores a raw physical address */
+     struct my_driver_config {
+         MY_PERIPHERAL_Type *base;
+     };
+
+     .base = (MY_PERIPHERAL_Type *)DT_INST_REG_ADDR(n),
+
+  Instead, drivers shall use:
+
+  .. code-block:: C
+
+     /* Correct: uses the Device MMIO API */
+     struct my_driver_config {
+         DEVICE_MMIO_ROM;
+         /* other config fields */
+     };
+
+     struct my_driver_data {
+         DEVICE_MMIO_RAM;
+         /* other data fields */
+     };
+
+  With initialization via ``DEVICE_MMIO_ROM_INIT()`` and a call to
+  ``DEVICE_MMIO_MAP()`` in the driver's init function.
+
+  For complete usage examples including named regions and top-level drivers,
+  see :ref:`device_mmio` in the Device Driver Model documentation.
+
+Rationale
+  On systems with a Memory Management Unit (MMU), physical addresses from
+  the devicetree are not directly accessible. They must be mapped into the
+  kernel's virtual address space before use. Drivers that dereference raw
+  physical addresses will fault at runtime on these systems.
+
+  The Device MMIO API handles this transparently: on MMU systems it creates
+  the required page table mapping at driver init time, and on non-MMU
+  systems the macros compile away to zero-cost direct address access. This
+  makes drivers portable across both MMU and non-MMU platforms without
+  conditional compilation.
+
+  Many peripheral IPs are shared across different MCU classes. A driver
+  written for a Cortex-M target today may be reused on a Cortex-A target
+  with MMU tomorrow. Using the Device MMIO API from the start avoids
+  retroactive porting effort.
