@@ -320,6 +320,9 @@ int es8311_initialize(const struct device *dev, const struct es8311_config *conf
 	case ES8311_BIT_DEPTH_32:
 		format_bits = 0x10;
 		break;
+	default:
+		LOG_ERR("Unsupported bit depth: %d", config->bit_depth);
+		return -EINVAL;
 	}
 	
 	switch (config->format) {
@@ -332,6 +335,9 @@ int es8311_initialize(const struct device *dev, const struct es8311_config *conf
 	case ES8311_FORMAT_DSP_A:
 		format_bits |= 0x03;
 		break;
+	default:
+		LOG_ERR("Unsupported format: %d", config->format);
+		return -EINVAL;
 	}
 	
 	/* Enable DAC path, disable ADC path for playback */

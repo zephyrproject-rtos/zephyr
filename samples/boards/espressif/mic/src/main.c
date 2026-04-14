@@ -141,7 +141,9 @@ static int init_pa_control(void)
 		return -ENODEV;
 	}
 	int ret = gpio_pin_configure_dt(&pa_ctrl, GPIO_OUTPUT_INACTIVE);
-	if (ret < 0) return ret;
+	if (ret < 0) {
+		return ret;
+	}
 	gpio_pin_set_dt(&pa_ctrl, 1);
 	LOG_INF("PA enabled (GPIO46 HIGH)");
 	return 0;
@@ -154,7 +156,9 @@ static int init_mute_control(void)
 		return -ENODEV;
 	}
 	int ret = gpio_pin_configure_dt(&mute_ctrl, GPIO_OUTPUT_INACTIVE);
-	if (ret < 0) return ret;
+	if (ret < 0) {
+		return ret;
+	}
 	gpio_pin_set_dt(&mute_ctrl, 0);
 	LOG_INF("Audio unmuted");
 	return 0;
@@ -300,13 +304,6 @@ static int init_lfs(void)
 	return 0;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Shell: bincat command (used by ultra_fast_extract.py)              */
-/*                                                                      */
-/*  Usage: bincat /lfs/audio_000.raw                                   */
-/*  Output: BINSTART\n<hex lines>\nBINEND\n                            */
-/* ------------------------------------------------------------------ */
-
 #define BINCAT_CHUNK 256   /* bytes per hex line output */
 
 static int cmd_bincat(const struct shell *sh, size_t argc, char **argv)
@@ -361,7 +358,9 @@ static int cmd_fs_ls(const struct shell *sh, size_t argc, char **argv)
 
 	while (true) {
 		ret = fs_readdir(&dir, &entry);
-		if (ret < 0 || entry.name[0] == '\0') break;
+		if (ret < 0 || entry.name[0] == '\0') {
+			break;
+		}
 		shell_print(sh, "%8zu %s", entry.size, entry.name);
 	}
 
@@ -394,6 +393,33 @@ static void feed_tx_silence(void)
 			k_mem_slab_free(&tx_mem_slab, tx_block);
 		}
 	}
+}
+
+/* Restart I2S after an underrun/error — refill TX and restart both directions. */
+static void i2s_restart_after_error(void)
+{
+	i2s_trigger(i2s_dev, I2S_DIR_BOTH, I2S_TRIGGER_DROP);
+	k_msleep(5);
+	for (int i = 0; i < NUM_TX_BLOCKS - 1; i++) {
+		feed_tx_silence();
+	}
+	i2s_trigger(i2s_dev, I2S_DIR_BOTH, I2S_TRIGGER_START);
+}
+
+/* Track peak amplitude across a PCM block. */
+static uint32_t update_max_amplitude(const void *block, size_t size, uint32_t current_max)
+{
+	const int16_t *samples = (const int16_t *)block;
+	uint32_t n = size / sizeof(int16_t);
+
+	for (uint32_t i = 0; i < n; i++) {
+		uint32_t amp = (uint32_t)abs((int)samples[i]);
+
+		if (amp > current_max) {
+			current_max = amp;
+		}
+	}
+	return current_max;
 }
 
 static int record_to_file(const char *path, uint32_t duration_ms)
@@ -472,17 +498,7 @@ static int record_to_file(const char *path, uint32_t duration_ms)
 		}
 		if (ret < 0) {
 			LOG_ERR("i2s_read error: %d (restarting BOTH)", ret);
-			/*
-			 * On EIO: attempt to restart rather than abort.
-			 * This recovers from a one-off TX underrun glitch.
-			 */
-			i2s_trigger(i2s_dev, I2S_DIR_BOTH, I2S_TRIGGER_DROP);
-			k_msleep(5);
-			/* Refill TX */
-			for (int i = 0; i < NUM_TX_BLOCKS - 1; i++) {
-				feed_tx_silence();
-			}
-			i2s_trigger(i2s_dev, I2S_DIR_BOTH, I2S_TRIGGER_START);
+			i2s_restart_after_error();
 			continue;
 		}
 
@@ -496,12 +512,7 @@ static int record_to_file(const char *path, uint32_t duration_ms)
 		total_bytes += written;
 
 		/* Track amplitude */
-		int16_t *samples = (int16_t *)rx_block;
-		uint32_t n = size / sizeof(int16_t);
-		for (uint32_t i = 0; i < n; i++) {
-			uint32_t amp = (uint32_t)abs((int)samples[i]);
-			if (amp > max_amplitude) max_amplitude = amp;
-		}
+		max_amplitude = update_max_amplitude(rx_block, size, max_amplitude);
 
 		k_mem_slab_free(&rx_mem_slab, rx_block);
 		blocks_read++;
@@ -557,8 +568,9 @@ static int play_test_audio(void)
 
 	i2s_trigger(i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
 	int ret = i2s_configure(i2s_dev, I2S_DIR_TX, &cfg);
-	if (ret < 0) return ret;
-
+	if (ret < 0) {
+		return ret;
+	}
 	const int16_t *src = test_audio_data;
 	size_t total = TEST_AUDIO_SAMPLES;
 	size_t samp_per_block = TX_BLOCK_SIZE / sizeof(int16_t);
@@ -572,7 +584,9 @@ static int play_test_audio(void)
 		size_t n = MIN(samp_per_block, total - cur);
 		void *tx_block;
 		ret = k_mem_slab_alloc(&tx_mem_slab, &tx_block, K_MSEC(500));
-		if (ret < 0) break;
+		if (ret < 0) {
+			break;
+		}
 		memcpy(tx_block, &src[cur], n * sizeof(int16_t));
 		if (n < samp_per_block) {
 			memset((int16_t *)tx_block + n, 0,
@@ -619,20 +633,25 @@ static int init_audio(void)
 	int ret;
 
 	ret = init_pa_control();
-	if (ret < 0) return ret;
-
+	if (ret < 0) {
+		return ret;
+	}
 	ret = init_mute_control();
-	if (ret < 0) return ret;
-
+	if (ret < 0) {
+		return ret;
+	}
 	ret = init_es8311();
-	if (ret < 0) return ret;
-
+	if (ret < 0) {
+		return ret;
+	}
 	ret = init_es7210();
-	if (ret < 0) return ret;
-
+	if (ret < 0) {
+		return ret;
+	}
 	ret = init_i2s();
-	if (ret < 0) return ret;
-
+	if (ret < 0) {
+		return ret;
+	}
 	return 0;
 }
 

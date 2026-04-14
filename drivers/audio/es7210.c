@@ -255,9 +255,58 @@ static int es7210_set_sample_rate(const struct device *dev, struct audio_codec_c
 	return es7210_write_reg(dev, ES7210_REG_LRCK_DIVL, coeff->lrck_l);
 }
 
+/* Enable clocks and power for a MIC pair if any mic in the pair is active. */
+static int es7210_enable_mic_pair(const struct device *dev, uint8_t mic_mask,
+				  uint8_t pair_mask, uint8_t clk_bits,
+				  uint8_t power_reg)
+{
+	int ret;
+
+	if (!(mic_mask & pair_mask)) {
+		return 0;
+	}
+
+	ret = es7210_update_reg(dev, ES7210_REG_CLOCK_OFF, clk_bits, 0x00);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return es7210_write_reg(dev, power_reg, 0x00);
+}
+
+/* Set gain register for each active mic. */
+static int es7210_set_mic_gains(const struct device *dev, uint8_t mic_mask,
+				uint8_t gain_val)
+{
+	static const struct {
+		uint8_t bit;
+		uint8_t reg;
+	} mics[] = {
+		{ ES7210_MIC1, ES7210_REG_MIC1_GAIN },
+		{ ES7210_MIC2, ES7210_REG_MIC2_GAIN },
+		{ ES7210_MIC3, ES7210_REG_MIC3_GAIN },
+		{ ES7210_MIC4, ES7210_REG_MIC4_GAIN },
+	};
+	int ret;
+
+	for (int i = 0; i < ARRAY_SIZE(mics); i++) {
+		if (!(mic_mask & mics[i].bit)) {
+			continue;
+		}
+		ret = es7210_update_reg(dev, mics[i].reg, BIT(4) | 0x0F,
+					BIT(4) | gain_val);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 static int es7210_apply_mic_selection(const struct device *dev)
 {
 	const struct es7210_config *cfg = dev->config;
+	uint8_t gain_val = MIN(cfg->mic_gain_db / 3U, 0x0E);
 	int ret;
 
 	/* Clear SELMIC bits first */
@@ -268,6 +317,7 @@ static int es7210_apply_mic_selection(const struct device *dev)
 		}
 	}
 
+	/* Power down both pairs initially */
 	ret = es7210_write_reg(dev, ES7210_REG_MIC12_POWER, 0xFF);
 	if (ret < 0) {
 		return ret;
@@ -277,65 +327,29 @@ static int es7210_apply_mic_selection(const struct device *dev)
 		return ret;
 	}
 
-	if (cfg->mic_mask & (ES7210_MIC1 | ES7210_MIC2)) {
-		ret = es7210_update_reg(dev, ES7210_REG_CLOCK_OFF, 0x0B, 0x00);
-		if (ret < 0) {
-			return ret;
-		}
-		ret = es7210_write_reg(dev, ES7210_REG_MIC12_POWER, 0x00);
-		if (ret < 0) {
-			return ret;
-		}
+	/* Enable clocks and power for active pairs */
+	ret = es7210_enable_mic_pair(dev, cfg->mic_mask,
+				     ES7210_MIC1 | ES7210_MIC2,
+				     0x0B, ES7210_REG_MIC12_POWER);
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (cfg->mic_mask & (ES7210_MIC3 | ES7210_MIC4)) {
-		ret = es7210_update_reg(dev, ES7210_REG_CLOCK_OFF, 0x15, 0x00);
-		if (ret < 0) {
-			return ret;
-		}
-		ret = es7210_write_reg(dev, ES7210_REG_MIC34_POWER, 0x00);
-		if (ret < 0) {
-			return ret;
-		}
+	ret = es7210_enable_mic_pair(dev, cfg->mic_mask,
+				     ES7210_MIC3 | ES7210_MIC4,
+				     0x15, ES7210_REG_MIC34_POWER);
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (cfg->mic_mask & ES7210_MIC1) {
-		ret = es7210_update_reg(dev, ES7210_REG_MIC1_GAIN, BIT(4) | 0x0F,
-					     BIT(4) | MIN(cfg->mic_gain_db / 3U, 0x0E));
-		if (ret < 0) {
-			return ret;
-		}
-	}
-	if (cfg->mic_mask & ES7210_MIC2) {
-		ret = es7210_update_reg(dev, ES7210_REG_MIC2_GAIN, BIT(4) | 0x0F,
-					     BIT(4) | MIN(cfg->mic_gain_db / 3U, 0x0E));
-		if (ret < 0) {
-			return ret;
-		}
-	}
-	if (cfg->mic_mask & ES7210_MIC3) {
-		ret = es7210_update_reg(dev, ES7210_REG_MIC3_GAIN, BIT(4) | 0x0F,
-					     BIT(4) | MIN(cfg->mic_gain_db / 3U, 0x0E));
-		if (ret < 0) {
-			return ret;
-		}
-	}
-	if (cfg->mic_mask & ES7210_MIC4) {
-		ret = es7210_update_reg(dev, ES7210_REG_MIC4_GAIN, BIT(4) | 0x0F,
-					     BIT(4) | MIN(cfg->mic_gain_db / 3U, 0x0E));
-		if (ret < 0) {
-			return ret;
-		}
+	ret = es7210_set_mic_gains(dev, cfg->mic_mask, gain_val);
+	if (ret < 0) {
+		return ret;
 	}
 
 	/* TDM only when explicitly requested. */
-	if (cfg->use_tdm) {
-		ret = es7210_write_reg(dev, ES7210_REG_SDP_INTERFACE2, 0x02);
-	} else {
-		ret = es7210_write_reg(dev, ES7210_REG_SDP_INTERFACE2, 0x00);
-	}
-
-	return ret;
+	return es7210_write_reg(dev, ES7210_REG_SDP_INTERFACE2,
+				cfg->use_tdm ? 0x02 : 0x00);
 }
 
 static int es7210_configure(const struct device *dev, struct audio_codec_cfg *cfg)
@@ -500,19 +514,15 @@ static int es7210_set_property(const struct device *dev, audio_property_t proper
 {
 	ARG_UNUSED(channel);
 
-	switch (property) {
-	case AUDIO_PROPERTY_INPUT_MUTE:
-		if (val.mute) {
-			es7210_update_reg(dev, ES7210_REG_ADC34_MUTERANGE, 0x03, 0x03);
-			es7210_update_reg(dev, ES7210_REG_ADC12_MUTERANGE, 0x03, 0x03);
-		} else {
-			es7210_update_reg(dev, ES7210_REG_ADC34_MUTERANGE, 0x03, 0x00);
-			es7210_update_reg(dev, ES7210_REG_ADC12_MUTERANGE, 0x03, 0x00);
-		}
+	if (property == AUDIO_PROPERTY_INPUT_MUTE) {
+		uint8_t mute_val = val.mute ? 0x03 : 0x00;
+
+		es7210_update_reg(dev, ES7210_REG_ADC34_MUTERANGE, 0x03, mute_val);
+		es7210_update_reg(dev, ES7210_REG_ADC12_MUTERANGE, 0x03, mute_val);
 		return 0;
-	default:
-		return -ENOTSUP;
 	}
+
+	return -ENOTSUP;
 }
 
 static int es7210_apply_properties(const struct device *dev)

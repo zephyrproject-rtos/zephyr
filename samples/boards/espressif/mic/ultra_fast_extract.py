@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026 NotioNext Ltd.
-# SPDX-License-Identifier: Apache-2.0
-
 """
 Ultra-fast audio extraction from ESP32-S3-BOX-3 (Zephyr shell bincat command).
 
@@ -68,6 +65,74 @@ def list_audio_files(ser):
     return files
 
 
+def _clean_line(raw_line):
+    """Decode a raw serial line and strip ANSI codes and shell prompt artifacts."""
+    line = raw_line.decode("utf-8", errors="ignore")
+    line = re.sub(r'\x1b\[[0-9;]*m', '', line)
+    line = re.sub(r'uart:~\$\s*', '', line)
+    return line.strip()
+
+
+def _decode_hex_line(line):
+    """Try to decode a hex line to bytes. Returns bytes or None on failure."""
+    hex_clean = re.sub(r'[^0-9a-fA-F]', '', line)
+    if len(hex_clean) % 2 != 0 or len(hex_clean) == 0:
+        return None
+    try:
+        return bytes.fromhex(hex_clean)
+    except ValueError:
+        return None
+
+
+def _log_progress(bytes_written, start):
+    """Print transfer progress if on a 10KB boundary."""
+    elapsed = time.time() - start
+    speed = bytes_written / elapsed / 1024 if elapsed else 0
+    print(f"  📊 {bytes_written} bytes  ({speed:.1f} KB/s)")
+
+
+def _read_transfer(ser, f, deadline, start):
+    """
+    Read serial lines until BINEND or timeout.
+    Returns total bytes written to f.
+    """
+    in_binary = False
+    bytes_written = 0
+
+    while time.time() < deadline[0]:
+        raw_line = ser.readline()
+        if not raw_line:
+            continue
+
+        line = _clean_line(raw_line)
+        if not line:
+            continue
+
+        if line == "BINSTART":
+            in_binary = True
+            print("📡 Binary transfer started...")
+            deadline[0] = time.time() + TIMEOUT
+            continue
+
+        if line == "BINEND":
+            print("✅ Transfer complete!")
+            break
+
+        if not in_binary:
+            continue
+
+        data = _decode_hex_line(line)
+        if data is None:
+            continue
+
+        f.write(data)
+        bytes_written += len(data)
+        if bytes_written % (10 * 1024) < len(data):
+            _log_progress(bytes_written, start)
+
+    return bytes_written
+
+
 def extract_file(ser, remote_name, local_raw_path):
     """
     Run 'bincat /lfs/<remote_name>' and capture the hex payload.
@@ -79,51 +144,11 @@ def extract_file(ser, remote_name, local_raw_path):
     cmd = f"bincat /lfs/{remote_name}\n"
     ser.write(cmd.encode())
 
-    in_binary = False
-    bytes_written = 0
     start = time.time()
-    deadline = start + TIMEOUT
+    deadline = [start + TIMEOUT]  # mutable so _read_transfer can reset it
 
     with open(local_raw_path, "wb") as f:
-        while time.time() < deadline:
-            raw_line = ser.readline()
-            if not raw_line:
-                continue
-
-            # Decode and strip ANSI + shell prompt artifacts
-            line = raw_line.decode("utf-8", errors="ignore")
-            line = re.sub(r'\x1b\[[0-9;]*m', '', line)  # ANSI colours
-            line = re.sub(r'uart:~\$\s*', '', line)      # shell prompt
-            line = line.strip()
-
-            if not line:
-                continue
-
-            if line == "BINSTART":
-                in_binary = True
-                print("📡 Binary transfer started...")
-                deadline = time.time() + TIMEOUT  # reset timeout
-                continue
-
-            if line == "BINEND":
-                print("✅ Transfer complete!")
-                break
-
-            if in_binary:
-                # Must be a pure hex string (even number of hex chars)
-                hex_clean = re.sub(r'[^0-9a-fA-F]', '', line)
-                if len(hex_clean) % 2 != 0 or len(hex_clean) == 0:
-                    continue
-                try:
-                    data = bytes.fromhex(hex_clean)
-                    f.write(data)
-                    bytes_written += len(data)
-                    if bytes_written % (10 * 1024) < len(data):
-                        elapsed = time.time() - start
-                        speed = bytes_written / elapsed / 1024 if elapsed else 0
-                        print(f"  📊 {bytes_written} bytes  ({speed:.1f} KB/s)")
-                except ValueError:
-                    continue
+        bytes_written = _read_transfer(ser, f, deadline, start)
 
     elapsed = time.time() - start
     speed = bytes_written / elapsed / 1024 if elapsed else 0

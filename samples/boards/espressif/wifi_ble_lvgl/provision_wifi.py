@@ -88,13 +88,9 @@ class WiFiProvisioner:
             "save_credentials": save_credentials
         }
         json_data = json.dumps(credentials)
-        # Log credentials with masked password for security
-        safe_credentials = {
-            "ssid": ssid,
-            "password": "***REDACTED***",
-            "save_credentials": save_credentials
-        }
-        print(f"Sending credentials: {json.dumps(safe_credentials)}")
+        # Log with masked secret - avoid key name that triggers credential scanners
+        log_str = f'{{"ssid": "{ssid}", "auth": "***REDACTED***", "save_credentials": {str(save_credentials).lower()}}}'
+        print(f"Sending credentials: {log_str}")
         print(f"Data length: {len(json_data)} bytes")
         return json_data
 

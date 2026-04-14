@@ -92,7 +92,7 @@ static int esp32_lcd_transmit_cmd(const struct device *dev, uint8_t cmd,
 		/* Set DC high for data */
 		gpio_pin_set_dt(&config->dc_gpio, 1);
 
-		tx_buf.buf = (void *)data;
+		tx_buf.buf = (void *)(uintptr_t)data;
 		tx_buf.len = len;
 
 		ret = spi_write_dt(&config->spi, &tx);
@@ -114,7 +114,7 @@ static int esp32_lcd_transmit_data(const struct device *dev,
 	gpio_pin_set_dt(&config->dc_gpio, 1);
 
 	struct spi_buf tx_buf = {
-		.buf = (void *)data,
+		.buf = (void *)(uintptr_t)data,
 		.len = len,
 	};
 	struct spi_buf_set tx = {
