@@ -98,9 +98,9 @@ Another option controls block size.
 :kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE`
 
         Block size in bytes for LLEXT :c:type:`sys_mem_blocks_t` heap(s).
-        Must be equal to or a multiple of ``LLEXT_PAGE_SIZE``. The block size
-        must also be equal to or a multiple of the largest alignment needed
-        for any extension region. If
+        Must be equal to or a multiple of ``LLEXT_PAGE_SIZE`` if MMU or MPU
+        are enabled. The block size must also be equal to or a multiple of the
+        largest alignment needed for any extension region. If
         :kconfig:option:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT` is
         selected and regions are large, an unreasonably large block size may be
         needed to satisfy alignment requirements.
