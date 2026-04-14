@@ -13,6 +13,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/shell/shell.h>
 #include <zephyr/net/net_if.h>
 
 #ifdef __cplusplus
@@ -97,6 +98,26 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
  * @return 0 if ok, <0 if error.
  */
 int net_config_init_app(const struct device *dev, const char *app_info);
+
+/** @brief Initialize SSH server on the device.
+ *
+ * @param sh Shell instance to use for executing commands to set up the SSH
+ * server. This is needed because the SSH server is configured through shell
+ * commands in this function.
+ * @param iface Network interface to use for the SSH server. If NULL, the SSH
+ * server will bind to the wildcard address and be reachable through all network
+ * interfaces.
+ * @param username Username to use for password authentication. If NULL or empty
+ * string, then username is not used. The username cannot contain spaces.
+ * @param password Password to use for password authentication. If NULL or empty
+ * string, password authentication will be disabled and only public key
+ * authentication will be allowed.
+ *
+ * @return 0 if the SSH server was initialized successfully, <0 if there was
+ * an error.
+ */
+int net_config_init_sshd(const struct shell *sh, struct net_if *iface,
+			 const char *username, const char *password);
 
 /**
  * @}
