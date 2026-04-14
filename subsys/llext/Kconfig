@@ -112,9 +112,9 @@ config LLEXT_HEAP_MEMBLK_BLOCK_SIZE
 	default 32
 	help
 	  Block size in bytes for LLEXT sys_mem_blocks heap(s). Must be equal to or
-	  a multiple of LLEXT_PAGE_SIZE. The block size must also be equal to or a
-	  multiple of the largest alignment needed for any extension region.
-	  If MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT is selected and regions are large,
+	  a multiple of LLEXT_PAGE_SIZE if MMU or MPU are enabled. The block size must also
+	  be equal to or a multiple of the largest alignment needed for any extension
+	  region. If MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT is selected and regions are large,
 	  an unreasonably large block size may be needed to satisfy alignment requirements.
 
 endif
