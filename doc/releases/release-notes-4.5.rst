@@ -98,6 +98,10 @@ New Samples
 Libraries / Subsystems
 **********************
 
+* Bluetooth Host: :kconfig:option:`CONFIG_BT_GATT_DYNAMIC_DB` may be enabled without
+  :kconfig:option:`CONFIG_BT_GATT_SERVICE_CHANGED`; see the API documentation and
+  :ref:`migration guide <migration_4.5>` for restrictions. (:github:`106421`)
+
 Other notable changes
 *********************
 
