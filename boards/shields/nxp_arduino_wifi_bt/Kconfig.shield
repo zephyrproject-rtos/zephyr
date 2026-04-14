@@ -1,0 +1,5 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_NXP_ARDUINO_AW510_WIFI_BT
+	def_bool $(shields_list_contains,nxp_arduino_aw510_wifi_bt)
