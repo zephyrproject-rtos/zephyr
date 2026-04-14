@@ -545,7 +545,7 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 	};
 #endif
 	struct net_sockaddr *local_addr = NULL;
-	net_socklen_t addr_len = 0;
+	__maybe_unused net_socklen_t addr_len = 0;
 	int i = 0, idx = 0;
 	const struct net_in6_addr *addr6 = NULL;
 	const struct net_in_addr *addr4 = NULL;
