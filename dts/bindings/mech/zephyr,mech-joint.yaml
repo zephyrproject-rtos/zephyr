@@ -1,0 +1,114 @@
+# Copyright (c) 2026 Sylvain Mosnier
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Kinematic joint between two links in a kinematic tree.
+
+  A joint defines the transform from the parent link frame to the child link
+  frame and the type of motion allowed between them. The root joint of the 
+  kinematic tree has no parent link.
+
+  Joint types:
+    fixed      No motion. Child is rigidly attached to parent.
+    revolute   Single-axis rotation with position limits.
+    continuous Single-axis rotation without limits (e.g. a wheel).
+    prismatic  Single-axis translation with position limits.
+    floating   6-DOF unconstrained (e.g. a tracked object or free body).
+
+  Example — fixed camera mount:
+
+    camera_joint: camera-joint {
+        compatible = "zephyr,mech-joint";
+        joint-type = "fixed";
+        parent-link = <&base_link>;
+        origin-translation-mm          = <120 0 80>;
+        origin-rotation-euler-zyx-urad = <0 (-261799) 0>; /* -15° */
+    };
+
+  Example — revolute elbow with limits:
+
+    elbow_joint: elbow-joint {
+        compatible = "zephyr,mech-joint";
+        joint-type = "revolute";
+        parent-link = <&upper_arm_link>;
+        origin-translation-mm          = <0 0 280>;
+        origin-rotation-euler-zyx-urad = <0 0 0>;
+        axis = <0 1 0>;
+
+        lower     = <(-1571)>; /* -90° in mrad */
+        upper     = <1571>;    /* +90° in mrad */
+        effort-mN = <5000>;    /* 5 N·m */
+        velocity  = <3142>;    /* ~180°/s in mrad/s */
+    };
+
+compatible: "zephyr,mech-joint"
+
+properties:
+  joint-type:
+    type: string
+    required: true
+    enum:
+      - "fixed"
+      - "revolute"
+      - "continuous"
+      - "prismatic"
+      - "floating"
+    description: Type of kinematic constraint between parent and child links.
+
+  parent-link:
+    type: phandle
+    required: true
+    description: Parent link node.
+
+  origin-translation-mm:
+    type: array
+    default: [0, 0, 0]
+    description: |
+      Translation [x, y, z] of the joint frame relative to the parent link
+      frame, in millimetres.
+
+  origin-rotation-euler-zyx-urad:
+    type: array
+    default: [0, 0, 0]
+    description: |
+      Rotation of the joint frame relative to the parent link frame, as ZYX
+      Euler angles [roll, pitch, yaw] in microradians.
+
+  axis:
+    type: array
+    default: [1, 0, 0]
+    description: |
+      Unit vector [x, y, z] defining the axis of motion in the joint frame.
+      Used for revolute, continuous, and prismatic joints.
+
+  limit-lower:
+    type: int
+    description: |
+      Lower position limit.
+      - revolute/continuous: milliradians. 
+      - prismatic: millimetres.
+      - fixed/floating: unused.
+
+  limit-upper:
+    type: int
+    description: |
+      Upper position limit.
+      - revolute/continuous: milliradians. 
+      - prismatic: millimetres.
+      - fixed/floating: unused.
+
+  limit-effort-mN:
+    type: int
+    description: |
+      Maximum effort.
+      - revolute/continuous: mN·m (torque). 
+      - prismatic: mN (force).
+      - fixed/floating: unused.
+
+  limit-velocity:
+    type: int
+    description: |
+      Maximum velocity.
+      - revolute/continuous: mrad/s. 
+      - prismatic: mm/s.
+      - fixed/floating: unused.

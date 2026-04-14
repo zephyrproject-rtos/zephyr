@@ -1,0 +1,64 @@
+# Copyright (c) 2026 Sylvain Mosnier
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Transmission between an actuator and a joint.
+
+  A transmission describes the mechanical coupling between a physical
+  actuator (motor, servo) and a kinematic joint. It records the gear ratio
+  and maps a Zephyr actuator device to the joint it drives.
+
+  The gear ratio is expressed as a signed rational number
+  (numerator / denominator), from the actuator to the joint:
+  joint = actuator * numerator / denominator.
+  A negative numerator indicates an inverted direction.
+  A direct drive is 1/1; a 30:1 reducer with inversion is -1/30.
+
+  Example — direct drive wheel:
+
+    wheel_tx: wheel-transmission {
+        compatible = "zephyr,mech-transmission";
+        joint           = <&wheel_joint>;
+        actuator-device = <&motor_0>;
+        gear-ratio-numerator   = <1>;
+        gear-ratio-denominator = <1>;
+    };
+
+  Example — 30:1 reducer, right motor (inverted):
+
+    right_wheel_tx: right-wheel-transmission {
+        compatible = "zephyr,mech-transmission";
+        joint           = <&right_wheel_joint>;
+        actuator-device = <&motor_right>;
+        gear-ratio-numerator   = <(-1)>;
+        gear-ratio-denominator = <30>;
+    };
+
+compatible: "zephyr,mech-transmission"
+
+properties:
+  joint:
+    type: phandle
+    required: true
+    description: The joint driven by this transmission.
+
+  actuator-device:
+    type: phandle
+    required: true
+    description: |
+      Zephyr device node implementing the physical actuator (motor
+      controller, servo driver, stepper, etc.).
+
+  gear-ratio-numerator:
+    type: int
+    required: true
+    default: 1
+    description: |
+      Signed numerator of the gear ratio (joint turns / actuator turns).
+      Use a negative value to invert the direction.
+
+  gear-ratio-denominator:
+    type: int
+    required: true
+    default: 1
+    description: Denominator of the gear ratio. Typically 1 for integer ratios.

@@ -1,0 +1,87 @@
+# Copyright (c) 2026 Sylvain Mosnier
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Rigid link in a kinematic tree.
+
+  A link represents a rigid body. Its frame origin coincides with the child
+  frame of its parent joint.
+
+  Inertial properties are optional and only meaningful when
+  CONFIG_MECH_INERTIAL is enabled.
+
+  Child nodes declare devices (sensors, actuators) physically mounted on
+  this link, with their local mounting transform. Each child node describes
+  one mounted device.
+
+  Example — upper arm link with an IMU and a proximity sensor:
+
+    upper_arm_link: upper-arm-link {
+        compatible = "zephyr,mech-link";
+        parent-joint = <&shoulder_joint>
+        mass-g = <540>;
+        center-of-mass-mm = <0 0 140>;
+
+        imu_mount: imu-mount {
+            device = <&imu_0>;
+            translation-mm = <0 0 10>;
+            rotation-euler-zyx-urad = <0 0 0>;
+        };
+
+        prox_mount: prox-mount {
+            device = <&prox_sensor_0>;
+            translation-mm = <30 0 280>;
+            rotation-euler-zyx-urad = <0 (-261799) 0>; /* -15° */
+        };
+    };
+
+compatible: "zephyr,mech-link"
+
+properties:
+  parent-joint:
+    type: phandle
+    description: Parent joint; absent on the root link.
+
+  mass-g:
+    type: int
+    description: Link mass in grams (CONFIG_MECH_INERTIAL).
+
+  center-of-mass-mm:
+    type: array
+    description: |
+      Center of mass [x, y, z] in millimetres, in the link frame
+      (CONFIG_MECH_INERTIAL).
+
+  inertia-tensor-gmm2:
+    type: array
+    description: |
+      Symmetric 3x3 inertia tensor, upper triangle only, as 6 elements
+      [ixx, ixy, ixz, iyy, iyz, izz] in g·mm^2 (CONFIG_MECH_INERTIAL).
+
+child-binding:
+  description: |
+    A device mounted on this link, with its local mounting transform.
+
+    The device phandle can point to any Zephyr device node (sensor, actuator,
+    camera, etc.). The transform describes the device frame relative to the
+    link frame.
+
+  properties:
+    device:
+      type: phandle
+      required: true
+      description: Phandle to the Zephyr device node mounted at this location.
+
+    translation-mm:
+      type: array
+      required: true
+      description: |
+        Translation [x, y, z] of the device frame origin relative to the
+        link frame, in millimetres.
+
+    rotation-euler-zyx-urad:
+      type: array
+      required: true
+      description: |
+        Rotation of the device frame relative to the link frame, as ZYX
+        Euler angles [roll, pitch, yaw] in microradians.
