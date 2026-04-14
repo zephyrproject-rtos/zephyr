@@ -800,6 +800,8 @@ static inline int display_register_event_cb(const struct device *dev,
 					    uint32_t event_mask, bool in_isr,
 					    uint32_t *out_reg_handle)
 {
+	__ASSERT(cb != NULL, "Registration failed: callback function pointer is NULL");
+
 	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->register_event_cb == NULL) {
