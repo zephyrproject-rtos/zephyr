@@ -240,12 +240,12 @@ skip:
 
 static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
 {
-	return ETHERNET_LINK_100BASE |
-		ETHERNET_LINK_10BASE |
+	enum ethernet_hw_caps caps = ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE;
+
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
-		ETHERNET_PROMISC_MODE |
+	caps |= ETHERNET_PROMISC_MODE;
 #endif
-		ENET_MAC_PACKET_FILTER_PM_MASK;
+	return caps;
 }
 
 static bool software_owns_descriptor(volatile union nxp_enet_qos_rx_desc *desc)
