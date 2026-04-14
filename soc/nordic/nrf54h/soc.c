@@ -94,7 +94,7 @@ static int trim_hsfll(void)
 	return 0;
 }
 
-#if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK)
+#if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK) && !defined(CONFIG_NRF_CUSTOM_ON_ENTER_CPU_IDLE_HOOK)
 bool z_arm_on_enter_cpu_idle(void)
 {
 #ifdef CONFIG_LOG_FRONTEND_STMESP
