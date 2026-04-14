@@ -1451,7 +1451,7 @@ Mbed TLS
   TF-M continues to build with Mbed TLS 3.6.5.
   Crypto-wise there are many changes introduced with this change, so it's strongly
   suggested to take a look to the official `Mbed TLS 3.x to TF-PSA-Crypto 1.x migration guide
-  <https://github.com/Mbed-TLS/TF-PSA-Crypto/blob/development/docs/1.0-migration-guide.md>`.
+  <https://github.com/Mbed-TLS/TF-PSA-Crypto/blob/development/docs/1.0-migration-guide.md>`_.
 
 * ``CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR`` has been renamed to
   :kconfig:option:`CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY`.
