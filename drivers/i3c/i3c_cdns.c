@@ -577,7 +577,7 @@ struct cdns_i3c_data {
 	struct k_mutex bus_lock;
 #ifdef CONFIG_I3C_CONTROLLER
 	struct cdns_i3c_i2c_dev_data cdns_i3c_i2c_priv_data[I3C_MAX_DEVS];
-#ifdef CONFIG_I3C_CALLBACK
+#if defined(CONFIG_I3C_CALLBACK) || defined(CONFIG_I2C_CALLBACK)
 	struct k_timer timeout;
 	i3c_callback_t cb;
 	void *userdata;
@@ -597,7 +597,8 @@ struct cdns_i3c_data {
 #endif /* CONFIG_I3C_CONTROLLER */
 #endif /* CONFIG_I3C_TARGET */
 #endif /* CONFIG_I3C_USE_IBI*/
-#if (defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)) || defined(CONFIG_I3C_CALLBACK)
+#if (defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)) ||                              \
+	defined(CONFIG_I3C_CALLBACK) || defined(CONFIG_I2C_CALLBACK)
 	const struct device *dev;
 #endif
 #if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)
@@ -1369,7 +1370,7 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	sys_write32(CTRL_DEV_EN | sys_read32(config->base + CTRL), config->base + CTRL);
 }
 
-#ifdef CONFIG_I3C_CALLBACK
+#if defined(CONFIG_I3C_CALLBACK) || defined(CONFIG_I2C_CALLBACK)
 static void cdns_i3c_cb_timeout(struct k_timer *timer)
 {
 	struct cdns_i3c_data *data = CONTAINER_OF(timer, struct cdns_i3c_data, timeout);
@@ -2110,7 +2111,7 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 
 	/* Indicate no transfer is pending */
 	data->xfer.num_cmds = 0;
-#ifdef CONFIG_I3C_CALLBACK
+#if defined(CONFIG_I3C_CALLBACK) || defined(CONFIG_I2C_CALLBACK)
 	pm_device_busy_clear(dev);
 	if (data->cb) {
 		k_timer_stop(&data->timeout);
@@ -2137,8 +2138,9 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
  * @retval -EIO General input / output error.
  * @retval -EINVAL Address not registered
  */
-static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_desc *i2c_dev,
-				 struct i2c_msg *msgs, uint8_t num_msgs)
+static int cdns_i3c_i2c_transfer_do(const struct device *dev, struct i3c_i2c_device_desc *i2c_dev,
+				    struct i2c_msg *msgs, uint8_t num_msgs, bool async,
+				    i2c_callback_t cb, void *userdata)
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
@@ -2169,6 +2171,16 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 	}
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
+#ifdef CONFIG_I2C_CALLBACK
+	k_sem_take(&data->async_sem, K_FOREVER);
+	if (async) {
+		data->cb = cb;
+		data->userdata = userdata;
+	} else {
+		data->cb = NULL;
+		data->userdata = NULL;
+	}
+#endif
 	pm_device_busy_set(dev);
 
 	/* make sure we are currently the active controller */
@@ -2217,17 +2229,72 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 	data->xfer.num_cmds = num_msgs;
 
 	cdns_i3c_start_transfer(dev);
-	if (k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
-		cdns_i3c_cancel_transfer(dev);
+	if (!async) {
+		if (k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
+			cdns_i3c_cancel_transfer(dev);
+		}
+		ret = data->xfer.ret;
 	}
-
-	ret = data->xfer.ret;
+#ifdef CONFIG_I2C_CALLBACK
+	else {
+		k_timer_start(&data->timeout, K_MSEC(1000), K_NO_WAIT);
+		ret = 0;
+	}
+#endif
 error:
+#ifdef CONFIG_I2C_CALLBACK
+	if (!async || ret != 0) {
+		pm_device_busy_clear(dev);
+		k_sem_give(&data->async_sem);
+	}
+#else
 	pm_device_busy_clear(dev);
+#endif
 	k_mutex_unlock(&data->bus_lock);
 
 	return ret;
 }
+
+/**
+ * @brief Transfer messages in I2C mode.
+ *
+ * @see i2c_transfer
+ *
+ * @param dev Pointer to device driver instance.
+ * @param i2c_dev Pointer to I2C device descriptor.
+ * @param msgs Pointer to I2C messages.
+ * @param num_msgs Number of messages to transfer.
+ *
+ * @return @see i2c_transfer
+ */
+static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_desc *i2c_dev,
+				 struct i2c_msg *msgs, uint8_t num_msgs)
+{
+	return cdns_i3c_i2c_transfer_do(dev, i2c_dev, msgs, num_msgs, false, NULL, NULL);
+}
+
+#ifdef CONFIG_I2C_CALLBACK
+/**
+ * @brief Transfer messages in I2C mode with completion callback.
+ *
+ * @see i2c_transfer_cb
+ *
+ * @param dev Pointer to device driver instance.
+ * @param i2c_dev Pointer to I2C device descriptor.
+ * @param msgs Pointer to I2C messages.
+ * @param num_msgs Number of messages to transfer.
+ * @param cb Callback function
+ * @param userdata User data for callback function
+ *
+ * @return @see i2c_transfer_cb
+ */
+static int cdns_i3c_i2c_transfer_cb(const struct device *dev,
+				    struct i3c_i2c_device_desc *i2c_dev, struct i2c_msg *msgs,
+				    uint8_t num_msgs, i2c_callback_t cb, void *userdata)
+{
+	return cdns_i3c_i2c_transfer_do(dev, i2c_dev, msgs, num_msgs, true, cb, userdata);
+}
+#endif
 
 static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_addr)
 {
@@ -3545,6 +3612,21 @@ static int cdns_i3c_i2c_api_transfer(const struct device *dev, struct i2c_msg *m
 
 	return ret;
 }
+
+#ifdef CONFIG_I2C_CALLBACK
+static int cdns_i3c_i2c_api_transfer_cb(const struct device *dev, struct i2c_msg *msgs,
+					uint8_t num_msgs, uint16_t addr, i2c_callback_t cb,
+					void *userdata)
+{
+	struct i3c_i2c_device_desc *i2c_dev = cdns_i3c_i2c_device_find(dev, addr);
+
+	if (i2c_dev == NULL) {
+		return -ENODEV;
+	}
+
+	return cdns_i3c_i2c_transfer_cb(dev, i2c_dev, msgs, num_msgs, cb, userdata);
+}
+#endif /* CONFIG_I2C_CALLBACK */
 #endif /* CONFIG_I3C_CONTROLLER */
 #if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)
 /**
@@ -3737,10 +3819,10 @@ static int cdns_i3c_bus_init(const struct device *dev)
 #endif /* CONFIG_I3C_CONTROLLER */
 #endif /* CONFIG_I3C_TARGET */
 #endif /* CONFIG_I3C_USE_IBI */
-#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_CALLBACK)
+#if defined(CONFIG_I3C_CONTROLLER) && (defined(CONFIG_I3C_CALLBACK) || defined(CONFIG_I2C_CALLBACK))
 	k_sem_init(&data->async_sem, 1, 1);
 	k_timer_init(&data->timeout, cdns_i3c_cb_timeout, NULL);
-#endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_CALLBACK */
+#endif /* CONFIG_I3C_CONTROLLER && (CONFIG_I3C_CALLBACK || CONFIG_I2C_CALLBACK) */
 
 	cdns_i3c_interrupts_disable(config);
 	cdns_i3c_interrupts_clear(config);
@@ -3868,6 +3950,9 @@ static DEVICE_API(i3c, api) = {
 #ifdef CONFIG_I3C_CONTROLLER
 	.i2c_api.configure = cdns_i3c_i2c_api_configure,
 	.i2c_api.transfer = cdns_i3c_i2c_api_transfer,
+#ifdef CONFIG_I2C_CALLBACK
+	.i2c_api.transfer_cb = cdns_i3c_i2c_api_transfer_cb,
+#endif
 #ifdef CONFIG_I2C_RTIO
 	.i2c_api.iodev_submit = i2c_iodev_submit_fallback,
 #endif
