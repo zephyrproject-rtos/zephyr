@@ -1612,3 +1612,10 @@ test_i2c_pac194x: pac194x@d0 {
 		microchip,accumulation-mode = <PAC_ACCUM_VBUS>;
 	};
 };
+
+test_i2c_fdc1004: fdc1004@d1 {
+	compatible = "ti,fdc1004";
+	reg = <0xd1>;
+	measure-rate = <100>;
+	ti,capdac = <0 0 0 0>;
+};
