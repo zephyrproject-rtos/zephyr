@@ -58,28 +58,15 @@ static int siwx91x_nwp_fw_load(const struct device *dev)
 int siwx91x_nwp_fw_boot(const struct device *dev)
 {
 	const struct siwx91x_nwp_config *config = dev->config;
-	bool run_bootload_sequence = true;
 	int ret;
 
-	if (!(config->m4_regs->status & SIWX91X_TA_IS_ACTIVE)) {
-		config->m4_regs->status |= SIWX91X_M4_WAKEUP_TA;
-		run_bootload_sequence = false;
-	}
-
-	while (!(config->m4_regs->status & SIWX91X_TA_IS_ACTIVE)) {
-		; /* empty */
-	}
-
-	if (!run_bootload_sequence) {
-		return 0;
-	}
-
+	__ASSERT(config->m4_regs->status & SIWX91X_TA_IS_ACTIVE, "Unexpected state");
 	do {
 		ret = siwx91x_nwp_fw_wait_ready(dev);
-		if (ret && ret != -EBUSY) {
-			return ret;
-		}
-	} while (ret);
+	} while (ret == -EBUSY);
+	if (ret) {
+		return ret;
+	}
 
 	ret = siwx91x_nwp_fw_load(dev);
 	if (ret) {
