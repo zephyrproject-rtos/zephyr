@@ -233,4 +233,13 @@ config NRF_TRACE_PORT
 	  Unit) for tracing using a hardware probe. If disabled, the trace
 	  pins will be used as GPIO.
 
+config NRF_CUSTOM_ON_ENTER_CPU_IDLE_HOOK
+	bool "Custom on enter CPU idle hook"
+	depends on ARM_ON_ENTER_CPU_IDLE_HOOK
+	help
+	  Select this option to use a custom on enter CPU idle hook. If enabled,
+	  the hook is implemented by the user. It is the user's responsibility to
+	  implement the SoC-specific code in the hook that is present in the default
+	  implementation.
+
 endif # SOC_FAMILY_NORDIC_NRF
