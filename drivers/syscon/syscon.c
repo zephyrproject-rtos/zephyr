@@ -33,7 +33,7 @@ static int syscon_generic_get_base(const struct device *dev, uintptr_t *addr)
 	return 0;
 }
 
-static int syscon_generic_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
+static int syscon_generic_read_reg(const struct device *dev, uint32_t reg, uint32_t *val)
 {
 	const struct syscon_generic_config *config = dev->config;
 	struct syscon_generic_data *data = dev->data;
@@ -66,7 +66,7 @@ static int syscon_generic_read_reg(const struct device *dev, uint16_t reg, uint3
 	return 0;
 }
 
-static int syscon_generic_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
+static int syscon_generic_write_reg(const struct device *dev, uint32_t reg, uint32_t val)
 {
 	const struct syscon_generic_config *config = dev->config;
 	struct syscon_generic_data *data = dev->data;

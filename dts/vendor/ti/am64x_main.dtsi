@@ -18,6 +18,11 @@
 		reg-names = "debug_messages";
 		reg = <0x44043000 0xfe0>;
 		status = "disabled";
+
+		k3_clks: clock-controller {
+			compatible = "ti,k2g-sci-clk";
+			#clock-cells = <2>;
+		};
 	};
 
 	secure_proxy_main: mailbox0@4d000000 {
@@ -41,6 +46,16 @@
 			reg = <0x4000 0x2ac>;
 			status = "disabled";
 		};
+	};
+
+	main_mmr_cfg0: syscon@43000000 {
+		compatible = "ti,control-module", "syscon";
+		reg = <0x43000000 DT_SIZE_K(128)>;
+		ranges = <0x00 0x43000000 DT_SIZE_K(128)>;
+		ti,unlock-offsets = <0x5008>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		#epwm-tbclk-cells = <2>;
 	};
 
 	main_timer0: timer@2400000 {
@@ -521,6 +536,96 @@
 		compatible = "ti,omap-mailbox";
 		reg = <0x29070000 0x200>;
 		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	main_epwm0: pwm@23000000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23000000 0x100>;
+		tbclk = <&main_mmr_cfg0 0x4130 0>;
+		#pwm-cells = <3>;
+		power-domains = <&epwm0_pd>;
+		clocks = <&k3_clks 86 0>;
+		status = "disabled";
+	};
+
+	main_epwm1: pwm@23010000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23010000 0x100>;
+		tbclk = <&main_mmr_cfg0 0x4130 1>;
+		#pwm-cells = <3>;
+		power-domains = <&epwm1_pd>;
+		clocks = <&k3_clks 87 0>;
+		status = "disabled";
+	};
+
+	main_epwm2: pwm@23020000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23020000 0x100>;
+		tbclk = <&main_mmr_cfg0 0x4130 2>;
+		#pwm-cells = <3>;
+		power-domains = <&epwm2_pd>;
+		clocks = <&k3_clks 88 0>;
+		status = "disabled";
+	};
+
+	main_epwm3: pwm@23030000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23030000 0x100>;
+		tbclk = <&main_mmr_cfg0 0x4130 3>;
+		#pwm-cells = <3>;
+		power-domains = <&epwm3_pd>;
+		clocks = <&k3_clks 89 0>;
+		status = "disabled";
+	};
+
+	main_epwm4: pwm@23040000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23040000 0x100>;
+		tbclk = <&main_mmr_cfg0 0x4130 4>;
+		#pwm-cells = <3>;
+		power-domains = <&epwm4_pd>;
+		clocks = <&k3_clks 90 0>;
+		status = "disabled";
+	};
+
+	main_epwm5: pwm@23050000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23050000 0x100>;
+		tbclk = <&main_mmr_cfg0 0x4130 5>;
+		#pwm-cells = <3>;
+		power-domains = <&epwm5_pd>;
+		clocks = <&k3_clks 91 0>;
+		status = "disabled";
+	};
+
+	main_epwm6: pwm@23060000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23060000 0x100>;
+		tbclk = <&main_mmr_cfg0 0x4130 6>;
+		#pwm-cells = <3>;
+		power-domains = <&epwm6_pd>;
+		clocks = <&k3_clks 92 0>;
+		status = "disabled";
+	};
+
+	main_epwm7: pwm@23070000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23070000 0x100>;
+		tbclk = <&main_mmr_cfg0 0x4130 7>;
+		#pwm-cells = <3>;
+		power-domains = <&epwm7_pd>;
+		clocks = <&k3_clks 93 0>;
+		status = "disabled";
+	};
+
+	main_epwm8: pwm@23080000 {
+		compatible = "ti,am3352-ehrpwm";
+		reg = <0x23080000 0x100>;
+		tbclk = <&main_mmr_cfg0 0x4130 8>;
+		#pwm-cells = <3>;
+		power-domains = <&epwm8_pd>;
+		clocks = <&k3_clks 94 0>;
 		status = "disabled";
 	};
 };

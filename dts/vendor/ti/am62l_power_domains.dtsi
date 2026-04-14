@@ -68,6 +68,24 @@
 			#power-domain-cells = <0>;
 		};
 
+		main_epwm0_pd: power-domain@28 {
+			compatible = "arm,scmi-power-domain";
+			reg = <40>;
+			#power-domain-cells = <0>;
+		};
+
+		main_epwm1_pd: power-domain@29 {
+			compatible = "arm,scmi-power-domain";
+			reg = <41>;
+			#power-domain-cells = <0>;
+		};
+
+		main_epwm2_pd: power-domain@2a {
+			compatible = "arm,scmi-power-domain";
+			reg = <42>;
+			#power-domain-cells = <0>;
+		};
+
 		main_spi3_pd: power-domain@4b {
 			compatible = "arm,scmi-power-domain";
 			reg = <75>;
