@@ -12,6 +12,7 @@ config SOC_SERIES_BL808
 	select RISCV
 	select SOC_EARLY_INIT_HOOK
 	select SOC_PREP_HOOK
+	select USE_DT_CODE_PARTITION
 	imply CODE_DATA_RELOCATION
 	imply FLASH
 	imply FPU

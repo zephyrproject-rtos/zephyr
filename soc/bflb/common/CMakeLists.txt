@@ -9,8 +9,19 @@ if(CONFIG_SOC_SERIES_BL60X OR CONFIG_SOC_SERIES_BL70X OR CONFIG_SOC_SERIES_BL70X
   zephyr_sources(
     e24/soc_irq_privileged.c
     e24/soc.c
+    e24/sf_offset.S
   )
 endif()
+
+if(CONFIG_SOC_SERIES_BL61X OR CONFIG_SOC_SERIES_BL808)
+  zephyr_include_directories(thead)
+  zephyr_sources(
+    thead/sf_offset.S
+  )
+endif()
+
+# Add offset change as the very first code in ROM
+zephyr_linker_sources(ROM_START SORT_KEY "0x0bflb" sf_offset.ld)
 
 zephyr_sources(
   power.c
