@@ -67,6 +67,7 @@ enum usbd_str_desc_utype {
 	USBD_DUT_STRING_SERIAL_NUMBER,
 	USBD_DUT_STRING_CONFIG,
 	USBD_DUT_STRING_INTERFACE,
+	USBD_DUT_STRING_MAC_ADDRESS,
 };
 
 enum usbd_bos_desc_utype {
@@ -649,6 +650,33 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 			.ascii7 = true,						\
 			.use_hwinfo = true,					\
 		},								\
+		.bDescriptorType = USB_DESC_STRING,				\
+	}
+
+/**
+ * @brief Define an iMACAddress string descriptor node backed by a live MAC buffer
+ *
+ * This macro defines a descriptor node that, when requested, is rendered by
+ * the device stack into a 12-character uppercase-hex string formed from the
+ * MAC address pointed to by @p d_mac_ptr. The remote (host-side) MAC is
+ * derived from the local MAC by flipping the U/L bit (byte 0 XOR 0x02), so
+ * the host-visible iMACAddress tracks runtime changes to the device's local
+ * MAC address with no per-change bookkeeping in the class driver.
+ *
+ * @param d_name    String descriptor node identifier.
+ * @param d_mac_ptr Pointer to a stable 6-byte uint8_t buffer holding the
+ *                  local MAC address. The stack reads from this buffer at
+ *                  GET_DESCRIPTOR time; the buffer itself remains fully owned
+ *                  and mutable by the caller.
+ */
+#define USBD_DESC_MAC_ADDRESS_DEFINE(d_name, d_mac_ptr)				\
+	static struct usbd_desc_node d_name = {					\
+		.str = {							\
+			.utype = USBD_DUT_STRING_MAC_ADDRESS,			\
+			.ascii7 = true,						\
+		},								\
+		.ptr = (d_mac_ptr),						\
+		.bLength = 2 + 12 * 2,						\
 		.bDescriptorType = USB_DESC_STRING,				\
 	}
 

@@ -10,7 +10,14 @@ include: ethernet-controller.yaml
 properties:
   remote-mac-address:
     type: string
-    required: true
+    deprecated: true
     description: |
-      Remote MAC address of the virtual Ethernet connection.
-      Should not be the same as local-mac-address property.
+      Remote (host-side) MAC address of the virtual Ethernet connection.
+
+      Deprecated: when this property is omitted the driver derives the
+      host-side MAC at runtime from the local MAC address by flipping the
+      U/L bit, so the host-visible iMACAddress tracks runtime changes to
+      the local MAC. If this property is set, the legacy behaviour of
+      baking the string into the descriptor at build time is preserved for
+      backward compatibility, but new designs should omit the property.
+      Must not be the same as local-mac-address when set.

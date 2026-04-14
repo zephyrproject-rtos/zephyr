@@ -519,12 +519,39 @@ static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 	return 0;
 }
 
+static void bytes_to_ascii_hex_upper(uint8_t *const dst,
+				     const uint8_t *const src, const size_t n)
+{
+	static const char hex[] = "0123456789ABCDEF";
+
+	for (size_t i = 0; i < n; i++) {
+		dst[i * 2]     = hex[src[i] >> 4];
+		dst[i * 2 + 1] = hex[src[i] & 0x0F];
+	}
+}
+
+#define USBD_MAC_ADDRESS_ASCII7_LENGTH 12
+
+/* Render a CDC iMACAddress string from a live 6-byte MAC buffer */
+static size_t get_mac_address_string(uint8_t mac_str[static USBD_MAC_ADDRESS_ASCII7_LENGTH],
+				     const uint8_t *const mac_addr)
+{
+	uint8_t remote[6];
+
+	memcpy(remote, mac_addr, sizeof(remote));
+	/* U/L bit flip: host-side MAC derived from device-side MAC */
+	remote[0] ^= 0x02;
+
+	bytes_to_ascii_hex_upper(mac_str, remote, sizeof(remote));
+
+	return USBD_MAC_ADDRESS_ASCII7_LENGTH;
+}
+
 #define USBD_SN_ASCII7_LENGTH (CONFIG_USBD_HWINFO_DEVID_LENGTH * 2)
 
 /* Generate valid USB device serial number from hwid */
 static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_SN_ASCII7_LENGTH])
 {
-	static const char hex[] = "0123456789ABCDEF";
 	uint8_t hwid[USBD_SN_ASCII7_LENGTH / 2U];
 	ssize_t hwid_len = -ENOSYS;
 
@@ -540,12 +567,10 @@ static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_SN_ASCII7_LENGTH])
 		return hwid_len;
 	}
 
-	for (ssize_t i = 0; i < MIN(hwid_len, sizeof(hwid)); i++) {
-		sn[i * 2] = hex[hwid[i] >> 4];
-		sn[i * 2 + 1] = hex[hwid[i] & 0xF];
-	}
+	hwid_len = MIN(hwid_len, (ssize_t)sizeof(hwid));
+	bytes_to_ascii_hex_upper(sn, hwid, hwid_len);
 
-	return MIN(hwid_len, sizeof(hwid)) * 2;
+	return hwid_len * 2;
 }
 
 /* Copy and convert ASCII-7 string descriptor to UTF16-LE */
@@ -553,6 +578,7 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 				     struct net_buf *const buf, const uint16_t wLength)
 {
 	uint8_t sn_ascii7_str[USBD_SN_ASCII7_LENGTH];
+	uint8_t mac_ascii7_str[USBD_MAC_ADDRESS_ASCII7_LENGTH];
 	struct usb_desc_header head = {
 		.bDescriptorType = dn->bDescriptorType,
 	};
@@ -571,6 +597,12 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 
 		head.bLength = sizeof(head) + sn_ascii7_str_len * 2;
 		ascii7_str = sn_ascii7_str;
+	} else if (dn->str.utype == USBD_DUT_STRING_MAC_ADDRESS) {
+		size_t mac_str_len = get_mac_address_string(mac_ascii7_str,
+							    (const uint8_t *)dn->ptr);
+
+		head.bLength = sizeof(head) + mac_str_len * 2;
+		ascii7_str = mac_ascii7_str;
 	} else {
 		head.bLength = dn->bLength;
 		ascii7_str = (uint8_t *)dn->ptr;
