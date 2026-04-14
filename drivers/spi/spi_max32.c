@@ -330,12 +330,12 @@ static int spi_max32_transceive(const struct device *dev)
 		len = sqe->rx.buf_len;
 		data->req.rxData = sqe->rx.buf;
 		data->req.rxLen = sqe->rx.buf_len;
-#ifndef CONFIG_SPI_MAX32_DMA
-		if (data->req.rxData == NULL) {
+		if (data->req.rxData == NULL &&
+		    (COND_CODE_1(IS_ENABLED(CONFIG_SPI_MAX32_DMA),
+				 (cfg->rx_dma.channel == 0xFF), (true)))) {
 			data->req.rxData = data->dummy;
 			data->req.rxLen = 0;
 		}
-#endif
 		data->req.txData = NULL;
 		data->req.txLen = len;
 		break;
@@ -359,12 +359,12 @@ static int spi_max32_transceive(const struct device *dev)
 		data->req.rxData = sqe->txrx.rx_buf;
 		data->req.txLen = len;
 		data->req.rxLen = len;
-#ifndef CONFIG_SPI_MAX32_DMA
-		if (data->req.rxData == NULL) {
+		if (data->req.rxData == NULL &&
+		    (COND_CODE_1(IS_ENABLED(CONFIG_SPI_MAX32_DMA),
+				 (cfg->rx_dma.channel == 0xFF), (true)))) {
 			data->req.rxData = data->dummy;
 			data->req.rxLen = 0;
 		}
-#endif
 		break;
 	default:
 		break;
