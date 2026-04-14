@@ -18,3 +18,12 @@ tests:
       - mimxrt1060_evk/mimxrt1062/qspi
       - max32690evkit/max32690/m4
     tags: usb
+  sample.usb_device_next.hid-mouse-bc12:
+    filter: dt_chosen_enabled("zephyr,usb-bc12")
+    depends_on:
+      - usbd
+    integration_platforms:
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+    extra_configs:
+      - CONFIG_USB_BC12=y
+    tags: usb
