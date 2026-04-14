@@ -60,6 +60,9 @@ LOG_MODULE_REGISTER(udc_numaker, CONFIG_UDC_DRIVER_LOG_LEVEL);
 /* Wait for USB/PHY stable timeout 100 ms */
 #define NUMAKER_HSUSBD_PHY_STABLE_TIMEOUT_US 100000
 
+/* Wait for Control Data IN token timeout */
+#define NUMAKER_HSUSBD_CTRL_DATA_IN_TOKEN_TIMEOUT_US 500
+
 #if defined(CONFIG_SOC_SERIES_M46X)
 #define CEPBUFSTART CEPBUFST
 #define EPBUFSTART  EPBUFST
@@ -112,6 +115,30 @@ struct numaker_usbd_msg {
 			uint8_t ep;
 		} xfer;
 	};
+};
+
+/* Rather than queued messages, track USB bus status real-time
+ * for abnormal processing
+ */
+enum numaker_usbd_event {
+	/* Control Setup transaction completed
+	 *
+	 * Indicate new Setup packet has arrived and handling for
+	 * current Control transfer needs to be canceled
+	 */
+	NUMAKER_USBD_EVENT_CTRL_SETUP_COMPL,
+
+	/* Data IN token received
+	 *
+	 * Arm for Control Data IN only when Data IN token is present.
+	 * This has the points:
+	 * 1. Lower the chance that Data IN data armed for outdated Control
+	 *    transfer is transmitted in new transfer
+	 * 2. Make the mis-arm error stop propagation in the current or
+	 *    next transfer because Data IN won't get armed when there is
+	 *    no Data IN token, which results from broken transfer
+	 */
+	NUMAKER_USBD_EVENT_CTRL_DATA_IN_TOKEN,
 };
 
 /* EP H/W context */
@@ -204,6 +231,8 @@ struct udc_numaker_data {
 #if defined(CONFIG_UDC_NUMAKER_DMA)
 	struct k_sem sem_dma_done;
 #endif
+
+	struct k_event events;
 
 	bool status_out;
 };
@@ -829,6 +858,7 @@ static void numaker_usbd_setup_copy_to_user(const struct device *dev, uint8_t *u
 /* Interrupt top half processing for Setup packet */
 static void numaker_usbd_setup_th(const struct device *dev)
 {
+	struct udc_numaker_data *priv = udc_get_private(dev);
 	USBD_EP_T *ep0_base = numaker_usbd_ep_base(dev, EP0);
 	USBD_EP_T *ep1_base = numaker_usbd_ep_base(dev, EP1);
 	struct numaker_usbd_msg msg = {0};
@@ -850,12 +880,16 @@ static void numaker_usbd_setup_th(const struct device *dev)
 	msg.type = NUMAKER_USBD_MSG_TYPE_SETUP;
 	numaker_usbd_setup_copy_to_user(dev, msg.setup.packet);
 	numaker_usbd_send_msg(dev, &msg);
+
+	k_event_post(&priv->events, BIT(NUMAKER_USBD_EVENT_CTRL_SETUP_COMPL));
 }
 
 /* Interrupt top half processing for EP (excluding Setup) */
 static void numaker_usbd_ep_th(const struct device *dev, uint32_t ep_hw_idx)
 {
+	const struct udc_numaker_config *config = dev->config;
 	struct udc_numaker_data *priv = udc_get_private(dev);
+	USBD_T *base = config->base;
 	USBD_EP_T *ep_base = numaker_usbd_ep_base(dev, ep_hw_idx);
 	uint8_t ep_dir;
 	uint8_t ep_idx;
@@ -878,9 +912,7 @@ static void numaker_usbd_ep_th(const struct device *dev, uint32_t ep_hw_idx)
 	 * CTRL OUT's MXPLD
 	 */
 	if (ep == USB_EP_GET_ADDR(0, USB_EP_DIR_OUT)) {
-		const struct udc_numaker_config *config = dev->config;
 		struct numaker_usbd_ep *ep_ctrlout = priv->ep_pool + 0;
-		USBD_T *base = config->base;
 
 		ep_ctrlout->mxpld_ctrlout = (ep_base->MXPLD & USBD_MXPLD_MXPLD_Msk) >>
 					    USBD_MXPLD_MXPLD_Pos;
@@ -911,6 +943,7 @@ static void numaker_usbd_ep_th(const struct device *dev, uint32_t ep_hw_idx)
 static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 {
 	const struct udc_numaker_config *config = dev->config;
+	struct udc_numaker_data *priv = udc_get_private(dev);
 	HSUSBD_T *base = config->base;
 	struct numaker_usbd_msg msg = {0};
 
@@ -935,8 +968,6 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 
 	/* Status stage completed */
 	if (cepintsts & HSUSBD_CEPINTSTS_STSDONEIF_Msk) {
-		struct udc_numaker_data *priv = udc_get_private(dev);
-
 		/* Message for bottom-half processing */
 		msg.type = NUMAKER_USBD_MSG_TYPE_STATUS;
 		if (priv->status_out) {
@@ -968,6 +999,13 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 		msg.type = NUMAKER_USBD_MSG_TYPE_SETUP;
 		numaker_usbd_setup_copy_to_user(dev, msg.setup.packet);
 		numaker_usbd_send_msg(dev, &msg);
+
+		k_event_post(&priv->events, BIT(NUMAKER_USBD_EVENT_CTRL_SETUP_COMPL));
+	}
+
+	/* Monitor Data IN token */
+	if (cepintsts & HSUSBD_CEPINTSTS_INTKIF_Msk) {
+		k_event_post(&priv->events, BIT(NUMAKER_USBD_EVENT_CTRL_DATA_IN_TOKEN));
 	}
 }
 
@@ -1550,6 +1588,51 @@ static void numaker_hsusbd_ep_disable(struct numaker_usbd_ep *ep_cur)
 	}
 }
 
+static bool numaker_hsusbd_cep_wait_in_token(const struct device *dev, uint32_t timeout_us)
+{
+	const struct udc_numaker_config *config = dev->config;
+	struct udc_numaker_data *priv = udc_get_private(dev);
+	HSUSBD_T *base = config->base;
+	uint32_t evt;
+	uint32_t evt_mask;
+
+	__ASSERT_NO_MSG(config->is_hsusbd);
+
+	/* Evaluate arm or not for Control Data In
+	 *
+	 * Abandon when either condition is not met:
+	 * 1. Data In token present
+	 * 2. No new Setup packet
+	 */
+	evt_mask = BIT(NUMAKER_USBD_EVENT_CTRL_SETUP_COMPL) |
+		   BIT(NUMAKER_USBD_EVENT_CTRL_DATA_IN_TOKEN);
+
+	/* Note on clear of INTKIF interrupt flag
+	 *
+	 * Per test, on M460 (but not on M55M1), it seems clear of INTKIF
+	 * will make TXPKIF not raise. For not getting into such hazard,
+	 * make clear of INTKIF and arm of Control Data IN not overlap.
+	 */
+	base->CEPINTSTS = HSUSBD_CEPINTSTS_INTKIF_Msk;
+	base->CEPINTEN |= HSUSBD_CEPINTEN_INTKIEN_Msk;
+
+	k_event_clear(&priv->events, BIT(NUMAKER_USBD_EVENT_CTRL_DATA_IN_TOKEN));
+	evt = k_event_wait(&priv->events, evt_mask, false, K_USEC(timeout_us));
+
+	base->CEPINTEN &= ~HSUSBD_CEPINTEN_INTKIEN_Msk;
+
+	if (evt & BIT(NUMAKER_USBD_EVENT_CTRL_SETUP_COMPL)) {
+		LOG_WRN("New Setup packet arrived, not to arm Control Data IN");
+		return false;
+	} else if (!(evt & BIT(NUMAKER_USBD_EVENT_CTRL_DATA_IN_TOKEN))) {
+		LOG_WRN("Wait no Control Data IN token, not to arm Control Data "
+			"IN");
+		return false;
+	}
+
+	return true;
+}
+
 /* Start EP data transaction */
 static void numaker_hsusbd_ep_trigger(struct numaker_usbd_ep *ep_cur, uint32_t len)
 {
@@ -1560,8 +1643,16 @@ static void numaker_hsusbd_ep_trigger(struct numaker_usbd_ep *ep_cur, uint32_t l
 
 	if (ep_cur->ep_hw_idx == CEP) {
 		if (USB_EP_DIR_IS_IN(ep_cur->addr)) {
-			__ASSERT_NO_MSG(len <= ep_cur->mps);
-			base->CEPTXCNT = len;
+			int has_in_token;
+			uint32_t timeout_us;
+
+			/* Arm Data IN when there is Data IN token present, or drop it */
+			timeout_us = NUMAKER_HSUSBD_CTRL_DATA_IN_TOKEN_TIMEOUT_US;
+			has_in_token = numaker_hsusbd_cep_wait_in_token(dev, timeout_us);
+			if (has_in_token) {
+				__ASSERT_NO_MSG(len <= ep_cur->mps);
+				base->CEPTXCNT = len;
+			}
 		} else {
 			/* Enable CEP interrupt */
 			base->CEPINTEN |= HSUSBD_CEPINTEN_RXPKIEN_Msk;
@@ -2058,6 +2149,9 @@ static int numaker_usbd_msg_handle_setup(const struct device *dev, struct numake
 	struct numaker_usbd_ep *ep_cur;
 
 	__ASSERT_NO_MSG(msg->type == NUMAKER_USBD_MSG_TYPE_SETUP);
+
+	/* Change new Setup packet from pending to active */
+	k_event_clear(&priv->events, BIT(NUMAKER_USBD_EVENT_CTRL_SETUP_COMPL));
 
 	ep = USB_CONTROL_EP_OUT;
 
@@ -3020,6 +3114,8 @@ static int udc_numaker_driver_preinit(const struct device *dev)
 #if defined(CONFIG_UDC_NUMAKER_DMA)
 	k_sem_init(&priv->sem_dma_done, 0, 1);
 #endif
+
+	k_event_init(&priv->events);
 
 	return 0;
 }
