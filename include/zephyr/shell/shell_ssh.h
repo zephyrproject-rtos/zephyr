@@ -30,27 +30,43 @@ extern "C" {
 struct ssh_channel;
 struct shell_ssh;
 
+/** @endcond */
+
+/** @brief SSH password storage. */
 struct shell_ssh_passwd {
+	/** Buffer to hold the password. */
 	char buf[SHELL_SSH_MAX_PASSWORD_LEN + 1];
+	/** Length of the password stored in the buffer. */
 	size_t len;
 };
 
-struct shell_ssh_userdata {
+/** @brief SSH transport user data.
+ *
+ * This structure holds the user data for the shell SSH transport. It is
+ * passed to the transport event callback and can be used to store any
+ * necessary context for the transport.
+ */
+struct shell_ssh_context {
+	/** Shell instance associated with this transport. */
 	const struct shell *sh;
-	const struct shell *ssh;
-	struct shell_ssh *shell_ssh;
+	/** Shell SSH transport API. */
+	struct shell_ssh *ssh;
+	/** SSH channel associated with this transport. */
 	struct ssh_channel *channel;
+	/** SSH transport associated with this user data. */
 	struct ssh_transport *transport;
+	/** SSH server password storage */
 	struct shell_ssh_passwd password;
+	/** Is this context in use (server-side pool tracking) */
+	bool in_use;
 };
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct shell_transport_api shell_ssh_transport_api;
 /** @endcond */
 
+/** Helper macro to construct internal symbol names for a shell SSH transport instance. */
 #define SHELL_SSH_GET_NAME(_name) _name##_shell_ssh
-
-/** @endcond */
 
 /**
  * @brief Define a shell SSH transport instance.
@@ -69,16 +85,19 @@ extern const struct shell_transport_api shell_ssh_transport_api;
 		.ctx = &_name##_shell_ssh,			\
 	}
 
-/** @cond INTERNAL_HIDDEN */
-
+/**
+ * @brief SSH transport API
+ */
 struct shell_ssh {
+	/** Transport handler */
 	shell_transport_handler_t handler;
+	/** SSH channel */
 	struct ssh_channel *ssh_channel;
+	/** Transport context */
 	void *context;
+	/** Is this transport in use */
+	bool in_use;
 };
-
-
-int shell_ssh_setup(const struct shell *sh, struct ssh_channel *channel);
 
 /** @cond INTERNAL_HIDDEN */
 

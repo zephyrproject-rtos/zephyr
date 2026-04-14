@@ -24,16 +24,6 @@ LOG_MODULE_DECLARE(net_shell);
 
 #if defined(CONFIG_SSH_SHELL)
 
-#if defined(CONFIG_SSH_SERVER)
-SHELL_SSH_DEFINE(shell_transport_ssh);
-SHELL_DEFINE(shell_ssh,
-	     CONFIG_SHELL_PROMPT_SSH,
-	     &shell_transport_ssh,
-	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_SIZE,
-	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_TIMEOUT,
-	     SHELL_FLAG_OLF_CRLF);
-#endif /* CONFIG_SSH_SERVER */
-
 #define MAX_USERNAME_LEN 32
 #define MAX_PASSWORD_LEN 32
 #define MAX_ADDRESS_LEN 64
@@ -501,7 +491,6 @@ static int cmd_sshd_start(const struct shell *sh, size_t argc, char **argv)
 {
 #if defined(CONFIG_SSH_SHELL)
 #if defined(CONFIG_SSH_SERVER)
-	static struct shell_ssh_userdata ud;
 	struct ssh_params params = { 0 };
 	struct net_sockaddr_storage bind_addr;
 	struct ssh_server *sshd;
@@ -562,9 +551,6 @@ static int cmd_sshd_start(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	ud.ssh = &shell_ssh; /* The ssh shell defined in SHELL_DEFINE() in this file */
-	ud.shell_ssh = (struct shell_ssh *)shell_transport_ssh.ctx;
-
 	ret = ssh_server_start(sshd,
 			       net_sad(&bind_addr),
 			       hostkey_idx,
@@ -574,7 +560,7 @@ static int cmd_sshd_start(const struct shell *sh, size_t argc, char **argv)
 			       params.auth_key_count,
 			       shell_sshd_event_callback,
 			       shell_sshd_transport_event_callback,
-			       &ud);
+			       NULL);
 	if (ret != 0) {
 		PR_ERROR("Failed to start SSH server: %d\n", ret);
 	}
@@ -671,7 +657,7 @@ static int cmd_ssh_start(const struct shell *sh, size_t argc, char **argv)
 	struct ssh_params params = { 0 };
 	struct net_sockaddr_storage dest_addr;
 	struct ssh_client *sshc;
-	static struct shell_ssh_userdata ud;
+	static struct shell_ssh_context ctx;
 	int client_instance, hostkey_idx;
 	char *dst, *username;
 	int ret;
@@ -680,7 +666,7 @@ static int cmd_ssh_start(const struct shell *sh, size_t argc, char **argv)
 	params.instance = -1;
 	params.hostkey_idx = -1;
 
-	ud.sh = sh;
+	ctx.sh = sh;
 
 	ret = ssh_parse_args_to_params(sh, argc, argv, true, &params);
 	if (ret < 0) {
@@ -747,7 +733,7 @@ static int cmd_ssh_start(const struct shell *sh, size_t argc, char **argv)
 			       net_sad(&dest_addr),
 			       hostkey_idx,
 			       shell_ssh_client_transport_event_callback,
-			       &ud);
+			       &ctx);
 	if (ret != 0) {
 		PR_ERROR("Failed to start SSH client: %d\n", ret);
 	} else {

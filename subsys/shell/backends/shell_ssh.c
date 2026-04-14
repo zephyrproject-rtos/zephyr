@@ -15,6 +15,89 @@ LOG_MODULE_REGISTER(shell_ssh, CONFIG_SHELL_SSH_LOG_LEVEL);
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_ssh.h>
 
+#if defined(CONFIG_SSH_SERVER)
+
+static K_MUTEX_DEFINE(ssh_lock);
+
+#define SHELL_SSH_NAME(n, _) &shell_ssh_##n
+
+#define SHELL_SSH_DEFINE_ALL(n, _)					\
+	SHELL_SSH_DEFINE(shell_transport_ssh_##n);			\
+	SHELL_DEFINE(shell_ssh_##n,					\
+		     CONFIG_SHELL_PROMPT_SSH,				\
+		     &shell_transport_ssh_##n,				\
+		     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_SIZE, \
+		     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_TIMEOUT, \
+		     SHELL_FLAG_OLF_CRLF)
+
+LISTIFY(CONFIG_SSH_SERVER_SHELL_COUNT, SHELL_SSH_DEFINE_ALL, (;));
+
+static const struct shell *const ssh_shell_instances[] = {
+	LISTIFY(CONFIG_SSH_SERVER_SHELL_COUNT, SHELL_SSH_NAME, (,), shell_ssh)
+};
+
+static struct shell_ssh_context ssh_server_contexts[CONFIG_SSH_SERVER_SHELL_COUNT];
+
+static struct shell_ssh_context *ssh_server_context_alloc(void)
+{
+	k_mutex_lock(&ssh_lock, K_FOREVER);
+
+	for (size_t i = 0; i < ARRAY_SIZE(ssh_server_contexts); i++) {
+		if (!ssh_server_contexts[i].in_use) {
+			memset(&ssh_server_contexts[i], 0,
+			       sizeof(ssh_server_contexts[i]));
+			ssh_server_contexts[i].in_use = true;
+			k_mutex_unlock(&ssh_lock);
+			return &ssh_server_contexts[i];
+		}
+	}
+
+	k_mutex_unlock(&ssh_lock);
+
+	return NULL;
+}
+
+static void ssh_server_context_free(struct shell_ssh_context *ctx)
+{
+	k_mutex_lock(&ssh_lock, K_FOREVER);
+	ctx->in_use = false;
+	k_mutex_unlock(&ssh_lock);
+}
+
+static const struct shell *ssh_server_shell_instance_alloc(struct shell_ssh_context *ctx)
+{
+	k_mutex_lock(&ssh_lock, K_FOREVER);
+
+	for (size_t i = 0; i < ARRAY_SIZE(ssh_shell_instances); i++) {
+		const struct shell *sh = ssh_shell_instances[i];
+		struct shell_ssh *sh_ssh = sh->iface->ctx;
+
+		if (!sh_ssh->in_use) {
+			sh_ssh->in_use = true;
+			ctx->ssh = sh_ssh;
+			k_mutex_unlock(&ssh_lock);
+			return sh;
+		}
+	}
+
+	k_mutex_unlock(&ssh_lock);
+
+	return NULL;
+}
+
+static void ssh_server_shell_instance_free(const struct shell *sh)
+{
+	struct shell_ssh *sh_ssh;
+
+	k_mutex_lock(&ssh_lock, K_FOREVER);
+
+	sh_ssh = sh->iface->ctx;
+	sh_ssh->in_use = false;
+
+	k_mutex_unlock(&ssh_lock);
+}
+#endif
+
 static int shell_ssh_init(const struct shell_transport *transport,
 			  const void *config,
 			  shell_transport_handler_t evt_handler,
@@ -81,20 +164,6 @@ const struct shell_transport_api shell_ssh_transport_api = {
 	.read = shell_ssh_read
 };
 
-int shell_ssh_setup(const struct shell *sh, struct ssh_channel *channel)
-{
-	static const struct shell_backend_config_flags cfg_flags =
-		SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
-	int ret;
-
-	ret = shell_init(sh, channel, cfg_flags, false, LOG_LEVEL_NONE);
-	if (ret < 0) {
-		LOG_DBG("Cannot init ssh shell (%d)", ret);
-	}
-
-	return ret;
-}
-
 #if defined(CONFIG_SSH_SERVER)
 int shell_sshd_event_callback(struct ssh_server *sshd,
 			      const struct ssh_server_event *event,
@@ -129,12 +198,24 @@ int shell_sshd_transport_event_callback(struct ssh_transport *transport,
 					void *user_data)
 {
 	ARG_UNUSED(transport);
+	ARG_UNUSED(user_data);
 
 	switch (event->type) {
-	case SSH_TRANSPORT_EVENT_CHANNEL_OPEN:
+	case SSH_TRANSPORT_EVENT_CHANNEL_OPEN: {
+		struct shell_ssh_context *ctx;
+
+		ctx = ssh_server_context_alloc();
+		if (ctx == NULL) {
+			LOG_ERR("No SSH server contexts available");
+			return ssh_channel_open_result(
+				event->channel_open.channel, false,
+				NULL, NULL);
+		}
+
 		return ssh_channel_open_result(event->channel_open.channel, true,
 					       sshd_channel_event_callback,
-					       user_data);
+					       ctx);
+	}
 	default:
 		break;
 	}
@@ -142,23 +223,47 @@ int shell_sshd_transport_event_callback(struct ssh_transport *transport,
 	return 0;
 }
 
+static int shell_ssh_setup(struct shell_ssh_context *ctx, struct ssh_channel *channel)
+{
+	static const struct shell_backend_config_flags cfg_flags =
+		SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
+	const struct shell *sh;
+	int ret;
+
+	sh = ssh_server_shell_instance_alloc(ctx);
+	if (sh != NULL) {
+		ret = shell_init(sh, channel, cfg_flags, false, LOG_LEVEL_NONE);
+		if (ret == 0) {
+			ctx->sh = sh;
+		} else {
+			LOG_DBG("Cannot init ssh shell (%d)", ret);
+			ssh_server_shell_instance_free(sh);
+		}
+	} else {
+		LOG_ERR("No SSH server shell instances remaining");
+		ret = -ENOMEM;
+	}
+
+	return ret;
+}
+
 static int sshd_channel_event_callback(struct ssh_channel *channel,
 				       const struct ssh_channel_event *event,
 				       void *user_data)
 {
-	struct shell_ssh_userdata *ud = user_data;
+	struct shell_ssh_context *ctx = user_data;
 
 	switch (event->type) {
 	case SSH_CHANNEL_EVENT_REQUEST: {
 		bool success = false;
 
-		LOG_INF("Server channel request");
+		LOG_DBG("Server channel request (%d)", event->channel_request.type);
 
 		switch (event->channel_request.type) {
 		case SSH_CHANNEL_REQUEST_SHELL: {
 			int ret;
 
-			ret = shell_ssh_setup(ud->ssh, channel);
+			ret = shell_ssh_setup(ctx, channel);
 			if (ret != 0) {
 				LOG_ERR("shell_init error (%d)", ret);
 			} else {
@@ -193,16 +298,20 @@ static int sshd_channel_event_callback(struct ssh_channel *channel,
 	}
 
 	case SSH_CHANNEL_EVENT_RX_DATA_READY: {
-		struct shell_ssh *sh_ssh = ud->shell_ssh;
+		struct shell_ssh *sh_ssh = ctx->ssh;
 
-		sh_ssh->handler(SHELL_TRANSPORT_EVT_RX_RDY, sh_ssh->context);
+		if (sh_ssh != NULL && sh_ssh->handler != NULL) {
+			sh_ssh->handler(SHELL_TRANSPORT_EVT_RX_RDY, sh_ssh->context);
+		}
 		break;
 	}
 
 	case SSH_CHANNEL_EVENT_TX_DATA_READY: {
-		struct shell_ssh *sh_ssh = ud->shell_ssh;
+		struct shell_ssh *sh_ssh = ctx->ssh;
 
-		sh_ssh->handler(SHELL_TRANSPORT_EVT_TX_RDY, sh_ssh->context);
+		if (sh_ssh != NULL && sh_ssh->handler != NULL) {
+			sh_ssh->handler(SHELL_TRANSPORT_EVT_TX_RDY, sh_ssh->context);
+		}
 		break;
 	}
 
@@ -216,7 +325,13 @@ static int sshd_channel_event_callback(struct ssh_channel *channel,
 
 	case SSH_CHANNEL_EVENT_CLOSED:
 		LOG_INF("Server channel closed");
-		shell_uninit(ud->ssh, NULL);
+		if (ctx->sh != NULL) {
+			shell_uninit(ctx->sh, NULL);
+			ssh_server_shell_instance_free(ctx->sh);
+			ctx->sh = NULL;
+			ctx->ssh = NULL;
+		}
+		ssh_server_context_free(ctx);
 		break;
 
 	default:
