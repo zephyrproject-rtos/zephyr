@@ -13,6 +13,7 @@ supported:
   - uart
   - counter
   - bluetooth
+  - can
 testing:
   ignore_tags:
     - pm

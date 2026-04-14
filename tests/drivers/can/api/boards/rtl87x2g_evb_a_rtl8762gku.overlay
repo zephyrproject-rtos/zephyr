@@ -1,0 +1,29 @@
+/*
+ * Copyright(c) 2026, Realtek Semiconductor Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,canbus = &can;
+	};
+};
+
+&can {
+	pinctrl-0 = <&can_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pinctrl {
+	can_default: can_default {
+		group1 {
+			psels = <BEE_PSEL(A2C_TX, P3_4)>,
+				<BEE_PSEL(A2C_RX, P3_5)>;
+			output-enable;
+			output-high;
+			bias-disable;
+		};
+	};
+};
