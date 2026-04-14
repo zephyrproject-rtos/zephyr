@@ -109,7 +109,8 @@ extern const struct zbus_proxy_agent_backend_api zbus_proxy_agent_ipc_backend_ap
  * @brief Define an IPC backend instance and its proxy agent in code.
  *
  * The proxy agent instance is defined in code while devicetree may still be used
- * to look up the backing IPC hardware or service device.
+ * to look up the backing IPC hardware or service device. Queued proxy-agent work
+ * runs on Zephyr's system workqueue by default.
  *
  * @param _name Proxy agent instance name
  * @param _dev Device pointer expression for the IPC instance used by this backend
@@ -118,6 +119,19 @@ extern const struct zbus_proxy_agent_backend_api zbus_proxy_agent_ipc_backend_ap
 	_ZBUS_PROXY_AGENT_IPC_CONFIG_DEFINE(_name, _dev)                                      \
 	_ZBUS_PROXY_AGENT_INSTANCE_DEFINE(_name, _ZBUS_PROXY_AGENT_IPC_CONFIG(_name),         \
 					  _ZBUS_PROXY_AGENT_IPC_API)
+
+/**
+ * @brief Define an IPC backend instance and its proxy agent on a specific workqueue.
+ *
+ * @param _name Proxy agent instance name
+ * @param _dev Device pointer expression for the IPC instance used by this backend
+ * @param _work_q Workqueue used for queued proxy-agent RX/TX processing
+ */
+#define ZBUS_PROXY_AGENT_IPC_DEFINE_WITH_WORKQ(_name, _dev, _work_q)                        \
+	_ZBUS_PROXY_AGENT_IPC_CONFIG_DEFINE(_name, _dev)                                    \
+	_ZBUS_PROXY_AGENT_INSTANCE_DEFINE_WITH_WORKQ(                                        \
+		_name, _ZBUS_PROXY_AGENT_IPC_CONFIG(_name), _ZBUS_PROXY_AGENT_IPC_API,      \
+		_work_q)
 
 /** @endcond */
 

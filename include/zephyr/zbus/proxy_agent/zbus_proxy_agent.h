@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_H_
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/zbus/zbus.h>
 
@@ -65,6 +66,16 @@ struct zbus_proxy_agent_rx_msg {
 };
 
 /**
+ * @brief Work item wrapper used to bind queued work to a proxy agent instance.
+ */
+struct zbus_proxy_agent_work_ctx {
+	/** Work item submitted to the proxy agent's configured workqueue */
+	struct k_work work;
+	/** Proxy agent instance that owns the work item */
+	const struct zbus_proxy_agent *agent;
+};
+
+/**
  * @brief Structure for proxy agent configuration.
  *
  * This structure represents a proxy agent instance and its associated configuration.
@@ -76,14 +87,18 @@ struct zbus_proxy_agent {
 	const void *backend_config;
 	/** Backend API for this agent instance */
 	const struct zbus_proxy_agent_backend_api *backend_api;
-	/** Dedicated thread used to process received proxy messages */
-	struct k_thread *thread;
-	/** msgq for received proxy messages */
-	struct k_msgq *msgq;
-	/** Stack for the dedicated proxy agent thread */
-	k_thread_stack_t *stack;
-	/** Pointer to the thread ID of the dedicated proxy agent thread */
-	k_tid_t *const thread_id;
+	/** Work item that drains the receive queue onto local shadow channels */
+	struct zbus_proxy_agent_work_ctx *rx_work;
+	/** Work item that drains the transmit queue through the backend */
+	struct zbus_proxy_agent_work_ctx *tx_work;
+	/** Queue of validated remote messages waiting for local publication */
+	struct k_msgq *rx_msgq;
+	/** Queue of local publications waiting to be forwarded remotely */
+	struct k_msgq *tx_msgq;
+	/** Workqueue used to process queued RX and TX work for this agent */
+	struct k_work_q *work_q;
+	/** Set while this agent is publishing one of its shadow channels */
+	atomic_t *shadow_pub_active;
 };
 
 /**
@@ -131,7 +146,7 @@ void zbus_proxy_agent_listener_cb(const struct zbus_channel *chan,
  * @note This function is called by the generated initialization function from sys_init and should
  * not be called directly.
  *
- * Initializes the proxy agent by setting up the backend and starting the dedicated thread.
+ * Initializes the proxy agent by setting up the backend and work items.
  *
  * @param agent Proxy agent configuration
  * @return int 0 on success, negative error code on failure
@@ -143,27 +158,45 @@ int zbus_init_proxy_agent(const struct zbus_proxy_agent *agent);
  * @hideinitializer
  *
  * This macro defines a proxy agent with the specified name, backend configuration, and backend
- * API.
+ * API, using Zephyr's system workqueue for queued RX/TX processing.
  *
  * @param _name Name of the proxy agent instance
  * @param _backend_config Pointer to the backend configuration for this agent instance
  * @param _backend_api Pointer to the backend API used by this agent instance
  */
 #define ZBUS_PROXY_AGENT_DEFINE(_name, _backend_config, _backend_api)                              \
-	K_THREAD_STACK_DEFINE(_name##_thread_stack,                                                \
-			      CONFIG_ZBUS_PROXY_AGENT_WORK_QUEUE_STACK_SIZE);                      \
+	ZBUS_PROXY_AGENT_DEFINE_WITH_WORKQ(_name, _backend_config, _backend_api, &k_sys_work_q)
+
+/**
+ * @brief Proxy agent definition macro using an application-provided workqueue.
+ * @hideinitializer
+ *
+ * This macro defines a proxy agent with the specified name, backend configuration, backend
+ * API, and workqueue used for queued RX/TX processing.
+ *
+ * @param _name Name of the proxy agent instance
+ * @param _backend_config Pointer to the backend configuration for this agent instance
+ * @param _backend_api Pointer to the backend API used by this agent instance
+ * @param _work_q Workqueue used to process queued RX/TX work for this agent
+ */
+#define ZBUS_PROXY_AGENT_DEFINE_WITH_WORKQ(_name, _backend_config, _backend_api, _work_q)          \
 	K_MSGQ_DEFINE(_name##_rx_msgq, sizeof(struct zbus_proxy_agent_rx_msg),                     \
 		      CONFIG_ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH, 4);                                  \
-	static struct k_thread _name##_thread;                                                     \
-	static k_tid_t _name##_thread_id;                                                          \
+	K_MSGQ_DEFINE(_name##_tx_msgq, sizeof(struct zbus_proxy_msg),                              \
+		      CONFIG_ZBUS_PROXY_AGENT_TX_QUEUE_DEPTH, 4);                                  \
+	static struct zbus_proxy_agent_work_ctx _name##_rx_work;                                   \
+	static struct zbus_proxy_agent_work_ctx _name##_tx_work;                                   \
+	static atomic_t _name##_shadow_pub_active = ATOMIC_INIT(0);                                \
 	const struct zbus_proxy_agent _name = {                                                    \
 		.name = #_name,                                                                    \
 		.backend_config = (_backend_config),                                               \
 		.backend_api = (_backend_api),                                                     \
-		.thread = &_name##_thread,                                                         \
-		.msgq = &_name##_rx_msgq,                                                          \
-		.stack = _name##_thread_stack,                                                     \
-		.thread_id = &_name##_thread_id,                                                   \
+		.rx_work = &_name##_rx_work,                                                       \
+		.tx_work = &_name##_tx_work,                                                       \
+		.rx_msgq = &_name##_rx_msgq,                                                       \
+		.tx_msgq = &_name##_tx_msgq,                                                       \
+		.work_q = (_work_q),                                                              \
+		.shadow_pub_active = &_name##_shadow_pub_active,                                   \
 	};                                                                                         \
 	static void _name##_zbus_listener_cb(const struct zbus_channel *chan)                      \
 	{                                                                                          \
@@ -181,6 +214,10 @@ int zbus_init_proxy_agent(const struct zbus_proxy_agent *agent);
 
 #define _ZBUS_PROXY_AGENT_INSTANCE_DEFINE(_name, _backend_config, _backend_api)                    \
 	ZBUS_PROXY_AGENT_DEFINE(_name, _backend_config, _backend_api)
+
+#define _ZBUS_PROXY_AGENT_INSTANCE_DEFINE_WITH_WORKQ(                                             \
+	_name, _backend_config, _backend_api, _work_q)                                            \
+	ZBUS_PROXY_AGENT_DEFINE_WITH_WORKQ(_name, _backend_config, _backend_api, _work_q)
 
 /** @brief Internal helper invoked when shadow channel publish validation fails.
  *
@@ -201,8 +238,8 @@ void zbus_proxy_agent_log_shadow_pub_denied(const struct zbus_proxy_agent *agent
 /**
  * @brief Generate a shadow validator function for the specified proxy agent.
  *
- * @note This validator ensures that shadow channels can only be published to by their
- * associated proxy agent's dedicated thread context.
+ * @note This validator ensures that shadow channels can only be published while the proxy
+ * agent is actively draining its local publication work item.
  *
  * @param _proxy_name Name of the proxy agent instance
  */
@@ -211,8 +248,7 @@ void zbus_proxy_agent_log_shadow_pub_denied(const struct zbus_proxy_agent *agent
 	{                                                                                          \
 		(void)msg;                                                                         \
 		(void)msg_size;                                                                    \
-		/* Only allow publishing from the proxy agent's dedicated thread */                \
-		if (k_current_get() != *_proxy_name.thread_id) {                                   \
+		if (atomic_get(_proxy_name.shadow_pub_active) == 0) {                              \
 			zbus_proxy_agent_log_shadow_pub_denied(&_proxy_name);                      \
 			return false;                                                              \
 		}                                                                                  \

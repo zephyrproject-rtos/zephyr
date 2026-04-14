@@ -22,26 +22,19 @@ config ZBUS_PROXY_AGENT_INIT_PRIORITY
 	help
 	  Initialization priority for the ZBus proxy agent.
 
-config ZBUS_PROXY_AGENT_WORK_QUEUE_STACK_SIZE
-	int "Receive work queue stack size"
-	default 1024
-	help
-	  Stack size for the ZBus proxy agent work queue thread. This thread is responsible for
-	  publishing forwarded messages locally. If using listeners on the shadow channels, this stack
-	  size should be large enough to accommodate the listener callbacks.
-
-config ZBUS_PROXY_AGENT_WORK_QUEUE_PRIORITY
-	int "Receive work queue priority"
-	default 5
-	help
-	  Priority for the ZBus proxy agent work queue thread.
-
 config ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH
 	int "Receive queue depth"
 	default 4
 	help
 	  Number of proxy messages buffered per proxy agent before incoming
 	  messages are dropped.
+
+config ZBUS_PROXY_AGENT_TX_QUEUE_DEPTH
+	int "Transmit queue depth"
+	default 4
+	help
+	  Number of locally published proxy messages buffered per proxy agent
+	  before outbound messages are dropped.
 
 menuconfig ZBUS_PROXY_AGENT_IPC
 	bool "ZBus proxy agent IPC backend"

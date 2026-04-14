@@ -54,4 +54,10 @@ extern const struct zbus_proxy_agent_backend_api zbus_proxy_agent_mock_backend_a
 	_ZBUS_PROXY_AGENT_INSTANCE_DEFINE(_name, _ZBUS_PROXY_AGENT_MOCK_CONFIG(_name),       \
 					  _ZBUS_PROXY_AGENT_MOCK_API)
 
+#define ZBUS_PROXY_AGENT_MOCK_DEFINE_WITH_WORKQ(_name, _work_q)                                    \
+	_ZBUS_PROXY_AGENT_MOCK_CONFIG_DEFINE(_name)                                          \
+	_ZBUS_PROXY_AGENT_INSTANCE_DEFINE_WITH_WORKQ(_name,                                  \
+						     _ZBUS_PROXY_AGENT_MOCK_CONFIG(_name), \
+						     _ZBUS_PROXY_AGENT_MOCK_API, _work_q)
+
 #endif /* ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_MOCK_H_ */

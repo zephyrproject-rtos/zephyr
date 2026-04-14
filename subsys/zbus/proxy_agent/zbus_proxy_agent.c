@@ -3,12 +3,20 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/zbus/zbus.h>
 #include <zephyr/zbus/proxy_agent/zbus_proxy_agent.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(zbus_proxy_agent, CONFIG_ZBUS_PROXY_AGENT_LOG_LEVEL);
+
+static struct zbus_proxy_agent_work_ctx *zbus_proxy_agent_work_ctx_from_work(struct k_work *work)
+{
+	return (struct zbus_proxy_agent_work_ctx *)
+		((char *)work - offsetof(struct zbus_proxy_agent_work_ctx, work));
+}
 
 void zbus_proxy_agent_log_shadow_pub_denied(const struct zbus_proxy_agent *agent)
 {
@@ -23,30 +31,32 @@ static bool is_shadow_channel_for_proxy(const struct zbus_channel *chan,
 			return true;
 		}
 	}
+
 	return false;
 }
 
-static void proxy_agent_thread_fn(void *p1, void *p2, void *p3)
+static void zbus_proxy_agent_submit_work(struct zbus_proxy_agent_work_ctx *work_ctx,
+					 const char *work_name)
 {
-	const struct zbus_proxy_agent *agent = p1;
+	int ret = k_work_submit_to_queue(work_ctx->agent->work_q, &work_ctx->work);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to submit %s work for proxy agent '%s': %d", work_name,
+			work_ctx->agent->name, ret);
+	}
+}
+
+static void zbus_proxy_agent_rx_work_handler(struct k_work *work)
+{
+	struct zbus_proxy_agent_work_ctx *work_ctx = zbus_proxy_agent_work_ctx_from_work(work);
+	const struct zbus_proxy_agent *agent = work_ctx->agent;
 	struct zbus_proxy_agent_rx_msg msg;
 	int ret;
 
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	while (true) {
-		ret = k_msgq_get(agent->msgq, &msg, K_FOREVER);
-		if (ret != 0) {
-			continue;
-		}
-
-		/* Publish the message to the shadow channel.
-		 * The shadow validator will check that this is running in the proxy agent
-		 * thread context, ensuring only the proxy agent can publish to this shadow
-		 * channel.
-		 */
+	while (k_msgq_get(agent->rx_msgq, &msg, K_NO_WAIT) == 0) {
+		atomic_set(agent->shadow_pub_active, 1);
 		ret = zbus_chan_pub(msg.chan, msg.message, K_NO_WAIT);
+		atomic_clear(agent->shadow_pub_active);
 		if (ret < 0) {
 			LOG_ERR("Failed to publish message on channel '%s': %d",
 				_ZBUS_CHAN_NAME(msg.chan), ret);
@@ -54,14 +64,30 @@ static void proxy_agent_thread_fn(void *p1, void *p2, void *p3)
 	}
 }
 
+static void zbus_proxy_agent_tx_work_handler(struct k_work *work)
+{
+	struct zbus_proxy_agent_work_ctx *work_ctx = zbus_proxy_agent_work_ctx_from_work(work);
+	const struct zbus_proxy_agent *agent = work_ctx->agent;
+	struct zbus_proxy_msg msg = {0};
+	int ret;
+
+	while (k_msgq_get(agent->tx_msgq, &msg, K_NO_WAIT) == 0) {
+		ret = agent->backend_api->backend_send(agent, &msg);
+		if (ret < 0) {
+			LOG_ERR("Failed to send message via proxy agent '%s' backend: %d",
+				agent->name, ret);
+		}
+	}
+}
+
 void zbus_proxy_agent_listener_cb(const struct zbus_channel *chan,
 				  const struct zbus_proxy_agent *agent)
 {
-	int ret;
 	const void *msg;
 	const char *chan_name;
 	size_t chan_name_len;
 	struct zbus_proxy_msg tx_msg = {0};
+	int ret;
 
 	if (chan->message_size > CONFIG_ZBUS_PROXY_AGENT_MAX_MESSAGE_SIZE) {
 		LOG_ERR("Message size %zu exceeds maximum %d in proxy agent listener callback",
@@ -73,7 +99,7 @@ void zbus_proxy_agent_listener_cb(const struct zbus_channel *chan,
 
 	msg = zbus_chan_const_msg(chan);
 	chan_name = _ZBUS_CHAN_NAME(chan);
-	chan_name_len = strlen(chan_name) + 1; /* includes NUL terminator */
+	chan_name_len = strlen(chan_name) + 1U;
 
 	if (chan_name_len > sizeof(tx_msg.channel_name)) {
 		LOG_ERR("Channel name '%s' too long for proxy transport (%zu > %zu)", chan_name,
@@ -86,19 +112,21 @@ void zbus_proxy_agent_listener_cb(const struct zbus_channel *chan,
 	tx_msg.channel_name_len = chan_name_len;
 	memcpy(tx_msg.channel_name, chan_name, chan_name_len);
 
-	ret = agent->backend_api->backend_send(agent, &tx_msg);
+	ret = k_msgq_put(agent->tx_msgq, &tx_msg, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to send message via proxy agent '%s' backend: %d", agent->name,
-			ret);
+		LOG_WRN("Transmit queue full for proxy agent %s, dropping message", agent->name);
+		return;
 	}
+
+	zbus_proxy_agent_submit_work(agent->tx_work, "transmit");
 }
 
 static int zbus_proxy_agent_receive_cb(const struct zbus_proxy_agent *agent,
 				       const struct zbus_proxy_msg *msg)
 {
-	int ret;
 	const struct zbus_channel *chan;
 	struct zbus_proxy_agent_rx_msg queued_msg = {0};
+	int ret;
 
 	if (msg->message_size == 0 || msg->message_size > sizeof(msg->message)) {
 		LOG_ERR("Invalid message size %u in proxy agent receive callback",
@@ -132,49 +160,49 @@ static int zbus_proxy_agent_receive_cb(const struct zbus_proxy_agent *agent,
 		return -EMSGSIZE;
 	}
 
-	/* Copy validated payload before deferring publish to the proxy agent thread. */
 	queued_msg.chan = chan;
 	memcpy(queued_msg.message, msg->message, msg->message_size);
 
-	ret = k_msgq_put(agent->msgq, &queued_msg, K_NO_WAIT);
+	ret = k_msgq_put(agent->rx_msgq, &queued_msg, K_NO_WAIT);
 	if (ret < 0) {
 		LOG_WRN("Receive queue full for proxy agent %s, dropping message", agent->name);
 		return ret;
 	}
+
+	zbus_proxy_agent_submit_work(agent->rx_work, "receive");
 
 	return 0;
 }
 
 int zbus_init_proxy_agent(const struct zbus_proxy_agent *agent)
 {
-	_ZBUS_ASSERT(agent != NULL, "Proxy agent configuration is NULL in init");
-	_ZBUS_ASSERT(agent->thread_id != NULL, "Thread ID storage is NULL in proxy agent init");
-	_ZBUS_ASSERT(agent->backend_api != NULL, "Backend API is NULL in proxy agent init");
-	_ZBUS_ASSERT(agent->thread != NULL, "Thread is NULL in proxy agent init");
-	_ZBUS_ASSERT(agent->msgq != NULL, "Message queue is NULL in proxy agent init");
-	_ZBUS_ASSERT(agent->stack != NULL, "Thread stack is NULL in proxy agent init");
-
 	int ret;
 
-	*agent->thread_id = k_thread_create(
-		agent->thread, agent->stack, CONFIG_ZBUS_PROXY_AGENT_WORK_QUEUE_STACK_SIZE,
-		proxy_agent_thread_fn, (void *)agent, NULL, NULL,
-		CONFIG_ZBUS_PROXY_AGENT_WORK_QUEUE_PRIORITY, 0, K_NO_WAIT);
-	k_thread_name_set(*agent->thread_id, agent->name);
+	_ZBUS_ASSERT(agent != NULL, "Proxy agent configuration is NULL in init");
+	_ZBUS_ASSERT(agent->backend_api != NULL, "Backend API is NULL in proxy agent init");
+	_ZBUS_ASSERT(agent->rx_work != NULL, "RX work item is NULL in proxy agent init");
+	_ZBUS_ASSERT(agent->tx_work != NULL, "TX work item is NULL in proxy agent init");
+	_ZBUS_ASSERT(agent->rx_msgq != NULL, "RX message queue is NULL in proxy agent init");
+	_ZBUS_ASSERT(agent->tx_msgq != NULL, "TX message queue is NULL in proxy agent init");
+	_ZBUS_ASSERT(agent->work_q != NULL, "Workqueue is NULL in proxy agent init");
+	_ZBUS_ASSERT(agent->shadow_pub_active != NULL,
+		     "Shadow publish flag is NULL in proxy agent init");
+
+	k_work_init(&agent->rx_work->work, zbus_proxy_agent_rx_work_handler);
+	agent->rx_work->agent = agent;
+	k_work_init(&agent->tx_work->work, zbus_proxy_agent_tx_work_handler);
+	agent->tx_work->agent = agent;
+	atomic_clear(agent->shadow_pub_active);
 
 	ret = agent->backend_api->backend_set_recv_cb(agent, zbus_proxy_agent_receive_cb);
 	if (ret < 0) {
 		LOG_ERR("Failed to set receive callback for proxy agent %s: %d", agent->name, ret);
-		k_thread_abort(*agent->thread_id);
-		*agent->thread_id = NULL;
 		return ret;
 	}
 
 	ret = agent->backend_api->backend_init(agent);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize backend for proxy agent %s: %d", agent->name, ret);
-		k_thread_abort(*agent->thread_id);
-		*agent->thread_id = NULL;
 		return ret;
 	}
 

@@ -16,6 +16,8 @@ LOG_MODULE_REGISTER(proxy_agent_test, LOG_LEVEL_DBG);
 
 DEFINE_FFF_GLOBALS;
 
+#define TEST_PROXY_WORK_Q_STACK_SIZE 2048
+
 struct test_data {
 	uint32_t test_value;
 };
@@ -24,7 +26,11 @@ struct test_data last_received_data;
 struct zbus_channel last_received_chan;
 K_SEM_DEFINE(listener_event_sem, 0, K_SEM_MAX_LIMIT);
 
-ZBUS_PROXY_AGENT_MOCK_DEFINE(test_proxy_agent);
+K_KERNEL_STACK_DEFINE(test_proxy_work_q_stack, TEST_PROXY_WORK_Q_STACK_SIZE);
+static struct k_work_q test_proxy_work_q;
+
+ZBUS_PROXY_AGENT_MOCK_DEFINE_WITH_WORKQ(test_proxy_agent, &test_proxy_work_q);
+ZBUS_PROXY_AGENT_MOCK_DEFINE(default_wq_agent);
 
 ZBUS_CHAN_DEFINE(test_channel, struct test_data, NULL, NULL, ZBUS_OBSERVERS_EMPTY,
 		 ZBUS_MSG_INIT(0));
@@ -38,8 +44,6 @@ ZBUS_PROXY_AGENT_MOCK_DEFINE(unused_proxy_agent);
 
 ZBUS_SHADOW_CHAN_DEFINE(unused_shadow_channel, struct test_data, unused_proxy_agent, NULL,
 			ZBUS_OBSERVERS_EMPTY, ZBUS_MSG_INIT(0));
-
-K_THREAD_STACK_DEFINE(test_error_handling_stack, CONFIG_ZBUS_PROXY_AGENT_WORK_QUEUE_STACK_SIZE);
 
 void test_channel_listener_cb(const struct zbus_channel *chan)
 {
@@ -56,14 +60,8 @@ ZBUS_LISTENER_DEFINE(test_channel_listener, test_channel_listener_cb);
 ZBUS_CHAN_ADD_OBS(test_channel, test_channel_listener, 0);
 ZBUS_CHAN_ADD_OBS(test_shadow_channel, test_channel_listener, 0);
 
-static void stop_manual_proxy_agent_config(k_tid_t *thread_id,
-					   struct zbus_proxy_agent_mock_data *backend_data)
+static void reset_manual_proxy_agent_config(struct zbus_proxy_agent_mock_data *backend_data)
 {
-	if (thread_id != NULL && *thread_id != NULL) {
-		k_thread_abort(*thread_id);
-		*thread_id = NULL;
-	}
-
 	if (backend_data != NULL) {
 		backend_data->recv_cb = NULL;
 		backend_data->recv_cb_config_ptr = NULL;
@@ -109,10 +107,34 @@ static void assert_listener_event_not_received(const char *msg)
 	zassert_not_equal(ret, 0, "%s", msg);
 }
 
+static void drain_proxy_workqueue(const struct zbus_proxy_agent *agent, const char *msg)
+{
+	int ret = k_work_queue_drain(agent->work_q, false);
+
+	zassert_true(ret >= 0, "%s", msg);
+}
+
+static void *test_setup(void)
+{
+	struct k_work_queue_config cfg = {
+		.name = "zbus_proxy_test",
+	};
+
+	k_work_queue_init(&test_proxy_work_q);
+	k_work_queue_start(&test_proxy_work_q, test_proxy_work_q_stack,
+			   K_KERNEL_STACK_SIZEOF(test_proxy_work_q_stack), 0, &cfg);
+	k_thread_name_set(&test_proxy_work_q.thread, "zbus_proxy_test");
+
+	return NULL;
+}
+
 static void test_cleanup(void *fixture)
 {
+	const struct zbus_proxy_agent *agent = get_test_proxy_agent_ptr();
+
 	ARG_UNUSED(fixture);
 
+	drain_proxy_workqueue(agent, "Failed to drain proxy-agent work before cleanup");
 	memset(&last_received_data, 0, sizeof(last_received_data));
 	memset(&last_received_chan, 0, sizeof(last_received_chan));
 	reset_listener_event_sem();
@@ -134,9 +156,14 @@ ZTEST(zbus_proxy_agent_tests, test_proxy_agent_config_generation)
 	zassert_str_equal(test_proxy_agent.name, "test_proxy_agent", "Proxy agent name mismatch");
 	zassert_equal(test_proxy_agent.backend_config, backend_config,
 		      "Backend config pointer mismatch");
+	zassert_equal(test_proxy_agent.work_q, &test_proxy_work_q,
+		      "Proxy agent should use the configured workqueue");
 	zassert_not_null(backend_config, "Backend config should not be NULL");
 	zassert_str_equal(backend_config->name, "test_proxy_agent", "Backend config name mismatch");
 	zassert_not_null(backend_config->data, "Backend config data should not be NULL");
+
+	zassert_equal(default_wq_agent.work_q, &k_sys_work_q,
+		      "Default proxy agent macro should use the system workqueue");
 
 	/* Verify the values set on initialization is as expected, indicating that the SYS_INIT is
 	 * working correctly
@@ -148,9 +175,12 @@ ZTEST(zbus_proxy_agent_tests, test_proxy_agent_config_generation)
 	zassert_not_equal(backend_config->data->recv_cb_config_ptr, NULL,
 			  "Backend config recv_cb_config_ptr should not be NULL");
 
-	zassert_not_null(test_proxy_agent.thread, "Thread pointer should not be NULL");
-	zassert_not_null(test_proxy_agent.msgq, "Message queue pointer should not be NULL");
-	zassert_not_null(test_proxy_agent.stack, "Thread stack pointer should not be NULL");
+	zassert_not_null(test_proxy_agent.rx_work, "RX work item should not be NULL");
+	zassert_not_null(test_proxy_agent.tx_work, "TX work item should not be NULL");
+	zassert_not_null(test_proxy_agent.rx_msgq, "RX queue should not be NULL");
+	zassert_not_null(test_proxy_agent.tx_msgq, "TX queue should not be NULL");
+	zassert_not_null(test_proxy_agent.shadow_pub_active,
+			 "Shadow publish flag should not be NULL");
 }
 
 ZTEST(zbus_proxy_agent_tests, test_shadow_channel_validator)
@@ -176,9 +206,9 @@ ZTEST(zbus_proxy_agent_tests, test_zbus_init_proxy_agent_invalid_params)
 	zassert_equal(ret, -EFAULT, "zbus_init_proxy_agent should fail with NULL config");
 
 	ret = zbus_init_proxy_agent(&invalid_config);
-	zassert_equal(
-		ret, -EFAULT,
-		"zbus_init_proxy_agent should fail with missing runtime data/thread resources");
+	zassert_equal(ret, -EFAULT,
+		      "zbus_init_proxy_agent should fail with missing runtime data/workqueue "
+		      "resources");
 }
 
 ZTEST(zbus_proxy_agent_tests, test_zbus_init_proxy_agent_error_handling)
@@ -189,38 +219,48 @@ ZTEST(zbus_proxy_agent_tests, test_zbus_init_proxy_agent_error_handling)
 		.data = &backend_data,
 		.name = "error_handling_agent",
 	};
-	struct k_thread thread;
-	struct k_msgq msgq;
-	k_tid_t thread_id = NULL;
-	char msgq_buf[CONFIG_ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH *
-		      sizeof(struct zbus_proxy_agent_rx_msg)];
+	struct zbus_proxy_agent_work_ctx rx_work = {0};
+	struct zbus_proxy_agent_work_ctx tx_work = {0};
+	struct k_msgq rx_msgq;
+	struct k_msgq tx_msgq;
+	atomic_t shadow_pub_active = ATOMIC_INIT(0);
+	char rx_msgq_buf[CONFIG_ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH *
+			 sizeof(struct zbus_proxy_agent_rx_msg)];
+	char tx_msgq_buf[CONFIG_ZBUS_PROXY_AGENT_TX_QUEUE_DEPTH *
+			 sizeof(struct zbus_proxy_msg)];
 	struct zbus_proxy_agent agent = {
 		.name = "error_handling_agent",
 		.backend_config = &backend_config,
 		.backend_api = _ZBUS_PROXY_AGENT_MOCK_API,
-		.thread = &thread,
-		.msgq = &msgq,
-		.thread_id = &thread_id,
-		.stack = test_error_handling_stack,
+		.rx_work = &rx_work,
+		.tx_work = &tx_work,
+		.rx_msgq = &rx_msgq,
+		.tx_msgq = &tx_msgq,
+		.work_q = &test_proxy_work_q,
+		.shadow_pub_active = &shadow_pub_active,
 	};
 
-	k_msgq_init(&msgq, msgq_buf, sizeof(struct zbus_proxy_agent_rx_msg),
+	k_msgq_init(&rx_msgq, rx_msgq_buf, sizeof(struct zbus_proxy_agent_rx_msg),
 		    CONFIG_ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH);
+	k_msgq_init(&tx_msgq, tx_msgq_buf, sizeof(struct zbus_proxy_msg),
+		    CONFIG_ZBUS_PROXY_AGENT_TX_QUEUE_DEPTH);
 
 	mock_backend_set_set_recv_cb_retval(-1);
 	ret = zbus_init_proxy_agent(&agent);
 	zassert_equal(ret, -1, "zbus_init_proxy_agent should fail when backend_set_recv_cb fails");
 	mock_backend_set_set_recv_cb_retval(0);
-	stop_manual_proxy_agent_config(&thread_id, &backend_data);
+	reset_manual_proxy_agent_config(&backend_data);
 
-	k_msgq_init(&msgq, msgq_buf, sizeof(struct zbus_proxy_agent_rx_msg),
+	k_msgq_init(&rx_msgq, rx_msgq_buf, sizeof(struct zbus_proxy_agent_rx_msg),
 		    CONFIG_ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH);
+	k_msgq_init(&tx_msgq, tx_msgq_buf, sizeof(struct zbus_proxy_msg),
+		    CONFIG_ZBUS_PROXY_AGENT_TX_QUEUE_DEPTH);
 
 	mock_backend_set_init_retval(-5);
 	ret = zbus_init_proxy_agent(&agent);
 	zassert_equal(ret, -5, "zbus_init_proxy_agent should fail when backend_init fails");
 	mock_backend_set_init_retval(0);
-	stop_manual_proxy_agent_config(&thread_id, &backend_data);
+	reset_manual_proxy_agent_config(&backend_data);
 }
 
 /* zbus_proxy_agent_listener_cb tests */
@@ -228,11 +268,13 @@ ZTEST(zbus_proxy_agent_tests, test_zbus_proxy_agent_listener_cb_from_zbus)
 {
 	int ret;
 	struct test_data data = {.test_value = 123};
+	const struct zbus_proxy_agent *agent = get_test_proxy_agent_ptr();
 	int send_count = mock_backend_get_send_count();
 
 	/* Publish a message to the test channel */
 	ret = zbus_chan_pub(&test_channel, &data, K_NO_WAIT);
 	zassert_equal(ret, 0, "Failed to publish message to test channel");
+	drain_proxy_workqueue(agent, "Failed to drain queued transmit work");
 
 	/* Verify that the msg was received and processed by the test listener callback */
 	zassert_equal(last_received_data.test_value, 123,
@@ -271,20 +313,24 @@ ZTEST(zbus_proxy_agent_tests, test_zbus_proxy_agent_listener_cb_error_handling)
 	};
 
 	zbus_proxy_agent_listener_cb(&invalid_size_chan, agent);
+	drain_proxy_workqueue(agent, "Failed to drain queued work after oversized message");
 	zassert_equal(mock_backend_get_send_count(), send_count,
 		      "Backend send should not be called when message size exceeds maximum");
 
 	zbus_proxy_agent_listener_cb(&invalid_name_chan, agent);
+	drain_proxy_workqueue(agent, "Failed to drain queued work after oversized channel name");
 	zassert_equal(mock_backend_get_send_count(), send_count,
 		      "Backend send should not be called when channel name length exceeds maximum");
 
 	mock_backend_set_send_retval(-3);
 	zbus_proxy_agent_listener_cb(&valid_chan, agent);
+	drain_proxy_workqueue(agent, "Failed to drain queued work after send error");
 	zassert_equal(mock_backend_get_send_count(), send_count,
 		      "Backend send failure must not increment successful send count");
 	mock_backend_set_send_retval(0);
 
 	zbus_proxy_agent_listener_cb(&valid_chan, agent);
+	drain_proxy_workqueue(agent, "Failed to drain queued transmit work");
 	zassert_equal(mock_backend_get_send_count() - send_count, 1,
 		      "Message was not sent by backend after error cases");
 }
@@ -374,4 +420,4 @@ ZTEST(zbus_proxy_agent_tests, test_zbus_proxy_agent_receive_cb_invalid_msg)
 		      "Invalid message should not publish any message");
 }
 
-ZTEST_SUITE(zbus_proxy_agent_tests, NULL, NULL, NULL, test_cleanup, NULL);
+ZTEST_SUITE(zbus_proxy_agent_tests, NULL, test_setup, NULL, test_cleanup, NULL);
