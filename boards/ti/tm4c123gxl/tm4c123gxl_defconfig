@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Linumiz
+# Author: Sri Surya <srisurya@linumiz.com>
+
+# Default configuration for TI TM4C123GXL LaunchPad
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
