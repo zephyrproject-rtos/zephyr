@@ -14,8 +14,10 @@
 #include <zephyr/posix/sys/select.h>
 
 /* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
+#if !defined(CONFIG_TC_PROVIDES_POSIX_DEVICE_IO_STREAMS)
 FILE *zvfs_fdopen(int fd, const char *mode);
 int zvfs_fileno(FILE *file);
+#endif
 
 static struct fd_op_vtable posix_op_vtable = {
 	.read = zvfs_read_vmeth,
@@ -52,6 +54,7 @@ int close(int fd)
 FUNC_ALIAS(close, _close, int);
 #endif
 
+#if !defined(CONFIG_TC_PROVIDES_POSIX_DEVICE_IO_STREAMS)
 FILE *fdopen(int fd, const char *mode)
 {
 	return zvfs_fdopen(fd, mode);
@@ -61,6 +64,7 @@ int fileno(FILE *file)
 {
 	return zvfs_fileno(file);
 }
+#endif
 
 static int posix_mode_to_zephyr(int mf)
 {

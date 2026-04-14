@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <zephyr/posix/unistd.h>
 #include "test_fs.h"
 
@@ -257,6 +258,40 @@ ZTEST(posix_fs_file_test, test_fs_unlink)
 	zassert_true(test_file_open() == TC_PASS);
 	zassert_true(test_file_delete() == TC_PASS);
 }
+
+#ifdef CONFIG_TC_PROVIDES_POSIX_DEVICE_IO_STREAMS
+/**
+ * @brief Test for POSIX fdopen and fileno APIs
+ *
+ * @details Test wraps an open file descriptor in a libc-owned FILE stream.
+ */
+ZTEST(posix_fs_file_test, test_fs_fdopen)
+{
+	FILE *stream;
+	char read_buff[sizeof(test_str)];
+	int fd;
+	size_t len = strlen(test_str);
+	size_t brw;
+
+	zassert_true(test_file_open() == TC_PASS);
+	fd = file;
+
+	stream = fdopen(file, "w+");
+	zassert_not_null(stream);
+	file = -1;
+
+	zassert_equal(fileno(stream), fd);
+	zassert_equal(fwrite(test_str, 1, len, stream), len);
+	zassert_equal(fflush(stream), 0);
+	zassert_equal(fseek(stream, 0, SEEK_SET), 0);
+
+	brw = fread(read_buff, 1, len, stream);
+	zassert_equal(brw, len);
+	zassert_mem_equal(read_buff, test_str, len);
+
+	zassert_equal(fclose(stream), 0);
+}
+#endif
 
 ZTEST(posix_fs_file_test, test_fs_fd_leak)
 {
