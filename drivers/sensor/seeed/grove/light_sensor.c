@@ -100,7 +100,7 @@ static int gls_init(const struct device *dev)
 		.acquisition_time = ADC_ACQ_TIME_DEFAULT,
 		.channel_id = cfg->adc_channel,
 #ifdef CONFIG_ADC_NRFX_SAADC
-		.input_positive = SAADC_CH_PSELP_PSELP_AnalogInput0 + cfg->adc_channel,
+		.input_positive = cfg->adc_channel,
 #endif
 	};
 	adc_table.buffer = &drv_data->raw;
