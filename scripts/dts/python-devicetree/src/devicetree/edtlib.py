@@ -1821,10 +1821,10 @@ class Node:
             return True
 
         if prop_type == "int":
-            return prop.to_num()
+            return prop.to_num(signed_aware=True)
 
         if prop_type == "array":
-            return prop.to_nums()
+            return prop.to_nums(signed_aware=True)
 
         if prop_type == "uint8-array":
             return prop.to_bytes()
