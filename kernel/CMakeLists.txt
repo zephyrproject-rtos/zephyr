@@ -186,6 +186,7 @@ if(${CONFIG_KERNEL_MEM_POOL})
 
   endif()
 
+  zephyr_linker_include_var(VAR K_HEAP_MEM_POOL_SIZE VALUE ${final_heap_size})
   zephyr_compile_definitions(K_HEAP_MEM_POOL_SIZE=${final_heap_size})
 endif()
 
