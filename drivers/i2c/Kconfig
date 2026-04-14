@@ -77,6 +77,9 @@ config I2C_ALLOW_NO_STOP_TRANSACTIONS
 	  unsupported and can leave the bus in an unexpected state. The option
 	  will be removed in Zephyr 4.1.
 
+config I2C_BUS_RECOVERY
+	bool "Allows I2C bus recovery support"
+
 config I2C_RTIO
 	bool "I2C RTIO API"
 	select EXPERIMENTAL
