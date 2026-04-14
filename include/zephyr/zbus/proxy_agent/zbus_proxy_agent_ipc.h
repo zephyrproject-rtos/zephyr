@@ -73,17 +73,16 @@ struct zbus_proxy_agent_ipc_config {
  * @brief Backend config creation for IPC type
  *
  * @param _name Name of the backend config instance
- * @param _backend_dt_node Device tree node for the backend configuration
+ * @param _dev Device pointer expression for the backend configuration
  */
-#define _ZBUS_PROXY_AGENT_BACKEND_CONFIG_DEFINE_ZBUS_PROXY_AGENT_BACKEND_IPC(_name,                \
-									     _backend_dt_node)     \
+#define _ZBUS_PROXY_AGENT_IPC_CONFIG_DEFINE(_name, _dev)                                          \
 	static struct zbus_proxy_agent_ipc_data _name##_ipc_data = {                               \
 		.ept_cfg = {                                                                       \
 			.name = #_name "_ipc_ept",                                                 \
 		},                                                                                 \
 	};                                                                                         \
 	static const struct zbus_proxy_agent_ipc_config _name##_ipc_config = {                     \
-		.dev = DEVICE_DT_GET(_backend_dt_node),                                            \
+		.dev = (_dev),                                                                    \
 		.ept_name = #_name "_ipc_ept",                                                     \
 		.data = &_name##_ipc_data,                                                         \
 	};
@@ -94,8 +93,7 @@ struct zbus_proxy_agent_ipc_config {
  * @param _name Name of the backend config instance
  * @return Pointer to the backend config structure for the specified instance
  */
-#define _ZBUS_PROXY_AGENT_GET_BACKEND_CONFIG_ZBUS_PROXY_AGENT_BACKEND_IPC(_name)                   \
-	(&_name##_ipc_config)
+#define _ZBUS_PROXY_AGENT_IPC_CONFIG(_name) (&_name##_ipc_config)
 
 /* Forward declaration of the IPC backend API */
 extern const struct zbus_proxy_agent_backend_api zbus_proxy_agent_ipc_backend_api;
@@ -105,8 +103,21 @@ extern const struct zbus_proxy_agent_backend_api zbus_proxy_agent_ipc_backend_ap
  *
  * @return Pointer to the IPC backend API structure
  */
-#define _ZBUS_PROXY_AGENT_GET_BACKEND_API_ZBUS_PROXY_AGENT_BACKEND_IPC                             \
-	(&zbus_proxy_agent_ipc_backend_api)
+#define _ZBUS_PROXY_AGENT_IPC_API (&zbus_proxy_agent_ipc_backend_api)
+
+/**
+ * @brief Define an IPC backend instance and its proxy agent in code.
+ *
+ * The proxy agent instance is defined in code while devicetree may still be used
+ * to look up the backing IPC hardware or service device.
+ *
+ * @param _name Proxy agent instance name
+ * @param _dev Device pointer expression for the IPC instance used by this backend
+ */
+#define ZBUS_PROXY_AGENT_IPC_DEFINE(_name, _dev)                                                  \
+	_ZBUS_PROXY_AGENT_IPC_CONFIG_DEFINE(_name, _dev)                                      \
+	_ZBUS_PROXY_AGENT_INSTANCE_DEFINE(_name, _ZBUS_PROXY_AGENT_IPC_CONFIG(_name),         \
+					  _ZBUS_PROXY_AGENT_IPC_API)
 
 /** @endcond */
 

@@ -22,39 +22,22 @@ struct transfer_data {
 	uint32_t test_value;
 };
 
-ZBUS_PROXY_AGENT_DEFINE(
-	proxy_agent,                                     /* Proxy agent name */
-	ZBUS_PROXY_AGENT_BACKEND_IPC,                    /* Proxy agent type */
-	DT_PHANDLE(DT_PATH(zephyr_user), zbus_proxy_ipc) /* Backend node */
-);
+ZBUS_PROXY_AGENT_IPC_DEFINE(proxy_agent,
+			    DEVICE_DT_GET(DT_PHANDLE(DT_PATH(zephyr_user), zbus_proxy_ipc)));
 
 /**
  * Channel definitions
  * Channel request_channel is origin channel, being forwarded to domain B
  * Channel response_channel is shadow channels, shadowing channel from domain B
  */
-ZBUS_CHAN_DEFINE(
-	request_channel,      /* Chan name */
-	struct transfer_data, /* Message type */
-
-	NULL,                 /* Validator function */
-	NULL,                 /* User data */
-	ZBUS_OBSERVERS_EMPTY, /* Observers */
-	ZBUS_MSG_INIT(0)      /* Initial value */
-);
+ZBUS_CHAN_DEFINE(request_channel, struct transfer_data, NULL, NULL, ZBUS_OBSERVERS_EMPTY,
+		 ZBUS_MSG_INIT(0));
 
 /* Add request channel to proxy agent forwarding */
 ZBUS_PROXY_ADD_CHAN(proxy_agent, request_channel);
 
-ZBUS_SHADOW_CHAN_DEFINE(
-	response_channel,     /* Chan name */
-	struct transfer_data, /* Message type */
-
-	proxy_agent,          /* Proxy agent name */
-	NULL,                 /* User data */
-	ZBUS_OBSERVERS_EMPTY, /* Observers */
-	ZBUS_MSG_INIT(0)      /* Initial value */
-);
+ZBUS_SHADOW_CHAN_DEFINE(response_channel, struct transfer_data, proxy_agent, NULL,
+			ZBUS_OBSERVERS_EMPTY, ZBUS_MSG_INIT(0));
 
 void ipc_forwarder_listener_cb(const struct zbus_channel *chan)
 {

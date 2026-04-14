@@ -25,10 +25,6 @@ struct zbus_proxy_agent_mock_data {
 	const struct zbus_proxy_agent *recv_cb_config_ptr;
 };
 
-enum zbus_proxy_agent_backend_test_type {
-	ZBUS_PROXY_AGENT_MOCK = 99
-};
-
 /* Helper functions */
 void mock_backend_reset(void);
 void mock_backend_set_init_retval(int retval);
@@ -38,18 +34,24 @@ uint32_t mock_backend_get_send_count(void);
 int mock_backend_trigger_receive(const struct zbus_proxy_agent *config, struct zbus_proxy_msg *msg);
 
 /* backend config creation for MOCK type */
-#define _ZBUS_PROXY_AGENT_BACKEND_CONFIG_DEFINE_ZBUS_PROXY_AGENT_MOCK(_name, _backend_dt_node)     \
-	static struct zbus_proxy_agent_mock_data _name##_mock_data;                                \
-	static struct zbus_proxy_agent_mock_config _name##_mock_config = {                         \
-		.name = STRINGIFY(_name), .data = &_name##_mock_data,                              \
+#define _ZBUS_PROXY_AGENT_MOCK_CONFIG_DEFINE(_name)                                               \
+	static struct zbus_proxy_agent_mock_data _name##_mock_data;                              \
+	static struct zbus_proxy_agent_mock_config _name##_mock_config = {                       \
+		.name = STRINGIFY(_name),                                                        \
+		.data = &_name##_mock_data,                                                     \
 	};
 
 /* backend config getter for MOCK type */
-#define _ZBUS_PROXY_AGENT_GET_BACKEND_CONFIG_ZBUS_PROXY_AGENT_MOCK(_name) (&_name##_mock_config)
+#define _ZBUS_PROXY_AGENT_MOCK_CONFIG(_name) (&_name##_mock_config)
 
 /* Forward declaration and backend API getter for MOCK type */
 extern const struct zbus_proxy_agent_backend_api zbus_proxy_agent_mock_backend_api;
 
-#define _ZBUS_PROXY_AGENT_GET_BACKEND_API_ZBUS_PROXY_AGENT_MOCK (&zbus_proxy_agent_mock_backend_api)
+#define _ZBUS_PROXY_AGENT_MOCK_API (&zbus_proxy_agent_mock_backend_api)
+
+#define ZBUS_PROXY_AGENT_MOCK_DEFINE(_name)                                                       \
+	_ZBUS_PROXY_AGENT_MOCK_CONFIG_DEFINE(_name)                                          \
+	_ZBUS_PROXY_AGENT_INSTANCE_DEFINE(_name, _ZBUS_PROXY_AGENT_MOCK_CONFIG(_name),       \
+					  _ZBUS_PROXY_AGENT_MOCK_API)
 
 #endif /* ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_MOCK_H_ */

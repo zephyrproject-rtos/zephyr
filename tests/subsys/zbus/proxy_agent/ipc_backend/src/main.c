@@ -39,7 +39,7 @@ create_test_proxy_agent(const struct zbus_proxy_agent_ipc_config *config)
 	struct zbus_proxy_agent agent_config = {
 		.name = "test_agent",
 		.backend_config = config,
-		.backend_api = _ZBUS_PROXY_AGENT_GET_BACKEND_API_ZBUS_PROXY_AGENT_BACKEND_IPC,
+		.backend_api = _ZBUS_PROXY_AGENT_IPC_API,
 	};
 
 	return agent_config;
@@ -74,18 +74,18 @@ void init_backend(struct zbus_proxy_agent *agent)
 }
 
 /* Test backend config macros */
-_ZBUS_PROXY_AGENT_BACKEND_CONFIG_DEFINE_ZBUS_PROXY_AGENT_BACKEND_IPC(test_agent, FAKE_IPC_NODE)
+_ZBUS_PROXY_AGENT_IPC_CONFIG_DEFINE(test_agent, DEVICE_DT_GET(FAKE_IPC_NODE))
 
 ZTEST(ipc_backend, test_get_backend_config_macro)
 {
 	const struct zbus_proxy_agent_ipc_config *config =
-		_ZBUS_PROXY_AGENT_GET_BACKEND_CONFIG_ZBUS_PROXY_AGENT_BACKEND_IPC(test_agent);
+		_ZBUS_PROXY_AGENT_IPC_CONFIG(test_agent);
 
 	zassert_not_null(config, "Config should not be NULL");
 	zassert_equal(config->dev, DEVICE_DT_GET(FAKE_IPC_NODE),
 		      "Device should match the one from devicetree");
 	zassert_str_equal(config->ept_name, "test_agent_ipc_ept",
-		   "Endpoint name should be correctly set by macro");
+			  "Endpoint name should be correctly set by macro");
 }
 
 /* Test set_recv_cb */

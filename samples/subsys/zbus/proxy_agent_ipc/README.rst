@@ -15,7 +15,7 @@ The sample implements a request-response pattern where:
 
 Each domain defines its own proxy agent and channels.
 
-- The proxy agents are defined with :c:macro:`ZBUS_PROXY_AGENT_DEFINE`
+- The proxy agents are defined in code with :c:macro:`ZBUS_PROXY_AGENT_IPC_DEFINE`
 - Channels are defined with :c:macro:`ZBUS_CHAN_DEFINE` and added to proxy agents with :c:macro:`ZBUS_PROXY_ADD_CHAN`
 - Shadow channels are defined with :c:macro:`ZBUS_SHADOW_CHAN_DEFINE` and automatically mirror channels from other domains
 - Shared data structures (for example, ``struct transfer_data``) are defined separately in each

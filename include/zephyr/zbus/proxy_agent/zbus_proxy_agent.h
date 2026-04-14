@@ -28,14 +28,6 @@ struct zbus_proxy_agent_backend_api;
 struct zbus_proxy_agent;
 
 /**
- * @brief Enum for supported proxy agent backend types.
- */
-enum zbus_proxy_agent_backend_type {
-	/** IPC backend for inter-process communication */
-	ZBUS_PROXY_AGENT_BACKEND_IPC,
-};
-
-/**
  * @brief Metadata for shadow channels to track their ownership by proxy agents.
  */
 struct zbus_shadow_channel {
@@ -82,7 +74,7 @@ struct zbus_proxy_agent {
 	const char *name;
 	/** Backend specific configuration */
 	const void *backend_config;
-	/** Backend API determined at compile-time based on backend type */
+	/** Backend API for this agent instance */
 	const struct zbus_proxy_agent_backend_api *backend_api;
 	/** Dedicated thread used to process received proxy messages */
 	struct k_thread *thread;
@@ -150,15 +142,14 @@ int zbus_init_proxy_agent(const struct zbus_proxy_agent *agent);
  * @brief Proxy agent definition macro.
  * @hideinitializer
  *
- * This macro defines a proxy agent with the specified name, backend type, and backend device tree
- * node.
+ * This macro defines a proxy agent with the specified name, backend configuration, and backend
+ * API.
  *
  * @param _name Name of the proxy agent instance
- * @param _type Backend type for the proxy agent (e.g., ZBUS_PROXY_AGENT_BACKEND_IPC)
- * @param _backend_dt_node Device tree node for the backend configuration
+ * @param _backend_config Pointer to the backend configuration for this agent instance
+ * @param _backend_api Pointer to the backend API used by this agent instance
  */
-#define ZBUS_PROXY_AGENT_DEFINE(_name, _type, _backend_dt_node)                                    \
-	_ZBUS_PROXY_AGENT_BACKEND_CONFIG_DEFINE(_name, _type, _backend_dt_node)                    \
+#define ZBUS_PROXY_AGENT_DEFINE(_name, _backend_config, _backend_api)                              \
 	K_THREAD_STACK_DEFINE(_name##_thread_stack,                                                \
 			      CONFIG_ZBUS_PROXY_AGENT_WORK_QUEUE_STACK_SIZE);                      \
 	K_MSGQ_DEFINE(_name##_rx_msgq, sizeof(struct zbus_proxy_agent_rx_msg),                     \
@@ -167,8 +158,8 @@ int zbus_init_proxy_agent(const struct zbus_proxy_agent *agent);
 	static k_tid_t _name##_thread_id;                                                          \
 	const struct zbus_proxy_agent _name = {                                                    \
 		.name = #_name,                                                                    \
-		.backend_config = _ZBUS_PROXY_AGENT_GET_BACKEND_CONFIG(_name, _type),              \
-		.backend_api = _ZBUS_PROXY_AGENT_GET_BACKEND_API(_type),                           \
+		.backend_config = (_backend_config),                                               \
+		.backend_api = (_backend_api),                                                     \
 		.thread = &_name##_thread,                                                         \
 		.msgq = &_name##_rx_msgq,                                                          \
 		.stack = _name##_thread_stack,                                                     \
@@ -188,30 +179,8 @@ int zbus_init_proxy_agent(const struct zbus_proxy_agent *agent);
 
 /** @cond INTERNAL_HIDDEN */
 
-/** @brief Backend config generation (dispatches to per-backend macro)
- *
- * @param _name Name of the backend config instance
- * @param _type Backend type from the enum zbus_proxy_agent_backend_type
- * @param _backend_dt_node Device tree node for the backend configuration
- */
-#define _ZBUS_PROXY_AGENT_BACKEND_CONFIG_DEFINE(_name, _type, _backend_dt_node)                    \
-	_ZBUS_PROXY_AGENT_BACKEND_CONFIG_DEFINE_##_type(_name, _backend_dt_node)
-
-/** @brief Backend config retrieval (dispatches to per-backend macro)
- *
- * @param _name Name of the backend config instance
- * @param _type Backend type from the enum zbus_proxy_agent_backend_type
- * @return Pointer to the backend config structure for the specified instance and type
- */
-#define _ZBUS_PROXY_AGENT_GET_BACKEND_CONFIG(_name, _type)                                         \
-	_ZBUS_PROXY_AGENT_GET_BACKEND_CONFIG_##_type(_name)
-
-/** @brief Backend API resolution (dispatches to per-backend macro)
- *
- * @param _type Backend type from the enum zbus_proxy_agent_backend_type
- * @return Pointer to the backend API structure for the specified type
- */
-#define _ZBUS_PROXY_AGENT_GET_BACKEND_API(_type) _ZBUS_PROXY_AGENT_GET_BACKEND_API_##_type
+#define _ZBUS_PROXY_AGENT_INSTANCE_DEFINE(_name, _backend_config, _backend_api)                    \
+	ZBUS_PROXY_AGENT_DEFINE(_name, _backend_config, _backend_api)
 
 /** @brief Internal helper invoked when shadow channel publish validation fails.
  *
