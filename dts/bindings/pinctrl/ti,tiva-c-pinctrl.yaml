@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Linumiz
+# Author: Sri Surya <srisurya@linumiz.com>
+
+description: |
+  TI Tiva C Series pin controller.
+
+  Device pin configuration should be placed in child nodes of this node.
+  Each child node specifies a single pinmux value that encodes the port,
+  pin number, mux function, and peripheral type in one 32-bit integer
+  (see dt-bindings/pinctrl/tiva-c-pinctrl.h):
+
+    Bits [15:0]  — port index  (0=A … 5=F)
+    Bits [18:16] — pin number  (0-7)
+    Bits [22:19] — mux function (alternate-function 0-15)
+    Bits [25:23] — pin type    (0=GPIO, 1=UART, … 6=PWM)
+
+  Use the TIVA_C_PINMUX() helper macro from the dt-bindings header.
+
+  Example for UART0 on PA0/PA1:
+
+    #include <dt-bindings/pinctrl/tiva-c-pinctrl.h>
+
+    &pinctrl {
+      uart0_rx_pa0: uart0_rx_pa0 {
+        pinmux = <TIVA_C_PINMUX(TIVA_C_PORT_A, 0, 1, TIVA_C_TYPE_UART)>;
+      };
+      uart0_tx_pa1: uart0_tx_pa1 {
+        pinmux = <TIVA_C_PINMUX(TIVA_C_PORT_A, 1, 1, TIVA_C_TYPE_UART)>;
+      };
+    };
+
+compatible: "ti,tiva-c-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: TI Tiva C pin configuration node.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-up
+        - bias-pull-down
+        - drive-open-drain
+
+  properties:
+    pinmux:
+      required: true
+      type: int
+      description: |
+        32-bit pinmux value built with TIVA_C_PINMUX(port, pin, mux, type).
+        Encodes port index (lower 16 bits) and pin number, mux function,
+        and peripheral type (upper 16 bits) in a single value.
