@@ -56,16 +56,7 @@ void cntr_init(void)
 
 	nrf_grtc_event_clear(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_TICKER);
 
-	/* FIXME: Replace with nrf_grtc_int_enable when is available,
-	 *        with ability to select/set IRQ group.
-	 *        Shared interrupts is an option? It may add ISR latencies?
-	 */
-	NRF_GRTC->INTENSET1 = HAL_CNTR_GRTC_INTENSET_COMPARE_TICKER_Msk;
-	if (IS_ENABLED(CONFIG_SOC_SERIES_BSIM_NRF54LX)) {
-		extern void nhw_GRTC_regw_sideeffects_INTENSET(uint32_t inst, uint32_t n);
-
-		nhw_GRTC_regw_sideeffects_INTENSET(0, 1);
-	}
+	nrf_grtc_int_group_enable(NRF_GRTC, 1U, HAL_CNTR_GRTC_INTENSET_COMPARE_TICKER_Msk);
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC_START)
 	NRF_GRTC->MODE = ((GRTC_MODE_SYSCOUNTEREN_Enabled <<
