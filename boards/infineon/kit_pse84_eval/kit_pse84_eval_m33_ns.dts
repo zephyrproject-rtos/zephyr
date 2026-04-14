@@ -10,6 +10,7 @@
 #include <infineon/edge/pse84/pse84.cm33.dtsi>
 #include <infineon/edge/pse84/system_clocks.dtsi>
 
+#include "kit_pse84_eval_common.dtsi"
 #include "kit_pse84_eval_memory_map.dtsi"
 
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -22,41 +23,13 @@
 		led0 = &led_red;
 		led1 = &led_green;
 		led2 = &led_blue;
-		sw0 = &user_bt;
 	};
 
 	chosen {
 		zephyr,flash = &m33_xip;
 		zephyr,sram = &m33_data;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_red: led_0 {
-			label = "LED_0";
-			gpios = <&gpio_prt16 7 GPIO_ACTIVE_HIGH>;
-		};
-
-		led_green: led_1 {
-			label = "LED_1";
-			gpios = <&gpio_prt16 6 GPIO_ACTIVE_HIGH>;
-		};
-
-		led_blue: led_2 {
-			label = "LED_2";
-			gpios = <&gpio_prt16 5 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
-	gpio_keys {
-		compatible = "gpio-keys";
-
-		user_bt: button_0 {
-			label = "SW_1";
-			gpios = <&gpio_prt8 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			zephyr,code = <INPUT_KEY_0>;
-		};
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
 	};
 };
 
@@ -69,13 +42,5 @@
 };
 
 &mcwdt0 {
-	status = "okay";
-};
-
-&gpio_prt8 {
-	status = "okay";
-};
-
-&gpio_prt16 {
 	status = "okay";
 };
