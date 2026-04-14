@@ -80,11 +80,6 @@
 		};
 	};
 
-	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash-controller = &flashctrl;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -295,14 +290,37 @@
 			interrupt-parent = <&clic>;
 		};
 
-		flashctrl: flash-controller@4000b000 {
-			compatible = "bflb,flash-controller";
+		sf_ctrl: sf@4000b000 {
+			compatible = "bflb,sf-controller";
 			reg = <0x4000b000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 
 			interrupts = <39 0>;
 			interrupt-parent = <&clic>;
+
+			sf_bank1: sf_bank@23000000 {
+				compatible = "bflb,sf-bank";
+				zephyr,memory-region = "ROM";
+				reg = <0x23000000 DT_SIZE_M(16)>;
+				ranges = <0x0 0x23000000 DT_SIZE_M(16)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			sf_bank2: sf_bank@24000000 {
+				/* Only have the memory-region compatible
+				 * when not using a pre-existing (ROM) memory region
+				 */
+				compatible = "bflb,sf-bank", "zephyr,memory-region";
+				zephyr,memory-region = "PSRAM";
+				reg = <0x24000000 DT_SIZE_M(16)>;
+				ranges = <0x0 0x24000000 DT_SIZE_M(16)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		dma0: dma@4000c000 {

@@ -88,10 +88,6 @@
 		};
 	};
 
-	chosen {
-		zephyr,flash-controller = &flashctrl;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -146,7 +142,7 @@
 
 		itcm: itcm@22014000 {
 			compatible = "zephyr,memory-region", "sifive,dtim0";
-			reg = <0x22014000 DT_SIZE_K(12)>;
+			reg = <0x22014000 DT_SIZE_K(16)>;
 			zephyr,memory-region = "ITCM";
 		};
 
@@ -333,8 +329,8 @@
 			interrupt-parent = <&clic>;
 		};
 
-		flashctrl: flash-controller@4000b000 {
-			compatible = "bflb,flash-controller";
+		sf_ctrl: sf@4000b000 {
+			compatible = "bflb,sf-controller";
 			reg = <0x4000b000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -342,6 +338,28 @@
 
 			interrupts = <39 0>;
 			interrupt-parent = <&clic>;
+
+			sf_bank1: sf_bank@23000000 {
+				compatible = "bflb,sf-bank";
+				zephyr,memory-region = "ROM";
+				reg = <0x23000000 DT_SIZE_M(16)>;
+				ranges = <0x0 0x23000000 DT_SIZE_M(16)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			sf_bank2: sf_bank@24000000 {
+				/* Only have the memory-region compatible
+				 * when not using a pre-existing (ROM) memory region
+				 */
+				compatible = "bflb,sf-bank", "zephyr,memory-region";
+				zephyr,memory-region = "PSRAM";
+				reg = <0x24000000 DT_SIZE_M(16)>;
+				ranges = <0x0 0x24000000 DT_SIZE_M(16)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		usb0: usb@4000d800 {
@@ -400,12 +418,6 @@
 		retram: memory@40010000 {
 			compatible = "mmio-sram";
 			reg = <0x40010000 DT_SIZE_K(4)>;
-		};
-
-		dtcm: dtcm@42017000 {
-			compatible = "zephyr,memory-region", "sifive,dtim0";
-			reg = <0x42017000 DT_SIZE_K(4)>;
-			zephyr,memory-region = "DTCM";
 		};
 
 		sram0: memory@42018000 {
