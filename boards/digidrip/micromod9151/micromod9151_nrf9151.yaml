@@ -1,0 +1,17 @@
+identifier: micromod9151/nrf9151
+name: MicroMod-nRF9151-NRF9151
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 88
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - counter
+vendor: digidrip

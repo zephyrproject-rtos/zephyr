@@ -1,0 +1,7 @@
+board:
+  name: micromod9151
+  vendor: digidrip
+  socs:
+  - name: nrf9151
+    variants:
+    - name: 'ns'

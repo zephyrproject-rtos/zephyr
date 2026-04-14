@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable TrustZone-M
+CONFIG_ARM_TRUSTZONE_M=y
+
+# This board implies building Non-Secure firmware
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+
+# Enable SPI
+CONFIG_SPI=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+CONFIG_GPIO_MCP23SXX=y
+
+# Enable UART driver
+CONFIG_SERIAL=y
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Set GNSS Modem Antenna Config
+CONFIG_MODEM_ANTENNA=y
+CONFIG_MODEM_ANTENNA_GNSS_ONBOARD=n
+CONFIG_MODEM_ANTENNA_AT_MAGPIO=""
+CONFIG_MODEM_ANTENNA_AT_COEX0="AT\%XCOEX0=1,1,1565,1586"

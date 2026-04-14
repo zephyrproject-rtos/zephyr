@@ -1,0 +1,7 @@
+# MicroMod nRF9151 board configuration
+
+# Copyright (c) 2026 Christian Hirsch
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MICROMOD9151
+	select SOC_NRF9151_LACA
