@@ -4,7 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
+
+#define FSPI_INTF_AND_MIRROR_FUNC_DISABLED CONFIG_SOC_IT51XXX_SIGNATURE_FLAG & BIT(5)
+
+#if FSPI_INTF_AND_MIRROR_FUNC_DISABLED && CONFIG_SOC_IT51XXX_CMP_RANGE_ADDR != 0xAA
+	.error "comparison range address[17:10] must be 0xAA"
+#endif /* FSPI_INTF_AND_MIRROR_FUNC_DISABLED && CONFIG_SOC_IT51XXX_CMP_RANGE_ADDR != 0xAA */
 
 /* exports */
 GTEXT(__start)
@@ -38,9 +45,9 @@ SECTION_FUNC(vectors, __start)
  * (HW mechanism)
  * The content of 16-bytes must be the following and at offset 0x40 of binary.
  * ----------------------------------------------------------------------------
- * 1st 2nd 3rd 4th 5th 6th 7th    8th    9th 10th 11th 12th 13th 14th 15th 16th
+ * 1st 2nd 3rd 4th 5th 6th 7th    8th    9th 10th 11th 12th 13th  14th  15th 16th
  * ----------------------------------------------------------------------------
- * A5h A5h A5h A5h A5h A5h [host] [flag] 85h  12h  5Ah  5Ah  AAh  AAh  55h  55h
+ * A5h A5h A5h A5h A5h A5h [host] [flag] 85h  12h  5Ah  5Ah  AAh  [cmp]  55h  55h
  * ----------------------------------------------------------------------------
  * 7th [host]: A4h = enable eSPI, A5h = enable LPC
  */
@@ -55,5 +62,10 @@ eflash_sig:
 .byte 0xA5 /* LPC mode */
 #endif
 /* Flag of signature. Enable internal clock generator */
-.byte 0xB4
-.byte 0x85, 0x12, 0x5A, 0x5A, 0xAA, 0xAA, 0x55, 0x55
+.byte CONFIG_SOC_IT51XXX_SIGNATURE_FLAG
+.byte 0x85, 0x12, 0x5A, 0x5A, 0xAA, CONFIG_SOC_IT51XXX_CMP_RANGE_ADDR, 0x55, 0x55
+
+/* optional project-specific extension */
+#ifdef CONFIG_SOC_IT51XXX_SIGNATURE_DATA_EXTENSION
+#include "signature_custom.S"
+#endif /* CONFIG_SOC_IT51XXX_SIGNATURE_DATA_EXTENSION */
