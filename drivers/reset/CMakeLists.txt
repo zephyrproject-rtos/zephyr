@@ -5,6 +5,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/reset.h)
 zephyr_library()
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_RESET_ARM_SCMI reset_arm_scmi.c)
 zephyr_library_sources_ifdef(CONFIG_RESET_AST10X0 reset_ast10x0.c)
 zephyr_library_sources_ifdef(CONFIG_RESET_FOCALTECH_FT9001 reset_ft9001.c)
 zephyr_library_sources_ifdef(CONFIG_RESET_GD32 reset_gd32.c)

@@ -36,6 +36,51 @@
  */
 #define SCMI_PROTOCOL_NAME(proto) CONCAT(scmi_protocol_, proto)
 
+#ifdef CONFIG_ARM_SCMI_MAILBOX_TRANSPORT
+/**
+ * @brief Devicetree compatible string for the Mailbox transport.
+ */
+#define DT_SCMI_TRANSPORT_COMPATIBLE arm_scmi
+#elif CONFIG_ARM_SCMI_SMC_TRANSPORT
+/**
+ * @brief Devicetree compatible string for the SMC transport.
+ */
+#define DT_SCMI_TRANSPORT_COMPATIBLE arm_scmi_smc
+#else
+#error "Transport needs to define COMPATIBLE macro"
+#endif
+
+/**
+ * @brief Check if a node is the base SCMI transport node.
+ *
+ * This macro determines if the given node_id corresponds to the primary
+ * SCMI transport layer (the base node), by verifying if the node has
+ * a compatible string matching the current transport's definition
+ * (DT_SCMI_TRANSPORT_COMPATIBLE).
+ *
+ * @param node_id protocol node identifier
+ * @return 1 if the node is the base transport node, 0 otherwise.
+ */
+#define DT_SCMI_TRANSPORT_PROTO_IS_BASE(node_id) \
+	DT_NODE_HAS_COMPAT(node_id, DT_SCMI_TRANSPORT_COMPATIBLE)
+
+/**
+ * @brief Get the raw protocol ID from the SCMI protocol node
+ *
+ * This macro maps a dt node to the corresponding SCMI protocol ID.
+ * If the node is identified as the base transport node, it returns
+ * SCMI_PROTOCOL_BASE, which corresponds to the 0x10. Otherwise,
+ * it retrieves a node's only register block address, which represents
+ * the specific SCMI protocol ID.
+ *
+ * @param node_id protocol node identifier
+ * @return protocol ID
+ */
+#define DT_SCMI_TRANSPORT_PROTOCOL_ID(node_id)					\
+	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_IS_BASE(node_id),			\
+		    (SCMI_PROTOCOL_BASE),					\
+		    (DT_REG_ADDR_RAW(node_id)))
+
 #ifdef CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
 
 #ifdef CONFIG_ARM_SCMI_MAILBOX_TRANSPORT
@@ -84,7 +129,8 @@
 #define DT_SCMI_TRANSPORT_TX_CHAN_DECLARE(node_id)				\
 	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 0),		\
 		    (extern struct scmi_channel					\
-		     SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 0);),	\
+		     SCMI_TRANSPORT_CHAN_NAME(					\
+			DT_SCMI_TRANSPORT_PROTOCOL_ID(node_id), 0);),		\
 		    (extern struct scmi_channel					\
 		     SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0);))		\
 
@@ -128,7 +174,8 @@
  */
 #define DT_SCMI_TRANSPORT_TX_CHAN(node_id)					\
 	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 0),		\
-		    (&SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 0)),	\
+		    (&SCMI_TRANSPORT_CHAN_NAME(					\
+			DT_SCMI_TRANSPORT_PROTOCOL_ID(node_id), 0)),		\
 		    (&SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0)))
 
 /**
@@ -267,8 +314,9 @@
  */
 #define DT_SCMI_PROTOCOL_DEFINE_NODEV(node_id, data, version)			\
 	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
-	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR_RAW(node_id), data,	\
-			version)						\
+	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id,					\
+				     DT_SCMI_TRANSPORT_PROTOCOL_ID(node_id),	\
+				     data, version)
 
 /**
  * @brief Create an SCMI message field
