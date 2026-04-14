@@ -10,15 +10,16 @@ description: |
 
 compatible: "silabs,siwx91x-nwp"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
-  interrupts:
+  reg:
     required: true
 
-  stack-size:
-    type: int
-    description: Stack size for the NWP in bytes
+  reg-names:
+    required: true
+
+  interrupts:
     required: true
 
   support-1p8v:

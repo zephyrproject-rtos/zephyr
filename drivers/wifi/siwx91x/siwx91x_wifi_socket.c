@@ -4,226 +4,230 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/net/net_offload.h>
+#include <zephyr/net/net_pkt.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/arch/common/ffs.h>
+#include <zephyr/sys/math_extras.h>
 #include <assert.h>
 
+#include "siwx91x_nwp_bus.h"
+#include "siwx91x_nwp_api.h"
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_socket.h"
 
-#include "sl_status.h"
-#include "sl_net_ip_types.h"
-#include "sl_net_si91x.h"
-#include "sl_si91x_types.h"
-#include "sl_si91x_socket.h"
-#include "sl_si91x_socket_utility.h"
+LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
-LOG_MODULE_DECLARE(siwx91x_wifi);
+BUILD_ASSERT(SLI_NUMBER_OF_SOCKETS < 32, "Number of sockets have to fit on uint32_t");
+BUILD_ASSERT(SIWX91X_MAX_CONCURRENT_SELECT < 16, "\"select\" slots have to fit on uint16_t");
 
-BUILD_ASSERT(SLI_NUMBER_OF_SOCKETS < sizeof(uint32_t) * 8);
-BUILD_ASSERT(SLI_NUMBER_OF_SOCKETS < SIZEOF_FIELD(sl_si91x_fdset_t, __fds_bits) * 8);
+#define SIWX91X_WIFI_SOCK_TX_HEADROOM (sizeof(struct siwx91x_frame_desc) + \
+				       sizeof(sli_si91x_socket_send_request_t) + \
+				       NET_IPV6H_LEN + NET_TCPH_LEN)
 
-NET_BUF_POOL_FIXED_DEFINE(siwx91x_tx_pool, 1, NET_ETH_MTU, 0, NULL);
-NET_BUF_POOL_FIXED_DEFINE(siwx91x_rx_pool, 10, NET_ETH_MTU, 0, NULL);
-
-enum offloaded_net_if_types siwx91x_get_type(void)
+enum offloaded_net_if_types siwx91x_sock_get_type(void)
 {
 	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
 }
 
-/* SiWx91x does not use the standard struct sockaddr (despite it uses the same
- * name):
- *   - uses Little Endian for port number while Posix uses big endian
- *   - IPv6 addresses are bytes swapped
- * Note: this function allows to have in == out.
- */
-static void siwx91x_sockaddr_swap_bytes(struct sockaddr *out,
-					const struct sockaddr *in, socklen_t in_len)
-{
-	const struct sockaddr_in6 *in6 = (const struct sockaddr_in6 *)in;
-	struct sockaddr_in6 *out6 = (struct sockaddr_in6 *)out;
 
-	/* In Zephyr, size of sockaddr == size of sockaddr_storage
-	 * (while in Posix sockaddr is smaller than sockaddr_storage).
-	 */
-	memcpy(out, in, in_len);
-	if (in->sa_family == AF_INET6) {
-		ARRAY_FOR_EACH(in6->sin6_addr.s6_addr32, i) {
-			out6->sin6_addr.s6_addr32[i] = ntohl(in6->sin6_addr.s6_addr32[i]);
-		}
-		out6->sin6_port = ntohs(in6->sin6_port);
-	} else if (in->sa_family == AF_INET) {
-		out6->sin6_port = ntohs(in6->sin6_port);
-	}
+int siwx91x_sock_alloc(struct net_if *iface, struct net_pkt *pkt,
+		       size_t size, enum net_ip_protocol proto,
+		       k_timeout_t timeout)
+{
+	int ret;
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	ret = net_pkt_alloc_buffer_with_reserve_debug(pkt,
+						      size,
+						      SIWX91X_WIFI_SOCK_TX_HEADROOM,
+						      proto,
+						      timeout,
+						      caller,
+						      line);
+#else
+	ret = net_pkt_alloc_buffer_with_reserve(pkt,
+						size,
+						SIWX91X_WIFI_SOCK_TX_HEADROOM,
+						proto,
+						timeout);
+#endif
+	return ret;
 }
 
-void siwx91x_on_join_ipv4(struct siwx91x_dev *sidev)
+void siwx91x_sock_on_join_ipv4(const struct device *dev)
 {
-	sl_net_ip_configuration_t ip_config4 = {
-		.mode = SL_IP_MANAGEMENT_DHCP,
-		.type = SL_IPV4,
-	};
-	struct in_addr addr4 = { };
+	const struct siwx91x_wifi_config *config = dev->config;
+	struct siwx91x_wifi_data *data = dev->data;
+	struct in_addr addr, gw, mask;
 	int ret;
 
 	if (!IS_ENABLED(CONFIG_NET_IPV4)) {
 		return;
 	}
+	LOG_INF("Configuring IPv4");
 	/* FIXME: support for static IP configuration */
-	ret = sl_si91x_configure_ip_address(&ip_config4, SL_SI91X_WIFI_CLIENT_VAP_ID);
+	ret = siwx91x_nwp_sock_config_ipv4(config->nwp_dev, &addr, &mask, &gw);
 	if (ret) {
-		LOG_ERR("sl_si91x_configure_ip_address(): %#04x", ret);
+		LOG_INF("Fail to get IPv6 configuration");
 		return;
 	}
-	memcpy(addr4.s4_addr, ip_config4.ip.v4.ip_address.bytes, sizeof(addr4.s4_addr));
-	/* FIXME: also report gateway (net_if_ipv4_router_add()) */
-	net_if_ipv4_addr_add(sidev->iface, &addr4, NET_ADDR_DHCP, 0);
+	net_if_ipv4_addr_add(data->iface, &addr, NET_ADDR_DHCP, 0);
+	net_if_ipv4_set_netmask_by_addr(data->iface, &addr, &mask);
+	net_if_ipv4_set_gw(data->iface, &gw);
 }
 
-void siwx91x_on_join_ipv6(struct siwx91x_dev *sidev)
+void siwx91x_sock_on_join_ipv6(const struct device *dev)
 {
-	sl_net_ip_configuration_t ip_config6 = {
-		.mode = SL_IP_MANAGEMENT_DHCP,
-		.type = SL_IPV6,
-	};
-	struct in6_addr addr6 = { };
+	const struct siwx91x_wifi_config *config = dev->config;
+	struct siwx91x_wifi_data *data = dev->data;
+	struct in6_addr lua, gua, gw;
+	int prefix_len;
 	int ret;
 
 	if (!IS_ENABLED(CONFIG_NET_IPV6)) {
 		return;
 	}
+	LOG_INF("Configuring IPv6");
 	/* FIXME: support for static IP configuration */
-	ret = sl_si91x_configure_ip_address(&ip_config6, SL_SI91X_WIFI_CLIENT_VAP_ID);
+	ret = siwx91x_nwp_sock_config_ipv6(config->nwp_dev, &lua, &gua, &prefix_len, &gw);
 	if (ret) {
-		LOG_ERR("sl_si91x_configure_ip_address(): %#04x", ret);
+		LOG_INF("Fail to get IPv6 configuration");
 		return;
 	}
-	ARRAY_FOR_EACH(addr6.s6_addr32, i) {
-		addr6.s6_addr32[i] = ntohl(ip_config6.ip.v6.global_address.value[i]);
-	}
-	/* SiWx91x already take care of DAD and sending ND is not
-	 * supported anyway.
-	 */
-	net_if_flag_set(sidev->iface, NET_IF_IPV6_NO_ND);
-	/* FIXME: also report gateway and link local address */
-	net_if_ipv6_addr_add(sidev->iface, &addr6, NET_ADDR_AUTOCONF, 0);
-}
-
-static int siwx91x_sock_recv_sync(struct net_context *context,
-				  net_context_recv_cb_t cb, void *user_data)
-{
-	struct net_if *iface = net_context_get_iface(context);
-	int sockfd = (int)context->offload_context;
-	struct net_pkt *pkt;
-	struct net_buf *buf;
-	int ret;
-
-	pkt = net_pkt_rx_alloc_on_iface(iface, K_MSEC(100));
-	if (!pkt) {
-		return -ENOBUFS;
-	}
-	buf = net_buf_alloc(&siwx91x_rx_pool, K_MSEC(100));
-	if (!buf) {
-		net_pkt_unref(pkt);
-		return -ENOBUFS;
-	}
-	net_pkt_append_buffer(pkt, buf);
-
-	ret = sl_si91x_recvfrom(sockfd, buf->data, NET_ETH_MTU, 0, NULL, NULL);
-	if (ret < 0) {
-		net_pkt_unref(pkt);
-		ret = -errno;
-	} else {
-		net_buf_add(buf, ret);
-		net_pkt_cursor_init(pkt);
-		ret = 0;
-	}
-	if (cb) {
-		cb(context, pkt, NULL, NULL, ret, user_data);
-	}
-	return ret;
-}
-
-static void siwx91x_sock_on_recv(sl_si91x_fdset_t *read_fd, sl_si91x_fdset_t *write_fd,
-				 sl_si91x_fdset_t *except_fd, int status)
-{
-	/* When CONFIG_NET_SOCKETS_OFFLOAD is set, only one interface exist */
-	struct siwx91x_dev *sidev = net_if_get_device(net_if_get_first_wifi())->data;
-
-	ARRAY_FOR_EACH(sidev->fds_cb, i) {
-		if (SL_SI91X_FD_ISSET(i, read_fd)) {
-			if (sidev->fds_cb[i].cb) {
-				siwx91x_sock_recv_sync(sidev->fds_cb[i].context,
-						       sidev->fds_cb[i].cb,
-						       sidev->fds_cb[i].user_data);
-			} else {
-				SL_SI91X_FD_CLR(i, &sidev->fds_watch);
-				k_event_post(&sidev->fds_recv_event, 1U << i);
-			}
-		}
-	}
-
-	sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
-			siwx91x_sock_on_recv);
+	/* NWP already take care of DAD and sending ND is not supported anyway. */
+	net_if_flag_set(data->iface, NET_IF_IPV6_NO_ND);
+	net_if_ipv6_addr_add(data->iface, &lua, NET_ADDR_AUTOCONF, 0);
+	net_if_ipv6_addr_add(data->iface, &gua, NET_ADDR_AUTOCONF, 0);
+	net_if_ipv6_prefix_add(data->iface, &gua, prefix_len, 0xFFFFFFFF);
+	net_if_ipv6_router_add(data->iface, &gw, true, 0);
 }
 
 static int siwx91x_sock_get(net_sa_family_t family, enum net_sock_type type,
 			    enum net_ip_protocol ip_proto, struct net_context **context)
 {
-	struct siwx91x_dev *sidev = net_if_get_device(net_if_get_first_wifi())->data;
+	struct net_if *iface = net_if_get_first_wifi();
+	const struct device *dev = net_if_get_device(iface);
+	struct siwx91x_wifi_data *data = dev->data;
 	int sockfd;
 
-	sockfd = sl_si91x_socket(family, type, ip_proto);
-	if (sockfd < 0) {
-		return -errno;
+	k_mutex_lock(&data->sock_lock, K_FOREVER);
+	sockfd = u32_count_trailing_zeros(~data->sock_bitmap);
+	if (sockfd >= SLI_NUMBER_OF_SOCKETS) {
+		k_mutex_unlock(&data->sock_lock);
+		return -ENOBUFS;
 	}
-	assert(!sidev->fds_cb[sockfd].cb);
+	data->sock_bitmap |= BIT(sockfd);
+	k_mutex_unlock(&data->sock_lock);
 	(*context)->offload_context = (void *)sockfd;
 	return sockfd;
 }
 
 static int siwx91x_sock_put(struct net_context *context)
 {
-	struct siwx91x_dev *sidev = net_if_get_device(net_context_get_iface(context))->data;
+	struct net_if *iface = net_if_get_first_wifi();
+	const struct device *dev = net_if_get_device(iface);
+	const struct siwx91x_wifi_config *config = dev->config;
+	struct siwx91x_wifi_data *data = dev->data;
 	int sockfd = (int)context->offload_context;
-	int ret;
 
-	SL_SI91X_FD_CLR(sockfd, &sidev->fds_watch);
-	memset(&sidev->fds_cb[sockfd], 0, sizeof(sidev->fds_cb[sockfd]));
-	sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
-			siwx91x_sock_on_recv);
-	ret = sl_si91x_shutdown(sockfd, 0);
-	if (ret < 0) {
-		ret = -errno;
+	siwx91x_nwp_sock_close(config->nwp_dev, data->sock_id[sockfd]);
+	k_mutex_lock(&data->sock_lock, K_FOREVER);
+	if (!(data->sock_bitmap & BIT(sockfd))) {
+		k_mutex_unlock(&data->sock_lock);
+		return -EINVAL;
 	}
-	return ret;
+	data->sock_bitmap &= ~BIT(sockfd);
+	k_mutex_unlock(&data->sock_lock);
+	siwx91x_nwp_sock_close(config->nwp_dev, sockfd);
+
+	return 0;
+}
+
+void siwx91x_sock_on_select(const struct siwx91x_nwp_wifi_cb *context, int select_slot,
+			    uint32_t read_fds, uint32_t write_fds)
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	const struct device *dev = net_if_get_device(iface);
+	const struct siwx91x_wifi_config *config = dev->config;
+	struct siwx91x_wifi_data *data = dev->data;
+	uint32_t fds = 0;
+
+	__ASSERT(select_slot == 0, "Corrupted state");
+	__ASSERT(write_fds == 0, "Corrupted state");
+	for (int i = 0; i < ARRAY_SIZE(data->sock_id); i++) {
+		if (data->sock_watch & BIT(i) && read_fds & BIT(data->sock_id[i])) {
+			fds |= BIT(i);
+		}
+	}
+	data->sock_watch &= ~fds;
+	k_event_post(&data->sock_events, fds);
+	fds = 0;
+	for (int i = 0; i < ARRAY_SIZE(data->sock_id); i++) {
+		if (data->sock_watch & BIT(i)) {
+			fds |= BIT(data->sock_id[i]);
+		}
+	}
+	if (fds) {
+		__ASSERT(0, "FIXME: launch a workqueue");
+		siwx91x_nwp_sock_select(config->nwp_dev, 0, fds, 0);
+	}
+}
+
+static int siwx91x_sock_wait(const struct device *dev, uint32_t sockfd, k_timeout_t timeout)
+{
+	const struct siwx91x_wifi_config *config = dev->config;
+	struct siwx91x_wifi_data *data = dev->data;
+	uint32_t fds = 0;
+
+	data->sock_watch |= BIT(sockfd);
+	for (int i = 0; i < ARRAY_SIZE(data->sock_id); i++) {
+		if (data->sock_watch & BIT(i)) {
+			fds |= BIT(data->sock_id[i]);
+		}
+	}
+	siwx91x_nwp_sock_select(config->nwp_dev, 0, fds, 0);
+	return k_event_wait_safe(&data->sock_events, BIT(sockfd), false, timeout);
 }
 
 static int siwx91x_sock_bind(struct net_context *context,
 			     const struct sockaddr *addr, socklen_t addrlen)
 {
-	struct siwx91x_dev *sidev = net_if_get_device(net_context_get_iface(context))->data;
+	struct net_if *iface = net_context_get_iface(context);
+	const struct device *dev = net_if_get_device(iface);
+	const struct siwx91x_wifi_config *config = dev->config;
+	struct siwx91x_wifi_data *data = dev->data;
 	int sockfd = (int)context->offload_context;
-	struct sockaddr addr_le;
 	int ret;
 
-	/* Zephyr tends to call bind() even if the TCP socket is a client. 917
-	 * return an error in this case.
-	 */
-	if (net_context_get_proto(context) == IPPROTO_TCP &&
-	    !((struct sockaddr_in *)addr)->sin_port) {
+	/* With TCP, we will do the real job during the call to listen() */
+	if (net_context_get_type(context) == SOCK_STREAM) {
 		return 0;
 	}
-	siwx91x_sockaddr_swap_bytes(&addr_le, addr, addrlen);
-	ret = sl_si91x_bind(sockfd, &addr_le, addrlen);
+
+	ret = siwx91x_nwp_sock_bind(config->nwp_dev, addr);
 	if (ret) {
-		return -errno;
+		return ret;
 	}
-	/* WiseConnect refuses to run select on TCP listening sockets */
-	if (net_context_get_proto(context) == IPPROTO_UDP) {
-		SL_SI91X_FD_SET(sockfd, &sidev->fds_watch);
-		sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
-				siwx91x_sock_on_recv);
+	data->sock_id[sockfd] = ret;
+	siwx91x_sock_wait(dev, sockfd, K_FOREVER);
+	return 0;
+}
+
+static int siwx91x_sock_listen(struct net_context *context, int backlog)
+{
+	struct net_if *iface = net_context_get_iface(context);
+	const struct device *dev = net_if_get_device(iface);
+	const struct siwx91x_wifi_config *config = dev->config;
+	struct siwx91x_wifi_data *data = dev->data;
+	int sockfd = (int)context->offload_context;
+	int ret;
+
+	ret = siwx91x_nwp_sock_listen(config->nwp_dev, &context->local, backlog);
+	if (ret < 0) {
+		return ret;
 	}
+	data->sock_id[sockfd] = ret;
+	net_context_set_state(context, NET_CONTEXT_LISTENING);
 	return 0;
 }
 
@@ -231,82 +235,98 @@ static int siwx91x_sock_connect(struct net_context *context,
 				const struct sockaddr *addr, socklen_t addrlen,
 				net_context_connect_cb_t cb, int32_t timeout, void *user_data)
 {
-	struct siwx91x_dev *sidev = net_if_get_device(net_context_get_iface(context))->data;
+	struct net_if *iface = net_context_get_iface(context);
+	const struct device *dev = net_if_get_device(iface);
+	const struct siwx91x_wifi_config *config = dev->config;
+	struct siwx91x_wifi_data *data = dev->data;
 	int sockfd = (int)context->offload_context;
-	struct sockaddr addr_le;
 	int ret;
 
-	/* sl_si91x_connect() always return immediately, so we ignore timeout */
-	siwx91x_sockaddr_swap_bytes(&addr_le, addr, addrlen);
-	ret = sl_si91x_connect(sockfd, &addr_le, addrlen);
-	if (ret) {
-		ret = -errno;
+	if (timeout == 0) {
+		return -ENOTSUP;
 	}
-	SL_SI91X_FD_SET(sockfd, &sidev->fds_watch);
-	sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
-			siwx91x_sock_on_recv);
+	if (net_context_get_state(context) == NET_CONTEXT_CONNECTED) {
+		return -EISCONN;
+	}
+	ret = siwx91x_nwp_sock_connect(config->nwp_dev, net_context_get_type(context), addr);
+	if (ret < 0) {
+		return ret;
+	}
+	data->sock_id[sockfd] = ret;
+	siwx91x_sock_wait(dev, sockfd, timeout < 0 ? K_FOREVER : K_MSEC(timeout));
 	net_context_set_state(context, NET_CONTEXT_CONNECTED);
 	if (cb) {
-		cb(context, ret, user_data);
+		cb(context, 0, user_data);
 	}
-	return ret;
-}
-
-static int siwx91x_sock_listen(struct net_context *context, int backlog)
-{
-	int sockfd = (int)context->offload_context;
-	int ret;
-
-	ret = sl_si91x_listen(sockfd, backlog);
-	if (ret) {
-		return -errno;
-	}
-	net_context_set_state(context, NET_CONTEXT_LISTENING);
 	return 0;
 }
 
 static int siwx91x_sock_accept(struct net_context *context,
 			       net_tcp_accept_cb_t cb, int32_t timeout, void *user_data)
 {
-	struct siwx91x_dev *sidev = net_if_get_device(net_context_get_iface(context))->data;
+	struct net_if *iface = net_context_get_iface(context);
+	const struct device *dev = net_if_get_device(iface);
+	const struct siwx91x_wifi_config *config = dev->config;
+	struct siwx91x_wifi_data *data = dev->data;
 	int sockfd = (int)context->offload_context;
 	struct net_context *newcontext;
-	struct sockaddr addr_le;
 	int ret;
 
-	/* TODO: support timeout != K_FOREVER */
-	assert(timeout < 0);
-
+	if (timeout == 0) {
+		return -ENOTSUP;
+	}
 	ret = net_context_get(net_context_get_family(context),
 			      net_context_get_type(context),
 			      net_context_get_proto(context), &newcontext);
 	if (ret < 0) {
 		return ret;
 	}
-	/* net_context_get() calls siwx91x_sock_get() but sl_si91x_accept() also
-	 * allocates a socket.
-	 */
-	ret = siwx91x_sock_put(newcontext);
+	siwx91x_sock_wait(dev, sockfd, timeout < 0 ? K_FOREVER : K_MSEC(timeout));
+	newcontext->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
+	ret = siwx91x_nwp_sock_accept(config->nwp_dev, data->sock_id[sockfd], &context->local,
+				      &newcontext->remote);
+	if (ret < 0) {
+		net_context_put(newcontext);
+		return ret;
+	}
+	data->sock_id[(int)newcontext->offload_context] = ret;
+	siwx91x_sock_wait(dev, (int)newcontext->offload_context, K_FOREVER);
+	net_context_set_state(context, NET_CONTEXT_CONNECTED);
+	if (cb) {
+		cb(newcontext, &context->remote, sizeof(context->remote), 0, user_data);
+	}
+	return 0;
+};
+
+static int siwx91x_sock_recv(struct net_context *context,
+			     net_context_recv_cb_t cb, int32_t timeout, void *user_data)
+{
+	struct net_if *iface = net_context_get_iface(context);
+	const struct device *dev = net_if_get_device(iface);
+	const struct siwx91x_wifi_config *config = dev->config;
+	int sockfd = (int)context->offload_context;
+	struct net_buf *buf;
+	struct net_pkt *pkt;
+	int ret;
+
+	if (timeout == 0) {
+		return -ENOTSUP;
+	}
+	siwx91x_sock_wait(dev, sockfd, timeout < 0 ? K_FOREVER : K_MSEC(timeout));
+	ret = siwx91x_nwp_sock_recv(config->nwp_dev, sockfd, &buf);
 	if (ret < 0) {
 		return ret;
 	}
-	/* The iface is reset when getting a new context. */
-	newcontext->iface = context->iface;
-	ret = sl_si91x_accept(sockfd, &addr_le, sizeof(addr_le));
-	if (ret < 0) {
-		return -errno;
+	pkt = net_pkt_rx_alloc_on_iface(iface, K_MSEC(100));
+	if (!pkt) {
+		net_buf_unref(buf);
+		return -ENOBUFS;
 	}
-	newcontext->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
-	newcontext->offload_context = (void *)ret;
-	siwx91x_sockaddr_swap_bytes(&newcontext->remote, &addr_le, sizeof(addr_le));
-
-	SL_SI91X_FD_SET(ret, &sidev->fds_watch);
-	sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
-			siwx91x_sock_on_recv);
+	net_pkt_append_buffer(pkt, buf);
+	net_pkt_cursor_init(pkt);
 	if (cb) {
-		cb(newcontext, &addr_le, sizeof(addr_le), 0, user_data);
+		cb(context, pkt, NULL, NULL, 0, user_data);
 	}
-
 	return 0;
 }
 
@@ -315,82 +335,66 @@ static int siwx91x_sock_sendto(struct net_pkt *pkt,
 			       net_context_send_cb_t cb, int32_t timeout, void *user_data)
 {
 	struct net_context *context = pkt->context;
+	struct net_if *iface = net_context_get_iface(context);
+	const struct device *dev = net_if_get_device(iface);
+	const struct siwx91x_wifi_config *config = dev->config;
 	int sockfd = (int)context->offload_context;
-	struct sockaddr addr_le;
-	struct net_buf *buf;
-	int ret;
+	sli_si91x_socket_send_request_t *params;
+	struct sockaddr_in6 *addr6;
+	struct sockaddr_in *addr4;
+	int length = net_buf_frags_len(pkt->buffer);
 
-	/* struct net_pkt use fragmented buffers while SiWx91x API need a
-	 * continuous buffer.
+	__ASSERT(net_buf_headroom(pkt->buffer) >= SIWX91X_WIFI_SOCK_TX_HEADROOM, "No supported");
+
+	if (!addr) {
+		addr = &context->remote;
+	}
+	addr6 = (struct sockaddr_in6 *)addr;
+	addr4 = (struct sockaddr_in *)addr;
+	net_buf_push(pkt->buffer, NET_TCPH_LEN);
+	net_buf_push(pkt->buffer, NET_IPV6H_LEN);
+	params = net_buf_push(pkt->buffer, sizeof(sli_si91x_socket_send_request_t));
+	params->data_offset = sizeof(sli_si91x_socket_send_request_t) +
+			      NET_IPV6H_LEN + NET_TCPH_LEN;
+	params->socket_id = sockfd;
+	params->length = length;
+	switch (addr->sa_family) {
+	case NET_AF_INET:
+		params->ip_version = SL_IPV4_ADDRESS_LENGTH;
+		params->dest_port = ntohs(addr4->sin_port);
+		memcpy(params->dest_ip_addr.ipv4_address,
+		       &addr4->sin_addr,
+		       sizeof(addr4->sin_addr));
+		break;
+	case NET_AF_INET6:
+		params->ip_version = SL_IPV6_ADDRESS_LENGTH;
+		params->dest_port = ntohs(addr6->sin6_port);
+		sys_put_be32(addr6->sin6_addr.s6_addr32[0], &params->dest_ip_addr.ipv6_address[0]);
+		sys_put_be32(addr6->sin6_addr.s6_addr32[1], &params->dest_ip_addr.ipv6_address[4]);
+		sys_put_be32(addr6->sin6_addr.s6_addr32[2], &params->dest_ip_addr.ipv6_address[8]);
+		sys_put_be32(addr6->sin6_addr.s6_addr32[3], &params->dest_ip_addr.ipv6_address[12]);
+		break;
+	default:
+		return -EAFNOSUPPORT;
+	}
+	net_buf_push(pkt->buffer, sizeof(struct siwx91x_frame_desc));
+	siwx91x_nwp_send_frame(config->nwp_dev, pkt->buffer,
+			       SLI_SEND_RAW_DATA, SLI_WLAN_DATA_Q,
+			       SIWX91X_FRAME_FLAG_ASYNC);
+	/* FIXME: In fact, the callback has to be sent once the frame has been sent over the air.
+	 * However, we don't have this information.
 	 */
-	if (net_pkt_get_len(pkt) > NET_ETH_MTU) {
-		LOG_ERR("unexpected buffer size");
-		ret = -ENOBUFS;
-		goto out_cb;
-	}
-	buf = net_buf_alloc(&siwx91x_tx_pool, K_FOREVER);
-	if (!buf) {
-		ret = -ENOBUFS;
-		goto out_cb;
-	}
-	if (net_pkt_read(pkt, buf->data, net_pkt_get_len(pkt))) {
-		ret = -ENOBUFS;
-		goto out_release_buf;
-	}
-	net_buf_add(buf, net_pkt_get_len(pkt));
-
-	/* sl_si91x_sendto() always return immediately, so we ignore timeout */
-	siwx91x_sockaddr_swap_bytes(&addr_le, addr, addrlen);
-	ret = sl_si91x_sendto(sockfd, buf->data, net_pkt_get_len(pkt), 0, &addr_le, addrlen);
-	if (ret < 0) {
-		ret = -errno;
-		goto out_release_buf;
+	if (cb) {
+		cb(pkt->context, 0, user_data);
 	}
 	net_pkt_unref(pkt);
-
-out_release_buf:
-	net_buf_unref(buf);
-
-out_cb:
-	if (cb) {
-		cb(pkt->context, ret, user_data);
-	}
-	return ret;
+	return 0;
 }
 
 static int siwx91x_sock_send(struct net_pkt *pkt,
 			     net_context_send_cb_t cb, int32_t timeout, void *user_data)
 {
 	return siwx91x_sock_sendto(pkt, NULL, 0, cb, timeout, user_data);
-}
-
-static int siwx91x_sock_recv(struct net_context *context,
-			     net_context_recv_cb_t cb, int32_t timeout, void *user_data)
-{
-	struct net_if *iface = net_context_get_iface(context);
-	struct siwx91x_dev *sidev = net_if_get_device(iface)->data;
-	int sockfd = (int)context->offload_context;
-	int ret;
-
-	ret = k_event_wait(&sidev->fds_recv_event, 1U << sockfd, false,
-			   timeout < 0 ? K_FOREVER : K_MSEC(timeout));
-	if (timeout == 0) {
-		sidev->fds_cb[sockfd].context = context;
-		sidev->fds_cb[sockfd].cb = cb;
-		sidev->fds_cb[sockfd].user_data = user_data;
-	} else {
-		memset(&sidev->fds_cb[sockfd], 0, sizeof(sidev->fds_cb[sockfd]));
-	}
-
-	if (ret) {
-		k_event_clear(&sidev->fds_recv_event, 1U << sockfd);
-		ret = siwx91x_sock_recv_sync(context, cb, user_data);
-		SL_SI91X_FD_SET(sockfd, &sidev->fds_watch);
-	}
-
-	sl_si91x_select(SLI_NUMBER_OF_SOCKETS, &sidev->fds_watch, NULL, NULL, NULL,
-			siwx91x_sock_on_recv);
-	return ret;
 }
 
 static struct net_offload siwx91x_offload = {
@@ -400,15 +404,17 @@ static struct net_offload siwx91x_offload = {
 	.listen   = siwx91x_sock_listen,
 	.connect  = siwx91x_sock_connect,
 	.accept   = siwx91x_sock_accept,
+	.recv     = siwx91x_sock_recv,
 	.sendto   = siwx91x_sock_sendto,
 	.send     = siwx91x_sock_send,
-	.recv     = siwx91x_sock_recv,
 };
 
 void siwx91x_sock_init(struct net_if *iface)
 {
-	struct siwx91x_dev *sidev = net_if_get_device(iface)->data;
+	const struct device *dev = net_if_get_device(iface);
+	struct siwx91x_wifi_data *data = dev->data;
 
-	net_if_offload_set(iface, &siwx91x_offload);
-	k_event_init(&sidev->fds_recv_event);
+	k_mutex_init(&data->sock_lock);
+	k_event_init(&data->sock_events);
+	iface->if_dev->offload = &siwx91x_offload;
 }

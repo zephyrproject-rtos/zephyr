@@ -49,6 +49,9 @@ struct net_buf_pool *net_buf_pool_get(int id)
 {
 	struct net_buf_pool *pool;
 
+	if (id == NET_BUF_ON_STACK_POOL_ID) {
+		return NULL;
+	}
 	STRUCT_SECTION_GET(net_buf_pool, id, &pool);
 
 	return pool;
@@ -466,6 +469,7 @@ void net_buf_unref(struct net_buf *buf)
 
 		pool = net_buf_pool_get(buf->pool_id);
 
+		__ASSERT(pool, "Can't destroy stack allocated buffer");
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 		atomic_inc(&pool->avail_count);
 		__ASSERT_NO_MSG(atomic_get(&pool->avail_count) <= pool->buf_count);
@@ -500,6 +504,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, k_timeout_t timeout)
 	__ASSERT_NO_MSG(buf);
 
 	pool = net_buf_pool_get(buf->pool_id);
+	__ASSERT(pool, "Can't clone stack allocated buffer");
 
 	clone = net_buf_alloc_len(pool, 0, timeout);
 	if (!clone) {

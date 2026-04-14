@@ -4,42 +4,40 @@
  */
 #ifndef SIWX91X_WIFI_H
 #define SIWX91X_WIFI_H
-
+#include <stdint.h>
 #include <zephyr/net/wifi_mgmt.h>
 
-#include "sl_si91x_types.h"
+#include "siwx91x_nwp.h"
+#include "device/silabs/si91x/wireless/inc/sl_si91x_protocol_types.h"
 
-struct siwx91x_config {
+struct siwx91x_wifi_config {
 	const struct device *nwp_dev;
 	uint8_t scan_tx_power;
 	uint8_t join_tx_power;
 };
 
-struct siwx91x_dev {
+struct siwx91x_wifi_data {
 	struct net_if *iface;
-	sl_mac_address_t macaddr;
-	enum wifi_iface_state state;
-	enum wifi_iface_state scan_prev_state;
-	scan_result_cb_t scan_res_cb;
-	uint16_t scan_max_bss_cnt;
-	struct wifi_ps_params ps_params;
-	uint8_t max_num_sta;
-	bool reboot_needed;
-	bool hidden_ssid;
+	struct siwx91x_nwp_wifi_cb nwp_ops;
+	scan_result_cb_t zephyr_scan_cb;
+	uint8_t operating_mode;
+	int ap_idle_timeout;
+	int ap_max_num_sta;
+	bool ap_hide_ssid;
+
+	bool ps_enabled;
+	unsigned int ps_timeout_ms;
+	unsigned short ps_listen_interval;
+	enum wifi_ps_exit_strategy ps_exit_strategy;
+	enum wifi_ps_wakeup_mode ps_wakeup_mode;
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
-	struct k_event fds_recv_event;
-	sl_si91x_fdset_t fds_watch;
-	struct {
-		net_context_recv_cb_t cb;
-		void *user_data;
-		struct net_context *context;
-	} fds_cb[SLI_NUMBER_OF_SOCKETS];
+	uint32_t sock_bitmap;
+	int sock_id[SLI_NUMBER_OF_SOCKETS];
+	struct k_mutex sock_lock;
+	struct k_event sock_events;
+	uint32_t sock_watch;
 #endif
 };
-
-int siwx91x_status(const struct device *dev, struct wifi_iface_status *status);
-bool siwx91x_param_changed(struct wifi_iface_status *prev_params,
-			   struct wifi_connect_req_params *new_params);
 
 #endif

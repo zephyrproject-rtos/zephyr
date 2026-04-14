@@ -1,0 +1,60 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SILABS_SIWX91X_NWP
+	bool "Silabs Network Coprocessor"
+	depends on DT_HAS_SILABS_SIWX91X_NWP_ENABLED
+	select NET_BUF
+	select POLL
+	help
+	  Add support for Network Coprocessor (also named NWP) presents on SiWx91x parts.
+
+config SILABS_SIWX91X_NWP_WISECONNECT
+	bool
+	depends on SILABS_SIWX91X_NWP_BROKEN
+	help
+	  This implementation is no more provided
+
+config SILABS_SIWX91X_NWP_BROKEN
+	bool
+
+if SILABS_SIWX91X_NWP
+
+module = SIWX91X_NWP
+module-str = siwx91x_nwp
+source "subsys/logging/Kconfig.template.log_config"
+
+config SIWX91X_NWP_INIT_PRIORITY
+	int "Init priority"
+	default 39
+	help
+	  Initialization priority of the SiWx91x Network Processor. NWP init must
+	  have a higher priority than services that depend on it, such as Bluetooth,
+	  Wi-Fi and crypto.
+
+config SIWX91X_NWP_THREAD_STACK_SIZE
+	int "Stack size for interrupt handler"
+	default 1536
+	help
+	  Size of the stack used for internal thread which is ran for Network Co-Processor
+	  communication.
+
+config SIWX91X_NWP_THREAD_PRIO
+	int "Priority for interrupt handler"
+	default -15
+	help
+	  Priority level of the internal thread which is ran for Network Co-Processor
+	  communication.
+
+config SIWX91X_NWP_RELOCATION_SRAM
+	bool "Relocate communication path in RAM"
+	default y
+	select SRAM_VECTOR_TABLE
+	select SRAM_SW_ISR_TABLE
+	select CODE_DATA_RELOCATION_SRAM
+	help
+	  A performance boost can be achieved by relocating a few functions in RAM. This option
+	  increases the WiFi througput by ~20% while the RAM consumption increase by ~3kB. This
+	  option is usually recommended.
+
+endif

@@ -160,58 +160,6 @@ against:
    +---------------+-------------+-------------+--------------+
 
 
-BG Scan and Roaming
--------------------
-
-Roaming enables a Wi-Fi STA (Station) to seamlessly transition from one
-Access Point (AP) to another within the same network without losing its
-connection. This ensures uninterrupted connectivity as the STA moves across
-different AP coverage areas.
-
-The device support **Legacy Roaming**, which comprises the following procedures:
-
-   1. **Background (BG) Scan**:
-
-      - A standard scanning procedure executed while the STA remains connected
-        to the network.
-      - Triggered when the Received Signal Strength Indicator (RSSI) falls
-        below a predefined threshold.
-
-   2. **Roaming**:
-
-      - Initiated when the RSSI crosses the threshold and a roaming hysteresis
-        condition is met.
-      - The roaming process can be carried out using either an
-        **NDP (Null Data Packet)** or a **Deauthentication frame**. The default
-        configuration is to use NDP. The configuration can be changed using
-        Kconfig ``CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH`` to use a
-        deauthentication frame for Roaming.
-
-
-**Challenges**:
-
-   - The **Zephyr API** does not currently provide an API for Legacy Roaming.
-     While APIs for **802.11r roaming** are defined, they do not apply to
-     Legacy Roaming.
-
-**Current Design**:
-
-   - **BG Scan**: Performed using the Scan API.
-
-   - **Roaming Configuration**: Configured during the first BG Scan. Roaming
-     parameters are managed through **Kconfig** options.
-
-Roaming is enabled by default, but BG Scan needs to be performed to initiate
-and configure the Roaming parameters. Roaming can be disabled by disabling the
-config flag ``WIFI_SILABS_SIWX91X_ENABLE_ROAMING``.
-
-BG Scan stops when the STA gets disconnected. This BG Scan command again needs
-to be given to enable BG Scan and Roaming.
-
-The device support multi-probe in BG Scan where it can also scan APs with
-different SSID. This configuration can be disabled using Kconfig.
-
-
 Target Wake Time (TWT)
 ----------------------
 

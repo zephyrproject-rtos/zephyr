@@ -168,6 +168,7 @@ config STACK_ALIGN_DOUBLE_WORD
 
 config SLOW_FLASH_DATA
 	bool
+	depends on CPU_CORTEX_M
 	depends on !ARMV6_M_ARMV8_M_BASELINE
 	help
 	 On some SoC, accessing the rodata is slower than accessing the instructions (generally

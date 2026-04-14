@@ -62,6 +62,10 @@ struct offloaded_if_api {
 
 	/** Types of offloaded net device */
 	enum offloaded_net_if_types (*get_type)(void);
+
+	/** Allocate Tx buffer. If NULL, the default allocation is used. */
+	int (*alloc)(struct net_if *iface, struct net_pkt *pkt, size_t size,
+		     enum net_ip_protocol proto, k_timeout_t timeout);
 };
 
 /* Ensure offloaded_if_api is compatible with net_if_api */

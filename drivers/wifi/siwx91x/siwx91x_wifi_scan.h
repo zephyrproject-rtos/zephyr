@@ -7,13 +7,10 @@
 
 #include <zephyr/net/wifi_mgmt.h>
 
-#include "sl_wifi_types.h"
+struct siwx91x_nwp_wifi_cb;
 
-int siwx91x_scan(const struct device *dev,
-		 struct wifi_scan_params *params,
-		 scan_result_cb_t cb);
-
-unsigned int siwx91x_on_scan(sl_wifi_event_t event, unsigned int status,
-			     void *data, uint32_t data_length, void *arg);
+int siwx91x_wifi_scan(const struct device *dev,
+		      struct wifi_scan_params *params, scan_result_cb_t cb);
+void siwx91x_wifi_on_scan_results(const struct siwx91x_nwp_wifi_cb *ctxt, struct net_buf *buf);
 
 #endif
