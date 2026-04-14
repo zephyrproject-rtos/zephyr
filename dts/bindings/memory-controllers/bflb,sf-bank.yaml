@@ -1,0 +1,18 @@
+# Copyright (c) 2026 MASSDRIVER EI
+# SPDX-License-Identifier: Apache-2.0
+
+title: Bouffalolab Serial Flash Controller Bank
+
+description: |
+  Bouffalolab Serial Flash Controller Bank
+
+compatible: "bflb,sf-bank"
+
+include:
+  - "zephyr,memory-region.yaml"
+  - flash-controller.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
