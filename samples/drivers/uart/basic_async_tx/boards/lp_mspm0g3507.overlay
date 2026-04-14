@@ -1,0 +1,28 @@
+/*
+ * Device tree overlay for lp_mspm0g3507 board
+ * to use UART1 with PA17 as TX pin
+ */
+
+/* Configure UART0 with minimal configuration */
+&uart0 {
+	status = "okay";
+	current-speed = <400000>;
+	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
+	pinctrl-names = "default";
+};
+
+/* Configure UART1 with PA17 as TX pin only */
+&uart1 {
+	status = "okay";
+	current-speed = <400000>;
+	pinctrl-0 = <&uart1_tx_pa17>;
+	pinctrl-names = "default";
+};
+
+/* Keep console assigned but disable logging */
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
