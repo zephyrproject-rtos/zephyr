@@ -96,6 +96,16 @@ config IPI_OPTIMIZE
 	  would be to not issue any IPIs if the newly readied thread is of
 	  lower priority than all the threads currently executing on other CPUs.
 
+config IPI_OPTIMIZE_SINGLE_TARGET
+	bool "Send IPI to only one CPU instead of all eligible CPUs"
+	default n
+	depends on IPI_OPTIMIZE
+	help
+	  When selected, the kernel will send an IPI to only the single best
+	  CPU candidate instead of broadcasting to all eligible CPUs. The best
+	  CPU is selected based on the priority of the threads running across
+	  the eligible CPUs.
+
 config KERNEL_COHERENCE
 	bool "Place all shared data into coherent memory"
 	depends on CACHE_CAN_SAY_MEM_COHERENCE

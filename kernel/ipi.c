@@ -32,11 +32,85 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 		return (CONFIG_MP_MAX_NUM_CPUS > 1) ? IPI_ALL_CPUS_MASK : 0;
 	}
 
-	uint32_t  ipi_mask = 0;
 	uint32_t  num_cpus = (uint32_t)arch_num_cpus();
 	uint32_t  id = _current_cpu->id;
 	struct k_thread *cpu_thread;
 	bool   executable_on_cpu = true;
+
+#if IS_ENABLED(CONFIG_IPI_OPTIMIZE_SINGLE_TARGET)
+	int32_t  best_cpu = -1;
+	int   best_priority = INT_MIN;
+
+	/*
+	 * Fallback to original CONFIG_IPI_OPTIMIZE mechanism for metaIRQ threads.
+	 * For metaIRQ threads, IPI is sent without checking if the target CPU's
+	 * active thread is preemptible or it has higher priority.
+	 */
+	if (thread_is_metairq(thread)) {
+		uint32_t  ipi_mask = 0;
+
+		for (uint32_t i = 0; i < num_cpus; i++) {
+			if (i == id) {
+				continue;
+			}
+
+#if defined(CONFIG_SCHED_CPU_MASK)
+			executable_on_cpu = ((thread->base.cpu_mask & BIT(i)) != 0);
+#endif
+			cpu_thread = _kernel.cpus[i].current;
+			if ((cpu_thread != NULL) && executable_on_cpu) {
+				ipi_mask |= BIT(i);
+			}
+		}
+
+		return (atomic_val_t)ipi_mask;
+	}
+
+	/* Find the single best CPU candidate to send IPI to */
+	for (uint32_t i = 0; i < num_cpus; i++) {
+		/*
+		 * An IPI absolutely does not need to be sent if ...
+		 * 1. the CPU is not active, or
+		 * 2. <thread> can not execute on the target CPU
+		 * ... and might not need to be sent if ...
+		 * 3. the target CPU's active thread is not preemptible, or
+		 * 4. the target CPU's active thread has a higher priority
+		 *    (Items 3 & 4 may be overridden by a metaIRQ thread)
+		 */
+
+#if defined(CONFIG_SCHED_CPU_MASK)
+		executable_on_cpu = ((thread->base.cpu_mask & BIT(i)) != 0);
+#endif
+
+		if (!executable_on_cpu) {
+			continue;
+		}
+
+		cpu_thread = _kernel.cpus[i].current;
+		if (cpu_thread == NULL) {
+			continue;
+		}
+
+		/* Check if this CPU is a valid candidate for preemption */
+		if (thread_is_preemptible(cpu_thread) &&
+		    (z_sched_prio_cmp(cpu_thread, thread) < 0)) {
+			/* Track the CPU with the lowest priority thread */
+			if (cpu_thread->base.prio > best_priority) {
+				best_priority = cpu_thread->base.prio;
+				best_cpu = (int32_t)i;
+			}
+		}
+	}
+
+	/* If best CPU is current CPU, no IPI needed */
+	if (best_cpu == (int32_t)id) {
+		return 0;
+	}
+
+	return (best_cpu >= 0) ? (atomic_val_t)BIT(best_cpu) : 0;
+
+#else /* !CONFIG_IPI_OPTIMIZE_SINGLE_TARGET */
+	uint32_t  ipi_mask = 0;
 
 	for (uint32_t i = 0; i < num_cpus; i++) {
 		if (id == i) {
@@ -67,6 +141,7 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 	}
 
 	return (atomic_val_t)ipi_mask;
+#endif /* CONFIG_IPI_OPTIMIZE_SINGLE_TARGET */
 }
 
 void signal_pending_ipi(void)
