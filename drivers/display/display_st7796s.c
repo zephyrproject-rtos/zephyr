@@ -48,6 +48,7 @@ struct st7796s_config {
 	uint8_t madctl; /* Memory data access control */
 	uint8_t te_mode; /* Tearing enable mode */
 	uint32_t te_delay; /* Tearing enable delay */
+	uint32_t te_to;/*Tearing effect delay time out*/
 	bool rgb_is_inverted;
 };
 
@@ -422,6 +423,7 @@ static DEVICE_API(display, st7796s_api) = {
 		.rgb_is_inverted = DT_INST_PROP(n, rgb_is_inverted),		\
 		.te_mode = MIPI_DBI_TE_MODE_DT_INST(n, te_mode),                \
 		.te_delay = DT_INST_PROP(n, te_delay),                          \
+		.te_to = DT_INST_PROP(n, te_to),                         	\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, st7796s_init,					\

@@ -274,8 +274,16 @@ __weak __ramfunc void clock_init(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lcdic)) && CONFIG_MIPI_DBI_NXP_LCDIC
 	CLOCK_AttachClk(kMAIN_CLK_to_LCD_CLK);
+#if MIPI_DBI_MODE_8080_BUS_8_BIT
+    /* Initialize TDDR PLL and enable outputs that are not clock gated. */
+    CLOCK_InitTddrRefClk(kCLOCK_TddrFlexspiDiv10);
+	/* Enable TDDR PLL FlexSPI clock output */
+    CLOCK_EnableClock(kCLOCK_TddrMciFlexspiClk);	
+	CLOCK_AttachClk(kTDDR_MCI_FLEXSPI_to_LCD_CLK);
+#endif
 	RESET_PeripheralReset(kLCDIC_RST_SHIFT_RSTn);
 #endif
+
 
 #if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
 #if (DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer0), okay))

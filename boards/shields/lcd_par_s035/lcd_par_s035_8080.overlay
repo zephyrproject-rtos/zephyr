@@ -50,7 +50,7 @@
 		height = <320>;
 		width = <480>;
 		invert-mode = "1-dot";
-		frmctl1 = [80 10];
+		frmctl1 = [10 B0];
 		bpc = [1f 50 00 20];
 		dfc = [8a 07 3b];
 		pwr1 = [80 64];

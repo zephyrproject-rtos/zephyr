@@ -117,3 +117,9 @@ properties:
       as the inverted value of the RGB pixel-format specified in MADCTL.
       This option is convenient for supporting displays with bugs
       where the actual color is different from the pixel format of MADCTL.
+
+  te-to:
+    type: int 
+    default: 0x0
+    description: |
+      Time out value for tearing effect, 0 means no time out.
