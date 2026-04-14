@@ -31,10 +31,11 @@ extern "C" {
  * Fields:
  *
  * - 24..31: pin
- * - 20..23: signal
- * - 18..19: mode
- * - 16..17: instance
- * -  8..15: function
+ * - 21..23: reserved
+ * - 18..20: signal
+ * - 16..17: mode
+ * - 13..15: instance
+ * -  8..12: function
  * -      7: reserved
  * -      6: GPIO Output Enable
  * -      5: Pull Down
