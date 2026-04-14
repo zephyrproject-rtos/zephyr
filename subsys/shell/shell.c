@@ -1738,6 +1738,7 @@ int shell_prompt_change(const struct shell *sh, const char *prompt)
 #endif
 }
 
+#if defined(CONFIG_SHELL_HELP)
 void shell_help(const struct shell *sh)
 {
 	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
@@ -1746,6 +1747,7 @@ void shell_help(const struct shell *sh)
 	shell_internal_help_print(sh);
 	z_shell_unlock(sh);
 }
+#endif
 
 int shell_execute_cmd(const struct shell *sh, const char *cmd)
 {
