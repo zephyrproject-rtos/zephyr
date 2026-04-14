@@ -222,3 +222,8 @@ endif()
 
 # Do not use prologue and epilogue code that uses library function calls
 zephyr_library_compile_options_ifdef(CONFIG_FLASH_ANDES_QSPI_XIP -mno-save-restore)
+
+if(CONFIG_SOC_FLASH_BFLB)
+zephyr_code_relocate_ifdef(CONFIG_SOC_FLASH_BFLB FILES ${CMAKE_CURRENT_LIST_DIR}/jesd216.c
+  LOCATION ITCM NOKEEP)
+endif()
