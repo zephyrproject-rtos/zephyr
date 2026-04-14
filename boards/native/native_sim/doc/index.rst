@@ -395,12 +395,40 @@ Here are more details on the peripherals that are currently provided with this b
 **Bluetooth controller**
   It's possible to use the host's Bluetooth adapter as a Bluetooth
   controller for Zephyr. To do this the HCI device needs to be passed as
-  a command line option to ``zephyr.exe``. For example, to use ``hci0``,
-  use ``sudo zephyr.exe --bt-dev=hci0``. Using the device requires root
-  privileges (or the CAP_NET_ADMIN POSIX capability, to be exact) so
-  ``zephyr.exe`` needs to be run through ``sudo``. The chosen HCI device
-  must be powered down and support Bluetooth Low Energy (i.e. support the
-  Bluetooth specification version 4.0 or greater).
+  a command line option to ``zephyr.exe``. For example, to use ``hci0``:
+
+  .. code-block:: console
+
+     $ ./zephyr.exe --bt-dev=hci0
+
+  The chosen HCI device must be powered down before use and support
+  Bluetooth Low Energy (i.e. support the Bluetooth specification version
+  4.0 or greater). It can be powered down with:
+
+  .. code-block:: console
+
+     $ btmgmt -i hci0 power off
+
+  ``btmgmt info`` may be used to list current controllers and their states.
+
+  Or, on older systems:
+
+  .. code-block:: console
+
+     $ hciconfig hci0 down
+
+  ``hciconfig`` (without arguments) may be used to list available HCI devices.
+
+  If you get a permissions error when running ``zephyr.exe``, you may need
+  to grant the ``CAP_NET_ADMIN`` capability to the executable:
+
+  .. code-block:: console
+
+     $ sudo setcap cap_net_raw,cap_net_admin,cap_sys_admin+ep ./build/zephyr/zephyr.exe
+
+  Alternatively, depending on your OS configuration, running with ``sudo``
+  may also work. For other alternatives such as using ``btproxy``, see
+  :ref:`bluetooth_bluez`.
 
   Another possibility is to use a HCI TCP server which acts as a
   :ref:`virtual Bluetooth controller<bluetooth_virtual_posix>` over TCP.

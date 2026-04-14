@@ -326,39 +326,12 @@ When tester application has been built for :zephyr:board:`native_sim <native_sim
 Depending on your system,
 you may need to perform the following steps to successfully run ``zephyr.exe``.
 
-Setting capabilities
---------------------
+Setting up the HCI controller
+-----------------------------
 
-Since the application will need access to connect to a socket for HCI,
-you may need to perform the following
-
-.. code-block::
-
-    setcap cap_net_raw,cap_net_admin,cap_sys_admin+ep zephyr.exe
-
-This is not required if you run ``zephyr.exe`` or ``./autoptsclient-zephyr.py`` with e.g. ``sudo``.
-
-Downing the HCI controller
---------------------------
-
-You may also need to "down" or "power off" the HCI controller before running ``zephyr.exe``.
-This can be done either with ``hciconfig`` as
-
-.. code-block::
-
-    hciconfig hciX down
-
-Where ``hciX`` is a value like ``hci0``. You may run ``hciconfig`` to get a list of your HCI devices.
-
-Since ``hciconfig`` is deprecated on some systems, you may need to use
-
-.. code-block::
-
-    btmgmt -i hciX power off
-
-Similar to ``hciconfig``, ``btmgmt info`` may be used to list current controllers and their states.
-
-Both ``hciconfig`` and ``btmgmt`` may require ``sudo`` when powering down a controller.
+Before running ``zephyr.exe``, you may need to power down the HCI controller
+and grant the necessary capabilities to the executable.
+See :ref:`nsim_bt_host_cont` for details.
 
 Running the client
 ------------------

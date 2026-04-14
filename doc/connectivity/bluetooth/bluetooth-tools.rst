@@ -106,11 +106,10 @@ On the host side, BlueZ allows you to export its Bluetooth controller
 through a so-called user channel for QEMU and :zephyr:board:`native_sim <native_sim>` to use.
 
 .. note::
-   You only need to run ``btproxy`` when using QEMU. native_sim handles
-   the UNIX socket proxying automatically
-
-If you are using QEMU, in order to make the Controller available you will need
-one additional step using ``btproxy``:
+   When using QEMU, ``btproxy`` is required to expose the controller over a
+   UNIX socket. For :zephyr:board:`native_sim <native_sim>`, the HCI device
+   can be passed directly via ``--bt-dev=hci0``, or ``btproxy`` can be used
+   as an alternative to avoid running as root.
 
 #. Make sure that the Bluetooth controller is down
 
@@ -158,7 +157,13 @@ building and running a sample:
 
   And then run it with::
 
-     $ sudo ./build/zephyr/zephyr.exe --bt-dev=hci0
+     $ ./build/zephyr/zephyr.exe --bt-dev=hci0
+
+  .. note::
+     Accessing the HCI device directly may require additional permissions
+     depending on your OS configuration. See :ref:`nsim_bt_host_cont` for
+     details on how to set up the HCI controller and grant the necessary
+     capabilities, as well as alternatives such as using ``btproxy``.
 
 Using a Zephyr-based Bluetooth Controller
 =========================================
