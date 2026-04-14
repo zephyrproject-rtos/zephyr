@@ -768,7 +768,7 @@ static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) && !defined(CONFIG_SPI_RTIO)
 	spi_stm32_shift_fifo(spi, data);
 #else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 	if (ll_tx_is_not_full(spi) && data->tx_len != 0U) {
@@ -864,8 +864,10 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_EnableIT_EOT(spi);
-	LL_SPI_EnableIT_DXP(spi);
+	if (!IS_ENABLED(CONFIG_SPI_RTIO) || LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+		LL_SPI_EnableIT_EOT(spi);
+		LL_SPI_EnableIT_DXP(spi);
+	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 	ll_enable_int_errors(spi);
 	ll_enable_int_rx_not_empty(spi);
@@ -918,10 +920,6 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 	data->ctx.sync_status = 0;
 	data->ctx.owner = config;
 
-#ifdef CONFIG_SPI_SLAVE
-	ctx->recv_frames = 0;
-#endif /* CONFIG_SPI_SLAVE */
-
 	if (!spi_stm32_transfer_ongoing(data)) {
 		spi_stm32_iodev_complete(dev, 0);
 	}
@@ -929,13 +927,8 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 	__maybe_unused const struct spi_stm32_config *cfg = dev->config;
 	__maybe_unused SPI_TypeDef *spi = cfg->spi;
 
-	if (LL_SPI_IsEnabled(spi)) {
-		/* SPI needs to be disabled to set the transfer size */
-		ll_disable_spi(spi);
-	}
-
 	if (!use_dma) {
-		if (spi_stm32_set_transfer_size(dev, NULL, NULL, NULL) != 0) {
+		if (spi_stm32_set_transfer_size(dev, config, NULL, NULL) != 0) {
 			spi_stm32_iodev_complete(dev, -EINVAL);
 		}
 	}
@@ -1036,6 +1029,10 @@ static inline int spi_stm32_iodev_prepare_start(const struct device *dev)
 		     (op_code == RTIO_OP_TINY_TX) ||
 		     (op_code == RTIO_OP_TXRX);
 
+#ifdef CONFIG_SPI_SLAVE
+	data->ctx.recv_frames = 0;
+#endif /* CONFIG_SPI_SLAVE */
+
 	return spi_stm32_configure(dev, spi_config, write);
 }
 
@@ -1090,6 +1087,7 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		LL_SPI_ClearFlag_TXTF(spi);
 		LL_SPI_ClearFlag_OVR(spi);
+		LL_SPI_ClearFlag_EOT(spi);
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 		spi_stm32_iodev_complete(dev, status);
 		return;
@@ -1507,11 +1505,18 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (frames <= cfg->fifo_max_transfer_size) {
-		LL_SPI_SetTransferSize(spi, (uint32_t)frames);
-	} else {
-		LOG_ERR("Buffer size exceeds maximal supported value");
-		return -EINVAL;
+	if (!IS_ENABLED(CONFIG_SPI_RTIO) ||
+	    (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER)) {
+		if (frames <= cfg->fifo_max_transfer_size) {
+			if (LL_SPI_IsEnabled(spi)) {
+				/* SPI needs to be disabled to set the transfer size */
+				ll_disable_spi(spi);
+			}
+			LL_SPI_SetTransferSize(spi, (uint32_t)frames);
+		} else {
+			LOG_ERR("Buffer size exceeds maximal supported value");
+			return -EINVAL;
+		}
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
@@ -2021,12 +2026,6 @@ static int transceive(const struct device *dev,
 
 	spi_stm32_complete(dev, ret);
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&data->ctx) && ret == 0) {
-		ret = data->ctx.recv_frames;
-	}
-#endif /* CONFIG_SPI_SLAVE */
-
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
 end:
@@ -2036,6 +2035,13 @@ end:
 #if defined(CONFIG_SPI_STM32_DMA) && defined(CONFIG_SPI_ASYNC)
 release:
 #endif /* CONFIG_SPI_STM32_DMA && CONFIG_SPI_ASYNC */
+
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(&data->ctx) && ret == 0) {
+		ret = data->ctx.recv_frames;
+	}
+#endif /* CONFIG_SPI_SLAVE */
+
 	spi_context_release(&data->ctx, ret);
 
 	return ret;
