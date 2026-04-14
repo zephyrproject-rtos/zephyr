@@ -943,8 +943,10 @@ Proxy agent communication introduces several key concepts:
 * **Proxy agents**: Background services that synchronize channel data between domains
 * **Transport backends**: Communication mechanisms used by proxy agents
 
-Proxy agents are set up in code using :c:macro:`ZBUS_PROXY_AGENT_DEFINE`, specifying the transport
-backend and configuration parameters.
+Proxy agents and their transport backends are set up in code. Use backend-specific helper macros
+such as :c:macro:`ZBUS_PROXY_AGENT_IPC_DEFINE` and :c:macro:`ZBUS_PROXY_AGENT_UART_DEFINE`.
+Devicetree may still be used to identify the underlying hardware or service endpoint, but the
+proxy agent instance itself is not described by devicetree.
 Channels are defined using standard zbus macros (:c:macro:`ZBUS_CHAN_DEFINE` or
 :c:macro:`ZBUS_CHAN_DEFINE_WITH_ID`) and shadow channels use :c:macro:`ZBUS_SHADOW_CHAN_DEFINE`
 to create read-only mirrors linked to specific proxy agents.
@@ -967,7 +969,13 @@ Usage
 =====
 
 1. Enable :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT` and the desired backend option.
-2. Provide the backend device in devicetree.
+   Proxy-agent work runs on Zephyr's system workqueue by default, so
+   :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` must be large enough for the selected
+   backend and any shadow-channel listeners it triggers. Applications that need isolation can
+   instead define a proxy agent with a dedicated :c:type:`k_work_q` by using a
+   ``*_DEFINE_WITH_WORKQ`` helper macro.
+2. Select the backend device. This can come directly from code or from devicetree via
+   ``DEVICE_DT_GET(...)``.
 3. Instantiate the proxy agent:
 
 .. code-block:: c
@@ -975,18 +983,14 @@ Usage
     #include <zephyr/zbus/proxy_agent/zbus_proxy_agent.h>
     #include <zephyr/zbus/proxy_agent/zbus_proxy_agent_ipc.h>
 
-    #define IPC_DEV_NODE DT_NODELABEL(ipc0)
+    #define IPC_DEV DEVICE_DT_GET(DT_NODELABEL(ipc0))
 
-    ZBUS_PROXY_AGENT_DEFINE(proxy_agent,                   /* Proxy agent name */
-                            ZBUS_PROXY_AGENT_BACKEND_IPC,  /* Proxy agent type */
-                            IPC_DEV_NODE                   /* Backend node */
-    );
+    ZBUS_PROXY_AGENT_IPC_DEFINE(proxy_agent, IPC_DEV);
 
 Where:
 
-- "proxy_agent": Name of the proxy agent instance
-- "ZBUS_PROXY_AGENT_BACKEND_IPC": Transport backend type (IPC in this case)
-- "IPC_DEV_NODE": Device tree node for the backend device
+- ``proxy_agent`` is the proxy agent instance name
+- ``IPC_DEV`` is the backend device pointer expression used by the IPC backend
 
 4. Forward local channels through the agent:
 
@@ -1122,13 +1126,13 @@ Proxy Agent Configuration Options
 * :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_MAX_CHANNEL_NAME_SIZE` maximum size of channel names in
   proxy agent communication;
 * :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_INIT_PRIORITY` initialization priority for proxy agent
-  setup.
-* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_WORK_QUEUE_STACK_SIZE` stack size for the proxy agent
-  receive work queue thread;
-* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_WORK_QUEUE_PRIORITY` priority for the proxy agent receive
-  work queue thread.
+  setup;
 * :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH` depth of the proxy agent receive queue
-  for incoming messages from remote domains.
+  for incoming messages from remote domains;
+* :kconfig:option:`CONFIG_ZBUS_PROXY_AGENT_TX_QUEUE_DEPTH` depth of the proxy agent transmit queue
+  for local messages waiting to be forwarded to remote domains;
+* :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` stack available to proxy-agent work items
+  when an agent uses the default system workqueue.
 
 API Reference
 *************

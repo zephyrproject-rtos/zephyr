@@ -1,0 +1,12 @@
+common:
+  tags:
+    - zbus
+    - proxy_agent
+    - uart
+  harness: ztest
+  platform_allow:
+    - native_sim
+  extra_args: DTC_OVERLAY_FILE="app.overlay"
+
+tests:
+  subsys.zbus.proxy_agent.uart_backend: {}

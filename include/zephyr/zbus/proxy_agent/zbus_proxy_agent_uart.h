@@ -39,13 +39,20 @@ extern "C" {
  * @{
  */
 
+/** @brief Size in bytes of the fixed UART proxy wire-format header. */
 #define ZBUS_PROXY_AGENT_UART_WIRE_HEADER_SIZE (sizeof(uint32_t) * 2U)
+
+/** @brief Maximum decoded UART proxy frame size, including payload and channel name. */
 #define ZBUS_PROXY_AGENT_UART_MAX_DECODED_FRAME_SIZE                                            \
 	(ZBUS_PROXY_AGENT_UART_WIRE_HEADER_SIZE + CONFIG_ZBUS_PROXY_AGENT_MAX_MESSAGE_SIZE +    \
 	 CONFIG_ZBUS_PROXY_AGENT_MAX_CHANNEL_NAME_SIZE)
+
+/** @brief Maximum encoded COBS frame size, including the trailing delimiter. */
 #define ZBUS_PROXY_AGENT_UART_MAX_ENCODED_FRAME_SIZE                                            \
 	(ZBUS_PROXY_AGENT_UART_MAX_DECODED_FRAME_SIZE +                                         \
 	 (ZBUS_PROXY_AGENT_UART_MAX_DECODED_FRAME_SIZE / 254U) + 2U)
+
+/** @brief Ring-buffer capacity reserved for ISR-driven UART receive accumulation. */
 #define ZBUS_PROXY_AGENT_UART_RX_RING_BUF_SIZE (ZBUS_PROXY_AGENT_UART_MAX_ENCODED_FRAME_SIZE * 4U)
 
 /**
