@@ -1,0 +1,95 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bee ADC controller.
+  Pinctrl must be configured as "SW_MODE" while using ADC.
+
+  The RTL87x2G ADC has 9 channels.
+  P2_0 to P2_7 could be configured as ADC sampling pins, corresponding to ADC channel 0 to 7.
+  The last ADC channel(channel 8) is internal vbat channel, which does not need a external pin
+  to sample.
+
+  The RTL8752H ADC has 8 channels.
+  P2_0 to P2_5 and P2_7 could be configured as ADC sampling pins,
+  corresponding to ADC channel 0 to 5 and 7.
+  The last ADC channel(channel 8) is internal vbat channel, which does not need a external pin
+  to sample.
+  Notes: ADC channel 6 is not supported on RTL8752H!!!
+
+  Example of devicetree configuration.
+
+  &adc {
+    pinctrl-0 = <&adc_default>;
+    pinctrl-names = "default";
+    #address-cells = <1>;
+    #size-cells = <0>;
+    status = "okay";
+
+    channel@0 {
+        reg = <0>;
+        zephyr,gain = "ADC_GAIN_1";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,resolution = <12>;
+    };
+
+    channel@8 {
+        reg = <8>;
+        zephyr,gain = "ADC_GAIN_1";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,resolution = <12>;
+    };
+  };
+
+  &pinctrl {
+    adc_default: adc_default {
+        group1 {
+            psels = <BEE_PSEL(SW_MODE, P2_0)>;
+            output-disable;
+            bias-pull-down;
+        };
+    };
+  };
+
+compatible: "realtek,bee-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  channels:
+    type: int
+    description: Number of ADC channels
+    required: true
+
+  interrupts:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  is-bypass-mode:
+    type: int
+    default: 0
+    description: |
+      This is a channel map (bitmask) to configure bypass/divide mode for each adc channel.
+      For example, setting to 0x05 means channel 0 and channel 2 are configured as bypass mode,
+      and other channels are configured as divide mode by default.
+      - Divide mode (default): the ADC range is 0 to 3.3V.
+      - Bypass mode: the ADC range is 0 to 0.9V.
+
+io-channel-cells:
+  - input

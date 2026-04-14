@@ -10,6 +10,7 @@
 #include <dt-bindings/pinctrl/rtl8752h-pinctrl.h>
 #include <dt-bindings/clock/rtl8752h-clocks.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	chosen {
@@ -283,6 +284,16 @@
 			interrupts = <19 0>;
 			clocks = <&cctl APB_CLK(KEYSCAN)>;
 			status = "disabled";
+		};
+
+		adc: adc@40010000 {
+			compatible = "realtek,bee-adc";
+			reg = <0x40010000 0x60>;
+			interrupts = <18 0>;
+			clocks = <&cctl APB_CLK(ADC)>;
+			channels = <9>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 	};
 

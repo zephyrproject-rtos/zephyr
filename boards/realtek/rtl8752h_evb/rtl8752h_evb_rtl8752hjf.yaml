@@ -12,6 +12,7 @@ supported:
   - uart
   - gpio
   - counter
+  - adc
 testing:
   ignore_tags:
     - pm
