@@ -1,0 +1,16 @@
+name: Restore outbound internet access
+description: Restores outbound internet access by reverting DNS and clearing proxy environment variables
+
+runs:
+  using: composite
+  steps:
+    - name: Restore outbound internet access
+      shell: bash
+      run: |
+        cp /etc/resolv.conf.bak /etc/resolv.conf
+        echo "http_proxy=" >> $GITHUB_ENV
+        echo "https_proxy=" >> $GITHUB_ENV
+        echo "HTTP_PROXY=" >> $GITHUB_ENV
+        echo "HTTPS_PROXY=" >> $GITHUB_ENV
+        echo "no_proxy=" >> $GITHUB_ENV
+        echo "NO_PROXY=" >> $GITHUB_ENV

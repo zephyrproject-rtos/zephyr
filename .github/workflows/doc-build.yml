@@ -123,6 +123,9 @@ jobs:
         pip install -r scripts/requirements-actions.txt --require-hashes
         pip install -r doc/requirements.txt --require-hashes
 
+    - name: Block outbound internet access
+      uses: ./.github/actions/block-internet
+
     - name: Build HTML documentation
       shell: bash
       run: |
@@ -148,6 +151,10 @@ jobs:
         # deprecated page causing issues
         lcov --remove doc-coverage.info \*/deprecated > new.info
         genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
+
+    - name: Restore outbound internet access
+      if: always()
+      uses: ./.github/actions/restore-internet
 
     - name: Set up Node.js
       uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
