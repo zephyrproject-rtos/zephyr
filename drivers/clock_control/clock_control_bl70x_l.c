@@ -21,7 +21,6 @@ LOG_MODULE_REGISTER(clock_control_bl70x_l, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #include <bouffalolab/bl70xl/hbn_reg.h>
 #include <bouffalolab/bl70xl/l1c_reg.h>
 #include <bouffalolab/bl70xl/extra_defines.h>
-#include <bouffalolab/bl70xl/sf_ctrl_reg.h>
 #else
 #include <zephyr/dt-bindings/clock/bflb_bl70x_clock.h>
 #include <bouffalolab/bl70x/bflb_soc.h>
@@ -31,7 +30,6 @@ LOG_MODULE_REGISTER(clock_control_bl70x_l, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #include <bouffalolab/bl70x/pds_reg.h>
 #include <bouffalolab/bl70x/l1c_reg.h>
 #include <bouffalolab/bl70x/extra_defines.h>
-#include <bouffalolab/bl70x/sf_ctrl_reg.h>
 #endif
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
@@ -70,6 +68,8 @@ LOG_MODULE_REGISTER(clock_control_bl70x_l, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define EFUSE_RC32M_TRIM_MSK        0x3fc00
 
 #define BL70X_L_UNDOCUMENTED_BCLK_EN 0x40000ffc
+
+#define BL70X_L_TARGET_BASIC_CLOCK MHZ(32)
 
 enum bl70x_l_clkid {
 #if defined(CONFIG_SOC_SERIES_BL70XL)
@@ -585,28 +585,12 @@ static __ramfunc void clock_control_bl70x_l_update_flash_clk(const struct device
 {
 	struct clock_control_bl70x_l_data *data = dev->data;
 	volatile uint32_t tmp;
+	uint32_t clk;
 
 	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET);
 	tmp &= GLB_SF_CLK_DIV_UMSK;
 	tmp &= GLB_SF_CLK_EN_UMSK;
-	tmp |= ((uint32_t)(data->flashclk.divider - 1U)) << GLB_SF_CLK_DIV_POS;
 	*(volatile uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET) = tmp;
-
-	tmp = *(volatile uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET);
-	tmp |= SF_CTRL_SF_IF_READ_DLY_EN_MSK;
-	tmp &= ~SF_CTRL_SF_IF_READ_DLY_N_MSK;
-	tmp |= ((uint32_t)data->flashclk.read_delay << SF_CTRL_SF_IF_READ_DLY_N_POS);
-	if (data->flashclk.clock_invert) {
-		tmp &= ~SF_CTRL_SF_CLK_OUT_INV_SEL_MSK;
-	} else {
-		tmp |= SF_CTRL_SF_CLK_OUT_INV_SEL_MSK;
-	}
-	if (data->flashclk.rx_clock_invert) {
-		tmp |= SF_CTRL_SF_CLK_SF_RX_INV_SEL_MSK;
-	} else {
-		tmp &= ~SF_CTRL_SF_CLK_SF_RX_INV_SEL_MSK;
-	}
-	*(volatile uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET) = tmp;
 
 	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET);
 	tmp &= GLB_SF_CLK_SEL_UMSK;
@@ -614,6 +598,7 @@ static __ramfunc void clock_control_bl70x_l_update_flash_clk(const struct device
 	tmp &= GLB_SF_CLK_SEL2_UMSK;
 #endif
 	if (data->flashclk.source == bl70x_l_clkid_clk_dll) {
+		clk = clock_control_bl70x_l_get_clk(dev);
 #if defined(CONFIG_SOC_SERIES_BL70XL)
 		tmp |= 1U << GLB_SF_CLK_SEL_POS;
 #else
@@ -621,6 +606,7 @@ static __ramfunc void clock_control_bl70x_l_update_flash_clk(const struct device
 		tmp |= 0U << GLB_SF_CLK_SEL2_POS;
 #endif
 	} else if (data->flashclk.source == bl70x_l_clkid_clk_crystal) {
+		clk = clock_control_bl70x_l_get_xclk(dev);
 #if defined(CONFIG_SOC_SERIES_BL70XL)
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 #else
@@ -628,9 +614,20 @@ static __ramfunc void clock_control_bl70x_l_update_flash_clk(const struct device
 		tmp |= 1U << GLB_SF_CLK_SEL2_POS;
 #endif
 	} else {
+		clk = clock_control_bl70x_l_get_bclk(dev);
 		/* If using RC32M or BCLK, use BCLK */
 		tmp |= 2U << GLB_SF_CLK_SEL_POS;
 	}
+
+	/* If flash controller will manage flash, set to standard speed
+	 * and let it set the divider.
+	 */
+#if defined(CONFIG_SOC_FLASH_BFLB)
+	clk = DIV_ROUND_CLOSEST(clk, BL70X_L_TARGET_BASIC_CLOCK);
+	tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
+#else
+	tmp |= ((uint32_t)(data->flashclk.divider - 1U)) << GLB_SF_CLK_DIV_POS;
+#endif
 
 	*(volatile uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET) = tmp;
 
@@ -1083,11 +1080,6 @@ static struct clock_control_bl70x_l_data clock_control_bl70x_l_data = {
 #else
 			.source = bl70x_l_clkid_clk_rc32m,
 #endif
-			.read_delay = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), read_delay),
-			.clock_invert =
-				DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), clock_invert),
-			.rx_clock_invert =
-				DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), rx_clock_invert),
 			.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), divider),
 		},
 
