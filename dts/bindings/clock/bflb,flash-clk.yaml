@@ -24,26 +24,5 @@ properties:
     default: 1
     description: Divide source clock by this 3-bits value (1 to 8). Typically 1.
 
-  read-delay:
-    type: int
-    default: 0
-    enum:
-      - 0
-      - 1
-      - 2
-      - 3
-    description: Flash Read delay. This is a flash controller setting.
-      This may be necessary to achieve flash clock higher than XCLK.
-
-  clock-invert:
-    type: boolean
-    description: Invert Clock Signal. This is a flash controller setting.
-      This may be necessary to achieve flash clock higher than XCLK.
-
-  rx-clock-invert:
-    type: boolean
-    description: Invert RX Clock Signal. This is a flash controller setting.
-      This may be necessary to achieve flash clock higher than XCLK.
-
   "#clock-cells":
     const: 0

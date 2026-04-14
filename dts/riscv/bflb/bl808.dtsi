@@ -103,7 +103,6 @@
 			compatible = "bflb,flash-clk";
 			clocks = <&clk_crystal>;
 			divider = <1>;
-			read-delay = <0>;
 			status = "okay";
 		};
 
