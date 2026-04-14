@@ -26,10 +26,3 @@
 	/* 120MHz BCLK */
 	divider = <5>;
 };
-
-&clk_flash {
-	/* 0 Units of delay for GD Flash but inverted RX */
-	read-delay = <0>;
-	rx-clock-invert;
-	divider = <1>;
-};

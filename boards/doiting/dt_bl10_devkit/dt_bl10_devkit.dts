@@ -13,7 +13,8 @@
 	compatible = "bflb,bl602";
 
 	chosen {
-		zephyr,flash = &flash0;
+		zephyr,flash = &is25lp128;
+		zephyr,flash-controller = &sf_bank1;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
@@ -32,28 +33,35 @@
 	clock-frequency = <DT_FREQ_M(192)>;
 };
 
-&flashctrl {
-	flash0: flash@23000000 {
-		compatible = "soc-nv-flash", "issi,is25lp128";
-		reg = <0x23000000 (0x1000000 - 0x2000)>;
-		write-block-size = <256>;
+&sf_bank1 {
+	reg = <0x23000000 0x1000000>;
+	ranges = <0x0 0x23000000 0x1000000>;
+
+	is25lp128: flash@0 {
+		compatible = "bflb,sf-flash", "soc-nv-flash";
+		reg = <0 0x1000000>;
+		write-block-size = <1>;
 		erase-block-size = <DT_SIZE_K(4)>;
-		/* jedec-id = [96 60 18]; */
+
+		spi-bus-mode = <2>;
+		sf-pad = <1>;
+		jedec-id = [96 60 18];
 
 		partitions {
-			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			slot0_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
 				label = "image-0";
-				reg = <0x00000000 0x100000>;
+				reg = <0x00000000 (0x00100000 - 0x2000)>;
 				read-only;
 			};
 
 			storage_partition: partition@100000 {
+				compatible = "zephyr,mapped-partition";
 				label = "storage";
-				reg = <0x00100000 (0xF00000 - 0x2000)>;
+				reg = <0x00100000 0xf00000>;
 			};
 		};
 	};

@@ -8,31 +8,50 @@
 
 #include <bflb/bl706.dtsi>
 
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &sf_bank1;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
 &cpu0 {
 	clock-frequency = <DT_FREQ_M(144)>;
 };
 
-&flashctrl {
-	flash0: flash@23000000 {
-		compatible = "soc-nv-flash";
-		reg = <0x23000000 DT_SIZE_M(4)>;
-		write-block-size = <256>;
+&sf_bank1 {
+	reg = <0x23000000 DT_SIZE_M(4)>;
+	ranges = <0x0 0x23000000 DT_SIZE_M(4)>;
+
+	pinctrl-0 = <&sf2_default>;
+	pinctrl-names = "default";
+
+	flash0: flash@0 {
+		compatible = "bflb,sf-flash", "soc-nv-flash";
+		reg = <0 DT_SIZE_M(4)>;
+		write-block-size = <1>;
 		erase-block-size = <DT_SIZE_K(4)>;
 
+		spi-bus-mode = <2>;
+		sf-pad = <2>;
+		sf-pad-is-external;
+
 		partitions {
-			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			slot0_partition: partition@0 {
+			slot0_partition: partition@3e8000 {
+				compatible = "zephyr,mapped-partition";
 				label = "image-0";
-				reg = <0x00000000 DT_SIZE_K(4064)>;
+				reg = <0x00000000 (DT_SIZE_K(4000) - 0x2000)>;
 				read-only;
 			};
 
-			storage_partition: partition@3f8000 {
+			storage_partition: partition@100000 {
+				compatible = "zephyr,mapped-partition";
 				label = "storage";
-				reg = <0x003f8000 DT_SIZE_K(32)>;
+				reg = <0x003e8000 DT_SIZE_K(96)>;
 			};
 		};
 	};
