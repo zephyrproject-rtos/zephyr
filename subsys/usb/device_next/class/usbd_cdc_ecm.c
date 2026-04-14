@@ -81,6 +81,7 @@ struct usbd_cdc_ecm_desc {
 struct cdc_ecm_eth_data {
 	struct usbd_class_data *c_data;
 	struct usbd_desc_node *const mac_desc_data;
+	uint8_t *const mac_desc_str;
 	struct usbd_cdc_ecm_desc *const desc;
 	const struct usb_desc_header **const fs_desc;
 	const struct usb_desc_header **const hs_desc;
@@ -91,6 +92,22 @@ struct cdc_ecm_eth_data {
 	struct k_sem sync_sem;
 	atomic_t state;
 };
+
+static void cdc_ecm_update_mac_desc(struct cdc_ecm_eth_data *const data)
+{
+	static const char hex[] = "0123456789ABCDEF";
+	uint8_t remote[6];
+
+	memcpy(remote, data->mac_addr, sizeof(remote));
+	remote[0] ^= 0x02;
+
+	for (int i = 0; i < 6; i++) {
+		data->mac_desc_str[i * 2]     = hex[remote[i] >> 4];
+		data->mac_desc_str[i * 2 + 1] = hex[remote[i] & 0x0F];
+	}
+
+	data->mac_desc_str[12] = '\0';
+}
 
 static uint8_t cdc_ecm_get_ctrl_if(struct cdc_ecm_eth_data *const data)
 {
@@ -552,6 +569,7 @@ static int cdc_ecm_set_config(const struct device *dev,
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(data->mac_addr, config->mac_address.addr,
 		       sizeof(data->mac_addr));
+		cdc_ecm_update_mac_desc(data);
 		return 0;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		/* nothing to do */
@@ -626,6 +644,8 @@ static int usbd_cdc_ecm_preinit(const struct device *dev)
 	if (sys_get_le48(data->mac_addr) == sys_cpu_to_le48(0)) {
 		gen_random_mac(data->mac_addr, 0, 0, 0);
 	}
+
+	cdc_ecm_update_mac_desc(data);
 
 	LOG_DBG("CDC ECM device initialized");
 
@@ -819,9 +839,18 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 
 #define USBD_CDC_ECM_DT_DEVICE_DEFINE(n)					\
 	CDC_ECM_DEFINE_DESCRIPTOR(n);						\
-	USBD_DESC_STRING_DEFINE(mac_desc_data_##n,				\
-				DT_INST_PROP(n, remote_mac_address),		\
-				USBD_DUT_STRING_INTERFACE);			\
+	static uint8_t mac_desc_str_##n[13] =					\
+		DT_INST_PROP(n, remote_mac_address);				\
+	static struct usbd_desc_node mac_desc_data_##n = {			\
+		.str = {							\
+			.utype = USBD_DUT_STRING_INTERFACE,			\
+			.ascii7 = true,						\
+		},								\
+		.ptr = mac_desc_str_##n,					\
+		.bLength = USB_STRING_DESCRIPTOR_LENGTH(			\
+			DT_INST_PROP(n, remote_mac_address)),			\
+		.bDescriptorType = USB_DESC_STRING,				\
+	};									\
 										\
 	USBD_DEFINE_CLASS(cdc_ecm_##n,						\
 			  &usbd_cdc_ecm_api,					\
@@ -832,6 +861,7 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),		\
 		.sync_sem = Z_SEM_INITIALIZER(eth_data_##n.sync_sem, 0, 1),	\
 		.mac_desc_data = &mac_desc_data_##n,				\
+		.mac_desc_str = mac_desc_str_##n,				\
 		.desc = &cdc_ecm_desc_##n,					\
 		.fs_desc = cdc_ecm_fs_desc_##n,					\
 		.hs_desc = cdc_ecm_hs_desc_##n,					\
