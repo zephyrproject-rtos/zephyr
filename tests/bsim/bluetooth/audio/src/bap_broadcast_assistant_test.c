@@ -152,8 +152,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 		for (uint8_t i = 0; i < state->num_subgroups; i++) {
 			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 
-			if (subgroup->bis_sync != BT_BAP_BIS_SYNC_FAILED) {
-				FAIL("Invalid BIS sync value 0x%08X for failed sync\n",
+			if (subgroup->bis_sync != 0U) {
+				FAIL("Invalid BIS sync value 0x%08X for bad broadcast code\n",
 				     subgroup->bis_sync);
 				return;
 			}
