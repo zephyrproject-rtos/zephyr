@@ -156,8 +156,11 @@
 		};
 
 		itcm: itcm@22014000 {
-			compatible = "zephyr,memory-region", "sifive,dtim0";
-			reg = <0x22014000 DT_SIZE_K(12)>;
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x22014000 DT_SIZE_K(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x22014000 DT_SIZE_K(16)>;
 			zephyr,memory-region = "ITCM";
 		};
 
@@ -410,8 +413,12 @@
 		};
 
 		retram: memory@40010000 {
-			compatible = "mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x40010000 DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40010000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "RETRAM";
 		};
 
 		dtcm: dtcm@42017000 {
@@ -431,11 +438,17 @@
 			sram0_bt: sram@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(88)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(88)>;
 			};
 
 			sram0_bt_em16k: sram_16k@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(80)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(80)>;
 			};
 		};
 	};
