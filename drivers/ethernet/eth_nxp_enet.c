@@ -84,7 +84,6 @@ struct nxp_enet_mac_config {
 	/* Deprecated */
 	enum mac_address_source mac_addr_source;
 
-	const struct pinctrl_dev_config *pincfg;
 	enet_buffer_config_t buffer_config[1];
 	uint8_t phy_mode;
 	void (*irq_config_func)(void);
@@ -673,11 +672,6 @@ static int eth_nxp_enet_init(const struct device *dev)
 
 	data->base = (ENET_Type *)DEVICE_MMIO_GET(config->module_dev);
 
-	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (err) {
-		return err;
-	}
-
 	k_mutex_init(&data->rx_frame_buf_mutex);
 	k_sem_init(&data->rx_thread_sem, 0, CONFIG_ETH_NXP_ENET_RX_BUFFERS);
 	k_sem_init(&data->tx_buf_sem,
@@ -907,8 +901,6 @@ static const struct ethernet_api api_funcs = {
 #define NXP_ENET_MAC_INIT(n)								\
 		NXP_ENET_NODE_HAS_MAC_ADDR_CHECK(n)					\
 											\
-		PINCTRL_DT_INST_DEFINE(n);						\
-											\
 		NXP_ENET_FRAMEINFO_ARRAY(n)						\
 											\
 		static void nxp_enet_##n##_irq_config_func(void)			\
@@ -943,7 +935,6 @@ static const struct ethernet_api api_funcs = {
 			.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),	\
 			.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(			\
 						DT_INST_PARENT(n), 0, name),		\
-			.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 			.buffer_config = {{						\
 				.rxBdNumber = CONFIG_ETH_NXP_ENET_RX_BUFFERS,		\
 				.txBdNumber = CONFIG_ETH_NXP_ENET_TX_BUFFERS,		\
@@ -990,6 +981,7 @@ struct nxp_enet_mod_config {
 	DEVICE_MMIO_ROM;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct nxp_enet_mod_data {
@@ -1011,16 +1003,24 @@ static int nxp_enet_mod_init(const struct device *dev)
 
 	ENET_Reset((ENET_Type *)DEVICE_MMIO_GET(dev));
 
+	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return 0;
 }
 
 #define NXP_ENET_INIT(n, compat)							\
+											\
+PINCTRL_DT_INST_DEFINE(n);								\
 											\
 static const struct nxp_enet_mod_config nxp_enet_mod_cfg_##n = {			\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),		\
 		.clock_subsys = (void *) DT_CLOCKS_CELL_BY_IDX(				\
 							DT_DRV_INST(n), 0, name),	\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 };											\
 											\
 static struct nxp_enet_mod_data nxp_enet_mod_data_##n;					\

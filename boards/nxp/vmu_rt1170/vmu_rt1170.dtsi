@@ -99,9 +99,12 @@
 	status = "okay";
 };
 
-&enet1g_mac {
+&enet1g {
 	pinctrl-0 = <&pinmux_enet1g>;
 	pinctrl-names = "default";
+};
+
+&enet1g_mac {
 	phy-handle = <&enet1g_phy>;
 	phy-connection-type = "rmii";
 	zephyr,random-mac-address;

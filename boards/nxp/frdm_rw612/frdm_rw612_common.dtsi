@@ -261,10 +261,14 @@ mikrobus_serial: &flexcomm0 {};
 	wakeup-source;
 };
 
-&enet_mac {
+&enet {
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
+};
+
+&enet_mac {
+	status = "okay";
 	phy-handle = <&phy>;
 	nxp,unique-mac;
 	phy-connection-type = "rmii";
