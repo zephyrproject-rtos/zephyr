@@ -23,6 +23,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,sdhc = &sdcard0;
 	};
 
 	aliases {
@@ -31,6 +32,7 @@
 		led0 = &green_led0;
 		pwm-led0 = &buzzer0;
 		rtc = &pfc8563_rtc;
+		sdhc0 = &sdcard0;
 		sw0 = &refresh_key0;
 		sw1 = &left_key1;
 		sw2 = &right_key2;
@@ -144,6 +146,31 @@
 
 &gpio1 {
 	status = "okay";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+
+	sdcard0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <DT_FREQ_M(20)>;
+		pwr-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		cd-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		power-delay-ms = <5>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
 };
 
 &timer0 {
