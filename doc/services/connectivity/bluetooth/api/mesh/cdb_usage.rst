@@ -53,7 +53,7 @@ The structures represent nodes, subnets, application keys, and the overall datab
 Node structure
 ==============
 
-.. literalinclude:: ../../../../../include/zephyr/bluetooth/mesh/cdb.h
+.. literalinclude:: ../../../../../../include/zephyr/bluetooth/mesh/cdb.h
    :language: c
    :dedent:
    :start-after: doc string cdb node start
@@ -66,7 +66,7 @@ Node flags:
 Subnet structure
 ================
 
-.. literalinclude:: ../../../../../include/zephyr/bluetooth/mesh/cdb.h
+.. literalinclude:: ../../../../../../include/zephyr/bluetooth/mesh/cdb.h
    :language: c
    :dedent:
    :start-after: doc string cdb subnet start
@@ -75,7 +75,7 @@ Subnet structure
 Application Key structure
 ==========================
 
-.. literalinclude:: ../../../../../include/zephyr/bluetooth/mesh/cdb.h
+.. literalinclude:: ../../../../../../include/zephyr/bluetooth/mesh/cdb.h
    :language: c
    :dedent:
    :start-after: doc string cdb app key start
@@ -84,7 +84,7 @@ Application Key structure
 Main CDB structure
 ==================
 
-.. literalinclude:: ../../../../../include/zephyr/bluetooth/mesh/cdb.h
+.. literalinclude:: ../../../../../../include/zephyr/bluetooth/mesh/cdb.h
    :language: c
    :dedent:
    :start-after: doc string cdb start
