@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -80,6 +81,11 @@ void peripheral(void)
 	err = bt_gatt_service_register(&svc);
 	TEST_ASSERT(!err, "bt_gatt_service_register failed (%d)", err);
 	LOG_DBG("New service added");
+
+#if defined(CONFIG_BT_PRIVACY)
+	/* Wait so that the central has time to rotate its RPA. */
+	k_sleep(K_SECONDS(CONFIG_BT_RPA_TIMEOUT + 1));
+#endif
 
 	start_adv(adv);
 	wait_connected();
