@@ -1,0 +1,15 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <infineon/tc4x/tc4x7_com-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <ASCLIN0_TX_P14_0>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <ASCLIN0_RX_P14_1>;
+		};
+	};
+};

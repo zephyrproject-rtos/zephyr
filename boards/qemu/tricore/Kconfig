@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_TC3X
+	bool
+	select QEMU_TARGET
+
+config BOARD_QEMU_TC4X
+	bool
+	select QEMU_TARGET

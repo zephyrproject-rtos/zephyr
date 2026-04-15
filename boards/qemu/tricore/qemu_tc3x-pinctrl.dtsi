@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/pinctrl/aurix-pinctrl.h>
+#include <infineon/tc3x/tc3x7_adas-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <ASCLIN0_TX_P14_0>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <ASCLIN0_RX_P14_1>;
+		};
+	};
+};
