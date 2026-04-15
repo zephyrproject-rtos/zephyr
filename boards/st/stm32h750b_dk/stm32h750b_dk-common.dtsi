@@ -185,11 +185,13 @@
 		cs-high-time = <4>; /* >= 50 ns */
 		spi-bus-width = <4>;
 		reset-cmd;
-		status = "okay";
 
+		/* QSPI external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(128)>; /* Ext Flash mem-mapped to 0x90000000 */
+		ranges = <0x0 0x90000000 DT_SIZE_M(128)>;
+
+		status = "okay";
 
 		/* Sector erase 64KB uniform granularity for each Flash */
 		/* Subsector erase 4KB, 32KB granularity for each Flash */
@@ -198,11 +200,14 @@
 			reg = <0x0 DT_SIZE_M(128)>; /* 128MB total in dual-flash mode */
 			write-block-size = <1>; /* 1byte=4bits*2 in dual-flash mode */
 			erase-block-size = <DT_SIZE_K(8)>; /* 4KB*2 in dual-flash mode */
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
 			partitions {
-				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				ranges;
 			};
 		};
 	};

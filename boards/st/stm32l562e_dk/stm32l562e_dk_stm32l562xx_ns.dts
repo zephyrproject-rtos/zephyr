@@ -92,23 +92,27 @@
 
 &mx25lm51245 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		slot1_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00000000 DT_SIZE_K(240)>;
 		};
 
 		unused: partition@3c000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0003c000 DT_SIZE_K(32)>;
 		};
 
 		slot1_ns_partition: partition@44000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00044000 DT_SIZE_K(172)>;
 		};
 
 		storage_partition: partition@6f000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0006f000 (DT_SIZE_M(64) - DT_SIZE_K(444))>;
 		};
 	};

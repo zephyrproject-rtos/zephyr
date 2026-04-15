@@ -39,16 +39,18 @@
 
 &ext_flash {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00000000 DT_SIZE_M(32)>;
 		};
 
 		slot1_partition: partition@2000000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x02000000 DT_SIZE_M(32)>;
 		};

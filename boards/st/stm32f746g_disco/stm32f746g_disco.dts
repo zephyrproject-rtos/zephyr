@@ -220,19 +220,27 @@ zephyr_udc0: &usbotg_fs {
 		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <72000000>;
 		cs-high-time = <4>; /* >= 50 ns */
+
+		/* QSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(16)>;
+
 		status = "okay";
 
 		partitions {
-			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			slot1_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
 				label = "image-1";
 				reg = <0x00000000 DT_SIZE_K(640)>;
 			};
 
 			storage_partition: partition@a0000 {
+				compatible = "zephyr,mapped-partition";
 				label = "storage";
 				reg = <0x000a0000 DT_SIZE_M(15)>;
 			};
