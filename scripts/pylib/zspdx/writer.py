@@ -153,11 +153,13 @@ PackageCopyrightText: {pkg.cfg.copyrightText}
 #   1) f: file handle for SPDX document
 #   2) lic: custom license ID being described
 def writeOtherLicenseSPDX(f, lic):
+    # REUSE-IgnoreStart
     f.write(f"""LicenseID: {lic}
 ExtractedText: {lic}
 LicenseName: {lic}
 LicenseComment: Corresponds to the license ID `{lic}` detected in an SPDX-License-Identifier: tag.
 """)
+    # REUSE-IgnoreEnd
 
 # Output tag-value SPDX content for the given Document object.
 # Arguments:
