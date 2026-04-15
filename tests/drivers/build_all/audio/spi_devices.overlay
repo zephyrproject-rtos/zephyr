@@ -21,6 +21,14 @@
 				reg = <0x0>;
 				spi-max-frequency = <100000>;
 			};
+
+			test_spi_tlv320aic26: tlv320aic26@1 {
+				compatible = "ti,tlv320aic26";
+				reg = <0x1>;
+				spi-max-frequency = <12000000>;
+				mclk-frequency = <12000000>;
+				status = "okay";
+			};
 		};
 	};
 };
