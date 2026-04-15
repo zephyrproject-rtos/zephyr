@@ -43,7 +43,7 @@ For example, for the Sample USB-C Sink application:
 Each Physical Type-C port is represented in the devicetree by a usb-c-connector
 compatible node:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/sink/boards/b_g474e_dpow1.overlay
+.. literalinclude:: ../../../../../samples/subsys/usb_c/sink/boards/b_g474e_dpow1.overlay
    :language: dts
    :start-after: usbc.rst usbc-port start
    :end-before: usbc.rst usbc-port end
@@ -52,7 +52,7 @@ compatible node:
 VBUS is measured by a device that's referenced in the devicetree by a
 usb-c-vbus-adc compatible node:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/sink/boards/b_g474e_dpow1.overlay
+.. literalinclude:: ../../../../../samples/subsys/usb_c/sink/boards/b_g474e_dpow1.overlay
    :language: dts
    :start-after: usbc.rst vbus-voltage-divider-adc start
    :end-before: usbc.rst vbus-voltage-divider-adc end
@@ -62,7 +62,7 @@ usb-c-vbus-adc compatible node:
 A user defined structure is defined and later registered with the subsystem and can
 be accessed from callback through an API:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/sink/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/sink/src/main.c
    :language: c
    :start-after: usbc.rst port data object start
    :end-before: usbc.rst port data object end
@@ -70,7 +70,7 @@ be accessed from callback through an API:
 
 These callbacks are used by the subsystem to set or get application specific data:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/sink/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/sink/src/main.c
    :language: c
    :start-after: usbc.rst callbacks start
    :end-before: usbc.rst callbacks end
@@ -78,7 +78,7 @@ These callbacks are used by the subsystem to set or get application specific dat
 
 This callback is used by the subsystem to query if a certain action can be taken:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/sink/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/sink/src/main.c
    :language: c
    :start-after: usbc.rst check start
    :end-before: usbc.rst check end
@@ -86,7 +86,7 @@ This callback is used by the subsystem to query if a certain action can be taken
 
 This callback is used by the subsystem to notify the application of an event:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/sink/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/sink/src/main.c
    :language: c
    :start-after: usbc.rst notify start
    :end-before: usbc.rst notify end
@@ -94,7 +94,7 @@ This callback is used by the subsystem to notify the application of an event:
 
 Registering the callbacks:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/sink/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/sink/src/main.c
    :language: c
    :start-after: usbc.rst register start
    :end-before: usbc.rst register end
@@ -102,7 +102,7 @@ Registering the callbacks:
 
 Register the user defined structure:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/sink/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/sink/src/main.c
    :language: c
    :start-after: usbc.rst user data start
    :end-before: usbc.rst user data end
@@ -110,7 +110,7 @@ Register the user defined structure:
 
 Start the USB-C subsystem:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/sink/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/sink/src/main.c
    :language: c
    :start-after: usbc.rst usbc start
    :end-before: usbc.rst usbc end
@@ -134,7 +134,7 @@ For example, for the Sample USB-C Source application:
 Each Physical Type-C port is represented in the devicetree by a ``usb-c-connector``
 compatible node:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval.overlay
+.. literalinclude:: ../../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval.overlay
    :language: dts
    :start-after: usbc.rst usbc-port start
    :end-before: usbc.rst usbc-port end
@@ -143,7 +143,7 @@ compatible node:
 VBUS is measured by a device that's referenced in the devicetree by a
 ``usb-c-vbus-adc`` compatible node:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval.overlay
+.. literalinclude:: ../../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval.overlay
    :language: dts
    :start-after: usbc.rst vbus-voltage-divider-adc start
    :end-before: usbc.rst vbus-voltage-divider-adc end
@@ -152,7 +152,7 @@ VBUS is measured by a device that's referenced in the devicetree by a
 Power control for VBUS and VCONN can be managed by a device referenced in the
 devicetree by a ``zephyr,usb-c-pwrctrl`` compatible node:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval.overlay
+.. literalinclude:: ../../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval.overlay
    :language: dts
    :start-after: usbc.rst pwrctrl start
    :end-before: usbc.rst pwrctrl end
@@ -161,7 +161,7 @@ devicetree by a ``zephyr,usb-c-pwrctrl`` compatible node:
 A user defined structure is defined and later registered with the subsystem and can
 be accessed from callback through an API:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/source/src/main.c
    :language: c
    :start-after: usbc.rst port data object start
    :end-before: usbc.rst port data object end
@@ -169,7 +169,7 @@ be accessed from callback through an API:
 
 These callbacks are used by the subsystem to set or get application specific data:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/source/src/main.c
    :language: c
    :start-after: usbc.rst callbacks start
    :end-before: usbc.rst callbacks end
@@ -177,7 +177,7 @@ These callbacks are used by the subsystem to set or get application specific dat
 
 This callback is used by the subsystem to query if a certain action can be taken:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/source/src/main.c
    :language: c
    :start-after: usbc.rst check start
    :end-before: usbc.rst check end
@@ -185,7 +185,7 @@ This callback is used by the subsystem to query if a certain action can be taken
 
 This callback is used by the subsystem to notify the application of an event:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/source/src/main.c
    :language: c
    :start-after: usbc.rst notify start
    :end-before: usbc.rst notify end
@@ -193,7 +193,7 @@ This callback is used by the subsystem to notify the application of an event:
 
 Registering the callbacks:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/source/src/main.c
    :language: c
    :start-after: usbc.rst register start
    :end-before: usbc.rst register end
@@ -201,7 +201,7 @@ Registering the callbacks:
 
 Register the user defined structure:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/source/src/main.c
    :language: c
    :start-after: usbc.rst user data start
    :end-before: usbc.rst user data end
@@ -209,7 +209,7 @@ Register the user defined structure:
 
 Start the USB-C subsystem:
 
-.. literalinclude:: ../../../../samples/subsys/usb_c/source/src/main.c
+.. literalinclude:: ../../../../../samples/subsys/usb_c/source/src/main.c
    :language: c
    :start-after: usbc.rst usbc start
    :end-before: usbc.rst usbc end
