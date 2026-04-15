@@ -88,7 +88,12 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
+	if (recv_state_count == 0U) {
+		FAIL("No receive states found\n");
+		return;
+	}
 	LOG_INF("BASS discover done with %u recv states", recv_state_count);
+
 	g_recv_state_count = recv_state_count;
 	SET_FLAG(flag_discovery_complete);
 }
