@@ -750,6 +750,16 @@ static int wifi_ap_enable(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
+	if (params->psk_length != 0 && (params->psk_length < 8 || params->psk_length > 64)) {
+		return -EINVAL;
+	}
+
+	if (params->sae_password_length != 0 &&
+	    (params->sae_password_length < 8 ||
+	    params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
+		return -EINVAL;
+	}
+
 	return wifi_mgmt_api->ap_enable(dev, params);
 }
 
