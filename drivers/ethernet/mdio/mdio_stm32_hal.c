@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(mdio_stm32_hal, CONFIG_MDIO_LOG_LEVEL);
 #define ADIN1100_REG_VALUE_MASK		GENMASK(15, 0)
 
 struct mdio_stm32_data {
-	struct k_sem sem;
+	struct k_mutex mutex;
 };
 
 struct mdio_stm32_config {
@@ -44,7 +44,7 @@ static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 	HAL_StatusTypeDef ret;
 	uint32_t read;
 
-	k_sem_take(&dev_data->sem, K_FOREVER);
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 #ifdef CONFIG_ETH_STM32_HAL_API_V2
 	ret = HAL_ETH_ReadPHYRegister(heth, prtad, regad, &read);
@@ -54,7 +54,7 @@ static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 	ret = HAL_ETH_ReadPHYRegister(heth, regad, &read);
 #endif
 
-	k_sem_give(&dev_data->sem);
+	k_mutex_unlock(&dev_data->mutex);
 
 	if (ret != HAL_OK) {
 		return -EIO;
@@ -74,7 +74,7 @@ static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	HAL_StatusTypeDef ret;
 
-	k_sem_take(&dev_data->sem, K_FOREVER);
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
 #ifdef CONFIG_ETH_STM32_HAL_API_V2
 	ret = HAL_ETH_WritePHYRegister(heth, prtad, regad, data);
@@ -84,7 +84,7 @@ static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
 	ret = HAL_ETH_WritePHYRegister(heth, regad, data);
 #endif
 
-	k_sem_give(&dev_data->sem);
+	k_mutex_unlock(&dev_data->mutex);
 
 	if (ret != HAL_OK) {
 		return -EIO;
@@ -104,7 +104,7 @@ static int mdio_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-	k_sem_init(&dev_data->sem, 1, 1);
+	k_mutex_init(&dev_data->mutex);
 
 	return 0;
 }
