@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
 from subprocess import run
 
-from west import log
+logger = logging.getLogger('zspdx')
 
 
 # Given a path to the applicable C compiler, a C source file, and the
@@ -16,7 +17,7 @@ from west import log
 #   3) TargetCompileGroup for the current target
 # Returns: list of paths to include files, or [] on error or empty findings.
 def getCIncludes(compilerPath, srcFile, tcg):
-    log.dbg(f"    - getting includes for {srcFile}")
+    logger.debug(f"    - getting includes for {srcFile}")
 
     # prepare fragments
     fragments = [fr for fr in tcg.compileCommandFragments if fr.strip() != ""]
@@ -32,7 +33,7 @@ def getCIncludes(compilerPath, srcFile, tcg):
 
     cp = run(cmd, capture_output=True, text=True)
     if cp.returncode != 0:
-        log.dbg(f"    - calling {compilerPath} failed with error code {cp.returncode}")
+        logger.debug(f"    - calling {compilerPath} failed with error code {cp.returncode}")
         return []
     else:
         # response will be in cp.stderr, not cp.stdout

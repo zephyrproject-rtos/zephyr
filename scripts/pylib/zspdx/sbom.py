@@ -2,15 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
 import os
 from dataclasses import dataclass
-
-from west import log
 
 from .scanner import ScannerConfig, scanDocument
 from .version import SPDX_VERSION_2_3
 from .walker import Walker, WalkerConfig
 from .writer import writeSPDX
+
+logger = logging.getLogger('zspdx')
 
 
 # SBOMConfig contains settings that will be passed along to the various
@@ -44,7 +45,9 @@ def setupCmakeQuery(build_dir):
     cmakeApiDirPath = os.path.join(build_dir, ".cmake", "api", "v1", "query")
     if os.path.exists(cmakeApiDirPath):
         if not os.path.isdir(cmakeApiDirPath):
-            log.err(f'cmake api query directory {cmakeApiDirPath} exists and is not a directory')
+            logger.error(
+                f'cmake api query directory {cmakeApiDirPath} exists and is not a directory'
+            )
             return False
         # directory exists, we're good
     else:
@@ -55,7 +58,7 @@ def setupCmakeQuery(build_dir):
     queryFilePath = os.path.join(cmakeApiDirPath, "codemodel-v2")
     if os.path.exists(queryFilePath):
         if not os.path.isfile(queryFilePath):
-            log.err(f'cmake api query file {queryFilePath} exists and is not a directory')
+            logger.error(f'cmake api query file {queryFilePath} exists and is not a directory')
             return False
         # file exists, we're good
         return True
@@ -72,8 +75,12 @@ def setupCmakeQuery(build_dir):
 def makeSPDX(cfg):
     # report any odd configuration settings
     if cfg.analyzeIncludes and not cfg.includeSDK:
-        log.wrn("config: requested to analyze includes but not to generate SDK SPDX document;")
-        log.wrn("config: will proceed but will discard detected includes for SDK header files")
+        logger.warning(
+            "config: requested to analyze includes but not to generate SDK SPDX document;"
+        )
+        logger.warning(
+            "config: will proceed but will discard detected includes for SDK header files"
+        )
 
     # set up walker configuration
     walkerCfg = WalkerConfig()
@@ -86,7 +93,7 @@ def makeSPDX(cfg):
     w = Walker(walkerCfg)
     retval = w.makeDocuments()
     if not retval:
-        log.err("SPDX walker failed; bailing")
+        logger.error("SPDX walker failed; bailing")
         return False
 
     # set up scanner configuration
@@ -106,25 +113,25 @@ def makeSPDX(cfg):
     if cfg.includeSDK:
         retval = writeSPDX(os.path.join(cfg.spdxDir, "sdk.spdx"), w.docSDK, cfg.spdxVersion)
         if not retval:
-            log.err("SPDX writer failed for SDK document; bailing")
+            logger.error("SPDX writer failed for SDK document; bailing")
             return False
 
     # write app document
     retval = writeSPDX(os.path.join(cfg.spdxDir, "app.spdx"), w.docApp, cfg.spdxVersion)
     if not retval:
-        log.err("SPDX writer failed for app document; bailing")
+        logger.error("SPDX writer failed for app document; bailing")
         return False
 
     # write zephyr document
     retval = writeSPDX(os.path.join(cfg.spdxDir, "zephyr.spdx"), w.docZephyr, cfg.spdxVersion)
     if not retval:
-        log.err("SPDX writer failed for zephyr document; bailing")
+        logger.error("SPDX writer failed for zephyr document; bailing")
         return False
 
     # write build document
     retval = writeSPDX(os.path.join(cfg.spdxDir, "build.spdx"), w.docBuild, cfg.spdxVersion)
     if not retval:
-        log.err("SPDX writer failed for build document; bailing")
+        logger.error("SPDX writer failed for build document; bailing")
         return False
 
     # write modules document
@@ -132,7 +139,7 @@ def makeSPDX(cfg):
         os.path.join(cfg.spdxDir, "modules-deps.spdx"), w.docModulesExtRefs, cfg.spdxVersion
     )
     if not retval:
-        log.err("SPDX writer failed for modules-deps document; bailing")
+        logger.error("SPDX writer failed for modules-deps document; bailing")
         return False
 
     return True

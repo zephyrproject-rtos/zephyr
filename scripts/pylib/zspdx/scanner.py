@@ -3,15 +3,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import hashlib
+import logging
 import os
 import re
 from dataclasses import dataclass
 
 from reuse.project import Project
-from west import log
 
 from .licenses import LICENSES
 from .util import getHashes
+
+logger = logging.getLogger('zspdx')
 
 
 # ScannerConfig contains settings used to configure how the SPDX
@@ -61,7 +63,7 @@ def getExpressionData(filePath, numLines):
                     giving up. If 0, will scan the entire file.
     Returns: parsed expression if found; None if not found.
     """
-    log.dbg(f"  - getting licenses for {filePath}")
+    logger.debug(f"  - getting licenses for {filePath}")
 
     with open(filePath) as f:
         try:
@@ -186,7 +188,7 @@ def getCopyrightInfo(filePath):
 
     Returns: list of copyright statements if found; empty list if not found
     """
-    log.dbg(f"  - getting copyright info for {filePath}")
+    logger.debug(f"  - getting copyright info for {filePath}")
 
     try:
         project = Project(os.path.dirname(filePath))
@@ -199,7 +201,7 @@ def getCopyrightInfo(filePath):
 
         return copyrights
     except Exception as e:
-        log.wrn(f"Error getting copyright info for {filePath}: {e}")
+        logger.warning(f"Error getting copyright info for {filePath}: {e}")
         return []
 
 
@@ -213,7 +215,7 @@ def scanDocument(cfg, doc):
         - doc: Document
     """
     for pkg in doc.pkgs.values():
-        log.inf(f"scanning files in package {pkg.cfg.name} in document {doc.cfg.name}")
+        logger.info(f"scanning files in package {pkg.cfg.name} in document {doc.cfg.name}")
 
         # first, gather File data for this package
         for f in pkg.files.values():
@@ -223,7 +225,7 @@ def scanDocument(cfg, doc):
             # get hashes for file
             hashes = getHashes(f.abspath)
             if not hashes:
-                log.wrn(f"unable to get hashes for file {f.abspath}; skipping")
+                logger.warning(f"unable to get hashes for file {f.abspath}; skipping")
                 continue
             hSHA1, hSHA256, hMD5 = hashes
             f.sha1 = hSHA1

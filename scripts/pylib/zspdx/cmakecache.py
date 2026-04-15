@@ -2,13 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from west import log
+import logging
+
+logger = logging.getLogger('zspdx')
 
 
 # Parse a CMakeCache file and return a dict of key:value (discarding
 # type hints).
 def parseCMakeCacheFile(filePath):
-    log.dbg(f"parsing CMake cache file at {filePath}")
+    logger.debug(f"parsing CMake cache file at {filePath}")
     kv = {}
     try:
         with open(filePath) as f:
@@ -35,5 +37,5 @@ def parseCMakeCacheFile(filePath):
             return kv
 
     except OSError as e:
-        log.err(f"Error loading {filePath}: {str(e)}")
+        logger.error(f"Error loading {filePath}: {str(e)}")
         return {}

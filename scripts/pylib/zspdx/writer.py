@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
 import re
 from datetime import datetime
 
-from west import log
-
 from .util import getHashes
 from .version import SPDX_VERSION_2_3
+
+logger = logging.getLogger('zspdx')
 
 CPE23TYPE_REGEX = (
     r'^cpe:2\.3:[aho\*\-](:(((\?*|\*?)([a-zA-Z0-9\-\._]|(\\[\\\*\?!"#$$%&\'\(\)\+,\/:;<=>@\[\]\^'
@@ -121,7 +122,7 @@ PackageCopyrightText: {pkg.cfg.copyrightText}
         elif re.fullmatch(PURL_REGEX, ref):
             f.write(f"ExternalRef: PACKAGE-MANAGER purl {ref}\n")
         else:
-            log.wrn(f"Unknown external reference ({ref})")
+            logger.warning(f"Unknown external reference ({ref})")
 
     # flag whether files analyzed / any files present
     if len(pkg.files) > 0:
@@ -211,17 +212,17 @@ Created: {datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
 def writeSPDX(spdxPath, doc, spdx_version=SPDX_VERSION_2_3):
     # create and write document to disk
     try:
-        log.inf(f"Writing SPDX {spdx_version} document {doc.cfg.name} to {spdxPath}")
+        logger.info(f"Writing SPDX {spdx_version} document {doc.cfg.name} to {spdxPath}")
         with open(spdxPath, "w") as f:
             writeDocumentSPDX(f, doc, spdx_version)
     except OSError as e:
-        log.err(f"Error: Unable to write to {spdxPath}: {str(e)}")
+        logger.error(f"Error: Unable to write to {spdxPath}: {str(e)}")
         return False
 
     # calculate hash of the document we just wrote
     hashes = getHashes(spdxPath)
     if not hashes:
-        log.err("Error: created document but unable to calculate hash values")
+        logger.error("Error: created document but unable to calculate hash values")
         return False
     doc.myDocSHA1 = hashes[0]
 
