@@ -150,7 +150,18 @@ static inline struct usb_dwc2_reg *dwc2_get_base(const struct device *dev)
 	return (struct usb_dwc2_reg *)DEVICE_MMIO_NAMED_GET(dev, core);
 }
 
-#include "udc_dwc2_vendor_quirks.h"
+#if DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_usb_otg)
+#include "udc_dwc2_esp32_usb_otg.h"
+#endif
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs)
+#include "udc_dwc2_nrf_usbhs.h"
+#endif
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs_nrf54l)
+#include "udc_dwc2_nrf_usbhs_nrf54l.h"
+#endif
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_fsotg)
+#include "udc_dwc2_stm32f4_fsotg.h"
+#endif
 
 #define UDC_DWC2_VENDOR_QUIRK_GET(n)						\
 	COND_CODE_1(DT_NODE_VENDOR_HAS_IDX(DT_DRV_INST(n), 1),			\
