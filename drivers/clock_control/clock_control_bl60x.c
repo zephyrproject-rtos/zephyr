@@ -14,6 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_bl60x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
+#include <soc.h>
 #include <bouffalolab/bl60x/bflb_soc.h>
 #include <bouffalolab/bl60x/aon_reg.h>
 #include <bouffalolab/bl60x/glb_reg.h>
@@ -194,7 +195,8 @@ static int clock_control_bl60x_init_crystal(void)
 }
 
 /* HCLK is the core clock */
-static void clock_control_bl60x_set_root_clock_dividers(uint32_t hclk_div, uint32_t bclk_div)
+static __critfunc void clock_control_bl60x_set_root_clock_dividers(uint32_t hclk_div,
+								   uint32_t bclk_div)
 {
 	uint32_t tmp;
 	uint32_t old_rootclk;
@@ -313,14 +315,6 @@ static void clock_control_bl60x_init_pll(const enum bl60x_clkid source, const in
 					 const uint32_t sdmin)
 {
 	uint32_t tmp;
-	uint32_t old_rootclk;
-
-	old_rootclk = clock_bflb_get_root_clock();
-
-	/* security RC32M */
-	if (old_rootclk > 1) {
-		clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_RC32M);
-	}
 
 	clock_control_bl60x_deinit_pll();
 
@@ -419,7 +413,6 @@ static void clock_control_bl60x_init_pll(const enum bl60x_clkid source, const in
 	tmp = (tmp & PDS_CLKPLL_SDM_RESET_UMSK) | (0U << PDS_CLKPLL_SDM_RESET_POS);
 	sys_write32(tmp, PDS_BASE + PDS_PU_RST_CLKPLL_OFFSET);
 
-	clock_bflb_set_root_clock(old_rootclk);
 	clock_bflb_settle();
 }
 
@@ -474,7 +467,7 @@ static int clock_control_bl60x_clock_trim_32M(void)
 }
 
 /* source for most clocks, either XTAL or RC32M */
-static uint32_t clock_control_bl60x_get_xclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl60x_get_xclk(const struct device *dev)
 {
 	uint32_t tmp;
 
@@ -491,7 +484,7 @@ static uint32_t clock_control_bl60x_get_xclk(const struct device *dev)
 	}
 }
 
-static uint32_t clock_control_bl60x_get_clk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl60x_get_clk(const struct device *dev)
 {
 	struct clock_control_bl60x_data *data = dev->data;
 	uint32_t tmp;
@@ -529,7 +522,7 @@ static uint32_t clock_control_bl60x_get_clk(const struct device *dev)
 }
 
 /* most peripherals clock */
-static uint32_t clock_control_bl60x_get_bclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl60x_get_bclk(const struct device *dev)
 {
 	uint32_t tmp;
 	uint32_t clock_id;
@@ -600,7 +593,7 @@ static void clock_control_bl60x_setup_pll(const struct device *dev)
 	sys_write32(tmp, GLB_BASE + GLB_CLK_CFG0_OFFSET);
 }
 
-static void clock_control_bl60x_init_root_as_pll(const struct device *dev)
+static __critfunc void clock_control_bl60x_init_root_as_pll(const struct device *dev)
 {
 	struct clock_control_bl60x_data *data = dev->data;
 
@@ -620,7 +613,7 @@ static void clock_control_bl60x_init_root_as_pll(const struct device *dev)
 	clock_control_bl60x_set_PKA_clock(1);
 }
 
-static void clock_control_bl60x_init_root_as_crystal(const struct device *dev)
+static __critfunc void clock_control_bl60x_init_root_as_crystal(const struct device *dev)
 {
 	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_XTAL);
 	sys_write32(clock_control_bl60x_get_clk(dev), CORECLOCKREGISTER);
@@ -758,7 +751,7 @@ static int clock_control_bl60x_update_f32k(const struct device *dev)
 	return 0;
 }
 
-static int clock_control_bl60x_update_clocks(const struct device *dev)
+static __critfunc int clock_control_bl60x_update_clocks(const struct device *dev)
 {
 	struct clock_control_bl60x_data *data = dev->data;
 	uint32_t tmp;

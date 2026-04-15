@@ -15,8 +15,7 @@
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &sf_bank1;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,itcm = &sram1;
-		zephyr,sram = &sram0;
+		zephyr,sram = &all_ram;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &sec_eng_trng;

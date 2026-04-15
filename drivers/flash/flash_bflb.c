@@ -106,15 +106,6 @@ LOG_MODULE_REGISTER(flash_bflb, CONFIG_FLASH_LOG_LEVEL);
 #define FLASH_READ32(address)		(*((volatile uint32_t *)(address)))
 #define FLASH_WRITE32(value, address)	(*((volatile uint32_t *)(address))) = value;
 
-/* This correctly relocates this section to ITCM, fallback to ram if itcm is not set.
- * Prefer RAM on e24 platforms as ITCM is very limited.
- */
-#if DT_HAS_CHOSEN(zephyr_itcm) && defined(CONFIG_SOC_SERIES_BL61X)
-#define __nxipfunc			__GENERIC_SECTION(.itcm)
-#else
-#define __nxipfunc			__ramfunc
-#endif
-
 #include "flash_bflb.h"
 
 #define ADDR_SIZE(_data) COND_CODE_1(BFLB_HAS_32B,						\
@@ -198,7 +189,7 @@ static const flash_bflb_nxip_message flash_bflb_nxip_messages[NXIP_MSG_MAX] = {
 	[NXIP_MSG_SFDP_BADSIZE] = flash_bflb_nxip_message_sfdp_badsize,
 };
 
-static __nxipfunc void flash_bflb_nxip_message_set(struct flash_bflb_bank_data *data,
+static __ramfunc void flash_bflb_nxip_message_set(struct flash_bflb_bank_data *data,
 					enum flash_bflb_nxip_message_id id,
 					uint32_t arg1, uint32_t arg2, uint32_t arg3)
 {
@@ -219,7 +210,7 @@ static void flash_bflb_nxip_message_clear(struct flash_bflb_bank_data *data)
 }
 
 /* Will using function cause error ? */
-static __nxipfunc bool flash_bflb_is_in_xip(struct flash_bflb_bank_data *data, void *func)
+static __ramfunc bool flash_bflb_is_in_xip(struct flash_bflb_bank_data *data, void *func)
 {
 	if (((uint32_t)func >= (BFLB_XIP_BASE_BANK1)
 	    && (uint32_t)func < (BFLB_XIP_BASE_BANK1 + BFLB_XIP_SIZE))
@@ -248,7 +239,7 @@ static int flash_bflb_is_valid_range(struct flash_bflb_bank_data *data, off_t of
 	return 0;
 }
 
-static __nxipfunc void flash_bflb_settle_x(size_t cnt)
+static __ramfunc void flash_bflb_settle_x(size_t cnt)
 {
 	for (size_t i = 0; i < cnt; i++) {
 		__asm__ volatile (".rept 20 ; nop ; .endr");
@@ -257,7 +248,7 @@ static __nxipfunc void flash_bflb_settle_x(size_t cnt)
 
 #if !DT_ANY_INST_HAS_BOOL_STATUS_OKAY(no_header)
 
-static __nxipfunc void flash_bflb_set_default_read_header(struct flash_bflb_bank_data *data,
+static __ramfunc void flash_bflb_set_default_read_header(struct flash_bflb_bank_data *data,
 						struct bflb_header_flash_cfg *flash_header_cfg)
 {
 	switch (data->cfg.auto_spi_mode) {
@@ -292,7 +283,7 @@ static __nxipfunc void flash_bflb_set_default_read_header(struct flash_bflb_bank
 
 #endif
 
-static __nxipfunc void flash_bflb_set_default_read_default(struct flash_bflb_bank_data *data)
+static __ramfunc void flash_bflb_set_default_read_default(struct flash_bflb_bank_data *data)
 {
 	switch (data->cfg.auto_spi_mode) {
 	default:
@@ -321,7 +312,7 @@ static __nxipfunc void flash_bflb_set_default_read_default(struct flash_bflb_ban
 
 #ifdef CONFIG_SOC_FLASH_BFLB_SFDP
 
-static __nxipfunc enum flash_bflb_bus_mode flash_bflb_pick_next_worse_xip(
+static __ramfunc enum flash_bflb_bus_mode flash_bflb_pick_next_worse_xip(
 								enum flash_bflb_bus_mode mode)
 {
 	switch (mode) {
@@ -349,7 +340,7 @@ static __nxipfunc enum flash_bflb_bus_mode flash_bflb_pick_next_worse_xip(
 #if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL60X) || \
 	defined(CONFIG_SOC_SERIES_BL70XL)
 
-static __nxipfunc void flash_bflb_l1c_wrap(bool enable)
+static __ramfunc void flash_bflb_l1c_wrap(bool enable)
 {
 	uint32_t tmp;
 	bool caching = false;
@@ -381,7 +372,7 @@ static __nxipfunc void flash_bflb_l1c_wrap(bool enable)
 
 #elif defined(CONFIG_SOC_SERIES_BL61X)
 
-static __nxipfunc void flash_bflb_l1c_wrap(bool enable)
+static __ramfunc void flash_bflb_l1c_wrap(bool enable)
 {
 	/* Do nothing on Bl61x: no L1C */
 	ARG_UNUSED(enable);
@@ -391,7 +382,7 @@ static __nxipfunc void flash_bflb_l1c_wrap(bool enable)
 
 #if BFLB_HAS_IF2
 
-static __nxipfunc void flash_bflb_if2_enable(struct flash_bflb_bank_data *data, bool enable)
+static __ramfunc void flash_bflb_if2_enable(struct flash_bflb_bank_data *data, bool enable)
 {
 	uint32_t tmp;
 
@@ -444,7 +435,7 @@ static __nxipfunc void flash_bflb_if2_enable(struct flash_bflb_bank_data *data, 
 	}
 }
 
-static __nxipfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
+static __ramfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
 {
 	if (data->bank == BANK2) {
 
@@ -458,14 +449,14 @@ static __nxipfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *dat
 	return data->reg + SF_CTRL_SF_IF_SAHB_0_OFFSET;
 }
 
-static __nxipfunc void flash_bflb_release_sahb(struct flash_bflb_bank_data *data)
+static __ramfunc void flash_bflb_release_sahb(struct flash_bflb_bank_data *data)
 {
 	if (data->bank == BANK2) {
 		flash_bflb_if2_enable(data, false);
 	}
 }
 
-static __nxipfunc uintptr_t flash_bflb_get_if(struct flash_bflb_bank_data *data)
+static __ramfunc uintptr_t flash_bflb_get_if(struct flash_bflb_bank_data *data)
 {
 	if (data->bank == BANK2) {
 		return data->reg + SF_CTRL_SF_IF2_CTRL_0_OFFSET;
@@ -476,21 +467,21 @@ static __nxipfunc uintptr_t flash_bflb_get_if(struct flash_bflb_bank_data *data)
 
 #else
 
-static __nxipfunc uintptr_t flash_bflb_get_if(struct flash_bflb_bank_data *data)
+static __ramfunc uintptr_t flash_bflb_get_if(struct flash_bflb_bank_data *data)
 {
 	return data->reg;
 }
 
 #if defined(CONFIG_SOC_SERIES_BL60X)
 
-static __nxipfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
+static __ramfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
 {
 	return data->reg + SF_CTRL_SF_IF_SAHB_0_OFFSET;
 }
 
 #else
 
-static __nxipfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
+static __ramfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *data)
 {
 	uint32_t tmp;
 
@@ -507,7 +498,7 @@ static __nxipfunc uintptr_t flash_bflb_set_sahb(struct flash_bflb_bank_data *dat
 
 #endif
 
-static __nxipfunc void flash_bflb_release_sahb(struct flash_bflb_bank_data *data)
+static __ramfunc void flash_bflb_release_sahb(struct flash_bflb_bank_data *data)
 {
 	/* Nothing to do */
 }
@@ -516,7 +507,7 @@ static __nxipfunc void flash_bflb_release_sahb(struct flash_bflb_bank_data *data
 
 #if defined(CONFIG_SOC_SERIES_BL61X)
 
-static __nxipfunc void flash_bflb_select_pads(struct flash_bflb_bank_data *data,
+static __ramfunc void flash_bflb_select_pads(struct flash_bflb_bank_data *data,
 					      enum flash_bflb_pad bank1, enum flash_bflb_pad bank2)
 {
 	uint32_t tmp;
@@ -563,7 +554,7 @@ static __nxipfunc void flash_bflb_select_pads(struct flash_bflb_bank_data *data,
 
 #elif defined(CONFIG_SOC_SERIES_BL60X)
 
-static __nxipfunc void flash_bflb_select_pads(struct flash_bflb_bank_data *data,
+static __ramfunc void flash_bflb_select_pads(struct flash_bflb_bank_data *data,
 					      enum flash_bflb_pad bank1, enum flash_bflb_pad bank2)
 {
 	uint32_t tmp;
@@ -576,7 +567,7 @@ static __nxipfunc void flash_bflb_select_pads(struct flash_bflb_bank_data *data,
 
 #elif defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL70XL)
 
-static __nxipfunc void flash_bflb_select_pads(struct flash_bflb_bank_data *data,
+static __ramfunc void flash_bflb_select_pads(struct flash_bflb_bank_data *data,
 					      enum flash_bflb_pad bank1, enum flash_bflb_pad bank2)
 {
 	uint32_t tmp;
@@ -618,7 +609,7 @@ static __nxipfunc void flash_bflb_select_pads(struct flash_bflb_bank_data *data,
 #endif
 
 /* Memcpy will not be in ram */
-static __nxipfunc void flash_bflb_xip_memcpy(volatile uint8_t *address_from,
+static __ramfunc void flash_bflb_xip_memcpy(volatile uint8_t *address_from,
 					     volatile uint8_t *address_to, size_t size)
 {
 	for (size_t i = 0; i < size; i++) {
@@ -626,7 +617,7 @@ static __nxipfunc void flash_bflb_xip_memcpy(volatile uint8_t *address_from,
 	}
 }
 
-static __nxipfunc bool flash_bflb_busy_wait(struct flash_bflb_bank_data *data)
+static __ramfunc bool flash_bflb_busy_wait(struct flash_bflb_bank_data *data)
 {
 	uint32_t counter = 0;
 
@@ -650,7 +641,7 @@ static __nxipfunc bool flash_bflb_busy_wait(struct flash_bflb_bank_data *data)
  * 0: System AHB (AHB connected to everything, E24 System Port)
  * 1: Instruction AHB (a dedicated bus between flash controller and L1C)
  */
-static __nxipfunc int flash_bflb_set_bus(struct flash_bflb_bank_data *data, uint8_t bus)
+static __ramfunc int flash_bflb_set_bus(struct flash_bflb_bank_data *data, uint8_t bus)
 {
 	uint32_t tmp;
 
@@ -673,7 +664,7 @@ static __nxipfunc int flash_bflb_set_bus(struct flash_bflb_bank_data *data, uint
 	return 0;
 }
 
-static __nxipfunc int flash_bflb_set_command_iahb(struct flash_bflb_bank_data *data,
+static __ramfunc int flash_bflb_set_command_iahb(struct flash_bflb_bank_data *data,
 						  struct bflb_flash_command *command,
 						  bool doing_cmd)
 {
@@ -767,7 +758,7 @@ static __nxipfunc int flash_bflb_set_command_iahb(struct flash_bflb_bank_data *d
 	return 0;
 }
 
-static __nxipfunc int flash_bflb_set_command_iahb_write(struct flash_bflb_bank_data *data,
+static __ramfunc int flash_bflb_set_command_iahb_write(struct flash_bflb_bank_data *data,
 							struct bflb_flash_command *command,
 							bool doing_cmd)
 {
@@ -845,7 +836,7 @@ static __nxipfunc int flash_bflb_set_command_iahb_write(struct flash_bflb_bank_d
 	return 0;
 }
 
-static __nxipfunc int flash_bflb_set_command_sahb(struct flash_bflb_bank_data *data,
+static __ramfunc int flash_bflb_set_command_sahb(struct flash_bflb_bank_data *data,
 						  struct bflb_flash_command *command,
 						  bool doing_cmd)
 {
@@ -914,7 +905,7 @@ static __nxipfunc int flash_bflb_set_command_sahb(struct flash_bflb_bank_data *d
 	return 0;
 }
 
-static __nxipfunc int flash_bflb_send_command(struct flash_bflb_bank_data *data,
+static __ramfunc int flash_bflb_send_command(struct flash_bflb_bank_data *data,
 					      struct bflb_flash_command *command)
 {
 	uint32_t tmp;
@@ -969,7 +960,7 @@ static __nxipfunc int flash_bflb_send_command(struct flash_bflb_bank_data *data,
 	return ret;
 }
 
-static __nxipfunc int flash_bflb_flash_send_triplet(struct flash_bflb_bank_data *data, uint8_t cmd,
+static __ramfunc int flash_bflb_flash_send_triplet(struct flash_bflb_bank_data *data, uint8_t cmd,
 						    uint32_t cdata, uint8_t len)
 {
 	struct bflb_flash_command triplet = {0};
@@ -984,7 +975,7 @@ static __nxipfunc int flash_bflb_flash_send_triplet(struct flash_bflb_bank_data 
 	return flash_bflb_send_command(data, &triplet);
 }
 
-static __nxipfunc int flash_bflb_flash_read_register(struct flash_bflb_bank_data *data,
+static __ramfunc int flash_bflb_flash_read_register(struct flash_bflb_bank_data *data,
 						     uint8_t index,
 						     uint8_t *out, uint8_t len)
 {
@@ -1008,7 +999,7 @@ static __nxipfunc int flash_bflb_flash_read_register(struct flash_bflb_bank_data
 	return 0;
 }
 
-static __nxipfunc int flash_bflb_flash_write_register(struct flash_bflb_bank_data *data,
+static __ramfunc int flash_bflb_flash_write_register(struct flash_bflb_bank_data *data,
 						      uint8_t index,
 						      uint8_t *in, uint8_t len)
 {
@@ -1024,7 +1015,7 @@ static __nxipfunc int flash_bflb_flash_write_register(struct flash_bflb_bank_dat
 	return flash_bflb_send_command(data, &write_reg);
 }
 
-static __nxipfunc int flash_bflb_flash_disable_continuous_read(struct flash_bflb_bank_data *data)
+static __ramfunc int flash_bflb_flash_disable_continuous_read(struct flash_bflb_bank_data *data)
 {
 	struct bflb_flash_command disable_continuous_read = {0};
 
@@ -1043,7 +1034,7 @@ static __nxipfunc int flash_bflb_flash_disable_continuous_read(struct flash_bflb
 	return flash_bflb_send_command(data, &disable_continuous_read);
 }
 
-static __nxipfunc int flash_bflb_enable_writable(struct flash_bflb_bank_data *data)
+static __ramfunc int flash_bflb_enable_writable(struct flash_bflb_bank_data *data)
 {
 	struct bflb_flash_command write_enable = {0};
 	int ret;
@@ -1075,7 +1066,7 @@ static __nxipfunc int flash_bflb_enable_writable(struct flash_bflb_bank_data *da
 	return -EIO;
 }
 
-static __nxipfunc int flash_bflb_flash_set_burst(struct flash_bflb_bank_data *data, bool yes)
+static __ramfunc int flash_bflb_flash_set_burst(struct flash_bflb_bank_data *data, bool yes)
 {
 	struct bflb_flash_command enable_burstwrap = {0};
 	int ret;
@@ -1106,7 +1097,7 @@ static __nxipfunc int flash_bflb_flash_set_burst(struct flash_bflb_bank_data *da
 
 #if BFLB_HAS_32B
 
-static __nxipfunc void flash_bflb_set_32b_enabled(struct flash_bflb_bank_data *data, bool yes)
+static __ramfunc void flash_bflb_set_32b_enabled(struct flash_bflb_bank_data *data, bool yes)
 {
 	uint32_t tmp;
 
@@ -1119,7 +1110,7 @@ static __nxipfunc void flash_bflb_set_32b_enabled(struct flash_bflb_bank_data *d
 	FLASH_WRITE32(tmp, data->reg + SF_CTRL_0_OFFSET);
 }
 
-static __nxipfunc int flash_bflb_enable_32baddr(struct flash_bflb_bank_data *data)
+static __ramfunc int flash_bflb_enable_32baddr(struct flash_bflb_bank_data *data)
 {
 	struct bflb_flash_command enable_32baddr = {0};
 
@@ -1134,7 +1125,7 @@ static __nxipfunc int flash_bflb_enable_32baddr(struct flash_bflb_bank_data *dat
 #endif
 
 /* (!= QPI enable) */
-static __nxipfunc int flash_bflb_enable_qspi(struct flash_bflb_bank_data *data)
+static __ramfunc int flash_bflb_enable_qspi(struct flash_bflb_bank_data *data)
 {
 	int ret;
 	uint32_t tmp = 0;
@@ -1217,7 +1208,7 @@ static __nxipfunc int flash_bflb_enable_qspi(struct flash_bflb_bank_data *data)
 	return -EIO;
 }
 
-static __nxipfunc int flash_bflb_reset(struct flash_bflb_bank_data *data)
+static __ramfunc int flash_bflb_reset(struct flash_bflb_bank_data *data)
 {
 	struct bflb_flash_command reset = {0};
 	int ret;
@@ -1239,7 +1230,7 @@ static __nxipfunc int flash_bflb_reset(struct flash_bflb_bank_data *data)
 	return 0;
 }
 
-static __nxipfunc int flash_bflb_flash_enable_qpi(struct flash_bflb_bank_data *data)
+static __ramfunc int flash_bflb_flash_enable_qpi(struct flash_bflb_bank_data *data)
 {
 	struct bflb_flash_command enable_qpi = {0};
 
@@ -1253,7 +1244,7 @@ static __nxipfunc int flash_bflb_flash_enable_qpi(struct flash_bflb_bank_data *d
 	return flash_bflb_send_command(data, &enable_qpi);
 }
 
-static __nxipfunc int flash_bflb_flash_disable_qpi(struct flash_bflb_bank_data *data)
+static __ramfunc int flash_bflb_flash_disable_qpi(struct flash_bflb_bank_data *data)
 {
 	struct bflb_flash_command disable_qpi = {0};
 
@@ -1279,7 +1270,7 @@ static __nxipfunc int flash_bflb_flash_disable_qpi(struct flash_bflb_bank_data *
 }
 
 /* ID0 for CPU 0, ID1 for cpu 1 */
-static __nxipfunc uint32_t flash_bflb_get_offset(struct flash_bflb_bank_data *data)
+static __ramfunc uint32_t flash_bflb_get_offset(struct flash_bflb_bank_data *data)
 {
 	uint32_t tmp;
 #if defined(CONFIG_SOC_SERIES_BL60X)
@@ -1296,7 +1287,7 @@ static __nxipfunc uint32_t flash_bflb_get_offset(struct flash_bflb_bank_data *da
 	return tmp;
 }
 
-static __nxipfunc void flash_bflb_set_offset(struct flash_bflb_bank_data *data, uintptr_t offset)
+static __ramfunc void flash_bflb_set_offset(struct flash_bflb_bank_data *data, uintptr_t offset)
 {
 	uint32_t tmp;
 #if defined(CONFIG_SOC_SERIES_BL60X)
@@ -1311,7 +1302,7 @@ static __nxipfunc void flash_bflb_set_offset(struct flash_bflb_bank_data *data, 
 	FLASH_WRITE32(tmp, data->reg + reg);
 }
 
-static __nxipfunc int flash_bflb_save_xip_state(const struct device *dev)
+static __ramfunc int flash_bflb_save_xip_state(const struct device *dev)
 {
 	struct flash_bflb_bank_data *data = dev->data;
 	int ret;
@@ -1378,7 +1369,7 @@ exit_here:
 	return ret;
 }
 
-static __nxipfunc bool flash_bflb_flash_busy_wait(struct flash_bflb_bank_data *data)
+static __ramfunc bool flash_bflb_flash_busy_wait(struct flash_bflb_bank_data *data)
 {
 	uint8_t tmp_bus = 0xFF;
 	uint32_t counter = 0;
@@ -1405,7 +1396,7 @@ static __nxipfunc bool flash_bflb_flash_busy_wait(struct flash_bflb_bank_data *d
 	return false;
 }
 
-static __nxipfunc int flash_bflb_xip_init(struct flash_bflb_bank_data *data)
+static __ramfunc int flash_bflb_xip_init(struct flash_bflb_bank_data *data)
 {
 	struct bflb_flash_command xip_cmd = {0};
 	struct bflb_flash_command cont_read_init_cmd = {0};
@@ -1481,7 +1472,7 @@ static __nxipfunc int flash_bflb_xip_init(struct flash_bflb_bank_data *data)
 	return flash_bflb_set_command_iahb(data, &xip_cmd, is_command);
 }
 
-static __nxipfunc int flash_bflb_autowrite_init(struct flash_bflb_bank_data *data)
+static __ramfunc int flash_bflb_autowrite_init(struct flash_bflb_bank_data *data)
 {
 	struct bflb_flash_command autowrite_cmd = {0};
 	int ret;
@@ -1517,7 +1508,7 @@ static __nxipfunc int flash_bflb_autowrite_init(struct flash_bflb_bank_data *dat
 	return flash_bflb_set_command_iahb_write(data, &autowrite_cmd, true);
 }
 
-static __nxipfunc int flash_bflb_restore_xip_state(struct flash_bflb_bank_data *data)
+static __ramfunc int flash_bflb_restore_xip_state(struct flash_bflb_bank_data *data)
 {
 	int ret;
 
@@ -1577,7 +1568,7 @@ exit_here:
 
 #if defined(CONFIG_SOC_FLASH_BFLB_DIRECT_ACCESS)
 
-static __nxipfunc int flash_bflb_read_sahb_do(struct flash_bflb_bank_data *data, off_t address,
+static __ramfunc int flash_bflb_read_sahb_do(struct flash_bflb_bank_data *data, off_t address,
 					      void *buffer, size_t length)
 {
 	int ret;
@@ -1634,7 +1625,7 @@ static __nxipfunc int flash_bflb_read_sahb_do(struct flash_bflb_bank_data *data,
 }
 
 /* copies flash data using direct access */
-static __nxipfunc int flash_bflb_read(const struct device *dev, off_t address, void *buffer,
+static __ramfunc int flash_bflb_read(const struct device *dev, off_t address, void *buffer,
 				      size_t length)
 {
 	struct flash_bflb_bank_data *data = dev->data;
@@ -1680,7 +1671,7 @@ static __nxipfunc int flash_bflb_read(const struct device *dev, off_t address, v
 #else
 
 /* copies flash data using XIP access */
-static __nxipfunc int flash_bflb_read(const struct device *dev, off_t address, void *buffer,
+static __ramfunc int flash_bflb_read(const struct device *dev, off_t address, void *buffer,
 				      size_t length)
 {
 	struct flash_bflb_bank_data *data = dev->data;
@@ -1736,7 +1727,7 @@ static __nxipfunc int flash_bflb_read(const struct device *dev, off_t address, v
 
 #endif
 
-static __nxipfunc int flash_bflb_write(const struct device *dev, off_t address, const void *buffer,
+static __ramfunc int flash_bflb_write(const struct device *dev, off_t address, const void *buffer,
 				       size_t length)
 {
 	struct flash_bflb_bank_data *data = dev->data;
@@ -1856,7 +1847,7 @@ exit_here:
 	return (ret != 0 ? ret : rete);
 }
 
-static __nxipfunc int flash_bflb_erase(const struct device *dev, off_t start, size_t len)
+static __ramfunc int flash_bflb_erase(const struct device *dev, off_t start, size_t len)
 {
 	struct flash_bflb_bank_data *data = dev->data;
 	unsigned int	locker;
@@ -1966,7 +1957,7 @@ static const struct flash_parameters *flash_bflb_get_parameters(const struct dev
 	return &data->cfg.parameters;
 }
 
-static __nxipfunc int flash_bflb_get_jedec_id_internal(struct flash_bflb_bank_data *data,
+static __ramfunc int flash_bflb_get_jedec_id_internal(struct flash_bflb_bank_data *data,
 						       uint8_t *out)
 {
 	struct bflb_flash_command get_jedecid = {0};
@@ -2019,7 +2010,7 @@ static __nxipfunc int flash_bflb_get_jedec_id_internal(struct flash_bflb_bank_da
 
 #ifdef CONFIG_SOC_FLASH_BFLB_SFDP
 
-int __nxipfunc flash_bflb_read_sfdp_internal(struct flash_bflb_bank_data *data, off_t offset,
+int __ramfunc flash_bflb_read_sfdp_internal(struct flash_bflb_bank_data *data, off_t offset,
 				  uint8_t *o_data, size_t len)
 {
 	struct bflb_flash_command read_sfdp = {0};
@@ -2068,7 +2059,7 @@ int __nxipfunc flash_bflb_read_sfdp_internal(struct flash_bflb_bank_data *data, 
 
 #if defined(CONFIG_FLASH_JESD216_API)
 
-static __nxipfunc int flash_bflb_get_jedec_id(const struct device *dev, uint8_t *id)
+static __ramfunc int flash_bflb_get_jedec_id(const struct device *dev, uint8_t *id)
 {
 	struct flash_bflb_bank_data *data = dev->data;
 	unsigned int locker;
@@ -2096,7 +2087,7 @@ static __nxipfunc int flash_bflb_get_jedec_id(const struct device *dev, uint8_t 
 	return ret;
 }
 
-static __nxipfunc int flash_bflb_read_sfdp(const struct device *dev, off_t offset, void *o_data,
+static __ramfunc int flash_bflb_read_sfdp(const struct device *dev, off_t offset, void *o_data,
 					   size_t len)
 {
 	struct flash_bflb_bank_data *data = dev->data;
@@ -2162,7 +2153,7 @@ static uint32_t bflb_soft_crc32(uint32_t initial, void *in, uint32_t len)
 	return ~crc;
 }
 
-static __nxipfunc int flash_bflb_header_fetch(struct flash_bflb_bank_data *data,
+static __ramfunc int flash_bflb_header_fetch(struct flash_bflb_bank_data *data,
 					      struct bflb_header_flash_cfg *flash_header_cfg)
 {
 	uint32_t tmp;
@@ -2286,7 +2277,7 @@ static int flash_bflb_init_bootbank(struct flash_bflb_bank_data *data)
  * possibly each bit sets 3ns, or the value of 3 does, which is the maximum.
  * It used for final fine tuning.
  */
-static __nxipfunc void flash_bflb_set_io_delays(struct flash_bflb_bank_data *data,
+static __ramfunc void flash_bflb_set_io_delays(struct flash_bflb_bank_data *data,
 						uint8_t dod, uint8_t did, uint8_t oed,
 						uint8_t csd, uint8_t clkd)
 {
@@ -2379,7 +2370,7 @@ static __nxipfunc void flash_bflb_set_io_delays(struct flash_bflb_bank_data *dat
  * 3: `handle wrap commands, cmds force wrap16*4 split into two wrap8*4`
  *
  */
-static __nxipfunc void flash_bflb_set_cmds(struct flash_bflb_bank_data *data, uint8_t mode,
+static __ramfunc void flash_bflb_set_cmds(struct flash_bflb_bank_data *data, uint8_t mode,
 					   uint8_t len)
 {
 	uint32_t tmp;
@@ -2408,7 +2399,7 @@ static __nxipfunc void flash_bflb_set_cmds(struct flash_bflb_bank_data *data, ui
 
 #ifdef CONFIG_SOC_FLASH_BFLB_SFDP
 
-static __nxipfunc int flash_bflb_discovery(struct flash_bflb_bank_data *data, uint8_t jedec_id[3])
+static __ramfunc int flash_bflb_discovery(struct flash_bflb_bank_data *data, uint8_t jedec_id[3])
 {
 	struct jesd216_sfdp_header sfdp_header;
 	struct jesd216_param_header cur_header;
@@ -2741,7 +2732,7 @@ static __nxipfunc int flash_bflb_discovery(struct flash_bflb_bank_data *data, ui
 
 #endif /* CONFIG_SOC_FLASH_BFLB_SFDP */
 
-static __nxipfunc void flash_bflb_configure_timings(struct flash_bflb_bank_data *data)
+static __ramfunc void flash_bflb_configure_timings(struct flash_bflb_bank_data *data)
 {
 	uint32_t tmp;
 
@@ -2830,7 +2821,7 @@ static __nxipfunc void flash_bflb_configure_timings(struct flash_bflb_bank_data 
 	FLASH_WRITE32(tmp, GLB_BASE + BFLB_SF_CLK_REG_OFF);
 }
 
-static __nxipfunc void flash_bflb_apply_pads(struct flash_bflb_bank_data *data)
+static __ramfunc void flash_bflb_apply_pads(struct flash_bflb_bank_data *data)
 {
 	enum flash_bflb_pad bank_a, bank_b;
 	size_t other = 0;
@@ -2853,7 +2844,7 @@ static __nxipfunc void flash_bflb_apply_pads(struct flash_bflb_bank_data *data)
 	}
 }
 
-static __nxipfunc int flash_bflb_init(const struct device *dev)
+static __ramfunc int flash_bflb_init(const struct device *dev)
 {
 	const struct flash_bflb_bank_config *config = dev->config;
 	struct flash_bflb_bank_data *data = dev->data;

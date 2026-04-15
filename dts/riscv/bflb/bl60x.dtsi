@@ -398,15 +398,30 @@
 			zephyr,memory-region = "ITCM";
 		};
 
-		dtcm: dtcm@42014000 {
-			compatible = "zephyr,memory-region", "sifive,dtim0";
-			reg = <0x42014000 DT_SIZE_K(48)>;
-			zephyr,memory-region = "DTCM";
-		};
-
-		sram0: memory@42020000 {
+		/* All contiguous fast RAM
+		 * DTCM is tightly coupled, but the SRAM is not, this can be a problem when clocks
+		 * are being changed.
+		 */
+		all_ram: memory@42014000 {
 			compatible = "mmio-sram";
-			reg = <0x42020000 DT_SIZE_K(176)>;
+			reg = <0x42014000 DT_SIZE_K(224)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* DTCM is significantly faster than the SRAM */
+			dtcm: dtcm@42014000 {
+				compatible = "zephyr,memory-region", "sifive,dtim0";
+				reg = <0x42014000 DT_SIZE_K(48)>;
+				zephyr,memory-region = "DTCM";
+				status = "disabled";
+			};
+
+			/* SRAM goes through the system bus and is cached via L1C */
+			sram0: memory@42020000 {
+				compatible = "mmio-sram";
+				reg = <0x42020000 DT_SIZE_K(176)>;
+				status = "disabled";
+			};
 		};
 	};
 };

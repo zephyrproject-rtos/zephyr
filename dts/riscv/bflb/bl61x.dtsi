@@ -444,15 +444,28 @@
 			size = <512>;
 		};
 
-		sram0: memory@62fc0000 {
+		/* All contiguous fast RAM
+		 * It is kept tightly coupled by the CPU's internal cache
+		 */
+		all_ram: memory@62fc0000 {
 			compatible = "mmio-sram";
-			reg = <0x62fc0000 DT_SIZE_K(320)>;
-		};
+			reg = <0x62fc0000 DT_SIZE_K(480)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		sram1: memory@63010000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x63010000 DT_SIZE_K(160)>;
-			zephyr,memory-region = "ITCM";
+			/* OCRAM is slightly faster */
+			ocram: memory@62fc0000 {
+				compatible = "mmio-sram";
+				reg = <0x62fc0000 DT_SIZE_K(320)>;
+				status = "disabled";
+			};
+
+			/* WRAM is slightly slower, it can be used by the RF systems */
+			wram: memory@63010000 {
+				compatible = "mmio-sram";
+				reg = <0x63010000 DT_SIZE_K(160)>;
+				status = "disabled";
+			};
 		};
 
 		psram: memory@a8000000 {
