@@ -48,6 +48,7 @@ if sys.platform == 'linux':
     from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
 
 from domains import Domains
+from pylib.zspdx.sbom import SBOMConfig, makeSPDX, setupCmakeQuery
 from twisterlib.coverage import run_coverage_instance
 from twisterlib.environment import TwisterEnv
 from twisterlib.harness import Ctest, HarnessImporter, Pytest
@@ -950,6 +951,23 @@ class ProjectBuilder(FilterBuilder):
         else:
             self.log_info(f"{b_log}", inline_logs)
 
+    def _spdx_init(self):
+        if not self.options.spdx_bom:
+            return
+
+        if not setupCmakeQuery(self.instance.build_dir):
+            logger.warning(f"SPDX failed to init {self.instance.build_dir}")
+
+    def _spdx_generate(self):
+        if not self.options.spdx_bom:
+            return
+
+        spdx_dir = os.path.join(self.instance.build_dir, "spdx")
+        cfg = SBOMConfig(buildDir=self.instance.build_dir, spdxDir=spdx_dir)
+        os.makedirs(cfg.spdxDir)
+        if not makeSPDX(cfg):
+            logger.warning(f"SPDX failed to make {spdx_dir}")
+
     def _add_to_processing_queue(self, processing_queue: deque, op: str, additionals: dict=None):
         if additionals is None:
             additionals = {}
@@ -1003,6 +1021,7 @@ class ProjectBuilder(FilterBuilder):
         # The build process, call cmake and build with configured generator
         elif op == "cmake":
             try:
+                self._spdx_init()
                 ret = self.cmake()
                 if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
                     next_op = 'report'
@@ -1058,6 +1077,7 @@ class ProjectBuilder(FilterBuilder):
                         )
                         next_op = 'report'
                     else:
+                        self._spdx_generate()
                         if self.instance.testsuite.harness in ['ztest', 'test']:
                             logger.debug(
                                 f"Determine test cases for test instance: {self.instance.name}"

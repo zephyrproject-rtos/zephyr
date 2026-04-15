@@ -1514,6 +1514,7 @@ def test_projectbuilder_process(
     pb.options.outdir = tmp_path
     pb.options.log_file = None
     pb.options.log_level = "DEBUG"
+    pb.options.spdx_bom = False
 
     pb.cmake = mock.Mock(return_value=cmake_res)
     pb.build = mock.Mock(return_value=build_res)
