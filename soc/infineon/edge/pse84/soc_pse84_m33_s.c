@@ -25,18 +25,24 @@ static void systeminit_enable_clocks(void)
 	/* Void all return types to suppress compiler warnings about unused return values */
 
 	/* For enabling SYS_MMIO_3, we need CLK_HF11 to be enabled first */
-	(void)Cy_SysClk_ClkHfSetSource(11U, CY_SYSCLK_CLKHF_IN_CLKPATH0);
-	(void)Cy_SysClk_ClkHfSetDivider(11U, CY_SYSCLK_CLKHF_NO_DIVIDE);
-	(void)Cy_SysClk_ClkHfEnable(11U);
+	if (!Cy_SysClk_ClkHfIsEnabled(11U)) {
+		(void)Cy_SysClk_ClkHfSetSource(11U, CY_SYSCLK_CLKHF_IN_CLKPATH0);
+		(void)Cy_SysClk_ClkHfSetDivider(11U, CY_SYSCLK_CLKHF_NO_DIVIDE);
+		(void)Cy_SysClk_ClkHfEnable(11U);
+	}
 
 	/* enable HF3 and HF4 for SMIF */
-	(void)Cy_SysClk_ClkHfSetSource(3U, CY_SYSCLK_CLKHF_IN_CLKPATH0);
-	(void)Cy_SysClk_ClkHfSetDivider(3U, CY_SYSCLK_CLKHF_NO_DIVIDE);
-	(void)Cy_SysClk_ClkHfEnable(3U);
+	if (!Cy_SysClk_ClkHfIsEnabled(3U)) {
+		(void)Cy_SysClk_ClkHfSetSource(3U, CY_SYSCLK_CLKHF_IN_CLKPATH0);
+		(void)Cy_SysClk_ClkHfSetDivider(3U, CY_SYSCLK_CLKHF_NO_DIVIDE);
+		(void)Cy_SysClk_ClkHfEnable(3U);
+	}
 
-	(void)Cy_SysClk_ClkHfSetSource(4U, CY_SYSCLK_CLKHF_IN_CLKPATH0);
-	(void)Cy_SysClk_ClkHfSetDivider(4U, CY_SYSCLK_CLKHF_NO_DIVIDE);
-	(void)Cy_SysClk_ClkHfEnable(4U);
+	if (!Cy_SysClk_ClkHfIsEnabled(4U)) {
+		(void)Cy_SysClk_ClkHfSetSource(4U, CY_SYSCLK_CLKHF_IN_CLKPATH0);
+		(void)Cy_SysClk_ClkHfSetDivider(4U, CY_SYSCLK_CLKHF_NO_DIVIDE);
+		(void)Cy_SysClk_ClkHfEnable(4U);
+	}
 }
 
 static void systeminit_enable_peri(void)
