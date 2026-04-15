@@ -59,4 +59,17 @@
 			output-enable;
 		};
 	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO8>,
+				 <SPIM2_SCLK_GPIO7>,
+				 <SPIM2_CSEL_GPIO14>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO9>;
+			output-low;
+		};
+	};
 };
