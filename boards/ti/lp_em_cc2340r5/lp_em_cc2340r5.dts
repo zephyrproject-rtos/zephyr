@@ -15,7 +15,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "LP_EM_CC2340R5";
+	model = "TI CC2340R5 LaunchPad";
 	compatible = "ti,lp_em_cc2340r5";
 
 	chosen {
