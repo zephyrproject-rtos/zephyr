@@ -4280,7 +4280,7 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 	struct tcphdr *th = th_get(pkt);
 	enum net_verdict verdict = NET_DROP;
 
-	if (th && (th_off(th) < 5)) {
+	if (th && (th_off(th) >= 5)) {
 		struct tcp *conn = tcp_conn_search(pkt);
 
 		if (conn == NULL && SYN == th_flags(th)) {
