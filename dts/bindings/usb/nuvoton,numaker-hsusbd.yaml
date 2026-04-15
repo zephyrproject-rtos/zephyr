@@ -31,3 +31,11 @@ properties:
     description: |
       Supports USB controller can be disabled temporarily when USB cable is unplugged
       and then enabled back when the cable is re-plugged.
+
+  disable-vbus-detect:
+    type: boolean
+    description: |
+      Nuvoton HSUSBD peripheral supports VBUS detect functionality, but some PCB designs
+      may choose to use mutually exclusive USB-C peripheral for VBUS detection.
+      In this case, the USB controller backed VBUS detect functionality won't work and
+      needs to be disabled.
