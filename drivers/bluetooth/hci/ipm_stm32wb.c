@@ -154,6 +154,25 @@ static void stm32wb_set_stack_options(SHCI_C2_Ble_Init_Cmd_Packet_t *ble_init_cm
 #endif
 }
 
+/*
+ * Select the BLE low speed (RF wakeup) clock configuration (LsSource) from the
+ * RF wakeup clock source set in the "clocks" property of the ble_rf devicetree
+ * node. CFG_BLE_LS_SOURCE (from app_conf.h) provides the calibration and device
+ * type bits together with the LSE clock bit; HSE/1024 additionally sets the
+ * HSE/1024 clock bit.
+ */
+static uint8_t stm32wb_rf_wakeup_ls_source(uint32_t rf_clock)
+{
+	switch (rf_clock) {
+	case STM32_SRC_LSE:
+		return CFG_BLE_LS_SOURCE;
+	case STM32_SRC_HSE:
+		return CFG_BLE_LS_SOURCE | SHCI_C2_BLE_INIT_CFG_BLE_LS_CLK_HSE_1024;
+	default:
+		return 0;
+	}
+}
+
 static void stm32wb_start_ble(uint32_t rf_clock)
 {
 	SHCI_C2_Ble_Init_Cmd_Packet_t ble_init_cmd_packet = {
@@ -170,7 +189,7 @@ static void stm32wb_start_ble(uint32_t rf_clock)
 	    CFG_BLE_MAX_ATT_MTU,
 	    CFG_BLE_PERIPHERAL_SCA,
 	    CFG_BLE_CENTRAL_SCA,
-	    (rf_clock == STM32_SRC_LSE) ? CFG_BLE_LS_SOURCE : 0,
+	    stm32wb_rf_wakeup_ls_source(rf_clock),
 	    CFG_BLE_MAX_CONN_EVENT_LENGTH,
 	    CFG_BLE_HSE_STARTUP_TIME,
 	    CFG_BLE_VITERBI_MODE,
