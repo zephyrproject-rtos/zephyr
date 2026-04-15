@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 NXP
+#
+# NXP eIQ ML middleware configuration
+
+config NXP_NEUTRON
+	bool "NXP NEUTRON NPU Driver"
+	depends on SOC_SERIES_IMXRT7XX || SOC_FAMILY_MCXN
+	help
+	  Enable the NXP NEUTRON Neural Processing Unit driver.
+
+config TENSORFLOW_LITE_MICRO_NXP_NEUTRON
+	bool "TensorFlow Lite Micro NEUTRON integration"
+	depends on TENSORFLOW_LITE_MICRO
+	select NXP_NEUTRON
+	default n
+	help
+	  Enable TensorFlow Lite Micro integration with NEUTRON NPU.
+	  This allows TFLM models to use the NEUTRON accelerator
+	  for inference operations.
+
+source "Kconfig.zephyr"

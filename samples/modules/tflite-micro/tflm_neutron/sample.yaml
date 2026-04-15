@@ -1,0 +1,15 @@
+sample:
+  description: Hello world TFLM inference with NXP Neutron NPU.
+  name: NXP Neutron NPU sample
+tests:
+  sample.modules.tflite_micro.neutron:
+    tags:
+      - NPU
+    modules:
+      - tflite-micro
+    build_only: true
+    depends_on: []
+    integration_platforms:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - frdm_mcxn947/mcxn947/cpu0

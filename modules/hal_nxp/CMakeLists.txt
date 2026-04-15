@@ -40,4 +40,8 @@ if(CONFIG_WIFI_NXP)
   add_subdirectory(wifi)
 endif()
 
+if(CONFIG_NXP_NEUTRON)
+  add_subdirectory(neutron)
+endif()
+
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/zephyr/src hal_nxp)
