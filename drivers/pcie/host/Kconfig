@@ -20,8 +20,12 @@ config PCIE_INIT_PRIORITY
 	help
 	  PCIe host drivers initialization priority.
 
+ZEPHYR_PCIE_CONTROLLER := zephyr,pcie-controller
+
 config PCIE_CONTROLLER
 	bool "PCIe Controller management"
+	depends on $(dt_chosen_enabled,$(ZEPHYR_PCIE_CONTROLLER))
+	default y
 	help
 	  Add support for PCIe Controller management when not handled by a
 	  system firmware like on x86 platforms.
