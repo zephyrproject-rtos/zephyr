@@ -86,7 +86,7 @@ static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt
 {
 	switch (mgmt_event) {
 	case NET_EVENT_IPV4_DHCP_BOUND:
-		wifi_mgmt_raise_connect_result_event(iface, 0);
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
 		break;
 	default:
 		break;
@@ -298,38 +298,58 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
 #else
-	wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, 0);
+	wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, WIFI_STATUS_CONN_SUCCESS);
 #endif
 }
 
 static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 {
 	wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
+	struct wifi_status result;
 
 	if (esp32_data.state == ESP32_STA_CONNECTED) {
 #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
 		net_dhcpv4_stop(esp32_wifi_iface);
 #endif
-		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, 0);
+		switch (event->reason) {
+		case WIFI_REASON_ASSOC_LEAVE:
+			result.disconn_reason = WIFI_REASON_DISCONN_USER_REQUEST;
+			break;
+		case WIFI_REASON_AUTH_LEAVE:
+			result.disconn_reason = WIFI_REASON_DISCONN_AP_LEAVING;
+			break;
+		case WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY:
+			result.disconn_reason = WIFI_REASON_DISCONN_INACTIVITY;
+			break;
+		default:
+			result.disconn_reason = WIFI_REASON_DISCONN_UNSPECIFIED;
+			break;
+		}
+		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, result.status);
 	} else {
-		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, -1);
+		switch (event->reason) {
+		case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+			result.conn_status = WIFI_STATUS_CONN_WRONG_PASSWORD;
+			break;
+		case WIFI_REASON_HANDSHAKE_TIMEOUT:
+		case WIFI_REASON_AUTH_EXPIRE:
+			result.conn_status = WIFI_STATUS_CONN_TIMEOUT;
+			break;
+		case WIFI_REASON_NO_AP_FOUND:
+		case WIFI_REASON_NO_AP_FOUND_W_COMPATIBLE_SECURITY:
+		case WIFI_REASON_NO_AP_FOUND_IN_AUTHMODE_THRESHOLD:
+		case WIFI_REASON_NO_AP_FOUND_IN_RSSI_THRESHOLD:
+			result.conn_status = WIFI_STATUS_CONN_AP_NOT_FOUND;
+			break;
+		case WIFI_REASON_AUTH_FAIL:
+		case WIFI_REASON_MIC_FAILURE:
+		default:
+			result.conn_status = WIFI_STATUS_CONN_FAIL;
+			break;
+		}
+		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, result.status);
 	}
-
 	LOG_DBG("Disconnect reason: %d", event->reason);
-	switch (event->reason) {
-	case WIFI_REASON_AUTH_EXPIRE:
-	case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-	case WIFI_REASON_AUTH_FAIL:
-	case WIFI_REASON_HANDSHAKE_TIMEOUT:
-	case WIFI_REASON_MIC_FAILURE:
-		LOG_DBG("STA Auth Error");
-		break;
-	case WIFI_REASON_NO_AP_FOUND:
-		LOG_DBG("AP Not found");
-		break;
-	default:
-		break;
-	}
 
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT) &&
 	    (event->reason != WIFI_REASON_ASSOC_LEAVE)) {
@@ -445,12 +465,12 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	case WIFI_EVENT_AP_START:
 		ap_data->state = ESP32_AP_STARTED;
 		net_eth_carrier_on(iface_ap);
-		wifi_mgmt_raise_ap_enable_result_event(iface_ap, 0);
+		wifi_mgmt_raise_ap_enable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
 		break;
 	case WIFI_EVENT_AP_STOP:
 		ap_data->state = ESP32_AP_STOPPED;
 		net_eth_carrier_off(iface_ap);
-		wifi_mgmt_raise_ap_disable_result_event(iface_ap, 0);
+		wifi_mgmt_raise_ap_disable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
 		break;
 	case WIFI_EVENT_AP_STACONNECTED:
 		ap_data->state = ESP32_AP_CONNECTED;
@@ -486,7 +506,7 @@ static int esp32_wifi_connect(const struct device *dev,
 	int ret;
 
 	if (data->state == ESP32_STA_CONNECTING || data->state == ESP32_STA_CONNECTED) {
-		wifi_mgmt_raise_connect_result_event(iface, -1);
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
 		return -EALREADY;
 	}
 
@@ -515,7 +535,7 @@ static int esp32_wifi_connect(const struct device *dev,
 
 	if (data->state != ESP32_STA_STARTED) {
 		LOG_ERR("Wi-Fi not in station mode");
-		wifi_mgmt_raise_connect_result_event(iface, -1);
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
 		return -EIO;
 	}
 
