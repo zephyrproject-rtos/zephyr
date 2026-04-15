@@ -83,6 +83,7 @@ static inline void encode_be16(struct coap_packet *cpkt, uint16_t offset, uint16
 	cpkt->offset += 2;
 }
 
+__maybe_unused
 static inline void encode_be32(struct coap_packet *cpkt, uint16_t offset, uint32_t data)
 {
 	sys_put_be32(data, &cpkt->data[offset]);
