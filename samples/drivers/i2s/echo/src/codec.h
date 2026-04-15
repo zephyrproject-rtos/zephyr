@@ -7,6 +7,7 @@
 
 #define WM8731_NODE DT_NODELABEL(wm8731)
 #define MAX9867_NODE DT_NODELABEL(max9867)
+#define ES8311_NODE DT_NODELABEL(es8311)
 
 #if DT_ON_BUS(WM8731_NODE, i2c)
 bool init_wm8731_i2c(void);
@@ -14,4 +15,8 @@ bool init_wm8731_i2c(void);
 
 #if DT_ON_BUS(MAX9867_NODE, i2c)
 bool init_max9867_i2c(void);
+#endif
+
+#if DT_NODE_EXISTS(ES8311_NODE)
+bool init_es8311(void);
 #endif

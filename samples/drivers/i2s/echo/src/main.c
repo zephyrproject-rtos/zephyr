@@ -259,6 +259,13 @@ int main(void)
 	struct i2s_config config;
 
 	printk("I2S echo sample\n");
+	
+
+#if DT_NODE_EXISTS(DT_NODELABEL(es8311))
+	if (!init_es8311()) {
+		return 0;
+	}
+#endif
 
 #if DT_ON_BUS(DT_NODELABEL(wm8731), i2c)
 	if (!init_wm8731_i2c()) {

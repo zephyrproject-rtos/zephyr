@@ -1,0 +1,20 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &esp32_lcd;
+	};
+};
+
+/* Turn on LCD backlight at boot via fixed regulator */
+/ {
+	lcd_backlight_en: lcd-backlight-en {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd_backlight";
+		enable-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+};
+

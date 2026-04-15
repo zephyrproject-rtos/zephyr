@@ -311,3 +311,38 @@ bool init_max9867_i2c(void)
 }
 
 #endif /* DT_ON_BUS(MAX9867_NODE, i2c) */
+
+#if DT_NODE_EXISTS(DT_NODELABEL(es8311))
+#include <zephyr/drivers/audio/es8311.h>
+
+bool init_es8311(void)
+{
+	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(es8311));
+
+	if (!device_is_ready(dev)) {
+		printk("ES8311 device not ready\n");
+		return false;
+	}
+
+	struct es8311_config cfg = {
+		.sample_rate = ES8311_SAMPLE_RATE_48KHZ,
+		.bit_depth   = ES8311_BIT_DEPTH_16,
+		.format      = ES8311_FORMAT_I2S,
+		.channels    = 2,
+		.master_mode = false,
+		.use_mclk    = true,
+	};
+
+	int ret = es8311_initialize(dev, &cfg);
+	if (ret < 0) {
+		printk("ES8311 init failed: %d\n", ret);
+		return false;
+	}
+
+	es8311_set_volume(dev, 200);
+	es8311_enable(dev, true);
+
+	printk("ES8311 initialized\n");
+	return true;
+}
+#endif /* DT_NODE_EXISTS(es8311) */
