@@ -136,10 +136,14 @@ arduino_serial: &lpuart2 {
 	pinctrl-names = "default";
 };
 
-&enet_mac {
+&enet {
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
+};
+
+&enet_mac {
+	status = "okay";
 	phy-handle = <&phy>;
 	phy-connection-type = "rmii";
 	zephyr,random-mac-address;
@@ -166,10 +170,13 @@ arduino_serial: &lpuart2 {
 	pinctrl-names = "default";
 };
 
-&enet1g_mac {
-	status = "disabled";
+&enet1g {
 	pinctrl-0 = <&pinmux_enet1g>;
 	pinctrl-names = "default";
+};
+
+&enet1g_mac {
+	status = "disabled";
 	phy-handle = <&enet1g_phy>;
 	phy-connection-type = "rgmii";
 	zephyr,random-mac-address;
