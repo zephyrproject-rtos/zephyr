@@ -16,8 +16,6 @@
 #include <zephyr/types.h>
 #include <soc.h>
 
-#define DT_DRV_COMPAT st_stm32_ethernet
-
 extern const struct device *eth_stm32_phy_dev;
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
