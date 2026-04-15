@@ -23,6 +23,9 @@ GTEXT(z_arm_reset)
 GTEXT(arch_early_memset)
 GDATA(z_interrupt_stacks)
 GDATA(z_main_stack)
+#if defined(CONFIG_BUILD_WITH_TFM)
+GTEXT(arch_data_copy)
+#endif
 #if defined(CONFIG_DEBUG_THREAD_INFO)
 GDATA(z_sys_post_kernel)
 #endif
@@ -89,6 +92,21 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,z_arm_reset)
  * search for a __start symbol instead, so create that alias here.
  */
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
+
+#if defined(CONFIG_BUILD_WITH_TFM)
+    /*
+     * Early .data initialization for TrustZone NS builds.
+     *
+     * TF-M sets VTOR_NS and MSP_NS before BXNS, so the stack is valid.
+     * Copy .data from flash to SRAM so that any fault handler has valid
+     * .data variables (timestamp_func, log_mpsc_pbuf_area, etc.).
+     * z_prep_c calls arch_data_copy again later; repeating is idempotent.
+     *
+     * NOTE: arch_bss_zero is NOT called here — z_main_stack lives in BSS
+     * and MSP points into it. Zeroing BSS would corrupt the stack.
+     */
+    bl arch_data_copy
+#endif /* CONFIG_BUILD_WITH_TFM */
 
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
     /* Reset CONTROL register */
