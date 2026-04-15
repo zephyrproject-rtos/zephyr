@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief RPMsg shell backend
+ * @ingroup shell_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_SHELL_RPMSG_H_
 #define ZEPHYR_INCLUDE_SHELL_RPMSG_H_
 

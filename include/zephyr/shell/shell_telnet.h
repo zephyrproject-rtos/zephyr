@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Telnet shell backend
+ * @ingroup shell_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_SHELL_TELNET_H_
 #define ZEPHYR_INCLUDE_SHELL_TELNET_H_
 

@@ -6,6 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Dummy shell backend for testing
+ * @ingroup shell_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_SHELL_DUMMY_H_
 #define ZEPHYR_INCLUDE_SHELL_DUMMY_H_
 
