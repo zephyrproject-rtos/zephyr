@@ -983,6 +983,8 @@ static const struct net_wifi_mgmt_offload wifi_offload_ops = {
 	.wifi_drv_ops = &wpa_supp_ops,
 #endif /* CONFIG_NRF70_STA_MODE */
 };
+
+static struct net_eth_mac_config mcfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 #endif /* CONFIG_NET_L2_ETHERNET */
 
 
@@ -992,7 +994,7 @@ ETH_NET_DEVICE_DT_INST_DEFINE(0,
 		    nrf_wifi_drv_main_zep, /* init_fn */
 		    NULL, /* pm_action_cb */
 		    &rpu_drv_priv_zep.rpu_ctx_zep.vif_ctx_zep[0], /* data */
-		    NULL, /* cfg */
+		    &mcfg, /* cfg */
 		    CONFIG_WIFI_INIT_PRIORITY, /* prio */
 		    &wifi_offload_ops, /* api */
 		    CONFIG_NRF_WIFI_IFACE_MTU); /*mtu */
