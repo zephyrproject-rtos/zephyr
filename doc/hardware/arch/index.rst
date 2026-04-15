@@ -10,6 +10,7 @@ Architecture-related Guides
    arm_cortex_m.rst
    risc-v.rst
    semihost.rst
+   tricore.rst
    x86.rst
    xtensa.rst
    arm-scmi.rst
