@@ -73,6 +73,21 @@ properties:
         HCLK4 shared prescaler (AHB4, Flash memory and SRAM2).
         (A.K.A SHDHPRE)
 
+  st,rf-wakeup-clk:
+    type: string
+    enum:
+      - "NONE"
+      - "LSE"
+      - "LSI"
+      - "HSE_DIV1024"
+    default: "LSE"
+    description: |
+        RF Wakeup clock source selection.
+        0: No clock
+        1: LSE
+        2: LSI
+        3: HSE divided by 1024
+
 clock-cells:
   - bus
   - bits
