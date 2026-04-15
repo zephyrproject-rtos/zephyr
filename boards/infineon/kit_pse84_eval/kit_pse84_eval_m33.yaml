@@ -14,12 +14,13 @@ toolchain:
 supported:
   - bluetooth
   - clock_control
+  - comparator
   - dma
   - gpio
   - hwinfo
-  - pinctrl
-  - uart
-  - spi
+  - i2c
   - i2s
+  - pinctrl
+  - spi
+  - uart
   - watchdog
-  - comparator
