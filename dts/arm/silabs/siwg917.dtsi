@@ -84,7 +84,7 @@
 		support-1p8v;
 		enable-xtal-correction;
 		qspi-80mhz-clk;
-		clock-frequency = <120000000>;
+		clock-frequency = <DT_FREQ_M(80)>;
 		status = "okay";
 
 		bt_hci0: bt_hci {
