@@ -470,9 +470,6 @@
 #define I3C_IDLE_TIMEOUT_CYC                                                                       \
 	(I3C_WAIT_FOR_IDLE_STATE_US * (sys_clock_hw_cycles_per_sec() / USEC_PER_SEC))
 
-/* Target T_LOW period in open-drain mode. */
-#define I3C_BUS_TLOW_OD_MIN_NS 200
-
 /*
  * MIPI I3C v1.1.1 Spec defines SDA Signal Data Hold in Push Pull max as the
  * minimum of the clock rise and fall time plus 3ns
@@ -957,6 +954,25 @@ static void cdns_i3c_set_prescalers(const struct device *dev)
 					   (ctrl_config->scl.i2c * I2C_PRESCL_REG_SCALE)) -
 			      1;
 
+	/*
+	 * If scl_od_min.high_ns is set, ensure T/2 >= high_ns by increasing prescaler if needed.
+	 * OD high period = T/2 = (prescl_i3c + 1) * 2e9 / sys_clk_freq (in ns).
+	 * This also affects push-pull speed since both share PRESCL_CTRL0.i3c.
+	 */
+	if (ctrl_config->scl_od_min.high_ns > 0) {
+		uint32_t prescl_i3c_for_high = DIV_ROUND_UP(
+			(uint64_t)ctrl_config->scl_od_min.high_ns * config->input_frequency,
+			2 * (uint64_t)NSEC_PER_SEC) - 1;
+		if (prescl_i3c_for_high > prescl_i3c) {
+			LOG_WRN("%s: Increasing I3C prescaler from %u to %u to meet"
+				" OD SCL high minimum of %uns,"
+				" push-pull speed will also be reduced",
+				dev->name, prescl_i3c, prescl_i3c_for_high,
+				ctrl_config->scl_od_min.high_ns);
+			prescl_i3c = prescl_i3c_for_high;
+		}
+	}
+
 	/* update with actual value */
 	ctrl_config->scl.i3c = config->input_frequency / ((prescl_i3c + 1) * I3C_PRESCL_REG_SCALE);
 	ctrl_config->scl.i2c = config->input_frequency / ((prescl_i2c + 1) * I2C_PRESCL_REG_SCALE);
@@ -966,9 +982,20 @@ static void cdns_i3c_set_prescalers(const struct device *dev)
 	LOG_DBG("%s: I2C speed = %u, PRESCL_CTRL0.i2c = 0x%x", dev->name, ctrl_config->scl.i2c,
 		prescl_i2c);
 
-	/* Calculate the OD_LOW value assuming a desired T_low period of 210ns. */
-	uint32_t pres_step = 1000000000 / (ctrl_config->scl.i3c * 4);
-	int32_t od_low = DIV_ROUND_UP(I3C_BUS_TLOW_OD_MIN_NS, pres_step) - 2;
+	/* Use scl_od_min.low_ns if set, otherwise default to I3C_OD_TLOW_MIN_NS */
+	uint32_t od_low_ns = ctrl_config->scl_od_min.low_ns;
+
+	if (od_low_ns == 0) {
+		od_low_ns = I3C_OD_TLOW_MIN_NS;
+	} else if (od_low_ns < I3C_OD_TLOW_MIN_NS) {
+		LOG_WRN("%s: scl_od_min.low_ns (%u) below spec minimum (%u), clamping",
+			dev->name, od_low_ns, I3C_OD_TLOW_MIN_NS);
+		od_low_ns = I3C_OD_TLOW_MIN_NS;
+	}
+
+	/* pres_step is the resolution of PRESCL_CTRL1.od_low in nanoseconds (T/4) */
+	uint32_t pres_step = NSEC_PER_SEC / (ctrl_config->scl.i3c * 4);
+	int32_t od_low = DIV_ROUND_UP(od_low_ns, pres_step) - 2;
 
 	if (od_low < 0) {
 		od_low = 0;
@@ -1831,6 +1858,7 @@ static int cdns_i3c_configure(const struct device *dev, enum i3c_config_type typ
 
 		data->common.ctrl_config.scl.i3c = ctrl_cfg->scl.i3c;
 		data->common.ctrl_config.scl.i2c = ctrl_cfg->scl.i2c;
+		data->common.ctrl_config.scl_od_min = ctrl_cfg->scl_od_min;
 
 		k_mutex_lock(&data->bus_lock, K_FOREVER);
 		pm_device_busy_set(dev);
@@ -3791,7 +3819,11 @@ static DEVICE_API(i3c, api) = {
 	static struct cdns_i3c_data i3c_data_##n = {                                               \
 		IF_ENABLED(CONFIG_I3C_CONTROLLER,                                                  \
 			(.common.ctrl_config.scl.i3c = DT_INST_PROP(n, i3c_scl_hz),                \
-			.common.ctrl_config.scl.i2c = DT_INST_PROP(n, i2c_scl_hz),))               \
+			.common.ctrl_config.scl.i2c = DT_INST_PROP(n, i2c_scl_hz),                 \
+			.common.ctrl_config.scl_od_min.high_ns =                                   \
+				DT_INST_PROP(n, od_thigh_min_ns),                                  \
+			.common.ctrl_config.scl_od_min.low_ns =                                    \
+				DT_INST_PROP(n, od_tlow_min_ns),))                                 \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, cdns_i3c_bus_init, NULL, &i3c_data_##n, &i3c_config_##n,          \
 			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY, &api);             \
