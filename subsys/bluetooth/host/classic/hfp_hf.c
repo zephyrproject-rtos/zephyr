@@ -338,6 +338,11 @@ static void cind_handle_values(struct at_client *hf_at, uint32_t index,
 
 	LOG_DBG("index: %u, name: %s, min: %u, max:%u", index, name, min, max);
 
+	if (index >= ARRAY_SIZE(hf->ind_table)) {
+		LOG_WRN("Invalid indicator index: %u", index);
+		return;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(ag_ind); i++) {
 		if (strcmp(name, ag_ind[i].name) != 0) {
 			continue;
