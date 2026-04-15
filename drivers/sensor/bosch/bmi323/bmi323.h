@@ -20,6 +20,11 @@
 #include <zephyr/drivers/sensor.h>
 #endif
 
+#define IMU_BOSCH_BMI323_REG_CHIP_ID    (0x00)
+
+#define IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELSIUS (23000000LL)
+#define IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELSIUS_LSB    (1953L)
+
 #define IMU_BOSCH_BMI323_REG_ACC_DATA_X (0x03)
 #define IMU_BOSCH_BMI323_REG_ACC_DATA_Y (0x04)
 #define IMU_BOSCH_BMI323_REG_ACC_DATA_Z (0x05)
@@ -237,6 +242,7 @@ struct bosch_bmi323_data {
 	struct rtio *r;
 	struct rtio_iodev *bus_iodev;
 	struct rtio_iodev_sqe *pending_sqe;
+	struct k_spinlock mpsc_lock;
 	/*
 	 * Staging buffer: [conf_addr(1), ACC_CONF(2), GYRO_CONF(2), data_addr(1), sensor_data(14)]
 	 * Plus offset for bus-specific dummy bytes. Max 22 bytes.
@@ -244,9 +250,7 @@ struct bosch_bmi323_data {
 	 */
 	uint8_t raw_buffer[22];
 
-	/* Simple MPSC ring buffer - any context can push, completion cb pops */
 	struct mpsc io_q;
-	bool mpsc_busy;
 #endif
 };
 
@@ -279,13 +283,13 @@ struct bmi323_decoder_header {
 
 struct bmi323_encoded_data {
 	struct bmi323_decoder_header header;
-	struct {
-		uint8_t has_accel : 1;
-		uint8_t has_gyro : 1;
-		uint8_t has_temp : 1;
-	} __attribute__((__packed__));
+	bool has_accel;
+	bool has_gyro;
+	bool has_temp;
+	uint16_t acce_range;
+	uint16_t gyro_range;
 	struct bmi323_reading reading;
-};
+} __attribute__((__packed__));
 
 /* Q31 conversion constants */
 #define BMI323_ACCEL_SHIFT  10  /* Q21.10 for acceleration (m/s^2) */

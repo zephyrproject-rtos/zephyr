@@ -31,9 +31,6 @@ LOG_MODULE_REGISTER(bosch_bmi323);
 /* Value taken from BMI323 Datasheet section 5.8.1 */
 #define IMU_BOSCH_FEATURE_ENGINE_STARTUP_CONFIG (0x012C)
 
-#define IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELSIUS (23000000LL)
-#define IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELSIUS_LSB    (1953L)
-
 typedef void (*bosch_bmi323_gpio_callback_ptr)(const struct device *dev, struct gpio_callback *cb,
 						   uint32_t pins);
 
@@ -1286,7 +1283,6 @@ static int bosch_bmi323_init(const struct device *dev)
 #ifdef CONFIG_SENSOR_ASYNC_API
 	/* Init MPSC ring buffer indices */
 	mpsc_init(&data->io_q);
-	data->mpsc_busy = false;
 #endif
 
 	ret = bosch_bmi323_init_irq(dev);
@@ -1332,7 +1328,7 @@ static int bosch_bmi323_init(const struct device *dev)
 			    SPI_WORD_SET(8))
 #define BMI323_I2C_IODEV_DEFINE(inst) \
 	I2C_DT_IODEV_DEFINE(bmi323_iodev_##inst, DT_DRV_INST(inst))
-#define BMI323_I3C_IODEV_DEFINE(inst) \
+#define BMI323_I3C_IODEV_DEFINE(inst)                                                              \
 	I3C_DT_IODEV_DEFINE(bmi323_iodev_##inst, DT_DRV_INST(inst))
 
 #define BMI323_BUS_IODEV(inst)         (&bmi323_iodev_##inst)
@@ -1374,9 +1370,9 @@ static int bosch_bmi323_init(const struct device *dev)
 	static struct bosch_bmi323_data bosch_bmi323_data_##inst = {                               \
 		BMI323_RTIO_DATA_INIT(inst)                                                        \
 	}; \
-                                                                                                   \
+                                                                                               \
 	static void bosch_bmi323_irq_callback##inst(const struct device *dev,                      \
-						struct gpio_callback *cb, uint32_t pins)       \
+							struct gpio_callback *cb, uint32_t pins) \
 	{                                                                                          \
 		bosch_bmi323_irq_callback(DEVICE_DT_INST_GET(inst));                               \
 	}                                                                                          \
