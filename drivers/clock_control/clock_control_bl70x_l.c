@@ -14,6 +14,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_bl70x_l, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
+#include <soc.h>
+
 #if defined(CONFIG_SOC_SERIES_BL70XL)
 #include <zephyr/dt-bindings/clock/bflb_bl70xl_clock.h>
 #include <bouffalolab/bl70xl/bflb_soc.h>
@@ -217,7 +219,8 @@ static int clock_control_bl70x_l_init_crystal(void)
 }
 
 /* HCLK is the core clock */
-static void clock_control_bl70x_l_set_root_clock_dividers(uint32_t hclk_div, uint32_t bclk_div)
+static __bflb_critfunc void clock_control_bl70x_l_set_root_clock_dividers(uint32_t hclk_div,
+									  uint32_t bclk_div)
 {
 	uint32_t tmp;
 	uint32_t old_rootclk;
@@ -322,14 +325,6 @@ static void clock_control_bl70x_l_set_dll_source(uint32_t source)
 static void clock_control_bl70x_l_init_dll(enum bl70x_l_clkid source)
 {
 	uint32_t tmp;
-	uint32_t old_rootclk;
-
-	old_rootclk = clock_bflb_get_root_clock();
-
-	/* security RC32M */
-	if (old_rootclk > 1U) {
-		clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_RC32M);
-	}
 
 	clock_control_bl70x_l_deinit_dll();
 
@@ -362,7 +357,6 @@ static void clock_control_bl70x_l_init_dll(enum bl70x_l_clkid source)
 
 	clock_control_bl70x_l_clock_at_least_us(5);
 
-	clock_bflb_set_root_clock(old_rootclk);
 	clock_bflb_settle();
 }
 
@@ -428,7 +422,7 @@ static int clock_control_bl70x_l_clock_trim_32M(void)
 }
 
 /* source for most clocks, either XTAL or RC32M */
-static uint32_t clock_control_bl70x_l_get_xclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl70x_l_get_xclk(const struct device *dev)
 {
 	uint32_t tmp;
 
@@ -444,7 +438,7 @@ static uint32_t clock_control_bl70x_l_get_xclk(const struct device *dev)
 	}
 }
 
-static uint32_t clock_control_bl70x_l_get_clk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl70x_l_get_clk(const struct device *dev)
 {
 	uint32_t tmp;
 	uint32_t hclk_div;
@@ -487,7 +481,7 @@ static uint32_t clock_control_bl70x_l_get_clk(const struct device *dev)
 }
 
 /* most peripherals clock */
-static uint32_t clock_control_bl70x_l_get_bclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl70x_l_get_bclk(const struct device *dev)
 {
 	uint32_t tmp;
 	uint32_t hclk_freq;
@@ -557,7 +551,7 @@ static void clock_control_bl70x_l_setup_dll(const struct device *dev)
 	sys_write32(tmp, GLB_BASE + GLB_CLK_CFG0_OFFSET);
 }
 
-static void clock_control_bl70x_l_init_root_as_dll(const struct device *dev)
+static __bflb_critfunc void clock_control_bl70x_l_init_root_as_dll(const struct device *dev)
 {
 	struct clock_control_bl70x_l_data *data = dev->data;
 
@@ -576,7 +570,7 @@ static void clock_control_bl70x_l_init_root_as_dll(const struct device *dev)
 	sys_write32(clock_control_bl70x_l_get_clk(dev), CORECLOCKREGISTER);
 }
 
-static void clock_control_bl70x_l_init_root_as_crystal(const struct device *dev)
+static __bflb_critfunc void clock_control_bl70x_l_init_root_as_crystal(const struct device *dev)
 {
 	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_XTAL);
 	sys_write32(clock_control_bl70x_l_get_clk(dev), CORECLOCKREGISTER);
@@ -728,7 +722,7 @@ static int clock_control_bl70x_l_update_f32k(const struct device *dev)
 	return 0;
 }
 
-static int clock_control_bl70x_l_update_clocks(const struct device *dev)
+static __bflb_critfunc int clock_control_bl70x_l_update_clocks(const struct device *dev)
 {
 	struct clock_control_bl70x_l_data *data = dev->data;
 	uint32_t tmp;

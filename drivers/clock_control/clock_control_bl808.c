@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_bl808, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
+#include <soc.h>
 #include <bouffalolab/bl808/bflb_soc.h>
 #include <bouffalolab/bl808/aon_reg.h>
 #include <bouffalolab/bl808/cci_reg.h>
@@ -521,7 +522,7 @@ static int clock_control_bl808_init_crystal(void)
  * Update HCLK and BCLK dividers using the hardware BCLK protection handshake.
  * Must be called with root clock on RC32M or XCLK to be safe.
  */
-static int clock_bflb_set_root_clock_dividers(uint32_t hclk_div, uint32_t bclk_div)
+static __bflb_critfunc int clock_bflb_set_root_clock_dividers(uint32_t hclk_div, uint32_t bclk_div)
 {
 	uint32_t tmp;
 	uint32_t old_rootclk;
@@ -1153,7 +1154,7 @@ static void clock_control_bl808_gate_pll(uint8_t pll)
 }
 
 /* Get XCLK frequency: RC32M when root_clk_sel[0]=0, crystal otherwise. */
-static uint32_t clock_control_bl808_get_xclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl808_get_xclk(const struct device *dev)
 {
 	uint32_t tmp;
 
@@ -1166,7 +1167,7 @@ static uint32_t clock_control_bl808_get_xclk(const struct device *dev)
 }
 
 /* Get FCLK (CPU core clock): XCLK when root_clk_sel[1]=0, PLL output otherwise. */
-static uint32_t clock_control_bl808_get_fclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl808_get_fclk(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 	uint32_t tmp;
@@ -1202,7 +1203,7 @@ static uint32_t clock_control_bl808_mtimer_get_fclk_src_div(const struct device 
 }
 
 /* Get HCLK (AHB bus clock): FCLK divided by (hclk_div + 1). */
-static uint32_t clock_control_bl808_get_hclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl808_get_hclk(const struct device *dev)
 {
 	uint32_t tmp;
 	uint32_t clock_f;
@@ -1214,7 +1215,7 @@ static uint32_t clock_control_bl808_get_hclk(const struct device *dev)
 }
 
 /* Get BCLK (APB peripheral bus clock): HCLK divided by (bclk_div + 1). */
-static uint32_t clock_control_bl808_get_bclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl808_get_bclk(const struct device *dev)
 {
 	uint32_t tmp;
 	uint32_t source_clock;
@@ -1252,7 +1253,7 @@ static uint32_t clock_control_bl808_get_160m(const struct device *dev)
 	}
 }
 
-static void clock_control_bl808_init_root_as_wifipll(const struct device *dev)
+static __bflb_critfunc void clock_control_bl808_init_root_as_wifipll(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 
@@ -1265,7 +1266,7 @@ static void clock_control_bl808_init_root_as_wifipll(const struct device *dev)
 	}
 }
 
-static void clock_control_bl808_init_root_as_aupll(const struct device *dev)
+static __bflb_critfunc void clock_control_bl808_init_root_as_aupll(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 
@@ -1278,7 +1279,7 @@ static void clock_control_bl808_init_root_as_aupll(const struct device *dev)
 	}
 }
 
-static void clock_control_bl808_init_root_as_cpupll(const struct device *dev)
+static __bflb_critfunc void clock_control_bl808_init_root_as_cpupll(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 
@@ -1291,7 +1292,7 @@ static void clock_control_bl808_init_root_as_cpupll(const struct device *dev)
 	}
 }
 
-static void clock_control_bl808_init_root_as_crystal(const struct device *dev)
+static __bflb_critfunc void clock_control_bl808_init_root_as_crystal(const struct device *dev)
 {
 	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_XTAL);
 }
@@ -1422,7 +1423,7 @@ static int clock_control_bl808_update_f32k(const struct device *dev)
 	return 0;
 }
 
-static void clock_control_bl808_update_flash_clk(const struct device *dev)
+static __ramfunc void clock_control_bl808_update_flash_clk(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 	volatile uint32_t tmp;
@@ -1469,7 +1470,7 @@ static void clock_control_bl808_update_flash_clk(const struct device *dev)
 	clock_bflb_settle();
 }
 
-static int clock_control_bl808_update_clocks(const struct device *dev)
+static __bflb_critfunc int clock_control_bl808_update_clocks(const struct device *dev)
 {
 	struct clock_control_bl808_data *data = dev->data;
 	const struct clock_control_bl808_config *config = dev->config;

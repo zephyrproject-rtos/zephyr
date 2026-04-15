@@ -148,12 +148,18 @@
 		itcm: itcm@22020000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x22020000 DT_SIZE_K(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x22020000 DT_SIZE_K(16)>;
 			zephyr,memory-region = "ITCM";
 		};
 
 		retram: memory@40010000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x40010000 DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40010000 DT_SIZE_K(4)>;
 			zephyr,memory-region = "RETRAM";
 		};
 
@@ -178,11 +184,17 @@
 			sram0_btle: sram@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(56)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(56)>;
 			};
 
-			sram0_btle_em16k: sram@c000 {
+			sram0_btle_em16k: sram_16k@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(48)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(48)>;
 			};
 		};
 
