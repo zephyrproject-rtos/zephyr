@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Infineon Technologies AG
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: qemu_tc3x
+name: QEMU emulation for AURIX TC39x (TC1.6P)
+type: qemu
+simulation:
+  - name: qemu
+arch: tricore
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 240
+supported:
+  - gpio
+  - uart
+testing:
+  default: true
+  timeout_multiplier: 2
+  ignore_tags:
+    - can
+    - cpp
+    - bluetooth
+    - net
+vendor: infineon

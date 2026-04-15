@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Infineon Technologies AG
+#
+# SPDX-License-Identifier: Apache-2.0
+
+boards:
+  - name: qemu_tc3x
+    full_name: QEMU Emulation for Infineon AURIX TC39x
+    vendor: infineon
+    socs:
+      - name: qemu_tc3x
+
+  - name: qemu_tc4x
+    full_name: QEMU Emulation for Infineon AURIX TC4Dx
+    vendor: infineon
+    socs:
+      - name: qemu_tc4x
