@@ -42,8 +42,8 @@
 #define MMC_SWITCH_HS200_TIMING_ARG                                                                \
 	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (185U << 16)) +    \
 		(0x0000FF00 & (2U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
-#define MMC_RCA_ARG	(CONFIG_MMC_RCA << 16U)
-#define MMC_REL_ADR_ARG (card->relative_addr << 16U)
+#define MMC_RCA_ARG	((uint32_t)CONFIG_MMC_RCA << 16U)
+#define MMC_REL_ADR_ARG ((uint32_t)card->relative_addr << 16U)
 #define MMC_SWITCH_PWR_CLASS_ARG                                                                   \
 	(0xFC000000 & (0U << 26)) + (0x03000000 & (0b11 << 24)) + (0x00FF0000 & (187U << 16)) +    \
 		(0x0000FF00 & (0U << 8)) + (0x000000F7 & (0U << 3)) + (0x00000000 & (3U << 0))
