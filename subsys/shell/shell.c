@@ -1546,6 +1546,9 @@ const struct shell *shell_backend_get_by_name(const char *backend_name)
 }
 
 /* This function mustn't be used from shell context to avoid deadlock.
+ * It also must not be called with interrupts locked (e.g. inside a
+ * K_SPINLOCK block) or from ISR context, as the implementation may
+ * block on kernel primitives that require a context switch.
  * However it can be used in shell command handlers.
  */
 void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
@@ -1553,6 +1556,15 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 {
 	__ASSERT_NO_MSG(sh);
 	__ASSERT(!k_is_in_isr(), "Thread context required.");
+
+	/* This path may block (k_event_wait) when the TX buffer is full.
+	 * Bail out if we cannot yield to avoid a deadlock in contexts
+	 * such as ISRs, spinlocks, or pre-kernel.
+	 */
+	if (!k_can_yield()) {
+		return;
+	}
+
 	__ASSERT_NO_MSG(sh->ctx);
 	__ASSERT_NO_MSG(z_flag_cmd_ctx_get(sh) ||
 			(k_current_get() != sh->ctx->tid));
