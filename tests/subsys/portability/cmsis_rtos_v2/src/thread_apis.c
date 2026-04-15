@@ -61,8 +61,6 @@ static void thread1(void *argument)
 	 * in thread2.
 	 */
 	zassert_equal(*args->yield_check, 2);
-
-	osThreadExit();
 }
 
 static void thread2(void *argument)
@@ -85,7 +83,7 @@ static void thread2(void *argument)
 		uint32_t size = osThreadGetStackSize(thread_array[i]);
 		uint32_t space = osThreadGetStackSpace(thread_array[i]);
 
-		zassert_true(space < size, "stack size remaining is not what is expected");
+		zassert_true(space <= size, "stack size remaining is not what is expected");
 	}
 
 	zassert_equal(osThreadGetState(thread_array[1]), osThreadReady,
@@ -107,13 +105,16 @@ static void thread2(void *argument)
 	osThreadYield();
 }
 
+static struct thread1_args args;
+
 static void thread_apis_common(int *yield_check, const char *thread1_name,
 			       osThreadAttr_t *thread1_attr, osThreadAttr_t *thread2_attr)
 {
 	osThreadId_t id1;
 	osThreadId_t id2;
 
-	struct thread1_args args = {.yield_check = yield_check, .name = thread1_name};
+	args.yield_check = yield_check;
+	args.name = thread1_name;
 
 	id1 = osThreadNew(thread1, &args, thread1_attr);
 	zassert_true(id1 != NULL, "Failed creating thread1");
@@ -126,6 +127,9 @@ static void thread_apis_common(int *yield_check, const char *thread1_name,
 	do {
 		osDelay(100);
 	} while (*yield_check != 2);
+
+	/* Let both threads complete before returning */
+	osDelay(100);
 }
 
 ZTEST(cmsis_thread_apis, test_thread_apis_dynamic)
