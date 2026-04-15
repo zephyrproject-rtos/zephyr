@@ -1,0 +1,35 @@
+# Copyright (c) 2025 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE KB106x keyboard matrix controller
+
+compatible: "ene,kb106x-kbd"
+
+include: [kbd-matrix-common.yaml, pinctrl-device.yaml]
+
+properties:
+  gpio-dev:
+    type: phandle
+    required: true
+
+  row-pins:
+    type: array
+    required: true
+    description: GPIOs for the keyboard rows.
+
+  col-pins:
+    type: array
+    required: true
+    description: GPIOs for the keyboard columns.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  row-size:
+    required: true
+
+  col-size:
+    required: true

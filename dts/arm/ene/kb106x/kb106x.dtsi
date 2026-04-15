@@ -126,6 +126,13 @@
 			#io-channel-cells = <1>;
 		};
 
+		kbd0: matrix-kbd {
+			compatible = "ene,kb106x-kbd";
+			row-size = <8>;
+			col-size = <13>;
+			status = "disabled";
+		};
+
 		pwm0: pwm@40210000 {
 			compatible = "ene,kb106x-pwm";
 			reg = <0x40210000 0x10>;
