@@ -27,3 +27,4 @@ supported:
   - watchdog
   - comparator
   - dmic
+  - i2c
