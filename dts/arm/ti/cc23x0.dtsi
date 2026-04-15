@@ -146,9 +146,12 @@
 		};
 
 		rtc0: rtc@40002000 {
-			compatible = "ti,cc23x0-rtc";
+			compatible = "ti,lpf3-rtc-timer";
 			reg = <0x40002000 0x64>;
-			interrupts = <3 0>;
+			/* RTC interrupt signal is mapped to IRQ1. This interrupt line is not a
+			 * dedicated interrupt line for the RTC peripheral.
+			 */
+			interrupts = <1 0>;
 			status = "disabled";
 		};
 

@@ -27,6 +27,7 @@
 #include <ti/devices/DeviceFamily.h>
 #include DeviceFamily_constructPath(inc/hw_types.h)
 #include DeviceFamily_constructPath(inc/hw_memmap.h)
+#include DeviceFamily_constructPath(inc/hw_rtc.h)
 #include DeviceFamily_constructPath(inc/hw_systim.h)
 #include DeviceFamily_constructPath(cmsis/core/cmsis_compiler.h)
 #include DeviceFamily_constructPath(driverlib/systick.h)
@@ -50,6 +51,22 @@ extern int_fast16_t PowerCC23X0_notify(uint_fast16_t eventType);
  * resolution).
  */
 #define MAX_SYSTIMER_DELTA (0xFFBFFFFFU)
+
+/*
+ * The RTC timer uses a compare register to generate RTC compare events.
+ * The CH0CC8U register is being used to configure the compare time.
+ * The CH0CC8U register is a 32-bit register with 8us resolution.
+ * The maximum compare event which can be set is:
+ * ( ( (2^32) - 1 ) * 8) us = 34359.74 s = 9.54 hours.
+ * Since a compare event is generated if the TIME8U register value is
+ * one second behind the CH0CC8U register, we have to subtract one second
+ * from the maximum value giving a maximum time of 34358.74 s.
+ *
+ * Maximum delta in microseconds terms is:
+ * 8*( (2^32) - 1 ) - (10^6) = 34358738360.
+ *
+ */
+#define MAX_RTC_DELTA_1US (0x7FFF0BDB8ULL)
 
 #define SYSTIMER_CHANNEL_COUNT (5U)
 
@@ -75,6 +92,10 @@ static void pm_cc23x0_enter_standby(void)
 {
 	uint32_t constraints;
 	uint32_t sysTimerDelta;
+	uint32_t soonestDelta;
+	uint64_t rtcDelta1Us;
+	uint32_t rtcTIME8U;
+	uint32_t rtcCH0CC8U;
 	uint32_t sysTimerIMASK;
 	uint32_t sysTimerLoopDelta;
 	uint32_t sysTimerCurrTime;
@@ -115,6 +136,11 @@ static void pm_cc23x0_enter_standby(void)
 
 		/* Get current time in 1us resolution */
 		sysTimerCurrTime = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
+
+		/* Get current RTC time. */
+
+		rtcTIME8U = HWREG(RTC_BASE + RTC_O_TIME8U);
+		rtcCH0CC8U = HWREG(RTC_BASE + RTC_O_CH0CC8U);
 
 		/* We only want to check the SysTimer channels if at least one of them
 		 * is active. It may be that no one is using ClockP or RCL in this
@@ -186,13 +212,33 @@ static void pm_cc23x0_enter_standby(void)
 			sysTimerDelta = MAX_SYSTIMER_DELTA;
 		}
 
+		/* Calculate pending time to RTC compare event. */
+
+		if (HWREG(RTC_BASE + RTC_O_IMASK) & RTC_ARMSET_CH0_SET) {
+
+			rtcDelta1Us = (((uint64_t)(rtcCH0CC8U - rtcTIME8U) * 8ULL)) - 32ULL;
+
+			/* If the RTC delta is more than the maximum delta, the compare event
+			 * happened in the past and we need to abort to avoid being in sleep for
+			 * a very long time.
+			 */
+
+			if (rtcDelta1Us > (uint64_t)MAX_RTC_DELTA_1US) {
+				rtcDelta1Us = 0;
+			}
+		} else {
+			rtcDelta1Us = MAX_RTC_DELTA_1US;
+		}
+
+		soonestDelta = (uint32_t)Math_MIN(((uint64_t)sysTimerDelta), rtcDelta1Us);
+
 		/* Check sysTimerDelta time vs STANDBY latency */
-		if (sysTimerDelta > PowerCC23X0_TOTALTIMESTANDBY) {
+		if (soonestDelta > PowerCC23X0_TOTALTIMESTANDBY) {
 			/* Store SysTick enabled state */
 			sysTickEnabled = ((SysTick->CTRL & SysTick_CTRL_ENABLE_Msk) != 0);
 
 			/* Go to standby mode */
-			PowerLPF3_sleep(sysTimerDelta + sysTimerCurrTime);
+			PowerLPF3_sleep(soonestDelta + sysTimerCurrTime);
 
 			/* Since PowerLPF3_sleep() is disabling SysTick, it must be enabled
 			 * if it was enabled before calling PowerLPF3_sleep()

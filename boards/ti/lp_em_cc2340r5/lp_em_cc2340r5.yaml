@@ -17,4 +17,5 @@ supported:
   - crypto
   - spi
   - watchdog
+  - rtc
 vendor: ti
