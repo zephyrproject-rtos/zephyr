@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Texas Instruments.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: TI SimpleLink LPF3 RTC
+
+compatible: "ti,lpf3-rtc-timer"
+
+include: rtc.yaml
+
+properties:
+  reg:
+    required: true

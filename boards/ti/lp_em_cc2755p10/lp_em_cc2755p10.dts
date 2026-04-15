@@ -34,6 +34,7 @@
 		led1 = &led1;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		rtc = &rtc;
 	};
 
 	leds {
@@ -192,5 +193,9 @@
 };
 
 &rng {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };

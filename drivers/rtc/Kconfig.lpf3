@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Texas Instruments.
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_LPF3
+	bool "TI Simplelink RTC driver for LPF3 devices"
+	default y
+	depends on DT_HAS_TI_LPF3_RTC_TIMER_ENABLED
+	help
+	  TI Simplelink LPF3 Real-Time Clock (RTC) driver.
