@@ -127,36 +127,36 @@ static int pcie_ecam_init(const struct device *dev)
 	data->cfg_size = cfg->cfg_size;
 
 	if (data->regions[PCIE_REGION_IO].size) {
-		LOG_DBG("IO bus [0x%lx - 0x%lx, size 0x%lx]",
+		LOG_DBG("IO bus [0x%lx - 0x%lx, size 0x%zx]",
 			data->regions[PCIE_REGION_IO].bus_start,
 			(data->regions[PCIE_REGION_IO].bus_start +
 			 data->regions[PCIE_REGION_IO].size - 1),
 			data->regions[PCIE_REGION_IO].size);
-		LOG_DBG("IO space [0x%lx - 0x%lx, size 0x%lx]",
+		LOG_DBG("IO space [0x%lx - 0x%lx, size 0x%zx]",
 			data->regions[PCIE_REGION_IO].phys_start,
 			(data->regions[PCIE_REGION_IO].phys_start +
 			 data->regions[PCIE_REGION_IO].size - 1),
 			data->regions[PCIE_REGION_IO].size);
 	}
 	if (data->regions[PCIE_REGION_MEM].size) {
-		LOG_DBG("MEM bus [0x%lx - 0x%lx, size 0x%lx]",
+		LOG_DBG("MEM bus [0x%lx - 0x%lx, size 0x%zx]",
 			data->regions[PCIE_REGION_MEM].bus_start,
 			(data->regions[PCIE_REGION_MEM].bus_start +
 			 data->regions[PCIE_REGION_MEM].size - 1),
 			data->regions[PCIE_REGION_MEM].size);
-		LOG_DBG("MEM space [0x%lx - 0x%lx, size 0x%lx]",
+		LOG_DBG("MEM space [0x%lx - 0x%lx, size 0x%zx]",
 			data->regions[PCIE_REGION_MEM].phys_start,
 			(data->regions[PCIE_REGION_MEM].phys_start +
 			 data->regions[PCIE_REGION_MEM].size - 1),
 			data->regions[PCIE_REGION_MEM].size);
 	}
 	if (data->regions[PCIE_REGION_MEM64].size) {
-		LOG_DBG("MEM64 bus [0x%lx - 0x%lx, size 0x%lx]",
+		LOG_DBG("MEM64 bus [0x%lx - 0x%lx, size 0x%zx]",
 			data->regions[PCIE_REGION_MEM64].bus_start,
 			(data->regions[PCIE_REGION_MEM64].bus_start +
 			 data->regions[PCIE_REGION_MEM64].size - 1),
 			data->regions[PCIE_REGION_MEM64].size);
-		LOG_DBG("MEM64 space [0x%lx - 0x%lx, size 0x%lx]",
+		LOG_DBG("MEM64 space [0x%lx - 0x%lx, size 0x%zx]",
 			data->regions[PCIE_REGION_MEM64].phys_start,
 			(data->regions[PCIE_REGION_MEM64].phys_start +
 			 data->regions[PCIE_REGION_MEM64].size - 1),
@@ -166,9 +166,9 @@ static int pcie_ecam_init(const struct device *dev)
 	/* Map config space to be used by the pcie_generic_ctrl_conf_read/write callbacks */
 	device_map(&data->cfg_addr, data->cfg_phys_addr, data->cfg_size, K_MEM_CACHE_NONE);
 
-	LOG_DBG("Config space [0x%lx - 0x%lx, size 0x%lx]",
+	LOG_DBG("Config space [0x%lx - 0x%lx, size 0x%zx]",
 		data->cfg_phys_addr, (data->cfg_phys_addr + data->cfg_size - 1), data->cfg_size);
-	LOG_DBG("Config mapped [0x%lx - 0x%lx, size 0x%lx]",
+	LOG_DBG("Config mapped [0x%lx - 0x%lx, size 0x%zx]",
 		data->cfg_addr, (data->cfg_addr + data->cfg_size - 1), data->cfg_size);
 
 	pcie_generic_ctrl_enumerate(dev, PCIE_BDF(0, 0, 0));
