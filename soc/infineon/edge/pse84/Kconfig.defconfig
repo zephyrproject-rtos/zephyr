@@ -26,10 +26,14 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_TICKS_PER_SEC
 	default $(dt_node_int_prop_int,/clk_pilo,clock-frequency) if USE_INFINEON_LPTIMER
 
+# For cm33 all code executes from CBUS aliases (0x08.../0x18...)
+# for performance improvements but must be flashed at SAHB
+# alias (0x60.../0x70...). Adjust LMA by +0x58000000 (constant
+# difference between 0x08 -> 0x60)
 config BUILD_OUTPUT_ADJUST_LMA
 	depends on XIP
 	depends on CPU_CORTEX_M33
-	default "0x60000000 - $(dt_node_reg_addr_hex,$(dt_nodelabel_path,flash0))"
+	default "0x58000000"
 
 # BL2 implementation not available yet
 config TFM_BL2_NOT_SUPPORTED
