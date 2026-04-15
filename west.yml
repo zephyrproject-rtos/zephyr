@@ -328,12 +328,6 @@ manifest:
       path: modules/crypto/mbedtls
       groups:
         - crypto
-    - name: mbedtls-3.6 # Required for TF-M build until we bump it to v2.3
-      repo-path: mbedtls
-      revision: a00e23de17b6b0a0de28e180cb186da6f0008836
-      path: modules/crypto/mbedtls-3.6
-      groups:
-        - crypto
     - name: mcuboot
       revision: 511dc9e28f223d6b158740b66a702209531361ff
       path: bootloader/mcuboot
