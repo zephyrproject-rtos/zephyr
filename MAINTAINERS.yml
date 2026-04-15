@@ -6492,16 +6492,6 @@ West:
     - crypto.mbedtls
     - psa.secure_storage
 
-"West project: mbedtls-3.6":
-  status: maintained
-  maintainers:
-    - ceolin
-    - valeriosetti
-    - tomi-font
-  files: []
-  labels:
-    - "area: Mbed TLS"
-
 "West project: mcuboot":
   status: maintained
   maintainers:
