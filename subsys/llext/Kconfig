@@ -82,6 +82,12 @@ config LLEXT_HEAP_MEMBLK
 
 endchoice
 
+config LLEXT_CUSTOM_HEAP_PLACEMENT
+	bool "Custom placement of llext heap sections"
+	help
+	  Remove default placements of LLEXT heap sections in the linker script,
+	  allowing the user to place the heap(s) themselves.
+
 config LLEXT_HEAP_SIZE
 	int "llext heap memory size in kilobytes"
 	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD && !LLEXT_HEAP_MEMBLK
