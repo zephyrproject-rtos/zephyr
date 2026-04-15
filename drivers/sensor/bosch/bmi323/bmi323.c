@@ -13,11 +13,10 @@
 
 #include "bmi323.h"
 
+#define DT_DRV_COMPAT bosch_bmi323
+
 #ifdef CONFIG_BMI323_BUS_SPI
 #include "bmi323_spi.h"
-#endif
-#ifdef CONFIG_BMI323_BUS_I3C
-#include "bmi323_i3c.h"
 #endif
 #ifdef CONFIG_BMI323_BUS_I2C
 #include "bmi323_i2c.h"
@@ -26,13 +25,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bosch_bmi323);
 
-#define DT_DRV_COMPAT bosch_bmi323
-
 /* Value taken from BMI323 Datasheet section 5.8.1 */
 #define IMU_BOSCH_FEATURE_ENGINE_STARTUP_CONFIG (0x012C)
-
-#define IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELSIUS (23000000LL)
-#define IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELSIUS_LSB    (1953L)
 
 typedef void (*bosch_bmi323_gpio_callback_ptr)(const struct device *dev, struct gpio_callback *cb,
 						   uint32_t pins);
@@ -1179,6 +1173,7 @@ static void bosch_bmi323_irq_callback_handler(struct k_work *item)
 static int bosch_bmi323_pm_resume(const struct device *dev)
 {
 	const struct bosch_bmi323_config *config = (const struct bosch_bmi323_config *)dev->config;
+	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
 	int ret;
 
 	ret = bosch_bmi323_bus_init(dev);
@@ -1204,6 +1199,10 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 
 		return ret;
 	}
+
+	/* Soft reset restores chip to power-on defaults: 8g accel, 2000dps gyro */
+	data->acc_full_scale = 8000;  /* ±8G in milli-G */
+	data->gyro_full_scale = 2000000;  /* ±2000dps in micro-dps */
 
 	ret = bosch_bmi323_bus_init(dev);
 
@@ -1294,17 +1293,13 @@ static int bosch_bmi323_init(const struct device *dev)
 
 	data->dev = dev;
 
-	/* Set raw_data_offset: SPI=1 (no dummy), I2C/I3C=2 (2 dummy bytes) */
-	if (data->async_bus_type == BMI323_BUS_SPI) {
-		data->raw_data_offset = 1U;
-	} else {
-		data->raw_data_offset = 2U;
-	}
+	/* Initialize to chip power-on defaults: 8g accel, 2000dps gyro */
+	data->acc_full_scale = 8000;  /* ±8G in milli-G */
+	data->gyro_full_scale = 2000000;  /* ±2000dps in micro-dps */
 
 #ifdef CONFIG_SENSOR_ASYNC_API
 	/* Init MPSC ring buffer indices */
 	mpsc_init(&data->io_q);
-	data->mpsc_busy = false;
 #endif
 
 	ret = bosch_bmi323_init_irq(dev);
@@ -1336,13 +1331,12 @@ static int bosch_bmi323_init(const struct device *dev)
 
 #define BMI323_DEVICE_BUS(inst)                                                                    \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI323_DEVICE_SPI_BUS(inst)),                      \
-	(COND_CODE_1(DT_INST_ON_BUS(inst, i3c), (BMI323_DEVICE_I3C_BUS(inst)),                     \
 	(COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (BMI323_DEVICE_I2C_BUS(inst)),                     \
-	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))))
+	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))
 
 /* RTIO context definition - one per device instance */
 #ifdef CONFIG_SENSOR_ASYNC_API
-#define BMI323_RTIO_DEFINE(inst)       RTIO_DEFINE(bmi323_rtio_ctx_##inst, 4, 4)
+#define BMI323_RTIO_DEFINE(inst)       RTIO_DEFINE(bmi323_rtio_ctx_##inst, 8, 8)
 
 /* Bus-specific IODEV definitions */
 #define BMI323_SPI_IODEV_DEFINE(inst) \
@@ -1350,32 +1344,23 @@ static int bosch_bmi323_init(const struct device *dev)
 			    SPI_WORD_SET(8))
 #define BMI323_I2C_IODEV_DEFINE(inst) \
 	I2C_DT_IODEV_DEFINE(bmi323_iodev_##inst, DT_DRV_INST(inst))
-#define BMI323_I3C_IODEV_DEFINE(inst) \
-	I3C_DT_IODEV_DEFINE(bmi323_iodev_##inst, DT_DRV_INST(inst))
 
 #define BMI323_BUS_IODEV(inst)         (&bmi323_iodev_##inst)
 #else
 #define BMI323_RTIO_DEFINE(inst)
 #define BMI323_SPI_IODEV_DEFINE(inst)
 #define BMI323_I2C_IODEV_DEFINE(inst)
-#define BMI323_I3C_IODEV_DEFINE(inst)
 #define BMI323_BUS_IODEV(inst)         NULL
 #endif
 
-#ifdef CONFIG_SENSOR_ASYNC_API
-/* Bus raw offset macros - read buffer sizing (still needed for async submit) */
-#define BMI323_BUS_RAW_OFFSET(inst)                                                                \
-	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI323_SPI_RAW_OFFSET),                           \
-	(COND_CODE_1(DT_INST_ON_BUS(inst, i3c), (BMI323_I3C_RAW_OFFSET),                          \
-	(COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (BMI323_I2C_RAW_OFFSET),                          \
-	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))))
+/* Bus type selection (needed for both sync and async builds) */
 
 #define BMI323_BUS_TYPE(inst)                                                                      \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI323_BUS_SPI),                                   \
-	(COND_CODE_1(DT_INST_ON_BUS(inst, i3c), (BMI323_BUS_I3C),                                  \
 	(COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (BMI323_BUS_I2C),                                  \
-	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))))
+	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))
 
+#ifdef CONFIG_SENSOR_ASYNC_API
 #define BMI323_RTIO_DATA_INIT(inst)                                                                \
 	.r = &bmi323_rtio_ctx_##inst,                                                           \
 	.bus_iodev = BMI323_BUS_IODEV(inst),                                                    \
@@ -1392,9 +1377,9 @@ static int bosch_bmi323_init(const struct device *dev)
 	static struct bosch_bmi323_data bosch_bmi323_data_##inst = {                               \
 		BMI323_RTIO_DATA_INIT(inst)                                                        \
 	}; \
-                                                                                                   \
+                                                                                               \
 	static void bosch_bmi323_irq_callback##inst(const struct device *dev,                      \
-						struct gpio_callback *cb, uint32_t pins)       \
+							struct gpio_callback *cb, uint32_t pins) \
 	{                                                                                          \
 		bosch_bmi323_irq_callback(DEVICE_DT_INST_GET(inst));                               \
 	}                                                                                          \
