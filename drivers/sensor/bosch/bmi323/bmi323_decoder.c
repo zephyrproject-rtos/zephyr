@@ -10,6 +10,8 @@
 
 #include "bmi323.h"
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+
 static int32_t bmi323_centi_to_q31(int32_t centi_deg, int shift)
 {
 	return (int32_t)(((int64_t)centi_deg * (1LL << (31 - shift))) / 100LL);
@@ -241,10 +243,19 @@ static int bmi323_decoder_decode(const uint8_t *buffer,
 	return 1;
 }
 
+static bool bmi323_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+{
+	ARG_UNUSED(buffer);
+	ARG_UNUSED(trigger);
+
+	return false;
+}
+
 SENSOR_DECODER_API_DT_DEFINE() = {
 	.get_frame_count = bmi323_decoder_get_frame_count,
 	.get_size_info = bmi323_decoder_get_size_info,
 	.decode = bmi323_decoder_decode,
+	.has_trigger = bmi323_decoder_has_trigger,
 };
 
 int bmi323_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
@@ -253,3 +264,5 @@ int bmi323_get_decoder(const struct device *dev, const struct sensor_decoder_api
 	*decoder = &SENSOR_DECODER_NAME();
 	return 0;
 }
+
+#endif /* CONFIG_SENSOR_ASYNC_API */

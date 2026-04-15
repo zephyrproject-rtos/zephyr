@@ -30,11 +30,13 @@ config BMI323_BUS_SPI
 	default y
 	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI323),spi)
 	select SPI
+	select SPI_RTIO if SENSOR_ASYNC_API
 
 config BMI323_BUS_I2C
 	bool "BMI323 driver support for I2C bus"
 	default y
 	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI323),i2c)
 	select I2C
+	select I2C_RTIO if SENSOR_ASYNC_API
 
 endif # BMI323

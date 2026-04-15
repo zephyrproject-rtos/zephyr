@@ -15,6 +15,8 @@
 
 #include "bmi323.h"
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+
 LOG_MODULE_DECLARE(bosch_bmi323, CONFIG_SENSOR_LOG_LEVEL);
 
 /*
@@ -22,7 +24,7 @@ LOG_MODULE_DECLARE(bosch_bmi323, CONFIG_SENSOR_LOG_LEVEL);
  *
  * raw_buffer layout:
  *   [0]              : register address (BMI323_DATA_REG)
- *   [1 .. off]       : bus dummy bytes  (1 for SPI, 2 for I2C / I3C)
+ *   [1 .. off]       : bus dummy bytes  (1 for SPI, 2 for I2C)
  *   [1+off .. 14+off]: 14 bytes of sensor data (accel XYZ, gyro XYZ, temp)
  *
  * Worst-case allocation: 1 (addr) + 2 (max dummy) + 14 (data) = 17 bytes.
@@ -42,16 +44,21 @@ LOG_MODULE_DECLARE(bosch_bmi323, CONFIG_SENSOR_LOG_LEVEL);
 /* Forward declarations */
 static void bmi323_complete_cb(struct rtio *r, const struct rtio_sqe *sqe,
 				   int res, void *arg);
-static bool bmi323_start_next(struct bosch_bmi323_data *data);
+static void bmi323_start_next(struct bosch_bmi323_data *data);
 
-/* Helper to start an RTIO transfer for a given iodev_sqe */
+/*
+ * Build and submit an RTIO transaction for a given iodev_sqe.
+ * On failure, pending_sqe is cleared and the request is completed with error.
+ */
 static void bmi323_start_transfer(struct rtio_iodev_sqe *iodev_sqe, struct bosch_bmi323_data *data)
 {
 	struct rtio_sqe *wr_data;
 	struct rtio_sqe *rd_data;
 	struct rtio_sqe *cb;
-	uint8_t off = data->raw_data_offset;
+	uint8_t off;
 	k_spinlock_key_t key;
+
+	off = (data->async_bus_type == BMI323_BUS_SPI) ? 1U : 2U;
 
 	/* Setup register address with read bit for SPI */
 	if (data->async_bus_type == BMI323_BUS_SPI) {
@@ -83,8 +90,6 @@ static void bmi323_start_transfer(struct rtio_iodev_sqe *iodev_sqe, struct bosch
 
 	if (data->async_bus_type == BMI323_BUS_I2C) {
 		rd_data->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
-	} else if (data->async_bus_type == BMI323_BUS_I3C) {
-		rd_data->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 	} else {
 		/* SPI: no special flags needed */
 	}
@@ -95,15 +100,19 @@ static void bmi323_start_transfer(struct rtio_iodev_sqe *iodev_sqe, struct bosch
 	rtio_submit(data->r, 0);
 }
 
-/* Helper to try starting next transfer from queue with spinlock protection */
-static bool bmi323_start_next(struct bosch_bmi323_data *data)
+/*
+ * Try starting the next transfer from the queue.
+ * Single attempt per call - if it fails, the request is completed with error
+ * and the completion callback will call bmi323_start_next again.
+ */
+static void bmi323_start_next(struct bosch_bmi323_data *data)
 {
 	k_spinlock_key_t key = k_spin_lock(&data->mpsc_lock);
 
 	/* Already processing a transfer */
 	if (data->pending_sqe != NULL) {
 		k_spin_unlock(&data->mpsc_lock, key);
-		return false;
+		return;
 	}
 
 	/* Pop next request from queue */
@@ -112,7 +121,7 @@ static bool bmi323_start_next(struct bosch_bmi323_data *data)
 	if (node == NULL) {
 		/* Queue empty */
 		k_spin_unlock(&data->mpsc_lock, key);
-		return false;
+		return;
 	}
 
 	struct rtio_iodev_sqe *next_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
@@ -123,9 +132,10 @@ static bool bmi323_start_next(struct bosch_bmi323_data *data)
 	data->pending_sqe = next_sqe;
 	k_spin_unlock(&data->mpsc_lock, key);
 
-	/* Start the transfer (safe to do outside lock) */
+	/* Start the transfer (safe to do outside lock).
+	 * Error handling is done inside bmi323_start_transfer.
+	 */
 	bmi323_start_transfer(next_sqe, data);
-	return true;
 }
 
 static void bmi323_complete_cb(struct rtio *r, const struct rtio_sqe *sqe,
@@ -155,7 +165,7 @@ static void bmi323_complete_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	}
 
 	/* Sensor data starts after address byte + bus dummy bytes */
-	data_raw = &data->raw_buffer[1U + data->raw_data_offset];
+	data_raw = &data->raw_buffer[1U + ((data->async_bus_type == BMI323_BUS_SPI) ? 1U : 2U)];
 
 	for (size_t i = 0; i < cfg->count; i++) {
 		switch (cfg->channels[i].chan_type) {
@@ -215,7 +225,9 @@ static void bmi323_complete_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	edata->has_accel        = fetch_accel;
 	edata->has_gyro         = fetch_gyro;
 	edata->has_temp         = fetch_temp;
+	/* acc_full_scale is in milli-G, convert to G */
 	edata->accel_range      = (data->acc_full_scale / 1000);
+	/* gyro_full_scale is in micro-dps, convert to dps */
 	edata->gyro_range       = (data->gyro_full_scale / 1000);
 	edata->reading          = reading;
 
@@ -258,3 +270,5 @@ void bmi323_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	/* Then try to start next with spinlock protection */
 	bmi323_start_next(data);
 }
+
+#endif /* CONFIG_SENSOR_ASYNC_API */
