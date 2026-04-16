@@ -14,12 +14,6 @@
 			reg = <0x20004000 DT_SIZE_K(16)>;
 		};
 
-		/* Combine SRAM0(16K) and SRAM1(16K), since its address is continuous. */
-		sram: memory@20000000 {
-			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(32)>;
-		};
-
 		uart4: usart@40005000 {
 			compatible = "gd,gd32-usart";
 			reg = <0x40005000 0x400>;
@@ -29,6 +23,10 @@
 			status = "disabled";
 		};
 	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(32)>;
 };
 
 &flash0 {
