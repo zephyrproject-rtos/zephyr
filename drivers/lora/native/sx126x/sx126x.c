@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 	(IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP) \
 	 ? SX126X_STATE_SLEEP : SX126X_STATE_IDLE)
 
+#define SX126X_SF56_MIN_PREAMBLE_LEN	12
+
 static int bandwidth_to_reg(enum lora_signal_bandwidth bw, uint8_t *reg)
 {
 	switch (bw) {
@@ -125,6 +127,7 @@ static int sx126x_validate_config(const struct lora_modem_config *config)
 
 	return 0;
 }
+
 static int sx126x_set_standby(const struct device *dev, uint8_t mode)
 {
 	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_STANDBY, &mode, 1);
@@ -761,6 +764,18 @@ static int sx126x_lora_config(const struct device *dev,
 
 	/* Store configuration */
 	memcpy(&data->config, config, sizeof(*config));
+
+	/*
+	 * SX126x requires a minimum preamble length of 12 symbols for SF5
+	 * and SF6 (DS.SX1261-2.W.APP, Rev 2.2, section 6.1.1).
+	 */
+	if ((config->datarate == SF_5 || config->datarate == SF_6) &&
+	    data->config.preamble_len < SX126X_SF56_MIN_PREAMBLE_LEN) {
+		LOG_WRN("SF%d requires minimum %d preamble symbols, clamping from %d",
+			config->datarate, SX126X_SF56_MIN_PREAMBLE_LEN,
+			data->config.preamble_len);
+		data->config.preamble_len = SX126X_SF56_MIN_PREAMBLE_LEN;
+	}
 
 	/* Run image calibration for frequency band */
 	ret = sx126x_calibrate_image(dev, config->frequency);
