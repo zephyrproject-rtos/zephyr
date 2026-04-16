@@ -42,6 +42,11 @@ tests:
       - SB_CONFIG_APP_CPUFLPR_RUN=y
 
   sample.boards.nrf.coresight_stm.rtt:
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      pytest_root:
+        - "pytest/test_stm.py::test_sample_STM_decoded"
     required_snippets:
       - nordic-log-stm
     extra_configs:
