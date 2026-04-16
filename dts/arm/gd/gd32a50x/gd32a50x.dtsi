@@ -9,6 +9,8 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-sw.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/clock/gd32a50x-clocks.h>
 #include <zephyr/dt-bindings/reset/gd32a50x.h>
@@ -34,6 +36,11 @@
 
 	soc {
 		sram0: memory@20000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "SRAM";
+			zephyr,memory-attr = <(DT_MEM_DMA |
+					       DT_MEM_SW_ALLOC_NON_CACHE |
+					       DT_MEM_SW_ALLOC_DMA)>;
 		};
 
 		/*
@@ -44,6 +51,7 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x2000c000 DT_SIZE_K(4)>;
 			zephyr,memory-region = "SHAREDSRAM";
+			zephyr,memory-attr = <DT_MEM_DMA>;
 		};
 
 		rcu: reset-clock-controller@40021000 {
