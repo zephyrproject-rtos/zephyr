@@ -6,4 +6,7 @@ if SHIELD_WIZNET_W5500
 configdefault NET_L2_ETHERNET
 	default y
 
+configdefault ETH_W5500_RX_THREAD_STACK_SIZE
+	default 1024
+
 endif # SHIELD_WIZNET_W5500
