@@ -3,43 +3,49 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Adds mcuboot metadata to the PSE84 CM33 secure image using imgtool
-# with parameters derived from the DT memory map (header address,
-# header size, and slot size). Uses default version 0.0.0+0 as imgtool
-# requires a version parameter.
-# Registers the add metadata command and output file via
-# extra_post_build properties.
+# Adds ext-boot metadata header to a PSE84 CM33 secure hex image using imgtool.
+# Derives partition addresses and sizes from the devicetree.
 #
-# Usage: pse84_add_metadata_secure_hex(<input_hex> <output_hex>)
-function(pse84_add_metadata_secure_hex INPUT_FILE OUTPUT_FILE)
-  dt_nodelabel(flash_sahb NODELABEL "flash0_sahb")
-  dt_reg_addr(flash_sahb_addr PATH ${flash_sahb})
-
-  # Partitions live under flash0_s whose dt_reg_addr returns a bus-translated
-  # address (e.g. 0x18100000) when mapped-partition + ranges is used, or a raw
-  # flash offset with fixed-partitions. Compute a rebase delta so we can convert
-  # any partition address to SAHB space in one step.
-  dt_nodelabel(flash_s NODELABEL "flash0_s")
-  dt_reg_addr(flash_s_addr PATH ${flash_s})
-
-  dt_nodelabel(m33s_header_node NODELABEL "m33s_header")
-  dt_nodelabel(m33s_xip_node NODELABEL "m33s_xip")
-  dt_reg_addr(part_addr PATH ${m33s_header_node})
-  dt_reg_size(header_size PATH ${m33s_header_node})
-  dt_reg_size(m33s_xip_size PATH ${m33s_xip_node})
-  math(EXPR slot_size "${m33s_xip_size} + ${header_size}" OUTPUT_FORMAT HEXADECIMAL)
-
-    # Rebase partition address from flash0_s space to flash0_sahb space.
-  if(part_addr GREATER_EQUAL flash_s_addr)
-    math(EXPR header_sahb_addr "${part_addr} - ${flash_s_addr} + ${flash_sahb_addr}" OUTPUT_FORMAT HEXADECIMAL)
+# When CONFIG_MCUBOOT is set (building MCUBoot itself), uses boot_partition
+# for address/size and ROM_START_OFFSET for header size. The header space is
+# pre-reserved in the ELF so --pad-header is not used.
+#
+# Apps chain-loaded by MCUBoot (slot0/slot2) do NOT use this function —
+# their signing is handled by cmake/mcuboot.cmake.
+#
+# Otherwise (standalone secure image), uses m33s_header/m33s_xip partitions.
+# The header is separate from the code partition so --pad-header is used to
+# prepend it.
+#
+# Usage: pse84_add_extboot_metadata(<input_hex> <output_hex>)
+function(pse84_add_extboot_metadata INPUT_FILE OUTPUT_FILE)
+  if(CONFIG_MCUBOOT)
+    # MCUBoot bootloader image: use boot_partition, header from ROM_START_OFFSET.
+    dt_nodelabel(part_node NODELABEL "boot_partition")
+    dt_reg_addr(part_addr PATH ${part_node})
+    dt_reg_size(slot_size PATH ${part_node})
+    set(header_size ${CONFIG_ROM_START_OFFSET})
+    set(pad_header_arg "")
   else()
-    math(EXPR header_sahb_addr "${part_addr} + ${flash_sahb_addr}" OUTPUT_FORMAT HEXADECIMAL)
+    # Standalone secure image: use m33s_header + m33s_xip partitions.
+    dt_nodelabel(header_node NODELABEL "m33s_header")
+    dt_nodelabel(xip_node NODELABEL "m33s_xip")
+    dt_reg_addr(part_addr PATH ${header_node})
+    dt_reg_size(header_size PATH ${header_node})
+    dt_reg_size(xip_size PATH ${xip_node})
+    math(EXPR slot_size "${xip_size} + ${header_size}" OUTPUT_FORMAT HEXADECIMAL)
+    set(pad_header_arg --pad-header)
   endif()
+
+  # All partitions (boot_partition, m33s_header, m33s_xip) are in the CBUS
+  # address space. Add BUILD_OUTPUT_ADJUST_LMA to convert to SAHB space for
+  # flashing.
+  math(EXPR hex_addr "${part_addr} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA}" OUTPUT_FORMAT HEXADECIMAL)
 
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${IMGTOOL} sign --version "0.0.0+0"
-      --header-size ${header_size} --erased-val 0xff --pad-header
-      --slot-size ${slot_size} --hex-addr ${header_sahb_addr}
+      --header-size ${header_size} --erased-val 0xff ${pad_header_arg}
+      --slot-size ${slot_size} --hex-addr ${hex_addr}
       ${INPUT_FILE} ${OUTPUT_FILE}
   )
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${OUTPUT_FILE})

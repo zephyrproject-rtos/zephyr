@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * DTS overlay applied to the CM55 application image when built as the
+ * second MCUBoot-managed image (IMAGE_1).  Overrides the chosen
+ * code-partition to slot2_partition so that the CM55 firmware is linked
+ * and signed for the correct flash region.
+ */
+/ {
+	chosen {
+		zephyr,code-partition = &slot2_partition;
+	};
+};

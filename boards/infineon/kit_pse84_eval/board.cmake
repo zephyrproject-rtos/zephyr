@@ -25,7 +25,10 @@ board_runner_args(probe-rs "--chip=PSE846GPS4DBZC4A")
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/probe-rs.board.cmake)
 
-if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
+if((CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE) OR CONFIG_BOOTLOADER_MCUBOOT)
+# First case is for a plain cm33s app that needs to be in MCUBoot format,
+# second case is for the MCUBoot bootloader image itself.
+# In both cases they get the ext-boot metadata header and have a .signed hex.
   set_property(TARGET runners_yaml_props_target
     PROPERTY hex_file ${KERNEL_NAME}.signed.hex)
 endif()
