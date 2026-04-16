@@ -19,3 +19,6 @@ tests:
       - net
       - ocpp
       - tls
+    platform_allow:
+      - qemu_x86
+      - native_sim
