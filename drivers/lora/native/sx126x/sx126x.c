@@ -254,12 +254,40 @@ static int sx126x_set_modulation_params(const struct device *dev,
 	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_MODULATION_PARAMS, buf, 4);
 }
 
+/*
+ * Workaround — Modulation Quality with 500 kHz LoRa Bandwidth
+ * (DS_SX1261-2_V1.2, chapter 15.1)
+ *
+ * Must be called before each packet transmission.
+ */
+static int sx126x_apply_tx_modulation_workaround(const struct device *dev,
+						  enum lora_signal_bandwidth bw)
+{
+	uint8_t reg_val;
+	int ret;
+
+	ret = sx126x_hal_read_regs(dev, SX126X_REG_TX_MODULATION, &reg_val, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (bw == BW_500_KHZ) {
+		reg_val &= ~BIT(2);
+	} else {
+		reg_val |= BIT(2);
+	}
+
+	return sx126x_hal_write_regs(dev, SX126X_REG_TX_MODULATION, &reg_val, 1);
+}
+
 static int sx126x_set_packet_params(const struct device *dev,
 				    uint16_t preamble_len, uint8_t header_type,
 				    uint8_t payload_len, uint8_t crc_mode,
 				    uint8_t invert_iq)
 {
 	uint8_t buf[6];
+	uint8_t reg_val;
+	int ret;
 
 	sys_put_be16(preamble_len, &buf[0]);
 	buf[2] = header_type;
@@ -267,7 +295,27 @@ static int sx126x_set_packet_params(const struct device *dev,
 	buf[4] = crc_mode;
 	buf[5] = invert_iq;
 
-	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_PACKET_PARAMS, buf, 6);
+	ret = sx126x_hal_write_cmd(dev, SX126X_CMD_SET_PACKET_PARAMS, buf, 6);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/*
+	 * Workaround — Optimizing the Inverted IQ Operation
+	 * (DS_SX1261-2_V1.2, chapter 15.4)
+	 */
+	ret = sx126x_hal_read_regs(dev, SX126X_REG_IQ_POLARITY, &reg_val, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (invert_iq == SX126X_LORA_IQ_INVERTED) {
+		reg_val &= ~BIT(2);
+	} else {
+		reg_val |= BIT(2);
+	}
+
+	return sx126x_hal_write_regs(dev, SX126X_REG_IQ_POLARITY, &reg_val, 1);
 }
 
 static int sx126x_set_sync_word(const struct device *dev, bool public_network)
@@ -371,6 +419,40 @@ static int sx126x_get_packet_status(const struct device *dev,
 	return ret;
 }
 
+/*
+ * Add a register to the chip's internal retention list so its value
+ * survives warm-start sleep cycles (STDBY_RC -> SLEEP -> STDBY_RC).
+ */
+static int sx126x_add_reg_to_retention(const struct device *dev, uint16_t addr)
+{
+	uint8_t buf[9];
+	uint8_t n;
+	int ret;
+
+	ret = sx126x_hal_read_regs(dev, SX126X_REG_RETENTION_LIST, buf, sizeof(buf));
+	if (ret < 0) {
+		return ret;
+	}
+
+	n = buf[0];
+
+	for (uint8_t i = 0; i < n; i++) {
+		if (sys_get_be16(&buf[1 + 2 * i]) == addr) {
+			return 0;
+		}
+	}
+
+	if (n >= SX126X_MAX_RETENTION_REGS) {
+		LOG_ERR("Retention list full");
+		return -ENOSPC;
+	}
+
+	buf[0] = n + 1;
+	sys_put_be16(addr, &buf[1 + 2 * n]);
+
+	return sx126x_hal_write_regs(dev, SX126X_REG_RETENTION_LIST, buf, sizeof(buf));
+}
+
 static int sx126x_chip_init(const struct device *dev)
 {
 	const struct sx126x_hal_config *config = dev->config;
@@ -451,6 +533,22 @@ static int sx126x_chip_init(const struct device *dev)
 	ret = sx126x_clear_irq_status(dev, SX126X_IRQ_ALL);
 	if (ret < 0) {
 		LOG_ERR("Clear IRQ failed: %d", ret);
+		return ret;
+	}
+
+	/*
+	 * Preserve RX gain and TX modulation settings across warm-start
+	 * sleep cycles by adding them to the chip's retention list.
+	 */
+	ret = sx126x_add_reg_to_retention(dev, SX126X_REG_RX_GAIN);
+	if (ret < 0) {
+		LOG_ERR("Add RX_GAIN to retention failed: %d", ret);
+		return ret;
+	}
+
+	ret = sx126x_add_reg_to_retention(dev, SX126X_REG_TX_MODULATION);
+	if (ret < 0) {
+		LOG_ERR("Add TX_MODULATION to retention failed: %d", ret);
 		return ret;
 	}
 
@@ -882,6 +980,11 @@ static int sx126x_lora_send_async(const struct device *dev,
 
 	/* Write payload to buffer */
 	ret = sx126x_hal_write_buffer(dev, 0x00, data_buf, data_len);
+	if (ret < 0) {
+		goto out_error;
+	}
+
+	ret = sx126x_apply_tx_modulation_workaround(dev, data->config.bandwidth);
 	if (ret < 0) {
 		goto out_error;
 	}
