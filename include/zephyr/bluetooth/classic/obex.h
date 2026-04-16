@@ -503,11 +503,13 @@ struct bt_obex_server {
 	 */
 	const struct bt_obex_server_ops *ops;
 
+	/** @brief Receiving configurations */
 	struct {
 		/** @brief The Maximum OBEX Packet Length (MOPL) */
 		uint16_t mopl;
 	} rx;
 
+	/** @brief Transmission configurations */
 	struct {
 		/** @brief The Maximum OBEX Packet Length (MOPL) */
 		uint16_t mopl;
@@ -544,11 +546,13 @@ struct bt_obex_client {
 	 */
 	const struct bt_obex_client_ops *ops;
 
+	/** @brief Receiving configurations */
 	struct {
 		/** @brief The Maximum OBEX Packet Length (MOPL) */
 		uint16_t mopl;
 	} rx;
 
+	/** @brief Transmission configurations */
 	struct {
 		/** @brief The Maximum OBEX Packet Length (MOPL) */
 		uint16_t mopl;
@@ -578,11 +582,13 @@ struct bt_obex_client {
 
 /** @brief OBEX structure. */
 struct bt_obex {
+	/** @brief Receiving configurations */
 	struct {
 		/** @brief MTU of OBEX transport */
 		uint16_t mtu;
 	} rx;
 
+	/** @brief Transmission configurations */
 	struct {
 		/** @brief MTU of OBEX transport */
 		uint16_t mtu;
