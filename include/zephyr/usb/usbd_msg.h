@@ -104,10 +104,23 @@ struct usbd_msg {
  */
 static inline const char *usbd_msg_type_string(const enum usbd_msg_type type)
 {
-	if (type >= 0 && type < USBD_MSG_MAX_NUMBER) {
+	switch (type) {
+	case USBD_MSG_VBUS_READY:
+	case USBD_MSG_VBUS_REMOVED:
+	case USBD_MSG_RESUME:
+	case USBD_MSG_SUSPEND:
+	case USBD_MSG_RESET:
+	case USBD_MSG_CONFIGURATION:
+	case USBD_MSG_UDC_ERROR:
+	case USBD_MSG_STACK_ERROR:
+	case USBD_MSG_CDC_ACM_LINE_CODING:
+	case USBD_MSG_CDC_ACM_CONTROL_LINE_STATE:
+	case USBD_MSG_DFU_APP_DETACH:
+	case USBD_MSG_DFU_DOWNLOAD_COMPLETED:
 		return usbd_msg_type_list[type];
+	case USBD_MSG_MAX_NUMBER:
+	/* no default to create a warning when enum usbd_msg_type is extended */
 	}
-
 	return "?";
 }
 
