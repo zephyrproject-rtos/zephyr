@@ -6,8 +6,11 @@
  */
 
 #include <errno.h>
+#include <limits.h>
 #include <stdint.h>
 #include <zephyr/data/cobs.h>
+
+#if defined(CONFIG_NET_BUF)
 
 static int cobs_net_buf_cb(const uint8_t *buf, size_t len, void *user_data)
 {
@@ -53,6 +56,8 @@ int cobs_decode(struct net_buf *src, struct net_buf *dst, uint32_t flags)
 
 	return cobs_decoder_close(&dec);
 }
+
+#endif /* defined(CONFIG_NET_BUF) */
 
 static inline void cobs_encoder_reset(struct cobs_encoder *enc)
 {
