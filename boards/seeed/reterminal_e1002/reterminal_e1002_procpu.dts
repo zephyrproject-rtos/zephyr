@@ -121,10 +121,17 @@
 };
 
 &i2c1 {
-	status = "disabled";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+
+	charger: sy6974b@6b {
+		compatible = "silergy,sy6974b";
+		reg = <0x6b>;
+		constant-charge-current-max-microamp = <500000>;
+		constant-charge-voltage-max-microvolt = <4208000>;
+	};
 };
 
 &ledc0 {
