@@ -34,7 +34,7 @@ int main(void)
 {
 	int err;
 	uint32_t count = 0;
-	uint32_t buf;
+	uint32_t buf = 0;
 	struct adc_sequence sequence = {
 		.buffer = &buf,
 		/* buffer size in bytes, not number of samples */
@@ -66,6 +66,12 @@ int main(void)
 		printk("ADC reading[%u]:\n", count++);
 		for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
 			int32_t val_mv;
+
+			/*
+			 * Clear buffer before reading.  This ensures the upper 16-bits will be zero
+			 * when the adc uses a 16-bit buffer size.
+			 */
+			buf = 0;
 
 			printk("- %s, channel %d: ",
 			       adc_channels[i].dev->name,
