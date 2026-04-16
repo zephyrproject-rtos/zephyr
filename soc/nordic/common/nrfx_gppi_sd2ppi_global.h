@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SOC_NORDIC_NRF54H_NRFX_GPPI_NRF54H_GLOBAL_H_
-#define SOC_NORDIC_NRF54H_NRFX_GPPI_NRF54H_GLOBAL_H_
+#ifndef SOC_NORDIC_COMMON_NRFX_GPPI_SD2PPI_GLOBAL_H_
+#define SOC_NORDIC_COMMON_NRFX_GPPI_SD2PPI_GLOBAL_H_
 
 #include <nrfx.h>
 #include <helpers/nrfx_gppi.h>
@@ -37,4 +37,4 @@ const nrfx_gppi_node_t *nrfx_gppi_nodes_get(void);
 void nrfx_gppi_channel_init(nrfx_gppi_node_id_t node_id, uint32_t ch_mask);
 void nrfx_gppi_groups_init(nrfx_gppi_node_id_t node_id, uint32_t group_mask);
 
-#endif /* SOC_NORDIC_NRF54H_NRFX_GPPI_NRF54H_GLOBAL_H_ */
+#endif /* SOC_NORDIC_COMMON_NRFX_GPPI_SD2PPI_GLOBAL_H_ */

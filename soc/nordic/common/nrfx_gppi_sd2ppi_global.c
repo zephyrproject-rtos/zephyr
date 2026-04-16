@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "nrfx_gppi_nrf54h_global.h"
+#include "nrfx_gppi_sd2ppi_global.h"
 #include <ironside/se/api.h>
 
 static nrfx_atomic_t channels[NRFX_GPPI_NODE_COUNT];
