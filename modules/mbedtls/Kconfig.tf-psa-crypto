@@ -106,7 +106,6 @@ config MBEDTLS_MEMORY_DEBUG
 
 config MBEDTLS_CIPHER
 	bool "Generic cipher layer"
-	default y if PSA_WANT_ALG_CMAC
 
 config MBEDTLS_MD_C
 	bool "Generic message digest layer"
