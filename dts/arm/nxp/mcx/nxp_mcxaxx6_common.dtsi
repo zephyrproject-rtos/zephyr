@@ -524,6 +524,14 @@
 			clocks = <&syscon MCUX_FLEXIO0_CLK>;
 		};
 
+		slcd: slcd@400c2000 {
+			compatible = "nxp,slcd";
+			reg = <0x400c2000 0x1000>;
+			interrupts = <121 0>;
+			clocks = <&syscon MCUX_SLCD_CLK>;
+			status = "disabled";
+		};
+
 		trng: random@400ec000 {
 			compatible = "nxp,kinetis-trng";
 			reg = <0x400ec000 0x1000>;

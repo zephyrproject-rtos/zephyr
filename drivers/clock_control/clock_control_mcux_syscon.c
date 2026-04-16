@@ -319,6 +319,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif
 #endif /* defined(CONFIG_WDT_MCUX_WWDT) */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_slcd)
+	if ((uint32_t)sub_system == MCUX_SLCD_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateSLCD0);
+	}
+#endif
+
 	return 0;
 }
 
@@ -802,6 +808,12 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #endif
 		break;
 #endif
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_slcd)
+	case MCUX_SLCD_CLK:
+		*rate = 16384U; /* Fix 16.384kHz */
+		break;
 #endif
 	}
 

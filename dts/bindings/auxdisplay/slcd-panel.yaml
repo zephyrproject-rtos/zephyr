@@ -1,0 +1,97 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Segment LCD Panel Device
+
+  Represents a SLCD(segment LCD) panel connected to an SLCD controller.
+  The SLCD panel defines the characteristics of the display including
+  segment type, how many positions of digits/letters and indicators, the
+  front plane pins and back plane COMs used by this panel, and the
+  multiplexing configuration.
+
+compatible: "slcd-panel"
+
+include: auxdisplay-device.yaml
+
+properties:
+  segment-type:
+    type: int
+    default: 7
+    enum: [7, 14, 16]
+    description: |
+      Number of segments per character position.
+      - 7:  Standard 7-segment display (segments A to G, support digits 0 to 9)
+      - 14: 14-segment display (not supported yet)
+      - 16: 16-segment display (not supported yet)
+
+  segment-pins:
+    type: array
+    description: |
+      2-D array of the pins that controls each segment.
+
+      Array dimensions: num-positions x num-segments
+      For a 7-segment(segment A to G) display with 6 positions, array size
+      is 6 x 7 = 42 elements
+
+      Example: If segment A (first segment) of position 1 (zero based index) is
+      controlled by pin 8 com 3, then the (1,0) element of this array is 8.
+
+  segment-coms:
+    type: array
+    description: |
+      2-D array of the coms that controls each segment.
+
+      Array dimensions: num-positions x num-segments
+      For a 7-segment(segment A to G) display with 6 positions, array size
+      is 6 x 7 = 42 elements
+
+      Example: If segment A (first segment) of position 1 (zero based index) is
+      controlled by pin 8 com 3, then the (1,0) element of this array is 3.
+
+  num-indicators:
+    type: int
+    default: 0
+    description: |
+      Number of special indicators on the display.
+      Indicators are individual segments that are not part of standard character positions.
+      For example, a colon, decimal point, or status indicator would count as one indicator.
+
+  indicator-pins:
+    type: array
+    description: |
+      1-D array of the pins that controls each indicator.
+
+      Example: if indicator 0 controlled by pin 15, COM4, the first element of
+      this array is 15.
+
+  indicator-coms:
+    type: array
+    description: |
+      1-D array of the coms that controls each indicator.
+
+      Example: if indicator 0 controlled by pin 15, COM4, the first element of
+      this array is 4.
+
+  col-indicators:
+    type: array
+    description: |
+      List of indicator indices for the combined colon column at each inter-digit gap.
+      Length must be columns - 1. Use 0xFF for gaps that have no colon indicator.
+      When writing ':', this indicator is used preferentially. If absent or 0xFF at a gap,
+      the driver falls back to setting both upper-dot-indicators and lower-dot-indicators.
+
+  upper-dot-indicators:
+    type: array
+    description: |
+      List of indicator indices for the upper dot at each inter-digit gap.
+      Length must be columns - 1. Use 0xFF for gaps with no upper dot.
+      Used as fallback for ':' (together with lower-dot-indicators) when col-indicators
+      is absent or 0xFF at a gap.
+
+  lower-dot-indicators:
+    type: array
+    description: |
+      List of indicator indices for the lower dot at each inter-digit gap.
+      Length must be columns - 1. Use 0xFF for gaps with no lower dot.
+      Used for '.' character and as fallback for ':' together with upper-dot-indicators.
