@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silergy SY6974B battery charger
+
+description: |
+  Silergy SY6974B 3A single-cell Li-Ion switching battery charger with I2C
+  control, USB BC1.2 detection, OTG boost and power-path management.
+
+compatible: "silergy,sy6974b"
+
+include: [battery.yaml, i2c-device.yaml]
+
+properties:
+  constant-charge-current-max-microamp:
+    required: true
+    description: |
+      Fast-charge current target applied at initialization.
+      Range: 0-3000 mA (60 mA steps, values are rounded down to the nearest step).
+
+  constant-charge-voltage-max-microvolt:
+    required: true
+    description: |
+      Charge voltage regulation target applied at initialization.
+      Range: 3.856-4.624V (32 mV steps, values are rounded down to the nearest step).
+      Default value is 4.208V, matching the device default reset configuration.
+    default: 4208000
+
+examples:
+  - |
+    charger: sy6974b@6b {
+        compatible = "silergy,sy6974b";
+        reg = <0x6b>;
+        constant-charge-current-max-microamp = <1500000>;
+        constant-charge-voltage-max-microvolt = <4208000>;
+    };
