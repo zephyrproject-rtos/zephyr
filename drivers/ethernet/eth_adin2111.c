@@ -312,6 +312,13 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 		len = (ftr & ADIN2111_OA_DATA_FTR_EV) ?
 		       ((ftr & ADIN2111_OA_DATA_FTR_EBO_MSK) >> ADIN2111_OA_DATA_FTR_EBO) + 1 :
 		       ctx->oa_cps;
+
+		if (ctx->scur + len > CONFIG_ETH_ADIN2111_BUFFER_SIZE) {
+			ctx->scur = 0;
+			LOG_ERR("OA RX: Frame is larger than maximum size !");
+			goto update_pos;
+		}
+
 		memcpy(&ctx->buf[ctx->scur], &ctx->oa_rx_buf[rx_pos], len);
 		ctx->scur += len;
 
