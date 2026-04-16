@@ -355,11 +355,13 @@ SYS_INIT(hci_uart_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 const struct {
 	uint8_t h4;
-	struct bt_hci_evt_hdr hdr;
+	uint8_t evt;
+	uint8_t len;
 	struct bt_hci_evt_cmd_complete cc;
 } __packed cc_evt = {
 	.h4 = BT_HCI_H4_EVT,
-	.hdr = {.evt = BT_HCI_EVT_CMD_COMPLETE, .len = sizeof(struct bt_hci_evt_cmd_complete)},
+	.evt = BT_HCI_EVT_CMD_COMPLETE,
+	.len = sizeof(struct bt_hci_evt_cmd_complete),
 	.cc = {.ncmd = 1, .opcode = sys_cpu_to_le16(BT_OP_NOP)},
 };
 
