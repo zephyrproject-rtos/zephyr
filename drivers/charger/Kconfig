@@ -63,6 +63,7 @@ source "drivers/charger/Kconfig.npm10xx"
 source "drivers/charger/Kconfig.pca9422"
 source "drivers/charger/Kconfig.pf1550"
 source "drivers/charger/Kconfig.sbs_charger"
+source "drivers/charger/Kconfig.sy6974b"
 # zephyr-keep-sorted-stop
 
 endif # CHARGER
