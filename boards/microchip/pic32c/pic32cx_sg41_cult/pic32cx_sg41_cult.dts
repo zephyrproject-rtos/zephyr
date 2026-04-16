@@ -248,6 +248,8 @@
 	txpo = <0>;
 	pinctrl-0 = <&sercom4_uart_default>;
 	pinctrl-names = "default";
+	dmas = <&dmac 1 0xc>, <&dmac 2 0xd>;
+	dma-names = "rx", "tx";
 	status = "okay";
 };
 
