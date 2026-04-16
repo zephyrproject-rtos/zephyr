@@ -1,0 +1,119 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon AutAnalog SAR ADC HS Sequencer Table Entry
+
+description: |
+  High-Speed (HS) mode sequencer table entry for the Infineon AutAnalog SAR
+  ADC.  Up to 32 entries may be defined as child nodes of the ADC node.  Nodes
+  must be named "seq-hs-<index>" (e.g. seq-hs-0, seq-hs-1, ...).
+
+  Each entry configures one step in the ADC scan sequence.  The hardware
+  executes entries in order, with the next-action field controlling
+  transitions between entries.
+
+  When only default (single-entry) operation is desired, these nodes may be
+  omitted entirely and the driver will create a single entry with backward-
+  compatible defaults.
+
+  Use IFX_AUTANALOG_SAR_SEQ_* constants from
+  <dt-bindings/adc/infineon-autanalog-sar.h> for property values.
+
+compatible: "infineon,autanalog-sar-seq-hs"
+
+properties:
+  sample-time-en:
+    type: boolean
+    description: |
+      Enable the programmable sample-time delay for this sequencer entry.
+      When disabled, the ADC uses its default minimum sampling window.
+
+  acc-en:
+    type: boolean
+    description: |
+      Enable accumulation / averaging for conversions triggered by this
+      sequencer entry.
+
+  acc-count:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Number of samples to accumulate when acc-en is set.
+      Use IFX_AUTANALOG_SAR_SEQ_ACC_CNT* constants.
+        0 = 2 samples   (IFX_AUTANALOG_SAR_SEQ_ACC_CNT2)
+        1 = 4 samples   (IFX_AUTANALOG_SAR_SEQ_ACC_CNT4)
+        2 = 8 samples   (IFX_AUTANALOG_SAR_SEQ_ACC_CNT8)
+        3 = 16 samples  (IFX_AUTANALOG_SAR_SEQ_ACC_CNT16)
+        4 = 32 samples  (IFX_AUTANALOG_SAR_SEQ_ACC_CNT32)
+        5 = 64 samples  (IFX_AUTANALOG_SAR_SEQ_ACC_CNT64)
+        6 = 128 samples (IFX_AUTANALOG_SAR_SEQ_ACC_CNT128)
+        7 = 256 samples (IFX_AUTANALOG_SAR_SEQ_ACC_CNT256)
+
+  cal-req:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3]
+    description: |
+      Real-time calibration request for this sequencer entry.
+      Use IFX_AUTANALOG_SAR_SEQ_CAL_* constants.
+        0 = Disabled  (IFX_AUTANALOG_SAR_SEQ_CAL_DISABLED)
+        1 = Both offset and linearity (IFX_AUTANALOG_SAR_SEQ_CAL_BOTH)
+        2 = Offset only    (IFX_AUTANALOG_SAR_SEQ_CAL_OFFSET)
+        3 = Linearity only (IFX_AUTANALOG_SAR_SEQ_CAL_LINEARITY)
+
+  next-action:
+    type: int
+    default: 0
+    enum: [0, 1, 2]
+    description: |
+      Action after this sequencer entry completes.
+      Use IFX_AUTANALOG_SAR_SEQ_NEXT_* constants.
+        0 = Stop, send SAR_EOS and SAR_DONE, go idle
+            (IFX_AUTANALOG_SAR_SEQ_NEXT_STOP)
+        1 = Send SAR_EOS and return to start (continuous)
+            (IFX_AUTANALOG_SAR_SEQ_NEXT_REPEAT)
+        2 = Continue to next entry in scan table
+            (IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE)
+
+  gpio-channels:
+    type: int
+    default: 0
+    description: |
+      Bitmask of GPIO channels (0-7) to sample in this sequencer entry.
+      Each bit enables the corresponding GPIO channel.  When zero, GPIO
+      channel selection is configured at runtime.
+
+  mux-mode:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4]
+    description: |
+      MUX channel operating mode for this sequencer entry.
+      Use IFX_AUTANALOG_SAR_MUX_* constants.
+
+  mux0-sel:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      MUX0 channel selection (0-15) for this entry.
+      Selects which of the 16 internal MUX channels to sample.
+
+  mux1-sel:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      MUX1 channel selection (0-15) for this entry.
+      Selects which of the 16 internal MUX channels to sample.
+
+  sample-time:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3]
+    description: |
+      Which of the 4 sample-time slots to use for this entry.
+      Use IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME* constants.
