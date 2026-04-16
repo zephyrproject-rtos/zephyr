@@ -3,6 +3,7 @@ tests:
     integration_platforms:
       - native_sim
       - native_sim/native/64
+    depends_on: can
     tags:
       - drivers
       - can
