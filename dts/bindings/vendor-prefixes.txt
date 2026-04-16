@@ -143,6 +143,7 @@ chipidea	Chipidea, Inc
 chipone	ChipOne
 chipsemi	Chipsemi Corp.
 chipspark	ChipSPARK
+chipwealth	Chip Wealth Technology Ltd.
 chrontel	Chrontel, Inc.
 chrp	Common Hardware Reference Platform
 chunghwa	Chunghwa Picture Tubes Ltd.
