@@ -62,6 +62,7 @@
 		fmc: flash-controller@40022000 {
 			compatible = "gd,gd32-flash-controller";
 			reg = <0x40022000 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -69,6 +70,8 @@
 			flash0: flash@8000000 {
 				compatible = "gd,gd32-nv-flash-v1", "soc-nv-flash";
 				write-block-size = <2>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

@@ -74,6 +74,7 @@
 		fmc: flash-controller@40023c00 {
 			compatible = "gd,gd32-flash-controller";
 			reg = <0x40023c00 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -82,6 +83,8 @@
 				compatible = "gd,gd32-nv-flash-v3", "soc-nv-flash";
 				write-block-size = <2>;
 				max-erase-time-ms = <8000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

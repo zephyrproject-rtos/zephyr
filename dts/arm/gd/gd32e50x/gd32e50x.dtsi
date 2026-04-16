@@ -58,6 +58,7 @@
 		fmc: flash-controller@40022000 {
 			compatible = "gd,gd32-flash-controller";
 			reg = <0x40022000 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -74,6 +75,8 @@
 				 */
 				max-erase-time-ms = <2400>;
 				page-size = <DT_SIZE_K(8)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

@@ -32,6 +32,7 @@
 
 &flash0 {
 	reg = <0x08000000 DT_SIZE_K(256)>;
+	ranges = <0x0 0x08000000 DT_SIZE_K(256)>;
 	/* GD32L23X DataSheet not defined the maximum page erase time
 	 * for flash memory.
 	 * From other GD32 DataSheets, we can find 1KB page normally have a
