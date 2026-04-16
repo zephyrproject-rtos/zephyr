@@ -4,11 +4,11 @@
  */
 
 /**
- * @file Common pm_s2ram.h include for Nordic SoCs.
+ * @file Common pm_s2ram.h include for Nordic nRF54H SoCs.
  */
 
-#ifndef _ZEPHYR_SOC_ARM_NORDIC_NRF_PM_S2RAM_H_
-#define _ZEPHYR_SOC_ARM_NORDIC_NRF_PM_S2RAM_H_
+#ifndef ZEPHYR_SOC_NORDIC_NRF54H_SOC_PM_S2RAM_H_
+#define ZEPHYR_SOC_NORDIC_NRF54H_SOC_PM_S2RAM_H_
 
 /**
  * @brief Save CPU state on suspend
@@ -28,4 +28,4 @@
  */
 int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off);
 
-#endif /* _ZEPHYR_SOC_ARM_NORDIC_NRF_PM_S2RAM_H_ */
+#endif /* ZEPHYR_SOC_NORDIC_NRF54H_SOC_PM_S2RAM_H_ */

@@ -16,14 +16,7 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
-if(CONFIG_NRF_PLATFORM_HALTIUM AND CONFIG_ARM)
-  zephyr_library_sources(haltium_power.c)
-  zephyr_code_relocate(
-    FILES haltium_power.c
-    FILTER ".*\\.cache_retain_and_sleep"
-    LOCATION PMLocalRamfunc_TEXT
-  )
-  zephyr_library_sources_ifdef(CONFIG_PM_S2RAM haltium_pm_s2ram.c)
+if((CONFIG_SOC_SERIES_NRF54H OR CONFIG_SOC_SERIES_NRF92) AND CONFIG_ARM)
   zephyr_library_sources_ifdef(CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS nrf54hx_nrf92x_mpu_regions.c)
   zephyr_library_sources(soc_lrcconf.c)
 endif()

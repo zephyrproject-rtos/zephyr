@@ -12,12 +12,12 @@
 #include <hal/nrf_memconf.h>
 #include <hal/nrf_cache.h>
 #include <zephyr/cache.h>
-#include <haltium_power.h>
+#include "soc_power.h"
 #include <soc_lrcconf.h>
 #include <soc.h>
-#include "haltium_pm_s2ram.h"
+#include "soc_pm_s2ram.h"
 
-#if defined(CONFIG_SOC_NRF54H20_CPUAPP) || defined(CONFIG_SOC_NRF9280_CPUAPP)
+#if defined(CONFIG_SOC_NRF54H20_CPUAPP)
 #define RAMBLOCK_CONTROL_BIT_ICACHE MEMCONF_POWER_CONTROL_MEM1_Pos
 #define RAMBLOCK_CONTROL_BIT_DCACHE MEMCONF_POWER_CONTROL_MEM2_Pos
 #define RAMBLOCK_POWER_ID           0
@@ -25,7 +25,7 @@
 #define RAMBLOCK_RET_MASK           (MEMCONF_POWER_RET_MEM0_Msk)
 #define RAMBLOCK_RET_BIT_ICACHE     MEMCONF_POWER_RET_MEM1_Pos
 #define RAMBLOCK_RET_BIT_DCACHE     MEMCONF_POWER_RET_MEM2_Pos
-#elif defined(CONFIG_SOC_NRF54H20_CPURAD) || defined(CONFIG_SOC_NRF9280_CPURAD)
+#elif defined(CONFIG_SOC_NRF54H20_CPURAD)
 #define RAMBLOCK_CONTROL_BIT_ICACHE MEMCONF_POWER_CONTROL_MEM6_Pos
 #define RAMBLOCK_CONTROL_BIT_DCACHE MEMCONF_POWER_CONTROL_MEM7_Pos
 #define RAMBLOCK_POWER_ID           0
@@ -250,7 +250,7 @@ static void s2ram_exit(void)
 /* Function called during local domain suspend to RAM. */
 static int sys_suspend_to_ram(void)
 {
-	/* Set intormation which is used on domain wakeup to determine if resume from RAM shall
+	/* Set information which is used on domain wakeup to determine if resume from RAM shall
 	 * be performed.
 	 */
 	nrf_resetinfo_resetreas_local_set(NRF_RESETINFO,
@@ -268,7 +268,7 @@ static int sys_suspend_to_ram(void)
 	__DSB();
 	__WFI();
 	/*
-	 * We might reach this point is k_cpu_idle returns (there is a pre sleep hook that
+	 * We might reach this point if k_cpu_idle returns (there is a pre sleep hook that
 	 * can abort sleeping.
 	 */
 	return -EBUSY;
@@ -277,7 +277,7 @@ static int sys_suspend_to_ram(void)
 static void s2ram_enter(void)
 {
 	/*
-	 * Save the CPU context (including the return address),set the SRAM
+	 * Save the CPU context (including the return address), set the SRAM
 	 * marker and power off the system.
 	 */
 	if (soc_s2ram_suspend(sys_suspend_to_ram)) {

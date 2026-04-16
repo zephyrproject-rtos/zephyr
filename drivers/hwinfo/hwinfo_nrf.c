@@ -9,7 +9,7 @@
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 #if defined(CONFIG_BOARD_QEMU_CORTEX_M0) || \
-	(defined(CONFIG_NRF_PLATFORM_HALTIUM) && \
+	((defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)) && \
 	 defined(CONFIG_RISCV_CORE_NORDIC_VPR))
 #define RESET_CAUSE_AVAILABLE 0
 #else

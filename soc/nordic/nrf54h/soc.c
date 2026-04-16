@@ -22,7 +22,7 @@
 #include <hal/nrf_nfct.h>
 #include <lib/nrfx_coredep.h>
 #include <soc_lrcconf.h>
-#include <haltium_power.h>
+#include "soc_power.h"
 #include <dmm.h>
 
 #if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)

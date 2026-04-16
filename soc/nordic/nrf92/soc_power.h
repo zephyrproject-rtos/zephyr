@@ -4,11 +4,11 @@
  */
 
 /**
- * @file Common power.h include for Nordic Haltium SoCs.
+ * @file Common power management for Nordic nRF92 SoCs.
  */
 
-#ifndef _ZEPHYR_SOC_ARM_NORDIC_NRF_HALTIUM_POWER_H_
-#define _ZEPHYR_SOC_ARM_NORDIC_NRF_HALTIUM_POWER_H_
+#ifndef ZEPHYR_SOC_NORDIC_NRF92_SOC_POWER_H_
+#define ZEPHYR_SOC_NORDIC_NRF92_SOC_POWER_H_
 
 /**
  * @brief Power domain early init.
@@ -30,4 +30,4 @@ void nrf_poweroff(void);
 void nrf_power_up_cache(void);
 #endif /* defined(CONFIG_PM) || defined(CONFIG_POWEROFF) */
 
-#endif /* _ZEPHYR_SOC_ARM_NORDIC_NRF_HALTIUM_POWER_H_ */
+#endif /* ZEPHYR_SOC_NORDIC_NRF92_SOC_POWER_H_ */
