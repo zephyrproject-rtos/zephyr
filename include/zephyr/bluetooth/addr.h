@@ -139,6 +139,18 @@ static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
 	memcpy(dst, src, sizeof(*dst));
 }
 
+/** @brief Copy Bluetooth LE device address from Bluetooth device address and type.
+ *
+ *  @param dst Bluetooth LE device address destination buffer.
+ *  @param src Bluetooth device address source buffer.
+ *  @param src_type Bluetooth device address source type.
+ */
+static inline void bt_addr_le_copy_addr(bt_addr_le_t *dst, const bt_addr_t *src, uint8_t src_type)
+{
+	bt_addr_copy(&dst->a, src);
+	dst->type = src_type;
+}
+
 /** Check if a Bluetooth LE random address is resolvable private address. */
 #define BT_ADDR_IS_RPA(a)     (((a)->val[5] & 0xc0) == 0x40)
 /** Check if a Bluetooth LE random address is a non-resolvable private address.
