@@ -416,14 +416,13 @@ int main(void)
 
 		const struct {
 			const uint8_t h4;
-			const struct bt_hci_evt_hdr hdr;
+			const uint8_t evt;
+			const uint8_t len;
 			const struct bt_hci_evt_cmd_complete cc;
 		} __packed cc_evt = {
 			.h4 = H4_EVT,
-			.hdr = {
-				.evt = BT_HCI_EVT_CMD_COMPLETE,
-				.len = sizeof(struct bt_hci_evt_cmd_complete),
-			},
+			.evt = BT_HCI_EVT_CMD_COMPLETE,
+			.len = sizeof(struct bt_hci_evt_cmd_complete),
 			.cc = {
 				.ncmd = 1,
 				.opcode = sys_cpu_to_le16(BT_OP_NOP),
