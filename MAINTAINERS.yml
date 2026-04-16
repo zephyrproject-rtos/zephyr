@@ -212,7 +212,6 @@ ARM Platforms:
   status: maintained
   maintainers:
     - wearyzen
-  collaborators:
     - ithinuel
   files:
     - boards/arm/mps*/
@@ -247,10 +246,10 @@ ARM arch:
   status: maintained
   maintainers:
     - wearyzen
+    - ithinuel
   collaborators:
     - MaureenHelm
     - stephanosio
-    - ithinuel
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -5950,9 +5949,9 @@ West:
   status: maintained
   maintainers:
     - wearyzen
+    - ithinuel
   collaborators:
     - tomi-font
-    - ithinuel
   files:
     - modules/cmsis_6/
   labels:
@@ -6077,8 +6076,8 @@ West:
   maintainers:
     - kristofer-jonsson-arm
     - wearyzen
-  collaborators:
     - ithinuel
+  collaborators:
     - ccli8
     - johan-alfven-arm
   files:
@@ -6634,6 +6633,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
     - valeriosetti
     - JordanYates
   files: []
@@ -6657,6 +6657,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
     - valeriosetti
     - JordanYates
   files: []
@@ -6718,6 +6719,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
     - valeriosetti
     - JordanYates
   files:
