@@ -1119,6 +1119,8 @@
 		compatible = "nxp,kinetis-acmp";
 		reg = <0x20b000 0x1000>;
 		interrupts = <17 0>;
+		resets = <&rstctl3 NXP_SYSCON_RESET(9, 8)>;
+		clocks = <&clkctl3 MCUX_ACMP0_CLK>;
 		status = "disabled";
 	};
 

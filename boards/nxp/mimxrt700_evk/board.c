@@ -552,11 +552,6 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivI3c23Clk, 4U);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp))
-	CLOCK_EnableClock(kCLOCK_Acmp0);
-	RESET_ClearPeripheralReset(kACMP0_RST_SHIFT_RSTn);
-#endif
-
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pmc_tmpsns))
 	POWER_DisablePD(kPDRUNCFG_PD_PMC_TEMPSNS);
 	POWER_ApplyPD();

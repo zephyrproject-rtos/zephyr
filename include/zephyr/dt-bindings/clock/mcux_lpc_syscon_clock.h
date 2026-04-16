@@ -167,4 +167,6 @@
 /** WWDT1 peripheral clock identifier. */
 #define MCUX_WWDT1_CLK MCUX_LPC_CLK_ID(0x26, 0x01)
 
+#define MCUX_ACMP0_CLK MCUX_LPC_CLK_ID(0x27, 0x00)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */
