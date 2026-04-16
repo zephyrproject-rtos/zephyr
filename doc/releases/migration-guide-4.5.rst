@@ -77,6 +77,10 @@ Ethernet
   a pointer to :c:struct:`net_if`. This api is not directly exposed to the application, so only
   out-of-tree drivers need to be updated. (:github:`106086`)
 
+* The ``pinctrl-0`` and ``pinctrl-names`` devicetree properties for the
+  :dtcompatible:`nxp,enet-mac` need to be moved from the MAC node to the parent Ethernet controller
+  node. (:github:`107352`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
