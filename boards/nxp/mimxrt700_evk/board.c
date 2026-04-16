@@ -190,14 +190,10 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma0))
-	CLOCK_EnableClock(kCLOCK_Dma0);
-	RESET_ClearPeripheralReset(kDMA0_RST_SHIFT_RSTn);
 	edma_enable_all_request(0);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma1))
-	CLOCK_EnableClock(kCLOCK_Dma1);
-	RESET_ClearPeripheralReset(kDMA1_RST_SHIFT_RSTn);
 	edma_enable_all_request(1);
 #endif
 
