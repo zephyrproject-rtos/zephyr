@@ -777,6 +777,11 @@ The function reads from the shell transport until a newline character is receive
 storing the data in a provided buffer. The newline character itself is not included
 in the buffer. The buffer is automatically null-terminated on success.
 
+Use :c:func:`shell_readline_prompt_set` before calling :c:func:`shell_readline` to
+display a prompt string (e.g. ``"Proceed? [y/N]: "``). The prompt is printed
+automatically at the start of readline and restored after any log messages that
+interrupt the input line. It is cleared when :c:func:`shell_readline` returns.
+
 .. note::
 
    The :c:func:`shell_readline` function should be called from the shell thread in a
@@ -791,9 +796,8 @@ Example usage:
            uint8_t input_buf[256];
            int ret;
 
-           shell_fprintf_normal(sh, "Enter your secret: ");
-
            shell_obscure_set(sh, true);
+           shell_readline_prompt_set(sh, "Enter your secret: ");
            ret = shell_readline(sh, input_buf, sizeof(input_buf), K_SECONDS(10));
            shell_obscure_set(sh, false);
 
