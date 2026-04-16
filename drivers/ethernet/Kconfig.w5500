@@ -16,7 +16,7 @@ menuconfig ETH_W5500
 config ETH_W5500_RX_THREAD_STACK_SIZE
 	int "Stack size for internal incoming packet handler"
 	depends on ETH_W5500
-	default 800
+	default 1024
 	help
 	  Size of the stack used for internal thread which is ran for
 	  incoming packet processing.
