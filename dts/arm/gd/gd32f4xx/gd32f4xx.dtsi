@@ -11,6 +11,8 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/clock/gd32f4xx-clocks.h>
 #include <zephyr/dt-bindings/reset/gd32f4xx.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-sw.h>
 
 / {
 	chosen {
@@ -36,13 +38,19 @@
 
 	soc {
 		tcmsram0: memory@10000000 {
-			compatible = "arm,dtcm";
+			compatible = "zephyr,memory-region", "arm,dtcm";
 			reg = <0x10000000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "DTCM";
+			zephyr,memory-attr = <DT_MEM_SW_ALLOC_NON_CACHE>;
 		};
 
 		sram0: memory@20000000 {
-			compatible = "mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "SRAM";
+			zephyr,memory-attr = <(DT_MEM_DMA |
+					       DT_MEM_SW_ALLOC_NON_CACHE |
+					       DT_MEM_SW_ALLOC_DMA)>;
 		};
 
 		rcu: reset-clock-controller@40023800 {
