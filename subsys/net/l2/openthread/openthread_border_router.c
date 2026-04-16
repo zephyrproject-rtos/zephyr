@@ -344,6 +344,7 @@ static void ot_bbr_multicast_listener_handler(void *context,
 							   (const struct net_in6_addr *)&recv_addr);
 			if (mcast_addr != NULL) {
 				net_if_ipv6_maddr_join(ot_context->iface, mcast_addr);
+				net_if_mcast_monitor(ail_iface_ptr, &mcast_addr->address, true);
 			}
 		}
 	} else {
@@ -360,6 +361,7 @@ static void ot_bbr_multicast_listener_handler(void *context,
 			net_if_ipv6_maddr_leave(ot_context->iface, addr_to_del);
 			net_if_ipv6_maddr_rm(ot_context->iface,
 					     (const struct net_in6_addr *)&recv_addr);
+			net_if_mcast_monitor(ail_iface_ptr, &addr_to_del->address, false);
 		}
 	}
 }
