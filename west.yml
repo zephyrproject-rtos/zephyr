@@ -389,7 +389,7 @@ manifest:
       groups:
         - debug
     - name: tf-m-tests
-      revision: cde5b6ed540d3ff5a09564fded6b39b0a70ad3bf
+      revision: 42f0fb9250acdd62219a13b8d272072f94446b84
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - testing
