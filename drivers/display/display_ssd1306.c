@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1306_SET_START_LINE			0x40 /* No arguments, command is argument */
 #define SSD1306_SET_START_LINE_END		0x7f /* Command as argument end */
 #define SSD1306_SET_CONTRAST_CTRL		0x81 /* 1 byte args: Contrast */
+#define CH1115_SET_IREF_MODE			0x82 /* A[1:0]: current, A[2] 1: internal */
 #define SH1106_SET_DCDC_DISABLED		0x8a /* No arguments, command is argument */
 #define SH1106_SET_DCDC_ENABLED			0x8b /* No arguments, command is argument */
 #define SSD1306_SET_CHARGE_PUMP			0x8d /* 1 byte args: A[0]A[7] Volts A[2] Enable */
@@ -60,14 +61,13 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 /*
  * Configuration Constants
  */
-#define SSD1306_CLOCK_DIV_RATIO			0x0
-#define SSD1306_CLOCK_FREQUENCY			0x8
 #define SSD1306_PANEL_VCOM_DESEL_LEVEL		0x20
 #define SSD1306_PANEL_PUMP_VOLTAGE		SSD1306_SET_PUMP_VOLTAGE_90
 #define SSD1306_MEM_ADDRESSING_HORIZONTAL	0x00
 #define SSD1306_MEM_ADDRESSING_VERTICAL		0x01
 #define SSD1306_MEM_ADDRESSING_PAGE		0x02
 #define SSD1306_PANEL_VCOM_DESEL_LEVEL_SSD1309	0x34
+#define SSD1306_PANEL_VCOM_DESEL_LEVEL_SH1106	0x35
 #define SSD1306_PADS_HW_SEQUENTIAL		0x02
 #define SSD1306_PADS_HW_ALTERNATIVE		0x12
 #define SSD1306_PADS_HW_COM_FLIP_SEQUENTIAL	0x22
@@ -77,6 +77,11 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1306_IREF_MODE_EXTERNAL		0x00
 #define SSD1306_CHARGE_PUMP_DISABLED		0x10
 #define SSD1306_CHARGE_PUMP_ENABLED		0x14
+#define CH1115_IREF_MODE_EXTERNAL		0x00
+#define CH1115_IREF_MODE_INTERNAL_200UA		0x04
+#define CH1115_IREF_MODE_INTERNAL_300UA		0x05
+#define CH1115_IREF_MODE_INTERNAL_400UA		0x06
+#define CH1115_IREF_MODE_INTERNAL_500UA		0x07
 
 /*
  * Code Constants
@@ -110,6 +115,15 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1306_SET_START_LINE_MASK		0x3f
 #define SSD1306_SET_PAGE_START_ADDRESS_MASK	0x07
 
+enum ssd1306_compatible {
+	COMPATIBLE_SSD1306 = 0,
+	COMPATIBLE_SSD1309,
+	COMPATIBLE_SSD1315,
+	COMPATIBLE_SH1106,
+	COMPATIBLE_CH1115,
+	COMPATIBLE_MAX
+};
+
 union ssd1306_bus {
 	struct i2c_dt_spec i2c;
 	struct spi_dt_spec spi;
@@ -128,8 +142,10 @@ struct ssd1306_config {
 	ssd1306_bus_ready_fn bus_ready;
 	ssd1306_write_bus_fn write_bus;
 	ssd1306_bus_name_fn bus_name;
+	enum ssd1306_compatible compatible;
 	uint16_t height;
 	uint16_t width;
+	uint8_t oscillator_freq;
 	uint8_t segment_offset;
 	uint8_t page_offset;
 	uint8_t display_offset;
@@ -139,8 +155,6 @@ struct ssd1306_config {
 	bool com_invdir;
 	bool com_sequential;
 	bool color_inversion;
-	bool ssd1309_compatible;
-	bool sh1106_compatible;
 	int ready_time_ms;
 	bool use_internal_iref;
 };
@@ -151,8 +165,14 @@ struct ssd1306_data {
 };
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306b, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1315, i2c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1309, i2c) || \
-	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, i2c))
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1305, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1107, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(chipwealth_ch1115, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(chipwealth_ch1116, i2c))
 static bool ssd1306_bus_ready_i2c(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
@@ -179,8 +199,14 @@ static const char *ssd1306_bus_name_i2c(const struct device *dev)
 #endif
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306, spi) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306b, spi) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1315, spi) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1309, spi) || \
-	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, spi))
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1305, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, spi) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1107, spi) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(chipwealth_ch1115, spi) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(chipwealth_ch1116, spi))
 static bool ssd1306_bus_ready_spi(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
@@ -259,12 +285,9 @@ static inline int ssd1306_set_timing_setting(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {SSD1306_SET_CLOCK_DIV_RATIO,
-			     (SSD1306_CLOCK_FREQUENCY << 4) | SSD1306_CLOCK_DIV_RATIO,
+			     config->oscillator_freq,
 			     SSD1306_SET_CHARGE_PERIOD,
-			     config->prechargep,
-			     SSD1306_SET_VCOM_DESELECT_LEVEL,
-			     config->ssd1309_compatible ? SSD1306_PANEL_VCOM_DESEL_LEVEL_SSD1309 :
-				SSD1306_PANEL_VCOM_DESEL_LEVEL};
+			     config->prechargep};
 
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
@@ -286,33 +309,67 @@ static inline int ssd1306_set_hardware_config(const struct device *dev)
 	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 }
 
-static inline int ssd1306_set_charge_pump(const struct device *dev)
+static int ssd1306_set_power_settings(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
-	uint8_t cmd_buf[] = {
-		(config->sh1106_compatible ? SH1106_SET_DCDC_MODE : SSD1306_SET_CHARGE_PUMP),
-		(config->sh1106_compatible ? SH1106_SET_DCDC_ENABLED
-					   : SSD1306_CHARGE_PUMP_ENABLED),
-		SSD1306_PANEL_PUMP_VOLTAGE,
-	};
-
-	return ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
-}
-
-static inline int ssd1306_set_iref_mode(const struct device *dev)
-{
+	uint8_t cmd_buf[3];
 	int ret = 0;
-	const struct ssd1306_config *config = dev->config;
-	uint8_t cmd_buf[] = {
-		SSD1306_SET_IREF_MODE,
-		SSD1306_IREF_MODE_INTERNAL_30UA,
-	};
 
-	if (config->use_internal_iref) {
-		ret = ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
+	if (config->compatible == COMPATIBLE_SSD1306 || config->compatible == COMPATIBLE_SSD1315) {
+		cmd_buf[0] = SSD1306_SET_CHARGE_PUMP;
+		cmd_buf[1] = SSD1306_CHARGE_PUMP_ENABLED;
+		/* For legacy displays */
+		cmd_buf[2] = SSD1306_PANEL_PUMP_VOLTAGE;
+		ret = ssd1306_write_bus(dev, cmd_buf, 3, true);
+	} else if (config->compatible == COMPATIBLE_SH1106
+		   || config->compatible == COMPATIBLE_CH1115) {
+		cmd_buf[0] = SH1106_SET_DCDC_MODE;
+		cmd_buf[1] = SH1106_SET_DCDC_ENABLED;
+		ret = ssd1306_write_bus(dev, cmd_buf, 2, true);
+	}
+	if (ret != 0) {
+		LOG_ERR("Failed to apply charge pump settings: %d", ret);
+		return ret;
 	}
 
-	return ret;
+	if (config->compatible == COMPATIBLE_SSD1315) {
+		cmd_buf[0] = SSD1306_SET_IREF_MODE;
+		if (config->use_internal_iref) {
+			cmd_buf[1] = SSD1306_IREF_MODE_INTERNAL_19UA;
+		} else {
+			cmd_buf[1] = SSD1306_IREF_MODE_EXTERNAL;
+		}
+		ret = ssd1306_write_bus(dev, cmd_buf, 2, true);
+	} else if (config->compatible == COMPATIBLE_CH1115) {
+		cmd_buf[0] = CH1115_SET_IREF_MODE;
+		if (config->use_internal_iref) {
+			cmd_buf[1] = CH1115_IREF_MODE_INTERNAL_200UA;
+		} else {
+			cmd_buf[1] = CH1115_IREF_MODE_EXTERNAL;
+		}
+		ret = ssd1306_write_bus(dev, cmd_buf, 2, true);
+	}
+	if (ret != 0) {
+		LOG_ERR("Failed to apply current reference settings: %d", ret);
+		return ret;
+	}
+
+	cmd_buf[0] = SSD1306_SET_VCOM_DESELECT_LEVEL;
+	if (config->compatible == COMPATIBLE_SSD1309) {
+		cmd_buf[1] = SSD1306_PANEL_VCOM_DESEL_LEVEL_SSD1309;
+	} else if (config->compatible == COMPATIBLE_SH1106
+		   || config->compatible == COMPATIBLE_CH1115) {
+		cmd_buf[1] = SSD1306_PANEL_VCOM_DESEL_LEVEL_SH1106;
+	} else {
+		cmd_buf[1] = SSD1306_PANEL_VCOM_DESEL_LEVEL;
+	}
+	ret = ssd1306_write_bus(dev, cmd_buf, 2, true);
+	if (ret != 0) {
+		LOG_ERR("Failed to apply VCOM deselect level: %d", ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 static int ssd1306_resume(const struct device *dev)
@@ -449,7 +506,7 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 
-	if (config->sh1106_compatible) {
+	if (config->compatible == COMPATIBLE_SH1106 || config->compatible == COMPATIBLE_CH1115) {
 		return ssd1306_write_sh1106(dev, x, y, desc, (uint8_t *)buf, buf_len);
 	}
 
@@ -592,18 +649,9 @@ static int ssd1306_init_device(const struct device *dev)
 	}
 	data->orientation = DISPLAY_ORIENTATION_NORMAL;
 
-	if (!config->ssd1309_compatible) {
-		ret = ssd1306_set_charge_pump(dev);
-		if (ret < 0) {
-			LOG_ERR("Failed to apply charge pump settings: %d", ret);
-			return ret;
-		}
-
-		ret = ssd1306_set_iref_mode(dev);
-		if (ret < 0) {
-			LOG_ERR("Failed to set reference settings: %d", ret);
-			return ret;
-		}
+	ret = ssd1306_set_power_settings(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	ret = ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
@@ -690,13 +738,14 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 	.bus_name = ssd1306_bus_name_i2c,                                                          \
 	.data_cmd = {0},
 
-#define SSD1306_DEFINE(node_id)                                                                    \
+#define SSD1306_DEFINE(node_id, _compatible)                                                       \
 	static struct ssd1306_data data##node_id;                                                  \
 	static const struct ssd1306_config config##node_id = {                                     \
 		.reset = GPIO_DT_SPEC_GET_OR(node_id, reset_gpios, {0}),                           \
 		.supply = GPIO_DT_SPEC_GET_OR(node_id, supply_gpios, {0}),                         \
 		.height = DT_PROP(node_id, height),                                                \
 		.width = DT_PROP(node_id, width),                                                  \
+		.oscillator_freq = DT_PROP(node_id, oscillator_freq),                              \
 		.segment_offset = DT_PROP(node_id, segment_offset),                                \
 		.page_offset = DT_PROP(node_id, page_offset),                                      \
 		.display_offset = DT_PROP(node_id, display_offset),                                \
@@ -706,10 +755,9 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 		.com_sequential = DT_PROP(node_id, com_sequential),                                \
 		.prechargep = DT_PROP(node_id, prechargep),                                        \
 		.color_inversion = DT_PROP(node_id, inversion_on),                                 \
-		.ssd1309_compatible = DT_NODE_HAS_COMPAT(node_id, solomon_ssd1309),                \
-		.sh1106_compatible = DT_NODE_HAS_COMPAT(node_id, sinowealth_sh1106),               \
 		.ready_time_ms = DT_PROP(node_id, ready_time_ms),                                  \
 		.use_internal_iref = DT_PROP(node_id, use_internal_iref),                          \
+		.compatible = _compatible,                                                         \
 		COND_CODE_1(DT_ON_BUS(node_id, spi), (SSD1306_CONFIG_SPI(node_id)),                \
 			    (SSD1306_CONFIG_I2C(node_id)))                                         \
 	};                                                                                         \
@@ -717,6 +765,12 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 	DEVICE_DT_DEFINE(node_id, ssd1306_init, NULL, &data##node_id, &config##node_id,            \
 			 POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &ssd1306_driver_api);
 
-DT_FOREACH_STATUS_OKAY(solomon_ssd1306, SSD1306_DEFINE)
-DT_FOREACH_STATUS_OKAY(solomon_ssd1309, SSD1306_DEFINE)
-DT_FOREACH_STATUS_OKAY(sinowealth_sh1106, SSD1306_DEFINE)
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1306, SSD1306_DEFINE, COMPATIBLE_SSD1306)
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1306b, SSD1306_DEFINE, COMPATIBLE_SSD1315)
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1315, SSD1306_DEFINE, COMPATIBLE_SSD1315)
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1309, SSD1306_DEFINE, COMPATIBLE_SSD1309)
+DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1305, SSD1306_DEFINE, COMPATIBLE_SSD1309)
+DT_FOREACH_STATUS_OKAY_VARGS(sinowealth_sh1106, SSD1306_DEFINE, COMPATIBLE_SH1106)
+DT_FOREACH_STATUS_OKAY_VARGS(sinowealth_sh1107, SSD1306_DEFINE, COMPATIBLE_SH1106)
+DT_FOREACH_STATUS_OKAY_VARGS(chipwealth_ch1115, SSD1306_DEFINE, COMPATIBLE_CH1115)
+DT_FOREACH_STATUS_OKAY_VARGS(chipwealth_ch1116, SSD1306_DEFINE, COMPATIBLE_CH1115)
