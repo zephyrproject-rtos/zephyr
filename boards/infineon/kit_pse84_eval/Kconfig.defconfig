@@ -48,3 +48,12 @@ config MAIN_STACK_SIZE
 endif # BT
 
 endif # BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M33
+
+# The extended boot of PSE84 validates a 0x400-byte MCUBoot-format header
+# at the start of the first image. ROM_START_OFFSET reserves space in the
+# ELF for imgtool to write the header into during signing.
+# BOOTLOADER_MCUBOOT: app chain-loaded by MCUBoot (MCUBoot image header).
+# MCUBOOT: the MCUBoot bootloader itself (ext-boot image header).
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+	default 0x400 if MCUBOOT
