@@ -1142,7 +1142,7 @@ Demand Paging:
     - peter-mitsis
     - nashif
   files:
-    - subsys/demand_paging/
+    - subsys/mem_mgmt/demand_paging/
     - tests/kernel/mem_protect/demand_paging/
     - samples/subsys/demand_paging/
   tests:

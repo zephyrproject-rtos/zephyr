@@ -4,8 +4,8 @@
 menu "Demand Paging modules"
 	depends on DEMAND_PAGING
 
-source "subsys/demand_paging/eviction/Kconfig"
+rsource "eviction/Kconfig"
 
-source "subsys/demand_paging/backing_store/Kconfig"
+rsource "backing_store/Kconfig"
 
 endmenu
