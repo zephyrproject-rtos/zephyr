@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Rtone.
+ * Copyright (c) 2026, Ylhyra ehf.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,6 @@
 #include <gd/gd32f4xx/gd32f470.dtsi>
 
 &flash0 {
-	reg = <0x08000000 DT_SIZE_K(3072)>;
-	ranges = <0x0 0x08000000 DT_SIZE_K(3072)>;
+	reg = <0x08000000 DT_SIZE_K(1024)>;
+	ranges = <0x0 0x08000000 DT_SIZE_K(1024)>;
 };
