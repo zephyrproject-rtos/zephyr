@@ -1706,10 +1706,9 @@ static int adc_stm32_channel_setup(const struct device *dev,
 #endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION && CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 #ifdef CONFIG_SOC_SERIES_STM32H5X
-	if (adc == ADC1) {
-		if (channel_cfg->channel_id == 0) {
-			LL_ADC_EnableChannel0_GPIO(adc);
-		}
+	if (channel_cfg->channel_id == 0) {
+		/* To read channel 0 of either ADC on H5, Option bit 0 of ADC1 must be set. */
+		LL_ADC_EnableChannel0_GPIO(ADC1);
 	}
 #endif
 
