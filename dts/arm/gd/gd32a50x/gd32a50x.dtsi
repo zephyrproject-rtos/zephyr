@@ -34,7 +34,16 @@
 
 	soc {
 		sram0: memory@20000000 {
-			compatible = "mmio-sram";
+		};
+
+		/*
+		 * This shared RAM can be switched into a fast program buffer, so
+		 * keep it separate from the default sram0 region.
+		 */
+		sharedsram: memory@2000c000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x2000c000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "SHAREDSRAM";
 		};
 
 		rcu: reset-clock-controller@40021000 {
