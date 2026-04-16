@@ -140,6 +140,14 @@ config NRFX_GPPI_V1
 	help
 	  When enabled then legacy version of Generic PPI layer is used.
 
+config NRFX_GPPI_SD2PPI_GLOBAL
+	bool
+	depends on NRFX_GPPI && !NRFX_GPPI_V1
+	help
+	  Indicates GPPI implementation for SD^2PPI (Secure multi-Domain DPPI) architecture.
+	  SD^2PPI architecture is using multiple instances of DPPI controllers and Ironside service
+	  to configure the security and ownership of the PPI resources.
+
 config NRFX_GRTC
 	bool "GRTC driver"
 	depends on $(dt_nodelabel_exists,grtc)
