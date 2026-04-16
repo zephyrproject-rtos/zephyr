@@ -1,6 +1,13 @@
 # Copyright (c) 2026 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_NRF7120_ENGA_CPUFLPR
+
+config HAS_NORDIC_VPR_LAUNCHER_IMAGE
+	default y
+
+endif
+
 config SOC_NRF71_GENERATE_UICR
 	bool "Generate nRF71 UICR hex"
 	depends on SOC_SERIES_NRF71
