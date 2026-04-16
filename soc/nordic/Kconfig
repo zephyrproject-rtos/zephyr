@@ -219,7 +219,7 @@ endchoice
 config NRF_SKIP_CLOCK_CONFIG
 	bool
 	prompt "Skip clock frequency configuration" if TRUSTED_EXECUTION_SECURE
-	depends on NRF_PLATFORM_LUMOS
+	depends on SOC_SERIES_NRF54L || SOC_SERIES_NRF71
 	default y if TRUSTED_EXECUTION_NONSECURE
 	help
 	  With this option, the CPU clock frequency is not set during system initialization.
@@ -232,19 +232,5 @@ config NRF_TRACE_PORT
 	  Enable this option to initialize the TPIU (Trace Port Interface
 	  Unit) for tracing using a hardware probe. If disabled, the trace
 	  pins will be used as GPIO.
-
-config NRF_PLATFORM_HALTIUM
-	bool
-	help
-	  SoC series based on the Nordic nRF Haltium platform need to select
-	  this option. This allows to easily enable common functionality on
-	  SoCs based on the Haltium platform.
-
-config NRF_PLATFORM_LUMOS
-	bool
-	help
-	  SoC series based on the Nordic nRF Lumos platform such as nRF54Lx
-	  series. This allows to easily enable common functionality on
-	  SoCs based on the Lumos platform.
 
 endif # SOC_FAMILY_NORDIC_NRF
