@@ -1096,6 +1096,8 @@
 		compatible = "nxp,mipi-dbi-dcnano-lcdif";
 		reg = <0x480000 0x1000>;
 		interrupts = <56 0>;
+		resets = <&rstctl4 NXP_SYSCON_RESET(10, 3)>;
+		clocks = <&clkctl4 MCUX_LCDIF_CLK>;
 		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;

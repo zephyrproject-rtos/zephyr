@@ -6,8 +6,10 @@
 
 #define DT_DRV_COMPAT nxp_dcnano_lcdif
 
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -29,7 +31,10 @@ LOG_MODULE_REGISTER(display_mcux_dcnano_lcdif, CONFIG_DISPLAY_LOG_LEVEL);
 struct mcux_dcnano_lcdif_config {
 	LCDIF_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	const struct gpio_dt_spec backlight_gpio;
+	struct reset_dt_spec reset;
 	lcdif_dpi_config_t dpi_config;
 	/* Pointer to start of first framebuffer */
 	uint8_t *fb_ptr;
@@ -235,9 +240,33 @@ static int mcux_dcnano_lcdif_init(const struct device *dev)
 	struct mcux_dcnano_lcdif_data *data = dev->data;
 	int ret;
 
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	ret = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret) {
 		return ret;
+	}
+
+	if (config->reset.dev != NULL) {
+		if (!device_is_ready(config->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
+			return ret;
+		}
 	}
 
 	/* Convert pixel format from devicetree to the format used by HAL */
@@ -354,7 +383,13 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 	struct mcux_dcnano_lcdif_config mcux_dcnano_lcdif_config_##n = {	\
 		.base = (LCDIF_Type *) DT_INST_REG_ADDR(n),			\
 		.irq_config_func = mcux_dcnano_lcdif_config_func_##n,		\
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),	\
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),	\
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),	\
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),	\
+			((clock_control_subsys_t)0U)),				\
 		.backlight_gpio = GPIO_DT_SPEC_INST_GET(n, backlight_gpios),	\
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
 		.dpi_config = {							\
 			.panelWidth = DT_INST_PROP(n, width),			\
 			.panelHeight = DT_INST_PROP(n, height),			\
