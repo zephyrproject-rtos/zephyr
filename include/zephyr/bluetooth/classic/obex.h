@@ -481,11 +481,6 @@ enum __packed bt_obex_state {
 	BT_OBEX_DISCONNECTING,
 };
 
-/* bt_obex flags */
-enum {
-	BT_OBEX_HAS_TARGET, /* Has target_header */
-};
-
 union bt_obex_uuid {
 	struct bt_uuid uuid;
 	struct bt_uuid_16 u16;
