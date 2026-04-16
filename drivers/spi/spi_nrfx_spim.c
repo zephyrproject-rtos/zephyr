@@ -77,9 +77,6 @@ static void transfer_start(const struct device *dev)
 		transfer_end(dev, ret);
 		return;
 	}
-
-	spi_context_update_tx(&dev_data->ctx, 1, chunk_len);
-	spi_context_update_rx(&dev_data->ctx, 1, chunk_len);
 }
 
 static void spim_wake_handler(const struct device *dev)
@@ -91,7 +88,12 @@ static void spim_wake_handler(const struct device *dev)
 
 static void spim_evt_handler(const struct device *dev, nrfx_spim_event_t *evt)
 {
+	struct driver_data *dev_data = dev->data;
+	uint32_t len = MAX(evt->xfer_desc.tx_length, evt->xfer_desc.rx_length);
+
 	spi_nrfx_spim_common_transfer_end(dev, &evt->xfer_desc);
+	spi_context_update_tx(&dev_data->ctx, 1, len);
+	spi_context_update_rx(&dev_data->ctx, 1, len);
 	transfer_start(dev);
 }
 
