@@ -160,7 +160,7 @@ static int rtc_renesas_ra_init(const struct device *dev)
 		R_RTC_ClockSourceSet(&data->fsp_ctrl);
 	}
 #else
-	if (R_BSP_ResetStatusGet() & BSP_RESET_TYPE_POR) {
+	if (!(R_BSP_ResetStatusGet() & BSP_RESET_TYPE_WARM)) {
 		R_RTC_ClockSourceSet(&data->fsp_ctrl);
 	}
 #endif /* CONFIG_RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE */
