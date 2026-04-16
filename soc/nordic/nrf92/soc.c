@@ -21,7 +21,7 @@
 #include <hal/nrf_memconf.h>
 #include <lib/nrfx_coredep.h>
 #include <soc_lrcconf.h>
-#include <haltium_power.h>
+#include "soc_power.h"
 #include <dmm.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);

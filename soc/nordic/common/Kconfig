@@ -19,7 +19,7 @@ config NRF_FORCE_RAM_ON_REBOOT
 
 config NRF_SYS_EVENT
 	bool "nRF system event support"
-	select NRFX_POWER if !NRF_PLATFORM_HALTIUM
+	select NRFX_POWER if !SOC_SERIES_NRF54H && !SOC_SERIES_NRF92
 
 if NRF_SYS_EVENT
 
