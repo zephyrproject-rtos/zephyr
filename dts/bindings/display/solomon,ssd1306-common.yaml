@@ -39,7 +39,7 @@ properties:
   prechargep:
     type: int
     required: true
-    description: Duration of the pre-charge period
+    description: Duration of the pre-charge periods. Typically 0x22 at reset.
 
   reset-gpios:
     type: phandle-array
@@ -70,3 +70,10 @@ properties:
     type: boolean
     description: |
       Send a reset command on startup, if no reset GPIO pin is connected.
+
+  oscillator-freq:
+    type: int
+    default: 0x80
+    description: Front clock divider (3:0) / oscillator frequency (7:4). It can be set to 0x0.
+      The default is the SSD1306 reset value, which is compatible with most displays.
+      However sinowealth and chipwealth compatibles prefer a 0x50 default.
