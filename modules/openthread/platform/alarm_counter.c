@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <openthread/platform/alarm-milli.h>
 #include <openthread/platform/alarm-micro.h>
+#include <openthread/platform/radio.h>
 #include <openthread-system.h>
 
 #include "platform-zephyr.h"
@@ -28,7 +29,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 void alarm_milli_set_time_offset_ms(int32_t offset_ms);
 
 static bool timer_us_fired;
+#if defined(CONFIG_OPENTHREAD_PLATFORM_PKT_TXTIME)
 static int32_t time_offset_us;
+#endif
 
 /* Wrap logic: split delays longer than one counter period into multiple alarms */
 typedef struct wrap_timer_data wrap_timer_data_t;
