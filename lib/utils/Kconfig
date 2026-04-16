@@ -93,7 +93,6 @@ config UTF8
 
 config COBS
 	bool "Consistent overhead byte stuffing"
-	select NET_BUF
 	help
 	  Enable consistent overhead byte stuffing
 
