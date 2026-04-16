@@ -1251,6 +1251,7 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 		return ret;
 	}
 
+	dev_data->hmspi.xspi.Instance = (XSPI_TypeDef *)dev_data->phys_addr;
 	(void)pm_device_runtime_get(spec->bus);
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -1365,12 +1366,34 @@ static int mspi_stm32_init(const struct device *controller)
 	return mspi_stm32_xspi_config(&spec);
 }
 
+#if defined(CONFIG_MSPI_TIMING)
+static int mspi_stm32_timing_config(const struct device *dev,
+				    const struct mspi_dev_id *dev_id,
+				    const uint32_t param_mask, void *cfg)
+{
+	struct mspi_stm32_data *dev_data = dev->data;
+	struct mspi_stm32_timing_cfg *config = cfg;
+
+	if (config->turnaround_cycles != 0) {
+		/* Required for PSRAM where tx_dummy = total latency (WLC),
+		 * while STM32 XSPI expects dummy cycles excluding turnaround.
+		 */
+		dev_data->dev_cfg.tx_dummy = dev_data->dev_cfg.tx_dummy - config->turnaround_cycles;
+	}
+
+	return 0;
+}
+#endif /* defined(CONFIG_MSPI_TIMING) */
+
 static DEVICE_API(mspi, mspi_stm32_driver_api) = {
 	.config = mspi_stm32_xspi_config,
 	.dev_config = mspi_stm32_xspi_dev_config,
 	.xip_config = mspi_stm32_xspi_xip_config,
 	.get_channel_status = mspi_stm32_xspi_get_channel_status,
 	.transceive = mspi_stm32_xspi_transceive,
+#if defined(CONFIG_MSPI_TIMING)
+	.timing_config = mspi_stm32_timing_config,
+#endif
 };
 
 #ifdef CONFIG_PM_DEVICE
@@ -1416,7 +1439,7 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 #define XSPI_DMA_CHANNEL_INIT(node, dir, dir_cap, src_dev, dest_dev)                              \
 	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                                 \
 	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                      \
-	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(node, dmas, dir)),                   \
+	.phys_addr = DT_REG_ADDR(DT_DMAS_CTLR(node)),                                              \
 	.cfg = {                                                                                  \
 		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),                                \
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(DMA_CHANNEL_CONFIG(node, dir)),   \
@@ -1474,8 +1497,8 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 		.dma_specified = DT_INST_NODE_HAS_PROP(index, dmas),                              \
 	};                                                                                        \
 	static struct mspi_stm32_data mspi_stm32_dev_data_##index = {                             \
+		.phys_addr = DT_INST_REG_ADDR(index),                                             \
 		.hmspi.xspi = {                                                                   \
-			.Instance = (XSPI_TypeDef *)DT_INST_REG_ADDR(index),                      \
 			.Init = {                                                                 \
 				.FifoThresholdByte = MSPI_STM32_FIFO_THRESHOLD,                   \
 				.SampleShifting =                                                 \
