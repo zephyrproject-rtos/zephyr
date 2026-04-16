@@ -7,8 +7,7 @@
 #define DT_DRV_COMPAT nordic_nrf_spim
 
 #include "spi_nrfx_spim_common.h"
-
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 
 LOG_MODULE_DECLARE(spi_nrfx_spim);
 
