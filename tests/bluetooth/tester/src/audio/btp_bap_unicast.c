@@ -556,6 +556,7 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 	LOG_DBG("Configured stream %p, ep %u, dir %u", stream, info.id, info.dir);
 
 	u_stream->conn_id = bt_conn_index(stream->conn);
+	u_stream->ase_id = info.id;
 	u_conn = &connections[u_stream->conn_id];
 
 	stream_state_changed(stream);
@@ -1937,16 +1938,13 @@ struct btp_bap_unicast_connection *btp_bap_unicast_conn_get(size_t conn_index)
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	struct btp_bap_unicast_connection *u_conn;
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		LOG_DBG("Failed to connect to %s (%u)", addr, err);
+		LOG_DBG("Failed to connect to %s (%u)", bt_conn_dst_str(conn), err);
 		return;
 	}
 
-	LOG_DBG("Connected: %s", addr);
+	LOG_DBG("Connected: %s", bt_conn_dst_str(conn));
 
 	u_conn = &connections[bt_conn_index(conn)];
 	memset(u_conn, 0, sizeof(*u_conn));
@@ -1955,11 +1953,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr, reason);
+	LOG_DBG("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn), reason);
 }
 
 static struct bt_conn_cb conn_callbacks = {

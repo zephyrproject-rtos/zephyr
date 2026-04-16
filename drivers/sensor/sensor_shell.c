@@ -148,6 +148,7 @@ static const char *const sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_BATCH_DURATION] = "batch_dur",
 	[SENSOR_ATTR_GAIN] = "gain",
 	[SENSOR_ATTR_RESOLUTION] = "resolution",
+	[SENSOR_ATTR_CHIP_ID] = "chip_id",
 };
 
 enum sample_stats_state {
@@ -677,7 +678,7 @@ static void cmd_sensor_attr_get_handler(const struct shell *sh, const struct dev
 		parse_named_int(channel_name, sensor_channel_name, ARRAY_SIZE(sensor_channel_name));
 	int attr = parse_named_int(attr_name, sensor_attribute_name,
 				   ARRAY_SIZE(sensor_attribute_name));
-	struct sensor_value value = {0};
+	struct sensor_value value[3] = {{0}, {0}, {0}};
 	int rc;
 
 	if (channel < 0) {
@@ -689,7 +690,7 @@ static void cmd_sensor_attr_get_handler(const struct shell *sh, const struct dev
 		return;
 	}
 
-	rc = sensor_attr_get(dev, channel, attr, &value);
+	rc = sensor_attr_get(dev, channel, attr, &value[0]);
 
 	if (rc != 0) {
 		if (rc == -EINVAL && !print_missing_attribute) {
@@ -700,9 +701,11 @@ static void cmd_sensor_attr_get_handler(const struct shell *sh, const struct dev
 		return;
 	}
 
-	shell_info(sh, "%s(channel=%s, attr=%s) value=%.6f", dev->name,
+	shell_info(sh, "%s(channel=%s, attr=%s) value=%.6f value=%.6f value=%.6f", dev->name,
 		   sensor_channel_name[channel], sensor_attribute_name[attr],
-		   sensor_value_to_double(&value));
+		   sensor_value_to_double(&value[0]),
+		   sensor_value_to_double(&value[1]),
+		   sensor_value_to_double(&value[2]));
 }
 
 static int cmd_sensor_attr_get(const struct shell *sh, size_t argc, char *argv[])

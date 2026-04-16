@@ -33,3 +33,7 @@ endif()
 if(SB_CONFIG_NRF_HALTIUM_GENERATE_UICR)
   include(${CMAKE_CURRENT_LIST_DIR}/common/uicr/sysbuild.cmake)
 endif()
+
+if(SB_CONFIG_SOC_NRF71_GENERATE_UICR)
+  include(${CMAKE_CURRENT_LIST_DIR}/nrf71/uicr/sysbuild.cmake)
+endif()

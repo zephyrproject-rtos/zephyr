@@ -16,8 +16,10 @@ supported:
   - clock_control
   - dma
   - gpio
+  - hwinfo
   - pinctrl
   - uart
   - spi
   - i2s
   - watchdog
+  - comparator

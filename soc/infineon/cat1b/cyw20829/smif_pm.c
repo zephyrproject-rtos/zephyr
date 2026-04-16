@@ -144,12 +144,21 @@ static void smif_enable(void)
 static int is_memory_ready(cy_stc_smif_mem_config_t const *mem_config)
 {
 	bool ret;
+	uint32_t retries = 0;
 
-	ret = WAIT_FOR(!Cy_SMIF_Memslot_IsBusy(SMIF_HW, (cy_stc_smif_mem_config_t *)mem_config,
-						&smif_context),
-		       MEMORY_BUSY_CHECK_RETRIES * 15, Cy_SysLib_DelayUs(15));
+	/* Not using WAIT_FOR macro here because it relies on kernel functions
+	 * that reside in flash memory. This function uses PDL functions that
+	 * are located in RAM, ensuring safe execution during flash operations.
+	 */
+	do {
+		ret =
+			Cy_SMIF_Memslot_IsBusy(SMIF_HW, (cy_stc_smif_mem_config_t *)mem_config,
+									&smif_context);
+		Cy_SysLib_DelayUs(15);
+		retries++;
+	} while (ret && (retries < MEMORY_BUSY_CHECK_RETRIES));
 
-	return ret ? 0 : -ETIMEDOUT;
+	return ret ? -ETIMEDOUT : 0;
 }
 
 /**

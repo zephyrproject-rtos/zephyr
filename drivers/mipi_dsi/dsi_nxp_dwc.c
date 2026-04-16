@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,11 +48,7 @@ static int dsi_dwc_attach(const struct device *dev, uint8_t channel,
 	dsi_dphy_config_t dphy_config;
 	dsi_config_t dsi_config;
 	dsi_dpi_config_t dpi_config = config->dpi_config;
-	dsi_command_config_t command_config = config->command_config;
 	uint32_t phy_hsfreqrange;
-	uint32_t m;
-	uint32_t n;
-	uint32_t vco_freq;
 
 	DSI_GetDefaultConfig(&dsi_config);
 	dphy_config.numLanes = mdev->data_lanes;
@@ -69,8 +65,12 @@ static int dsi_dwc_attach(const struct device *dev, uint8_t channel,
 
 	DSI_SetDpiConfig(base, &dpi_config, mdev->data_lanes);
 
-#if CONFIG_SOC_MIMX9352_A55
+#if defined(CONFIG_SOC_MIMX9352_A55) || defined(CONFIG_SOC_MIMX9352_M33)
+	uint32_t m;
+	uint32_t n;
+	uint32_t vco_freq;
 	uint32_t phyByteClkFreq_Hz = config->data_rate_clock * mdev->data_lanes / 8;
+	dsi_command_config_t command_config = config->command_config;
 
 	DSI_SetCommandModeConfig(base, &command_config, phyByteClkFreq_Hz);
 
@@ -104,6 +104,7 @@ static int dsi_dwc_attach(const struct device *dev, uint8_t channel,
 				 mdev->data_lanes);
 	DSI_InitDphy(base, &dphy_config);
 	phy_hsfreqrange = Pll_Set_Hs_Freqrange(config->data_rate_clock);
+
 #if CONFIG_SOC_MIMX9596_M7
 	CAMERA__DSI_OR_CSI_PHY_CSR->COMBO_PHY_FREQ_CONTROL =
 		CAMERA_DSI_OR_CSI_PHY_CSR_COMBO_PHY_FREQ_CONTROL_Phy_hsfreqrange(phy_hsfreqrange) |
@@ -118,7 +119,7 @@ static int dsi_dwc_attach(const struct device *dev, uint8_t channel,
 	DSI_ConfigDphy(base, config->dphy_ref_frequency, config->data_rate_clock);
 #endif
 
-#if CONFIG_SOC_MIMX9352_A55
+#if defined(CONFIG_SOC_MIMX9352_A55) || defined(CONFIG_SOC_MIMX9352_M33)
 	BLK_CTRL_MEDIAMIX->MIPI.DSI = MEDIAMIX_BLK_CTRL_DSI_updatepll(1) |
 				      MEDIAMIX_BLK_CTRL_DSI_HSFREQRANGE(phy_hsfreqrange) |
 				      MEDIAMIX_BLK_CTRL_DSI_CLKSEL(1) |

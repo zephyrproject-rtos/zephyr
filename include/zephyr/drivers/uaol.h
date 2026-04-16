@@ -85,9 +85,7 @@ __subsystem struct uaol_driver_api {
  */
 static inline int uaol_config(const struct device *dev, int stream, struct uaol_config *cfg)
 {
-	const struct uaol_driver_api *api = dev->api;
-
-	return api->config(dev, stream, cfg);
+	return DEVICE_API_GET(uaol, dev)->config(dev, stream, cfg);
 }
 
 /**
@@ -100,9 +98,7 @@ static inline int uaol_config(const struct device *dev, int stream, struct uaol_
  */
 static inline int uaol_start(const struct device *dev, int stream)
 {
-	const struct uaol_driver_api *api = dev->api;
-
-	return api->start(dev, stream);
+	return DEVICE_API_GET(uaol, dev)->start(dev, stream);
 }
 
 /**
@@ -115,9 +111,7 @@ static inline int uaol_start(const struct device *dev, int stream)
  */
 static inline int uaol_stop(const struct device *dev, int stream)
 {
-	const struct uaol_driver_api *api = dev->api;
-
-	return api->stop(dev, stream);
+	return DEVICE_API_GET(uaol, dev)->stop(dev, stream);
 }
 
 /**
@@ -133,9 +127,7 @@ static inline int uaol_stop(const struct device *dev, int stream)
 static inline int uaol_program_ep_table(const struct device *dev, int stream,
 					struct uaol_ep_table_entry entry, bool valid)
 {
-	const struct uaol_driver_api *api = dev->api;
-
-	return api->program_ep_table(dev, stream, entry, valid);
+	return DEVICE_API_GET(uaol, dev)->program_ep_table(dev, stream, entry, valid);
 }
 
 /**
@@ -148,9 +140,7 @@ static inline int uaol_program_ep_table(const struct device *dev, int stream,
  */
 static inline int uaol_get_capabilities(const struct device *dev, struct uaol_capabilities *caps)
 {
-	const struct uaol_driver_api *api = dev->api;
-
-	return api->get_capabilities(dev, caps);
+	return DEVICE_API_GET(uaol, dev)->get_capabilities(dev, caps);
 }
 
 /**

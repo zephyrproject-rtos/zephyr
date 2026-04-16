@@ -185,3 +185,7 @@ stm32_lp_tick_source: &lptim1 {
 &vref {
 	status = "okay";
 };
+
+&crc {
+	status = "okay";
+};

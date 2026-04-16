@@ -1,0 +1,22 @@
+common:
+  tags: lora
+  depends_on: lora
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "<inf> lora_duty_cycle: RX duty cycle started"
+sample:
+  description: Demonstration of LoRa RX duty cycle (wake-on-radio)
+  name: LoRa Duty Cycle Sample
+tests:
+  sample.driver.lora.duty_cycle.native:
+    build_only: true
+    extra_args:
+      - SHIELD=semtech_sx1261mb2bas
+    platform_allow:
+      - nrf52840dk/nrf52840
+  sample.driver.lora.duty_cycle.native.stm32wl:
+    build_only: true
+    integration_platforms:
+      - nucleo_wl55jc

@@ -334,23 +334,29 @@ static int set_mapping(uint64_t *top_table, uintptr_t virt, size_t size,
 			continue;
 		}
 
-		if (!may_overwrite && !is_free_desc(*pte)) {
-			/* the entry is already allocated */
-			LOG_ERR("entry already in use: "
-				"level %d pte %p *pte 0x%016llx",
-				level, pte, *pte);
-			return -EBUSY;
-		}
-
 		level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
 
+		/*
+		 * Check for an existing mapping with identical attributes
+		 * before rejecting a non-free entry. This makes set_mapping()
+		 * idempotent: re-mapping a region with the same physical
+		 * address and attributes is a no-op. This is needed when both
+		 * boot-time mmu_regions and device_map() identity-map the
+		 * same device address.
+		 */
 		if (is_desc_superset(*pte, desc, level)) {
-			/* This block already covers our range */
 			level_size -= (virt & (level_size - 1));
 			if (level_size > size) {
 				level_size = size;
 			}
 			goto move_on;
+		}
+
+		if (!may_overwrite && !is_free_desc(*pte)) {
+			LOG_ERR("entry already in use: "
+				"level %d pte %p *pte 0x%016llx",
+				level, pte, *pte);
+			return -EBUSY;
 		}
 
 		if ((size < level_size) || (virt & (level_size - 1)) ||
@@ -957,11 +963,16 @@ static uint64_t get_tcr(int el)
 
 	/*
 	 * Translation table walk is cacheable, inner/outer WBWA and
-	 * inner shareable.  Due to Cortex-A57 erratum #822227 we must
-	 * set TG1[1] = 4KB.
+	 * inner shareable.
 	 */
-	tcr |= TCR_TG1_4K | TCR_TG0_4K | TCR_SHARED_INNER |
-	       TCR_ORGN_WBWA | TCR_IRGN_WBWA;
+#if defined(CONFIG_ARM64_PAGE_SIZE_64KB)
+	tcr |= TCR_TG1_64K | TCR_TG0_64K;
+#elif defined(CONFIG_ARM64_PAGE_SIZE_16KB)
+	tcr |= TCR_TG1_16K | TCR_TG0_16K;
+#else
+	tcr |= TCR_TG1_4K | TCR_TG0_4K;
+#endif
+	tcr |= TCR_SHARED_INNER | TCR_ORGN_WBWA | TCR_IRGN_WBWA;
 
 	return tcr;
 }
@@ -1015,9 +1026,6 @@ __attribute__((target("branch-protection=none")))
 void z_arm64_mm_init(bool is_primary_core)
 {
 	unsigned int flags = 0U;
-
-	__ASSERT(CONFIG_MMU_PAGE_SIZE == KB(4),
-		 "Only 4K page size is supported\n");
 
 	__ASSERT(GET_EL(read_currentel()) == MODE_EL1,
 		 "Exception level not EL1, MMU not enabled!\n");

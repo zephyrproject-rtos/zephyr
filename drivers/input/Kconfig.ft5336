@@ -29,4 +29,13 @@ config INPUT_FT5336_INTERRUPT
 	help
 	  Enable interrupt support (requires GPIO).
 
+config INPUT_FT5336_PM_MODE_MONITOR
+	bool "Use monitor mode for PM suspend"
+	depends on PM_DEVICE
+	help
+	  Use monitor mode for PM suspend. Monitor mode reduces
+	  scan rate to 25fps and auto-wakes on touch detection.
+	  If disabled, hibernate mode is used which requires a
+	  hardware reset to wake (reset-gpios must be defined).
+
 endif # INPUT_FT5336

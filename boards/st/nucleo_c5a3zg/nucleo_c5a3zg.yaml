@@ -12,6 +12,7 @@ supported:
   - arduino_serial
   - arduino_spi
   - counter
+  - dac
   - dma
   - gpio
   - i2c
@@ -19,6 +20,7 @@ supported:
   - rtc
   - spi
   - uart
+  - usbd
   - watchdog
 ram: 256
 flash: 1024

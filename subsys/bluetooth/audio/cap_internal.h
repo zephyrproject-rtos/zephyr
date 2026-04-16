@@ -97,7 +97,7 @@ struct bt_cap_initiator_proc_param {
 		struct {
 			struct bt_conn *conn;
 			struct bt_bap_ep *ep;
-			struct bt_audio_codec_cfg *codec_cfg;
+			const struct bt_audio_codec_cfg *codec_cfg;
 			bool connected;
 		} start;
 		struct {

@@ -13,13 +13,46 @@ from a resource.
 This demo assumes that the platform of choice has networking support,
 some adjustments to the configuration may be needed.
 
-This sample will make a GET request with path 'test' to the IPv6
-multicast address reserved for CoAP nodes, so the URI can be
-represented as:
+This sample connects to a CoAP server selected with
+``CONFIG_NET_SAMPLE_COAP_CLIENT_PEER``. The peer value may be an IPv4
+literal, an IPv6 literal, or a hostname. If the port is omitted, the
+sample uses the default CoAP port 5683.
+
+With the default configuration, the URI can be represented as:
 
 .. code-block:: none
 
-    coap://[ff02::fd]:5683/test
+    coap://[2001:db8::1]:5683/test
+
+Other valid peer strings include:
+
+.. code-block:: none
+
+    192.0.2.1:5683
+    192.0.2.42
+    [2001:db8::1]:5683
+    [2001:db8::2]
+    example.com:5683
+    example.com
+
+Optional reply timeout and block-wise retry behavior can be configured
+with ``CONFIG_NET_SAMPLE_COAP_CLIENT_REPLY_TIMEOUT_MS`` and
+``CONFIG_NET_SAMPLE_COAP_CLIENT_BLOCKWISE_MAX_RETRIES``.
+
+For example, an IPv4 peer endpoint can be set with:
+
+.. code-block:: none
+
+    CONFIG_NET_SAMPLE_COAP_CLIENT_PEER="192.0.2.1:5683"
+
+For hostname-based testing with DNS enabled:
+
+.. code-block:: none
+
+    CONFIG_NET_SAMPLE_COAP_CLIENT_PEER="example.com:5683"
+
+See :ref: ``coap_sample_server.py`` in ``net-tools\coap-test-server\`` for a simple helper server that can
+be used for manual interoperability testing.
 
 Building and Running
 ********************
@@ -28,6 +61,8 @@ This project will print all the octets of the response received, more context ca
 be obtained by using a tool such as tcpdump or wireshark.
 
 See the `net-tools`_ project for more details.
+
+See the ``net-tools\coap-test-server\README.md`` project for more details about test server script.
 
 This sample can be built and executed on QEMU or native_sim board as described
 in :ref:`networking_with_host`.

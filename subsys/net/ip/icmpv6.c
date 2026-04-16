@@ -113,6 +113,7 @@ static enum net_verdict icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 {
 	struct net_pkt *reply = NULL;
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
+	struct net_if *iface = net_pkt_iface(pkt);
 	struct net_in6_addr req_src, req_dst;
 	const struct net_in6_addr *src;
 	struct net_pkt_cursor backup;
@@ -137,7 +138,7 @@ static enum net_verdict icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	reply = net_pkt_alloc_with_buffer(net_pkt_iface(pkt), payload_len,
+	reply = net_pkt_alloc_with_buffer(iface, payload_len,
 					  NET_AF_INET6, NET_IPPROTO_ICMPV6,
 					  PKT_WAIT_TIME);
 	if (!reply) {
@@ -146,8 +147,7 @@ static enum net_verdict icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 	}
 
 	if (net_ipv6_is_addr_mcast_raw(ip_hdr->dst)) {
-		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						  &req_src);
+		src = net_if_ipv6_select_src_addr(iface, &req_src);
 
 		if (net_ipv6_is_addr_unspecified(src)) {
 			NET_DBG("DROP: No src address match");
@@ -189,7 +189,7 @@ static enum net_verdict icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(reply));
+	net_stats_update_icmp_sent(iface);
 
 	net_pkt_cursor_restore(pkt, &backup);
 	return NET_CONTINUE;
@@ -199,7 +199,7 @@ drop:
 		net_pkt_unref(reply);
 	}
 
-	net_stats_update_icmp_drop(net_pkt_iface(pkt));
+	net_stats_update_icmp_drop(iface);
 
 	return NET_DROP;
 }
@@ -209,6 +209,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	int err = -EIO;
+	struct net_if *iface = net_pkt_iface(orig);
 	struct net_in6_addr orig_src, orig_dst;
 	struct net_ipv6_hdr *ip_hdr;
 	const struct net_in6_addr *src;
@@ -228,7 +229,11 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 						      struct net_icmp_hdr);
 		struct net_icmp_hdr *icmp_hdr;
 
-		net_pkt_acknowledge_data(orig, &ipv6_access);
+		ret = net_pkt_acknowledge_data(orig, &ipv6_access);
+		if (ret < 0) {
+			err = ret;
+			goto drop_no_pkt;
+		}
 
 		icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(
 							orig, &icmpv6_access);
@@ -254,7 +259,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 		copy_len = net_pkt_get_len(orig);
 	}
 
-	pkt = net_pkt_alloc_with_buffer(net_pkt_iface(orig),
+	pkt = net_pkt_alloc_with_buffer(iface,
 					net_pkt_lladdr_src(orig)->len * 2 +
 					copy_len + NET_ICMPV6_UNUSED_LEN,
 					NET_AF_INET6, NET_IPPROTO_ICMPV6,
@@ -306,8 +311,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
 
 	if (net_ipv6_is_addr_mcast_raw(ip_hdr->dst)) {
-		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						  &orig_dst);
+		src = net_if_ipv6_select_src_addr(iface, &orig_dst);
 	} else {
 		src = &orig_dst;
 	}
@@ -343,7 +347,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
 		net_sprint_ipv6_addr(&orig_src));
 
 	if (net_try_send_data(pkt, K_NO_WAIT) >= 0) {
-		net_stats_update_icmp_sent(net_pkt_iface(pkt));
+		net_stats_update_icmp_sent(iface);
 		return 0;
 	}
 
@@ -351,7 +355,7 @@ drop:
 	net_pkt_unref(pkt);
 
 drop_no_pkt:
-	net_stats_update_icmp_drop(net_pkt_iface(orig));
+	net_stats_update_icmp_drop(iface);
 
 	return err;
 }
@@ -363,6 +367,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
 	enum net_verdict verdict;
+	int ret;
 
 	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
@@ -374,7 +379,6 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV6_ICMP) ||
 	    net_pkt_is_ip_reassembled(pkt)) {
 		uint16_t chksum = 0;
-		int ret;
 
 		ret = net_calc_chksum_icmpv6(pkt, &chksum);
 		if (ret < 0 || chksum != 0U) {
@@ -383,7 +387,11 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 		}
 	}
 
-	net_pkt_acknowledge_data(pkt, &icmp_access);
+	ret = net_pkt_acknowledge_data(pkt, &icmp_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	NET_DBG("ICMPv6 %s received type %d code %d",
 		net_icmpv6_type2str(icmp_hdr->type),

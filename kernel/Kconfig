@@ -122,41 +122,6 @@ config SCHED_DEADLINE
 	  single priority will choose the next expiring deadline and
 	  not simply the least recently added thread.
 
-config SCHED_CPU_MASK
-	bool "CPU mask affinity/pinning API"
-	depends on SCHED_SIMPLE
-	help
-	  When true, the application will have access to the
-	  k_thread_cpu_mask_*() APIs which control per-CPU affinity masks in
-	  SMP mode, allowing applications to pin threads to specific CPUs or
-	  disallow threads from running on given CPUs.  Note that as currently
-	  implemented, this involves an inherent O(N) scaling in the number of
-	  idle-but-runnable threads, and thus works only with the simple
-	  scheduler (as SCALABLE and MULTIQ would see no benefit).
-
-	  Note that this setting does not technically depend on SMP and is
-	  implemented without it for testing purposes, but for obvious reasons
-	  makes sense as an application API only where there is more than one
-	  CPU.  With one CPU, it's just a higher overhead version of
-	  k_thread_start/stop().
-
-config SCHED_CPU_MASK_PIN_ONLY
-	bool "CPU mask variant with single-CPU pinning only"
-	depends on SMP && SCHED_CPU_MASK
-	help
-	  When true, enables a variant of SCHED_CPU_MASK where only
-	  one CPU may be specified for every thread.  Effectively, all
-	  threads have a single "assigned" CPU and they will never be
-	  scheduled symmetrically.  In general this is not helpful,
-	  but some applications have a carefully designed threading
-	  architecture and want to make their own decisions about how
-	  to assign work to CPUs.  In that circumstance, some moderate
-	  optimizations can be made (e.g. having a separate run queue
-	  per CPU, keeping the list length shorter). When selected,
-	  the CPU mask becomes an immutable thread attribute. It can
-	  only be modified before a thread is started.  Most
-	  applications don't want this.
-
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
@@ -223,18 +188,6 @@ config THREAD_CUSTOM_DATA
 	help
 	  This option allows each thread to store 32 bits of custom data,
 	  which can be accessed using the k_thread_custom_data_xxx() APIs.
-
-config THREAD_USERSPACE_LOCAL_DATA
-	bool
-	depends on USERSPACE
-	default y if ERRNO && !ERRNO_IN_TLS && !LIBC_ERRNO
-
-config USERSPACE_THREAD_MAY_RAISE_PRIORITY
-	bool "Thread can raise own priority"
-	depends on USERSPACE
-	depends on TEST # This should only be enabled by tests.
-	help
-	  Thread can raise its own priority in userspace mode.
 
 config DYNAMIC_THREAD
 	bool "Support for dynamic threads [EXPERIMENTAL]"
@@ -984,19 +937,6 @@ config STACK_CANARIES_TLS
 	  per thread.
 endif
 
-config EXECUTE_XOR_WRITE
-	bool "W^X for memory partitions"
-	depends on USERSPACE
-	depends on ARCH_HAS_EXECUTABLE_PAGE_BIT
-	default y
-	help
-	  When enabled, will enforce that a writable page isn't executable
-	  and vice versa.  This might not be acceptable in all scenarios,
-	  so this option is given for those unafraid of shooting themselves
-	  in the foot.
-
-	  If unsure, say Y.
-
 config STACK_POINTER_RANDOM
 	int "Initial stack pointer randomization bounds"
 	depends on !STACK_GROWS_UP
@@ -1017,18 +957,6 @@ config STACK_POINTER_RANDOM
 
 	  This is currently only implemented for systems whose stack pointers
 	  grow towards lower memory addresses.
-
-config BOUNDS_CHECK_BYPASS_MITIGATION
-	bool "Bounds check bypass mitigations for speculative execution"
-	depends on USERSPACE
-	help
-	  Untrusted parameters from user mode may be used in system calls to
-	  index arrays during speculative execution, also known as the Spectre
-	  V1 vulnerability. When enabled, various macros defined in
-	  misc/speculation.h will insert fence instructions or other appropriate
-	  mitigations after bounds checking any array index parameters passed
-	  in from untrusted sources (user mode threads). When disabled, these
-	  macros do nothing.
 
 config HW_SHADOW_STACK
 	bool "Use hardware shadow stack mechanism to provide stack protection [EXPERIMENTAL]"
@@ -1082,8 +1010,8 @@ config HW_SHADOW_STACK_ALLOW_REUSE
 
 endmenu
 
-rsource "Kconfig.mem_domain"
-rsource "Kconfig.smp"
+rsource "userspace/Kconfig"
+rsource "smp/Kconfig"
 
 config TICKLESS_KERNEL
 	bool "Tickless kernel"

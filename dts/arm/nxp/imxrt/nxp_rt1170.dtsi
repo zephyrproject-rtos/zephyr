@@ -8,8 +8,8 @@
 
 /* Configure ARM PLL to 996MHz */
 &arm_pll {
-	clock-mult = <83>;
-	clock-div = <2>;
+	loop-div = <166>;
+	post-div = <2>;
 };
 
 /* Set OCRAM regions/sizes for RT1170 */

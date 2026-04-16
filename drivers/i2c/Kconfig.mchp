@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config I2C_MCHP_SERCOM
@@ -17,30 +17,15 @@ config I2C_MCHP_SERCOM_G1
 
 if I2C_MCHP_SERCOM
 
-config I2C_MCHP_INTERRUPT_DRIVEN
-	bool "Interrupt support for Microchip I2C devices"
-	depends on !I2C_MCHP_DMA_DRIVEN
-	help
-	  This enables INTERRUPT driven transactions for the I2C peripheral.
-	  interrupt driven mode can be used in blocking & non blocking mode.
-
 config I2C_MCHP_DMA_DRIVEN
-	bool "DMA support for Microchip I2C devices"
+	bool
 	default y
-	depends on I2C_CALLBACK
 	depends on DMA
+	depends on $(dt_compat_all_has_prop,$(DT_COMPAT_MICROCHIP_SERCOM_G1_I2C),dmas)
 	help
-	  This enables DMA driven transactions for the I2C peripheral.
-	  DMA driven mode requires fewer interrupts to handle the
-	  transaction and ensures that high speed modes are not delayed
-	  by data reloading.
-
-config I2C_MCHP_TARGET
-	bool "Target device support for Microchip I2C devices"
-	default y
-	depends on I2C_TARGET
-	help
-	  This enables target device support for the I2C peripheral.
+	  This enables DMA driven transfers for the I2C peripheral.
+	  Requires DMA controller and dmas property in device tree.
+	  It can be used in blocking and non-blocking modes.
 
 config I2C_MCHP_TRANSFER_TIMEOUT
 	int "Microchip Transfer timeout [ms]"

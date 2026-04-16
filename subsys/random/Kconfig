@@ -121,6 +121,7 @@ config CSPRNG_ENABLED
 
 choice CSPRNG_GENERATOR_CHOICE
 	prompt "Cryptographically secure random generator"
+	default PSA_CSPRNG_GENERATOR if ENTROPY_NEEDS_PRNG
 	default HARDWARE_DEVICE_CS_GENERATOR
 	default TEST_CSPRNG_GENERATOR
 	help

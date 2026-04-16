@@ -25,3 +25,4 @@ supported:
   - spi
   - uart
   - watchdog
+  - comparator

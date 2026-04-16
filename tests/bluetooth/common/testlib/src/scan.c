@@ -94,9 +94,7 @@ int bt_testlib_scan_find_name(bt_addr_le_t *result, const char *name)
 	k_sem_give(&g_ctx_free);
 
 	if (!api_err) {
-		char str[BT_ADDR_LE_STR_LEN];
-		(void)bt_addr_le_to_str(result, str, ARRAY_SIZE(str));
-		LOG_INF("Scan match: %s", str);
+		LOG_INF("Scan match: %s", bt_addr_le_str(result));
 	} else {
 		LOG_ERR("Scan error: %d", api_err);
 	}

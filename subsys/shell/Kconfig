@@ -45,6 +45,7 @@ endif
 
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
+	default 4096 if NET_SHELL_HTTP_CLIENT_SUPPORTED
 	default 3168 if OPENTHREAD_SHELL
 	default 3072 if 64BIT
 	default 2048 if MULTITHREADING

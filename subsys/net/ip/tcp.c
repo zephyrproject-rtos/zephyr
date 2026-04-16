@@ -906,10 +906,9 @@ static void tcp_conn_release(struct k_work *work)
 
 	k_mutex_unlock(&conn->lock);
 
+	k_mutex_lock(&tcp_lock, K_FOREVER);
 	net_context_unref(conn->context);
 	conn->context = NULL;
-
-	k_mutex_lock(&tcp_lock, K_FOREVER);
 	sys_slist_find_and_remove(&tcp_conns, &conn->next);
 	k_mutex_unlock(&tcp_lock);
 
@@ -4540,10 +4539,19 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
+		/* Keep tcp_lock held while invoking the callback.
+		 * tcp_conn_release() removes entries from this list and
+		 * frees both conn->context and the conn slab under
+		 * tcp_lock, so dropping the lock here would allow a
+		 * concurrent release to free the *next* node saved by
+		 * the _SAFE iterator, causing a use-after-free when the
+		 * loop advances.
+		 *
+		 * All current callbacks are read-only diagnostics and
+		 * never acquire tcp_lock, so holding it is safe.
+		 */
 		if (atomic_get(&conn->ref_count) > 0) {
-			k_mutex_unlock(&tcp_lock);
 			cb(conn, user_data);
-			k_mutex_lock(&tcp_lock, K_FOREVER);
 		}
 	}
 
@@ -4752,6 +4760,25 @@ int net_tcp_get_option(struct net_context *context,
 	k_mutex_unlock(&conn->lock);
 
 	return ret;
+}
+
+int net_tcp_get_outq(struct net_context *context, int *outq_bytes)
+{
+	NET_ASSERT(context);
+
+	struct tcp *conn = context->tcp;
+
+	NET_ASSERT(conn);
+
+	if (outq_bytes == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&conn->lock, K_FOREVER);
+	*outq_bytes = (int)MIN(conn->send_data_total, (size_t)INT_MAX);
+	k_mutex_unlock(&conn->lock);
+
+	return 0;
 }
 
 const char *net_tcp_state_str(enum tcp_state state)

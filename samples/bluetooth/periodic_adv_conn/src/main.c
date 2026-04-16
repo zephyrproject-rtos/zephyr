@@ -75,7 +75,6 @@ static void response_cb(struct bt_le_ext_adv *adv, struct bt_le_per_adv_response
 {
 	int err;
 	bt_addr_le_t peer;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_conn_le_create_synced_param synced_param;
 	struct bt_le_conn_param conn_param;
 
@@ -95,8 +94,7 @@ static void response_cb(struct bt_le_ext_adv *adv, struct bt_le_per_adv_response
 		return;
 	}
 
-	bt_addr_le_to_str(&peer, addr_str, sizeof(addr_str));
-	printk("Connecting to %s in subevent %d\n", addr_str, info->subevent);
+	printk("Connecting to %s in subevent %d\n", bt_addr_le_str(&peer), info->subevent);
 
 	synced_param.peer = &peer;
 	synced_param.subevent = info->subevent;

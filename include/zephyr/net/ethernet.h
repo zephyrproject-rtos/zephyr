@@ -946,7 +946,7 @@ int net_eth_get_hw_config(struct net_if *iface, enum ethernet_config_type type,
 			 struct ethernet_config *config)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *eth = dev->api;
+	const struct ethernet_api *eth = (struct ethernet_api *)dev->api;
 
 	if (!eth->get_config) {
 		return -ENOTSUP;

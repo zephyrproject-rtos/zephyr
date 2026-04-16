@@ -222,10 +222,7 @@ __syscall int espi_saf_config(const struct device *dev,
 static inline int z_impl_espi_saf_config(const struct device *dev,
 					 const struct espi_saf_cfg *cfg)
 {
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	return api->config(dev, cfg);
+	return DEVICE_API_GET(espi_saf, dev)->config(dev, cfg);
 }
 
 /**
@@ -250,10 +247,7 @@ static inline int z_impl_espi_saf_set_protection_regions(
 					const struct device *dev,
 					const struct espi_saf_protection *pr)
 {
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	return api->set_protection_regions(dev, pr);
+	return DEVICE_API_GET(espi_saf, dev)->set_protection_regions(dev, pr);
 }
 
 /**
@@ -272,10 +266,7 @@ __syscall int espi_saf_activate(const struct device *dev);
 
 static inline int z_impl_espi_saf_activate(const struct device *dev)
 {
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	return api->activate(dev);
+	return DEVICE_API_GET(espi_saf, dev)->activate(dev);
 }
 
 /**
@@ -293,10 +284,7 @@ __syscall bool espi_saf_get_channel_status(const struct device *dev);
 static inline bool z_impl_espi_saf_get_channel_status(
 					const struct device *dev)
 {
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
-
-	return api->get_channel_status(dev);
+	return DEVICE_API_GET(espi_saf, dev)->get_channel_status(dev);
 }
 
 /**
@@ -318,8 +306,7 @@ __syscall int espi_saf_flash_read(const struct device *dev,
 static inline int z_impl_espi_saf_flash_read(const struct device *dev,
 					     struct espi_saf_packet *pckt)
 {
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
+	const struct espi_saf_driver_api *api = DEVICE_API_GET(espi_saf, dev);
 
 	if (!api->flash_read) {
 		return -ENOTSUP;
@@ -347,8 +334,7 @@ __syscall int espi_saf_flash_write(const struct device *dev,
 static inline int z_impl_espi_saf_flash_write(const struct device *dev,
 					      struct espi_saf_packet *pckt)
 {
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
+	const struct espi_saf_driver_api *api = DEVICE_API_GET(espi_saf, dev);
 
 	if (!api->flash_write) {
 		return -ENOTSUP;
@@ -376,8 +362,7 @@ __syscall int espi_saf_flash_erase(const struct device *dev,
 static inline int z_impl_espi_saf_flash_erase(const struct device *dev,
 					      struct espi_saf_packet *pckt)
 {
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
+	const struct espi_saf_driver_api *api = DEVICE_API_GET(espi_saf, dev);
 
 	if (!api->flash_erase) {
 		return -ENOTSUP;
@@ -405,8 +390,7 @@ __syscall int espi_saf_flash_unsuccess(const struct device *dev,
 static inline int z_impl_espi_saf_flash_unsuccess(const struct device *dev,
 						  struct espi_saf_packet *pckt)
 {
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
+	const struct espi_saf_driver_api *api = DEVICE_API_GET(espi_saf, dev);
 
 	if (!api->flash_unsuccess) {
 		return -ENOTSUP;
@@ -511,8 +495,7 @@ static inline void espi_saf_init_callback(struct espi_callback *callback,
 static inline int espi_saf_add_callback(const struct device *dev,
 					struct espi_callback *callback)
 {
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
+	const struct espi_saf_driver_api *api = DEVICE_API_GET(espi_saf, dev);
 
 	if (!api->manage_callback) {
 		return -ENOTSUP;
@@ -540,8 +523,7 @@ static inline int espi_saf_add_callback(const struct device *dev,
 static inline int espi_saf_remove_callback(const struct device *dev,
 					   struct espi_callback *callback)
 {
-	const struct espi_saf_driver_api *api =
-		(const struct espi_saf_driver_api *)dev->api;
+	const struct espi_saf_driver_api *api = DEVICE_API_GET(espi_saf, dev);
 
 	if (!api->manage_callback) {
 		return -ENOTSUP;

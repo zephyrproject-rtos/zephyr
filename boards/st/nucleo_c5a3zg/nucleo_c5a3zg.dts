@@ -20,6 +20,7 @@
 
 	chosen {
 		zephyr,console = &lpuart1;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash0;
@@ -79,12 +80,24 @@
 	status = "okay";
 };
 
+&dac1 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 11)>,
+		 <&rcc STM32_SRC_PSIK ADCDAC_SEL(2)>;
+	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &die_temp {
 	status = "okay";
 };
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
+};
+
+&clk_hsidiv3 {
 	status = "okay";
 };
 
@@ -192,6 +205,14 @@
 	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	clocks = <&rcc STM32_CLOCK(APB2, 24)>,
+		 <&rcc STM32_SRC_CK48 CK48_SEL(2)>;
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

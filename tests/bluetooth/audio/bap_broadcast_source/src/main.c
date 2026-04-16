@@ -49,6 +49,8 @@ ZTEST_RULE(mock_rule, mock_init_rule_before, mock_destroy_rule_after);
 
 struct bap_broadcast_source_test_suite_fixture {
 	struct bt_bap_broadcast_source_param *param;
+	struct bt_audio_codec_cfg *codec_cfg;
+	uint8_t *bis_data;
 	size_t stream_cnt;
 	struct bt_bap_broadcast_source *source;
 };
@@ -67,14 +69,12 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	const enum bt_audio_location loc = BT_AUDIO_LOCATION_FRONT_LEFT;
 	struct bt_bap_broadcast_source_subgroup_param *subgroup_param;
 	struct bt_bap_broadcast_source_stream_param *stream_params;
-	struct bt_audio_codec_cfg *codec_cfg;
 	struct bt_bap_qos_cfg *qos_cfg;
 	struct bt_bap_stream *streams;
 	const uint16_t latency = 10U; /* ms*/
 	const uint32_t pd = 40000U;   /* us */
 	const uint16_t sdu = 40U;     /* octets */
 	const uint8_t rtn = 2U;
-	uint8_t *bis_data;
 
 	zassert_true(streams_per_subgroup > 0U);
 	zassert_true(sizeof(bis_cfg_data) <= CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
@@ -87,14 +87,14 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	stream_params = malloc(sizeof(struct bt_bap_broadcast_source_stream_param) *
 			       CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT);
 	zassert_not_null(stream_params);
-	codec_cfg = malloc(sizeof(struct bt_audio_codec_cfg));
-	zassert_not_null(codec_cfg);
+	fixture->codec_cfg = malloc(sizeof(struct bt_audio_codec_cfg));
+	zassert_not_null(fixture->codec_cfg);
 	qos_cfg = malloc(sizeof(struct bt_bap_qos_cfg));
 	zassert_not_null(qos_cfg);
 	streams = malloc(sizeof(struct bt_bap_stream) * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT);
 	zassert_not_null(streams);
-	bis_data = malloc(CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
-	zassert_not_null(bis_data);
+	fixture->bis_data = malloc(CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
+	zassert_not_null(fixture->bis_data);
 
 	/* Memset everything to 0 */
 	memset(fixture->param, 0, sizeof(*fixture->param));
@@ -104,26 +104,26 @@ static void bap_broadcast_source_test_suite_fixture_init(
 	memset(stream_params, 0,
 	       sizeof(struct bt_bap_broadcast_source_stream_param) *
 		       CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT);
-	memset(codec_cfg, 0, sizeof(struct bt_audio_codec_cfg));
+	memset(fixture->codec_cfg, 0, sizeof(struct bt_audio_codec_cfg));
 	memset(qos_cfg, 0, sizeof(struct bt_bap_qos_cfg));
 	memset(streams, 0, sizeof(struct bt_bap_stream) * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT);
-	memset(bis_data, 0, CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
+	memset(fixture->bis_data, 0, CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
 
 	/* Initialize default values*/
-	*codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_16KHZ,
-					       BT_AUDIO_CODEC_CFG_DURATION_10, loc, 40U, 1, ctx);
+	*fixture->codec_cfg = BT_AUDIO_CODEC_LC3_CONFIG(
+		BT_AUDIO_CODEC_CFG_FREQ_16KHZ, BT_AUDIO_CODEC_CFG_DURATION_10, loc, 40U, 1, ctx);
 	*qos_cfg = BT_BAP_QOS_CFG_UNFRAMED(10000u, sdu, rtn, latency, pd);
-	memcpy(bis_data, bis_cfg_data, sizeof(bis_cfg_data));
+	memcpy(fixture->bis_data, bis_cfg_data, sizeof(bis_cfg_data));
 
 	for (size_t i = 0U; i < CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT; i++) {
 		subgroup_param[i].params_count = streams_per_subgroup;
 		subgroup_param[i].params = stream_params + i * streams_per_subgroup;
-		subgroup_param[i].codec_cfg = codec_cfg;
+		subgroup_param[i].codec_cfg = fixture->codec_cfg;
 	}
 
 	for (size_t i = 0U; i < CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT; i++) {
 		stream_params[i].stream = &streams[i];
-		stream_params[i].data = bis_data;
+		stream_params[i].data = fixture->bis_data;
 		stream_params[i].data_len = sizeof(bis_cfg_data);
 		bt_bap_stream_cb_register(stream_params[i].stream, &mock_bap_stream_ops);
 	}
@@ -176,10 +176,10 @@ static void bap_broadcast_source_test_suite_after(void *f)
 
 	param = fixture->param;
 
-	free(param->params[0].params[0].data);
 	free(param->params[0].params[0].stream);
 	free(param->params[0].params);
-	free(param->params[0].codec_cfg);
+	free(fixture->codec_cfg);
+	free(fixture->bis_data);
 	free(param->params);
 	free(param->qos);
 	free(param);
@@ -254,7 +254,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 
 			/* verify bap stream started cb stream parameter */
 			zassert_equal(mock_bap_stream_started_cb_fake.arg0_history[i], bap_stream);
-			struct bt_audio_codec_cfg *codec_cfg = bap_stream->codec_cfg;
+			const struct bt_audio_codec_cfg *codec_cfg = bap_stream->codec_cfg;
 			enum bt_audio_location chan_allocation;
 			/* verify subgroup codec data */
 			zassert_equal(bt_audio_codec_cfg_get_freq(codec_cfg),
@@ -411,7 +411,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 {
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
 	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
-	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
 	int err;
 
 	subgroup_params->codec_cfg = NULL;
@@ -425,8 +425,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	test_broadcast_source_create_inval_subgroup_params_codec_cfg_data_len)
 {
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
-	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
-	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	struct bt_audio_codec_cfg *codec_cfg = fixture->codec_cfg;
 	int err;
 
 	codec_cfg->data_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE + 1;
@@ -438,8 +437,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	test_broadcast_source_create_inval_subgroup_params_codec_cfg_meta_len)
 {
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
-	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
-	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	struct bt_audio_codec_cfg *codec_cfg = fixture->codec_cfg;
 	int err;
 
 	codec_cfg->meta_len = CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE + 1;
@@ -451,8 +449,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	test_broadcast_source_create_inval_subgroup_params_codec_cfg_cid)
 {
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
-	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
-	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	struct bt_audio_codec_cfg *codec_cfg = fixture->codec_cfg;
 	int err;
 
 	codec_cfg->id = BT_HCI_CODING_FORMAT_LC3;
@@ -465,8 +462,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	test_broadcast_source_create_inval_subgroup_params_codec_cfg_vid)
 {
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
-	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
-	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	struct bt_audio_codec_cfg *codec_cfg = fixture->codec_cfg;
 	int err;
 
 	codec_cfg->id = BT_HCI_CODING_FORMAT_LC3;
@@ -496,7 +492,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_stre
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
 	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &create_param->params[0];
 	struct bt_bap_broadcast_source_stream_param *stream_params = &subgroup_params->params[0];
-	uint8_t *data = stream_params->data;
+	const uint8_t *data = stream_params->data;
 	int err;
 
 	stream_params->data = NULL;
@@ -900,7 +896,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 {
 	struct bt_bap_broadcast_source_param *param = fixture->param;
 	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &param->params[0];
-	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
 	int err;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
@@ -924,8 +920,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	test_broadcast_source_reconfigure_inval_subgroup_params_codec_cfg_data_len)
 {
 	struct bt_bap_broadcast_source_param *param = fixture->param;
-	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &param->params[0];
-	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	struct bt_audio_codec_cfg *codec_cfg = fixture->codec_cfg;
 	int err;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
@@ -947,8 +942,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	test_broadcast_source_reconfigure_inval_subgroup_params_codec_cfg_meta_len)
 {
 	struct bt_bap_broadcast_source_param *param = fixture->param;
-	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &param->params[0];
-	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	struct bt_audio_codec_cfg *codec_cfg = fixture->codec_cfg;
 	int err;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
@@ -970,8 +964,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	test_broadcast_source_reconfigure_inval_subgroup_params_codec_cfg_cid)
 {
 	struct bt_bap_broadcast_source_param *param = fixture->param;
-	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &param->params[0];
-	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	struct bt_audio_codec_cfg *codec_cfg = fixture->codec_cfg;
 	int err;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
@@ -994,8 +987,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	test_broadcast_source_reconfigure_inval_subgroup_params_codec_cfg_vid)
 {
 	struct bt_bap_broadcast_source_param *param = fixture->param;
-	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &param->params[0];
-	struct bt_audio_codec_cfg *codec_cfg = subgroup_params->codec_cfg;
+	struct bt_audio_codec_cfg *codec_cfg = fixture->codec_cfg;
 	int err;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",
@@ -1046,7 +1038,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	struct bt_bap_broadcast_source_param *param = fixture->param;
 	struct bt_bap_broadcast_source_subgroup_param *subgroup_params = &param->params[0];
 	struct bt_bap_broadcast_source_stream_param *stream_params = &subgroup_params->params[0];
-	uint8_t *data = stream_params->data;
+	const uint8_t *data = stream_params->data;
 	int err;
 
 	printk("Creating broadcast source with %zu subgroups with %zu streams\n",

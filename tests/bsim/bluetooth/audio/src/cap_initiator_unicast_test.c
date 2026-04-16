@@ -405,7 +405,6 @@ static struct bt_gatt_cb gatt_callbacks = {
 
 static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_data)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t *addr = user_data;
 	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
@@ -428,8 +427,7 @@ static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_
 		return true; /* Continue parsing to next AD data type */
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s\n", addr_str);
+	printk("Device found: %s\n", bt_addr_le_str(addr));
 
 	printk("Stopping scan\n");
 	if (bt_le_scan_stop()) {
@@ -1274,9 +1272,10 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_para
 		for (size_t j = 0U; j < param->snk_cnt[i]; j++) {
 			struct bt_cap_unicast_audio_start_stream_param *stream_param =
 				&stream_params[stream_cnt];
+			struct bt_audio_codec_cfg *codec_cfg = snk_codec_cfgs[snk_stream_cnt];
 
 			stream_param->member.member = connected_conns[i];
-			stream_param->codec_cfg = snk_codec_cfgs[snk_stream_cnt];
+			stream_param->codec_cfg = codec_cfg;
 			stream_param->ep = snk_eps[snk_stream_cnt];
 			stream_param->stream = snk_cap_streams[snk_stream_cnt];
 
@@ -1288,7 +1287,7 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_para
 			 */
 			if (param->conn_cnt > 1U || param->snk_cnt[i] > 1U) {
 				const int err = bt_audio_codec_cfg_set_chan_allocation(
-					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
+					codec_cfg, (enum bt_audio_location)BIT(i));
 
 				if (err < 0) {
 					FAIL("Failed to set channel allocation: %d\n", err);
@@ -1300,9 +1299,10 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_para
 		for (size_t j = 0U; j < param->src_cnt[i]; j++) {
 			struct bt_cap_unicast_audio_start_stream_param *stream_param =
 				&stream_params[stream_cnt];
+			struct bt_audio_codec_cfg *codec_cfg = src_codec_cfgs[src_stream_cnt];
 
 			stream_param->member.member = connected_conns[i];
-			stream_param->codec_cfg = src_codec_cfgs[src_stream_cnt];
+			stream_param->codec_cfg = codec_cfg;
 			stream_param->ep = src_eps[src_stream_cnt];
 			stream_param->stream = src_cap_streams[src_stream_cnt];
 
@@ -1314,7 +1314,7 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_para
 			 */
 			if (param->conn_cnt > 1U || param->src_cnt[i] > 1U) {
 				const int err = bt_audio_codec_cfg_set_chan_allocation(
-					stream_param->codec_cfg, (enum bt_audio_location)BIT(i));
+					codec_cfg, (enum bt_audio_location)BIT(i));
 
 				if (err < 0) {
 					FAIL("Failed to set channel allocation: %d\n", err);

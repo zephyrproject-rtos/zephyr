@@ -275,6 +275,26 @@ config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
 	  This variable specifies maximum number of stored TLS/DTLS sessions,
 	  used for TLS/DTLS session resumption.
 
+config NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT
+	bool "Persistent TLS session cache across reboots"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	depends on SETTINGS
+	help
+	  Enable persistent storage of TLS/DTLS client sessions
+	  using the settings subsystem. When enabled, sessions are
+	  saved after each successful TLS handshake and restored
+	  during system initialization, allowing session resumption
+	  across device reboots.
+
+config NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT_PREFIX
+	string "Persistent TLS session cache prefix"
+	depends on NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT
+	default "tls_cache"
+	help
+	  Settings key prefix used for persistent TLS session cache
+	  entries. Change this if the default prefix conflicts with
+	  other settings keys in your application.
+
 config NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK
 	bool "TLS certificate verification callback support"
 	depends on NET_SOCKETS_SOCKOPT_TLS

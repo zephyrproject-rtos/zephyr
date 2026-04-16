@@ -1537,7 +1537,8 @@ static int i3c_stm32_init(const struct device *dev)
 	i3c_stm32_controller_init(dev);
 
 	/* Perform bus initialization only if there are devices that already exist on the bus */
-	if (config->drv_cfg.dev_list.num_i3c > 0) {
+	if (config->drv_cfg.dev_list.num_i3c > 0 &&
+	    !(config->drv_cfg.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 		ret = i3c_bus_init(dev, &config->drv_cfg.dev_list);
 		if (ret != 0) {
 			LOG_ERR("Failed to do i3c bus init, err=%d", ret);
@@ -1546,10 +1547,12 @@ static int i3c_stm32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_I3C_USE_IBI
-	LL_I3C_EnableHJAck(i3c);
-	data->hj_pm_lock = true;
-	(void)pm_device_runtime_get(dev);
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (!(config->drv_cfg.flags & I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT)) {
+		LL_I3C_EnableHJAck(i3c);
+		data->hj_pm_lock = true;
+		(void)pm_device_runtime_get(dev);
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
 #endif
 
 	return 0;
@@ -2212,6 +2215,7 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 		.drv_cfg.dev_list.num_i3c = ARRAY_SIZE(i3c_stm32_dev_arr_##index),                 \
 		.drv_cfg.dev_list.i2c = i3c_i2c_stm32_dev_arr_##index,                             \
 		.drv_cfg.dev_list.num_i2c = ARRAY_SIZE(i3c_i2c_stm32_dev_arr_##index),             \
+		.drv_cfg.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(index),                       \
 	};                                                                                         \
                                                                                                    \
 	static struct i3c_stm32_data i3c_stm32_data_##index = {                                    \

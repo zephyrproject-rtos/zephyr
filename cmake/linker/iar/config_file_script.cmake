@@ -616,7 +616,7 @@ function(section_to_string)
     endif()
     # In ilink if a block with min_size=X  does not match any input sections,
     # its _init block may be discarded despite being needed for spacing with
-    # other _init blocks. To get around tihs, lets tag min_size blocks as keep.
+    # other _init blocks. To get around this, lets tag min_size blocks as keep.
     if(CONFIG_IAR_ZEPHYR_INIT
        AND DEFINED group_parent_vma AND DEFINED group_parent_lma
        AND DEFINED i_min_size

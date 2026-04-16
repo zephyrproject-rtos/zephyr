@@ -263,6 +263,7 @@ static int igmp_v3_create_packet(struct net_pkt *pkt, const struct net_in_addr *
 
 static int igmp_send(struct net_pkt *pkt)
 {
+	__maybe_unused struct net_if *iface = net_pkt_iface(pkt);
 	int ret;
 
 	net_pkt_cursor_init(pkt);
@@ -270,11 +271,11 @@ static int igmp_send(struct net_pkt *pkt)
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
-		net_stats_update_ipv4_igmp_drop(net_pkt_iface(pkt));
+		net_stats_update_ipv4_igmp_drop(iface);
 		return ret;
 	}
 
-	net_stats_update_ipv4_igmp_sent(net_pkt_iface(pkt));
+	net_stats_update_ipv4_igmp_sent(iface);
 
 	return 0;
 }
@@ -491,13 +492,17 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	if (version == IGMPV3) {
-		net_pkt_acknowledge_data(pkt, &igmpv3_access);
+		ret = net_pkt_acknowledge_data(pkt, &igmpv3_access);
 	} else {
 #endif
-		net_pkt_acknowledge_data(pkt, &igmpv2_access);
+		ret = net_pkt_acknowledge_data(pkt, &igmpv2_access);
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	}
 #endif
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	dbg_addr_recv("Internet Group Management Protocol", &ip_hdr->src, &ip_hdr->dst);
 

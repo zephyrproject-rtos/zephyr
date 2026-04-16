@@ -52,7 +52,7 @@ struct _thread_base {
 	};
 
 	/* wait queue on which the thread is pended (needed only for
-	 * trees, not dumb lists)
+	 * trees, not simple lists)
 	 */
 	_wait_q_t *pended_on;
 

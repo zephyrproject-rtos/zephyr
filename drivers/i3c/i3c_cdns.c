@@ -3703,12 +3703,16 @@ static int cdns_i3c_bus_init(const struct device *dev)
 		/* Sleep to wait for bus idle. */
 		k_busy_wait(201);
 		/* Perform bus initialization */
-		if (config->common.dev_list.num_i3c > 0) {
+		if (config->common.dev_list.num_i3c > 0 &&
+		    !(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 			ret = i3c_bus_init(dev, &config->common.dev_list);
 		}
 #ifdef CONFIG_I3C_USE_IBI
-		/* Bus Initialization Complete, allow HJ ACKs */
-		sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL), config->base + CTRL);
+		/* Bus Initialization Complete, allow HJ ACKs if not disabled */
+		if (!(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT)) {
+			sys_write32(CTRL_HJ_ACK | sys_read32(config->base + CTRL),
+				    config->base + CTRL);
+		}
 #endif
 	}
 #endif /* CONFIG_I3C_CONTROLLER */
@@ -3780,7 +3784,9 @@ static DEVICE_API(i3c, api) = {
 			.common.dev_list.num_i3c = ARRAY_SIZE(cdns_i3c_device_array_##n),          \
 			.common.dev_list.i2c = cdns_i3c_i2c_device_array_##n,                      \
 			.common.dev_list.num_i2c = ARRAY_SIZE(cdns_i3c_i2c_device_array_##n),      \
-			.common.primary_controller_da = DT_INST_PROP_OR(n, primary_controller_da, 0x00),)) \
+			.common.primary_controller_da =                                            \
+				DT_INST_PROP_OR(n, primary_controller_da, 0x00),                   \
+			.common.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(n),))                  \
 	};                                                                                         \
 	static struct cdns_i3c_data i3c_data_##n = {                                               \
 		IF_ENABLED(CONFIG_I3C_CONTROLLER,                                                  \

@@ -471,7 +471,7 @@ static inline int video_set_format(const struct device *dev, struct video_format
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->set_format == NULL) {
 		return -ENOSYS;
 	}
@@ -497,7 +497,7 @@ static inline int video_get_format(const struct device *dev, struct video_format
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->get_format == NULL) {
 		return -ENOSYS;
 	}
@@ -533,7 +533,7 @@ static inline int video_set_frmival(const struct device *dev, struct video_frmiv
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->set_frmival == NULL) {
 		return -ENOSYS;
 	}
@@ -562,7 +562,7 @@ static inline int video_get_frmival(const struct device *dev, struct video_frmiv
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->get_frmival == NULL) {
 		return -ENOSYS;
 	}
@@ -595,7 +595,7 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->enum_frmival == NULL) {
 		return -ENOSYS;
 	}
@@ -641,7 +641,7 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->dequeue == NULL) {
 		return -ENOSYS;
 	}
@@ -670,7 +670,7 @@ static inline int video_flush(const struct device *dev, bool cancel)
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->flush == NULL) {
 		return -ENOSYS;
 	}
@@ -702,7 +702,7 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->set_stream == NULL) {
 		return -ENOSYS;
 	}
@@ -732,7 +732,7 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->set_stream == NULL) {
 		return -ENOSYS;
 	}
@@ -760,7 +760,7 @@ static inline int video_get_caps(const struct device *dev, struct video_caps *ca
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->get_caps == NULL) {
 		return -ENOSYS;
 	}
@@ -814,7 +814,7 @@ static inline int video_transform_cap(const struct device *const dev,
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->transform_cap == NULL) {
 		return -ENOSYS;
 	}
@@ -907,7 +907,7 @@ static inline int video_set_signal(const struct device *dev, struct k_poll_signa
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->set_signal == NULL) {
 		return -ENOSYS;
 	}
@@ -942,7 +942,7 @@ static inline int video_set_selection(const struct device *dev, struct video_sel
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->set_selection == NULL) {
 		return -ENOSYS;
 	}
@@ -975,7 +975,7 @@ static inline int video_get_selection(const struct device *dev, struct video_sel
 		return -EINVAL;
 	}
 
-	api = (const struct video_driver_api *)dev->api;
+	api = DEVICE_API_GET(video, dev);
 	if (api->get_selection == NULL) {
 		return -ENOSYS;
 	}

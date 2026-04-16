@@ -21,13 +21,14 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include <soc.h>
 #include <esp_memory_utils.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #ifdef SOC_GDMA_SUPPORTED
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #endif
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/policy.h>
 #include "spi_context.h"
 #include "spi_esp32_spim.h"
 
@@ -40,6 +41,33 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 
 #define SPI_DMA_RX 0
 #define SPI_DMA_TX 1
+
+#if CONFIG_PM
+static void spi_esp32_pm_policy_state_lock_get(const struct device *dev)
+{
+	struct spi_esp32_data *data = dev->data;
+	unsigned int key = irq_lock();
+
+	if (!data->pm_policy_state_on) {
+		data->pm_policy_state_on = true;
+		pm_policy_state_all_lock_get();
+	}
+
+	irq_unlock(key);
+}
+
+static void spi_esp32_pm_policy_state_lock_put(const struct device *dev)
+{
+	struct spi_esp32_data *data = dev->data;
+	unsigned int key = irq_lock();
+
+	if (data->pm_policy_state_on) {
+		data->pm_policy_state_on = false;
+		pm_policy_state_all_lock_put();
+	}
+	irq_unlock(key);
+}
+#endif
 
 static bool spi_esp32_transfer_ongoing(struct spi_esp32_data *data)
 {
@@ -387,6 +415,10 @@ static void IRAM_ATTR spi_esp32_isr(void *arg)
 	} while (spi_esp32_transfer_ongoing(data));
 
 	spi_esp32_complete(dev, data, cfg->spi, 0);
+
+#if CONFIG_PM
+	spi_esp32_pm_policy_state_lock_put(dev);
+#endif
 }
 #endif
 
@@ -670,6 +702,10 @@ static int transceive(const struct device *dev,
 		goto done;
 	}
 
+#if CONFIG_PM
+	spi_esp32_pm_policy_state_lock_get(dev);
+#endif
+
 	ret = spi_esp32_configure(dev, spi_cfg);
 	if (ret) {
 		goto done;
@@ -680,6 +716,8 @@ static int transceive(const struct device *dev,
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
 	spi_ll_enable_int(cfg->spi);
 	spi_ll_set_int_stat(cfg->spi);
+	spi_context_release(&data->ctx, ret);
+	return ret;
 #else
 
 	do {
@@ -691,6 +729,10 @@ static int transceive(const struct device *dev,
 #endif  /* CONFIG_SPI_ESP32_INTERRUPT */
 
 done:
+#if CONFIG_PM
+	spi_esp32_pm_policy_state_lock_put(dev);
+#endif
+
 	spi_context_release(&data->ctx, ret);
 
 	return ret;

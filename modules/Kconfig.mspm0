@@ -17,3 +17,6 @@ config USE_MSPM0_DL_TIMER
 
 config USE_MSPM0_DL_MCAN
 	bool
+
+config USE_MSPM0_DL_DAC12
+	bool

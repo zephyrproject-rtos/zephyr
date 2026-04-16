@@ -1479,6 +1479,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 			/* Copy the local RPA and handle this in advertising set
 			 * terminated event.
 			 */
+			conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
 			bt_addr_copy(&conn->le.resp_addr.a, &evt->local_rpa);
 		}
 

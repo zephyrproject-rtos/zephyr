@@ -127,6 +127,27 @@
 			#gpio-cells = <2>;
 		};
 
+		lpcomp0: comparator@42430000 {
+			compatible = "infineon,lp-comp";
+			reg = <0x42430000 0x10000>;
+			interrupts = <29 4>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			lpcomp0_0: lpcomp0-0 {
+				compatible = "infineon,lp-comp-channel";
+				channel = <0>;
+				status = "disabled";
+			};
+
+			lpcomp0_1: lpcomp0-1 {
+				compatible = "infineon,lp-comp-channel";
+				channel = <1>;
+				status = "disabled";
+			};
+		};
+
 		hppass_analog0: analog@42b00000 {
 			reg = <0x42b00000 0x100000>;
 			#address-cells = <1>;

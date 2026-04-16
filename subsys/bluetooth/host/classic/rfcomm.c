@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/crc.h>
 #include <zephyr/debug/stack.h>
 
 #include <zephyr/bluetooth/hci.h>
@@ -57,113 +58,65 @@ static sys_slist_t servers = SYS_SLIST_STATIC_INIT(&servers);
 
 static struct bt_rfcomm_session bt_rfcomm_pool[CONFIG_BT_MAX_CONN];
 
-/* reversed, 8-bit, poly=0x07 */
-static const uint8_t rfcomm_crc_table[256] = {
-	0x00, 0x91, 0xe3, 0x72, 0x07, 0x96, 0xe4, 0x75,
-	0x0e, 0x9f, 0xed, 0x7c, 0x09, 0x98, 0xea, 0x7b,
-	0x1c, 0x8d, 0xff, 0x6e, 0x1b, 0x8a, 0xf8, 0x69,
-	0x12, 0x83, 0xf1, 0x60, 0x15, 0x84, 0xf6, 0x67,
-
-	0x38, 0xa9, 0xdb, 0x4a, 0x3f, 0xae, 0xdc, 0x4d,
-	0x36, 0xa7, 0xd5, 0x44, 0x31, 0xa0, 0xd2, 0x43,
-	0x24, 0xb5, 0xc7, 0x56, 0x23, 0xb2, 0xc0, 0x51,
-	0x2a, 0xbb, 0xc9, 0x58, 0x2d, 0xbc, 0xce, 0x5f,
-
-	0x70, 0xe1, 0x93, 0x02, 0x77, 0xe6, 0x94, 0x05,
-	0x7e, 0xef, 0x9d, 0x0c, 0x79, 0xe8, 0x9a, 0x0b,
-	0x6c, 0xfd, 0x8f, 0x1e, 0x6b, 0xfa, 0x88, 0x19,
-	0x62, 0xf3, 0x81, 0x10, 0x65, 0xf4, 0x86, 0x17,
-
-	0x48, 0xd9, 0xab, 0x3a, 0x4f, 0xde, 0xac, 0x3d,
-	0x46, 0xd7, 0xa5, 0x34, 0x41, 0xd0, 0xa2, 0x33,
-	0x54, 0xc5, 0xb7, 0x26, 0x53, 0xc2, 0xb0, 0x21,
-	0x5a, 0xcb, 0xb9, 0x28, 0x5d, 0xcc, 0xbe, 0x2f,
-
-	0xe0, 0x71, 0x03, 0x92, 0xe7, 0x76, 0x04, 0x95,
-	0xee, 0x7f, 0x0d, 0x9c, 0xe9, 0x78, 0x0a, 0x9b,
-	0xfc, 0x6d, 0x1f, 0x8e, 0xfb, 0x6a, 0x18, 0x89,
-	0xf2, 0x63, 0x11, 0x80, 0xf5, 0x64, 0x16, 0x87,
-
-	0xd8, 0x49, 0x3b, 0xaa, 0xdf, 0x4e, 0x3c, 0xad,
-	0xd6, 0x47, 0x35, 0xa4, 0xd1, 0x40, 0x32, 0xa3,
-	0xc4, 0x55, 0x27, 0xb6, 0xc3, 0x52, 0x20, 0xb1,
-	0xca, 0x5b, 0x29, 0xb8, 0xcd, 0x5c, 0x2e, 0xbf,
-
-	0x90, 0x01, 0x73, 0xe2, 0x97, 0x06, 0x74, 0xe5,
-	0x9e, 0x0f, 0x7d, 0xec, 0x99, 0x08, 0x7a, 0xeb,
-	0x8c, 0x1d, 0x6f, 0xfe, 0x8b, 0x1a, 0x68, 0xf9,
-	0x82, 0x13, 0x61, 0xf0, 0x85, 0x14, 0x66, 0xf7,
-
-	0xa8, 0x39, 0x4b, 0xda, 0xaf, 0x3e, 0x4c, 0xdd,
-	0xa6, 0x37, 0x45, 0xd4, 0xa1, 0x30, 0x42, 0xd3,
-	0xb4, 0x25, 0x57, 0xc6, 0xb3, 0x22, 0x50, 0xc1,
-	0xba, 0x2b, 0x59, 0xc8, 0xbd, 0x2c, 0x5e, 0xcf
-};
+#define RFCOMM_CRC_POLY CRC8_REFLECT_POLY
+#define RFCOMM_CRC_INIT 0xff
+#define RFCOMM_CRC_REVD true
 
 static uint8_t rfcomm_calc_fcs(uint16_t len, const uint8_t *data)
 {
-	uint8_t fcs = 0xff;
+	uint8_t fcs;
 
-	while (len--) {
-		fcs = rfcomm_crc_table[fcs ^ *data++];
-	}
+	fcs = crc8(data, len, RFCOMM_CRC_POLY, RFCOMM_CRC_INIT, RFCOMM_CRC_REVD);
 
 	/* Ones compliment */
-	return (0xff - fcs);
+	fcs = (0xff - fcs);
+
+	return fcs;
 }
 
-static bool rfcomm_check_fcs(uint16_t len, const uint8_t *data,
-			     uint8_t recvd_fcs)
+static bool rfcomm_check_fcs(uint16_t len, const uint8_t *data, uint8_t recvd_fcs)
 {
-	uint8_t fcs = 0xff;
+	uint8_t fcs;
 
-	while (len--) {
-		fcs = rfcomm_crc_table[fcs ^ *data++];
-	}
+	fcs = rfcomm_calc_fcs(len, data);
 
-	/* Ones compliment */
-	fcs = rfcomm_crc_table[fcs ^ recvd_fcs];
-
-	/*0xCF is the reversed order of 11110011.*/
-	return (fcs == 0xcf);
+	return (fcs == recvd_fcs);
 }
 
-static struct bt_rfcomm_dlc *rfcomm_dlcs_lookup_dlci(struct bt_rfcomm_dlc *dlcs,
+static struct bt_rfcomm_dlc *rfcomm_dlcs_lookup_dlci(struct bt_rfcomm_session *session,
 						     uint8_t dlci)
 {
-	for (; dlcs; dlcs = dlcs->_next) {
-		if (dlcs->dlci == dlci) {
-			return dlcs;
-		}
-	}
+	struct bt_rfcomm_dlc *dlc, *tmp;
 
-	return NULL;
-}
-
-static struct bt_rfcomm_dlc *rfcomm_dlcs_remove_dlci(struct bt_rfcomm_dlc *dlcs,
-						     uint8_t dlci)
-{
-	struct bt_rfcomm_dlc *tmp;
-
-	if (!dlcs) {
+	if (session == NULL) {
 		return NULL;
 	}
 
-	/* If first node is the one to be removed */
-	if (dlcs->dlci == dlci) {
-		dlcs->session->dlcs = dlcs->_next;
-		return dlcs;
-	}
-
-	for (tmp = dlcs, dlcs = dlcs->_next; dlcs; dlcs = dlcs->_next) {
-		if (dlcs->dlci == dlci) {
-			tmp->_next = dlcs->_next;
-			return dlcs;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->dlcs, dlc, tmp, _node) {
+		if (dlc->dlci == dlci) {
+			return dlc;
 		}
-		tmp = dlcs;
 	}
 
 	return NULL;
+}
+
+static struct bt_rfcomm_dlc *rfcomm_dlcs_remove_dlci(struct bt_rfcomm_session *session,
+						     uint8_t dlci)
+{
+	struct bt_rfcomm_dlc *tmp;
+	bool found;
+
+	tmp = rfcomm_dlcs_lookup_dlci(session, dlci);
+	if (tmp == NULL) {
+		return NULL;
+	}
+
+	found = sys_slist_find_and_remove(&session->dlcs, &tmp->_node);
+	if (!found) {
+		LOG_WRN("DLC %p has been removed", tmp);
+	}
+	return tmp;
 }
 
 static struct bt_rfcomm_server *rfcomm_server_lookup_channel(uint8_t channel)
@@ -258,9 +211,11 @@ static void rfcomm_dlc_tx_trigger(struct bt_rfcomm_dlc *dlc)
 	}
 }
 
-static void rfcomm_dlcs_tx_trigger(struct bt_rfcomm_dlc *dlcs)
+static void rfcomm_dlcs_tx_trigger(struct bt_rfcomm_session *session)
 {
-	for (struct bt_rfcomm_dlc *dlc = dlcs; dlc != NULL; dlc = dlc->_next) {
+	struct bt_rfcomm_dlc *dlc, *tmp;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->dlcs, dlc, tmp, _node) {
 		rfcomm_dlc_tx_trigger(dlc);
 	}
 }
@@ -317,7 +272,7 @@ static void rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 
 static void rfcomm_session_disconnected(struct bt_rfcomm_session *session)
 {
-	struct bt_rfcomm_dlc *dlc;
+	struct bt_rfcomm_dlc *dlc, *tmp;
 
 	LOG_DBG("Session %p", session);
 
@@ -325,20 +280,12 @@ static void rfcomm_session_disconnected(struct bt_rfcomm_session *session)
 		return;
 	}
 
-	for (dlc = session->dlcs; dlc;) {
-		struct bt_rfcomm_dlc *next;
-
-		/* prefetch since disconnected callback may cleanup */
-		next = dlc->_next;
-		dlc->_next = NULL;
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->dlcs, dlc, tmp, _node) {
 		rfcomm_dlc_disconnect(dlc);
-
-		dlc = next;
 	}
 
+	sys_slist_init(&session->dlcs);
 	session->state = BT_RFCOMM_STATE_DISCONNECTED;
-	session->dlcs = NULL;
 }
 
 struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool)
@@ -412,7 +359,7 @@ static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 
 static void rfcomm_session_disconnect(struct bt_rfcomm_session *session)
 {
-	if (session->dlcs) {
+	if (!sys_slist_is_empty(&session->dlcs)) {
 		return;
 	}
 
@@ -479,7 +426,7 @@ static void rfcomm_dlc_rtx_timeout(struct k_work *work)
 
 	LOG_WRN("dlc %p state %d timeout", dlc, dlc->state);
 
-	rfcomm_dlcs_remove_dlci(session->dlcs, dlc->dlci);
+	rfcomm_dlcs_remove_dlci(session, dlc->dlci);
 	rfcomm_dlc_disconnect(dlc);
 	rfcomm_session_disconnect(session);
 }
@@ -510,8 +457,7 @@ static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 	/* Start a conn timer which includes auth as well */
 	k_work_schedule(&dlc->rtx_work, RFCOMM_CONN_TIMEOUT);
 
-	dlc->_next = session->dlcs;
-	session->dlcs = dlc;
+	sys_slist_prepend(&session->dlcs, &dlc->_node);
 }
 
 static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session,
@@ -872,6 +818,9 @@ static int rfcomm_send_fcoff(struct bt_rfcomm_session *session, uint8_t cr)
 	return rfcomm_send(session, buf);
 }
 
+/* The size of credits field. */
+#define BT_RFCOMM_CREDITS_SIZE 0x01
+
 static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
@@ -897,6 +846,14 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 
 	k_fifo_init(&dlc->tx_queue);
 	k_work_init(&dlc->tx_work, rfcomm_dlc_tx_worker);
+
+	/* For CFC supported cases, the space of credits should be discounted from the maximum
+	 * frame size. It is used to avoid the SDU length exceeding the maximum frame size if the
+	 * credits field is included.
+	 */
+	if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
+		dlc->mtu -= BT_RFCOMM_CREDITS_SIZE;
+	}
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);
@@ -944,7 +901,7 @@ static void rfcomm_dlc_drop(struct bt_rfcomm_dlc *dlc)
 {
 	LOG_DBG("dlc %p", dlc);
 
-	rfcomm_dlcs_remove_dlci(dlc->session->dlcs, dlc->dlci);
+	(void)rfcomm_dlcs_remove_dlci(dlc->session, dlc->dlci);
 	rfcomm_dlc_destroy(dlc);
 }
 
@@ -994,10 +951,10 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 		struct bt_rfcomm_dlc *dlc;
 		enum security_result result;
 
-		dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-		if (!dlc) {
+		dlc = rfcomm_dlcs_lookup_dlci(session, dlci);
+		if (dlc == NULL) {
 			dlc = rfcomm_dlc_accept(session, dlci);
-			if (!dlc) {
+			if (dlc == NULL) {
 				rfcomm_send_dm(session, dlci);
 				return;
 			}
@@ -1116,15 +1073,14 @@ static int rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
 
 static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 {
-	struct bt_rfcomm_dlc *dlc, *next;
+	struct bt_rfcomm_dlc *dlc, *tmp;
 	int err;
 
 	if (!dlci) {
 		switch (session->state) {
 		case BT_RFCOMM_STATE_CONNECTING:
 			session->state = BT_RFCOMM_STATE_CONNECTED;
-			for (dlc = session->dlcs; dlc; dlc = next) {
-				next = dlc->_next;
+			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->dlcs, dlc, tmp, _node) {
 				if (dlc->role == BT_RFCOMM_ROLE_INITIATOR &&
 				    dlc->state == BT_RFCOMM_STATE_INIT) {
 					if (rfcomm_dlc_start(dlc) < 0) {
@@ -1148,8 +1104,8 @@ static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 			break;
 		}
 	} else {
-		dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-		if (!dlc) {
+		dlc = rfcomm_dlcs_lookup_dlci(session, dlci);
+		if (dlc == NULL) {
 			return;
 		}
 
@@ -1173,8 +1129,8 @@ static void rfcomm_handle_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 
 	LOG_DBG("dlci %d", dlci);
 
-	dlc = rfcomm_dlcs_remove_dlci(session->dlcs, dlci);
-	if (!dlc) {
+	dlc = rfcomm_dlcs_remove_dlci(session, dlci);
+	if (dlc == NULL) {
 		return;
 	}
 
@@ -1191,8 +1147,8 @@ static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 
 	LOG_DBG("dlci %d", dlci);
 
-	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-	if (!dlc) {
+	dlc = rfcomm_dlcs_lookup_dlci(session, dlci);
+	if (dlc == NULL) {
 		return;
 	}
 
@@ -1237,8 +1193,8 @@ static void rfcomm_handle_rls(struct bt_rfcomm_session *session,
 		return;
 	}
 
-	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-	if (!dlc) {
+	dlc = rfcomm_dlcs_lookup_dlci(session, dlci);
+	if (dlc == NULL) {
 		return;
 	}
 
@@ -1298,8 +1254,8 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 	struct bt_rfcomm_pn *pn = (void *)buf->data;
 	struct bt_rfcomm_dlc *dlc;
 
-	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, pn->dlci);
-	if (!dlc) {
+	dlc = rfcomm_dlcs_lookup_dlci(session, pn->dlci);
+	if (dlc == NULL) {
 		/*  Ignore if it is a response */
 		if (!cr) {
 			return;
@@ -1374,8 +1330,8 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 	LOG_DBG("Dlci %d", dlci);
 
 	if (dlci) {
-		dlc = rfcomm_dlcs_remove_dlci(session->dlcs, dlci);
-		if (!dlc) {
+		dlc = rfcomm_dlcs_remove_dlci(session, dlci);
+		if (dlc == NULL) {
 			rfcomm_send_dm(session, dlci);
 			return;
 		}
@@ -1383,7 +1339,7 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 		rfcomm_send_ua(session, dlci);
 		rfcomm_dlc_disconnect(dlc);
 
-		if (!session->dlcs) {
+		if (sys_slist_is_empty(&session->dlcs)) {
 			/* Start a session idle timer */
 			k_work_reschedule(&session->rtx_work, RFCOMM_IDLE_TIMEOUT);
 		}
@@ -1448,7 +1404,7 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 		 */
 		k_sem_give(&session->fc);
 		rfcomm_send_fcon(session, BT_RFCOMM_MSG_RESP_CR);
-		rfcomm_dlcs_tx_trigger(session->dlcs);
+		rfcomm_dlcs_tx_trigger(session);
 		break;
 	case BT_RFCOMM_FCOFF:
 		if (session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
@@ -1506,7 +1462,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 
 	LOG_DBG("dlci %d, pf %d", dlci, pf);
 
-	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
+	dlc = rfcomm_dlcs_lookup_dlci(session, dlci);
 	if (!dlc) {
 		LOG_ERR("Data recvd in non existing DLC");
 		rfcomm_send_dm(session, dlci);
@@ -1664,13 +1620,11 @@ static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
 {
 	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
 	struct bt_conn *conn = chan->conn;
-	struct bt_rfcomm_dlc *dlc, *next;
+	struct bt_rfcomm_dlc *dlc, *tmp;
 
 	LOG_DBG("session %p status 0x%02x encr 0x%02x", session, hci_status, conn->encrypt);
 
-	for (dlc = session->dlcs; dlc; dlc = next) {
-		next = dlc->_next;
-
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->dlcs, dlc, tmp, _node) {
 		if (dlc->state != BT_RFCOMM_STATE_SECURITY_PENDING) {
 			continue;
 		}
@@ -1713,7 +1667,6 @@ static void rfcomm_session_rtx_timeout(struct k_work *work)
 
 static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 {
-	int i;
 	static const struct bt_l2cap_chan_ops ops = {
 		.connected = rfcomm_connected,
 		.disconnected = rfcomm_disconnected,
@@ -1721,10 +1674,10 @@ static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 		.encrypt_change = rfcomm_encrypt_change,
 	};
 
-	for (i = 0; i < ARRAY_SIZE(bt_rfcomm_pool); i++) {
+	ARRAY_FOR_EACH(bt_rfcomm_pool, i) {
 		struct bt_rfcomm_session *session = &bt_rfcomm_pool[i];
 
-		if (session->br_chan.chan.conn) {
+		if (session->br_chan.chan.conn != NULL) {
 			continue;
 		}
 
@@ -1735,6 +1688,7 @@ static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 		session->state = BT_RFCOMM_STATE_INIT;
 		session->role = role;
 		session->cfc = BT_RFCOMM_CFC_UNKNOWN;
+		sys_slist_init(&session->dlcs);
 		k_work_init_delayable(&session->rtx_work,
 				      rfcomm_session_rtx_timeout);
 		k_sem_init(&session->fc, 0, 1);
@@ -1781,7 +1735,7 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 
 	dlci = BT_RFCOMM_DLCI(session->role, channel);
 
-	if (rfcomm_dlcs_lookup_dlci(session->dlcs, dlci)) {
+	if (rfcomm_dlcs_lookup_dlci(session, dlci) != NULL) {
 		return -EBUSY;
 	}
 
@@ -1821,7 +1775,7 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 	return 0;
 
 fail:
-	rfcomm_dlcs_remove_dlci(session->dlcs, dlc->dlci);
+	(void)rfcomm_dlcs_remove_dlci(session, dlc->dlci);
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
 	return ret;

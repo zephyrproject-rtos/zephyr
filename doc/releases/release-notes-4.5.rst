@@ -53,6 +53,11 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* LoRa
+
+  * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
+    to be consistent with the existing sync/async naming convention.
+
 New APIs and options
 ====================
 ..
@@ -62,6 +67,8 @@ New APIs and options
   instead.
 
 .. zephyr-keep-sorted-start re(^\* \w)
+
+* :c:func:`lora_recv_duty_cycle_async`
 
 .. zephyr-keep-sorted-stop
 

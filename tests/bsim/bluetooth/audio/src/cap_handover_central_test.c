@@ -312,7 +312,6 @@ static struct bt_gatt_cb gatt_callbacks = {
 
 static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_data)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t *addr = user_data;
 	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
@@ -334,8 +333,7 @@ static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_
 		return true; /* Continue parsing to next AD data type */
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	LOG_DBG("Device found: %s", addr_str);
+	LOG_DBG("Device found: %s", bt_addr_le_str(addr));
 
 	bt_addr_le_copy(&remote_dev_addr, addr);
 	SET_FLAG(flag_dev_found);

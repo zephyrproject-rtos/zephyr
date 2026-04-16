@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 # Make sure the esptool package is available
@@ -16,6 +16,45 @@ zephyr_include_directories(include)
 
 if(NOT CONFIG_MCUBOOT AND NOT CONFIG_SOC_ESP32_APPCPU AND NOT CONFIG_SOC_ESP32S3_APPCPU)
   zephyr_sources_ifdef(CONFIG_ESP_SPIRAM esp_psram.c)
+endif()
+
+# Generate linker snippets for BSS relocation to PSRAM.
+# The snippet files are always created so that #include directives in the
+# linker scripts resolve regardless of the current configuration.
+set(_bss_inc "${PROJECT_BINARY_DIR}/include/generated/esp_spiram_relocate_bss.ld.inc")
+set(_extram_inc "${PROJECT_BINARY_DIR}/include/generated/esp_spiram_relocate_bss_ext_ram.ld.inc")
+
+set(_relocate_objects "")
+
+if(CONFIG_ESP_SPIRAM AND NOT "${CONFIG_ESP_SPIRAM_BSS_RELOC_LIBS_AND_OBJS}" STREQUAL "")
+  string(REPLACE " " ";" _tmp "${CONFIG_ESP_SPIRAM_BSS_RELOC_LIBS_AND_OBJS}")
+  foreach(obj IN LISTS _tmp)
+    string(STRIP "${obj}" obj)
+    if(NOT obj STREQUAL "")
+      list(APPEND _relocate_objects "${obj}")
+    endif()
+  endforeach()
+  list(REMOVE_DUPLICATES _relocate_objects)
+endif()
+
+if(_relocate_objects)
+  set(_exclude "")
+  set(_extram "")
+  foreach(obj IN LISTS _relocate_objects)
+    string(APPEND _exclude "*${obj}:* ")
+    string(APPEND _extram "    *${obj}:(.bss .bss.*)\n")
+  endforeach()
+  string(STRIP "${_exclude}" _exclude)
+
+  file(WRITE "${_bss_inc}"
+    "    *(EXCLUDE_FILE(${_exclude}) .bss)\n"
+    "    *(EXCLUDE_FILE(${_exclude}) .bss.*)\n")
+  file(WRITE "${_extram_inc}" "${_extram}")
+else()
+  file(WRITE "${_bss_inc}"
+    "    *(.bss)\n"
+    "    *(.bss.*)\n")
+  file(WRITE "${_extram_inc}" "")
 endif()
 
 # Get flash size to use in esptool as string

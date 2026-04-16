@@ -121,6 +121,14 @@
 			status = "disabled";
 		};
 
+		dac1: dac@42028400 {
+			compatible = "st,stm32-dac";
+			reg = <0x42028400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 11)>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		exti: interrupt-controller@44022000 {
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
@@ -574,6 +582,20 @@
 			status = "disabled";
 		};
 
+		usb: usb@40016000 {
+			compatible = "st,stm32-usb";
+			reg = <0x40016000 0x400>;
+			interrupts = <62 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <2048>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK(APB2, 24)>,
+				 <&rcc STM32_SRC_CK48 CK48_SEL(0)>;
+			phys = <&usb_fs_phy>;
+			status = "disabled";
+		};
+
 		wwdg: wwdg1: watchdog@40002c00 {
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x400>;
@@ -581,6 +603,11 @@
 			interrupts = <0 0>;
 			status = "disabled";
 		};
+	};
+
+	usb_fs_phy: usb_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 
 	die_temp: dietemp {

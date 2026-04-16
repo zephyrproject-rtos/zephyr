@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&flash1 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(128)>;
+			read-only;
+		};
+
+		storage_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x20000 DT_SIZE_K(128)>;
+		};
+	};
+};

@@ -1,0 +1,42 @@
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) Zephyproject contributors
+# SPDX-License-Identifier: Apache-2.0
+# Kconfig file for userspace configuration options.
+#
+if USERSPACE
+config THREAD_USERSPACE_LOCAL_DATA
+	bool
+	default y if ERRNO && !ERRNO_IN_TLS && !LIBC_ERRNO
+
+config USERSPACE_THREAD_MAY_RAISE_PRIORITY
+	bool "Thread can raise own priority"
+	depends on TEST # This should only be enabled by tests.
+	help
+	  Thread can raise its own priority in userspace mode.
+
+config EXECUTE_XOR_WRITE
+	bool "W^X for memory partitions"
+	depends on ARCH_HAS_EXECUTABLE_PAGE_BIT
+	default y
+	help
+	  When enabled, will enforce that a writable page isn't executable
+	  and vice versa.  This might not be acceptable in all scenarios,
+	  so this option is given for those unafraid of shooting themselves
+	  in the foot.
+
+	  If unsure, say Y.
+
+config BOUNDS_CHECK_BYPASS_MITIGATION
+	bool "Bounds check bypass mitigations for speculative execution"
+	help
+	  Untrusted parameters from user mode may be used in system calls to
+	  index arrays during speculative execution, also known as the Spectre
+	  V1 vulnerability. When enabled, various macros defined in
+	  misc/speculation.h will insert fence instructions or other appropriate
+	  mitigations after bounds checking any array index parameters passed
+	  in from untrusted sources (user mode threads). When disabled, these
+	  macros do nothing.
+
+
+rsource "Kconfig.mem_domain"
+endif

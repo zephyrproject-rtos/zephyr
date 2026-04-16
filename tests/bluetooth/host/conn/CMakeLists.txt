@@ -24,6 +24,7 @@ target_sources(testbinary
     PRIVATE
     src/main.c
 
+    ${ZEPHYR_BASE}/subsys/bluetooth/common/addr.c
     ${ZEPHYR_BASE}/subsys/bluetooth/host/conn.c
     ${ZEPHYR_BASE}/subsys/logging/log_minimal.c
     ${ZEPHYR_BASE}/lib/net_buf/buf.c

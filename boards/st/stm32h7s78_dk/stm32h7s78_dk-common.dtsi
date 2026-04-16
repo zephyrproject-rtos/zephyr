@@ -438,3 +438,7 @@ st_cam_dvp: &dcmipp {
 
 	pinctrl-names = "default";
 };
+
+&crc {
+	status = "okay";
+};

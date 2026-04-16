@@ -73,7 +73,7 @@ typedef uint32_t chunksz_t;
 #ifdef CONFIG_SYS_HEAP_CANARIES
 
 struct z_heap_chunk_trailer {
-	uint64_t canary;
+	uint32_t canary;
 } __aligned(CHUNK_UNIT);
 
 #define CHUNK_TRAILER_SIZE (sizeof(struct z_heap_chunk_trailer) / CHUNK_UNIT)
@@ -96,6 +96,9 @@ struct z_heap {
 	size_t free_bytes;
 	size_t allocated_bytes;
 	size_t max_allocated_bytes;
+#endif
+#ifdef CONFIG_SYS_HEAP_CANARIES_RANDOM
+	uint32_t canary_base;
 #endif
 	struct z_heap_bucket buckets[];
 };

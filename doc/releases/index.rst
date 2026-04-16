@@ -27,14 +27,14 @@ recommended starting point is either the **latest stable release** or the
    :reversed:
 
    release-notes-3.7
-   release-notes-4.[2-4]
+   release-notes-4.[3-5]
    migration-guide-3.7
-   migration-guide-4.[2-4]
+   migration-guide-4.[3-5]
 
 .. note::
-   | The next planned release is **Zephyr 4.4**, targeted for **April 2026**.
-   | The working drafts of the associated :doc:`Release Notes <release-notes-4.4>`
-     and :doc:`Migration Guide <migration-guide-4.4>` are already available.
+   | The next planned release is **Zephyr 4.5**, targeted for **October 2026**.
+   | The working drafts of the associated :doc:`Release Notes <release-notes-4.5>`
+     and :doc:`Migration Guide <migration-guide-4.5>` are already available.
 
 .. list-table::
     :header-rows: 1
@@ -44,18 +44,18 @@ recommended starting point is either the **latest stable release** or the
       - EOL
       - Status
       - Supporting Documentation
+    * - `Zephyr 4.4.0`_
+      - 2026-04-14
+      - 2027-04-12
+      - Latest stable
+      - * :doc:`Release Notes <release-notes-4.4>`
+        * :doc:`Migration Guide <migration-guide-4.4>`
     * - `Zephyr 4.3.0`_
       - 2025-11-14
       - 2026-10-15
-      - Latest stable
+      - Stable
       - * :doc:`Release Notes <release-notes-4.3>`
         * :doc:`Migration Guide <migration-guide-4.3>`
-    * - `Zephyr 4.2.0`_
-      - 2025-07-18
-      - 2026-03-20
-      - Stable
-      - * :doc:`Release Notes <release-notes-4.2>`
-        * :doc:`Migration Guide <migration-guide-4.2>`
     * - `Zephyr 3.7.0 (LTS3)`_
       - 2024-07-26
       - 2029-07-27
@@ -214,5 +214,5 @@ to be able to understand the context of the change.
 .. _`Zephyr 1.14.1 (LTS1)`: https://docs.zephyrproject.org/1.14.1/
 .. _`Zephyr 2.7.6 (LTS2)`: https://docs.zephyrproject.org/2.7.6/
 .. _`Zephyr 3.7.0 (LTS3)`: https://docs.zephyrproject.org/3.7.0/
-.. _`Zephyr 4.2.0`: https://docs.zephyrproject.org/4.2.0/
 .. _`Zephyr 4.3.0`: https://docs.zephyrproject.org/4.3.0/
+.. _`Zephyr 4.4.0`: https://docs.zephyrproject.org/4.4.0/

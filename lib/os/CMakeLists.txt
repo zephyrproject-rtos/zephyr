@@ -9,8 +9,6 @@ zephyr_sources(
   cbprintf_packaged.c
   clock.c
   printk.c
-  sem.c
-  thread_entry.c
   )
 
 if(CONFIG_ZVFS)
@@ -56,8 +54,6 @@ endif()
 if(CONFIG_ASSERT OR CONFIG_ASSERT_VERBOSE)
 zephyr_sources(assert.c)
 endif()
-
-zephyr_sources_ifdef(CONFIG_USERSPACE mutex.c user_work.c)
 
 zephyr_sources_ifdef(CONFIG_MPSC_PBUF mpsc_pbuf.c)
 

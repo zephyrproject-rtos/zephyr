@@ -180,29 +180,34 @@ static void analog_axis_loop(const struct device *dev)
 		return;
 	}
 
-	k_sem_take(&data->cal_lock, K_FOREVER);
-
 	for (i = 0; i < cfg->num_channels; i++) {
 		const struct analog_axis_channel_config *axis_cfg = &cfg->channel_cfg[i];
 		struct analog_axis_channel_data *axis_data = &cfg->channel_data[i];
 		struct analog_axis_calibration *cal = &cfg->calibration[i];
+		analog_axis_raw_data_t raw_data_cb;
 		int32_t raw_val = bufs[i];
 
 		if (axis_cfg->invert_input) {
 			raw_val *= -1;
 		}
 
-		if (data->raw_data_cb != NULL) {
-			data->raw_data_cb(dev, i, raw_val);
+		k_sem_take(&data->cal_lock, K_FOREVER);
+		raw_data_cb = data->raw_data_cb;
+		k_sem_give(&data->cal_lock);
+
+		if (raw_data_cb != NULL) {
+			raw_data_cb(dev, i, raw_val);
 		}
 
 		LOG_DBG("%s: ch %d: raw_val: %d", dev->name, i, raw_val);
 
+		k_sem_take(&data->cal_lock, K_FOREVER);
 		if (cal->in_deadzone > 0) {
 			out = analog_axis_out_deadzone(dev, i, raw_val);
 		} else {
 			out = analog_axis_out_linear(dev, i, raw_val);
 		}
+		k_sem_give(&data->cal_lock);
 
 		out = clamp(out, axis_cfg->out_min, axis_cfg->out_max);
 
@@ -216,7 +221,6 @@ static void analog_axis_loop(const struct device *dev)
 		axis_data->last_out = out;
 	}
 
-	k_sem_give(&data->cal_lock);
 }
 
 static void analog_axis_thread(void *arg1, void *arg2, void *arg3)

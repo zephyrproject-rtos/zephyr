@@ -82,7 +82,7 @@ config WIFI_NM_WPA_SUPPLICANT_PRIO
 	int "Thread priority of wpa_supplicant"
 	default 0
 
-# Currently we default ZVFS_OPEN_MAX to 16 in lib/posix/Kconfig
+# Currently we default ZVFS_OPEN_MAX to 16 in subsys/portability/posix/Kconfig
 # l2_packet - 1
 # ctrl_iface - 2 * socketpairs = 4(local and global)
 # z_wpa_event_sock - 1 socketpair = 2
@@ -318,10 +318,42 @@ config EAP_TLSV1_3
 
 endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 
-config WIFI_NM_WPA_SUPPLICANT_WPA3
-	bool "WPA3 support"
+choice WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION
+	prompt "WPA3 implementation"
+	default WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
-	default y
+	help
+	  Select how WPA3/SAE is provided. Internal uses the supplicant
+	  bignum-based implementation. External uses an out-of-tree
+	  implementation (e.g. PSA crypto). None disables WPA3.
+
+config WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_NONE
+	bool "None"
+	help
+	  WPA3 is disabled. Only WPA2 and earlier are available.
+
+config WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT
+	bool "Internal"
+	select WIFI_NM_WPA_SUPPLICANT_WPA3
+
+config WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_EXT
+	bool "External"
+
+endchoice
+
+config WIFI_NM_WPA_SUPPLICANT_WPA3
+	bool
+	help
+	  Internal WPA3/SAE implementation (bignum-based). Selected by
+	  WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT.
+
+config WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON
+	bool
+	default y if WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT || \
+		    WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_EXT
+	help
+	  WPA3/SAE is available (either internal or external implementation).
+	  Use this in code to gate WPA3 functionality regardless of backend.
 
 config WIFI_NM_WPA_SUPPLICANT_AP
 	bool "SoftAP mode support based on WPA supplicant"

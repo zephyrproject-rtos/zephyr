@@ -3067,7 +3067,8 @@ static int npcx_i3c_init(const struct device *dev)
 
 	/* Check I3C is controller mode and target device exist in device tree */
 	if ((config->common.dev_list.num_i3c > 0) &&
-	    GET_FIELD(inst->MCONFIG, NPCX_I3C_MCONFIG_CTRENA) == MCONFIG_CTRENA_ON) {
+	    GET_FIELD(inst->MCONFIG, NPCX_I3C_MCONFIG_CTRENA) == MCONFIG_CTRENA_ON &&
+	    !(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 		/* Perform bus initialization */
 		ret = i3c_bus_init(dev, &config->common.dev_list);
 		if (ret != 0) {
@@ -3136,6 +3137,7 @@ static DEVICE_API(i3c, npcx_i3c_driver_api) = {
 		.common.dev_list.num_i3c = ARRAY_SIZE(npcx_i3c_device_array_##id),                 \
 		.common.dev_list.i2c = npcx_i3c_i2c_device_array_##id,                             \
 		.common.dev_list.num_i2c = ARRAY_SIZE(npcx_i3c_i2c_device_array_##id),             \
+		.common.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(id),                           \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
 		.instance_id = DT_INST_PROP(id, instance_id),                                      \
 		.clocks.i3c_pp_scl_hz = DT_INST_PROP_OR(id, i3c_scl_hz, 0),                        \

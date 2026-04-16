@@ -573,7 +573,6 @@ Bluetooth HCI:
     - sjanc
     - HoZHel
     - cvinayak
-    - PavelVPV
     - HaavardRei
   files:
     - include/zephyr/drivers/bluetooth/
@@ -599,7 +598,6 @@ Bluetooth Host:
     - sjanc
     - Thalley
     - cvinayak
-    - PavelVPV
     - HaavardRei
   files:
     - doc/connectivity/bluetooth/
@@ -4558,9 +4556,9 @@ POSIX API layer:
     - ycsin
   files:
     - include/zephyr/posix/
-    - lib/posix/
-    - tests/posix/
-    - samples/posix/
+    - subsys/portability/posix/
+    - tests/subsys/portability/posix/
+    - samples/subsys/portability/posix/
     - tests/lib/fdtable/
     - doc/services/portability/posix/
   labels:
@@ -4813,9 +4811,11 @@ Realtek Fingerprint Platforms:
 Release:
   status: maintained
   maintainers:
-    - nashif
+    - MaureenHelm
+    - stephanosio
   collaborators:
     - kartben
+    - nashif
   files:
     - VERSION
     - scripts/dump_bugs_pickle.py
@@ -4823,21 +4823,10 @@ Release:
     - LICENSE
     - LICENSES/
     - scripts/release/
-  labels:
-    - "Release"
-
-Release Notes:
-  status: maintained
-  maintainers:
-    - MaureenHelm
-    - stephanosio
-  collaborators:
-    - kartben
-  files:
     - doc/releases/migration-guide-*
     - doc/releases/release-notes-*
   labels:
-    - "Release Notes"
+    - "Release"
 
 Renesas R-Car Platforms:
   status: maintained
@@ -4982,8 +4971,8 @@ SPDX Tooling:
   collaborators:
     - pdgendt
   files:
+    - scripts/pylib/zspdx/
     - scripts/west_commands/spdx.py
-    - scripts/west_commands/zspdx/
     - tests/application_development/software_bill_of_materials/
   labels:
     - "area: SPDX Tooling"
@@ -5398,7 +5387,8 @@ TI K3 Platforms:
     - natto1784
     - Kronosblaster
   files:
-    - boards/ti/*am62*/
+    - boards/ti/*am2*/
+    - boards/ti/*am6*/
     - drivers/*/*davinci*
     - drivers/*/*omap*
     - drivers/*/*ti_k3*
@@ -5427,14 +5417,6 @@ TI MSPM0 Platforms:
   labels:
     - "platform: Texas Instruments MSPM0"
 
-TI Platforms:
-  status: odd fixes
-  files:
-    - soc/ti/lm3s6965/
-    - dts/arm/ti/lm3s6965.dtsi
-  labels:
-    - "platform: TI"
-
 TI SimpleLink Platforms:
   status: maintained
   maintainers:
@@ -5442,6 +5424,7 @@ TI SimpleLink Platforms:
   collaborators:
     - bogdanovs
     - jpanisbl
+    - glneo
   files:
     - boards/ti/cc*/
     - boards/ti/msp*/
@@ -5451,12 +5434,19 @@ TI SimpleLink Platforms:
     - drivers/*/*cc26*
     - drivers/*/*cc32*
     - dts/arm/ti/cc*
-    - dts/bindings/*/ti,*
+    - dts/bindings/*/ti,cc*
     - soc/ti/simplelink/
-    - dts/bindings/*/ti,*
     - modules/Kconfig.simplelink
   labels:
     - "platform: TI SimpleLink"
+
+TI Stellaris Platforms:
+  status: odd fixes
+  files:
+    - soc/ti/lm3s6965/
+    - dts/arm/ti/lm3s6965.dtsi
+  labels:
+    - "platform: TI Stellaris"
 
 Task Watchdog:
   status: maintained
@@ -5705,7 +5695,7 @@ Userspace:
     - tests/kernel/mem_protect/
     - samples/userspace/
     - include/zephyr/syscall.h
-    - kernel/userspace*
+    - kernel/userspace/
     - scripts/build/gen_app_partitions.py
     - scripts/build/gen_kobject_list.py
     - scripts/build/gen_syscalls.py

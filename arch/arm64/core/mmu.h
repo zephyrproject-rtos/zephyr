@@ -26,8 +26,16 @@
  * +------------+------------+------------+------------+-----------+
  */
 
-/* Only 4K granule is supported */
+/* Determine the page size shift from the configured page size */
+#if defined(CONFIG_ARM64_PAGE_SIZE_64KB)
+#define PAGE_SIZE_SHIFT		16U
+#elif defined(CONFIG_ARM64_PAGE_SIZE_16KB)
+#define PAGE_SIZE_SHIFT		14U
+#elif defined(CONFIG_ARM64_PAGE_SIZE_4KB)
 #define PAGE_SIZE_SHIFT		12U
+#else
+#error Unsupported page size configuration
+#endif
 
 /* 48-bit VA address */
 #define VA_SIZE_SHIFT_MAX	48U

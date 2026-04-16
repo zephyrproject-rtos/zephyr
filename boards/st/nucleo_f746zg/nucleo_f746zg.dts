@@ -270,3 +270,7 @@ zephyr_udc0: &usbotg_fs {
 		};
 	};
 };
+
+&crc {
+	status = "okay";
+};

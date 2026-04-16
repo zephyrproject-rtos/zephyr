@@ -737,5 +737,17 @@
 			reg = <0x00f03800 0x100>;
 			status = "disabled";
 		};
+
+		rtc0: rtc@f01200 {
+			compatible = "ite,it8xxx2-rtc";
+			reg = <0x00f01200 6   /* EC2I */
+			       0x00f03e00 1   /* GPIOGCR */
+			       0x00f02000 1>; /* GCTRL */
+			interrupts = <IT8XXX2_IRQ_RTCT_ALARM1 IRQ_TYPE_EDGE_RISING
+				      IT8XXX2_IRQ_RTCT_ALARM2 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
+			alarms-count = <2>;
+			status = "disabled";
+		};
 	};
 };

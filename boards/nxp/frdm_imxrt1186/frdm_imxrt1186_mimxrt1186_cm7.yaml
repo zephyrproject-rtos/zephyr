@@ -20,4 +20,5 @@ supported:
   - uart
   - mbox
   - i2c
+  - watchdog
 vendor: nxp

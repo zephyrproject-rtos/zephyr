@@ -142,15 +142,6 @@ static bool has_ongoing_exchange(const struct coap_client *client)
 	return false;
 }
 
-static bool has_timeout_expired(const struct coap_client *client)
-{
-	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
-		if (timeout_expired(&client->requests[i])) {
-			return true;
-		}
-	}
-	return false;
-}
 
 static struct coap_client_internal_request *get_free_request(struct coap_client *client)
 {
@@ -584,10 +575,13 @@ static void report_multicast_complete(struct coap_client_internal_request *inter
 
 static bool timeout_expired(const struct coap_client_internal_request *internal_req)
 {
+	if (!internal_req->request_ongoing) {
+		return false;
+	}
+
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
-	if (internal_req->is_mcast && internal_req->request_ongoing &&
-	    sys_timepoint_expired(internal_req->mcast_timeout)) {
-		return true;
+	if (internal_req->is_mcast) {
+		return sys_timepoint_expired(internal_req->mcast_timeout);
 	}
 #endif
 
@@ -595,8 +589,7 @@ static bool timeout_expired(const struct coap_client_internal_request *internal_
 		return false;
 	}
 
-	return (internal_req->request_ongoing &&
-		internal_req->pending.timeout <= (k_uptime_get() - internal_req->pending.t0));
+	return internal_req->pending.timeout <= (k_uptime_get() - internal_req->pending.t0);
 }
 
 static int resend_request(struct coap_client *client,
@@ -678,6 +671,39 @@ static struct coap_client *get_client(int sock)
 	return NULL;
 }
 
+static int get_next_timeout(void)
+{
+	int64_t now = k_uptime_get();
+	int64_t min_timeout = COAP_PERIODIC_TIMEOUT;
+
+	for (int i = 0; i < num_clients; i++) {
+		for (int j = 0; j < CONFIG_COAP_CLIENT_MAX_REQUESTS; j++) {
+			struct coap_client_internal_request *req = &clients[i]->requests[j];
+
+			if (!req->request_ongoing || req->pending.timeout == 0) {
+				continue;
+			}
+
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+			if (req->is_mcast) {
+				continue;
+			}
+#endif
+
+			int64_t remaining = (req->pending.t0 + req->pending.timeout) - now;
+
+			if (remaining <= 0) {
+				/* Fire immediately */
+				return 0;
+			}
+
+			min_timeout = MIN(min_timeout, remaining);
+		}
+	}
+
+	return (int)min_timeout;
+}
+
 static int handle_poll(void)
 {
 	int ret = 0;
@@ -685,29 +711,22 @@ static int handle_poll(void)
 	struct zsock_pollfd fds[CONFIG_COAP_CLIENT_MAX_INSTANCES] = {0};
 	int nfds = 0;
 
-	/* Use periodic timeouts */
 	for (int i = 0; i < num_clients; i++) {
-		short events = (has_ongoing_exchange(clients[i]) ? ZSOCK_POLLIN : 0) |
-			       (has_timeout_expired(clients[i]) ? ZSOCK_POLLOUT : 0);
-
-		if (events == 0) {
-			/* Skip this socket */
+		if (!has_ongoing_exchange(clients[i])) {
 			continue;
 		}
 		fds[nfds].fd = clients[i]->fd;
-		fds[nfds].events = events;
+		fds[nfds].events = ZSOCK_POLLIN;
 		fds[nfds].revents = 0;
 		nfds++;
 	}
 
-	ret = zsock_poll(fds, nfds, COAP_PERIODIC_TIMEOUT);
+	ret = zsock_poll(fds, nfds, get_next_timeout());
 
 	if (ret < 0) {
 		ret = -errno;
 		LOG_ERR("Error in poll:%d", ret);
 		return ret;
-	} else if (ret == 0) {
-		return 0;
 	}
 
 	for (int i = 0; i < nfds; i++) {
@@ -720,9 +739,6 @@ static int handle_poll(void)
 			continue;
 		}
 
-		if (fds[i].revents & ZSOCK_POLLOUT) {
-			coap_client_resend_handler(client);
-		}
 		if (fds[i].revents & ZSOCK_POLLIN) {
 			struct coap_packet response;
 			bool response_truncated = false;
@@ -759,6 +775,11 @@ static int handle_poll(void)
 			LOG_ERR("Error in poll: POLLNVAL - fd %d not open", fds[i].fd);
 			cancel_requests_with(client, -EIO);
 		}
+	}
+
+	/* Handle timeouts independently of poll events */
+	for (int i = 0; i < num_clients; i++) {
+		coap_client_resend_handler(clients[i]);
 	}
 
 	return 0;
@@ -1261,7 +1282,7 @@ void coap_client_cancel_request(struct coap_client *client, struct coap_client_r
 		    requests_match(&client->requests[i].coap_request, req)) {
 			LOG_DBG("Cancelling request %d", i);
 			report_callback_error(&client->requests[i], -ECANCELED);
-			release_internal_request(&client->requests[i]);
+			reset_internal_request(&client->requests[i]);
 		}
 	}
 

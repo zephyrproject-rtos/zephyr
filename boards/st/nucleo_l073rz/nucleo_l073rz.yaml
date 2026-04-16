@@ -8,18 +8,19 @@ toolchain:
 ram: 20
 flash: 192
 supported:
+  - adc
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
+  - counter
+  - crc
+  - dac
+  - eeprom
   - gpio
   - i2c
+  - pwm
+  - rng
+  - rtc
   - spi
   - watchdog
-  - adc
-  - dac
-  - pwm
-  - counter
-  - rng
-  - eeprom
-  - rtc
 vendor: st

@@ -33,6 +33,7 @@ static int ipv6cp_add_iid(struct ppp_context *ctx, struct net_pkt *pkt)
 	uint8_t *iid = ctx->ipv6cp.my_options.iid;
 	size_t iid_len = sizeof(ctx->ipv6cp.my_options.iid);
 	struct net_linkaddr *linkaddr;
+	int ret;
 
 	linkaddr = net_if_get_link_addr(ctx->iface);
 	if (linkaddr->len == 8) {
@@ -45,7 +46,11 @@ static int ipv6cp_add_iid(struct ppp_context *ctx, struct net_pkt *pkt)
 		memcpy(iid + 5, linkaddr->addr + 3, 3);
 	}
 
-	net_pkt_write_u8(pkt, INTERFACE_IDENTIFIER_OPTION_LEN);
+	ret = net_pkt_write_u8(pkt, INTERFACE_IDENTIFIER_OPTION_LEN);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return net_pkt_write(pkt, iid, iid_len);
 }
 

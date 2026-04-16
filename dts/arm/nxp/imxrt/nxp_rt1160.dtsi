@@ -8,8 +8,8 @@
 
 /* Configure ARM PLL to 600MHz */
 &arm_pll {
-	clock-mult = <100>;
-	clock-div = <4>;
+	loop-div = <200>;
+	post-div = <4>;
 };
 
 /* Set OCRAM regions/sizes for RT1160. Combines OCRAM1/OCRAM2/OCRAM M7 (FlexRAM ECC).

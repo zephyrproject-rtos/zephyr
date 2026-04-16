@@ -41,3 +41,4 @@ list(APPEND QEMU_FLAGS_${ARCH}
   )
 
 set(BOARD_DEBUG_RUNNER qemu)
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

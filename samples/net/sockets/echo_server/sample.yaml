@@ -159,3 +159,9 @@ tests:
       - native_sim/native/64
     extra_args:
       - EXTRA_CONF_FILE="overlay-ws-console.conf"
+  sample.net.sockets.echo_server.wifi.nrf70dk:
+    extra_args:
+      - SNIPPET=wifi-ipv4
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp

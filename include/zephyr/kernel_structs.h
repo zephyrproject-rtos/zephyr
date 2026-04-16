@@ -87,22 +87,27 @@ extern "C" {
 
 #if !defined(_ASMLANGUAGE)
 
-/* Two abstractions are defined here for "thread priority queues".
+/* There are three abstractions defined for "thread priority queues".
  *
- * One is a "dumb" list implementation appropriate for systems with
- * small numbers of threads and sensitive to code size.  It is stored
- * in sorted order, taking an O(N) cost every time a thread is added
- * to the list.  This corresponds to the way the original _wait_q_t
- * abstraction worked and is very fast as long as the number of
- * threads is small.
+ * The first is a simple doubly linked list (sys_dlist_t) appropriate for
+ * systems with small numbers of threads and sensitive to code size. It is
+ * stored in sorted order, taking an O(N) cost every time a thread is added
+ * to the list. This corresponds to the way the original _wait_q_t abstraction
+ * worked and is very fast as long as the number of threads is small.
  *
- * The other is a balanced tree "fast" implementation with rather
- * larger code size (due to the data structure itself, the code here
- * is just stubs) and higher constant-factor performance overhead, but
- * much better O(logN) scaling in the presence of large number of
- * threads.
+ * The second is a scalable balanced tree. It has a rather larger code size
+ * (due to the data structure itself, the code here is just stubs) and higher
+ * constant-factor performance overhead, with O(logN) scaling in the presence
+ * of large number of threads.
  *
- * Each can be used for either the wait_q or system ready queue,
+ * The third is a traditional/textbook "multi-queue". It has separate lists
+ * for each priority. This corresponds to the original Zephyr scheduler. RAM
+ * requirements are comparatively high, but performance is very fast. It won't
+ * work with features like deadline scheduling which need large priority spaces
+ * to represent their requirements.
+ *
+ * Either the simple or balanced tree abstractions may be used for the wait_q.
+ * Any of the three may be used for the system ready queue. The choices are
  * configurable at build time.
  */
 
@@ -111,14 +116,6 @@ struct _priq_rb {
 	int next_order_key;
 };
 
-
-/* Traditional/textbook "multi-queue" structure.  Separate lists for a
- * small number (max 32 here) of fixed priorities.  This corresponds
- * to the original Zephyr scheduler.  RAM requirements are
- * comparatively high, but performance is very fast.  Won't work with
- * features like deadline scheduling which need large priority spaces
- * to represent their requirements.
- */
 struct _priq_mq {
 	sys_dlist_t queues[K_NUM_THREAD_PRIO];
 	unsigned long bitmask[PRIQ_BITMAP_SIZE];

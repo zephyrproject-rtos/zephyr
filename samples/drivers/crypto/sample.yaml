@@ -27,6 +27,7 @@ tests:
     tags: crypto
     filter: dt_compat_enabled("microchip,aes-g1")
     integration_platforms:
+      - sama7d65_curiosity
       - sama7g54_ek
     harness: console
     harness_config:

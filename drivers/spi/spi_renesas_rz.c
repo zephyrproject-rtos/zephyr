@@ -13,7 +13,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include "r_spi.h"
 #ifdef CONFIG_SPI_RTIO
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/rtio/rtio.h>
 #endif
 #include <zephyr/logging/log.h>

@@ -129,7 +129,10 @@ struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 
 	memcpy(udp_hdr, hdr, sizeof(struct net_udp_hdr));
 
-	net_pkt_set_data(pkt, &udp_access);
+	if (net_pkt_set_data(pkt, &udp_access) < 0) {
+		udp_hdr = NULL;
+		goto out;
+	}
 out:
 	net_pkt_cursor_restore(pkt, &backup);
 	net_pkt_set_overwrite(pkt, overwrite);

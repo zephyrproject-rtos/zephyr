@@ -15,10 +15,17 @@ properties:
     description: |
       conveys that this node is a wakeup controller
 
+  hw-either-edge-supported:
+    type: boolean
+    description: |
+      hardware supports either-edge triggering.
+
   both-edge-trigger:
     type: boolean
     description: |
       Rising-edge or falling-edge triggered is selected.
+      This property is ignored if `hw-either-edge-supported`
+      is present.
 
   "#wuc-cells":
     type: int

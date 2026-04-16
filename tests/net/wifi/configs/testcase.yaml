@@ -37,7 +37,7 @@ tests:
       - CONFIG_EAP_AKA=y
   wifi.build.wpa3:
     extra_configs:
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT=y
       - CONFIG_MBEDTLS_SSL_PROTO_TLS1_2=y
   wifi.build.ap:
     extra_configs:

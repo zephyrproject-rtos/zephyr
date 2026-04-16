@@ -105,7 +105,6 @@ static void copy_last_bonded_addr(const struct bt_bond_info *info, void *data)
 static void bt_ready(void)
 {
 	int err;
-	char addr[BT_ADDR_LE_STR_LEN];
 
 	printk("Bluetooth initialized\n");
 
@@ -120,8 +119,7 @@ static void bt_ready(void)
 	 * This means there is no bond yet.
 	 */
 	if (bt_addr_le_cmp(&bond_addr, BT_ADDR_LE_NONE) != 0) {
-		bt_addr_le_to_str(&bond_addr, addr, sizeof(addr));
-		printk("Direct advertising to %s\n", addr);
+		printk("Direct advertising to %s\n", bt_addr_le_str(&bond_addr));
 
 		adv_param = *BT_LE_ADV_CONN_DIR_LOW_DUTY(&bond_addr);
 		adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;

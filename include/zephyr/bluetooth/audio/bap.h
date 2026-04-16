@@ -926,8 +926,12 @@ struct bt_bap_stream {
 	/** Endpoint reference */
 	struct bt_bap_ep *ep;
 
-	/** Codec Configuration */
-	struct bt_audio_codec_cfg *codec_cfg;
+	/**
+	 * @brief Codec Configuration
+	 *
+	 * Only valid if the endpoint for this stream is non-NULL.
+	 */
+	const struct bt_audio_codec_cfg *codec_cfg;
 
 	/** QoS Configuration */
 	struct bt_bap_qos_cfg *qos;
@@ -1142,7 +1146,7 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream, struct bt_bap_strea
  * @return Allocated Audio Stream object or NULL in case of error.
  */
 int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
-			 struct bt_audio_codec_cfg *codec_cfg);
+			 const struct bt_audio_codec_cfg *codec_cfg);
 
 /**
  * @brief Reconfigure Audio Stream
@@ -1157,7 +1161,8 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
  *
  * @return 0 in case of success or negative value in case of error.
  */
-int bt_bap_stream_reconfig(struct bt_bap_stream *stream, struct bt_audio_codec_cfg *codec_cfg);
+int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
+			   const struct bt_audio_codec_cfg *codec_cfg);
 
 /**
  * @brief Configure Audio Stream QoS
@@ -1605,7 +1610,7 @@ int bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func
  * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
-				     struct bt_audio_codec_cfg *codec_cfg,
+				     const struct bt_audio_codec_cfg *codec_cfg,
 				     const struct bt_bap_qos_cfg_pref *qos_pref);
 
 /** @} */ /* End of group bt_bap_unicast_server */
@@ -2316,7 +2321,7 @@ struct bt_bap_broadcast_source_stream_param {
 	size_t data_len;
 
 	/** BIS Codec Specific Configuration */
-	uint8_t *data;
+	const uint8_t *data;
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 };
 
@@ -2329,7 +2334,7 @@ struct bt_bap_broadcast_source_subgroup_param {
 	struct bt_bap_broadcast_source_stream_param *params;
 
 	/** Subgroup Codec configuration. */
-	struct bt_audio_codec_cfg *codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg;
 };
 
 /** Broadcast Source create parameters */
@@ -2683,7 +2688,7 @@ int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink);
 /**
  * @brief Register the Basic Audio Profile Scan Delegator and BASS.
  *
- * Register the scan deligator and Broadcast Audio Scan Service (BASS)
+ * Register the scan delegator and Broadcast Audio Scan Service (BASS)
  * dynamically at runtime.
  *
  * Only one set of callbacks can be registered at any one time, and calling this function multiple
@@ -2698,7 +2703,7 @@ int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb);
 /**
  * @brief unregister the Basic Audio Profile Scan Delegator and BASS.
  *
- * Unregister the scan deligator and Broadcast Audio Scan Service (BASS)
+ * Unregister the scan delegator and Broadcast Audio Scan Service (BASS)
  * dynamically at runtime.
  *
  * @return 0 in case of success or negative value in case of error.

@@ -1683,7 +1683,7 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 
 	ascs_cp_rsp_success(ASE_ID(ase));
 
-	bt_bap_stream_attach(ase->conn, stream, &ase->ep, &ase->ep.codec_cfg);
+	bt_bap_stream_attach(ase->conn, stream, &ase->ep);
 
 	ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 
@@ -1704,7 +1704,7 @@ static struct bt_bap_ep *ep_lookup_stream(struct bt_conn *conn, struct bt_bap_st
 }
 
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
-		       struct bt_audio_codec_cfg *codec_cfg,
+		       const struct bt_audio_codec_cfg *codec_cfg,
 		       const struct bt_bap_qos_cfg_pref *qos_pref)
 {
 	const struct bt_audio_codec_cap *codec_cap;
@@ -1759,7 +1759,7 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 
 	ep->qos_pref = *qos_pref;
 
-	bt_bap_stream_attach(conn, stream, ep, &ep->codec_cfg);
+	bt_bap_stream_attach(conn, stream, ep);
 
 	err = ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 	if (err != 0) {
