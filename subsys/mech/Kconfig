@@ -1,0 +1,56 @@
+# Copyright (c) 2026 Sylvain Mosnier
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Mechanical subsystem"
+
+config MECH
+	bool "Kinematic tree and forward kinematics"
+	depends on DT_HAS_ZEPHYR_MECH_LINK_ENABLED
+	help
+	  Builds the kinematic tree from zephyr,mech-link and zephyr,mech-joint
+	  DT nodes at POST_KERNEL init.
+
+if MECH
+
+config MECH_MAX_DEPTH
+	int "Maximum kinematic chain depth"
+	default 4
+	help
+	  Maximum number of joints between a leaf link and the root link.
+	  Determines the size of stack-allocated path arrays used during
+	  forward kinematics traversal.
+
+config MECH_INIT_PRIORITY
+	int "SYS_INIT priority for kinematic tree init"
+	default 50
+	range 0 99
+	help
+	  POST_KERNEL init priority of the kinematic tree.
+
+config MECH_THREAD_SAFE
+	bool "Thread-safe joint state"
+	default y
+	depends on MULTITHREADING
+	help
+	  Protect each non-fixed joint state for concurrent access.
+
+config MECH_INERTIAL
+	bool "Inertial properties"
+	help
+	  Enable access to per-link inertial properties declared in the DT
+	  (mass, center of mass, inertia tensor).
+
+config MECH_TRANSMISSION
+	bool "Actuator transmissions"
+	depends on DT_HAS_ZEPHYR_MECH_TRANSMISSION_ENABLED
+	help
+	  Enable support for zephyr,mech-transmission DT nodes. Maps Zephyr
+	  actuator devices to kinematic joints with gear ratio.
+
+module = MECH
+module-str = mech
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MECH
+
+endmenu
