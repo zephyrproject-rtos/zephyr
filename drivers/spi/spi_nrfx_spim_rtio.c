@@ -21,7 +21,7 @@ struct driver_config {
 };
 
 static void iodev_end_curr(const struct device *dev);
-static void iodev_start_txn(const struct device *dev);
+static void iodev_start_curr(const struct device *dev);
 static void iodev_end_txn(const struct device *dev, int result);
 
 static void iodev_await_callback(struct rtio_iodev_sqe *iodev_sqe, void *userdata)
@@ -94,6 +94,8 @@ static void iodev_start_curr(const struct device *dev)
 			break;
 		}
 
+		spi_nrfx_spim_common_cs_set(dev, spi_cfg);
+
 		ret = spi_nrfx_spim_common_transfer_start(dev,
 							  tx_buf,
 							  tx_buf_len,
@@ -117,18 +119,6 @@ static void iodev_start_curr(const struct device *dev)
 	}
 }
 
-static void iodev_start_txn(const struct device *dev)
-{
-	const struct driver_config *dev_config = dev->config;
-	struct spi_rtio *spi_rtio_ctx = dev_config->spi_rtio_ctx;
-	struct rtio_sqe *sqe = &spi_rtio_ctx->txn_head->sqe;
-	struct spi_dt_spec *spi_spec = sqe->iodev->data;
-	struct spi_config *spi_cfg = &spi_spec->config;
-
-	spi_nrfx_spim_common_cs_set(dev, spi_cfg);
-	iodev_start_curr(dev);
-}
-
 static void iodev_end_txn(const struct device *dev, int result)
 {
 	const struct driver_config *dev_config = dev->config;
@@ -145,7 +135,7 @@ static void iodev_end_txn(const struct device *dev, int result)
 		return;
 	}
 
-	iodev_start_txn(dev);
+	iodev_start_curr(dev);
 }
 
 static void iodev_end_curr(const struct device *dev)
@@ -199,7 +189,7 @@ static int driver_api_transceive_async(const struct device *dev,
 
 static void spim_wake_handler(const struct device *dev)
 {
-	iodev_start_txn(dev);
+	iodev_start_curr(dev);
 }
 
 static void driver_api_iodev_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
