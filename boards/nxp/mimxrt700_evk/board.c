@@ -201,21 +201,6 @@ void board_early_init_hook(void)
 	edma_enable_all_request(1);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon))
-	RESET_ClearPeripheralReset(kIOPCTL0_RST_SHIFT_RSTn);
-	CLOCK_EnableClock(kCLOCK_Iopctl0);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon1))
-	RESET_ClearPeripheralReset(kIOPCTL1_RST_SHIFT_RSTn);
-	CLOCK_EnableClock(kCLOCK_Iopctl1);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(iocon2))
-	RESET_ClearPeripheralReset(kIOPCTL2_RST_SHIFT_RSTn);
-	CLOCK_EnableClock(kCLOCK_Iopctl2);
-#endif
-
 #ifdef CONFIG_BOARD_MIMXRT700_EVK_MIMXRT798S_CM33_CPU0
 	CLOCK_AttachClk(kOSC_CLK_to_FCCLK0);
 	CLOCK_SetClkDiv(kCLOCK_DivFcclk0Clk, 1U);
@@ -321,61 +306,6 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio))
 	CLOCK_AttachClk(kFRO0_DIV1_to_FLEXIO);
 	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1U);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
-	CLOCK_EnableClock(kCLOCK_Gpio0);
-	RESET_ClearPeripheralReset(kGPIO0_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
-	CLOCK_EnableClock(kCLOCK_Gpio1);
-	RESET_ClearPeripheralReset(kGPIO1_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio2))
-	CLOCK_EnableClock(kCLOCK_Gpio2);
-	RESET_ClearPeripheralReset(kGPIO2_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio3))
-	CLOCK_EnableClock(kCLOCK_Gpio3);
-	RESET_ClearPeripheralReset(kGPIO3_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
-	CLOCK_EnableClock(kCLOCK_Gpio4);
-	RESET_ClearPeripheralReset(kGPIO4_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio5))
-	CLOCK_EnableClock(kCLOCK_Gpio5);
-	RESET_ClearPeripheralReset(kGPIO5_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio6))
-	CLOCK_EnableClock(kCLOCK_Gpio6);
-	RESET_ClearPeripheralReset(kGPIO6_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio7))
-	CLOCK_EnableClock(kCLOCK_Gpio7);
-	RESET_ClearPeripheralReset(kGPIO7_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio8))
-	CLOCK_EnableClock(kCLOCK_Gpio8);
-	RESET_ClearPeripheralReset(kGPIO8_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio9))
-	CLOCK_EnableClock(kCLOCK_Gpio9);
-	RESET_ClearPeripheralReset(kGPIO9_RST_SHIFT_RSTn);
-#endif
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio10))
-	CLOCK_EnableClock(kCLOCK_Gpio10);
-	RESET_ClearPeripheralReset(kGPIO10_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
