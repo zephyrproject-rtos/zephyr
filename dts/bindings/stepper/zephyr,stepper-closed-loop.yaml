@@ -1,0 +1,128 @@
+# Copyright (c) 2026 Contributors to the Zephyr Project
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Closed-loop stepper motion controller that wraps an open-loop
+  stepper_ctrl device and a rotary encoder (sensor device) to provide
+  encoder-corrected positioning via a PID control loop.
+
+  The application uses the standard stepper_ctrl API. The closed-loop
+  driver reads the encoder via the sensor API and issues corrective
+  steps on the inner controller to eliminate position error.
+
+  Example:
+
+    closed_loop_stepper: closed-loop-stepper {
+        compatible = "zephyr,stepper-closed-loop";
+        stepper-ctrl = <&gpio_step_dir_ctrl>;
+        encoder = <&qdec0>;
+        encoder-counts-per-rev = <4096>;
+        motor-steps-per-rev = <200>;
+        pid-kp = <65536>;
+        pid-ki = <6554>;
+        pid-kd = <3277>;
+        pid-output-max = <500>;
+        position-error-threshold = <100>;
+        feedback-interval-us = <2000>;
+    };
+
+compatible: "zephyr,stepper-closed-loop"
+
+properties:
+  stepper-ctrl:
+    type: phandle
+    required: true
+    description: |
+      Reference to the underlying open-loop stepper motion controller
+      device. Must implement the stepper_ctrl driver API.
+
+  encoder:
+    type: phandle
+    required: true
+    description: |
+      Reference to the encoder sensor device used for position feedback.
+      Must implement the sensor API and provide SENSOR_CHAN_ROTATION or
+      SENSOR_CHAN_ENCODER_COUNT.
+
+  encoder-channel:
+    type: string
+    default: "rotation"
+    enum:
+      - "rotation"
+      - "encoder-count"
+    description: |
+      Sensor channel to read from the encoder device.
+        "rotation" = SENSOR_CHAN_ROTATION (degrees, for absolute encoders)
+        "encoder-count" = SENSOR_CHAN_ENCODER_COUNT (raw counts, for QDEC)
+      Default is "rotation".
+
+  encoder-counts-per-rev:
+    type: int
+    required: true
+    description: |
+      Number of encoder counts per full motor shaft revolution.
+      Used to convert between encoder counts and motor micro-steps.
+
+  motor-steps-per-rev:
+    type: int
+    default: 200
+    description: |
+      Full steps per motor revolution (typically 200 for 1.8-degree
+      stepper motors, 400 for 0.9-degree motors).
+
+  pid-kp:
+    type: int
+    required: true
+    description: |
+      PID proportional gain in Q16.16 fixed-point format.
+      Use 65536 for a gain of 1.0, 32768 for 0.5, etc.
+
+  pid-ki:
+    type: int
+    default: 0
+    description: |
+      PID integral gain in Q16.16 fixed-point format.
+
+  pid-kd:
+    type: int
+    default: 0
+    description: |
+      PID derivative gain in Q16.16 fixed-point format.
+
+  pid-output-max:
+    type: int
+    default: 1000
+    description: |
+      Maximum absolute PID output magnitude in micro-steps per
+      correction cycle. Limits the size of corrective steps.
+
+  position-error-threshold:
+    type: int
+    default: 0
+    description: |
+      Maximum tolerable position error in encoder counts before a
+      STEPPER_CTRL_EVENT_POSITION_ERROR event is raised. Set to 0
+      to disable threshold checking.
+
+  feedback-interval-us:
+    type: int
+    default: 1000
+    description: |
+      Interval in microseconds between encoder readings and PID
+      updates. Determines the control loop bandwidth. Typical values
+      range from 500 (2 kHz) to 10000 (100 Hz).
+
+  settling-window:
+    type: int
+    default: 2
+    description: |
+      Position error (in encoder counts) within which the motor is
+      considered to have reached its target position.
+
+  settling-count:
+    type: int
+    default: 5
+    description: |
+      Number of consecutive control loop cycles the position error
+      must remain within the settling window before the
+      STEPPER_CTRL_EVENT_STEPS_COMPLETED event is fired.

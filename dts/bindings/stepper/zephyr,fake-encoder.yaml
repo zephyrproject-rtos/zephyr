@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Contributors to the Zephyr Project
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A fake encoder sensor for use as a mock in testing closed-loop
+  stepper motor controllers.
+
+compatible: "zephyr,fake-encoder"

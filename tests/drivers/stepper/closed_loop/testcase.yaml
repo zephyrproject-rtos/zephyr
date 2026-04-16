@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Contributors to the Zephyr Project
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - stepper
+    - closed_loop
+tests:
+  drivers.stepper.closed_loop:
+    extra_args:
+      - platform:native_sim/native/64:DTC_OVERLAY_FILE="boards/native_sim.overlay"
+    platform_allow:
+      - native_sim/native/64

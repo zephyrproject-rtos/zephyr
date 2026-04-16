@@ -1,0 +1,59 @@
+# Copyright (c) 2026 Contributors to the Zephyr Project
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_CLOSED_LOOP
+	bool "Closed-loop stepper controller with encoder feedback"
+	default y
+	depends on DT_HAS_ZEPHYR_STEPPER_CLOSED_LOOP_ENABLED
+	depends on STEPPER
+	select PID_CONTROLLER
+	select STEPPER_CTRL_EVENT_HANDLER
+	select SENSOR
+	help
+	  Enable a composite stepper_ctrl driver that reads encoder
+	  position via the sensor API and uses a PID controller to
+	  correct the open-loop stepper position. Requires an encoder
+	  sensor device and an inner stepper_ctrl device configured
+	  via devicetree.
+
+if STEPPER_CLOSED_LOOP
+
+config STEPPER_CLOSED_LOOP_INIT_PRIORITY
+	int "Closed-loop stepper init priority"
+	default 91
+	help
+	  Device initialization priority for the closed-loop stepper
+	  controller. Must be higher (later) than CONFIG_STEPPER_INIT_PRIORITY
+	  (default 90) to ensure the inner stepper controller and encoder
+	  sensor are initialized first.
+
+config STEPPER_CLOSED_LOOP_THREAD_STACK_SIZE
+	int "Control loop thread stack size"
+	default 1024
+	help
+	  Stack size for the closed-loop feedback control thread.
+
+config STEPPER_CLOSED_LOOP_THREAD_PRIORITY
+	int "Control loop thread priority"
+	default 5
+	help
+	  Cooperative priority of the closed-loop control thread.
+	  Should be higher priority (lower number) than the application
+	  thread to ensure timely position corrections.
+
+config STEPPER_CLOSED_LOOP_MAX_ENCODER_FAILURES
+	int "Maximum consecutive encoder read failures before fault"
+	default 10
+	help
+	  Number of consecutive encoder read failures tolerated before
+	  a fault event is raised and the motor is stopped for safety.
+
+config FAKE_ENCODER
+	bool "Fake encoder sensor for testing"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_ENCODER_ENABLED
+	help
+	  Enable a fake encoder sensor device for testing closed-loop
+	  stepper controllers without real hardware.
+
+endif # STEPPER_CLOSED_LOOP

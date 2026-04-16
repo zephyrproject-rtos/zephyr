@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 Contributors to the Zephyr Project
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	fake_encoder: fake-encoder {
+		compatible = "zephyr,fake-encoder";
+	};
+
+	fake_stepper_ctrl: fake-stepper-ctrl {
+		compatible = "zephyr,fake-stepper-ctrl";
+	};
+
+	closed_loop_stepper: closed-loop-stepper {
+		compatible = "zephyr,stepper-closed-loop";
+		stepper-ctrl = <&fake_stepper_ctrl>;
+		encoder = <&fake_encoder>;
+		encoder-counts-per-rev = <3600>;
+		motor-steps-per-rev = <200>;
+		pid-kp = <65536>;     /* 1.0 in Q16.16 */
+		pid-ki = <0>;
+		pid-kd = <0>;
+		pid-output-max = <500>;
+		position-error-threshold = <100>;
+		feedback-interval-us = <1000>;
+		settling-window = <2>;
+		settling-count = <3>;
+	};
+
+	aliases {
+		closed-loop-stepper = &closed_loop_stepper;
+		fake-encoder = &fake_encoder;
+		fake-stepper-ctrl = &fake_stepper_ctrl;
+	};
+};
