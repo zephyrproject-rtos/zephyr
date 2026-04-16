@@ -39,6 +39,8 @@ enum {
 	BT_OBEX_RSP_SRM,    /* Response SRM Set */
 	BT_OBEX_RSP_SRMP,   /* Response SRMP Set */
 	BT_OBEX_RSP_RECV,   /* Response received */
+	BT_OBEX_REQ_RECV,   /* Request received */
+	BT_OBEX_REQ_F_BIT,  /* Request Final bit set */
 };
 
 /* Valid SRM value*/
@@ -327,6 +329,109 @@ failed:
 	return err;
 }
 
+static int obex_server_parse_srm(struct bt_obex_server *server, struct net_buf *buf, bool first,
+				 int bit)
+{
+	int err;
+	uint8_t srm;
+
+	err = bt_obex_get_header_srm(buf, &srm);
+	if (err != 0) {
+		/* No SRM header included */
+		return 0;
+	}
+
+	if (srm != BT_OBEX_SRM_VALUE) {
+		LOG_ERR("SRM value is invalid");
+		return -EINVAL;
+	}
+
+	if (!first) {
+		LOG_WRN("SRM header should not be included");
+		return -EINVAL;
+	}
+
+	atomic_set_bit(&server->_flags, bit);
+
+	return 0;
+}
+
+static int obex_server_parse_req_srm(struct bt_obex_server *server, struct net_buf *buf, bool first)
+{
+	int err;
+
+	if (first) {
+		atomic_clear(&server->_flags);
+	}
+
+	err = obex_server_parse_srm(server, buf, first, BT_OBEX_REQ_SRM);
+	if (err != 0) {
+		return err;
+	}
+
+	atomic_set_bit_to(&server->_flags, BT_OBEX_REQ_1ST, first);
+	return 0;
+}
+
+static int obex_server_parse_rsp_srm(struct bt_obex_server *server, struct net_buf *buf, bool first)
+{
+	return obex_server_parse_srm(server, buf, first, BT_OBEX_RSP_SRM);
+}
+
+static int obex_server_parse_srmp(struct bt_obex_server *server, struct net_buf *buf, bool first,
+				  int bit)
+{
+	int err;
+	uint8_t srmp;
+
+	err = bt_obex_get_header_srm_param(buf, &srmp);
+	if (err == 0 && srmp != BT_OBEX_SRMP_VALUE) {
+		LOG_WRN("SRMP value is invalid");
+		return -EINVAL;
+	}
+
+	if (!first && !atomic_test_bit(&server->_flags, bit) && err == 0) {
+		LOG_WRN("SRMP header should not be included");
+		return -EINVAL;
+	}
+
+	atomic_set_bit_to(&server->_flags, bit, err == 0);
+
+	return 0;
+}
+
+static int obex_server_rsp_check(struct bt_obex_server *server, bool first)
+{
+	if (first) {
+		return 0;
+	}
+
+	if (!(atomic_test_bit(&server->_flags, BT_OBEX_REQ_SRM) &&
+	      atomic_test_bit(&server->_flags, BT_OBEX_RSP_SRM))) {
+		if (atomic_test_bit(&server->_flags, BT_OBEX_REQ_RECV)) {
+			return 0;
+		}
+
+		LOG_ERR("SRM is not enabled, response is not received");
+		return -EPROTO;
+	}
+
+	LOG_DBG("SRM is enabled");
+
+	if (atomic_test_bit(&server->_flags, BT_OBEX_REQ_SRMP) ||
+	    !atomic_test_bit(&server->_flags, BT_OBEX_REQ_F_BIT)) {
+		if (atomic_test_bit(&server->_flags, BT_OBEX_REQ_RECV)) {
+			return 0;
+		}
+
+		LOG_ERR("SRM is enabled but waiting or final bit is not set, "
+			"response is not received");
+		return -EPROTO;
+	}
+
+	return 0;
+}
+
 static int obex_server_put_common(struct bt_obex_server *server, bool final, uint16_t len,
 				  struct net_buf *buf)
 {
@@ -356,9 +461,9 @@ static int obex_server_put_common(struct bt_obex_server *server, bool final, uin
 		goto failed;
 	}
 
+	opcode = atomic_get(&server->_opcode);
 	req_code = final ? BT_OBEX_OPCODE_PUT_F : BT_OBEX_OPCODE_PUT;
 	if (!atomic_cas(&server->_opcode, 0, req_code)) {
-		opcode = atomic_get(&server->_opcode);
 		if ((opcode != BT_OBEX_OPCODE_PUT_F) && (opcode != BT_OBEX_OPCODE_PUT)) {
 			LOG_WRN("Unexpected put request");
 			rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
@@ -378,6 +483,19 @@ static int obex_server_put_common(struct bt_obex_server *server, bool final, uin
 			goto failed;
 		}
 	}
+
+	err = obex_server_parse_req_srm(server, buf, opcode == 0);
+	if (err != 0) {
+		LOG_WRN("Invalid SRM header received");
+	}
+
+	err = obex_server_parse_srmp(server, buf, opcode == 0, BT_OBEX_REQ_SRMP);
+	if (err != 0) {
+		LOG_WRN("Invalid SRMP header received");
+	}
+
+	atomic_set_bit(&server->_flags, BT_OBEX_REQ_RECV);
+	atomic_set_bit_to(&server->_flags, BT_OBEX_REQ_F_BIT, final);
 
 	server->ops->put(server, final, buf);
 	return 0;
@@ -440,9 +558,9 @@ static int obex_server_get_common(struct bt_obex_server *server, bool final, uin
 		goto failed;
 	}
 
+	opcode = atomic_get(&server->_opcode);
 	req_code = final ? BT_OBEX_OPCODE_GET_F : BT_OBEX_OPCODE_GET;
 	if (!atomic_cas(&server->_opcode, 0, req_code)) {
-		opcode = atomic_get(&server->_opcode);
 		if ((opcode != BT_OBEX_OPCODE_GET_F) && (opcode != BT_OBEX_OPCODE_GET)) {
 			LOG_WRN("Unexpected get request");
 			rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
@@ -462,6 +580,19 @@ static int obex_server_get_common(struct bt_obex_server *server, bool final, uin
 			goto failed;
 		}
 	}
+
+	err = obex_server_parse_req_srm(server, buf, opcode == 0);
+	if (err != 0) {
+		LOG_WRN("Invalid SRM header received");
+	}
+
+	err = obex_server_parse_srmp(server, buf, opcode == 0, BT_OBEX_REQ_SRMP);
+	if (err != 0) {
+		LOG_WRN("Invalid SRMP header received");
+	}
+
+	atomic_set_bit(&server->_flags, BT_OBEX_REQ_RECV);
+	atomic_set_bit_to(&server->_flags, BT_OBEX_REQ_F_BIT, final);
 
 	server->ops->get(server, final, buf);
 	return 0;
@@ -2092,6 +2223,8 @@ int bt_obex_put_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 	int err;
 	uint8_t opcode;
 	bool allocated = false;
+	bool first;
+	atomic_val_t flags;
 
 	if (server == NULL || server->obex == NULL) {
 		LOG_WRN("Invalid parameter");
@@ -2108,15 +2241,6 @@ int bt_obex_put_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 		return -EINVAL;
 	}
 
-	if (buf == NULL) {
-		buf = obex_alloc_buf(server->obex);
-		if (buf == NULL) {
-			LOG_WRN("No buffers");
-			return -ENOBUFS;
-		}
-		allocated = true;
-	}
-
 	opcode = atomic_get(&server->_opcode);
 	if ((opcode != BT_OBEX_OPCODE_PUT_F) && (opcode != BT_OBEX_OPCODE_PUT)) {
 		LOG_WRN("Invalid response");
@@ -2128,20 +2252,54 @@ int bt_obex_put_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 		return -EINVAL;
 	}
 
+	if (buf == NULL) {
+		buf = obex_alloc_buf(server->obex);
+		if (buf == NULL) {
+			LOG_WRN("No buffers");
+			return -ENOBUFS;
+		}
+		allocated = true;
+	}
+
+	flags = atomic_get(&server->_flags);
+	first = atomic_test_and_clear_bit(&server->_flags, BT_OBEX_REQ_1ST);
+
+	err = obex_server_rsp_check(server, first);
+	if (err != 0) {
+		goto failed;
+	}
+
+	err = obex_server_parse_rsp_srm(server, buf, first);
+	if (err != 0) {
+		goto failed;
+	}
+
+	err = obex_server_parse_srmp(server, buf, first, BT_OBEX_RSP_SRMP);
+	if (err != 0) {
+		goto failed;
+	}
+
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
+	atomic_clear_bit(&server->_flags, BT_OBEX_REQ_RECV);
+
 	err = obex_send(server->obex, server->tx.mopl, buf);
-	if (err == 0) {
-		if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-			atomic_clear(&server->_opcode);
-			atomic_ptr_clear(&server->obex->_active_server);
-		}
-	} else {
-		if (allocated) {
-			net_buf_unref(buf);
-		}
+	if (err != 0) {
+		goto failed;
+	}
+
+	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
+		atomic_clear(&server->_opcode);
+		atomic_ptr_clear(&server->obex->_active_server);
+	}
+	return 0;
+
+failed:
+	atomic_set(&server->_flags, flags);
+	if (allocated) {
+		net_buf_unref(buf);
 	}
 	return err;
 }
@@ -2256,6 +2414,8 @@ int bt_obex_get_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 	int err;
 	uint8_t opcode;
 	bool allocated = false;
+	bool first;
+	atomic_val_t flags;
 
 	if (server == NULL || server->obex == NULL) {
 		LOG_WRN("Invalid parameter");
@@ -2272,15 +2432,6 @@ int bt_obex_get_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 		return -EINVAL;
 	}
 
-	if (buf == NULL) {
-		buf = obex_alloc_buf(server->obex);
-		if (buf == NULL) {
-			LOG_WRN("No buffers");
-			return -ENOBUFS;
-		}
-		allocated = true;
-	}
-
 	opcode = atomic_get(&server->_opcode);
 	if ((opcode != BT_OBEX_OPCODE_GET_F) && (opcode != BT_OBEX_OPCODE_GET)) {
 		LOG_WRN("Invalid response");
@@ -2292,20 +2443,54 @@ int bt_obex_get_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 		return -EINVAL;
 	}
 
+	if (buf == NULL) {
+		buf = obex_alloc_buf(server->obex);
+		if (buf == NULL) {
+			LOG_WRN("No buffers");
+			return -ENOBUFS;
+		}
+		allocated = true;
+	}
+
+	flags = atomic_get(&server->_flags);
+	first = atomic_test_and_clear_bit(&server->_flags, BT_OBEX_REQ_1ST);
+
+	err = obex_server_rsp_check(server, first);
+	if (err != 0) {
+		goto failed;
+	}
+
+	err = obex_server_parse_rsp_srm(server, buf, first);
+	if (err != 0) {
+		goto failed;
+	}
+
+	err = obex_server_parse_srmp(server, buf, first, BT_OBEX_RSP_SRMP);
+	if (err != 0) {
+		goto failed;
+	}
+
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
+	atomic_clear_bit(&server->_flags, BT_OBEX_REQ_RECV);
+
 	err = obex_send(server->obex, server->tx.mopl, buf);
-	if (err == 0) {
-		if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-			atomic_clear(&server->_opcode);
-			atomic_ptr_clear(&server->obex->_active_server);
-		}
-	} else {
-		if (allocated) {
-			net_buf_unref(buf);
-		}
+	if (err != 0) {
+		goto failed;
+	}
+
+	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
+		atomic_clear(&server->_opcode);
+		atomic_ptr_clear(&server->obex->_active_server);
+	}
+	return 0;
+
+failed:
+	atomic_set(&server->_flags, flags);
+	if (allocated) {
+		net_buf_unref(buf);
 	}
 	return err;
 }
