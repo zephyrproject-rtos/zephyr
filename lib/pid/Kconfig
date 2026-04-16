@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Contributors to the Zephyr Project
+# SPDX-License-Identifier: Apache-2.0
+
+config PID_CONTROLLER
+	bool "PID controller library"
+	help
+	  Generic discrete PID controller with anti-windup, using
+	  Q16.16 fixed-point arithmetic. Suitable for motor control,
+	  thermal regulation, and other feedback control applications.
+	  No FPU or kernel dependencies required.
