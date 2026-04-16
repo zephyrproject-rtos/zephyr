@@ -7,6 +7,10 @@
 #include <freq.h>
 #include <gd/gd32f4xx/gd32f4xx.dtsi>
 
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(192)>;
+};
+
 / {
 	soc {
 		spi3: spi@40013400 {
