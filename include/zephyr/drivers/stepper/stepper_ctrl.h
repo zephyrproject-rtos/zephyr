@@ -63,6 +63,10 @@ enum stepper_ctrl_event {
 	STEPPER_CTRL_EVENT_RIGHT_END_STOP_DETECTED = 2,
 	/** Stepper has stopped */
 	STEPPER_CTRL_EVENT_STOPPED = 3,
+	/** Encoder position error exceeds configured threshold */
+	STEPPER_CTRL_EVENT_POSITION_ERROR = 4,
+	/** Encoder feedback indicates stall (no movement despite stepping) */
+	STEPPER_CTRL_EVENT_ENCODER_STALL_DETECTED = 5,
 };
 
 /**
