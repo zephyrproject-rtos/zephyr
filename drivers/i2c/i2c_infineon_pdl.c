@@ -150,17 +150,14 @@ static void ifx_master_event_handler(void *callback_arg, uint32_t event)
 		(void)_i2c_abort_async(dev);
 		data->error = true;
 		k_sem_give(&data->transfer_sem);
-	}
-
-	/* Release semaphore if operation complete
-	 * When we have pending TX, RX operations, the semaphore will be released
-	 * after TX, RX complete.
-	 */
-	if (((data->async_pending == CAT1_I2C_PENDING_TX_RX) &&
+	} else if (((data->async_pending == CAT1_I2C_PENDING_TX_RX) &&
 	     ((CY_SCB_I2C_MASTER_RD_CMPLT_EVENT & event) != 0)) ||
 	    (data->async_pending != CAT1_I2C_PENDING_TX_RX)) {
-
-		/* Release semaphore (After I2C async transfer is complete) */
+		/* Release semaphore if operation complete
+		 * When we have pending TX, RX operations, the semaphore will be released
+		 * after TX, RX complete.
+		 * Release semaphore (After I2C async transfer is complete)
+		 */
 		k_sem_give(&data->transfer_sem);
 	}
 
