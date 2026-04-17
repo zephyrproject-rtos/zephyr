@@ -250,9 +250,8 @@ Example:
     * @param buf Data to transmit
     * @param size Number of bytes to transmit
     *
-    * @return Number of bytes placed in @p pipe
+    * @return Number of bytes placed in @p pipe, negative error code on failure.
     * @retval -EPERM Pipe is closed
-    * @retval -errno Negative error code on error
     */
    int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size);
 
