@@ -72,6 +72,10 @@
 	spi0_d1: spi0_d1_default {
 		pinmux = <K3_PINMUX(0x218, PIN_OUTPUT, MUX_MODE_0)>;
 	};
+
+	main_ecap0_in: ecap0_in_default {
+		pinmux = <K3_PINMUX(0x270, PIN_INPUT, MUX_MODE_0)>; /* (D18) ECAP0_IN_APWM_OUT */
+	};
 };
 
 &mcu_pinctrl {

@@ -14,4 +14,8 @@
 	uart0_tx_default: uart0_tx_default {
 		pinmux = <K3_PINMUX(0x1b8, PIN_OUTPUT, MUX_MODE_0)>; /* (C13) UART0_TXD */
 	};
+
+	main_ecap0_in: ecap0_in_default {
+		pinmux = <K3_PINMUX(0x078, PIN_INPUT, MUX_MODE_5)>; /* (L22) ECAP0_IN_APWM_OUT */
+	};
 };
