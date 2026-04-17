@@ -116,7 +116,7 @@ int z_stack_cleanup_sched_locked(struct k_stack *stack)
 	return ret;
 }
 
-int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 {
 	struct k_thread *first_pending_thread;
 	int ret = 0;
@@ -163,8 +163,8 @@ static inline int z_vrfy_k_stack_push(struct k_stack *stack, stack_data_t data)
 #include <zephyr/syscalls/k_stack_push_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
-		       k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
+						   k_timeout_t timeout)
 {
 	k_spinlock_key_t key;
 	int result;

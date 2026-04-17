@@ -210,8 +210,8 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
  * @retval -ENOMSG Failed immediately.
  * @retval -EAGAIN Timed out.
  */
-static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
-			     k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS static int
+mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, k_timeout_t timeout)
 {
 	struct k_thread *sending_thread;
 	struct k_thread *receiving_thread;
@@ -384,8 +384,8 @@ static int mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 	return 0;
 }
 
-int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
-	       k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
+					   void *buffer, k_timeout_t timeout)
 {
 	struct k_thread *sending_thread;
 	struct k_mbox_msg *tx_msg;

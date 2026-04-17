@@ -44,7 +44,7 @@ extern struct k_thread *pending_current;
  * @param timeout Sleep duration.
  * @return Ticks remaining when woken early, or 0 on normal expiry.
  */
-static int32_t z_tick_sleep(k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS static int32_t z_tick_sleep(k_timeout_t timeout)
 {
 	uint32_t expected_wakeup_ticks;
 

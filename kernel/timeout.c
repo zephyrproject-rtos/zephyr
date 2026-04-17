@@ -87,7 +87,8 @@ static int32_t next_timeout(int32_t ticks_elapsed)
 	return ret;
 }
 
-k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn,
+						    k_timeout_t timeout)
 {
 	k_ticks_t ticks = 0;
 
@@ -146,7 +147,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	return ticks;
 }
 
-int z_abort_timeout(struct _timeout *to)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_abort_timeout(struct _timeout *to)
 {
 	int ret = -EINVAL;
 
@@ -183,7 +184,7 @@ static k_ticks_t timeout_rem(const struct _timeout *timeout)
 	return ticks;
 }
 
-k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
@@ -197,7 +198,7 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 }
 EXPORT_SYMBOL(z_timeout_remaining);
 
-k_ticks_t z_timeout_expires(const struct _timeout *timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
@@ -212,7 +213,7 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 }
 EXPORT_SYMBOL(z_timeout_expires);
 
-int32_t z_get_next_timeout_expiry(void)
+Z_NO_THREAD_SAFETY_ANALYSIS int32_t z_get_next_timeout_expiry(void)
 {
 	int32_t ret = (int32_t) K_TICKS_FOREVER;
 
@@ -222,7 +223,7 @@ int32_t z_get_next_timeout_expiry(void)
 	return ret;
 }
 
-void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 {
 	/* We release the lock around the callbacks below, so on SMP
 	 * systems someone might be already running the loop.  Don't
@@ -273,18 +274,18 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 }
 
 #if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
-k_spinlock_key_t sys_clock_lock(void)
+Z_NO_THREAD_SAFETY_ANALYSIS k_spinlock_key_t sys_clock_lock(void)
 {
 	return k_spin_lock(&timeout_lock);
 }
 
-void sys_clock_unlock(k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS void sys_clock_unlock(k_spinlock_key_t key)
 {
 	k_spin_unlock(&timeout_lock, key);
 }
 #endif
 
-int64_t sys_clock_tick_get(void)
+Z_NO_THREAD_SAFETY_ANALYSIS int64_t sys_clock_tick_get(void)
 {
 	uint64_t t = 0U;
 

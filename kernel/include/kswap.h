@@ -198,7 +198,7 @@ static inline int z_swap_irqlock(unsigned int key)
 	return do_swap(key, NULL, false);
 }
 
-static inline int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS static inline int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
 {
 	return do_swap(key.key, lock, true);
 }
@@ -238,7 +238,8 @@ static inline int z_swap_irqlock(unsigned int key)
  * can't be in SMP.  The k_spin_release() call is just for validation
  * handling.
  */
-static ALWAYS_INLINE int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE int z_swap(struct k_spinlock *lock,
+							    k_spinlock_key_t key)
 {
 	k_spin_release(lock);
 	return z_swap_irqlock(key.key);

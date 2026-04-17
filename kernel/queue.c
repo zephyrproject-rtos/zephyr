@@ -96,7 +96,7 @@ static inline bool handle_poll_events(struct k_queue *queue, uint32_t state)
 #endif /* CONFIG_POLL */
 }
 
-void z_impl_k_queue_cancel_wait(struct k_queue *queue)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_queue, cancel_wait, queue);
 
@@ -129,8 +129,8 @@ static inline void z_vrfy_k_queue_cancel_wait(struct k_queue *queue)
 #include <zephyr/syscalls/k_queue_cancel_wait_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
-			    bool alloc, bool is_append)
+Z_NO_THREAD_SAFETY_ANALYSIS static int32_t queue_insert(struct k_queue *queue, void *prev,
+							void *data, bool alloc, bool is_append)
 {
 	struct k_thread *first_pending_thread;
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
@@ -252,7 +252,7 @@ static inline int32_t z_vrfy_k_queue_alloc_prepend(struct k_queue *queue,
 #include <zephyr/syscalls/k_queue_alloc_prepend_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
+Z_NO_THREAD_SAFETY_ANALYSIS int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, append_list, queue);
 	bool resched = false;
@@ -330,7 +330,7 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 	return 0;
 }
 
-void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	void *data;

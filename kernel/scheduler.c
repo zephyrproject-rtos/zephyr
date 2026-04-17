@@ -23,7 +23,7 @@ void z_sched_init(void)
 #endif /* CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 }
 
-void k_sched_lock(void)
+Z_NO_THREAD_SAFETY_ANALYSIS void k_sched_lock(void)
 {
 	K_SPINLOCK(&_sched_spinlock) {
 		SYS_PORT_TRACING_FUNC(k_thread, sched_lock);
@@ -37,7 +37,7 @@ void k_sched_lock(void)
 	}
 }
 
-void k_sched_unlock(void)
+Z_NO_THREAD_SAFETY_ANALYSIS void k_sched_unlock(void)
 {
 	SYS_PORT_TRACING_FUNC(k_thread, sched_unlock);
 
@@ -49,7 +49,7 @@ void k_sched_unlock(void)
 	z_sched_lock_reschedule(key);
 }
 
-void z_impl_k_reschedule(void)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_reschedule(void)
 {
 	k_spinlock_key_t key;
 
@@ -79,9 +79,8 @@ static inline k_tid_t z_vrfy_k_sched_current_thread_query(void)
 #include <zephyr/syscalls/k_sched_current_thread_query_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-
-int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
-		       _waitq_post_walk_cb_t post_func, void *data)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
+						   _waitq_post_walk_cb_t post_func, void *data)
 {
 	struct k_thread *thread;
 	int  status = 0;
@@ -125,7 +124,7 @@ int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
 /*
  * future scheduler.h API implementations
  */
-bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
+Z_NO_THREAD_SAFETY_ANALYSIS bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
 {
 	struct k_thread *thread;
 	bool ret = false;
@@ -147,8 +146,8 @@ bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
 	return ret;
 }
 
-int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
-		 _wait_q_t *wait_q, k_timeout_t timeout, void **data)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
+					     _wait_q_t *wait_q, k_timeout_t timeout, void **data)
 {
 	int ret = z_pend_curr(lock, key, wait_q, timeout);
 

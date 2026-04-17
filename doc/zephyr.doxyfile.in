@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
 # Doxyfile 1.15.0
 
 # This file describes the settings to be used by the documentation system
@@ -2584,6 +2587,17 @@ PREDEFINED             = __DOXYGEN__ \
                          __attribute_nonnull(...)= \
                          "__printf_like(x, y)=" \
                          __attribute__(x)= \
+                         Z_CAPABILITY(x)= \
+                         Z_GUARDED_BY(x)= \
+                         Z_PT_GUARDED_BY(x)= \
+                         Z_ACQUIRES(...)= \
+                         Z_RELEASES(...)= \
+                         "Z_TRY_ACQUIRES(x, ...)=" \
+                         Z_REQUIRES(...)= \
+                         Z_EXCLUDES(...)= \
+                         Z_NO_THREAD_SAFETY_ANALYSIS= \
+                         Z_ASSERT_CAPABILITY(...)= \
+                         Z_RETURN_CAPABILITY(x)= \
                          __syscall= \
                          __syscall_always_inline= \
                          __must_check= \
