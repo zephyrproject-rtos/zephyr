@@ -290,8 +290,9 @@ static const struct fd_op_vtable zvfs_eventfd_fd_vtable = {
 };
 
 /* common to both zvfs_eventfd_read_op() and zvfs_eventfd_write_op() */
-static ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
-			     int (*op)(struct zvfs_eventfd *efd, zvfs_eventfd_t *value))
+Z_NO_THREAD_SAFETY_ANALYSIS static ssize_t zvfs_eventfd_rw_op(void *obj, void *buf, size_t sz,
+							      int (*op)(struct zvfs_eventfd *efd,
+									zvfs_eventfd_t *value))
 {
 	int err;
 	ssize_t ret;
