@@ -518,11 +518,7 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	LOG_DBG("Raising security");
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to ser security level %d (err %d)", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	LOG_DBG("Starting Discovery");
 
@@ -564,11 +560,7 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	LOG_DBG("Raising security");
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to ser security level %d (err %d)", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	LOG_DBG("Waiting for all notifications to be received");
 	WAIT_FOR_FLAG(flag_all_notifications_received);
@@ -588,11 +580,7 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	LOG_DBG("Raising security");
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to ser security level %d (err %d)", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	LOG_DBG("Waiting for available contexts notification to be received");
 	WAIT_FOR_FLAG(flag_available_contexts_received);
@@ -612,11 +600,7 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	LOG_DBG("Raising security");
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to ser security level %d (err %d)", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	LOG_DBG("Waiting for available contexts notification to be received");
 	WAIT_FOR_FLAG(flag_available_contexts_received);

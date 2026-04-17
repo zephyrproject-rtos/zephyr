@@ -72,11 +72,7 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	printk("Raising security\n");
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to ser security level %d (err %d)\n", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	printk("Starting Discovery\n");
 	bt_csip_set_coordinator_discover(default_conn);
@@ -105,11 +101,7 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	printk("Raising security\n");
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to ser security level %d (err %d)\n", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	printk("Starting Discovery\n");
 	bt_csip_set_coordinator_discover(default_conn);

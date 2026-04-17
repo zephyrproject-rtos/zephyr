@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2022 Codecoup
- * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -164,13 +164,27 @@ bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len)
 
 #if defined(CONFIG_BT_CONN)
 
-static uint8_t bt_audio_security_check(const struct bt_conn *conn)
+uint8_t bt_audio_security_check(const struct bt_conn *conn)
 {
 	struct bt_conn_info info;
 	int err;
 
 	err = bt_conn_get_info(conn, &info);
 	if (err < 0) {
+		LOG_DBG("Could not get conn info for %p: %d", conn, err);
+
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
+	if (info.state != BT_CONN_STATE_CONNECTED) {
+		LOG_DBG("conn %p invalid state: %d", conn, info.state);
+
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
+	if (info.type != BT_CONN_TYPE_LE) {
+		LOG_DBG("conn %p invalid type: %d", conn, info.type);
+
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -182,10 +196,15 @@ static uint8_t bt_audio_security_check(const struct bt_conn *conn)
 		 * then an ATT_ERROR_RSP PDU shall be sent with the Error Code parameter set to
 		 * Insufficient Authentication (0x05).
 		 */
+		LOG_DBG("conn %p invalid security flags: %d", conn, info.security.flags);
+
 		return BT_ATT_ERR_AUTHENTICATION;
 	}
 
 	if (info.security.enc_key_size < BT_ENC_KEY_SIZE_MAX) {
+		LOG_DBG("conn %p invalid encryption key size: %u", conn,
+			info.security.enc_key_size);
+
 		return BT_ATT_ERR_ENCRYPTION_KEY_SIZE;
 	}
 

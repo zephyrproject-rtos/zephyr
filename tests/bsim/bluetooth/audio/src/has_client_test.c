@@ -649,11 +649,7 @@ static void test_gatt_client(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to set security level %d (err %d)", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	WAIT_FOR_COND(security_level == BT_SECURITY_L2);
 
@@ -682,11 +678,7 @@ static void test_gatt_client(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to set security level %d (err %d)\n", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	WAIT_FOR_FLAG(flag_all_notifications_received);
 

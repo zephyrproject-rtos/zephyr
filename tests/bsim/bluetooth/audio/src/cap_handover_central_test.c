@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -861,6 +861,8 @@ static void test_main_cap_handover_central_common(const size_t acceptor_cnt, uin
 		scan_and_connect(&cap_acceptors[i].conn);
 
 		WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+		update_security(cap_acceptors[i].conn);
 
 		discover_cas(cap_acceptors[i].conn);
 		discover_bass(cap_acceptors[i].conn);

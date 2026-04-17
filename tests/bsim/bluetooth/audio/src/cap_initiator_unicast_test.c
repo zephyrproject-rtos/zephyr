@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -927,6 +927,8 @@ static void test_main_cap_initiator_unicast(void)
 
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 
+	update_security(default_conn);
+
 	discover_cas(default_conn);
 	discover_cas(default_conn); /* test that we can discover twice */
 
@@ -980,6 +982,8 @@ static void test_main_cap_initiator_unicast_inval(void)
 
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
 
+	update_security(default_conn);
+
 	discover_cas_inval(default_conn);
 	discover_cas(default_conn);
 
@@ -1018,6 +1022,8 @@ static void test_cap_initiator_unicast_timeout(void)
 	scan_and_connect();
 
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+	update_security(default_conn);
 
 	discover_cas(default_conn);
 
@@ -1082,6 +1088,8 @@ static void test_cap_initiator_unicast_ase_error(void)
 	scan_and_connect();
 
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+	update_security(default_conn);
 
 	discover_cas(default_conn);
 	discover_sink(default_conn);
@@ -1475,6 +1483,8 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	}
 
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
+		update_security(connected_conns[i]);
+
 		discover_cas(connected_conns[i]);
 
 		if (param->snk_cnt[i] > 0U) {
