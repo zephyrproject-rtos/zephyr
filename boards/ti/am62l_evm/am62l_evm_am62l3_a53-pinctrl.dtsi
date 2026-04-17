@@ -14,4 +14,12 @@
 	uart0_tx_default: uart0_tx_default {
 		pinmux = <K3_PINMUX(0x1b8, PIN_OUTPUT, MUX_MODE_0)>; /* (C13) UART0_TXD */
 	};
+
+	mcan0_rx: mcan0_rx_default {
+		pinmux = <K3_PINMUX(0x01c8, PIN_INPUT, MUX_MODE_0)>; /* (B15) MCAN0_RX */
+	};
+
+	mcan0_tx: mcan0_tx_default {
+		pinmux = <K3_PINMUX(0x01c4, PIN_OUTPUT, MUX_MODE_0)>; /* (B16) MCAN0_TX */
+	};
 };

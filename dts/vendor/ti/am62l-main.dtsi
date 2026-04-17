@@ -304,4 +304,34 @@
 		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
+
+	main_mcan0: can@20701000 {
+		compatible = "ti,mcan";
+		reg = <0x20701000 0x200>, <0x20708000 0x8000>;
+		reg-names = "m_can", "message_ram";
+		power-domains = <&main_mcan0_pd>;
+		clocks = <&scmi_clk 178>;
+		bosch,mram-cfg = <0 128 64 64 64 64 32 32>;
+		status = "disabled";
+	};
+
+	main_mcan1: can@20711000 {
+		compatible = "ti,mcan";
+		reg = <0x20711000 0x200>, <0x20718000 0x8000>;
+		reg-names = "m_can", "message_ram";
+		power-domains = <&main_mcan1_pd>;
+		clocks = <&scmi_clk 184>;
+		bosch,mram-cfg = <0 128 64 64 64 64 32 32>;
+		status = "disabled";
+	};
+
+	main_mcan2: can@20721000 {
+		compatible = "ti,mcan";
+		reg = <0x20721000 0x200>, <0x20728000 0x8000>;
+		reg-names = "m_can", "message_ram";
+		power-domains = <&main_mcan2_pd>;
+		clocks = <&scmi_clk 190>;
+		bosch,mram-cfg = <0 128 64 64 64 64 32 32>;
+		status = "disabled";
+	};
 };
