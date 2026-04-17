@@ -14,7 +14,9 @@ LOG_MODULE_REGISTER(microchip_vsc8541, CONFIG_PHY_LOG_LEVEL);
 #include <zephyr/drivers/mdio.h>
 #include <string.h>
 #include <zephyr/sys/util_macro.h>
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) || DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 #include <zephyr/drivers/gpio.h>
+#endif
 
 #include "phy_mii.h"
 
@@ -28,24 +30,24 @@ LOG_MODULE_REGISTER(microchip_vsc8541, CONFIG_PHY_LOG_LEVEL);
 #define PHY_REG(page, reg) ((page << 8) | (reg << 0))
 
 /* Generic Register */
-#define PHY_REG_PAGE0_STAT100         PHY_REG(PHY_PAGE_0, 0x10)
-#define PHY_REG_PAGE0_STAT1000_EXT2   PHY_REG(PHY_PAGE_0, 0x11)
-#define PHY_REG_AUX_CTRL              0x12
-#define PHY_REG_PAGE0_ERROR_COUNTER_1 PHY_REG(0, 0x13)
-#define PHY_REG_PAGE0_ERROR_COUNTER_2 PHY_REG(0, 0x14)
-#define PHY_REG_PAGE0_EXT_CTRL_STAT   PHY_REG(PHY_PAGE_0, 0x16)
-#define PHY_REG_PAGE0_EXT_CONTROL_1   PHY_REG(PHY_PAGE_0, 0x17)
-#define PHY_REG_PAGE0_EXT_DEV_AUX     PHY_REG(PHY_PAGE_0, 0x1C)
-#define PHY_REG_LED_MODE              0x1d
+#define PHY_REG_PAGE0_STAT100               PHY_REG(PHY_PAGE_0, 0x10)
+#define PHY_REG_PAGE0_STAT1000_EXT2         PHY_REG(PHY_PAGE_0, 0x11)
+#define PHY_REG_PAGE0_EXT_CTRL_STAT         PHY_REG(PHY_PAGE_0, 0x16)
+#define PHY_REG_PAGE0_EXT_CONTROL_1         PHY_REG(PHY_PAGE_0, 0x17)
+#define PHY_REG_PAGE0_INT_MASK              PHY_REG(PHY_PAGE_0, 0x19)
+#define PHY_REG_PAGE0_INT_STAT              PHY_REG(PHY_PAGE_0, 0x1A)
+#define PHY_REG_PAGE0_EXT_DEV_AUX           PHY_REG(PHY_PAGE_0, 0x1C)
 
-#define PHY_REG_PAGE_SELECTOR 0x1F
+#define PHY_REG_PAGE_SELECTOR               0x1F
 
 /* Extended Register */
-#define PHY_REG_PAGE1_EXT_MODE_CTRL  PHY_REG(PHY_PAGE_1, 0x13)
-#define PHY_REG_PAGE2_RGMII_CONTROL  PHY_REG(PHY_PAGE_2, 0x14)
-#define PHY_REG_PAGE2_MAC_IF_CONTROL PHY_REG(PHY_PAGE_2, 0x1b)
+#define PHY_REG_PAGE2_RGMII_CONTROL         PHY_REG(PHY_PAGE_2, 0x14)
 
-#define PHY_REG_PAGE0_EXT_DEV_AUX_DUPLEX BIT(5)
+#define PHY_REG_PAGE0_EXT_DEV_AUX_DUPLEX    BIT(5)
+#define PHY_REG_PAGE0_INT_MASK_MDINT_EN     BIT(15)
+#define PHY_REG_PAGE0_INT_MASK_SPEED_CHANGE BIT(14)
+#define PHY_REG_PAGE0_INT_MASK_LINK_CHANGE  BIT(13)
+#define PHY_REG_PAGE0_INT_MASK_FDX_CHANGE   BIT(12)
 
 enum vsc8541_interface {
 	VSC8541_MII,
@@ -63,10 +65,10 @@ struct mc_vsc8541_config {
 	uint8_t rgmii_tx_clk_delay;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
-#endif
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	const struct gpio_dt_spec interrupt_gpio;
-#endif
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 };
 
 struct mc_vsc8541_data {
@@ -75,6 +77,9 @@ struct mc_vsc8541_data {
 	int active_page;
 	struct k_mutex mutex;
 	phy_callback_t cb;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	struct gpio_callback gpio_callback;
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 	void *cb_data;
 	struct k_work_delayable phy_monitor_work;
 };
@@ -266,18 +271,19 @@ static int phy_mc_vsc8541_get_speed(const struct device *dev, struct phy_link_st
 static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 				   enum phy_cfg_link_flag flags)
 {
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	const struct mc_vsc8541_config *cfg = dev->config;
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 	struct mc_vsc8541_data *data = dev->data;
 	int ret;
 
-	/* Lock mutex */
-	ret = k_mutex_lock(&data->mutex, K_FOREVER);
-	if (ret) {
-		LOG_ERR("PHY mutex lock error");
-		return ret;
-	}
+	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	/* Stop monitor during reconfiguration */
-	k_work_cancel_delayable(&data->phy_monitor_work);
+	if (UTIL_OR(UTIL_NOT(DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)),
+			(!cfg->interrupt_gpio.port))) {
+		k_work_cancel_delayable(&data->phy_monitor_work);
+	}
 
 	if ((flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) != 0U) {
 		ret = phy_mii_set_bmcr_reg_autoneg_disabled(dev, adv_speeds);
@@ -286,10 +292,12 @@ static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed
 	}
 
 	/* Start monitoring */
-	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+	if (UTIL_OR(UTIL_NOT(DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)),
+			(!cfg->interrupt_gpio.port))) {
+		k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+	}
 
-	/* Unlock mutex */
-	(void)k_mutex_unlock(&data->mutex);
+	k_mutex_unlock(&data->mutex);
 
 	return ret;
 }
@@ -466,6 +474,86 @@ static DEVICE_API(ethphy, mc_vsc8541_phy_api) = {
 	.write = phy_mc_vsc8541_write_ext,
 };
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+static int phy_mc_vsc8541_clear_interrupt(struct mc_vsc8541_data *data)
+{
+	const struct device *dev = data->dev;
+	uint16_t reg;
+	int ret;
+
+	k_mutex_lock(&data->mutex, K_FOREVER);
+
+	/* Read/clear PHY interrupt status register */
+	ret = phy_mc_vsc8541_read(dev, PHY_REG_PAGE0_INT_STAT, &reg);
+
+	k_mutex_unlock(&data->mutex);
+
+	return ret;
+}
+
+static void phy_mc_vsc8541_interrupt_handler(const struct device *port,
+						struct gpio_callback *cb,
+						gpio_port_pins_t pins)
+{
+	struct mc_vsc8541_data *data = CONTAINER_OF(cb, struct mc_vsc8541_data, gpio_callback);
+
+	k_work_reschedule(&data->phy_monitor_work, K_NO_WAIT);
+}
+
+static int phy_mc_vsc8541_init_interrupt(const struct device *dev)
+{
+	struct mc_vsc8541_data *data = dev->data;
+	const struct mc_vsc8541_config *cfg = dev->config;
+	uint16_t reg;
+	int ret;
+
+	if (cfg->interrupt_gpio.port == NULL) {
+		return 0;
+	}
+
+	/* Clear any previously inactive interrupts pending */
+	ret = phy_mc_vsc8541_clear_interrupt(data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Enable MDINT pin in interrupt mask register */
+	ret = phy_mc_vsc8541_read(dev, PHY_REG_PAGE0_INT_MASK, &reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	reg |= (PHY_REG_PAGE0_INT_MASK_MDINT_EN |
+		PHY_REG_PAGE0_INT_MASK_SPEED_CHANGE |
+		PHY_REG_PAGE0_INT_MASK_LINK_CHANGE |
+		PHY_REG_PAGE0_INT_MASK_FDX_CHANGE);
+	ret = phy_mc_vsc8541_write(dev, PHY_REG_PAGE0_INT_MASK, reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Configure interrupt GPIO */
+	ret = gpio_pin_configure_dt(&cfg->interrupt_gpio, GPIO_INPUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	gpio_init_callback(&data->gpio_callback, phy_mc_vsc8541_interrupt_handler,
+				BIT(cfg->interrupt_gpio.pin));
+	ret = gpio_add_callback_dt(&cfg->interrupt_gpio, &data->gpio_callback);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
+
 /**
  * @brief Performs periodic monitoring
  *
@@ -476,19 +564,35 @@ static void phy_mc_vsc8541_monitor_work_handler(struct k_work *work)
 	struct mc_vsc8541_data *data =
 		CONTAINER_OF(dwork, struct mc_vsc8541_data, phy_monitor_work);
 	const struct device *dev = data->dev;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	const struct mc_vsc8541_config *cfg = dev->config;
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 	struct phy_link_state state = {};
 	int ret;
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	if (cfg->interrupt_gpio.port) {
+		ret = phy_mc_vsc8541_clear_interrupt(data);
+		if (ret < 0) {
+			return;
+		}
+	}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
+
 	ret = phy_mc_vsc8541_get_link(dev, &state);
 
-	if (ret == 0 && memcmp(&state, &data->state, sizeof(struct phy_link_state)) != 0) {
+	if ((ret == 0) && ((state.is_up != data->state.is_up) ||
+			(state.speed != data->state.speed))) {
 		memcpy(&data->state, &state, sizeof(struct phy_link_state));
 		if (data->cb) {
 			data->cb(dev, &data->state, data->cb_data);
 		}
 	}
 
-	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+	if (UTIL_OR(UTIL_NOT(DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)),
+			(!cfg->interrupt_gpio.port))) {
+		k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+	}
 }
 
 /**
@@ -505,7 +609,7 @@ static int phy_mc_vsc8541_init(const struct device *dev)
 	data->active_page = -1;
 
 	ret = k_mutex_init(&data->mutex);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -518,7 +622,13 @@ static int phy_mc_vsc8541_init(const struct device *dev)
 
 	k_work_init_delayable(&data->phy_monitor_work, phy_mc_vsc8541_monitor_work_handler);
 
-	k_work_reschedule(&data->phy_monitor_work, K_NO_WAIT);
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	/* Initialize GPIO interrupt pin and configure PHY for interrupt mode */
+	ret = phy_mc_vsc8541_init_interrupt(dev);
+	if (ret < 0) {
+		return ret;
+	}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
 	phy_mc_vsc8541_cfg_link(dev, cfg->default_speeds, 0);
 

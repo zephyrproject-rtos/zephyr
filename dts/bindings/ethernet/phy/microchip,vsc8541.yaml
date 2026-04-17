@@ -19,6 +19,10 @@ properties:
     type: phandle-array
     description: GPIO connected to MAC PHY reset signal pin. Reset is active low.
 
+  int-gpios:
+    type: phandle-array
+    description: GPIO connected to MAC PHY interrupt signal pin. Interrupt is active low.
+
   microchip,interface-type:
     type: string
     required: true
