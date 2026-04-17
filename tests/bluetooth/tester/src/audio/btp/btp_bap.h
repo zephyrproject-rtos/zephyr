@@ -216,6 +216,13 @@ struct btp_bap_scan_delegator_add_src_rp {
 	uint8_t src_id;
 } __packed;
 
+#define BTP_BAP_BROADCAST_SINK_SET_BROADCAST_CODE 0x1b
+struct btp_bap_broadcast_sink_set_broadcast_code_cmd {
+	bt_addr_le_t address;
+	uint8_t broadcast_id[BT_AUDIO_BROADCAST_ID_SIZE];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
+} __packed;
+
 /* BAP events */
 #define BTP_BAP_EV_DISCOVERY_COMPLETED		0x80
 struct btp_bap_discovery_completed_ev {
