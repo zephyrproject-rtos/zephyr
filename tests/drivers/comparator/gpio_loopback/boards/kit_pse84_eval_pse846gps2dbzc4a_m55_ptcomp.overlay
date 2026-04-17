@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/comparator/infineon-autanalog-ptcomp.h>
+#include <zephyr/dt-bindings/regulator/infineon-autanalog-prb.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &comp1;
+	};
+
+	zephyr,user {
+		/* Connect positive-mux (P15.2) to pin (P15.4) */
+		test-gpios = <&gpio_prt15 4 0>;
+	};
+};
+
+&prb0 {
+	status = "okay";
+
+	vref0: vref@0 {
+		compatible = "infineon,autanalog-prb-vref";
+		reg = <0>;
+		source = <IFX_AUTANALOG_PRB_SRC_VDDA>;
+		tap = <IFX_AUTANALOG_PRB_TAP_7>;  /* 0.5 * Vsrc */
+	};
+};
+
+&ptcomp0 {
+	status = "okay";
+
+	comp1: comp@1 {
+		compatible = "infineon,autanalog-ptcomp-comp";
+		reg = <1>;
+		power-mode = <IFX_AUTANALOG_PTCOMP_PWR_NORMAL>;
+		interrupt-mode = <IFX_AUTANALOG_PTCOMP_INT_EDGE_RISING>;
+		positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO2>;
+		negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+	};
+};
+
+&gpio_prt15 {
+	status = "okay";
+};
