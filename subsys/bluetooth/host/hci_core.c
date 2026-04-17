@@ -1466,8 +1466,9 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 							     &evt->local_rpa,
 							     BT_ADDR_LE_RANDOM);
 				} else {
-					bt_addr_le_copy(&conn->le.resp_addr,
-							&bt_dev.random_addr);
+					bt_addr_le_copy_addr(&conn->le.resp_addr,
+							     &bt_dev.random_addr,
+							     BT_ADDR_LE_RANDOM);
 				}
 			} else {
 				bt_addr_le_copy(&conn->le.resp_addr,
@@ -1499,8 +1500,8 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 				bt_addr_le_copy_addr(&conn->le.init_addr,
 						     &evt->local_rpa, BT_ADDR_LE_RANDOM);
 			} else {
-				bt_addr_le_copy(&conn->le.init_addr,
-						&bt_dev.random_addr);
+				bt_addr_le_copy_addr(&conn->le.init_addr,
+						     &bt_dev.random_addr, BT_ADDR_LE_RANDOM);
 			}
 		} else {
 			bt_addr_le_copy(&conn->le.init_addr,
@@ -1738,7 +1739,7 @@ static void le_legacy_conn_complete(struct net_buf *buf)
 	bt_addr_le_copy(&enh.peer_addr, &evt->peer_addr);
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		bt_addr_copy(&enh.local_rpa, &bt_dev.random_addr.a);
+		bt_addr_copy(&enh.local_rpa, &bt_dev.random_addr);
 	} else {
 		bt_addr_copy(&enh.local_rpa, BT_ADDR_ANY);
 	}
@@ -4831,7 +4832,7 @@ int bt_disable(void)
 #endif
 
 	/* If random address was set up - clear it */
-	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
+	bt_addr_copy(&bt_dev.random_addr, BT_ADDR_ANY);
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 

@@ -41,7 +41,7 @@ static int bt_rand_custom_fake(void *buf, size_t len)
 
 	/* This will make set_random_address() succeeds and returns 0 */
 	memcpy(buf, &BT_ADDR->val, len);
-	bt_addr_copy(&bt_dev.random_addr.a, BT_ADDR);
+	bt_addr_copy(&bt_dev.random_addr, BT_ADDR);
 
 	return 0;
 }
@@ -176,10 +176,10 @@ ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_rpa_address_no_privacy)
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_SCAN_WITH_IDENTITY);
 
-	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_RPA_LE_ADDR);
+	bt_addr_le_copy_addr(&bt_dev.id_addr[BT_ID_DEFAULT], BT_RPA_ADDR, BT_ADDR_LE_RANDOM);
 
 	/* This will make set_random_address() succeeds and returns 0 */
-	bt_addr_copy(&bt_dev.random_addr.a, &BT_RPA_LE_ADDR->a);
+	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
 
 	err = bt_id_set_scan_own_addr(false, &own_addr_type);
 
