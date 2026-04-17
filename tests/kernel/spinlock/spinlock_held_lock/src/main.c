@@ -6,6 +6,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/thread_safety.h>
 
 extern struct k_spinlock _sched_spinlock;
 
@@ -21,9 +22,9 @@ static ZTEST_DMEM bool held_irq;
 static unsigned int irq_key;
 
 #ifdef CONFIG_ASSERT_NO_FILE_INFO
-void assert_post_action(void)
+Z_NO_THREAD_SAFETY_ANALYSIS void assert_post_action(void)
 #else
-void assert_post_action(const char *file, unsigned int line)
+Z_NO_THREAD_SAFETY_ANALYSIS void assert_post_action(const char *file, unsigned int line)
 #endif
 {
 #ifndef CONFIG_ASSERT_NO_FILE_INFO
@@ -56,13 +57,39 @@ void assert_post_action(const char *file, unsigned int line)
 	ztest_test_pass();
 }
 
+/* These helpers intentionally leave locks held on return; the matching
+ * unlock happens in assert_post_action() after the context switch fires
+ * the expected assert.  TSA cannot track that cross-function handoff.
+ */
+Z_NO_THREAD_SAFETY_ANALYSIS static void lock_a_only(void)
+{
+	key_a = k_spin_lock(&lock_a);
+	held_a = true;
+}
+
+Z_NO_THREAD_SAFETY_ANALYSIS static void lock_a_then_b(void)
+{
+	key_a = k_spin_lock(&lock_a);
+	held_a = true;
+	key_b = k_spin_lock(&lock_b);
+	held_b = true;
+}
+
+Z_NO_THREAD_SAFETY_ANALYSIS static void lock_a_and_b_then_unlock_a(void)
+{
+	key_a = k_spin_lock(&lock_a);
+	key_b = k_spin_lock(&lock_b);
+	held_b = true;
+
+	k_spin_unlock(&lock_a, key_a);
+}
+
 /** @brief Held spinlock address is reported on context switch assert */
 ZTEST(spinlock_held_lock, test_context_switch_prints_held_lock)
 {
 	zassert_is_null(z_spin_get_held_lock(), NULL);
 
-	key_a = k_spin_lock(&lock_a);
-	held_a = true;
+	lock_a_only();
 
 	zassert_equal_ptr(z_spin_get_held_lock(), &lock_a, NULL);
 
@@ -77,10 +104,7 @@ ZTEST(spinlock_held_lock, test_context_switch_nested_prints_outer)
 {
 	zassert_is_null(z_spin_get_held_lock(), NULL);
 
-	key_a = k_spin_lock(&lock_a);
-	held_a = true;
-	key_b = k_spin_lock(&lock_b);
-	held_b = true;
+	lock_a_then_b();
 
 	zassert_equal_ptr(z_spin_get_held_lock(), &lock_a, NULL);
 
@@ -100,11 +124,7 @@ ZTEST(spinlock_held_lock, test_context_switch_count_detects_unreleased_lock)
 {
 	zassert_is_null(z_spin_get_held_lock(), NULL);
 
-	key_a = k_spin_lock(&lock_a);
-	key_b = k_spin_lock(&lock_b);
-	held_b = true;
-
-	k_spin_unlock(&lock_a, key_a);
+	lock_a_and_b_then_unlock_a();
 	zassert_is_null(z_spin_get_held_lock(), NULL);
 
 	expect_assert = true;

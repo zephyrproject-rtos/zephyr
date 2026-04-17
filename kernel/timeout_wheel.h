@@ -407,7 +407,7 @@ static void timeout_wheel_sift_down(void)
  * advanced. Handlers fire with the lock dropped; inflight_timeout tracks
  * the in-flight timeout so aborts race correctly.
  */
-static k_spinlock_key_t timeout_wheel_announce_now(k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS static k_spinlock_key_t timeout_wheel_announce_now(k_spinlock_key_t key)
 {
 	struct _timeout *t;
 	uint32_t index = wheel.soon_index;
@@ -421,9 +421,9 @@ static k_spinlock_key_t timeout_wheel_announce_now(k_spinlock_key_t key)
 		timeout_wheel_clear_flags(t);
 
 		inflight_timeout = t;
-		k_spin_unlock(&timeout_lock, key);
+		k_spin_unlock(&z_timeout_lock, key);
 		t->fn(t);
-		key = k_spin_lock(&timeout_lock);
+		key = k_spin_lock(&z_timeout_lock);
 		inflight_timeout = NULL;
 	}
 	wheel.announcing = 0;

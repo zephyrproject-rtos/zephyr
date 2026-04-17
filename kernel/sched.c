@@ -40,8 +40,9 @@ struct k_spinlock _sched_spinlock;
 __incoherent struct k_thread _thread_dummy;
 
 static ALWAYS_INLINE void update_cache(int preempt_ok);
-static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state,
-				      k_spinlock_key_t *key);
+static ALWAYS_INLINE void halt_thread(struct k_thread *thread,
+								   uint8_t new_state,
+								   k_spinlock_key_t *key);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
 /* Clear the halting bits (_THREAD_ABORTING and _THREAD_SUSPENDING) */
@@ -259,7 +260,8 @@ void z_yield_testing_only(void)
  * deadlocks (but not complex ones involving cycles of 3+ threads!).
  * Acts to release the provided lock before returning.
  */
-static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS static void thread_halt_spin(struct k_thread *thread,
+							 k_spinlock_key_t key)
 {
 	if (z_is_thread_halting(_current)) {
 		halt_thread(_current,
@@ -281,8 +283,8 @@ static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
  * (aborting _current will not return, obviously), which may be after
  * a context switch.
  */
-void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
-					bool terminate)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
+					       bool terminate)
 {
 	_wait_q_t *wq = &thread->join_queue;
 #ifdef CONFIG_SMP
@@ -377,7 +379,7 @@ static inline bool need_swap(void)
 #endif /* CONFIG_SMP */
 }
 
-static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 {
 	if (resched(key.key) && need_swap()) {
 		z_swap(lock, key);
@@ -433,7 +435,7 @@ static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
 }
 
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
-		   k_timeout_t timeout)
+					       k_timeout_t timeout)
 {
 	__ASSERT_NO_MSG(thread == _current || is_thread_dummy(thread));
 	K_SPINLOCK(&_sched_spinlock) {
@@ -489,7 +491,7 @@ void z_thread_timeout(struct _timeout *timeout)
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
-	       _wait_q_t *wait_q, k_timeout_t timeout)
+					    _wait_q_t *wait_q, k_timeout_t timeout)
 {
 	/* A blocking pend from ISR context is a programming error with no
 	 * safe recovery: it would sleep whatever thread was interrupted and,
@@ -811,8 +813,9 @@ extern void thread_abort_hook(struct k_thread *thread);
  * @param new_state New thread state (_THREAD_DEAD or _THREAD_SUSPENDED)
  * @param key Pointer to the scheduler spinlock key held by the caller
  */
-static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state,
-				      k_spinlock_key_t *key)
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE void halt_thread(struct k_thread *thread,
+								  uint8_t new_state,
+								  k_spinlock_key_t *key)
 {
 	bool dummify = false;
 

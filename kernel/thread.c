@@ -1624,7 +1624,7 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 #include <zephyr/syscalls/k_thread_priority_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void z_impl_k_thread_suspend(k_tid_t thread)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_thread_suspend(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, suspend, thread);
 
@@ -1714,7 +1714,7 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 #include <zephyr/syscalls/k_wakeup_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void z_thread_abort(struct k_thread *thread)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_thread_abort(struct k_thread *thread)
 {
 	bool essential = z_is_thread_essential(thread);
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);

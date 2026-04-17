@@ -900,8 +900,7 @@ void k_work_queue_start(struct k_work_q *queue,
 	TOOLCHAIN_ENABLE_WARNING("-Wdeprecated-declarations");
 }
 
-int k_work_queue_drain(struct k_work_q *queue,
-		       bool plug)
+int k_work_queue_drain(struct k_work_q *queue, bool plug)
 {
 	__ASSERT_NO_MSG(queue);
 	__ASSERT_NO_MSG(!k_is_in_isr());
@@ -1107,8 +1106,8 @@ static int schedule_for_queue_locked(struct k_work_q **queuep,
  * @return true if and only if work had been delayed so the timeout
  * was cancelled.
  */
-static inline bool unschedule_locked(struct k_work_delayable *dwork,
-				     k_spinlock_key_t *key)
+Z_NO_THREAD_SAFETY_ANALYSIS static inline bool unschedule_locked(struct k_work_delayable *dwork,
+								  k_spinlock_key_t *key)
 {
 	bool ret = false;
 	struct k_work *work = &dwork->work;

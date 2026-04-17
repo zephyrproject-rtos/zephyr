@@ -208,8 +208,7 @@ static inline void clear_event_registration(struct k_poll_event *event)
 }
 
 /* must be called with interrupts locked */
-static inline void clear_event_registrations(struct k_poll_event *events,
-					      int num_events,
+static inline void clear_event_registrations(struct k_poll_event *events, int num_events,
 					      k_spinlock_key_t key)
 {
 	while (num_events--) {
@@ -280,7 +279,7 @@ static int signal_poller(struct k_poll_event *event, uint32_t state)
 }
 
 int z_impl_k_poll(struct k_poll_event *events, int num_events,
-		  k_timeout_t timeout)
+					      k_timeout_t timeout)
 {
 	int events_registered;
 	k_spinlock_key_t key;
@@ -641,7 +640,7 @@ static int signal_triggered_work(struct k_poll_event *event, uint32_t status)
 }
 
 static int triggered_work_cancel(struct k_work_poll *work,
-				 k_spinlock_key_t key)
+							       k_spinlock_key_t key)
 {
 	/* Check if the work waits for event. */
 	if (work->poller.is_polling && work->poller.mode != MODE_NONE) {
