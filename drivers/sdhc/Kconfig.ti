@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_TI_AM654
+	bool "TI AM654 SDHC driver"
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select SDHC_SUPPORTS_UHS
+	select EVENTS
+	select REGULATOR
+	default y
+	depends on DT_HAS_TI_AM654_SDHCI_ENABLED
+
+	help
+	  Interrupt based TI AM654 SD/eMMC Host controller
+
+if SDHC_TI_AM654
+config SDHC_TI_AM654_ENABLE_ADMA
+	bool "ADMA2"
+	default y
+	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
+	help
+	  Enable ADMA2 for TI AM654 SDHC driver
+
+config SDHC_TI_AM654_ENABLE_AUTO_STOP
+	bool "Auto-stop commands"
+	default y
+	help
+	  Enable auto-CMD12/CMD23 during multi-block transactions
+
+config SDHC_TI_AM654_ADMA_DESC_LEN
+	int "Maximum ADMA descriptor lines"
+	default 8
+	help
+	  Maximum number of ADMA descriptor lines allowed
+
+config SDHC_TI_AM654_LEGACY_PHY
+	bool "Legacy PHY configuration"
+	help
+	  Enable legacy PHY configuration for older IP versions.
+
+	  Early TI SDHC IP implementations use narrower register fields:
+	  - DLL frequency register field is 2-bit wide (vs 3-bit in newer IP)
+	  - Strobe select field is 4-bit wide (vs 8-bit in newer IP)
+
+	  Enable this for older hardware, disable for newer implementations
+	  like J721E which use wider register fields.
+endif

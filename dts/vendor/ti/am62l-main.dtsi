@@ -304,4 +304,67 @@
 		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
+
+	main_sdhci0: mmc@fa10000 {
+		compatible = "ti,am654-sdhci";
+		reg = <0xfa10000 DT_SIZE_K(4)>, <0xfa18000 DT_SIZE_K(1)>;
+		reg-names = "host", "subsys";
+		power-domains = <&main_mmcsd0_pd>;
+		max-bus-freq = <DT_FREQ_M(200)>;
+		min-bus-freq = <DT_FREQ_M(0)>;
+		ti,is-embedded;
+		ti,driver-strength-ohm = <50>;
+		ti,clkbuf-sel = <0x7>;
+		mmc-hs200-1_8v;
+		ti,otap-del-sel-sdr12 = <0xf>;
+		ti,otap-del-sel-sdr25 = <0xf>;
+		ti,otap-del-sel-ddr50 = <0x15>;
+		ti,otap-del-sel-hs200 = <0x6>;
+		ti,itap-del-sel-legacy = <0x0>;
+		ti,itap-del-sel-hs = <0x0>;
+		ti,itap-del-sel-sdr12 = <0x0>;
+		ti,itap-del-sel-sdr25 = <0x0>;
+		ti,itap-del-sel-ddr50 = <0x2>;
+		status = "disabled";
+	};
+
+	main_sdhci1: mmc@fa00000 {
+		compatible = "ti,am654-sdhci";
+		reg = <0xfa00000 DT_SIZE_K(4)>, <0xfa08000 DT_SIZE_K(1)>;
+		reg-names = "host", "subsys";
+		power-domains = <&main_mmcsd1_pd>;
+		max-bus-freq = <DT_FREQ_M(200)>;
+		min-bus-freq = <DT_FREQ_M(0)>;
+		ti,clkbuf-sel = <0x7>;
+		ti,otap-del-sel-sdr12 = <0xf>;
+		ti,otap-del-sel-sdr25 = <0xf>;
+		ti,otap-del-sel-sdr50 = <0xc>;
+		ti,otap-del-sel-sdr104 = <0x6>;
+		ti,otap-del-sel-ddr50 = <0x9>;
+		ti,itap-del-sel-legacy = <0x0>;
+		ti,itap-del-sel-hs = <0x0>;
+		ti,itap-del-sel-sdr12 = <0x0>;
+		ti,itap-del-sel-sdr25 = <0x0>;
+		status = "disabled";
+	};
+
+	main_sdhci2: mmc@fa20000 {
+		compatible = "ti,am654-sdhci";
+		reg = <0xfa20000 DT_SIZE_K(4)>, <0xfa28000 DT_SIZE_K(1)>;
+		reg-names = "host", "subsys";
+		power-domains = <&main_mmcsd2_pd>;
+		max-bus-freq = <DT_FREQ_M(200)>;
+		min-bus-freq = <DT_FREQ_M(0)>;
+		ti,clkbuf-sel = <0x7>;
+		ti,otap-del-sel-sdr12 = <0xf>;
+		ti,otap-del-sel-sdr25 = <0xf>;
+		ti,otap-del-sel-sdr50 = <0xc>;
+		ti,otap-del-sel-ddr50 = <0x9>;
+		ti,otap-del-sel-sdr104 = <0x6>;
+		ti,itap-del-sel-legacy = <0x0>;
+		ti,itap-del-sel-hs = <0x0>;
+		ti,itap-del-sel-sdr12 = <0x0>;
+		ti,itap-del-sel-sdr25 = <0x0>;
+		status = "disabled";
+	};
 };
