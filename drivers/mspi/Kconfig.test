@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_TEST
+	def_bool DT_HAS_VND_MSPI_ENABLED
+	depends on DT_HAS_VND_MSPI_ENABLED
+	help
+	  Enables "vnd,mspi" stub driver for testing.
