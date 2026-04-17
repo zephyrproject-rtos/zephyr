@@ -92,7 +92,7 @@ void report(const char *name, size_t n)
 	printk("%s samples=%d average %d stdev %d.%d\n", name, n, iavg, stdev_i, stdev_f);
 }
 
-void thread_fn(void *t0_arg, void *t1_arg, void *c)
+Z_NO_THREAD_SAFETY_ANALYSIS void thread_fn(void *t0_arg, void *t1_arg, void *c)
 {
 	uint32_t t0, t1, *t0_out = t0_arg, *t1_out = t1_arg;
 
