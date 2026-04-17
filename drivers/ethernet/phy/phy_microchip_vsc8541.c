@@ -54,12 +54,6 @@ enum vsc8541_interface {
 	VSC8541_RGMII,
 };
 
-/* Thread stack size */
-#define STACK_SIZE 512
-
-/* Thread priority */
-#define THREAD_PRIORITY 7
-
 struct mc_vsc8541_config {
 	uint8_t addr;
 	const struct device *mdio_dev;
@@ -77,22 +71,16 @@ struct mc_vsc8541_config {
 
 struct mc_vsc8541_data {
 	const struct device *dev;
-
 	struct phy_link_state state;
 	int active_page;
-
 	struct k_mutex mutex;
-
 	phy_callback_t cb;
 	void *cb_data;
-
-	struct k_thread link_monitor_thread;
-	uint8_t link_monitor_thread_stack[STACK_SIZE];
+	struct k_work_delayable phy_monitor_work;
 };
 
 static int phy_mc_vsc8541_read(const struct device *dev, uint16_t reg_addr, uint16_t *data);
 static int phy_mc_vsc8541_write(const struct device *dev, uint16_t reg_addr, uint16_t data);
-static void phy_mc_vsc8541_link_monitor(void *arg1, void *arg2, void *arg3);
 
 #if CONFIG_PHY_VERIFY_DEVICE_IDENTIFICATION
 /**
@@ -278,7 +266,18 @@ static int phy_mc_vsc8541_get_speed(const struct device *dev, struct phy_link_st
 static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed adv_speeds,
 				   enum phy_cfg_link_flag flags)
 {
+	struct mc_vsc8541_data *data = dev->data;
 	int ret;
+
+	/* Lock mutex */
+	ret = k_mutex_lock(&data->mutex, K_FOREVER);
+	if (ret) {
+		LOG_ERR("PHY mutex lock error");
+		return ret;
+	}
+
+	/* Stop monitor during reconfiguration */
+	k_work_cancel_delayable(&data->phy_monitor_work);
 
 	if ((flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) != 0U) {
 		ret = phy_mii_set_bmcr_reg_autoneg_disabled(dev, adv_speeds);
@@ -286,41 +285,13 @@ static int phy_mc_vsc8541_cfg_link(const struct device *dev, enum phy_link_speed
 		ret = phy_mii_cfg_link_autoneg(dev, adv_speeds, true);
 	}
 
+	/* Start monitoring */
+	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+
+	/* Unlock mutex */
+	(void)k_mutex_unlock(&data->mutex);
+
 	return ret;
-}
-
-/**
- * @brief Initializes the phy and starts the link monitor
- *
- */
-static int phy_mc_vsc8541_init(const struct device *dev)
-{
-	struct mc_vsc8541_data *data = dev->data;
-	const struct mc_vsc8541_config *cfg = dev->config;
-	int ret;
-
-	data->active_page = -1;
-
-	k_mutex_init(&data->mutex);
-
-	/* Reset PHY */
-	ret = phy_mc_vsc8541_reset(dev);
-	if (ret < 0) {
-		LOG_ERR("initialize failed");
-		return ret;
-	}
-
-	/* setup thread to watch link state */
-	k_thread_create(&data->link_monitor_thread,
-			(k_thread_stack_t *)data->link_monitor_thread_stack, STACK_SIZE,
-			phy_mc_vsc8541_link_monitor, (void *)dev, NULL, NULL, THREAD_PRIORITY, 0,
-			K_NO_WAIT);
-
-	k_thread_name_set(&data->link_monitor_thread, "phy-link-mon");
-
-	phy_mc_vsc8541_cfg_link(dev, cfg->default_speeds, 0);
-
-	return 0;
 }
 
 /**
@@ -385,38 +356,6 @@ static int phy_mc_vsc8541_link_cb_set(const struct device *dev, phy_callback_t c
 	data->cb(dev, &data->state, data->cb_data);
 
 	return 0;
-}
-
-/**
- * @brief Monitor thread to check the link state and announce if changed
- *
- * @param arg1 provides a pointer to device structure
- * @param arg2 not used
- * @param arg3 not used
- */
-void phy_mc_vsc8541_link_monitor(void *arg1, void *arg2, void *arg3)
-{
-	const struct device *dev = arg1;
-	struct mc_vsc8541_data *data = dev->data;
-
-	struct phy_link_state new_state;
-
-	while (1) {
-		k_sleep(K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
-		phy_mc_vsc8541_get_link(dev, &new_state);
-
-		if ((new_state.is_up != data->state.is_up) ||
-		    (new_state.speed != data->state.speed)) {
-			/* state changed */
-			data->state.is_up = new_state.is_up;
-			data->state.speed = new_state.speed;
-
-			if (data->cb) {
-				/* announce new state */
-				data->cb(dev, &data->state, data->cb_data);
-			}
-		}
-	}
 }
 
 /**
@@ -527,6 +466,65 @@ static DEVICE_API(ethphy, mc_vsc8541_phy_api) = {
 	.write = phy_mc_vsc8541_write_ext,
 };
 
+/**
+ * @brief Performs periodic monitoring
+ *
+ */
+static void phy_mc_vsc8541_monitor_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct mc_vsc8541_data *data =
+		CONTAINER_OF(dwork, struct mc_vsc8541_data, phy_monitor_work);
+	const struct device *dev = data->dev;
+	struct phy_link_state state = {};
+	int ret;
+
+	ret = phy_mc_vsc8541_get_link(dev, &state);
+
+	if (ret == 0 && memcmp(&state, &data->state, sizeof(struct phy_link_state)) != 0) {
+		memcpy(&data->state, &state, sizeof(struct phy_link_state));
+		if (data->cb) {
+			data->cb(dev, &data->state, data->cb_data);
+		}
+	}
+
+	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+}
+
+/**
+ * @brief Initializes the phy and starts the link monitor
+ *
+ */
+static int phy_mc_vsc8541_init(const struct device *dev)
+{
+	struct mc_vsc8541_data *data = dev->data;
+	const struct mc_vsc8541_config *cfg = dev->config;
+	int ret;
+
+	data->dev = dev;
+	data->active_page = -1;
+
+	ret = k_mutex_init(&data->mutex);
+	if (ret) {
+		return ret;
+	}
+
+	/* Reset PHY */
+	ret = phy_mc_vsc8541_reset(dev);
+	if (ret < 0) {
+		LOG_ERR("initialize failed");
+		return ret;
+	}
+
+	k_work_init_delayable(&data->phy_monitor_work, phy_mc_vsc8541_monitor_work_handler);
+
+	k_work_reschedule(&data->phy_monitor_work, K_NO_WAIT);
+
+	phy_mc_vsc8541_cfg_link(dev, cfg->default_speeds, 0);
+
+	return 0;
+}
+
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 #define RESET_GPIO(n) .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
 #else
@@ -546,8 +544,9 @@ static DEVICE_API(ethphy, mc_vsc8541_phy_api) = {
 		.microchip_interface_type = DT_INST_ENUM_IDX(n, microchip_interface_type),         \
 		.rgmii_rx_clk_delay = DT_INST_PROP(n, microchip_rgmii_rx_clk_delay),               \
 		.rgmii_tx_clk_delay = DT_INST_PROP(n, microchip_rgmii_tx_clk_delay),               \
-		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),				   \
-		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
+		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),                             \
+		RESET_GPIO(n)                                                                      \
+		INTERRUPT_GPIO(n)};                                                                \
                                                                                                    \
 	static struct mc_vsc8541_data mc_vsc8541_##n##_data;                                       \
                                                                                                    \
