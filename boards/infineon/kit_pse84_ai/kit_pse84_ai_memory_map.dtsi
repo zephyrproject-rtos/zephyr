@@ -69,7 +69,7 @@
 		};
 	};
 
-	/* Default Flash memory(16MB) assignment
+	/* Default Flash memory(64MB) assignment
 	 * - Lowest 1mb reserved for Storage
 	 * - 2mb for each of the cores(cm33_s, cm33 and cm55)
 	 */
@@ -80,17 +80,17 @@
 		#size-cells = <1>;
 
 		flash0: flash0@8000000 {
-			compatible = "soc-nv-flash";
+			compatible = "soc-nv-flash", "infineon,s25hs512t";
 			reg = <0x08000000 DT_SIZE_M(64)>;
 			write-block-size = <256>;
-			erase-block-size = <65536>;
+			erase-block-size = <DT_SIZE_K(256)>;
 
 			partitions {
 				#address-cells = <1>;
 				#size-cells = <1>;
 				compatible = "fixed-partitions";
 
-				storage: storage@0 {
+				storage_partition: storage@0 {
 					label = "storage";
 					reg = <0 DT_SIZE_M(1)>;
 				};
