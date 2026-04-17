@@ -174,9 +174,9 @@
 			};
 
 			/* "FLASH read-only area" */
-			flash@bfa0500 {
+			flash@8fff800 {
 				compatible = "st,stm32-nvm-otp";
-				reg = <0x0bfa0500 1536>; /* 1.5KB */
+				reg = <0x8fff800 1536>; /* 1.5KB */
 
 				nvmem-layout {
 					compatible = "fixed-layout";
