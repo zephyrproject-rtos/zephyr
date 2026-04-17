@@ -209,9 +209,9 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 	}
 
 	if (&adv->random_addr.a != addr) {
-		bt_addr_copy(&adv->random_addr.a, addr);
+		bt_addr_le_copy_addr(&adv->random_addr, addr, BT_ADDR_LE_RANDOM);
 	}
-	adv->random_addr.type = BT_ADDR_LE_RANDOM;
+
 	return 0;
 }
 
@@ -1579,8 +1579,7 @@ uint8_t bt_id_read_public_addr(bt_addr_le_t *addr)
 		return 0U;
 	}
 
-	bt_addr_copy(&addr->a, &rp->bdaddr);
-	addr->type = BT_ADDR_LE_PUBLIC;
+	bt_addr_le_copy_addr(addr, &rp->bdaddr, BT_ADDR_LE_PUBLIC);
 
 	net_buf_unref(rsp);
 	return 1U;
@@ -1710,8 +1709,7 @@ int bt_setup_random_id_addr(void)
 				}
 			}
 
-			bt_addr_copy(&addr.a, &addrs[i].bdaddr);
-			addr.type = BT_ADDR_LE_RANDOM;
+			bt_addr_le_copy_addr(&addr, &addrs[i].bdaddr, BT_ADDR_LE_RANDOM);
 
 			err = id_create(i, &addr, irk);
 			if (err) {
