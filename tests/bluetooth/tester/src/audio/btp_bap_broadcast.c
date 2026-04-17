@@ -1882,6 +1882,33 @@ uint8_t btp_bap_scan_delegator_add_src(const void *cmd, uint16_t cmd_len, void *
 	return BTP_STATUS_SUCCESS;
 }
 
+uint8_t btp_bap_set_sink_broadcast_code(const void *cmd, uint16_t cmd_len, void *rsp,
+					uint16_t *rsp_len)
+{
+	const struct btp_bap_broadcast_sink_set_broadcast_code_cmd *cp = cmd;
+	struct btp_bap_broadcast_remote_source *broadcaster = NULL;
+	uint32_t host_broadcast_id = sys_get_le24(cp->broadcast_id);
+
+	/* Find the broadcaster by address and broadcast_id */
+	broadcaster = remote_broadcaster_find(&cp->address, host_broadcast_id);
+	if (broadcaster == NULL) {
+		LOG_DBG("Broadcast source not found for addr %s, broadcast_id 0x%06X, alloc new",
+			bt_addr_le_str(&cp->address), host_broadcast_id);
+		/* If not found, allocate a new one */
+		broadcaster = remote_broadcaster_alloc();
+		if (broadcaster == NULL) {
+			LOG_DBG("Failed to allocate broadcaster entry");
+			return BTP_STATUS_FAILED;
+		}
+		bt_addr_le_copy(&broadcaster->address, &cp->address);
+	}
+	(void)memcpy(broadcaster->sink_broadcast_code, cp->broadcast_code,
+		     BT_ISO_BROADCAST_CODE_SIZE);
+	broadcaster->broadcast_id = host_broadcast_id;
+	broadcaster->broadcast_code_received = true;
+	return BTP_STATUS_SUCCESS;
+}
+
 static bool broadcast_inited;
 
 int btp_bap_broadcast_init(void)
