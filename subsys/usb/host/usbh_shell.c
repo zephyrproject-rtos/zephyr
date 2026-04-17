@@ -644,7 +644,7 @@ static int cmd_config_get(const struct shell *sh,
 
 	err = usbh_req_get_cfg(udev, &cfg);
 	if (err) {
-		shell_error(sh, "host: Failed to set configuration");
+		shell_error(sh, "host: Failed to get configuration");
 	} else {
 		shell_print(sh, "host: Device 0x%02x, current configuration %u",
 			    udev->addr, cfg);
@@ -851,75 +851,179 @@ static int cmd_usbh_disable(const struct shell *sh,
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(desc_cmds,
-	SHELL_CMD_ARG(device, NULL, "<addr>",
-		      cmd_desc_device, 2, 0),
-	SHELL_CMD_ARG(configuration, NULL, "<addr> <index>",
-		      cmd_desc_config, 3, 0),
-	SHELL_CMD_ARG(string, NULL, "<addr> <id> <index>",
-		      cmd_desc_string, 4, 0),
+	SHELL_CMD_ARG(device, NULL,
+		SHELL_HELP(
+			"Print device descriptor",
+			"<addr>\n"
+			"addr: Device bus address [dec]"
+		),
+		cmd_desc_device, 2, 0),
+	SHELL_CMD_ARG(configuration, NULL,
+		SHELL_HELP(
+			"Print configuration descriptor",
+			"<addr> <index>\n"
+			"addr:  Device bus address [dec]\n"
+			"index: Configuration index [dec]"
+		),
+		cmd_desc_config, 3, 0),
+	SHELL_CMD_ARG(string, NULL,
+		SHELL_HELP(
+			"Print string descriptor",
+			"<addr> <id> <index>\n"
+			"addr:  Device bus address [dec]\n"
+			"id:    Language ID [dec]\n"
+			"index: Index of string [dec]"
+		),
+		cmd_desc_string, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(feature_set_cmds,
-	SHELL_CMD_ARG(rwup, NULL, "<addr>",
-		      cmd_feature_set_rwup, 2, 0),
-	SHELL_CMD_ARG(ppwr, NULL, "<addr> <port>",
-		      cmd_feature_set_ppwr, 3, 0),
-	SHELL_CMD_ARG(prst, NULL, "<addr> <port>",
-		      cmd_feature_set_prst, 3, 0),
-	SHELL_CMD_ARG(halt, NULL, "<addr> <endpoint>",
-		      cmd_feature_set_halt, 3, 0),
+	SHELL_CMD_ARG(rwup, NULL,
+		SHELL_HELP(
+			"Set feature - Remote Wakeup",
+			"<addr>\n"
+			"addr: Device bus address [dec]"
+		),
+		cmd_feature_set_rwup, 2, 0),
+	SHELL_CMD_ARG(ppwr, NULL,
+		SHELL_HELP(
+			"Set feature - Port Power [Hub Class request]",
+			"<addr> <port>\n"
+			"addr: Device bus address [dec]\n"
+			"port: Port number [dec]"
+		),
+		cmd_feature_set_ppwr, 3, 0),
+	SHELL_CMD_ARG(prst, NULL,
+		SHELL_HELP(
+			"Set feature - Reset Port [Hub Class request]",
+			"<addr> <port>\n"
+			"addr: Device bus address [dec]\n"
+			"port: Port number [dec]"
+		),
+		cmd_feature_set_prst, 3, 0),
+	SHELL_CMD_ARG(halt, NULL,
+		SHELL_HELP(
+			"Set feature - Halt Endpoint",
+			"<addr> <ep_num>\n"
+			"addr:   Device bus address [dec]\n"
+			"ep_num: Endpoint number [hex]"
+		),
+		cmd_feature_set_halt, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(feature_clear_cmds,
-	SHELL_CMD_ARG(rwup, NULL, "<addr>",
-		      cmd_feature_clear_rwup, 2, 0),
-	SHELL_CMD_ARG(halt, NULL, "<addr> <endpoint>",
-		      cmd_feature_clear_halt, 3, 0),
+	SHELL_CMD_ARG(rwup, NULL,
+		SHELL_HELP(
+			"Clear feature - Remote Wakeup",
+			"<addr>\n"
+			"addr: Device bus address [dec]"
+		),
+		cmd_feature_clear_rwup, 2, 0),
+	SHELL_CMD_ARG(halt, NULL,
+		SHELL_HELP(
+			"Clear feature - Halt Endpoint",
+			"<addr> <ep_num>\n"
+			"addr:   Device bus address [dec]\n"
+			"ep_num: Endpoint number [hex]"
+		),
+		cmd_feature_clear_halt, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(config_cmds,
-	SHELL_CMD_ARG(get, NULL, "<addr>",
-		      cmd_config_get, 2, 0),
-	SHELL_CMD_ARG(set, NULL, "<addr> <configuration>",
-		      cmd_config_set, 3, 0),
+	SHELL_CMD_ARG(get, NULL,
+		SHELL_HELP(
+			"Get configuration",
+			"<addr>\n"
+			"addr: Device bus address [dec]"
+		),
+		cmd_config_get, 2, 0),
+	SHELL_CMD_ARG(set, NULL,
+		SHELL_HELP(
+			"Set configuration",
+			"<addr> <value>\n"
+			"addr:  Device bus address [dec]\n"
+			"value: Value to set [dec]"
+		),
+		cmd_config_set, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
-	SHELL_CMD_ARG(list, NULL, NULL,
-		      cmd_device_list, 1, 0),
-	SHELL_CMD_ARG(list_dd, NULL, "<address>",
-		      cmd_device_list_dd, 2, 0),
-	SHELL_CMD_ARG(address, NULL, "<address> <new address>",
-		      cmd_device_address, 3, 0),
-	SHELL_CMD_ARG(config, &config_cmds, "get|set configuration",
+	SHELL_CMD_ARG(list, NULL,
+		SHELL_HELP(
+			"List of active devices",
+			""
+		),
+		cmd_device_list, 1, 0),
+	SHELL_CMD_ARG(list_dd, NULL,
+		SHELL_HELP(
+			"List descriptors data",
+			"<addr>\n"
+			"addr: Device bus address [dec]\n"
+		),
+		cmd_device_list_dd, 2, 0),
+	SHELL_CMD_ARG(address, NULL,
+		SHELL_HELP(
+			"Set device address",
+			"<addr> <new addr>\n"
+			"addr: Device bus address [dec]\n"
+			"new:  New device address [dec]"
+		),
+		cmd_device_address, 3, 0),
+	SHELL_CMD_ARG(config, &config_cmds, "Get/Set configuration",
 		      NULL, 2, 0),
-	SHELL_CMD_ARG(interface, NULL, "<address> <interface> <alternate>",
-		      cmd_device_interface, 4, 0),
-	SHELL_CMD_ARG(descriptor, &desc_cmds, "descriptor request",
+	SHELL_CMD_ARG(interface, NULL,
+		SHELL_HELP(
+			"Set alternate interface",
+			"<addr> <iface> <alt>\n"
+			"addr:  Device bus address [dec]\n"
+			"iface: Interface number [dec]\n"
+			"alt:   Alternate setting [dec]"
+		),
+		cmd_device_interface, 4, 0),
+	SHELL_CMD_ARG(descriptor, &desc_cmds, "Descriptor commands",
 		      NULL, 2, 0),
-	SHELL_CMD_ARG(feature-set, &feature_set_cmds, "feature selector",
+	SHELL_CMD_ARG(feature-set, &feature_set_cmds, "Set Feature commands",
 		      NULL, 2, 0),
-	SHELL_CMD_ARG(feature-clear, &feature_clear_cmds, "feature selector",
+	SHELL_CMD_ARG(feature-clear, &feature_clear_cmds, "Clear Feature commands",
 		      NULL, 2, 0),
-	SHELL_CMD_ARG(vendor_in, NULL, "<address> <length>",
-		      cmd_vendor_in, 3, 0),
-	SHELL_CMD_ARG(vendor_out, NULL, "<address> <length>",
-		      cmd_vendor_out, 3, 0),
-	SHELL_CMD_ARG(bulk, NULL, "<address> <endpoint> <length>",
-		      cmd_bulk, 4, 0),
+	SHELL_CMD_ARG(vendor_in, NULL,
+		SHELL_HELP(
+			"Vendor IN transfer",
+			"<addr> <len>\n"
+			"addr: Device bus address [dec]\n"
+			"len:  Buffer length [dec]"
+		),
+		cmd_vendor_in, 3, 0),
+	SHELL_CMD_ARG(vendor_out, NULL,
+		SHELL_HELP(
+			"Vendor OUT transfer",
+			"<addr> <len>\n"
+			"addr: Device bus address [dec]\n"
+			"len:  Buffer length [dec]"
+		),
+		cmd_vendor_out, 3, 0),
+	SHELL_CMD_ARG(bulk, NULL,
+		SHELL_HELP(
+			"Bulk IN/OUT transfer",
+			"<addr> <ep_num> <len>\n"
+			"addr:   Device bus address [dec]\n"
+			"ep_num: Endpoint number [hex]\n"
+			"len:    Buffer length [dec]"
+		),
+		cmd_bulk, 4, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(bus_cmds,
-	SHELL_CMD_ARG(suspend, NULL, "[nono]",
+	SHELL_CMD_ARG(suspend, NULL, "[none]",
 		      cmd_bus_suspend, 1, 0),
-	SHELL_CMD_ARG(resume, NULL, "[nono]",
+	SHELL_CMD_ARG(resume, NULL, "[none]",
 		      cmd_bus_resume, 1, 0),
-	SHELL_CMD_ARG(reset, NULL, "[nono]",
+	SHELL_CMD_ARG(reset, NULL, "[none]",
 		      cmd_bus_reset, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
@@ -931,9 +1035,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_usbh_cmds,
 		      cmd_usbh_enable, 1, 0),
 	SHELL_CMD_ARG(disable, NULL, "[none]",
 		      cmd_usbh_disable, 1, 0),
-	SHELL_CMD_ARG(bus, &bus_cmds, "bus commands",
+	SHELL_CMD_ARG(bus, &bus_cmds, "Bus commands",
 		      NULL, 1, 0),
-	SHELL_CMD_ARG(device, &device_cmds, "device commands",
+	SHELL_CMD_ARG(device, &device_cmds, "Device commands",
 		      NULL, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
