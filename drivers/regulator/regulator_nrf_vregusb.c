@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/sys_io.h>
 #include <hal/nrf_vregusb.h>
 
 LOG_MODULE_REGISTER(vregusb, CONFIG_REGULATOR_LOG_LEVEL);
@@ -50,16 +51,46 @@ static void vregusb_isr(void *const arg)
 	}
 }
 
+/* Undocumented STATUS register offset and VBUS detected bit for nRF54LM20.
+ * The STATUS register is not part of the NRF_VREGUSB_Type struct in the MDK,
+ * but is present in hardware at offset 0x400 from the peripheral base.
+ */
+#define VREGUSB_STATUS_OFFSET	0x400
+#define VREGUSB_STATUS_VBUSDET	BIT(2)
+
 static int vregusb_enable(const struct device *const dev)
 {
 	const struct vregusb_config *const config = dev->config;
+	struct vregusb_data *const data = dev->data;
 	NRF_VREGUSB_Type *const base = config->base;
+
+	/* Clear stale events from a previous boot to prevent spurious ISR
+	 * firing with wrong or overwritten event type.
+	 */
+	nrf_vregusb_event_clear(base, NRF_VREGUSB_EVENT_VBUS_DETECTED);
+	nrf_vregusb_event_clear(base, NRF_VREGUSB_EVENT_VBUS_REMOVED);
 
 	nrf_vregusb_int_enable(base, NRF_VREGUSB_INT_VBUS_DETECTED_MASK |
 				     NRF_VREGUSB_INT_VBUS_REMOVED_MASK);
-	config->irq_enable_func(dev);
 
 	nrf_vregusb_task_trigger(base, NRF_VREGUSB_TASK_START);
+
+	/* If VBUS is already detected (e.g. after a warm reboot with the cable
+	 * connected), no VBUS_DETECTED edge interrupt will fire.  Synthesize
+	 * the callback so the upper layers learn about the present VBUS.
+	 */
+	if (sys_read32((mem_addr_t)base + VREGUSB_STATUS_OFFSET) & VREGUSB_STATUS_VBUSDET) {
+		LOG_DBG("VBUS already detected at enable");
+		if (data->cb != NULL) {
+			struct regulator_event event = {
+				.type = REGULATOR_VOLTAGE_DETECTED,
+			};
+
+			data->cb(dev, &event, data->user_data);
+		}
+	}
+
+	config->irq_enable_func(dev);
 
 	return 0;
 }
