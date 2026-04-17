@@ -33,10 +33,8 @@ extern unsigned int z_clock_hw_cycles_per_sec;
 #endif
 #endif
 
-/* add MAX_TICKS protection */
-#define _MAX_TICKS (int)((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
-#define MAX_TICKS ((_MAX_TICKS > 0) ? _MAX_TICKS : 1)
-#define MAX_CYCLES (MAX_TICKS * CYC_PER_TICK)
+/* Largest delta we can program into the 24-bit LOAD register. */
+#define MAX_CYCLES ((uint32_t)COUNTER_MAX)
 
 /* Minimum cycles in the future to try to program.  Note that this is
  * NOT simply "enough cycles to get the counter read and reprogrammed
@@ -55,8 +53,10 @@ static uint32_t last_load;
 
 #ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
 typedef uint64_t cycle_t;
+typedef int64_t cycle_diff_t;
 #else
 typedef uint32_t cycle_t;
+typedef int32_t cycle_diff_t;
 #endif
 
 /*
@@ -82,6 +82,14 @@ static cycle_t cycle_count;
  * dividing it by CYC_PER_TICK.
  */
 static cycle_t announced_cycles;
+
+/*
+ * Ticks reported to the kernel via sys_clock_elapsed() since the last
+ * announce. Reset in sys_clock_isr() / sys_clock_idle_exit() after an
+ * announce. Used by sys_clock_set_timeout() to compute a tick-aligned
+ * absolute deadline relative to announced_cycles.
+ */
+static uint32_t last_elapsed;
 
 /*
  * This local variable holds the amount of elapsed HW cycles due to
@@ -394,6 +402,7 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 		dcycles = cycle_count - announced_cycles;
 		dticks = dcycles / CYC_PER_TICK;
 		announced_cycles += dticks * CYC_PER_TICK;
+		last_elapsed = 0U;
 		sys_clock_announce(dticks);
 	} else {
 		sys_clock_announce(1);
@@ -470,68 +479,94 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
 
 #if defined(CONFIG_TICKLESS_KERNEL)
-	uint32_t delay;
-	uint32_t val1, val2;
-	uint32_t last_load_ = last_load;
-
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
-
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
+	/*
+	 * Sync cycle_count with current HW state, capturing any wrap that
+	 * might have occurred since the last sync point. The kernel's
+	 * preceding sys_clock_elapsed() call (or the ISR entry sync)
+	 * usually makes this redundant, but we still need to read CTRL
+	 * here to catch any wrap before writing VAL=0 destroys COUNTFLAG.
+	 *
+	 * val1 must be sampled immediately after elapsed() returns, before
+	 * the cycle_count/overflow_cyc writes below, so the window measured
+	 * by (val1 - val2) at the bottom of this function abuts the window
+	 * already accounted for by elapsed() with no gap in between. Any
+	 * instruction inserted between these two lines would be cycles that
+	 * are neither in elapsed()'s return value nor captured by the
+	 * val1/val2 drift compensation, i.e. systematically lost drift.
+	 */
 	uint32_t pending = elapsed();
-
-	val1 = SysTick->VAL;
+	uint32_t val1 = SysTick->VAL;
+	uint32_t old_load = last_load;
 
 	cycle_count += pending;
 	overflow_cyc = 0U;
 
-	uint32_t unannounced = cycle_count - announced_cycles;
+	uint32_t cycles;
 
-	if ((int32_t)unannounced < 0) {
-		/* We haven't announced for more than half the 32-bit
-		 * wrap duration, because new timeouts keep being set
-		 * before the existing one fires.  Force an announce
-		 * to avoid loss of a wrap event, making sure the
-		 * delay is at least the minimum delay possible.
-		 */
-		last_load = MIN_DELAY;
+	if (ticks == K_TICKS_FOREVER) {
+		/* Schedule as far out as SysTick can go in one LOAD. */
+		cycles = MAX_CYCLES;
 	} else {
-		/* Desired delay in the future */
-		delay = ticks * CYC_PER_TICK;
+		/*
+		 * Compute the number of cycles from 'now' to a tick-aligned
+		 * deadline measured from the last announce. last_elapsed is
+		 * the tick count most recently reported to the kernel via
+		 * sys_clock_elapsed(); the kernel's 'ticks' argument is
+		 * measured from that report. 64-bit math absorbs arbitrarily
+		 * large 'ticks' without overflowing the intermediate product.
+		 */
+		int64_t want = ((uint64_t)last_elapsed + ticks) * CYC_PER_TICK;
+		cycle_diff_t unannounced = cycle_count - announced_cycles;
+		int64_t delta_64 = want - unannounced;
 
-		/* Round delay up to next tick boundary */
-		delay += unannounced;
-		delay = DIV_ROUND_UP(delay, CYC_PER_TICK) * CYC_PER_TICK;
-		delay -= unannounced;
-		delay = MAX(delay, MIN_DELAY);
-		if (delay > MAX_CYCLES) {
-			last_load = MAX_CYCLES;
-		} else {
-			last_load = delay;
-		}
+		/*
+		 * Clamp to [MIN_DELAY, MAX_CYCLES] so the programmed LOAD is
+		 * within SysTick's 24-bit range and leaves enough cycles to
+		 * reliably service the next ISR. A past-deadline request
+		 * (delta_64 <= 0) is pulled up to MIN_DELAY to fire ASAP.
+		 */
+		cycles = CLAMP(delta_64, (int64_t)MIN_DELAY, (int64_t)MAX_CYCLES);
 	}
-
-	val2 = SysTick->VAL;
-
-	SysTick->LOAD = last_load - 1;
-	SysTick->VAL = 0; /* resets timer to last_load */
 
 	/*
-	 * Add elapsed cycles while computing the new load to cycle_count.
+	 * val2 must be sampled while the OLD LOAD is still the reload source:
+	 * if a wrap happened between SysTick->LOAD being reprogrammed and the
+	 * val2 read, VAL would reload from the NEW LOAD and the drift-comp
+	 * formula below (which uses old_load for the wrap case) would be
+	 * wrong. Updating last_load (a software shadow) is HW-inert and safe
+	 * to do before val2.
 	 *
-	 * Note that comparing val1 and val2 is normally not good enough to
-	 * guess if the counter wrapped during this interval. Indeed if val1 is
-	 * close to LOAD, then there are little chances to catch val2 between
-	 * val1 and LOAD after a wrap. COUNTFLAG should be checked in addition.
-	 * But since the load computation is faster than MIN_DELAY, then we
-	 * don't need to worry about this case.
+	 * COUNTFLAG is not checked here: the caller guarantees this runs
+	 * faster than MIN_DELAY cycles, so a wrap cannot be missed.
 	 */
+	last_load = cycles;
+
+	uint32_t val2 = SysTick->VAL;
+
+	SysTick->LOAD = cycles - 1U;
+	SysTick->VAL = 0U;	/* resets counter, clears COUNTFLAG */
+
+	/*
+	 * Clear any pending SysTick exception from the old schedule.
+	 * Writing VAL=0 clears COUNTFLAG in CTRL but not ICSR.PENDSTSET,
+	 * so without this a wrap that fired just before the reprogram
+	 * would still trigger the ISR once interrupts are re-enabled.
+	 * On Armv8-M, preserve STTNS (R/W) while writing the W1C bit.
+	 */
+#ifdef SCB_ICSR_STTNS_Msk
+	SCB->ICSR = (SCB->ICSR & SCB_ICSR_STTNS_Msk) | SCB_ICSR_PENDSTCLR_Msk;
+#else
+	SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
+#endif
+
 	if (val1 < val2) {
-		cycle_count += (val1 + (last_load_ - val2));
+		cycle_count += val1 + (old_load - val2);
 	} else {
-		cycle_count += (val1 - val2);
+		cycle_count += val1 - val2;
 	}
+
 	k_spin_unlock(&lock, key);
 #endif
 }
@@ -545,9 +580,11 @@ uint32_t sys_clock_elapsed(void)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint32_t unannounced = cycle_count - announced_cycles;
 	uint32_t cyc = elapsed() + unannounced;
+	uint32_t dticks = cyc / CYC_PER_TICK;
 
+	last_elapsed = dticks;
 	k_spin_unlock(&lock, key);
-	return cyc / CYC_PER_TICK;
+	return dticks;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
@@ -622,6 +659,7 @@ void sys_clock_idle_exit(void)
 		dcycles = cycle_count + elapsed() - announced_cycles;
 		dticks = dcycles / CYC_PER_TICK;
 		announced_cycles += dticks * CYC_PER_TICK;
+		last_elapsed = 0U;
 		sys_clock_announce(dticks);
 
 		/* We've already performed all needed operations */
