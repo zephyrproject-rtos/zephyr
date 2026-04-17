@@ -1,0 +1,15 @@
+common:
+  tags:
+    - ipc
+  platform_allow:
+    - native_sim
+  harness: ztest
+tests:
+  subsys.ipc.ipc_service_backend.serial:
+    extra_configs:
+      - CONFIG_SERIAL=y
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_EMUL=y
+      - CONFIG_IPC_SERVICE_BACKEND_SERIAL_CRC=y
+    extra_dtc_overlay_files:
+      - serial.overlay
