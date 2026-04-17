@@ -21,6 +21,17 @@ static int ssh_client_thread_run(struct ssh_client *ssh_client);
 
 static struct ssh_client ssh_client_instances[CONFIG_SSH_CLIENT_MAX_CLIENTS];
 
+void ssh_client_foreach(ssh_service_client_cb_t cb, void *user_data)
+{
+	ARRAY_FOR_EACH(ssh_client_instances, i) {
+		struct ssh_client *ssh = &ssh_client_instances[i];
+
+		if (ssh->running) {
+			cb(ssh, i, user_data);
+		}
+	}
+}
+
 struct ssh_client *ssh_client_instance(int instance)
 {
 	if (instance < ARRAY_SIZE(ssh_client_instances)) {
