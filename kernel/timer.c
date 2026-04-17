@@ -190,28 +190,6 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 		return;
 	}
 
-	/* z_add_timeout() always adds one to the incoming tick count
-	 * to round up to the next tick (by convention it waits for
-	 * "at least as long as the specified timeout"), but the
-	 * period interval is always guaranteed to be reset from
-	 * within the timer ISR, so no round up is desired and 1 is
-	 * subtracted in there.
-	 *
-	 * Note that the duration (!) value gets the same treatment
-	 * for backwards compatibility.  This is unfortunate
-	 * (i.e. k_timer_start() doesn't treat its initial sleep
-	 * argument the same way k_sleep() does), but historical.  The
-	 * timer_api test relies on this behavior.
-	 */
-	if (Z_IS_TIMEOUT_RELATIVE(duration)) {
-		/* For the duration == K_NO_WAIT case, ensure that behaviour
-		 * is consistent for both 32-bit k_ticks_t which are unsigned
-		 * and 64-bit k_ticks_t which are signed.
-		 */
-		duration.ticks = max(1, duration.ticks);
-		duration.ticks = duration.ticks - 1;
-	}
-
 	(void)z_abort_timeout(&timer->timeout);
 	timer->period = period;
 	timer->status = 0U;
