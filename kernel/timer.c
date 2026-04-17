@@ -87,9 +87,6 @@ void z_timer_expiration_handler(struct _timeout *t)
 	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
 		k_timeout_t next = timer->period;
 
-		/* see note about z_add_timeout() in z_impl_k_timer_start() */
-		next.ticks = max(next.ticks - 1, 0);
-
 #ifdef CONFIG_TIMEOUT_64BIT
 		/* Exploit the fact that uptime during a kernel
 		 * timeout handler reflects the time of the scheduled
@@ -98,11 +95,8 @@ void z_timer_expiration_handler(struct _timeout *t)
 		 * delayed for any reason, we still end up calculating
 		 * the next expiration as a regular stride from where
 		 * we "should" have run.  Requires absolute timeouts.
-		 * (Note offset by one: we're nominally at the
-		 * beginning of a tick, so need to defeat the "round
-		 * down" behavior on timeout addition).
 		 */
-		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1 + next.ticks);
+		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + next.ticks);
 #endif /* CONFIG_TIMEOUT_64BIT */
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 			      next);
