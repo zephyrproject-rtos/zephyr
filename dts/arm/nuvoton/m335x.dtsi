@@ -47,7 +47,7 @@
 			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV2 |
 					NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
 			core-clock = <DT_FREQ_M(144)>;
-			powerdown-mode = <NUMAKER_CLK_PMUCTL_PDMSEL_NPD0>;
+			powerdown-mode = <NUMAKER_CLK_PMUCTL_PDMSEL_SPD1>;
 
 			pcc: peripheral-clock-controller {
 				compatible = "nuvoton,numaker-pcc";
@@ -275,6 +275,30 @@
 			reg = <0x40096000 0x10>;
 			interrupts = <9 0>;
 			clocks = <&pcc NUMAKER_WWDT0_MODULE NUMAKER_CLK_CLKSEL1_WWDT0SEL_LIRC 0>;
+			status = "disabled";
+		};
+
+		pwm0: pwm@4005c000 {
+			compatible = "nuvoton,numaker-pwm";
+			reg = <0x4005c000 0x37c>;
+			interrupts = <25 0>, <26 0>, <27 0>;
+			interrupt-names = "pair0", "pair1", "pair2";
+			resets = <&rst NUMAKER_PWM0_RST>;
+			prescaler = <19>;
+			clocks = <&pcc NUMAKER_PWM0_MODULE NUMAKER_CLK_CLKSEL2_PWM0SEL_PCLK0 0>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm1: pwm@4005d000 {
+			compatible = "nuvoton,numaker-pwm";
+			reg = <0x4005d000 0x37c>;
+			interrupts = <29 0>, <30 0>, <31 0>;
+			interrupt-names = "pair0", "pair1", "pair2";
+			resets = <&rst NUMAKER_PWM1_RST>;
+			prescaler = <19>;
+			clocks = <&pcc NUMAKER_PWM1_MODULE NUMAKER_CLK_CLKSEL2_PWM1SEL_PCLK1 0>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};
