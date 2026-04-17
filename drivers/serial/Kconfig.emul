@@ -32,4 +32,12 @@ config UART_EMUL_WORK_Q_PRIORITY
 	int "UART emulator work queue thread priority"
 	default 1
 
+config UART_EMUL_LINK
+	bool "Emulated UART driver link"
+	default y
+	depends on UART_EMUL
+	depends on DT_HAS_ZEPHYR_UART_EMUL_LINK_ENABLED
+	help
+	  Enable a helper driver to link two emulated UART instances.
+
 endif # UART_EMUL
