@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(intc_riscv_aplic, CONFIG_LOG_DEFAULT_LEVEL);
 
-int riscv_aplic_domain_enable(const struct device *dev, bool enable)
+Z_NO_THREAD_SAFETY_ANALYSIS int riscv_aplic_domain_enable(const struct device *dev, bool enable)
 {
 	const struct aplic_cfg *cfg = dev->config;
 	struct aplic_data *data = dev->data;
@@ -40,7 +40,8 @@ int riscv_aplic_domain_enable(const struct device *dev, bool enable)
 	return 0;
 }
 
-int riscv_aplic_config_src(const struct device *dev, unsigned int src, unsigned int sm)
+Z_NO_THREAD_SAFETY_ANALYSIS int riscv_aplic_config_src(const struct device *dev, unsigned int src,
+						       unsigned int sm)
 {
 	const struct aplic_cfg *cfg = dev->config;
 	struct aplic_data *data = dev->data;
