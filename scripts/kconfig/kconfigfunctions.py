@@ -833,6 +833,9 @@ def dt_compat_enabled_num(kconf, _, compat):
     if doc_mode or edt is None:
         return "0"
 
+    if compat not in edt.compat2okay:
+        return "0"
+
     return str(len(edt.compat2okay[compat]))
 
 
