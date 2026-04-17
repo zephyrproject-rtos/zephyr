@@ -20,3 +20,6 @@ tests:
   drivers.build_all.opamp.stm32_opamp:
     platform_allow:
       - nucleo_g474re
+  drivers.build_all.opamp.infineon_ctb:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
