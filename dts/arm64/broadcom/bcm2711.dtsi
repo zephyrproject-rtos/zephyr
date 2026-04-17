@@ -49,7 +49,7 @@
 		sram0: memory@200000 {
 			device_type = "memory";
 			compatible = "mmio-sram";
-			reg = <0x200000 0x80000>;
+			reg = <0x200000 DT_SIZE_M(128)>;
 		};
 
 		gic: interrupt-controller@ff841000 {

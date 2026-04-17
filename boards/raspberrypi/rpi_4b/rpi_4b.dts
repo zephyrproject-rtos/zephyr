@@ -28,6 +28,17 @@
 		zephyr,entropy = &rng;
 	};
 
+	/*
+	 * Raspberry Pi 4B (1GB+): Default VideoCore shared memory is 76 MB.
+	 * The VideoCore section of the RAM is mapped in from 0x40000000 downward.
+	 */
+
+	vc_mem: memory@3b400000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x3b400000 DT_SIZE_M(76)>;
+		zephyr,memory-region = "VC_SHARED_RAM";
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -36,6 +47,10 @@
 			label = "ACT";
 		};
 	};
+};
+
+&mbox0 {
+	shared-memory = <&vc_mem>;
 };
 
 &gpio1 {
