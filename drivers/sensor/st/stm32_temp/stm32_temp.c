@@ -13,9 +13,9 @@
 #include <zephyr/nvmem.h>
 #include <zephyr/pm/device_runtime.h>
 #include <stm32_ll_adc.h>
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32C5X)
 #include <zephyr/cache.h>
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+#endif /* CONFIG_SOC_SERIES_STM32H5X || CONFIG_SOC_SERIES_STM32C5X */
 
 LOG_MODULE_REGISTER(stm32_temp, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -283,23 +283,23 @@ static int read_calibration_data(const struct stm32_temp_config *cfg,
 	}
 #  endif /* HAS_DUAL_CALIBRATION */
 # else /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
-#  if defined(CONFIG_SOC_SERIES_STM32H5X)
+#  if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32C5X)
 	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
 	 * This is required on STM32H5, where the manufacturing flash must be
 	 * accessed in non-cacheable mode - otherwise, a bus error occurs.
 	 */
 	sys_cache_instr_disable();
-#  endif /* CONFIG_SOC_SERIES_STM32H5X */
+#  endif /* CONFIG_SOC_SERIES_STM32H5X || CONFIG_SOC_SERIES_STM32C5X */
 
 	cd->raw[0] = fetch_mfg_data(cfg->ts_cal1);
 #  if defined(HAS_DUAL_CALIBRATION)
 	cd->raw[1] = fetch_mfg_data(cfg->ts_cal2);
 #  endif
 
-#  if defined(CONFIG_SOC_SERIES_STM32H5X)
+#  if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32C5X)
 	/* Re-enable the ICACHE (unconditionally - it should always be turned on) */
 	sys_cache_instr_enable();
-#  endif /* CONFIG_SOC_SERIES_STM32H5X */
+#  endif /* CONFIG_SOC_SERIES_STM32H5X || CONFIG_SOC_SERIES_STM32C5X */
 # endif /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
 
 	return 0;
