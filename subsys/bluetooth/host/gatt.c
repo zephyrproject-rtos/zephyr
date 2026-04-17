@@ -270,6 +270,8 @@ static bool update_range(uint16_t *start, uint16_t *end, uint16_t new_start,
 	LOG_DBG("start 0x%04x end 0x%04x new_start 0x%04x new_end 0x%04x", *start, *end, new_start,
 		new_end);
 
+	__ASSERT(new_start <= new_end, "New start is greater than new end");
+
 	/* Check if inside existing range */
 	if (new_start >= *start && new_end <= *end) {
 		return false;
