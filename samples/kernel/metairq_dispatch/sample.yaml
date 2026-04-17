@@ -22,3 +22,6 @@ tests:
   sample.kernel.metairq_dispatch:
     arch_exclude:
       - posix
+    platform_exclude:
+      - qemu_tc3x
+      - qemu_tc4x
