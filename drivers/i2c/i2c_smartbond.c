@@ -127,6 +127,7 @@ static int i2c_smartbond_apply_configure(const struct device *dev, uint32_t dev_
 	 */
 	default:
 		LOG_ERR("Speed not supported");
+		k_spin_unlock(&data->lock, key);
 		return -ENOTSUP;
 	}
 
@@ -136,6 +137,7 @@ static int i2c_smartbond_apply_configure(const struct device *dev, uint32_t dev_
 			I2C_I2C_CON_REG_I2C_MASTER_MODE_Msk | I2C_I2C_CON_REG_I2C_SLAVE_DISABLE_Msk;
 	} else {
 		LOG_ERR("Only I2C Controller mode supported");
+		k_spin_unlock(&data->lock, key);
 		return -ENOTSUP;
 	}
 
@@ -425,10 +427,12 @@ static int i2c_smartbond_transfer_cb(const struct device *dev, struct i2c_msg *m
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	if (cb == NULL) {
+		k_spin_unlock(&data->lock, key);
 		return -EINVAL;
 	}
 
 	if (data->cb != NULL) {
+		k_spin_unlock(&data->lock, key);
 		return -EWOULDBLOCK;
 	}
 
