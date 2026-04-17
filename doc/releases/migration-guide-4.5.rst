@@ -53,6 +53,11 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+Flash
+=====
+* :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
+  of each plane in the flash device. For devices with a single plane, this should be set to the
+  same value as ``size-bytes``.
 
 STM32
 =====
