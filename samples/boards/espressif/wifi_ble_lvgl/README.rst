@@ -12,8 +12,8 @@ Features
 * **Minimalistic LVGL UI**: Clean white interface with modern design principles
 * **Two-Screen Navigation**:
 
-  - **Main Screen**: Status display with centered "Device IP" button
-  - **IP Display Screen**: Shows device IP address with back navigation
+  * **Main Screen**: Status display with centered "Device IP" button
+  * **IP Display Screen**: Shows device IP address with back navigation
 
 * **BLE WiFi Provisioning**: Receive WiFi credentials via BLE in JSON format
 * **NVS Persistent Storage**: Store and retrieve WiFi credentials across reboots
@@ -26,27 +26,32 @@ UI Design
 *********
 
 **Modern Minimalistic Theme:**
-- Background: Pure White (#FFFFFF)
-- Primary Button: Modern Blue (#007BFF)
-- Text Colors:
-  - Default: Black (#000000)
+
+* Background: Pure White (#FFFFFF)
+* Primary Button: Modern Blue (#007BFF)
+* Text Colors:
+
+  * Default: Black (#000000)
 
 **Screen Flow:**
 1. **Main Screen**:
-   - Clean white background
-   - Centered status text with color-coded feedback
-   - Modern blue "DEVICE IP" button (appears after WiFi connection)
-   - All content perfectly centered for optimal user experience
+
+   * Clean white background
+   * Centered status text with color-coded feedback
+   * Modern blue "DEVICE IP" button (appears after WiFi connection)
+   * All content perfectly centered for optimal user experience
 
 2. **IP Display Screen**:
-   - Shows device IP address in black text
-   - Blue "BACK" button for navigation
-   - Minimalistic layout with centered content
+
+   * Shows device IP address in black text
+   * Blue "BACK" button for navigation
+   * Minimalistic layout with centered content
 
 **Touch Interaction:**
-- 300ms debounce timing for smooth navigation
-- Visual feedback with subtle button shadows
-- Responsive touch areas with proper coordinate handling
+
+* 300ms debounce timing for smooth navigation
+* Visual feedback with subtle button shadows
+* Responsive touch areas with proper coordinate handling
 
 Requirements
 ************
@@ -96,10 +101,11 @@ Usage Instructions
 6. **Navigation**: Use "BACK" button to return to main screen
 
 **Status Indicators:**
-- **Black Text**: Ready for provisioning
-- **Orange Text**: Processing (receiving credentials or connecting)
-- **Green Text**: Successfully connected to WiFi
-- **Red Text**: Connection failed
+
+* **Black Text**: Ready for provisioning
+* **Orange Text**: Processing (receiving credentials or connecting)
+* **Green Text**: Successfully connected to WiFi
+* **Red Text**: Connection failed
 
 **BLE Provisioning with Python Script:**
 
@@ -110,11 +116,12 @@ The included `provision_wifi.py` script provides an easy way to provision the de
    python3 provision_wifi.py --ssid "YourWiFiNetwork" --password "YourPassword"
 
 **Script Features:**
-- Automatic device discovery
-- Service and characteristic validation
-- Retry logic for reliability
-- Detailed error reporting
-- Connection status verification
+
+* Automatic device discovery
+* Service and characteristic validation
+* Retry logic for reliability
+* Detailed error reporting
+* Connection status verification
 
 **Manual BLE Provisioning:**
 
@@ -131,9 +138,10 @@ The included `provision_wifi.py` script provides an easy way to provision the de
       }
 
 **Service UUIDs:**
-- Service: `12345678-1234-1234-1234-123456789abc`
-- Credentials Characteristic: `12345678-1234-1234-1234-123456789abd`
-- Status Characteristic: `12345678-1234-1234-1234-123456789abe`
+
+* Service: ``12345678-1234-1234-1234-123456789abc``
+* Credentials Characteristic: ``12345678-1234-1234-1234-123456789abd``
+* Status Characteristic: ``12345678-1234-1234-1234-123456789abe``
 
 Python Provisioning Script
 ***************************
@@ -148,7 +156,7 @@ The included `provision_wifi.py` script provides a complete provisioning solutio
 
 **Usage:**
 
-.. code-block:: console
+.. code-block:: bash
 
    # Basic usage
    python3 provision_wifi.py --ssid "MyNetwork" --password "MyPassword"
@@ -160,11 +168,12 @@ The included `provision_wifi.py` script provides a complete provisioning solutio
    python3 provision_wifi.py --scan-only
 
 **Features:**
-- Automatic retry logic (up to 3 attempts)
-- Service discovery and validation
-- Connection status verification
-- Detailed error reporting and debugging
-- Support for both write types (with/without response)
+
+* Automatic retry logic (up to 3 attempts)
+* Service discovery and validation
+* Connection status verification
+* Detailed error reporting and debugging
+* Support for both write types (with/without response)
 
 Factory Reset
 *************
@@ -238,33 +247,38 @@ The application uses a modular, event-driven architecture:
 
 **Core Components:**
 
-* **UI Manager** (`ui_manager.c/h`):
-  - LVGL interface management
-  - Touch input handling with debouncing
-  - Screen transitions and event processing
-  - Color-coded status feedback
+* **UI Manager** (``ui_manager.c/h``):
 
-* **WiFi Manager** (`wifi_manager.c/h`):
-  - Asynchronous WiFi connection handling
-  - Network event processing
-  - IP address management
-  - Connection status reporting
+  * LVGL interface management
+  * Touch input handling with debouncing
+  * Screen transitions and event processing
+  * Color-coded status feedback
 
-* **BLE GATT Server** (`ble_gatt.c/h`):
-  - BLE service and characteristic definitions
-  - Credential reception and parsing
-  - Work queue for WiFi operations
-  - Connection management
+* **WiFi Manager** (``wifi_manager.c/h``):
 
-* **NVS Storage** (`nvs_storage.c/h`):
-  - Persistent credential storage
-  - Factory reset functionality
-  - Data validation and error handling
+  * Asynchronous WiFi connection handling
+  * Network event processing
+  * IP address management
+  * Connection status reporting
 
-* **Main Application** (`main.c`):
-  - System initialization and coordination
-  - Status monitoring thread
-  - Factory reset button handling
+* **BLE GATT Server** (``ble_gatt.c/h``):
+
+  * BLE service and characteristic definitions
+  * Credential reception and parsing
+  * Work queue for WiFi operations
+  * Connection management
+
+* **NVS Storage** (``nvs_storage.c/h``):
+
+  * Persistent credential storage
+  * Factory reset functionality
+  * Data validation and error handling
+
+* **Main Application** (``main.c``):
+
+  * System initialization and coordination
+  * Status monitoring thread
+  * Factory reset button handling
 
 **Key Design Decisions:**
 
@@ -302,33 +316,39 @@ Troubleshooting
 ***************
 
 **Display Issues:**
-- Verify display initialization in logs
-- Check LVGL memory pool size (increase if needed)
-- Ensure touch controller (GT911) is detected
+
+* Verify display initialization in logs
+* Check LVGL memory pool size (increase if needed)
+* Ensure touch controller (GT911) is detected
 
 **Touch Issues:**
-- Check touch coordinates in logs
-- Verify button areas are calculated correctly
-- Adjust debounce timing if needed
+
+* Check touch coordinates in logs
+* Verify button areas are calculated correctly
+* Adjust debounce timing if needed
 
 **BLE Connection Issues:**
-- Ensure device appears as "ESP32_S3_BOX3_BLE" in BLE scan
-- Check service UUIDs match exactly
-- Verify Python `bleak` library is installed
-- Try the retry mechanism in the Python script
+
+* Ensure device appears as "ESP32_S3_BOX3_BLE" in BLE scan
+* Check service UUIDs match exactly
+* Verify Python ``bleak`` library is installed
+* Try the retry mechanism in the Python script
 
 **WiFi Connection Issues:**
-- Verify network is 2.4GHz (5GHz not supported)
-- Check SSID and password are correct
-- Monitor logs for detailed WiFi error messages
-- Ensure network allows new device connections
+
+* Verify network is 2.4GHz (5GHz not supported)
+* Check SSID and password are correct
+* Monitor logs for detailed WiFi error messages
+* Ensure network allows new device connections
 
 **Memory Issues:**
-- Monitor heap usage in logs
-- Increase `CONFIG_HEAP_MEM_POOL_SIZE` if needed
-- Check for memory leaks in touch handling
+
+* Monitor heap usage in logs
+* Increase ``CONFIG_HEAP_MEM_POOL_SIZE`` if needed
+* Check for memory leaks in touch handling
 
 **Performance Issues:**
-- Verify UI thread priority settings
-- Check LVGL timer handler frequency
-- Monitor system load and stack usage
+
+* Verify UI thread priority settings
+* Check LVGL timer handler frequency
+* Monitor system load and stack usage

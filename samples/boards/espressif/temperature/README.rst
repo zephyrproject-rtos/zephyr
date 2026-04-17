@@ -109,4 +109,3 @@ References
 **********
 
 * `AHT30 Datasheet <https://server4.eca.ir/eshop/AHT30/Aosong_AHT30_en_draft_0c.pdf>`_
-* :ref:`sensor_api`

@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: esp32s3_box3_audio_recording
    :name: ESP32-S3-BOX-3 Audio Recording Demo
-   :relevant-api: audio_interface i2s_interface gpio_interface i2c_interface fs_interface
+   :relevant-api: i2s_interface gpio_interface i2c_interface
 
    Comprehensive audio demonstration for ESP32-S3-BOX-3 featuring ES8311 speaker and ES7210 microphone with LittleFS recording.
 
@@ -230,7 +230,4 @@ References
 
 * `ES8311 Datasheet <https://www.everest-semi.com/pdf/ES8311%20PB.pdf>`_
 * `ES7210 Datasheet <https://www.everest-semi.com/pdf/ES7210%20PB.pdf>`_
-* :ref:`audio_api`
-* :ref:`i2s_api`
-* :ref:`file_system_api`
 

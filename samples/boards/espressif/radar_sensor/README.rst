@@ -105,5 +105,3 @@ References
 **********
 
 * `AT581X Datasheet <https://www.andar.com.cn/>`_
-* :ref:`sensor_api`
-* :ref:`gpio_api`

@@ -27,7 +27,7 @@ Building and Running
 This application can be built and executed on the ESP32-S3-BOX-3 board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/esp32s3_box3
+   :zephyr-app: samples/boards/espressif/lcd_lvgl
    :board: esp32s3_box3/esp32s3/procpu
    :goals: build flash
    :compact:

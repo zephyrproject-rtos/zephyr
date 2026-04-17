@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 NotioNext Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Ultra-fast audio extraction from ESP32-S3-BOX-3 (Zephyr shell bincat command).
 

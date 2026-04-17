@@ -191,5 +191,3 @@ References
 **********
 
 * `ES8311 Datasheet <https://www.everest-semi.com/pdf/ES8311%20PB.pdf>`_
-* :ref:`audio_api`
-* :ref:`i2s_api`
