@@ -78,37 +78,37 @@
 		reg = <0x40250000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
+		status = "okay";
 
+		/* CBUS non-secure view of external flash.
+		 * Used as zephyr,flash for NS builds.
+		 * FLASH_BASE_ADDRESS = 0x08000000.
+		 */
 		flash0: flash0@8000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x08000000 DT_SIZE_M(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x08000000 DT_SIZE_M(64)>;
 			write-block-size = <256>;
 			erase-block-size = <65536>;
 
 			partitions {
 				#address-cells = <1>;
 				#size-cells = <1>;
-				compatible = "fixed-partitions";
+				ranges;
 
 				storage: storage@0 {
+					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0 DT_SIZE_M(1)>;
 				};
 
-				m33s_header: m33s_header@100000 {
-					reg = <0x100000 0x400>;
-				};
-
-				m33s_xip: m33s_xip@100400 {
-					reg = <0x100400 0x1ffc00>;
-				};
-
 				m33_xip: m33_xip@300000 {
+					compatible = "zephyr,mapped-partition";
+					label = "m33-xip";
 					reg = <0x300000 DT_SIZE_M(2)>;
-				};
-
-				m55_xip: m55_xip@500000 {
-					reg = <0x500000 DT_SIZE_M(2)>;
 				};
 			};
 		};
@@ -122,9 +122,30 @@
 		 */
 		flash0_s: flash0_s@18000000 {
 			compatible = "soc-nv-flash";
-			reg = <0x18000000 DT_SIZE_M(16)>;
+			reg = <0x18000000 DT_SIZE_M(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
 			write-block-size = <256>;
 			erase-block-size = <65536>;
+
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				m33s_header: m33s_header@100000 {
+					compatible = "zephyr,mapped-partition";
+					label = "m33s-header";
+					reg = <0x100000 0x400>;
+				};
+
+				m33s_xip: m33s_xip@100400 {
+					compatible = "zephyr,mapped-partition";
+					label = "m33s-xip";
+					reg = <0x100400 0x1ffc00>;
+				};
+			};
 		};
 
 		/* SAHB view of the same external flash.
@@ -136,9 +157,24 @@
 		 */
 		flash0_sahb: flash0_sahb@70000000 {
 			compatible = "soc-nv-flash";
-			reg = <0x70000000 DT_SIZE_M(16)>;
+			reg = <0x70000000 DT_SIZE_M(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x70000000 DT_SIZE_M(64)>;
 			write-block-size = <256>;
 			erase-block-size = <65536>;
+
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				m55_xip: m55_xip@500000 {
+					compatible = "zephyr,mapped-partition";
+					label = "m55-xip";
+					reg = <0x500000 DT_SIZE_M(2)>;
+				};
+			};
 		};
 	};
 };
