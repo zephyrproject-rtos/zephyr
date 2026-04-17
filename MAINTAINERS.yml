@@ -5841,6 +5841,7 @@ West:
     - mbolivar
     - carlescufi
     - marc-hb
+    - sylvioalves
   files:
     - scripts/west-commands.yml
     - scripts/west_commands/
