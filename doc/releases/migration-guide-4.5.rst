@@ -119,6 +119,11 @@ Bluetooth Audio
 * :c:member:`bt_bap_unicast_group_info.sink_pd` and :c:member:`bt_bap_unicast_group_info.source_pd`
   now reflect the local values defined for the group, and not the values configured for any remote
   ASEs. (:github:`104887`)
+* :c:func:`bt_bap_unicast_client_discover` and :c:func:`bt_bap_broadcast_assistant_discover` now
+  require that the connection has already gone through the pairing process and meets the security
+  requirements of BAP before doing any discovery. In most cases this requires a call to
+  :c:func:`bt_conn_set_security` for new devices. Bonded devices that reconnect should not require
+  anything.
 
 Bluetooth HCI
 =============
