@@ -15,12 +15,17 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <zephyr/sys/sys_getopt.h>
 #include <zephyr/net/socketutils.h>
+#include <zephyr/net/net_ip.h>
 #include <zephyr/shell/shell_ssh.h>
 #include <zephyr/net/ssh/common.h>
 #include <zephyr/net/ssh/server.h>
 #include <zephyr/net/ssh/client.h>
 
 #include "net_shell_private.h"
+
+#if defined(CONFIG_SSH)
+#include "ssh_transport.h"
+#endif
 
 #if defined(CONFIG_SSH_SHELL)
 
@@ -487,6 +492,108 @@ static int ssh_parse_args_to_params(const struct shell *sh,
 #endif /* CONFIG_SSH_CLIENT */
 #endif /* CONFIG_SSH_SHELL */
 
+#if defined(CONFIG_SSH_SHELL)
+static void ssh_client_list_cb(struct ssh_client *ssh, int instance, void *user_data)
+{
+#if defined(CONFIG_SSH_CLIENT)
+	struct net_shell_user_data *data = user_data;
+	char addr_str[NET_IPV6_ADDR_LEN];
+	const struct shell *sh = data->sh;
+	int *count = data->user_data;
+
+	net_addr_ntop(ssh->addr.ss_family, &net_sin(net_sad(&ssh->addr))->sin_addr,
+		      addr_str, sizeof(addr_str));
+
+	if (*count == 0) {
+		PR("Active SSH client connections:\n");
+		PR("Instance    Peer Address\n");
+	}
+
+	PR("%8d    %s%s%s:%d\n", instance,
+	   ssh->addr.ss_family == NET_AF_INET6 ? "[" : "",
+	   addr_str,
+	   ssh->addr.ss_family == NET_AF_INET6 ? "]" : "",
+	   net_ntohs(net_sin(net_sad(&ssh->addr))->sin_port));
+
+	(*count)++;
+#endif /* CONFIG_SSH_CLIENT */
+}
+
+static void ssh_server_list_cb(struct ssh_server *sshd, int instance, void *user_data)
+{
+#if defined(CONFIG_SSH_SERVER)
+	struct net_shell_user_data *data = user_data;
+	char addr_str[NET_IPV6_ADDR_LEN];
+	const struct shell *sh = data->sh;
+	int *count = data->user_data;
+
+	ARRAY_FOR_EACH(sshd->transport, i) {
+		if (sshd->transport[i].running) {
+			net_addr_ntop(sshd->transport[i].addr.ss_family,
+				      &net_sin(net_sad(&sshd->transport[i].addr))->sin_addr,
+				      addr_str, sizeof(addr_str));
+
+			if (*count == 0) {
+				PR("Active SSH server connections:\n");
+				PR("Instance  Transport    Peer Address\n");
+			}
+
+			PR("%8d  %9d    %s%s%s:%d\n", instance, i,
+			   sshd->transport[i].addr.ss_family == NET_AF_INET6 ? "[" : "",
+			   addr_str,
+			   sshd->transport[i].addr.ss_family == NET_AF_INET6 ? "]" : "",
+			   net_ntohs(net_sin(net_sad(&sshd->transport[i].addr))->sin_port));
+
+			(*count)++;
+		}
+	}
+#endif /* CONFIG_SSH_SERVER */
+}
+#endif /* CONFIG_SSH_SHELL */
+
+static int cmd_ssh_list(const struct shell *sh, size_t argc, char **argv)
+{
+#if defined(CONFIG_SSH_SHELL)
+	struct net_shell_user_data user_data;
+	int count = 0;
+
+	user_data.sh = sh;
+	user_data.user_data = &count;
+
+	if (IS_ENABLED(CONFIG_SSH_CLIENT)) {
+		ssh_client_foreach(ssh_client_list_cb, &user_data);
+		if (count == 0) {
+			PR_INFO("No active SSH client connections\n");
+		}
+	}
+
+	count = 0;
+
+	if (IS_ENABLED(CONFIG_SSH_SERVER)) {
+		ssh_server_foreach(ssh_server_list_cb, &user_data);
+		if (count == 0) {
+			PR_INFO("No active SSH server connections\n");
+		}
+	}
+
+	return 0;
+#else
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_SSH_SHELL", "SSH");
+	return 0;
+#endif /* CONFIG_SSH_SHELL */
+}
+
+static int cmd_ssh(const struct shell *sh, size_t argc, char **argv)
+{
+	if (argc == 2 &&
+	    (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	return cmd_ssh_list(sh, argc, argv);
+}
+
 static int cmd_sshd_start(const struct shell *sh, size_t argc, char **argv)
 {
 #if defined(CONFIG_SSH_SHELL)
@@ -644,11 +751,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_sshd,
 				 "[-i <instance>]\n"
 				 "If instance is omitted, then the default value 0 is used."),
 		      cmd_sshd_stop, 1, 3),
+	SHELL_CMD_ARG(list, NULL,
+		      SHELL_HELP("List active ssh connections", NULL),
+		      cmd_ssh_list, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_SUBCMD_ADD((net), sshd, &net_cmd_sshd,
-		 "SSH server commands", NULL, 1, 1);
+		 "SSH server commands", cmd_ssh, 0, 1);
 
 static int cmd_ssh_start(const struct shell *sh, size_t argc, char **argv)
 {
@@ -814,8 +924,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ssh,
 				 "[-i <instance>]\n"
 				 "If instance is omitted, then the default value 0 is used."),
 		      cmd_ssh_stop, 1, 3),
+	SHELL_CMD_ARG(list, NULL,
+		      SHELL_HELP("List active ssh connections", NULL),
+		      cmd_ssh_list, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_SUBCMD_ADD((net), ssh, &net_cmd_ssh,
-		 "SSH client commands", NULL, 1, 1);
+		 "SSH client commands", cmd_ssh, 0, 1);

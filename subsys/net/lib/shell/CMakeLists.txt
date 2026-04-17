@@ -4,6 +4,7 @@ zephyr_library_sources(net_shell.c)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/l2)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/lib)
 zephyr_library_include_directories_ifdef(CONFIG_WIREGUARD . ${ZEPHYR_BASE}/subsys/net/lib/wireguard)
+zephyr_library_include_directories_ifdef(CONFIG_SSH . ${ZEPHYR_BASE}/subsys/net/lib/ssh)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/ip)
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 
