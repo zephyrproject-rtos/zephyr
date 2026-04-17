@@ -72,6 +72,22 @@
 	spi0_d1: spi0_d1_default {
 		pinmux = <K3_PINMUX(0x218, PIN_OUTPUT, MUX_MODE_0)>;
 	};
+
+	eqep0_a: eqep0_a_default {
+		pinmux = <K3_PINMUX(0x0a0, PIN_INPUT, MUX_MODE_3)>; /* (N16) EQEP0_A */
+	};
+
+	eqep0_b: eqep0_b_default {
+		pinmux = <K3_PINMUX(0x0a4, PIN_INPUT, MUX_MODE_3)>; /* (N17) EQEP0_B */
+	};
+
+	eqep0_i: eqep0_i_default {
+		pinmux = <K3_PINMUX(0x0ac, PIN_INPUT, MUX_MODE_3)>; /* (R20) EQEP0_I */
+	};
+
+	eqep0_s: eqep0_s_default {
+		pinmux = <K3_PINMUX(0x0a8, PIN_INPUT, MUX_MODE_3)>; /* (R19) EQEP0_S */
+	};
 };
 
 &mcu_pinctrl {

@@ -9,6 +9,30 @@
 #include "am62l_power_domains.dtsi"
 
 / {
+	main_eqep0: counter@23200000 {
+		compatible = "ti,am3352-eqep";
+		reg = <0x23200000 0x100>;
+		power-domains = <&main_eqep0_pd>;
+		clocks = <&scmi_clk 127>;
+		status = "disabled";
+	};
+
+	main_eqep1: counter@23210000 {
+		compatible = "ti,am3352-eqep";
+		reg = <0x23210000 0x100>;
+		power-domains = <&main_eqep1_pd>;
+		clocks = <&scmi_clk 128>;
+		status = "disabled";
+	};
+
+	main_eqep2: counter@23220000 {
+		compatible = "ti,am3352-eqep";
+		reg = <0x23220000 0x100>;
+		power-domains = <&main_eqep2_pd>;
+		clocks = <&scmi_clk 129>;
+		status = "disabled";
+	};
+
 	main_uart0: serial@2800000 {
 		compatible = "ns16550";
 		reg = <0x02800000 0x100>;

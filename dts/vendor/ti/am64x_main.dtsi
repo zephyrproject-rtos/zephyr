@@ -18,6 +18,11 @@
 		reg-names = "debug_messages";
 		reg = <0x44043000 0xfe0>;
 		status = "disabled";
+
+		k3_clks: clock-controller {
+			compatible = "ti,k2g-sci-clk";
+			#clock-cells = <2>;
+		};
 	};
 
 	secure_proxy_main: mailbox0@4d000000 {
@@ -41,6 +46,30 @@
 			reg = <0x4000 0x2ac>;
 			status = "disabled";
 		};
+	};
+
+	main_eqep0: counter@23200000 {
+		compatible = "ti,am3352-eqep";
+		reg = <0x23200000 0x100>;
+		power-domains = <&eqep0_pd>;
+		clocks = <&k3_clks 59 0>;
+		status = "disabled";
+	};
+
+	main_eqep1: counter@23210000 {
+		compatible = "ti,am3352-eqep";
+		reg = <0x23210000 0x100>;
+		power-domains = <&eqep1_pd>;
+		clocks = <&k3_clks 60 0>;
+		status = "disabled";
+	};
+
+	main_eqep2: counter@23220000 {
+		compatible = "ti,am3352-eqep";
+		reg = <0x23220000 0x100>;
+		power-domains = <&eqep2_pd>;
+		clocks = <&k3_clks 62 0>;
+		status = "disabled";
 	};
 
 	main_timer0: timer@2400000 {

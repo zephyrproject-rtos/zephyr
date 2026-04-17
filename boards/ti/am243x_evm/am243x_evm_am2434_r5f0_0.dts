@@ -208,3 +208,9 @@
 	usr-id = <0>;
 	status = "okay";
 };
+
+&main_eqep0 {
+	pinctrl-0 = <&eqep0_a &eqep0_b &eqep0_i &eqep0_s>;
+	pinctrl-names = "default";
+	status = "okay";
+};
