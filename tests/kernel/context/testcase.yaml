@@ -1,3 +1,8 @@
+common:
+  # The k_cpu_idle test cannot tolerate background wake-ups from the
+  # NRU eviction algorithm's periodic pulse.
+  filter: not CONFIG_EVICTION_NRU
+
 tests:
   kernel.context:
     tags: kernel
