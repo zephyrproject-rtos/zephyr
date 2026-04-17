@@ -530,12 +530,12 @@ DEF_INT_C_HANDLER(7)
 
 static inline DEF_INT_C_HANDLER(1)
 
-/* C handler for level 1 exceptions/interrupts.  Hooked from the
- * DEF_EXCINT 1 vector declaration in assembly code.  This one looks
- * different because exceptions and interrupts land at the same
- * vector; other interrupt levels have their own vectors.
- */
-void *xtensa_excint1_c(void *esf)
+	/* C handler for level 1 exceptions/interrupts.  Hooked from the
+	 * DEF_EXCINT 1 vector declaration in assembly code.  This one looks
+	 * different because exceptions and interrupts land at the same
+	 * vector; other interrupt levels have their own vectors.
+	 */
+	Z_NO_THREAD_SAFETY_ANALYSIS void *xtensa_excint1_c(void *esf)
 {
 	int cause, reason;
 	int *interrupted_stack = &((struct arch_esf *)esf)->dummy;
