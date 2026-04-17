@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -760,6 +760,9 @@ static int common_init(void)
 	update_conn_params();
 
 	test_exchange_mtu();
+
+	update_security(default_conn);
+
 	test_bass_discover();
 	test_bass_read_receive_states();
 

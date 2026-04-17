@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1009,6 +1009,8 @@ static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 	}
 
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
+		update_security(connected_conns[i]);
+
 		discover_cas(connected_conns[i]);
 
 		if (param->snk_cnt[i] > 0U) {

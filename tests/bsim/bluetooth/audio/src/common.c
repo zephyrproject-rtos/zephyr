@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2020-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,7 @@ struct bt_conn *default_conn;
 atomic_t flag_connected;
 atomic_t flag_disconnected;
 atomic_t flag_conn_updated;
+atomic_t flag_security_changed;
 volatile bt_security_t security_level;
 #if defined(CONFIG_BT_CSIP_SET_MEMBER)
 uint8_t csip_rsi[BT_CSIP_RSI_SIZE];
@@ -167,6 +168,8 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level, enum 
 	if (err == BT_SECURITY_ERR_SUCCESS) {
 		security_level = level;
 	}
+
+	SET_FLAG(flag_security_changed);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -176,6 +179,28 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.security_changed = security_changed_cb,
 };
 
+void update_security(struct bt_conn *conn)
+{
+	struct bt_conn_info info;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	__ASSERT(err == 0, "Failed to get conn info: %d", err);
+
+	if (info.security.level >= BT_SECURITY_L2) {
+		printk("Skipping security update for %p\n", conn);
+		return;
+	}
+
+	UNSET_FLAG(flag_security_changed);
+	err = bt_conn_set_security(conn, BT_SECURITY_L2);
+	if (err != 0) {
+		FAIL("Failed to set security: %d\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_security_changed);
+}
 
 void setup_connectable_adv(struct bt_le_ext_adv **ext_adv)
 {
