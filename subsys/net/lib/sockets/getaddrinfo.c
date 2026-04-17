@@ -179,6 +179,9 @@ again:
 		 * DNS_EAI_ADDRFAMILY.
 		 */
 		st = DNS_EAI_ADDRFAMILY;
+	} else if (ret == -EAGAIN) {
+		/* Temporary resolver-side condition (e.g. no available query slot). */
+		st = DNS_EAI_AGAIN;
 	} else {
 		errno = -ret;
 		st = DNS_EAI_SYSTEM;
