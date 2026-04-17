@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  IPC service backend over serial (UART) with COBS framing and multi-endpoint
+  multiplexing. This allows inter-processor communication between two MCUs
+  connected via a UART link, supporting multiple IPC service endpoints on a
+  single serial connection.
+
+  Two MCUs communicate over a UART link. Each side runs an ipc-serial instance
+  with matching named endpoints (e.g. ``a``, ``b``). Once both sides register
+  an endpoint with the same name, the binding is established and data can flow.
+
+  ::
+
+    +------------------+                      +------------------+
+    |      MCU A       |                      |      MCU B       |
+    |                  |                      |                  |
+    |  +------------+  |                      |  +------------+  |
+    |  | ipc-serial |--+--TX--------------RX->+--| ipc-serial |  |
+    |  |   (UART)   |--+<-RX--------------TX--+--|   (UART)   |  |
+    |  +--^------^--+  |                      |  +--^------^--+  |
+    |     |      |     |                      |     |      |     |
+    |    +-+    +-+    |                      |    +-+    +-+    |
+    |    |a|    |b|    |                      |    |a|    |b|    |
+    |    +-+    +-+    |                      |    +-+    +-+    |
+    +------------------+                      +------------------+
+
+examples:
+  - |
+    &uart1 {
+      ipc_serial: ipc-serial {
+        compatible = "zephyr,ipc-serial";
+        status = "okay";
+      };
+    };
+
+compatible: "zephyr,ipc-serial"
+
+include: uart-device.yaml
+
+properties:
+  timeout-ms:
+    type: int
+    default: 0
+    description: |
+      Timeout in milliseconds for endpoint binding.
+      A zero timeout disables waiting for binding on registering an endpoint.

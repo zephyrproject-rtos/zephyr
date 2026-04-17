@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config IPC_SERVICE_BACKEND_SERIAL
+	bool "IPC service backend over serial (UART) with COBS framing"
+	default y
+	depends on UART_INTERRUPT_DRIVEN
+	depends on DT_HAS_ZEPHYR_IPC_SERIAL_ENABLED
+	select COBS
+	select RING_BUFFER
+	select EVENTS
+	help
+	  Enables the IPC service backend over a serial (UART) link.
+	  Uses COBS framing for reliable byte-stream transport and
+	  supports multiple IPC endpoints multiplexed on a single
+	  serial connection.
+
+if IPC_SERVICE_BACKEND_SERIAL
+
+config IPC_SERVICE_BACKEND_SERIAL_NUM_EP
+	int "Maximum number of endpoints per serial IPC instance"
+	range 1 32
+	default 8
+	help
+	  Maximum number of IPC endpoints that can be registered on a
+	  single serial IPC backend instance.
+
+config IPC_SERVICE_BACKEND_SERIAL_RX_BUF_SIZE
+	int "Receive ring buffer size"
+	default 512
+	help
+	  Size of the UART receive ring buffer in bytes. Must be large
+	  enough to hold at least one complete COBS-encoded frame.
+
+config IPC_SERVICE_BACKEND_SERIAL_FRAME_BUF_SIZE
+	int "Decoded frame buffer size"
+	default 256
+	range 4 $(UINT16_MAX)
+	help
+	  Maximum size of a decoded frame (after COBS decoding). This limits
+	  the maximum payload size for a single IPC send operation including
+	  the endpoint ID header.
+
+config IPC_SERVICE_BACKEND_SERIAL_CRC
+	bool "CRC-16 frame integrity check"
+	select CRC
+	help
+	  Append a CRC-16 checksum to every transmitted frame and verify it
+	  on reception. Frames with a CRC mismatch are discarded.
+
+	  Both ends of the link must have this option set identically;
+	  mixing will cause discarded or faulty frames.
+
+endif # IPC_SERVICE_BACKEND_SERIAL
