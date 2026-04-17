@@ -142,6 +142,16 @@ int ssh_server_start(struct ssh_server *sshd,
  */
 int ssh_server_stop(struct ssh_server *sshd);
 
+/**
+ * @brief Close an SSH server transport connection
+ *
+ * @param sshd Pointer to the SSH server instance.
+ * @param idx Index of the transport connection to close.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int ssh_server_transport_close(struct ssh_server *sshd, int idx);
+
 #ifdef __cplusplus
 }
 #endif

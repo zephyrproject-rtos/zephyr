@@ -45,6 +45,7 @@ struct ssh_params {
 	char password[MAX_PASSWORD_LEN + 1];
 	char address[MAX_ADDRESS_LEN + 1];
 	int instance;
+	int transport;
 	int hostkey_idx;
 	int auth_key_idx[MAX_HOST_KEYS];
 	int auth_key_count;
@@ -217,6 +218,7 @@ static int shell_ssh_client_transport_event_callback(struct ssh_transport *trans
 static int sshd_parse_args_to_params(const struct shell *sh,
 				     int argc, char *argv[],
 				     bool is_start,
+				     bool is_kill,
 				     struct ssh_params *config)
 {
 	struct sys_getopt_state *state;
@@ -244,17 +246,74 @@ static int sshd_parse_args_to_params(const struct shell *sh,
 		{ 0, 0, 0, 0 }
 	};
 
-	if (is_start) {
-		short_options = start_short_options;
-		long_options = start_long_options;
+	static const char kill_short_options[] = "i:t:h";
+	static const struct sys_getopt_option kill_long_options[] = {
+		{ "instance", sys_getopt_required_argument, 0, 'i' },
+		{ "transport", sys_getopt_required_argument, 0, 't' },
+		{ "help", sys_getopt_no_argument, 0, 'h' },
+		{ 0, 0, 0, 0 }
+	};
+
+	if (is_kill) {
+		short_options = kill_short_options;
+		long_options = kill_long_options;
 	} else {
-		short_options = stop_short_options;
-		long_options = stop_long_options;
+		if (is_start) {
+			short_options = start_short_options;
+			long_options = start_long_options;
+		} else {
+			short_options = stop_short_options;
+			long_options = stop_long_options;
+		}
 	}
 
 	while ((opt = sys_getopt_long(argc, argv, short_options, long_options,
 				      &option_index)) != -1) {
 		state = sys_getopt_state_get();
+
+		if (is_kill) {
+			switch (opt) {
+			case 'i': {
+				int err = 0;
+				int instance;
+
+				instance = shell_strtol(state->optarg, 10, &err);
+				if (err != 0) {
+					PR_WARNING("Invalid instance \"%s\" (%d)\n",
+						   state->optarg, err);
+					return -EINVAL;
+				}
+
+				config->instance = instance;
+				break;
+			}
+
+			case 't': {
+				int err = 0;
+				int transport;
+
+				transport = shell_strtol(state->optarg, 10, &err);
+				if (err != 0) {
+					PR_WARNING("Invalid transport \"%s\" (%d)\n",
+						   state->optarg, err);
+					return -EINVAL;
+				}
+
+				config->transport = transport;
+				break;
+			}
+			case 'h':
+			case '?':
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			default:
+				PR_ERROR("Invalid option %c\n", state->optopt);
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			continue;
+		}
 
 		if (is_start) {
 			/* Only start command supports all options */
@@ -608,7 +667,7 @@ static int cmd_sshd_start(const struct shell *sh, size_t argc, char **argv)
 	params.instance = -1;
 	params.hostkey_idx = -1;
 
-	ret = sshd_parse_args_to_params(sh, argc, argv, true, &params);
+	ret = sshd_parse_args_to_params(sh, argc, argv, true, false, &params);
 	if (ret < 0) {
 		return ret;
 	}
@@ -695,7 +754,7 @@ static int cmd_sshd_stop(const struct shell *sh, size_t argc, char **argv)
 
 	params.instance = -1;
 
-	ret = sshd_parse_args_to_params(sh, argc, argv, false, &params);
+	ret = sshd_parse_args_to_params(sh, argc, argv, false, false, &params);
 	if (ret < 0) {
 		return ret;
 	}
@@ -715,6 +774,57 @@ static int cmd_sshd_stop(const struct shell *sh, size_t argc, char **argv)
 	ret = ssh_server_stop(sshd);
 	if (ret < 0) {
 		PR_ERROR("Failed to stop SSH %s: %d\n", "server", ret);
+	}
+
+	return ret;
+#else
+	PR_INFO("SSH %s support is not enabled. Set %s to enable it.\n",
+		"server", "CONFIG_SSH_SERVER");
+	return -ENOTSUP;
+#endif /* CONFIG_SSH_SERVER */
+#else
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_SSH_SHELL", "SSH");
+	return 0;
+#endif /* CONFIG_SSH_SHELL */
+}
+
+static int cmd_sshd_kill(const struct shell *sh, size_t argc, char **argv)
+{
+#if defined(CONFIG_SSH_SHELL)
+#if defined(CONFIG_SSH_SERVER)
+	struct ssh_params params = { 0 };
+	struct ssh_server *sshd;
+	int server_instance;
+	int ret;
+
+	params.instance = -1;
+	params.transport = -1;
+
+	ret = sshd_parse_args_to_params(sh, argc, argv, false, true, &params);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (params.transport < 0) {
+		PR_ERROR("Transport instance is required\n");
+		return -EINVAL;
+	}
+
+	if (params.instance < 0) {
+		server_instance = 0; /* Default instance */
+	} else {
+		server_instance = params.instance;
+	}
+
+	sshd = ssh_server_instance(server_instance);
+	if (sshd == NULL) {
+		PR_ERROR("Failed to get SSH %s instance\n", "server");
+		return -ENOENT;
+	}
+
+	ret = ssh_server_transport_close(sshd, params.transport);
+	if (ret < 0) {
+		PR_ERROR("Failed to kill SSH connection: %d\n", ret);
 	}
 
 	return ret;
@@ -751,6 +861,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_sshd,
 				 "[-i <instance>]\n"
 				 "If instance is omitted, then the default value 0 is used."),
 		      cmd_sshd_stop, 1, 3),
+	SHELL_CMD_ARG(kill, NULL,
+		      SHELL_HELP("Kill active ssh server connection",
+				 "[-i <server-instance>] -t <transport-instance>\n"),
+		      cmd_sshd_kill, 3, 5),
 	SHELL_CMD_ARG(list, NULL,
 		      SHELL_HELP("List active ssh connections", NULL),
 		      cmd_ssh_list, 1, 0),
