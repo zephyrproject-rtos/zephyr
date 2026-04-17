@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: UART Emulator link
+
+compatible: "zephyr,uart-emul-link"
+
+properties:
+  uarts:
+    type: phandles
+    required: true
