@@ -162,11 +162,28 @@ static int ssh_client_channel_event_callback(struct ssh_channel *channel,
 		LOG_DBG("Client channel EOF");
 		break;
 
-	case SSH_CHANNEL_EVENT_CLOSED:
+	case SSH_CHANNEL_EVENT_CLOSED: {
+		struct ssh_client *sshc;
+		int ret;
+
+		sshc = ssh_client_instance(ctx->ssh_instance);
+		if (sshc != NULL) {
+			ret = ssh_client_stop(sshc);
+			if (ret < 0) {
+				LOG_DBG("Failed to stop SSH %s: %d\n", "client", ret);
+			} else {
+				LOG_INF("SSH %s %d stopped", "client", ctx->ssh_instance);
+				ctx->ssh_instance = -1;
+			}
+		} else {
+			LOG_DBG("Failed to get SSH %s instance for cleanup", "client");
+		}
+
 		LOG_DBG("Client channel closed");
 		shell_set_bypass(sh, NULL, NULL);
 		ctx->channel = NULL;
 		break;
+	}
 
 	default:
 		return -EINVAL;
@@ -951,6 +968,8 @@ static int cmd_ssh_start(const struct shell *sh, size_t argc, char **argv)
 		PR_ERROR("Failed to get SSH client instance\n");
 		return -ENOENT;
 	}
+
+	ctx.ssh_instance = client_instance;
 
 	ret = ssh_client_start(sshc,
 			       username,

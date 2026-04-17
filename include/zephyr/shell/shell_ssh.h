@@ -57,6 +57,8 @@ struct shell_ssh_context {
 	struct ssh_transport *transport;
 	/** SSH server password storage */
 	struct shell_ssh_passwd password;
+	/** Instance of the SSH connection (could be client or server) */
+	int ssh_instance;
 	/** Is this context in use (server-side pool tracking) */
 	bool in_use;
 };
