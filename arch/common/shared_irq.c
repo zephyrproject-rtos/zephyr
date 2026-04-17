@@ -37,8 +37,8 @@ void z_shared_isr(const void *data)
 
 static struct k_spinlock lock;
 
-void z_isr_install(unsigned int irq, void (*routine)(const void *),
-		   const void *param)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_isr_install(unsigned int irq, void (*routine)(const void *),
+					       const void *param)
 {
 	struct z_shared_isr_table_entry *shared_entry;
 	struct _isr_table_entry *entry;
@@ -156,9 +156,8 @@ int __weak arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 	return z_isr_uninstall(irq, routine, parameter);
 }
 
-int z_isr_uninstall(unsigned int irq,
-		    void (*routine)(const void *),
-		    const void *parameter)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_isr_uninstall(unsigned int irq, void (*routine)(const void *),
+						const void *parameter)
 {
 	struct z_shared_isr_table_entry *shared_entry;
 	struct _isr_table_entry *entry;
