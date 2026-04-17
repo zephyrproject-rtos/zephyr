@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/opamp/infineon-autanalog-ctb.h>
+#include <zephyr/dt-bindings/mfd/infineon-autanalog.h>
+
+/ {
+	zephyr,user {
+		opamp = <&opamp0>;
+	};
+};
+
+&ctb0 {
+	opamp0: opamp@0 {
+		compatible = "infineon,autanalog-ctb-opamp";
+		reg = <0>;
+		power-mode = <IFX_AUTANALOG_CTB_OA_PWR_ULTRA_LOW>;
+		topology = <IFX_AUTANALOG_CTB_OA_TOPO_PGA>;
+		/* OA0=P14.0, OA1=P14.5 */
+		ninv-inp-pin = <IFX_AUTANALOG_CTB_OA_NINV_PIN_OA0_P0_OA1_P5>;
+		/* OA0=P14.1, OA1=P14.4 */
+		inv-inp-pin = <IFX_AUTANALOG_CTB_OA_INV_PIN_OA0_P1_OA1_P4>;
+		gain = <IFX_AUTANALOG_CTB_OA_GAIN_1_00>;
+		out-to-pin; /* OA0=P14.2, OA1=P14.3 */
+		functional-mode = "non_inverting";
+	};
+};
