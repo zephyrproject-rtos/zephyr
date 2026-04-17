@@ -3,11 +3,27 @@
 # Copyright (c) 2025 Konrad Sikora
 # SPDX-License-Identifier: Apache-2.0
 
-config LTR55X
-	bool "LiteOn LTR-329/LTR-553 ambient light/proximity sensor support"
+config LITEON_LTR
+	bool "LiteOn LTR ambient light/proximity sensor support"
 	default y
-	depends on DT_HAS_LITEON_LTR329_ENABLED || DT_HAS_LITEON_LTR553_ENABLED
+	depends on DT_HAS_LITEON_LTR303_ENABLED || DT_HAS_LITEON_LTR329_ENABLED || DT_HAS_LITEON_LTR553_ENABLED
 	select I2C
 	help
-	  Enable driver for Lite-On LTR-329 ambient light sensor and
-	  LTR-55X ambient light plus proximity sensor.
+	  Enable driver for Lite-On LTR series sensors:
+	  LTR-303/LTR-329 ambient light sensors and
+	  LTR-553 ambient light plus proximity sensor.
+
+if LITEON_LTR
+
+config LITEON_LTR_TRIGGER_ALS
+	bool "Enable ALS trigger support"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_LITEON_LTR303),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_LITEON_LTR329),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_LITEON_LTR553),int-gpios)
+	select GPIO
+	default y
+	help
+	  Enable interrupt-driven threshold triggers on the light channel.
+	  Requires int-gpios to be defined in the devicetree node.
+
+endif # LITEON_LTR

@@ -120,10 +120,12 @@
 #define LTR55X_PS_DATA_MASK 0x07FF
 #define LTR55X_PS_DATA_MAX  LTR55X_PS_DATA_MASK
 
-#define LTR55X_ALS_CONTR_MODE_ACTIVE 0x1
-#define LTR55X_PS_CONTR_MODE_ACTIVE  0x02
+#define LTR55X_ALS_CONTR_MODE_STAND_BY	0x0
+#define LTR55X_ALS_CONTR_MODE_ACTIVE	0x1
+#define LTR55X_PS_CONTR_MODE_ACTIVE 	0x02
 
 /* Expected sensor IDs */
+#define LTR303_PART_ID_VALUE         0xA0
 #define LTR329_PART_ID_VALUE         0xA0
 #define LTR55X_PART_ID_VALUE         0x92
 #define LTR55X_MANUFACTURER_ID_VALUE 0x05
@@ -158,10 +160,12 @@
 
 struct ltr55x_config {
 	const struct i2c_dt_spec bus;
+	const struct gpio_dt_spec int_gpio;
 	uint8_t part_id;
 	uint8_t als_gain;
 	uint8_t als_integration_time;
 	uint8_t als_measurement_rate;
+	uint8_t als_interrupt_persist;
 	uint8_t ps_led_pulse_freq;
 	uint8_t ps_led_duty_cycle;
 	uint8_t ps_led_current;
@@ -171,13 +175,24 @@ struct ltr55x_config {
 };
 
 struct ltr55x_data {
+	const struct device *dev;
 	uint16_t als_ch0;
 	uint16_t als_ch1;
+	uint16_t als_upper_threshold;
+	uint16_t als_lower_threshold;
 	uint16_t ps_ch0;
 	uint16_t ps_offset;
 	uint16_t ps_upper_threshold;
 	uint16_t ps_lower_threshold;
 	bool proximity_state;
+
+#ifdef CONFIG_LITEON_LTR_TRIGGER_ALS
+	struct gpio_callback gpio_cb;
+	struct k_work work;
+	sensor_trigger_handler_t als_handler;
+	const struct sensor_trigger *als_trigger;
+	struct k_mutex trigger_mutex;
+#endif
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_LITEON_LTR55X_LTR55X_H_ */
