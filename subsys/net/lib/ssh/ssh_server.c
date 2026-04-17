@@ -377,3 +377,38 @@ int ssh_server_stop(struct ssh_server *sshd)
 
 	return ret;
 }
+
+int ssh_server_transport_close(struct ssh_server *sshd, int idx)
+{
+	zvfs_eventfd_t value = 1;
+	struct ssh_server_event event;
+
+	if (sshd == NULL) {
+		return -EINVAL;
+	}
+
+	if (!PART_OF_ARRAY(ssh_server_instances, sshd)) {
+		return -ENOENT;
+	}
+
+	if (idx < 0 || idx >= CONFIG_SSH_SERVER_MAX_CLIENTS) {
+		return -EINVAL;
+	}
+
+	if (!sshd->transport[idx].running) {
+		return -EALREADY;
+	}
+
+	event.type = SSH_SERVER_EVENT_CLIENT_DISCONNECTED;
+	event.client_disconnected.transport = &sshd->transport[idx];
+	sshd->server_callback(sshd, &event, sshd->callback_user_data);
+
+	zsock_close(sshd->transport[idx].sock);
+
+	ssh_transport_close(&sshd->transport[idx]);
+
+	/* Wake up the thread */
+	(void)zvfs_eventfd_write(sshd->eventfd, value);
+
+	return 0;
+}
