@@ -20,6 +20,13 @@ properties:
     required: true
     description: flash capacity in bytes
 
+  plane-bytes:
+    type: int
+    required: true
+    description: |
+      Capacity of each plane in bytes. For devices with a single plane,
+      this should be set to the same value as size-bytes.
+
   erase-block-size:
     type: int
     required: true
@@ -59,3 +66,13 @@ properties:
       Maximum reset duration in microseconds. Default is larger than the
       maximum values for sample Macronix (500 us) and Micron (1250 us)
       devices.
+
+  has-program-plane-select:
+    type: boolean
+    description: |
+      Indicates whether the flash program commands support plane select.
+
+  has-read-plane-select:
+    type: boolean
+    description: |
+      Indicates whether the flash read commands support plane select.
