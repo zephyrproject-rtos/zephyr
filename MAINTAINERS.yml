@@ -180,6 +180,7 @@ ADI Platforms:
     - dts/bindings/*/adi,*
     - dts/bindings/*/lltc,*
     - dts/bindings/*/maxim,*
+    - dts/vendor/adi/
     - soc/adi/
   files-regex:
     - ^drivers/(adc|dac|gpio|mfd|regulator)/.*adp?\d+
@@ -399,6 +400,7 @@ Base OS:
     - peter-mitsis
   files:
     - include/zephyr/sys/
+    - include/zephyr/zvfs/eventfd.h
     - lib/os/
     - tests/misc/print_format/
     - tests/lib/p4workq/
@@ -893,7 +895,7 @@ CMSIS API layer:
   collaborators:
     - nashif
   files:
-    - subsys/portability/
+    - subsys/portability/cmsis*/
     - include/zephyr/portability/cmsis*
     - samples/subsys/portability/cmsis_rtos_v*/
     - tests/subsys/portability/cmsis_rtos_v*/
@@ -3333,6 +3335,7 @@ Key-Value Storage Systems:
     - subsys/llext/
     - doc/services/llext/
     - include/zephyr/linker/llext-sections.ld
+    - scripts/build/llext_*
   labels:
     - "area: llext"
   tests:
@@ -3517,8 +3520,6 @@ MIPS arch:
     - boards/qemu/malta/
   labels:
     - "area: MIPS"
-  tests:
-    - arch.mips
 
 Memory Management:
   status: maintained
@@ -3629,6 +3630,7 @@ Microchip SAM Platforms:
   files:
     - boards/atmel/
     - dts/arm/atmel/
+    - dts/arm/microchip/sam/
     - soc/atmel/
     - soc/microchip/sam/sama*/
     - drivers/*/*sam*
@@ -4546,8 +4548,6 @@ OpenRISC Arch:
     - soc/qemu/or1k/
   labels:
     - "area: OpenRISC"
-  tests:
-    - arch.openrisc
 
 OpenTitan Platforms:
   status: maintained
@@ -4782,6 +4782,7 @@ Raspberry Pi Pico Platforms:
     - boards/wiznet/w5500_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
+    - dts/vendor/raspberrypi/
     - dts/riscv/raspberrypi/
     - drivers/*/*rpi_pico
     - drivers/*/*rpi_pico*/
