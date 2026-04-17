@@ -361,7 +361,7 @@ struct bt_dev {
 #endif
 #endif
 	/* Current local Random Address */
-	bt_addr_le_t            random_addr;
+	bt_addr_t                  random_addr;
 	uint8_t                    adv_conn_id;
 
 	/* Controller version & manufacturer information */
