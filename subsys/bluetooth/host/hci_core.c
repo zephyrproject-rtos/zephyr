@@ -1372,9 +1372,7 @@ static void translate_addrs(bt_addr_le_t *peer_addr, bt_addr_le_t *id_addr,
 {
 	if (bt_addr_le_is_resolved(&evt->peer_addr)) {
 		bt_addr_le_copy_resolved(id_addr, &evt->peer_addr);
-
-		bt_addr_copy(&peer_addr->a, &evt->peer_rpa);
-		peer_addr->type = BT_ADDR_LE_RANDOM;
+		bt_addr_le_copy_addr(peer_addr, &evt->peer_rpa, BT_ADDR_LE_RANDOM);
 	} else {
 		bt_addr_le_copy(id_addr, bt_lookup_id_addr(id, &evt->peer_addr));
 		bt_addr_le_copy(peer_addr, &evt->peer_addr);
@@ -1463,13 +1461,13 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 			if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 			    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
-				conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
 				if (!bt_addr_eq(&evt->local_rpa, BT_ADDR_ANY)) {
-					bt_addr_copy(&conn->le.resp_addr.a,
-						     &evt->local_rpa);
+					bt_addr_le_copy_addr(&conn->le.resp_addr,
+							     &evt->local_rpa,
+							     BT_ADDR_LE_RANDOM);
 				} else {
-					bt_addr_copy(&conn->le.resp_addr.a,
-						     &bt_dev.random_addr.a);
+					bt_addr_le_copy(&conn->le.resp_addr,
+							&bt_dev.random_addr);
 				}
 			} else {
 				bt_addr_le_copy(&conn->le.resp_addr,
@@ -1479,8 +1477,8 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 			/* Copy the local RPA and handle this in advertising set
 			 * terminated event.
 			 */
-			conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
-			bt_addr_copy(&conn->le.resp_addr.a, &evt->local_rpa);
+			bt_addr_le_copy_addr(&conn->le.resp_addr, &evt->local_rpa,
+					     BT_ADDR_LE_RANDOM);
 		}
 
 		if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
@@ -1497,13 +1495,12 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		bt_addr_le_copy(&conn->le.resp_addr, &peer_addr);
 
 		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-			conn->le.init_addr.type = BT_ADDR_LE_RANDOM;
 			if (!bt_addr_eq(&evt->local_rpa, BT_ADDR_ANY)) {
-				bt_addr_copy(&conn->le.init_addr.a,
-					     &evt->local_rpa);
+				bt_addr_le_copy_addr(&conn->le.init_addr,
+						     &evt->local_rpa, BT_ADDR_LE_RANDOM);
 			} else {
-				bt_addr_copy(&conn->le.init_addr.a,
-					     &bt_dev.random_addr.a);
+				bt_addr_le_copy(&conn->le.init_addr,
+						&bt_dev.random_addr);
 			}
 		} else {
 			bt_addr_le_copy(&conn->le.init_addr,
@@ -1604,8 +1601,7 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 	bt_addr_le_copy(&conn->le.init_addr, &peer_addr);
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
-		bt_addr_copy(&conn->le.resp_addr.a, &evt->local_rpa);
+		bt_addr_le_copy_addr(&conn->le.resp_addr, &evt->local_rpa, BT_ADDR_LE_RANDOM);
 	} else {
 		bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.id_addr[conn->id]);
 	}
