@@ -9,6 +9,7 @@
 
 #include <broadcom/bcm2711.dtsi>
 #include <broadcom/bcm2711-pinctrl.dtsi>
+#include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
@@ -24,7 +25,7 @@
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
-		zephyr,sram = &sram0;
+		zephyr,sram = &dram0;
 		zephyr,entropy = &rng;
 	};
 
@@ -35,6 +36,36 @@
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>; /* GPIO 42 */
 			label = "ACT";
 		};
+	};
+
+	/*
+	 * The first 2 MiB of LPDDR4 is reserved for VideoCore GPU, which boots
+	 * BCM2711 SoC before control is handed to the ARM core.
+	 */
+	dram0: memory@200000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x200000 DT_SIZE_M(8)>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* VideoCore shared memory region is mapped downward from 0x40000000. */
+		vc_mem: memory@3f800000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x3f800000 DT_SIZE_M(8)>;
+			zephyr,memory-region = "VC_SHARED_RAM";
+		};
+	};
+
+	firmware {
+		compatible = "raspberrypi,bcm283x-firmware";
+		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
+		mbox-names = "vc";
+		shared-memory = <&vc_mem>;
 	};
 };
 
