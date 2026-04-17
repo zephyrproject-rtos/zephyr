@@ -86,7 +86,7 @@ static uint64_t mtime(void)
 #endif
 }
 
-static void timer_isr(const void *arg)
+Z_NO_THREAD_SAFETY_ANALYSIS static void timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -109,7 +109,7 @@ static void timer_isr(const void *arg)
 	sys_clock_announce_locked(dticks, key);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+Z_NO_THREAD_SAFETY_ANALYSIS void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -128,7 +128,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	set_mtimecmp(cyc);
 }
 
-uint32_t sys_clock_elapsed(void)
+Z_NO_THREAD_SAFETY_ANALYSIS uint32_t sys_clock_elapsed(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
