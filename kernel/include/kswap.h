@@ -77,7 +77,7 @@ static inline void z_sched_switch_spin(struct k_thread *thread)
  * Note that is_spinlock is a compile-time construct which will be
  * optimized out when this function is expanded.
  */
-static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 					  struct k_spinlock *lock,
 					  bool is_spinlock)
 {
@@ -216,7 +216,8 @@ static inline int z_swap_irqlock(unsigned int key)
  * can't be in SMP.  The k_spin_release() call is just for validation
  * handling.
  */
-static ALWAYS_INLINE int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE int z_swap(struct k_spinlock *lock,
+							    k_spinlock_key_t key)
 {
 	k_spin_release(lock);
 	return z_swap_irqlock(key.key);

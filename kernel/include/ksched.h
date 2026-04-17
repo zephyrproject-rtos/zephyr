@@ -66,7 +66,7 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, k_timeout_t timeout);
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout);
-void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key);
+void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key) Z_RELEASES(*lock);
 void z_reschedule_irqlock(uint32_t key);
 int z_unpend_all(_wait_q_t *wait_q);
 bool z_thread_prio_set(struct k_thread *thread, int prio);

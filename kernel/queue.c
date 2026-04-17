@@ -91,7 +91,7 @@ static inline bool queue_handle_poll_events(struct k_queue *queue, uint32_t stat
 #endif /* CONFIG_POLL */
 }
 
-void z_impl_k_queue_cancel_wait(struct k_queue *queue)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_queue, cancel_wait, queue);
 
@@ -125,8 +125,10 @@ static inline void z_vrfy_k_queue_cancel_wait(struct k_queue *queue)
  * The queue's spinlock must be held prior to entry.
  * However, that same spinlock will be unlocked before it returns.
  */
-static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
-			    bool alloc, bool is_append, k_spinlock_key_t key)
+static int32_t queue_insert(struct k_queue *queue, void *prev,
+			    void *data, bool alloc, bool is_append,
+			    k_spinlock_key_t key)
+	Z_RELEASES(&queue->lock)
 {
 	int32_t result = 0;
 	bool resched = false;
@@ -319,7 +321,7 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 	return 0;
 }
 
-void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	void *data;

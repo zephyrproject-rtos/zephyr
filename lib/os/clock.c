@@ -101,7 +101,7 @@ int sys_clock_gettime(int clock_id, struct timespec *ts)
 	return 0;
 }
 
-void z_impl_sys_clock_getrtoffset(struct timespec *tp)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_sys_clock_getrtoffset(struct timespec *tp)
 {
 	__ASSERT_NO_MSG(tp != NULL);
 
@@ -121,7 +121,7 @@ void z_vrfy_sys_clock_getrtoffset(struct timespec *tp)
 #include <zephyr/syscalls/sys_clock_getrtoffset_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_sys_clock_settime(int clock_id, const struct timespec *tp)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_sys_clock_settime(int clock_id, const struct timespec *tp)
 {
 	struct timespec offset;
 
@@ -224,7 +224,7 @@ int z_vrfy_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 
 #ifdef CONFIG_ZTEST
 #include <zephyr/ztest.h>
-static void reset_clock_offset(void)
+Z_NO_THREAD_SAFETY_ANALYSIS static void reset_clock_offset(void)
 {
 	K_SPINLOCK(&rt_clock_offset_lock) {
 		rt_clock_offset = (struct timespec){0};

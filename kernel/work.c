@@ -672,7 +672,7 @@ static void work_timeout_stop_locked(struct k_work_q *queue)
  *
  * @param workq_ptr pointer to the work queue structure
  */
-static void work_queue_main(void *workq_ptr, void *p2, void *p3)
+Z_NO_THREAD_SAFETY_ANALYSIS static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -904,8 +904,7 @@ void k_work_queue_start(struct k_work_q *queue,
 	TOOLCHAIN_ENABLE_WARNING("-Wdeprecated-declarations");
 }
 
-int k_work_queue_drain(struct k_work_q *queue,
-		       bool plug)
+Z_NO_THREAD_SAFETY_ANALYSIS int k_work_queue_drain(struct k_work_q *queue, bool plug)
 {
 	__ASSERT_NO_MSG(queue);
 	__ASSERT_NO_MSG(!k_is_in_isr());
@@ -1111,8 +1110,8 @@ static int schedule_for_queue_locked(struct k_work_q **queuep,
  * @return true if and only if work had been delayed so the timeout
  * was cancelled.
  */
-static inline bool unschedule_locked(struct k_work_delayable *dwork,
-				     k_spinlock_key_t *key)
+Z_NO_THREAD_SAFETY_ANALYSIS static inline bool unschedule_locked(struct k_work_delayable *dwork,
+								  k_spinlock_key_t *key)
 {
 	bool ret = false;
 	struct k_work *work = &dwork->work;
