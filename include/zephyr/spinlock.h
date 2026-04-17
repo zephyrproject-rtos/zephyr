@@ -402,6 +402,31 @@ static ALWAYS_INLINE void z_spin_onexit(__maybe_unused k_spinlock_key_t *k)
  */
 #define K_SPINLOCK_BREAK continue
 
+/*
+ * TSA-unaware wrappers for K_SPINLOCK.
+ *
+ * K_SPINLOCK's for-loop RAII pattern cannot be expressed in Clang
+ * Thread Safety Analysis (the analyzer cannot prove the loop body
+ * executes exactly once).  By routing the acquire/release through
+ * helpers that carry no TSA annotations, the analyzer never sees a
+ * lock-state change inside the for-header and therefore emits no
+ * false positives for K_SPINLOCK users.
+ *
+ * Code that needs full TSA checking should use k_spin_lock /
+ * k_spin_unlock directly.
+ */
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE k_spinlock_key_t
+z_spinlock_lock_notsa(struct k_spinlock *l)
+{
+	return k_spin_lock(l);
+}
+
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE void z_spinlock_unlock_notsa(struct k_spinlock *l,
+									      k_spinlock_key_t key)
+{
+	k_spin_unlock(l, key);
+}
+
 /**
  * @brief Guards a code block with the given spinlock, automatically acquiring
  * the lock before executing the code block. The lock will be released either
@@ -443,9 +468,11 @@ static ALWAYS_INLINE void z_spin_onexit(__maybe_unused k_spinlock_key_t *k)
  *
  * @param lck Spinlock used to guard the enclosed code block.
  */
-#define K_SPINLOCK(lck)                                                                            \
-	for (k_spinlock_key_t __i K_SPINLOCK_ONEXIT = {}, __key = k_spin_lock(lck); !__i.key;      \
-	     k_spin_unlock((lck), __key), __i.key = 1)
+/* clang-format off */
+#define K_SPINLOCK(lck) for (k_spinlock_key_t __i K_SPINLOCK_ONEXIT = {},                          \
+			     __key = z_spinlock_lock_notsa(lck); !__i.key;                         \
+			     z_spinlock_unlock_notsa((lck), __key), __i.key = 1)
+/* clang-format on */
 
 /** @} */
 
