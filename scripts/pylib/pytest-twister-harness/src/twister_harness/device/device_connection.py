@@ -18,6 +18,7 @@ from pathlib import Path
 import serial
 
 from twister_harness.device.fifo_handler import FifoHandler
+from twister_harness.device.utils import terminate_process
 from twister_harness.exceptions import TwisterHarnessException, TwisterHarnessTimeoutException
 from twister_harness.twister_harness_config import DeviceConfig, DeviceSerialConfig
 
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 class DeviceConnection(abc.ABC):
     """
     Interface for device communication transport layer.
-    Handles the actual connection mechanism (Serial/UART, FIFO, process, etc.)
+    Handles the actual connection mechanism (Serial/UART/RTT, FIFO, process, etc.)
     """
 
     def __init__(self, log_path: Path, timeout: float) -> None:
@@ -210,23 +211,35 @@ class DeviceConnection(abc.ABC):
 
 
 class SerialConnection(DeviceConnection):
-    """Serial/UART connection implementation for hardware devices"""
+    """Serial/UART/RTT connection implementation for hardware devices"""
 
-    def __init__(self, log_path: Path, timeout: float, serial_config: DeviceSerialConfig) -> None:
+    def __init__(
+        self,
+        log_path: Path,
+        timeout: float,
+        serial_config: DeviceSerialConfig,
+    ) -> None:
         """
         Initialize serial connection.
         """
         super().__init__(log_path, timeout)
         self.serial_config: DeviceSerialConfig = serial_config
         self._serial_connection: serial.Serial | None = None
-        self._serial_pty_proc: subprocess.Popen | None = None
+        self._proc: subprocess.Popen | None = None
         self._serial_buffer: bytearray = bytearray()
 
     def _connect_device(self) -> None:
         if self.is_device_connected():
             # Device already connected
             return
-        serial_name = self._open_serial_pty() or self.serial_config.port
+
+        if self.serial_config.serial_pty:
+            serial_name = self._open_pty(self.serial_config.serial_pty)
+        elif self.serial_config.rtt_config:
+            serial_name = self._open_pty(self.serial_config.rtt_config.command)
+        else:
+            serial_name = self.serial_config.port
+
         logger.debug('Opening serial connection for %s', serial_name)
         try:
             self._serial_connection = serial.Serial(
@@ -239,7 +252,7 @@ class SerialConnection(DeviceConnection):
             )
         except serial.SerialException as exc:
             logger.exception('Cannot open connection: %s', exc)
-            self._close_serial_pty()
+            self._close_pty()
             raise
 
         self._serial_connection.flush()
@@ -249,10 +262,8 @@ class SerialConnection(DeviceConnection):
     def is_device_connected(self) -> bool:
         return self._serial_connection and self._serial_connection.is_open
 
-    def _open_serial_pty(self) -> str | None:
-        """Open a pty pair, run process and return tty name"""
-        if not self.serial_config.serial_pty:
-            return None
+    def _open_pty(self, command: str) -> str | None:
+        """Open a pty pair, run process with command and return tty name."""
 
         try:
             master, slave = pty.openpty()
@@ -261,14 +272,14 @@ class SerialConnection(DeviceConnection):
             raise exc
 
         try:
-            self._serial_pty_proc = subprocess.Popen(
-                re.split('[, ]', self.serial_config.serial_pty),
+            self._proc = subprocess.Popen(
+                re.split('[, ]', command),
                 stdout=master,
                 stdin=master,
                 stderr=master,
             )
         except subprocess.CalledProcessError as exc:
-            logger.exception('Failed to run subprocess, error %s', str(exc))
+            logger.exception('Failed to run subprocess %s, error %s', command, str(exc))
             raise
         return os.ttyname(slave)
 
@@ -278,15 +289,20 @@ class SerialConnection(DeviceConnection):
             self._serial_connection.close()
             self._serial_connection = None
             logger.debug('Closed serial connection for %s', serial_name)
-        self._close_serial_pty()
+        self._close_pty()
 
-    def _close_serial_pty(self) -> None:
-        """Terminate the process opened for serial pty script"""
-        if self._serial_pty_proc:
-            self._serial_pty_proc.terminate()
-            self._serial_pty_proc.communicate(timeout=self.timeout)
-            logger.debug('Process %s terminated', self.serial_config.serial_pty)
-            self._serial_pty_proc = None
+    def _close_pty(self) -> None:
+        """Terminate the process opened for serial pty script."""
+        if self._proc:
+            terminate_process(self._proc)
+            self._proc.communicate(timeout=self.timeout)
+
+            if self.serial_config.serial_pty:
+                proc = self.serial_config.serial_pty
+            else:
+                proc = "west rtt"
+            logger.debug('Process %s terminated', proc)
+            self._proc = None
 
     def _read_device_output(self) -> bytes:
         try:
@@ -341,7 +357,7 @@ class SerialConnection(DeviceConnection):
     def _clear_internal_resources(self) -> None:
         super()._clear_internal_resources()
         self._serial_connection = None
-        self._serial_pty_proc = None
+        self._proc = None
         self._serial_buffer.clear()
 
 
