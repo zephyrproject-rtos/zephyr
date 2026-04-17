@@ -38,10 +38,6 @@ LOG_MODULE_REGISTER(flash_nrf_mram, CONFIG_FLASH_LOG_LEVEL);
 #define IRONSIDE_SE_SUPPORT_READY_VER IRONSIDE_SE_V23_1_2_21
 
 BUILD_ASSERT(MRAM_START > 0, "nordic,mram: start address expected to be non-zero");
-BUILD_ASSERT((WRITE_BLOCK_SIZE % MRAM_WORD_SIZE) == 0,
-	     "write-block-size expected to be a multiple of MRAM_WORD_SIZE");
-BUILD_ASSERT((ERASE_BLOCK_SIZE % WRITE_BLOCK_SIZE) == 0,
-	     "erase-block-size expected to be a multiple of write-block-size");
 
 struct nrf_mram_data_t {
 	uint8_t ironside_se_ver;
@@ -425,9 +421,7 @@ latency_release:
 		}
 #endif
 	}
-#if defined(CONFIG_MRAM_LATENCY)
 unlock:
-#endif
 	k_mutex_unlock(&nrf_mram_data->nrf_mram_mutex);
 	return ret;
 }
@@ -438,7 +432,7 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 	uint8_t ironside_se_ver = nrf_mram_data->ironside_se_ver;
 	int ret = 0;
 
-	const uintptr_t addr = validate_and_map_addr(offset, size, true);
+	uintptr_t addr = validate_and_map_addr(offset, size, true);
 
 	if (!addr) {
 		return -EINVAL;
@@ -508,9 +502,7 @@ latency_release:
 		}
 #endif
 	}
-#if defined(CONFIG_MRAM_LATENCY)
 unlock:
-#endif
 	k_mutex_unlock(&nrf_mram_data->nrf_mram_mutex);
 	return ret;
 }
