@@ -85,20 +85,20 @@
 		 * The base address is 0x08000000.
 		 */
 		flash0: flash0@8000000 {
-			compatible = "soc-nv-flash";
+			compatible = "soc-nv-flash", "infineon,s25hs512t";
 			reg = <0x08000000 DT_SIZE_M(64)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x08000000 DT_SIZE_M(64)>;
 			write-block-size = <256>;
-			erase-block-size = <65536>;
+			erase-block-size = <DT_SIZE_K(256)>;
 
 			partitions {
 				#address-cells = <1>;
 				#size-cells = <1>;
 				ranges;
 
-				storage: storage@0 {
+				storage_partition: storage@0 {
 					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0 DT_SIZE_M(1)>;

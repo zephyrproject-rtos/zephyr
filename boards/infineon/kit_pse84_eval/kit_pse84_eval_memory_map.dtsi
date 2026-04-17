@@ -92,7 +92,7 @@
 		 * The base address is 0x08000000.
 		 */
 		flash0: flash0@8000000 {
-			compatible = "soc-nv-flash";
+			compatible = "soc-nv-flash", "infineon,s25fs128s";
 			reg = <0x08000000 DT_SIZE_M(16)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
