@@ -155,7 +155,9 @@ static int rtc_renesas_ra_init(const struct device *dev)
 		return -EIO;
 	}
 
-#if defined(CONFIG_RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE)
+#ifdef CONFIG_RTC_RENESAS_RA_ALWAYS_SET_CLOCK_SOURCE
+	R_RTC_ClockSourceSet(&data->fsp_ctrl);
+#elif defined(CONFIG_RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE)
 	if (R_BSP_ResetStatusGet() & BSP_RESET_TYPE_VBATPOR) {
 		R_RTC_ClockSourceSet(&data->fsp_ctrl);
 	}
@@ -163,7 +165,7 @@ static int rtc_renesas_ra_init(const struct device *dev)
 	if (!(R_BSP_ResetStatusGet() & BSP_RESET_TYPE_WARM)) {
 		R_RTC_ClockSourceSet(&data->fsp_ctrl);
 	}
-#endif /* CONFIG_RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE */
+#endif
 
 #ifdef CONFIG_RTC_UPDATE
 	fsp_err = R_RTC_PeriodicIrqRateSet(&data->fsp_ctrl, RTC_PERIODIC_IRQ_SELECT_1_SECOND);
