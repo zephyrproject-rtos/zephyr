@@ -4,8 +4,58 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+
 &wkup_pinctrl {
 	status = "okay";
+
+	main_ospi0_clk: ospi0-clk {
+		pinmux = <K3_PINMUX(0x003c, PIN_OUTPUT, MUX_MODE_0)>; /* (D22) OSPI0_CLK */
+	};
+
+	main_ospi0_csn0: ospi0-csn0 {
+		pinmux = <K3_PINMUX(0x0068, PIN_OUTPUT, MUX_MODE_0)>; /* (C20) OSPI0_CSN0 */
+	};
+
+	main_ospi0_d0: ospi0-d0 {
+		pinmux = <K3_PINMUX(0x0048, PIN_INPUT, MUX_MODE_0)>; /* (C22) OSPI0_D0 */
+	};
+
+	main_ospi0_d1: ospi0-d1 {
+		pinmux = <K3_PINMUX(0x004c, PIN_INPUT, MUX_MODE_0)>; /* (D21) OSPI0_D1 */
+	};
+
+	main_ospi0_d2: ospi0-d2 {
+		pinmux = <K3_PINMUX(0x0050, PIN_INPUT, MUX_MODE_0)>; /* (E23) OSPI0_D2 */
+	};
+
+	main_ospi0_d3: ospi0-d3 {
+		pinmux = <K3_PINMUX(0x0054, PIN_INPUT, MUX_MODE_0)>; /* (D23) OSPI0_D3 */
+	};
+
+	main_ospi0_d4: ospi0-d4 {
+		pinmux = <K3_PINMUX(0x0058, PIN_INPUT, MUX_MODE_0)>; /* (F21) OSPI0_D4 */
+	};
+
+	main_ospi0_d5: ospi0-d5 {
+		pinmux = <K3_PINMUX(0x005c, PIN_INPUT, MUX_MODE_0)>; /* (F19) OSPI0_D5 */
+	};
+
+	main_ospi0_d6: ospi0-d6 {
+		pinmux = <K3_PINMUX(0x0060, PIN_INPUT, MUX_MODE_0)>; /* (G20) OSPI0_D6 */
+	};
+
+	main_ospi0_d7: ospi0-d7 {
+		pinmux = <K3_PINMUX(0x0064, PIN_INPUT, MUX_MODE_0)>; /* (F20) OSPI0_D7 */
+	};
+
+	main_ospi0_dqs: ospi0-dqs {
+		pinmux = <K3_PINMUX(0x0044, PIN_INPUT, MUX_MODE_0)>; /* (E22) OSPI0_DQS */
+	};
+
+	main_ospi0_lbclko: ospi0-lbclko {
+		pinmux = <K3_PINMUX(0x0040, PIN_INPUT, MUX_MODE_0)>; /* (E18) OSPI0_LBCLKO */
+	};
 
 	uart0_rx_default: uart0_rx_default {
 		pinmux = <K3_PINMUX(0x1b4, PIN_INPUT, MUX_MODE_0)>; /* (D13) UART0_RXD */

@@ -74,6 +74,12 @@
 			#power-domain-cells = <0>;
 		};
 
+		main_fss0_pd: power-domain@20 {
+			compatible = "arm,scmi-power-domain";
+			reg = <32>;
+			#power-domain-cells = <0>;
+		};
+
 		main_i2c0_pd: power-domain@35 {
 			compatible = "arm,scmi-power-domain";
 			reg = <53>;
