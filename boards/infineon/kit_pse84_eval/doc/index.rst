@@ -203,7 +203,7 @@ so MCUBoot validates both slot0 and slot2:
 Step 2 — CM33 application (slot0)
 ----------------------------------
 
-Pass the memory map overlay and the slot0 conf file. The conf file sets
+Pass the memory map overlay and the slot conf file. The conf file sets
 ``CONFIG_BOOTLOADER_MCUBOOT=y``, the matching MCUBoot mode, and unsigned
 image generation:
 
@@ -231,7 +231,7 @@ Step 3 — CM55 application (slot2, dual-image only)
 ---------------------------------------------------
 
 Pass both the memory map overlay and the slot2 partition override, plus the
-slot2 conf file:
+slot conf file:
 
 .. code-block:: shell
 

@@ -120,6 +120,168 @@ to set the CMake variable ``OPENOCD``.
 Once the gdb console starts after executing the west debug command, you may now set breakpoints and
 perform other standard GDB debugging on the PSOC E84 CM33 core.
 
+MCUBoot Bootloader Support
+**************************
+
+The ``kit_pse84_ai`` board supports `MCUBoot`_ for bootloader and
+over-the-air (OTA) firmware updates. The PSOC™ Edge E84 extended-boot ROM
+validates an MCUBoot-compatible image header at the MCUBoot bootloader location
+before handing off to MCUBoot, which then validates and starts the application.
+
+Flash Layout with MCUBoot
+=========================
+
+When MCUBoot is enabled, the flash is partitioned as follows:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Partition
+     - Flash offset
+     - Size
+     - Description
+   * - ``boot_partition``
+     - ``0x100000``
+     - 256 KB
+     - MCUBoot bootloader (CM33 secure, SAHB alias ``0x70100000``)
+   * - ``slot0_partition``
+     - ``0x140000``
+     - 2 MB
+     - CM33 primary application (active)
+   * - ``slot1_partition``
+     - ``0x340000``
+     - 2 MB
+     - CM33 secondary / update slot
+   * - ``slot2_partition``
+     - ``0x540000``
+     - 2 MB
+     - CM55 primary application (active)
+   * - ``slot3_partition``
+     - ``0x740000``
+     - 2 MB
+     - CM55 secondary / update slot
+
+Building Images Independently (Standalone)
+==========================================
+
+Each image can be built and flashed individually. The board directory provides
+DTS overlay files for the MCUBoot partition layout; pass them on the ``west
+build`` command line as shown below.
+
+The board directory overlays referenced below are located in
+``boards/infineon/kit_pse84_ai/`` relative to ``$ZEPHYR_BASE``.
+
+Step 1 — MCUBoot bootloader
+----------------------------
+
+The bootloader must be linked at ``boot_partition``. Pass both the memory map
+overlay, the bootloader-specific overlay, and the MCUBoot configuration file.
+This configuration file is just an example; it sets overwrite-only mode and
+no signature verification by default.
+
+For a **single-image** setup (CM33 only):
+
+.. code-block:: shell
+
+   west build -b kit_pse84_ai/pse846gps2dbzc4a/m33 \
+       bootloader/mcuboot/boot/zephyr -d build_mcuboot \
+       -- -DEXTRA_DTC_OVERLAY_FILE="$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_memory_map_mcuboot.dtsi\;$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_mcuboot_bl.overlay" \
+          -DEXTRA_CONF_FILE="$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_mcuboot.conf"
+
+For a **dual-image** setup (CM33 + CM55), add ``CONFIG_UPDATEABLE_IMAGE_NUMBER=2``
+so MCUBoot validates both slot0 and slot2:
+
+.. code-block:: shell
+
+   west build -b kit_pse84_ai/pse846gps2dbzc4a/m33 \
+       bootloader/mcuboot/boot/zephyr -d build_mcuboot \
+       -- -DEXTRA_DTC_OVERLAY_FILE="$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_memory_map_mcuboot.dtsi\;$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_mcuboot_bl.overlay" \
+          -DEXTRA_CONF_FILE="$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_mcuboot.conf" \
+          -DCONFIG_UPDATEABLE_IMAGE_NUMBER=2
+
+Step 2 — CM33 application (slot0)
+----------------------------------
+
+Pass the memory map overlay and the slot conf file. The conf file sets
+``CONFIG_BOOTLOADER_MCUBOOT=y``, the matching MCUBoot mode, and unsigned
+image generation:
+
+For a **single-image** setup:
+
+.. code-block:: shell
+
+   west build -b kit_pse84_ai/pse846gps2dbzc4a/m33 \
+       <path/to/cm33/app> -d build_cm33 \
+       -- -DEXTRA_DTC_OVERLAY_FILE="$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_memory_map_mcuboot.dtsi" \
+          -DEXTRA_CONF_FILE="$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_slot.conf"
+
+For a **dual-image** setup, also enable the CM55 core:
+
+.. code-block:: shell
+
+   west build -b kit_pse84_ai/pse846gps2dbzc4a/m33 \
+       <path/to/cm33/app> -d build_cm33 \
+       -- -DEXTRA_DTC_OVERLAY_FILE="$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_memory_map_mcuboot.dtsi" \
+          -DEXTRA_CONF_FILE="$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_slot.conf" \
+          -DCONFIG_SOC_PSE84_M55_ENABLE=y
+
+Step 3 — CM55 application (slot2, dual-image only)
+---------------------------------------------------
+
+Pass both the memory map overlay and the slot2 partition override, plus the
+slot conf file:
+
+.. code-block:: shell
+
+   west build -b kit_pse84_ai/pse846gps2dbzc4a/m55 \
+       <path/to/cm55/app> -d build_cm55 \
+       -- -DEXTRA_DTC_OVERLAY_FILE="$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_memory_map_mcuboot.dtsi\;$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_mcuboot_cm55.overlay" \
+          -DEXTRA_CONF_FILE="$ZEPHYR_BASE/boards/infineon/kit_pse84_ai/kit_pse84_ai_slot.conf"
+
+
+Flashing
+========
+
+Each image is flashed independently from its build directory.
+``west flash`` automatically uses ``zephyr.signed.hex`` for all
+MCUBoot-related images.
+
+Flash MCUBoot first (required once; re-flash only when updating the
+bootloader):
+
+.. code-block:: shell
+
+   west flash -d build_mcuboot
+
+Flash the CM33 application:
+
+.. code-block:: shell
+
+   west flash -d build_cm33
+
+Flash the CM55 application (dual-image only):
+
+.. code-block:: shell
+
+   west flash -d build_cm55
+
+Iterating on a Single Image
+============================
+
+To update only the CM55 firmware without rebuilding the other images:
+
+.. code-block:: shell
+
+   # Rebuild (incremental)
+   west build -d build_cm55
+
+   # Re-flash slot2 only
+   west flash -d build_cm55
+
+This is the key advantage of the standalone workflow: once MCUBoot and the
+CM33 application are stable and flashed, the CM55 image can be developed,
+rebuilt, and reflashed independently in seconds.
+
 References
 **********
 
@@ -142,3 +304,6 @@ References
 
 .. _KitProg3:
     https://github.com/Infineon/KitProg3
+
+.. _MCUBoot:
+    https://docs.mcuboot.com/
