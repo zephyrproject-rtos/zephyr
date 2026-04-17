@@ -3,6 +3,7 @@
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_BQ274XX bq274xx)
+add_subdirectory_ifdef(CONFIG_CC13XX_CC26XX_VBAT cc13xx_cc26xx_vbat)
 add_subdirectory_ifdef(CONFIG_FDC2X1X fdc2x1x)
 add_subdirectory_ifdef(CONFIG_INA219 ina219)
 add_subdirectory_ifdef(CONFIG_INA2XX ina2xx)

@@ -240,6 +240,11 @@
 			#io-channel-cells = <1>;
 		};
 	};
+
+	vbat: vbat {
+		compatible = "ti,cc13xx-cc26xx-vbat";
+		status = "disabled";
+	};
 };
 
 &nvic {

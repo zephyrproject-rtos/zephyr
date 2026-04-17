@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Paweł Pielorz <pawel.pielorz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI CC13XX/CC26xx family VBat sensor
+
+include: sensor-device.yaml
+
+compatible: "ti,cc13xx-cc26xx-vbat"

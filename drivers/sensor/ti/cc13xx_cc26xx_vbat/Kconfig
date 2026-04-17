@@ -1,0 +1,12 @@
+# CC13xx/CC26xx vbat sensor configuration options
+
+# Copyright (c) 2026 Paweł Pielorz <pawel.pielorz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config CC13XX_CC26XX_VBAT
+	bool "CC13XX/CC26XX VBAT Sensor"
+	default y
+	depends on DT_HAS_TI_CC13XX_CC26XX_VBAT_ENABLED
+	depends on SOC_SERIES_CC13X2_CC26X2 || SOC_SERIES_CC13X2X7_CC26X2X7
+	help
+	  Enable driver for CC13XX/CC26XX VBat sensor.
