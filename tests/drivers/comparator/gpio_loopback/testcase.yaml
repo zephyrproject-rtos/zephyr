@@ -47,6 +47,15 @@ tests:
       - nrf7120dk/nrf7120/cpuapp
       - nrf7120dk/nrf7120/cpuapp/ns
       - ophelia4ev/nrf54l15/cpuapp
+  drivers.comparator.gpio_loopback.infineon_lpcomp:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+  drivers.comparator.gpio_loopback.infineon_ptcomp:
+    extra_args:
+      - FILE_SUFFIX="ptcomp"
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
   drivers.comparator.gpio_loopback.stm32_comp:
     platform_allow:
       - nucleo_h745zi_q/stm32h745xx/m7
