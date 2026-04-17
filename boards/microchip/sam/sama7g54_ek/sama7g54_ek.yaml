@@ -18,5 +18,6 @@ supported:
   - pwm
   - rtc
   - sdhc
+  - spi
   - uart
 vendor: microchip
