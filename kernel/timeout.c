@@ -110,7 +110,23 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 		if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
 			ticks_elapsed = elapsed();
 			has_elapsed = true;
-			to->dticks = timeout.ticks + 1 + ticks_elapsed;
+			/*
+			 * In the general case, "now" may be anywhere within
+			 * the current tick. Rounding up by one tick guarantees
+			 * "at least N ticks" semantics -- otherwise a request
+			 * made partway through a tick would fire on the next
+			 * tick edge, yielding less than N full ticks.
+			 *
+			 * The one moment we know we are at (or very close to)
+			 * a tick edge is while processing timeouts inside
+			 * sys_clock_announce_locked(), flagged by
+			 * announce_remaining != 0. Periodic timers rely on
+			 * this when rescheduling themselves from the timer
+			 * ISR: the round-up would otherwise accumulate and
+			 * make every period one tick late.
+			 */
+			to->dticks = timeout.ticks + ticks_elapsed +
+				     ((announce_remaining == 0) ? 1 : 0);
 			ticks = curr_tick + to->dticks;
 		} else {
 			k_ticks_t dticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
