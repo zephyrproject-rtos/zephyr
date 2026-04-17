@@ -912,6 +912,27 @@ static inline int dns_cancel_addr_info(uint16_t dns_id)
 }
 
 /**
+ * @brief Cancel a pending DNS query using id, name and type.
+ *
+ * @details This releases DNS resources used by a pending query.
+ *
+ * @param query_name Name of the resource we are trying to query (hostname)
+ * @param query_type Type of the query (A or AAAA)
+ * @param dns_id DNS id of the pending query
+ *
+ * @return 0 if ok, <0 if error.
+ */
+static inline int dns_cancel_addr_info_with_name(const char *query_name,
+					enum dns_query_type query_type,
+					uint16_t dns_id)
+{
+	return dns_resolve_cancel_with_name(dns_resolve_get_default(),
+				dns_id,
+				query_name,
+				query_type);
+}
+
+/**
  * @}
  */
 
