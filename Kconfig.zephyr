@@ -603,6 +603,17 @@ config COMPILER_COLOR_DIAGNOSTICS
 	help
 	  Compiler diagnostic messages are colorized.
 
+config THREAD_SAFETY_ANALYSIS
+	bool "Clang Thread Safety Analysis"
+	help
+	  Enable compile-time thread safety checking with Clang's
+	  -Wthread-safety flag. When enabled, Clang uses annotations on
+	  spinlock functions (Z_ACQUIRES, Z_RELEASES, Z_GUARDED_BY, etc.)
+	  to statically verify correct lock discipline at compile time.
+
+	  Has no effect on non-Clang toolchains. See
+	  include/zephyr/sys/thread_safety.h for details.
+
 choice COMPILER_SECURITY_FORTIFY
 	prompt "Detect buffer overflows in libc calls"
 	default FORTIFY_SOURCE_NONE if NO_OPTIMIZATIONS || MINIMAL_LIBC || NATIVE_BUILD

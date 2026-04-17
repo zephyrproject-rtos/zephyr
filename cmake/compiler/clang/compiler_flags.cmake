@@ -45,6 +45,9 @@ check_set_compiler_property(APPEND PROPERTY warning_base -Wno-pointer-sign)
 # Prohibit void pointer arithmetic. Illegal in C99
 check_set_compiler_property(APPEND PROPERTY warning_base -Wpointer-arith)
 
+# Enable compile-time thread safety analysis (see include/zephyr/sys/thread_safety.h)
+check_set_compiler_property(PROPERTY thread_safety_analysis -Wthread-safety)
+
 # clang options for warning levels 1, 2, 3, when using `-DW=[1|2|3]`
 set_compiler_property(PROPERTY warning_dw_1
                       -Wextra
