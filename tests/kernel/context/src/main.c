@@ -233,7 +233,10 @@ static void _test_kernel_cpu_idle(int atomic)
 	uint64_t t0, dt;
 	unsigned int i, key;
 	uint32_t dur = k_ms_to_ticks_ceil32(10);
-	uint32_t slop = 1 + k_ms_to_ticks_ceil32(1);
+	/* 1 tick for z_add_timeout()'s "at least N" round-up, plus
+	 * 1 ms measurement slop.
+	 */
+	uint32_t slop = 2 + k_ms_to_ticks_ceil32(1);
 	int idle_loops;
 
 	/* Set up a time to trigger events to exit idle mode */
