@@ -95,6 +95,7 @@ static int gpio_altera_configure(const struct device *dev,
 	} else if (flags == GPIO_OUTPUT) {
 		sys_set_bits(addr, BIT(pin));
 	} else {
+		k_spin_unlock(&data->lock, key);
 		return -EINVAL;
 	}
 
@@ -237,6 +238,7 @@ static int gpio_altera_pin_interrupt_configure(const struct device *dev,
 		irq_enable(cfg->irq_num);
 		break;
 	default:
+		k_spin_unlock(&data->lock, key);
 		return -EINVAL;
 	}
 
