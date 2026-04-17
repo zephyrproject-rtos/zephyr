@@ -2385,6 +2385,67 @@ static struct i3c_device_desc *dw_i3c_device_find(const struct device *dev,
 
 	return i3c_dev_list_find(&config->common.dev_list, id);
 }
+
+/**
+ * @brief Recover the I3C bus.
+ *
+ * Attempts to bring the DesignWare I3C controller back to an idle/ready state
+ * without destroying the driver's device table. Used by i3c_recover_bus()
+ * and the i3c shell.
+ *
+ * Deliberately does NOT issue RESET_CTRL_SOFT or RESET_CTRL_ALL, since those
+ * clear the Device Address Table (DAT) and Device Characteristic Table (DCT)
+ * which hold per-target state the driver relies on. Only the FIFOs and
+ * response/command/IBI queues are flushed, and the controller is RESUMEd if
+ * halted by a prior error.
+ *
+ * @param dev Pointer to controller device driver instance.
+ *
+ * @retval 0 on success.
+ * @retval -EACCES if controller is not in master mode.
+ */
+static int dw_i3c_recover_bus(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+	uint32_t nibis;
+	int ret;
+
+
+	if (!dw_i3c_is_current_controller(dev)) {
+		return -EACCES;
+	}
+
+	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
+	if (ret) {
+		LOG_ERR("%s: recover_bus mutex err (%d)", dev->name, ret);
+		return ret;
+	}
+
+	/* Drain any pending IBIs so the controller is not blocked by
+	 * an unread IBI queue when we try to resume.
+	 */
+	nibis = QUEUE_STATUS_IBI_BUF_BLR(sys_read32(config->regs + QUEUE_STATUS_LEVEL));
+	while (nibis--) {
+		(void)sys_read32(config->regs + IBI_QUEUE_STATUS);
+	}
+
+	/* Flush command / response / data FIFOs and the IBI queue.
+	 * Crucially, SOFT reset is NOT asserted here — DAT/DCT survive.
+	 */
+	sys_write32(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO |
+		    RESET_CTRL_RESP_QUEUE | RESET_CTRL_CMD_QUEUE |
+		    RESET_CTRL_IBI_QUEUE,
+		    config->regs + RESET_CTRL);
+
+	/* Resume controller from any halt state caused by a prior error. */
+	sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_RESUME,
+		    config->regs + DEVICE_CTRL);
+
+	k_mutex_unlock(&data->mt);
+
+	return 0;
+}
 #endif /* CONFIG_I3C_CONTROLLER */
 #ifdef CONFIG_I3C_TARGET
 /**
@@ -2669,6 +2730,7 @@ static int dw_i3c_pm_ctrl(const struct device *dev, enum pm_device_action action
 static DEVICE_API(i3c, dw_i3c_api) = {
 #ifdef CONFIG_I3C_CONTROLLER
 	.i2c_api.transfer = dw_i3c_i2c_api_transfer,
+	.i2c_api.recover_bus = dw_i3c_recover_bus,
 #ifdef CONFIG_I2C_RTIO
 	.i2c_api.iodev_submit = i2c_iodev_submit_fallback,
 #endif
@@ -2685,7 +2747,7 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 	.do_ccc = dw_i3c_do_ccc,
 
 	.i3c_device_find = dw_i3c_device_find,
-
+	.recover_bus = dw_i3c_recover_bus,
 	.i3c_xfers = dw_i3c_xfers,
 #endif /* CONFIG_I3C_CONTROLLER */
 #ifdef CONFIG_I3C_TARGET
