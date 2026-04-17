@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1239,6 +1239,8 @@ static void test_main_cap_commander_broadcast_reception(void)
 		scan_and_connect();
 
 		WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+		update_security(connected_conns[i]);
 	}
 
 	/* TODO: We should use CSIP to find set members */
