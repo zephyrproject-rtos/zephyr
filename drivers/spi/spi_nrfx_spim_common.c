@@ -12,6 +12,8 @@
 #include <hal/nrf_clock.h>
 #endif
 
+#include <gpiote_nrfx.h>
+
 #define WAKE_PIN_START_FLAGS (GPIO_INPUT | GPIO_PULL_UP)
 #define WAKE_PIN_STOP_FLAGS (GPIO_INPUT | GPIO_PULL_DOWN | GPIO_DISCONNECTED)
 
