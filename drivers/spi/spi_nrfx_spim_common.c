@@ -50,17 +50,20 @@ void spi_nrfx_spim_common_cs_set(const struct device *dev, const struct spi_conf
 	struct spi_nrfx_common_data *dev_data = dev->data;
 	NRF_SPIM_Type *spim_reg = dev_data->spim.p_reg;
 
-	if (spi_cfg->cs.cs_is_gpio == false && NRF_SPIM_IS_320MHZ_SPIM(spim_reg) == false) {
-		return;
-	}
+	/*
+	 * Enable the SPIM peripheral so it drives the SPI bus, ensuring correct initial bus state
+	 * before transfer starts, and setting CS if its controlled by the SPIM peripheral.
+	 */
+	nrfy_spim_enable(spim_reg);
 
 	if (spi_cfg->cs.cs_is_gpio) {
 		gpio_pin_set_dt(&spi_cfg->cs.gpio, 1);
-	} else {
-		nrfy_spim_enable(spim_reg);
 	}
 
-	k_busy_wait(spi_cfg->cs.delay);
+	/* Wait only if we control the CS pin */
+	if (spi_cfg->cs.cs_is_gpio || NRF_SPIM_IS_320MHZ_SPIM(spim_reg)) {
+		k_busy_wait(spi_cfg->cs.delay);
+	}
 }
 
 void spi_nrfx_spim_common_cs_clear(const struct device *dev, const struct spi_config *spi_cfg)
@@ -68,17 +71,20 @@ void spi_nrfx_spim_common_cs_clear(const struct device *dev, const struct spi_co
 	struct spi_nrfx_common_data *dev_data = dev->data;
 	NRF_SPIM_Type *spim_reg = dev_data->spim.p_reg;
 
-	if (spi_cfg->cs.cs_is_gpio == false && NRF_SPIM_IS_320MHZ_SPIM(spim_reg) == false) {
-		return;
+	/* Wait only if we control the CS pin */
+	if (spi_cfg->cs.cs_is_gpio || NRF_SPIM_IS_320MHZ_SPIM(spim_reg)) {
+		k_busy_wait(spi_cfg->cs.delay);
 	}
-
-	k_busy_wait(spi_cfg->cs.delay);
 
 	if (spi_cfg->cs.cs_is_gpio) {
 		gpio_pin_set_dt(&spi_cfg->cs.gpio, 0);
-	} else {
-		nrfy_spim_disable(spim_reg);
 	}
+
+	/*
+	 * Disable the SPIM peripheral so it no longer drives the SPI bus, clearing CS if its
+	 * controlled by the SPIM peripheral.
+	 */
+	nrfy_spim_disable(spim_reg);
 }
 
 static void evt_handler(nrfx_spim_event_t const *evt, void *data)
