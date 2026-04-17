@@ -41,3 +41,9 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&main_gpio0_2 {
+	pinctrl-0 = <&main_gpio0_89>;
+	pinctrl-names = "default";
+	status = "okay";
+};
