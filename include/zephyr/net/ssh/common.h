@@ -29,6 +29,8 @@ extern "C" {
 
 struct ssh_transport;
 struct ssh_channel;
+struct ssh_client;
+struct ssh_server;
 
 enum ssh_auth_type {
 	SSH_AUTH_NONE,
@@ -125,6 +127,47 @@ int ssh_channel_read_stderr(struct ssh_channel *channel, void *data, uint32_t le
 int ssh_channel_write_stderr(struct ssh_channel *channel, const void *data, uint32_t len);
 
 /** @endcond */
+
+/**
+ * @typedef ssh_service_client_cb_t
+ * @brief Callback used while iterating over SSH client connections
+ *
+ * @param ssh Pointer to the SSH client instance
+ * @param instance SSH client instance id
+ * @param user_data A valid pointer to user data or NULL
+ */
+typedef void (*ssh_service_client_cb_t)(struct ssh_client *ssh,
+					int instance,
+					void *user_data);
+
+/**
+ * @brief Go through all SSH client connections.
+ *
+ * @param cb User-supplied callback function to call
+ * @param user_data User specified data
+ */
+void ssh_client_foreach(ssh_service_client_cb_t cb, void *user_data);
+
+/**
+ * @typedef ssh_service_server_cb_t
+ * @brief Callback used while iterating over SSH server connections
+ *
+ * @param sshd Pointer to the SSH server instance
+ * @param instance SSH server instance id
+ * @param user_data A valid pointer to user data or NULL
+ */
+typedef void (*ssh_service_server_cb_t)(struct ssh_server *sshd,
+					int instance,
+					void *user_data);
+
+/**
+ * @brief Go through all SSH server connections.
+ *
+ * @param cb User-supplied callback function to call
+ * @param user_data User specified data
+ */
+void ssh_server_foreach(ssh_service_server_cb_t cb, void *user_data);
+
 
 #ifdef __cplusplus
 }
