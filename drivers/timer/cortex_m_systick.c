@@ -6,7 +6,6 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
-#include <zephyr/spinlock.h>
 #include <cmsis_core.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
@@ -46,8 +45,6 @@ extern unsigned int z_clock_hw_cycles_per_sec;
  * default, with an absolute minimum of 1k cyc.
  */
 #define MIN_DELAY MAX(1024U, ((uint32_t)CYC_PER_TICK/16U))
-
-static struct k_spinlock lock;
 
 static uint32_t last_load;
 
@@ -113,7 +110,7 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 		return;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = sys_clock_lock();
 
 	/* Publish the new frequency. */
 	z_clock_hw_cycles_per_sec = new_hz;
@@ -156,7 +153,7 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 		SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
 	}
 
-	k_spin_unlock(&lock, key);
+	sys_clock_unlock(key);
 }
 #endif /* CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE */
 
@@ -363,6 +360,8 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 	uint32_t dcycles;
 	uint32_t dticks;
 
+	k_spinlock_key_t key = sys_clock_lock();
+
 	/* Update overflow_cyc and clear COUNTFLAG by invoking elapsed() */
 	elapsed();
 
@@ -379,6 +378,7 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 	 * sys_clock_idle_exit function.
 	 */
 	if (timeout_idle) {
+		sys_clock_unlock(key);
 		ISR_DIRECT_PM();
 		z_arm_int_exit();
 
@@ -403,9 +403,9 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 		dticks = dcycles / CYC_PER_TICK;
 		announced_cycles += dticks * CYC_PER_TICK;
 		last_elapsed = 0U;
-		sys_clock_announce(dticks);
+		sys_clock_announce_locked(dticks, key);
 	} else {
-		sys_clock_announce(1);
+		sys_clock_announce_locked(1, key);
 	}
 
 	ISR_DIRECT_PM();
@@ -479,8 +479,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
 
 #if defined(CONFIG_TICKLESS_KERNEL)
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
 	/*
 	 * Sync cycle_count with current HW state, capturing any wrap that
 	 * might have occurred since the last sync point. The kernel's
@@ -566,8 +564,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	} else {
 		cycle_count += val1 - val2;
 	}
-
-	k_spin_unlock(&lock, key);
 #endif
 }
 
@@ -577,33 +573,31 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint32_t unannounced = cycle_count - announced_cycles;
 	uint32_t cyc = elapsed() + unannounced;
 	uint32_t dticks = cyc / CYC_PER_TICK;
 
 	last_elapsed = dticks;
-	k_spin_unlock(&lock, key);
 	return dticks;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = sys_clock_lock();
 	uint32_t ret = cycle_count;
 
 	ret += elapsed();
-	k_spin_unlock(&lock, key);
+	sys_clock_unlock(key);
 	return ret;
 }
 
 #ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
 uint64_t sys_clock_cycle_get_64(void)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = sys_clock_lock();
 	uint64_t ret = cycle_count + elapsed();
 
-	k_spin_unlock(&lock, key);
+	sys_clock_unlock(key);
 	return ret;
 }
 #endif
@@ -671,19 +665,21 @@ void sys_clock_idle_exit(void)
 		/* SysTick was stopped or placed under reset.
 		 * Restart the timer from scratch.
 		 */
-		K_SPINLOCK(&lock) {
-			last_load = CYC_PER_TICK;
-			SysTick->LOAD = last_load - 1;
-			SysTick->VAL = 0; /* resets timer to last_load */
-			if (!IS_ENABLED(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)) {
-				SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
-			} else {
-				NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
-				SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
-						  SysTick_CTRL_TICKINT_Msk |
-						  SYSTICK_CTRL_CLKSOURCE_MSK_GET());
-			}
+		k_spinlock_key_t key = sys_clock_lock();
+
+		last_load = CYC_PER_TICK;
+		SysTick->LOAD = last_load - 1;
+		SysTick->VAL = 0; /* resets timer to last_load */
+		if (!IS_ENABLED(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)) {
+			SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+		} else {
+			NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+			SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
+					  SysTick_CTRL_TICKINT_Msk |
+					  SYSTICK_CTRL_CLKSOURCE_MSK_GET());
 		}
+
+		sys_clock_unlock(key);
 	}
 }
 
