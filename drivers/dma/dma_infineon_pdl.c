@@ -575,10 +575,10 @@ static DEVICE_API(dma, ifx_cat1_dma_api) = {
 		.channel = n,                                                                      \
 	};                                                                                         \
                                                                                                    \
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, n, irq), DT_INST_IRQ_BY_IDX(inst, n, priority),       \
-		    ifx_cat1_dma_isr, &irq_context##inst##n, 0);                                   \
+	IRQ_CONNECT(DT_INST_IRQN_BY_IDX(inst, n), DT_INST_IRQ_BY_IDX(inst, n, priority),	   \
+		    ifx_cat1_dma_isr, &irq_context##inst##n, 0);				   \
                                                                                                    \
-	ifx_cat1_dma_channels##inst[n].irq = DT_INST_IRQ_BY_IDX(inst, n, irq);
+	ifx_cat1_dma_channels##inst[n].irq = DT_INST_IRQN_BY_IDX(inst, n);
 
 #define CONFIGURE_ALL_IRQS(inst, n) LISTIFY(n, IRQ_CONFIGURE, (), inst)
 
