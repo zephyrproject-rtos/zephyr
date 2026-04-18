@@ -774,26 +774,18 @@ struct ztest_unit_test *z_ztest_get_next_test(const struct ztest_suite_node *sui
 }
 
 #if CONFIG_ZTEST_SHUFFLE
-static void z_ztest_shuffle(bool shuffle, void *dest[], intptr_t start, size_t num_items,
-			    size_t element_size)
+static void shuffle_array(void **arr, size_t n)
 {
-	/* Initialize dest array */
-	for (size_t i = 0; i < num_items; ++i) {
-		dest[i] = (void *)(start + (i * element_size));
+	if (n <= 1) {
+		return;
 	}
-	void *tmp;
 
-	/* Shuffle dest array */
-	if (shuffle) {
-		for (size_t i = num_items - 1; i > 0; i--) {
-			int j = sys_rand32_get() % (i + 1);
+	for (size_t i = n - 1; i > 0; i--) {
+		size_t j = sys_rand32_get() % (i + 1);
+		void *tmp = arr[j];
 
-			if (i != j) {
-				tmp = dest[j];
-				dest[j] = dest[i];
-				dest[i] = tmp;
-			}
-		}
+		arr[j] = arr[i];
+		arr[i] = tmp;
 	}
 }
 #endif
@@ -801,7 +793,6 @@ static void z_ztest_shuffle(bool shuffle, void *dest[], intptr_t start, size_t n
 static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuffle, int suite_iter,
 				      int case_iter, void *param)
 {
-	struct ztest_unit_test *test = NULL;
 	void *data = NULL;
 	int fail = 0;
 	int tc_result = TC_PASS;
@@ -842,63 +833,47 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 		data = param;
 	}
 
+	struct ztest_unit_test *suite_tests[ZTEST_TEST_COUNT];
+	size_t suite_test_count = 0;
+
+	STRUCT_SECTION_FOREACH(ztest_unit_test, t) {
+		if (t->suite == suite) {
+			suite_tests[suite_test_count++] = t;
+		}
+	}
+
+#ifndef CONFIG_ZTEST_SHUFFLE
+	ARG_UNUSED(shuffle);
+#endif
+
 	for (int i = 0; i < case_iter; i++) {
 #ifdef CONFIG_ZTEST_SHUFFLE
-		STRUCT_SECTION_START_EXTERN(ztest_unit_test);
-		struct ztest_unit_test *tests_to_run[ZTEST_TEST_COUNT];
-
-		memset(tests_to_run, 0, ZTEST_TEST_COUNT * sizeof(struct ztest_unit_test *));
-		z_ztest_shuffle(shuffle, (void **)tests_to_run,
-				(intptr_t)STRUCT_SECTION_START(ztest_unit_test), ZTEST_TEST_COUNT,
-				sizeof(struct ztest_unit_test));
-		for (size_t j = 0; j < ZTEST_TEST_COUNT; ++j) {
-			test = tests_to_run[j];
-			/* Make sure that the test belongs to this suite */
-			if (test->suite != suite) {
-				continue;
-			}
-			if (ztest_api.should_test_run(suite->name, test->name)) {
-				test->stats->run_count++;
-				tc_result = run_test(suite, test, data);
-				if (tc_result == TC_PASS) {
-					test->stats->pass_count++;
-				} else if (tc_result == TC_SKIP) {
-					test->stats->skip_count++;
-				} else if (tc_result == TC_FAIL) {
-					test->stats->fail_count++;
-				}
-				if (tc_result == TC_FAIL) {
-					fail++;
-				}
-			}
-
-			if ((fail && FAIL_FAST) || test_status == ZTEST_STATUS_CRITICAL_ERROR) {
-				break;
-			}
-		}
-#else
-		while (((test = z_ztest_get_next_test(suite, test)) != NULL)) {
-			if (ztest_api.should_test_run(suite->name, test->name)) {
-				test->stats->run_count++;
-				tc_result = run_test(suite, test, data);
-				if (tc_result == TC_PASS) {
-					test->stats->pass_count++;
-				} else if (tc_result == TC_SKIP) {
-					test->stats->skip_count++;
-				} else if (tc_result == TC_FAIL) {
-					test->stats->fail_count++;
-				}
-
-				if (tc_result == TC_FAIL) {
-					fail++;
-				}
-			}
-
-			if ((fail && FAIL_FAST) || test_status == ZTEST_STATUS_CRITICAL_ERROR) {
-				break;
-			}
+		if (shuffle) {
+			shuffle_array((void **)suite_tests, suite_test_count);
 		}
 #endif
+		for (size_t j = 0; j < suite_test_count; ++j) {
+			struct ztest_unit_test *test = suite_tests[j];
+
+			if (ztest_api.should_test_run(suite->name, test->name)) {
+				test->stats->run_count++;
+				tc_result = run_test(suite, test, data);
+				if (tc_result == TC_PASS) {
+					test->stats->pass_count++;
+				} else if (tc_result == TC_SKIP) {
+					test->stats->skip_count++;
+				} else if (tc_result == TC_FAIL) {
+					test->stats->fail_count++;
+				}
+				if (tc_result == TC_FAIL) {
+					fail++;
+				}
+			}
+
+			if ((fail && FAIL_FAST) || test_status == ZTEST_STATUS_CRITICAL_ERROR) {
+				break;
+			}
+		}
 		if (test_status == ZTEST_STATUS_OK && fail != 0) {
 			test_status = ZTEST_STATUS_HAS_FAILURE;
 		}
@@ -1073,15 +1048,18 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 	gcov_reset_all_counts();
 #endif
 
-#ifdef CONFIG_ZTEST_SHUFFLE
-	STRUCT_SECTION_START_EXTERN(ztest_suite_node);
 	struct ztest_suite_node *suites_to_run[ZTEST_SUITE_COUNT];
+	size_t suites_count = 0;
 
-	memset(suites_to_run, 0, ZTEST_SUITE_COUNT * sizeof(struct ztest_suite_node *));
-	z_ztest_shuffle(shuffle, (void **)suites_to_run,
-			(intptr_t)STRUCT_SECTION_START(ztest_suite_node),
-			ZTEST_SUITE_COUNT, sizeof(struct ztest_suite_node));
-	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
+	STRUCT_SECTION_FOREACH(ztest_suite_node, s) {
+		suites_to_run[suites_count++] = s;
+	}
+#ifdef CONFIG_ZTEST_SHUFFLE
+	if (shuffle) {
+		shuffle_array((void **)suites_to_run, suites_count);
+	}
+#endif
+	for (size_t i = 0; i < suites_count; ++i) {
 		count += __ztest_run_test_suite(suites_to_run[i], state, shuffle, suite_iter,
 						case_iter, param);
 		/* Stop running tests if we have a critical error or if we have a failure and
@@ -1092,18 +1070,6 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 			break;
 		}
 	}
-#else
-	STRUCT_SECTION_FOREACH(ztest_suite_node, ptr) {
-		count += __ztest_run_test_suite(ptr, state, shuffle, suite_iter, case_iter, param);
-		/* Stop running tests if we have a critical error or if we have a failure and
-		 * FAIL_FAST was set
-		 */
-		if (test_status == ZTEST_STATUS_CRITICAL_ERROR ||
-		    (test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
-			break;
-		}
-	}
-#endif
 
 	return count;
 }
@@ -1159,11 +1125,8 @@ void ztest_run_all(const void *state, bool shuffle, int suite_iter, int case_ite
 
 void __weak test_main(void)
 {
-#if CONFIG_ZTEST_SHUFFLE
-	ztest_run_all(NULL, true, NUM_ITER_PER_SUITE, NUM_ITER_PER_TEST);
-#else
-	ztest_run_all(NULL, false, NUM_ITER_PER_SUITE, NUM_ITER_PER_TEST);
-#endif
+	ztest_run_all(NULL, IS_ENABLED(CONFIG_ZTEST_SHUFFLE),
+			NUM_ITER_PER_SUITE, NUM_ITER_PER_TEST);
 	ztest_verify_all_test_suites_ran();
 }
 
