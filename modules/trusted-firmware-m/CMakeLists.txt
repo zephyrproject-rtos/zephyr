@@ -291,6 +291,17 @@ if(CONFIG_BUILD_WITH_TFM)
   if(CONFIG_SOC_SERIES_PSE84)
     include(${ZEPHYR_BASE}/soc/infineon/edge/pse84/pse84_metadata.cmake)
     list(APPEND TFM_CMAKE_ARGS -DIFX_EPC=epc2)
+
+    # Use local hal_infineon assets instead of fetching from GitHub
+    list(APPEND TFM_CMAKE_ARGS
+      -DIFX_CORE_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/core-lib
+      -DIFX_DEV_SUPPORT_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-dsl-pse8xxgp
+      -DIFX_MTB_SRF_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-srf
+      -DIFX_ABSTRACTION_RTOS_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/abstraction-rtos
+      -DIFX_MTB_IPC_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-ipc
+      -DIFX_DEVICE_DB_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/device-db
+      -DIFX_BSP_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-template-pse8xxgp/files
+    )
   endif()
 
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
