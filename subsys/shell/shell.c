@@ -50,6 +50,19 @@ BUILD_ASSERT(SHELL_THREAD_PRIORITY >=
 BUILD_ASSERT(CONFIG_SHELL_BYPASS_READ_BUF_SIZE < CONFIG_SHELL_STACK_SIZE,
 		  "Bypass buffer size must be smaller than shell stack size");
 
+#if defined(CONFIG_SHELL_ALIASES)
+/* We have one alias defined by default. */
+const struct shell_alias shell_aliases[] = {
+	{ "?", "help" },
+
+#if defined(CONFIG_SHELL_ALIASES_HAS_FILE)
+#include "generated-shell-aliases.inc"
+#endif
+	/* NULL is used to mark the end of the array */
+	{ NULL, NULL }
+};
+#endif /* CONFIG_SHELL_ALIASES */
+
 static inline void receive_state_change(const struct shell *sh,
 					enum shell_receive_state state)
 {
@@ -668,6 +681,58 @@ static int execute(const struct shell *sh)
 
 	if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
 		z_shell_wildcard_prepare(sh);
+	}
+
+	if (IS_ENABLED(CONFIG_SHELL_ALIASES)) {
+		const char *alias = NULL;
+		char *first_space = strstr(cmd_buf, " ");
+		char *remaining_cmd = first_space ? first_space + 1 : NULL;
+		int ret;
+
+		if (first_space != NULL) {
+			/* Temporarily terminate command buffer at first space to
+			 * get root command for alias search.
+			 */
+			*first_space = '\0';
+		}
+
+		ret = z_shell_find_alias(cmd_buf, &alias);
+		if (ret == 0 && alias != NULL) {
+			size_t alias_len = z_shell_strlen(alias);
+			size_t cmd_buf_len = z_shell_strlen(remaining_cmd);
+			size_t separator_len = (remaining_cmd != NULL) ? 1 : 0;
+			size_t new_cmd_len = alias_len + separator_len + cmd_buf_len + 1;
+
+			if (new_cmd_len > CONFIG_SHELL_CMD_BUFF_SIZE) {
+				if (first_space != NULL) {
+					*first_space = ' ';
+				}
+
+				z_shell_fprintf(sh, SHELL_ERROR,
+						"Alias expansion too long\n");
+			} else {
+				/* Move the part of command buffer after root
+				 * command to the end of alias.
+				 */
+				if (remaining_cmd != NULL) {
+					memmove(cmd_buf + alias_len + 1, remaining_cmd,
+						cmd_buf_len + 1);
+				}
+
+				/* Copy alias to the beginning of command buffer */
+				memcpy(cmd_buf, alias, alias_len);
+
+				if (remaining_cmd == NULL) {
+					cmd_buf[alias_len] = '\0';
+				} else {
+					cmd_buf[alias_len] = ' ';
+				}
+			}
+		} else {
+			if (first_space != NULL) {
+				*first_space = ' ';
+			}
+		}
 	}
 
 	/* Parent present means we are in select mode. */

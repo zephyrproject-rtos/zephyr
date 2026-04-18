@@ -465,6 +465,39 @@ config SHELL_REMOTE_CLI_STACK_SIZE
 	depends on !SHELL_REMOTE_CLI_KWORK
 
 endif
+
+config SHELL_ALIASES
+	bool "Support command aliases"
+	default y
+	help
+	  Aliases can be used the same way as in Linux shells. You can rename
+	  an existing command if you want to have shortcuts.
+	  So instead of typing "kernel thread stacks" you could have an alias
+	  called
+	     stacks="kernel thread stacks"
+	  so when typing "stacks", the full command "kernel thread stacks"
+	  would be executed instead.
+
+config SHELL_CMDS_ALIASES
+	bool "Aliases command"
+	depends on SHELL_CMDS
+	depends on SHELL_ALIASES
+	default y
+	help
+	  This option shows current command aliases.
+
+config SHELL_ALIASES_FILE
+	string "Host file where aliases are stored"
+	depends on SHELL_ALIASES
+	help
+	  The aliases file will store each alias one line at a time.
+	  User must create this file on host side.
+
+config SHELL_ALIASES_HAS_FILE
+	bool
+	default y if SHELL_ALIASES_FILE != ""
+	depends on SHELL_ALIASES
+
 source "subsys/shell/modules/Kconfig"
 
 endif # SHELL
