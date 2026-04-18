@@ -17,6 +17,10 @@ TYPE_SECTION_END_EXTERN(union shell_cmd_entry, shell_dynamic_subcmds);
 TYPE_SECTION_START_EXTERN(union shell_cmd_entry, shell_subcmds);
 TYPE_SECTION_END_EXTERN(union shell_cmd_entry, shell_subcmds);
 
+#if defined(CONFIG_SHELL_ALIASES)
+extern const struct shell_alias shell_aliases[];
+#endif
+
 /* Macro creates empty entry at the bottom of the memory section with subcommands
  * it is used to detect end of subcommand set that is located before this marker.
  */
@@ -368,6 +372,36 @@ const struct shell_static_entry *z_shell_find_cmd(
 	}
 
 	return NULL;
+}
+
+/* Function returns pointer to a command matching given alias.
+ *
+ * @param cmd_str  Command pattern to be found.
+ * @param output   The actual command to execute instead of the alias.
+ *
+ * @return 0 if alias was found and output is set, -ENOENT if alias was
+ *         not found and -ENOTSUP if aliases are not supported.
+ */
+int z_shell_find_alias(const char *cmd_str, const char **output)
+{
+#if defined(CONFIG_SHELL_ALIASES)
+	int idx = 0;
+
+	while (shell_aliases[idx].alias != NULL) {
+		if (strcmp(shell_aliases[idx].alias, cmd_str) == 0) {
+			*output = shell_aliases[idx].command;
+			return 0;
+		}
+
+		idx++;
+	}
+
+	return -ENOENT;
+#else
+	ARG_UNUSED(cmd_str);
+	ARG_UNUSED(output);
+	return -ENOTSUP;
+#endif
 }
 
 const struct shell_static_entry *z_shell_get_last_command(
