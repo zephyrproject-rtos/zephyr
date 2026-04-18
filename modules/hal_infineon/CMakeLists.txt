@@ -71,6 +71,7 @@ if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
   zephyr_library_compile_definitions_ifdef(CONFIG_CPU_CORTEX_M55 COMPONENT_CM55)
   zephyr_library_compile_definitions_ifdef(CONFIG_CPU_CORTEX_M55 CORE_NAME_CM55_0)
 
+  add_subdirectory(mtb-template-pse8xxgp)
   add_subdirectory(mtb-srf)
   add_subdirectory(serial-memory)
   add_subdirectory(zephyr-ifx-cycfg)
