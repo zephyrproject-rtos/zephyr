@@ -64,6 +64,23 @@ config MCUBOOT_SIGNATURE_KEY_FILE
 	  must sign and prepare the Zephyr binaries manually to be bootable
 	  from MCUboot.
 
+config MCUBOOT_SIGNATURE_KEY_FILE_2
+	string "Path to a second mcuboot signing key file (optional)"
+	default ""
+	help
+	  Path to an optional second signing key known to the application
+	  build. Corresponds to the bootloader's BOOT_SIGNATURE_KEY_FILE_2;
+	  see SB_CONFIG_BOOT_SIGNATURE_KEY_FILE_2 for end-to-end semantics.
+
+	  The default Zephyr imgtool signing flow signs with
+	  MCUBOOT_SIGNATURE_KEY_FILE only; this option does not cause
+	  imgtool to dual-sign. It exposes the secondary key path to
+	  custom signing scripts and pipelines that may produce a
+	  separately-signed artifact (for example, a dev-signed variant
+	  alongside a prod-signed default).
+
+	  Leave empty (the default) to disable.
+
 config MCUBOOT_ENCRYPTION_KEY_FILE
 	string "Path to the mcuboot encryption key file"
 	default ""

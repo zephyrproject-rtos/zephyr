@@ -39,6 +39,12 @@ For more information on these and other related configuration options, see:
 - ``SB_CONFIG_BOOTLOADER_MCUBOOT``: build the application for loading by MCUboot
 - ``SB_CONFIG_BOOT_SIGNATURE_KEY_FILE``: the key file to use when signing images. If you have
   your own key, change this appropriately
+- ``SB_CONFIG_BOOT_SIGNATURE_KEY_FILE_2``: optional second key that MCUboot will accept for
+  image verification in addition to the primary key. Both keys must use the same signature
+  type. Typical use: development bootloaders that should boot both production and
+  development images, while production bootloaders remain locked to the production key
+  alone. Leave unset (the default) to produce a bootloader identical to one built without
+  this option
 - :kconfig:option:`CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS`: optional additional command line arguments
   for ``imgtool``
 - :kconfig:option:`CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE`: also generate a confirmed image,

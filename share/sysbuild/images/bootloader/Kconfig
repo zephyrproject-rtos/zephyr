@@ -201,7 +201,28 @@ config BOOT_SIGNATURE_KEY_FILE
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-rsa-2048.pem" if BOOT_SIGNATURE_TYPE_RSA
 	default ""
 	help
-	  Absolute path to signing key file to use with MCUBoot.
+	  Path to the signing key file used by MCUboot. May be absolute or
+	  relative; relative paths are resolved against the application
+	  source directory.
+
+config BOOT_SIGNATURE_KEY_FILE_2
+	string "Second signing PEM key file (optional)" if !BOOT_SIGNATURE_TYPE_NONE
+	default ""
+	help
+	  Optional second signing key. When non-empty, the MCUboot bootloader
+	  embeds both public keys and accepts images signed with either
+	  BOOT_SIGNATURE_KEY_FILE or this key (via bootutil_find_key).
+	  Both keys must use the same BOOT_SIGNATURE_TYPE. Typical use:
+	  development bootloaders that should boot both production and
+	  development images, while production bootloaders accept only the
+	  production key. May be absolute or relative; relative paths are
+	  resolved against the application source directory. A PUBLIC-only
+	  PEM is sufficient here — the bootloader needs only the public
+	  half of this key to verify signatures. Leave empty (the default)
+	  to disable; when empty, the compiled bootloader is bit-identical
+	  to one built without this option. Mutually exclusive with
+	  MCUBOOT_HW_KEY / MCUBOOT_BUILTIN_KEY (enforced at the MCUboot
+	  Kconfig level).
 
 config SUPPORT_BOOT_ENCRYPTION
 	bool

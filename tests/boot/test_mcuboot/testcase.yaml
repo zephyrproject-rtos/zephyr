@@ -94,3 +94,12 @@ tests:
     extra_args:
       - SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE=y
       - swapped_app_CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE=y
+  bootloader.mcuboot.dual_key:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - frdm_k64f
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    extra_args:
+      - SB_CONFIG_BOOT_SIGNATURE_TYPE_ED25519=y
+      - SB_CONFIG_BOOT_SIGNATURE_KEY_FILE_2="root-ed25519-2.pem"

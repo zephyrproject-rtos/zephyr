@@ -1535,6 +1535,7 @@ flagged.
         "BOOT_SHARE_DATA",  # Used in Kconfig text
         "BOOT_SHARE_DATA_BOOTINFO",  # Used in (sysbuild-based) test
         "BOOT_SIGNATURE_KEY_FILE",  # MCUboot setting used by sysbuild
+        "BOOT_SIGNATURE_KEY_FILE_2",  # MCUboot setting used by sysbuild
         "BOOT_SIGNATURE_TYPE_ECDSA_P256",  # MCUboot setting used by sysbuild
         "BOOT_SIGNATURE_TYPE_ED25519",  # MCUboot setting used by sysbuild
         "BOOT_SIGNATURE_TYPE_NONE",  # MCUboot setting used by sysbuild

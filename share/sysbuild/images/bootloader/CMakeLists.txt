@@ -17,7 +17,19 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
   # Link the footer size output of this MCUboot build with the main sysbuild image
   set_target_properties(${image} PROPERTIES MCUBOOT_FOOTER_UPDATE_IMAGES ${DEFAULT_IMAGE})
 
-  set_config_string(${image} CONFIG_BOOT_SIGNATURE_KEY_FILE "${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}")
+  # Normalize relative signing-key paths to absolute, resolved against the
+  # main application directory. This lets an application ship keys under its
+  # own source tree and reference them with a simple relative path in
+  # `sysbuild.conf` (e.g. `SB_CONFIG_BOOT_SIGNATURE_KEY_FILE_2="keys/mykey.pem"`),
+  # matching the resolution the app-side signing flow in `cmake/mcuboot.cmake`
+  # already performs against APPLICATION_CONFIG_DIR.
+  foreach(sb_sym BOOT_SIGNATURE_KEY_FILE BOOT_SIGNATURE_KEY_FILE_2)
+    set(key_path "${SB_CONFIG_${sb_sym}}")
+    if(key_path AND NOT IS_ABSOLUTE "${key_path}")
+      cmake_path(ABSOLUTE_PATH key_path BASE_DIRECTORY "${APP_DIR}" NORMALIZE)
+    endif()
+    set_config_string(${image} CONFIG_${sb_sym} "${key_path}")
+  endforeach()
 
   if(SB_CONFIG_MCUBOOT_DIRECT_XIP_GENERATE_VARIANT)
     ExternalZephyrVariantProject_Add(

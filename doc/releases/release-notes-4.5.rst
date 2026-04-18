@@ -108,6 +108,12 @@ Libraries / Subsystems
 Other notable changes
 *********************
 
+* MCUboot sysbuild gained ``SB_CONFIG_BOOT_SIGNATURE_KEY_FILE_2`` for optionally
+  embedding a second verification key in the bootloader. When set, MCUboot
+  accepts images signed with either the primary or the second key. See
+  :ref:`build-signing` and the
+  :zephyr:code-sample:`mcuboot_dual_key` sample.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
