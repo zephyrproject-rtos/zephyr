@@ -76,6 +76,12 @@ int _zbus_init(void)
 		++(curr->data->observers_end_idx);
 	}
 
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION)
+	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
+		chan->data->msg_subscriber_pool = &_zbus_msg_subscribers_pool;
+	}
+#endif
+
 #if defined(CONFIG_ZBUS_CHANNEL_ID)
 	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
 		/* Check for duplicate channel IDs */
