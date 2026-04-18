@@ -38,6 +38,12 @@ properties:
       Left blank if the pin is not connected in your
       application.
 
+  no-auto-reset:
+    type: boolean
+    description:
+      This flag disables the automatic reset to allow retaining port
+      states.
+
   "#gpio-cells":
     const: 2
 
