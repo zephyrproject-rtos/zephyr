@@ -15,6 +15,15 @@
 #include <stddef.h>
 
 /** @cond INTERNAL_HIDDEN */
+/*
+ * Identifier builders for the linker-visible symbols that the ZTEST_BENCHMARK*()
+ * macros generate. Use when defining a symbol or when taking its reference.
+ */
+#define Z_ZTEST_BENCHMARK_SUITE_NODE(suite)        z_ztest_benchmark_suite_##suite
+#define Z_ZTEST_BENCHMARK_NODE(suite, bench)       z_ztest_benchmark_##suite##_##bench
+#define Z_ZTEST_BENCHMARK_TIMED_NODE(suite, bench) z_ztest_benchmark_timed_##suite##_##bench
+#define Z_ZTEST_BENCHMARK_FN(suite, bench)         z_ztest_benchmark_##suite##_##bench##_fn
+
 typedef void (*ztest_benchmark_fn_t)(void);
 struct ztest_benchmark_suite {
 	const char *name;
@@ -77,12 +86,13 @@ void benchmark_main(void);
  * @param setup_fn Function to run before the suite
  * @param teardown_fn Function to run after the suite
  */
-#define ZTEST_BENCHMARK_SUITE(suite, setup_fn, teardown_fn)			\
-	static const STRUCT_SECTION_ITERABLE(ztest_benchmark_suite, suite) =	\
-	{									\
-		.name = #suite,							\
-		.setup = setup_fn,						\
-		.teardown = teardown_fn,					\
+#define ZTEST_BENCHMARK_SUITE(suite, setup_fn, teardown_fn)				\
+	static const STRUCT_SECTION_ITERABLE(ztest_benchmark_suite,			\
+					     Z_ZTEST_BENCHMARK_SUITE_NODE(suite)) =	\
+	{										\
+		.name = #suite,								\
+		.setup = setup_fn,							\
+		.teardown = teardown_fn,						\
 	}
 
 /**
@@ -95,17 +105,18 @@ void benchmark_main(void);
  * @param teardown_fn Function to run after the benchmark
  */
 #define ZTEST_BENCHMARK_SETUP_TEARDOWN(suite_name, benchmark, samples, setup_fn, teardown_fn)	\
-	static __noinline void benchmark##_fn(void);						\
-	static const STRUCT_SECTION_ITERABLE(ztest_benchmark, benchmark) =			\
+	static __noinline void Z_ZTEST_BENCHMARK_FN(suite_name, benchmark)(void);		\
+	static const STRUCT_SECTION_ITERABLE(ztest_benchmark,					\
+					     Z_ZTEST_BENCHMARK_NODE(suite_name, benchmark)) =	\
 	{											\
 		.name = #benchmark,								\
 		.iterations = samples,								\
 		.setup = setup_fn,								\
-		.run = benchmark##_fn,								\
 		.teardown = teardown_fn,							\
-		.suite = &suite_name,								\
+		.run = Z_ZTEST_BENCHMARK_FN(suite_name, benchmark),				\
+		.suite = &Z_ZTEST_BENCHMARK_SUITE_NODE(suite_name),				\
 	};											\
-	static __noinline void benchmark##_fn(void)
+	static __noinline void Z_ZTEST_BENCHMARK_FN(suite_name, benchmark)(void)
 
 
 /**
@@ -118,17 +129,18 @@ void benchmark_main(void);
  * @param teardown_fn Function to run after the benchmark
  */
 #define ZTEST_BENCHMARK_TIMED_SETUP_TEARDOWN(testsuite, benchmark, duration, setup_fn, teardown_fn)\
-	static __noinline void benchmark##_fn(void);						\
-	static const STRUCT_SECTION_ITERABLE(ztest_benchmark_timed, benchmark) =		\
+	static __noinline void Z_ZTEST_BENCHMARK_FN(testsuite, benchmark)(void);		\
+	static const STRUCT_SECTION_ITERABLE(ztest_benchmark_timed,				\
+					Z_ZTEST_BENCHMARK_TIMED_NODE(testsuite, benchmark)) =	\
 	{											\
 		.name = #benchmark,								\
 		.duration_ms = duration,							\
 		.setup = setup_fn,								\
-		.run = benchmark##_fn,								\
+		.run = Z_ZTEST_BENCHMARK_FN(testsuite, benchmark),				\
 		.teardown = teardown_fn,							\
-		.suite = &testsuite,								\
+		.suite = &Z_ZTEST_BENCHMARK_SUITE_NODE(testsuite),				\
 	};											\
-	static __noinline void benchmark##_fn(void)
+	static __noinline void Z_ZTEST_BENCHMARK_FN(testsuite, benchmark)(void)
 
 /**
  * @brief Define a benchmark without setup and teardown functions
