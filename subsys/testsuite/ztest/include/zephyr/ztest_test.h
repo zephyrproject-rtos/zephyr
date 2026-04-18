@@ -65,10 +65,25 @@ struct ztest_expected_result_entry {
 extern struct ztest_expected_result_entry _ztest_expected_result_entry_list_start[];
 extern struct ztest_expected_result_entry _ztest_expected_result_entry_list_end[];
 
+/** @cond INTERNAL_HIDDEN */
+/*
+ * Identifier builders for the linker-visible symbols that the ZTEST*() macros
+ * generate. Use when defining a symbol or when taking its reference.
+ */
+#define Z_ZTEST_SUITE_NODE(suite)         z_ztest_test_node_##suite
+#define Z_ZTEST_SUITE_STATS(suite)        z_ztest_suite_node_stats_##suite
+#define Z_ZTEST_TEST_NODE(suite, test)    z_ztest_unit_test__##suite##__##test
+#define Z_ZTEST_TEST_STATS(suite, test)   z_ztest_unit_test_stats_##suite##_##test
+#define Z_ZTEST_TEST_FN(suite, test)      suite##_##test
+#define Z_ZTEST_TEST_WRAPPER(suite, test) _##suite##_##test##_wrapper
+#define Z_ZTEST_RULE_NODE(name)           z_ztest_test_rule_##name
+#define Z_ZTEST_EXPECT_NODE(suite, test)  z_ztest_expected_result_##suite##test
+#define Z_ZTEST_FIXTURE(suite)            struct suite##_fixture *
+/** @endcond */
+
 #define __ZTEST_EXPECT(_suite_name, _test_name, expectation)                                       \
-	static const STRUCT_SECTION_ITERABLE(                                                      \
-		ztest_expected_result_entry,                                                       \
-		UTIL_CAT(UTIL_CAT(z_ztest_expected_result_, _suite_name), _test_name)) = {         \
+	static const STRUCT_SECTION_ITERABLE(ztest_expected_result_entry,                          \
+					     Z_ZTEST_EXPECT_NODE(_suite_name, _test_name)) = {     \
 			.test_suite_name = STRINGIFY(_suite_name),                                 \
 			.test_name = STRINGIFY(_test_name),                                        \
 			.expected_result = expectation,                                            \
@@ -231,16 +246,16 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
  * @param teardown_fn The function to call after running all the tests in this suite
  */
 #define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)             \
-	struct ztest_suite_stats UTIL_CAT(z_ztest_suite_node_stats_, SUITE_NAME);                  \
+	struct ztest_suite_stats Z_ZTEST_SUITE_STATS(SUITE_NAME);                                  \
 	static const STRUCT_SECTION_ITERABLE(ztest_suite_node,                                     \
-					     UTIL_CAT(z_ztest_test_node_, SUITE_NAME)) = {         \
+					     Z_ZTEST_SUITE_NODE(SUITE_NAME)) = {                   \
 		.name = STRINGIFY(SUITE_NAME),                                                     \
 		.setup = (setup_fn),                                                               \
 		.before = (before_fn),                                                             \
 		.after = (after_fn),                                                               \
 		.teardown = (teardown_fn),                                                         \
 		.predicate = PREDICATE,                                                            \
-		.stats = &UTIL_CAT(z_ztest_suite_node_stats_, SUITE_NAME),             \
+		.stats = &Z_ZTEST_SUITE_STATS(SUITE_NAME),                                         \
 	}
 /**
  * Default entry point for running or listing registered unit tests.
@@ -407,44 +422,46 @@ void ztest_test_skip(void);
 void ztest_skip_failed_assumption(void);
 
 #define Z_TEST_P(suite, fn, t_options) \
-	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn; \
-	static void _##suite##_##fn##_wrapper(void *data); \
-	static void suite##_##fn(void *data); \
-	static STRUCT_SECTION_ITERABLE(ztest_unit_test, z_ztest_unit_test__##suite##__##fn) = { \
+	struct ztest_unit_test_stats Z_ZTEST_TEST_STATS(suite, fn); \
+	static void Z_ZTEST_TEST_WRAPPER(suite, fn)(void *data); \
+	static void Z_ZTEST_TEST_FN(suite, fn)(void *data); \
+	static STRUCT_SECTION_ITERABLE(ztest_unit_test, Z_ZTEST_TEST_NODE(suite, fn)) = { \
 		.test_suite_name = STRINGIFY(suite), \
 		.name = STRINGIFY(fn), \
-		.test = (_##suite##_##fn##_wrapper), \
+		.test = Z_ZTEST_TEST_WRAPPER(suite, fn), \
 		.thread_options = t_options, \
-		.stats = &z_ztest_unit_test_stats_##suite##_##fn \
+		.stats = &Z_ZTEST_TEST_STATS(suite, fn) \
 	}; \
-	static void _##suite##_##fn##_wrapper(void *wrapper_data) \
+	static void Z_ZTEST_TEST_WRAPPER(suite, fn)(void *wrapper_data) \
 	{ \
-		 suite##_##fn(wrapper_data); \
+		Z_ZTEST_TEST_FN(suite, fn)(wrapper_data); \
 	} \
-	static inline void suite##_##fn(void *data)
+	static inline void Z_ZTEST_TEST_FN(suite, fn)(void *data)
 
 
 #define ZTEST_P(suite, fn) Z_TEST_P(suite, fn, 0)
 
-#define Z_TEST(suite, fn, t_options, use_fixture)                                                  \
-	struct ztest_unit_test_stats z_ztest_unit_test_stats_##suite##_##fn;                       \
-	static void _##suite##_##fn##_wrapper(void *data);                                         \
-	static void suite##_##fn(                                                                  \
-		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)));              \
-	static STRUCT_SECTION_ITERABLE(ztest_unit_test, z_ztest_unit_test__##suite##__##fn) = {    \
-		.test_suite_name = STRINGIFY(suite),                                               \
+#define Z_TEST(suite_name, fn, t_options, use_fixture)                                             \
+	struct ztest_unit_test_stats Z_ZTEST_TEST_STATS(suite_name, fn);                           \
+	static void Z_ZTEST_TEST_WRAPPER(suite_name, fn)(void *data);                              \
+	static void Z_ZTEST_TEST_FN(suite_name, fn)(                                               \
+		COND_CODE_1(use_fixture, (Z_ZTEST_FIXTURE(suite_name) fixture), (void)));          \
+	static STRUCT_SECTION_ITERABLE(ztest_unit_test, Z_ZTEST_TEST_NODE(suite_name, fn)) = {     \
+		.test_suite_name = STRINGIFY(suite_name),                                          \
 		.name = STRINGIFY(fn),                                                             \
-		.test = (_##suite##_##fn##_wrapper),                                               \
+		.test = Z_ZTEST_TEST_WRAPPER(suite_name, fn),                                      \
 		.thread_options = t_options,                                                       \
-		.stats = &z_ztest_unit_test_stats_##suite##_##fn                                   \
+		.stats = &Z_ZTEST_TEST_STATS(suite_name, fn)                                       \
 	};                                                                                         \
-	static void _##suite##_##fn##_wrapper(void *wrapper_data)                                  \
+	static void Z_ZTEST_TEST_WRAPPER(suite_name, fn)(void *wrapper_data)                       \
 	{                                                                                          \
-		COND_CODE_1(use_fixture, (suite##_##fn((struct suite##_fixture *)wrapper_data);),  \
-			    (ARG_UNUSED(wrapper_data); suite##_##fn();))                           \
+		COND_CODE_1(use_fixture,                                                           \
+			(Z_ZTEST_TEST_FN(suite_name, fn)(                                          \
+				(Z_ZTEST_FIXTURE(suite_name))wrapper_data);),                      \
+			(ARG_UNUSED(wrapper_data); Z_ZTEST_TEST_FN(suite_name, fn)();))            \
 	}                                                                                          \
-	static inline void suite##_##fn(                                                           \
-		COND_CODE_1(use_fixture, (struct suite##_fixture *fixture), (void)))
+	static inline void Z_ZTEST_TEST_FN(suite_name, fn)(                                        \
+		COND_CODE_1(use_fixture, (Z_ZTEST_FIXTURE(suite_name) fixture), (void)))
 
 #define Z_ZTEST(suite, fn, t_options) Z_TEST(suite, fn, t_options, 0)
 #define Z_ZTEST_F(suite, fn, t_options) Z_TEST(suite, fn, t_options, 1)
@@ -551,7 +568,7 @@ struct ztest_test_rule {
  * @param after_each_fn The callback function (ztest_rule_cb) to call after each test (may be NULL)
  */
 #define ZTEST_RULE(name, before_each_fn, after_each_fn)                                            \
-	static STRUCT_SECTION_ITERABLE(ztest_test_rule, z_ztest_test_rule_##name) = {              \
+	static STRUCT_SECTION_ITERABLE(ztest_test_rule, Z_ZTEST_RULE_NODE(name)) = {               \
 		.before_each = (before_each_fn),                                                   \
 		.after_each = (after_each_fn),                                                     \
 	}
