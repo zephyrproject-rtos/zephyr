@@ -1166,8 +1166,9 @@ static int i2c_dw_slave_register(const struct device *dev, struct i2c_target_con
 	dw->read_in_progress = false;
 	dw->slave_cfg = cfg;
 	ret = i2c_dw_set_slave_mode(dev, cfg->address);
-	write_intr_mask(DW_INTR_MASK_RX_FULL | DW_INTR_MASK_RD_REQ | DW_INTR_MASK_TX_ABRT |
-				DW_INTR_MASK_STOP_DET,
+	write_intr_mask(DW_INTR_MASK_RX_FULL | DW_INTR_MASK_RD_REQ |
+			DW_INTR_MASK_TX_ABRT | DW_INTR_MASK_STOP_DET |
+			DW_INTR_MASK_START_DET,
 			reg_base);
 
 	return ret;
