@@ -109,7 +109,7 @@ static struct rules_tests_fixture rule_tests_fixture;
 
 static void rule_before_each(const struct ztest_unit_test *test, void *data)
 {
-	if (strcmp(test->test_suite_name, "rules_tests") == 0 &&
+	if (strcmp(test->suite->name, "rules_tests") == 0 &&
 	    strcmp(test->name, "test_rules_before_after") == 0) {
 		struct rules_tests_fixture *fixture = data;
 
@@ -126,7 +126,7 @@ static void rule_before_each(const struct ztest_unit_test *test, void *data)
 
 static void rule_after_each(const struct ztest_unit_test *test, void *data)
 {
-	if (strcmp(test->test_suite_name, "rules_tests") == 0 &&
+	if (strcmp(test->suite->name, "rules_tests") == 0 &&
 	    strcmp(test->name, "test_rules_before_after") == 0) {
 		struct rules_tests_fixture *fixture = data;
 

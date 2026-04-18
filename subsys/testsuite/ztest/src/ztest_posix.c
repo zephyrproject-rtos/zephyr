@@ -121,16 +121,15 @@ const char *ztest_get_test_args(void)
  */
 int z_ztest_list_tests(void)
 {
-	struct ztest_suite_node *ptr;
-	struct ztest_unit_test *test = NULL;
 	int test_count = 0;
+	struct ztest_unit_test *test;
 	static bool list_once = true;
 
 	if (list_once) {
-		for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
+		STRUCT_SECTION_FOREACH(ztest_suite_node, ptr) {
 			test = NULL;
-			while ((test = z_ztest_get_next_test(ptr->name, test)) != NULL) {
-				TC_PRINT("%s::%s\n", test->test_suite_name, test->name);
+			while ((test = z_ztest_get_next_test(ptr, test)) != NULL) {
+				TC_PRINT("%s::%s\n", test->suite->name, test->name);
 				test_count++;
 			}
 		}

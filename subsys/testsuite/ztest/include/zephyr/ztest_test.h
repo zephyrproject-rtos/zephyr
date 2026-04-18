@@ -57,13 +57,9 @@ enum ztest_expected_result {
  * @see ZTEST_EXPECT_SKIP
  */
 struct ztest_expected_result_entry {
-	const char *test_suite_name; /**< The test suite's name for the expectation */
-	const char *test_name;	     /**< The test's name for the expectation */
+	const struct ztest_unit_test *test;   /**< The test this expectation applies to */
 	enum ztest_expected_result expected_result; /**< The expectation */
 };
-
-extern struct ztest_expected_result_entry _ztest_expected_result_entry_list_start[];
-extern struct ztest_expected_result_entry _ztest_expected_result_entry_list_end[];
 
 /** @cond INTERNAL_HIDDEN */
 /*
@@ -82,11 +78,11 @@ extern struct ztest_expected_result_entry _ztest_expected_result_entry_list_end[
 /** @endcond */
 
 #define __ZTEST_EXPECT(_suite_name, _test_name, expectation)                                       \
+	static struct ztest_unit_test Z_ZTEST_TEST_NODE(_suite_name, _test_name);                  \
 	static const STRUCT_SECTION_ITERABLE(ztest_expected_result_entry,                          \
 					     Z_ZTEST_EXPECT_NODE(_suite_name, _test_name)) = {     \
-			.test_suite_name = STRINGIFY(_suite_name),                                 \
-			.test_name = STRINGIFY(_test_name),                                        \
-			.expected_result = expectation,                                            \
+		.test = &Z_ZTEST_TEST_NODE(_suite_name, _test_name),                               \
+		.expected_result = expectation,                                                    \
 	}
 
 /**
@@ -121,20 +117,29 @@ extern struct ztest_expected_result_entry _ztest_expected_result_entry_list_end[
 #define ZTEST_EXPECT_SKIP(_suite_name, _test_name)                                                 \
 	__ZTEST_EXPECT(_suite_name, _test_name, ZTEST_EXPECTED_RESULT_SKIP)
 
+struct ztest_suite_node;
+
 struct ztest_unit_test {
-	const char *test_suite_name;
 	const char *name;
 	void (*test)(void *data);
 	uint32_t thread_options;
+	const struct ztest_suite_node *suite;
 
 	/** Stats */
 	struct ztest_unit_test_stats *const stats;
 };
 
-extern struct ztest_unit_test _ztest_unit_test_list_start[];
-extern struct ztest_unit_test _ztest_unit_test_list_end[];
+/** @cond INTERNAL_HIDDEN */
 /** Number of registered unit tests */
-#define ZTEST_TEST_COUNT (_ztest_unit_test_list_end - _ztest_unit_test_list_start)
+static inline size_t z_ztest_test_count(void)
+{
+	size_t count;
+
+	STRUCT_SECTION_COUNT(ztest_unit_test, &count);
+	return count;
+}
+#define ZTEST_TEST_COUNT (z_ztest_test_count())
+/** @endcond */
 
 /**
  * Stats about a ztest suite
@@ -225,11 +230,17 @@ struct ztest_suite_node {
 	struct ztest_suite_stats *const stats;
 };
 
-extern struct ztest_suite_node _ztest_suite_node_list_start[];
-extern struct ztest_suite_node _ztest_suite_node_list_end[];
-
+/* @cond INTERNAL_HIDDEN */
 /** Number of registered test suites */
-#define ZTEST_SUITE_COUNT (_ztest_suite_node_list_end - _ztest_suite_node_list_start)
+static inline size_t z_ztest_suite_count(void)
+{
+	size_t count;
+
+	STRUCT_SECTION_COUNT(ztest_suite_node, &count);
+	return count;
+}
+#define ZTEST_SUITE_COUNT (z_ztest_suite_count())
+/* @endcond */
 
 /**
  * Create and register a ztest suite. Using this macro creates a new test suite.
@@ -247,8 +258,7 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
  */
 #define ZTEST_SUITE(SUITE_NAME, PREDICATE, setup_fn, before_fn, after_fn, teardown_fn)             \
 	struct ztest_suite_stats Z_ZTEST_SUITE_STATS(SUITE_NAME);                                  \
-	static const STRUCT_SECTION_ITERABLE(ztest_suite_node,                                     \
-					     Z_ZTEST_SUITE_NODE(SUITE_NAME)) = {                   \
+	const STRUCT_SECTION_ITERABLE(ztest_suite_node, Z_ZTEST_SUITE_NODE(SUITE_NAME)) = {        \
 		.name = STRINGIFY(SUITE_NAME),                                                     \
 		.setup = (setup_fn),                                                               \
 		.before = (before_fn),                                                             \
@@ -363,16 +373,18 @@ void ztest_verify_all_test_suites_ran(void);
 int z_ztest_run_test_suite(const char *name, bool shuffle, int suite_iter,
 			int case_iter, void *param);
 
+/* @cond INTERNAL_HIDDEN */
 /**
  * @brief Returns next test within suite.
  *
  * @param suite Name of suite to get next test from.
  * @param prev  Previous unit test acquired from suite, use NULL to return first
  *		unit test.
- * @return struct ztest_unit_test*
+ * @return Next unit test within suite, or NULL if there are no more tests.
  */
-struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_unit_test *prev);
-
+struct ztest_unit_test *z_ztest_get_next_test(const struct ztest_suite_node *suite,
+					      struct ztest_unit_test *prev);
+/* @endcond */
 /* definitions for use with testing application shared memory   */
 #ifdef CONFIG_USERSPACE
 /**
@@ -421,36 +433,38 @@ void ztest_test_skip(void);
 
 void ztest_skip_failed_assumption(void);
 
-#define Z_TEST_P(suite, fn, t_options) \
-	struct ztest_unit_test_stats Z_ZTEST_TEST_STATS(suite, fn); \
-	static void Z_ZTEST_TEST_WRAPPER(suite, fn)(void *data); \
-	static void Z_ZTEST_TEST_FN(suite, fn)(void *data); \
-	static STRUCT_SECTION_ITERABLE(ztest_unit_test, Z_ZTEST_TEST_NODE(suite, fn)) = { \
-		.test_suite_name = STRINGIFY(suite), \
+#define Z_TEST_P(suite_name, fn, t_options) \
+	struct ztest_unit_test_stats Z_ZTEST_TEST_STATS(suite_name, fn); \
+	extern const struct ztest_suite_node Z_ZTEST_SUITE_NODE(suite_name); \
+	static void Z_ZTEST_TEST_WRAPPER(suite_name, fn)(void *data); \
+	static void Z_ZTEST_TEST_FN(suite_name, fn)(void *data); \
+	static STRUCT_SECTION_ITERABLE(ztest_unit_test, Z_ZTEST_TEST_NODE(suite_name, fn)) = { \
 		.name = STRINGIFY(fn), \
-		.test = Z_ZTEST_TEST_WRAPPER(suite, fn), \
+		.test = Z_ZTEST_TEST_WRAPPER(suite_name, fn), \
 		.thread_options = t_options, \
-		.stats = &Z_ZTEST_TEST_STATS(suite, fn) \
+		.suite = &Z_ZTEST_SUITE_NODE(suite_name), \
+		.stats = &Z_ZTEST_TEST_STATS(suite_name, fn) \
 	}; \
-	static void Z_ZTEST_TEST_WRAPPER(suite, fn)(void *wrapper_data) \
+	static void Z_ZTEST_TEST_WRAPPER(suite_name, fn)(void *wrapper_data) \
 	{ \
-		Z_ZTEST_TEST_FN(suite, fn)(wrapper_data); \
+		Z_ZTEST_TEST_FN(suite_name, fn)(wrapper_data); \
 	} \
-	static inline void Z_ZTEST_TEST_FN(suite, fn)(void *data)
+	static inline void Z_ZTEST_TEST_FN(suite_name, fn)(void *data)
 
 
 #define ZTEST_P(suite, fn) Z_TEST_P(suite, fn, 0)
 
 #define Z_TEST(suite_name, fn, t_options, use_fixture)                                             \
 	struct ztest_unit_test_stats Z_ZTEST_TEST_STATS(suite_name, fn);                           \
+	extern const struct ztest_suite_node Z_ZTEST_SUITE_NODE(suite_name);                       \
 	static void Z_ZTEST_TEST_WRAPPER(suite_name, fn)(void *data);                              \
 	static void Z_ZTEST_TEST_FN(suite_name, fn)(                                               \
 		COND_CODE_1(use_fixture, (Z_ZTEST_FIXTURE(suite_name) fixture), (void)));          \
 	static STRUCT_SECTION_ITERABLE(ztest_unit_test, Z_ZTEST_TEST_NODE(suite_name, fn)) = {     \
-		.test_suite_name = STRINGIFY(suite_name),                                          \
 		.name = STRINGIFY(fn),                                                             \
 		.test = Z_ZTEST_TEST_WRAPPER(suite_name, fn),                                      \
 		.thread_options = t_options,                                                       \
+		.suite = &Z_ZTEST_SUITE_NODE(suite_name),                                          \
 		.stats = &Z_ZTEST_TEST_STATS(suite_name, fn)                                       \
 	};                                                                                         \
 	static void Z_ZTEST_TEST_WRAPPER(suite_name, fn)(void *wrapper_data)                       \
@@ -572,9 +586,6 @@ struct ztest_test_rule {
 		.before_each = (before_each_fn),                                                   \
 		.after_each = (after_each_fn),                                                     \
 	}
-
-extern struct ztest_test_rule _ztest_test_rule_list_start[];
-extern struct ztest_test_rule _ztest_test_rule_list_end[];
 
 /**
  * @brief A 'before' function to use in test suites that just need to start 1cpu

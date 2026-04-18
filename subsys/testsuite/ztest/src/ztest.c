@@ -50,6 +50,10 @@ static bool failed_expectation;
 #include <coverage.h>
 #endif
 
+STRUCT_SECTION_START_EXTERN(ztest_suite_node);
+STRUCT_SECTION_END_EXTERN(ztest_suite_node);
+STRUCT_SECTION_START_EXTERN(ztest_unit_test);
+STRUCT_SECTION_END_EXTERN(ztest_unit_test);
 /* ZTEST_DMEM and ZTEST_BMEM are used for the application shared memory test  */
 
 /**
@@ -311,8 +315,7 @@ void z_vrfy_z_test_1cpu_stop(void)
 
 __maybe_unused static void run_test_rules(bool is_before, struct ztest_unit_test *test, void *data)
 {
-	for (struct ztest_test_rule *rule = _ztest_test_rule_list_start;
-	     rule < _ztest_test_rule_list_end; ++rule) {
+	STRUCT_SECTION_FOREACH(ztest_test_rule, rule) {
 		if (is_before && rule->before_each) {
 			rule->before_each(test, data);
 		} else if (!is_before && rule->after_each) {
@@ -334,11 +337,8 @@ static int get_final_test_result(const struct ztest_unit_test *test, int ret)
 {
 	enum ztest_expected_result expected_result = -1;
 
-	for (struct ztest_expected_result_entry *expectation =
-		     _ztest_expected_result_entry_list_start;
-	     expectation < _ztest_expected_result_entry_list_end; ++expectation) {
-		if (strcmp(expectation->test_name, test->name) == 0 &&
-		    strcmp(expectation->test_suite_name, test->test_suite_name) == 0) {
+	STRUCT_SECTION_FOREACH(ztest_expected_result_entry, expectation) {
+		if (expectation->test == test) {
 			expected_result = expectation->expected_result;
 			break;
 		}
@@ -750,9 +750,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 
 static struct ztest_suite_node *ztest_find_test_suite(const char *name)
 {
-	struct ztest_suite_node *node;
-
-	for (node = _ztest_suite_node_list_start; node < _ztest_suite_node_list_end; ++node) {
+	STRUCT_SECTION_FOREACH(ztest_suite_node, node) {
 		if (strcmp(name, node->name) == 0) {
 			return node;
 		}
@@ -761,12 +759,14 @@ static struct ztest_suite_node *ztest_find_test_suite(const char *name)
 	return NULL;
 }
 
-struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_unit_test *prev)
+struct ztest_unit_test *z_ztest_get_next_test(const struct ztest_suite_node *suite,
+					      struct ztest_unit_test *prev)
 {
-	struct ztest_unit_test *test = (prev == NULL) ? _ztest_unit_test_list_start : prev + 1;
+	struct ztest_unit_test *test =
+		(prev == NULL) ? STRUCT_SECTION_START(ztest_unit_test) : prev + 1;
 
-	for (; test < _ztest_unit_test_list_end; ++test) {
-		if (strcmp(suite, test->test_suite_name) == 0) {
+	for (; test < STRUCT_SECTION_END(ztest_unit_test); ++test) {
+		if (test->suite == suite) {
 			return test;
 		}
 	}
@@ -844,16 +844,17 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 
 	for (int i = 0; i < case_iter; i++) {
 #ifdef CONFIG_ZTEST_SHUFFLE
+		STRUCT_SECTION_START_EXTERN(ztest_unit_test);
 		struct ztest_unit_test *tests_to_run[ZTEST_TEST_COUNT];
 
 		memset(tests_to_run, 0, ZTEST_TEST_COUNT * sizeof(struct ztest_unit_test *));
 		z_ztest_shuffle(shuffle, (void **)tests_to_run,
-				(intptr_t)_ztest_unit_test_list_start, ZTEST_TEST_COUNT,
+				(intptr_t)STRUCT_SECTION_START(ztest_unit_test), ZTEST_TEST_COUNT,
 				sizeof(struct ztest_unit_test));
 		for (size_t j = 0; j < ZTEST_TEST_COUNT; ++j) {
 			test = tests_to_run[j];
 			/* Make sure that the test belongs to this suite */
-			if (strcmp(suite->name, test->test_suite_name) != 0) {
+			if (test->suite != suite) {
 				continue;
 			}
 			if (ztest_api.should_test_run(suite->name, test->name)) {
@@ -876,7 +877,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 			}
 		}
 #else
-		while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
+		while (((test = z_ztest_get_next_test(suite, test)) != NULL)) {
 			if (ztest_api.should_test_run(suite->name, test->name)) {
 				test->stats->run_count++;
 				tc_result = run_test(suite, test, data);
@@ -937,7 +938,7 @@ static void __ztest_show_suite_summary_oneline(struct ztest_suite_node *suite)
 	unsigned int suite_duration_worst_ms = 0;
 
 	/** summary of distinct run  */
-	while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
+	while (((test = z_ztest_get_next_test(suite, test)) != NULL)) {
 		distinct_total++;
 		suite_duration_worst_ms += test->stats->duration_worst_ms;
 		if (test->stats->skip_count == test->stats->run_count) {
@@ -983,7 +984,7 @@ static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
 		return;
 	}
 
-	while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
+	while (((test = z_ztest_get_next_test(suite, test)) != NULL)) {
 		if (test->stats->skip_count == test->stats->run_count) {
 			tc_result = TC_SKIP;
 		} else if (test->stats->pass_count == test->stats->run_count) {
@@ -998,13 +999,13 @@ static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
 			TC_SUMMARY_PRINT(
 				" - %s - [%s.%s] - (Failed %d of %d attempts)"
 				" - duration = %u.%03u seconds\n",
-				TC_RESULT_TO_STR(tc_result), test->test_suite_name, test->name,
+				TC_RESULT_TO_STR(tc_result), test->suite->name, test->name,
 				test->stats->run_count - test->stats->pass_count,
 				test->stats->run_count, test->stats->duration_worst_ms / 1000,
 				test->stats->duration_worst_ms % 1000);
 		} else {
 			TC_SUMMARY_PRINT(" - %s - [%s.%s] duration = %u.%03u seconds\n",
-					 TC_RESULT_TO_STR(tc_result), test->test_suite_name,
+					 TC_RESULT_TO_STR(tc_result), test->suite->name,
 					 test->name, test->stats->duration_worst_ms / 1000,
 					 test->stats->duration_worst_ms % 1000);
 		}
@@ -1030,25 +1031,23 @@ static void __ztest_show_suite_summary(void)
 	log_flush();
 	TC_SUMMARY_PRINT("\n------ TESTSUITE SUMMARY START ------\n\n");
 	log_flush();
-	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
-	     ptr < _ztest_suite_node_list_end; ++ptr) {
-
-		__ztest_show_suite_summary_oneline(ptr);
-		__ztest_show_suite_summary_verbose(ptr);
+	STRUCT_SECTION_FOREACH(ztest_suite_node, suite) {
+		__ztest_show_suite_summary_oneline(suite);
+		__ztest_show_suite_summary_verbose(suite);
 	}
 	TC_SUMMARY_PRINT("------ TESTSUITE SUMMARY END ------\n\n");
 	log_flush();
 }
 
-static int __ztest_run_test_suite(struct ztest_suite_node *ptr, const void *state, bool shuffle,
+static int __ztest_run_test_suite(struct ztest_suite_node *suite, const void *state, bool shuffle,
 				  int suite_iter, int case_iter, void *param)
 {
-	struct ztest_suite_stats *stats = ptr->stats;
+	struct ztest_suite_stats *stats = suite->stats;
 	int count = 0;
 
 	for (int i = 0; i < suite_iter; i++) {
-		if (ztest_api.should_suite_run(state, ptr)) {
-			int fail = z_ztest_run_test_suite_ptr(ptr, shuffle,
+		if (ztest_api.should_suite_run(state, suite)) {
+			int fail = z_ztest_run_test_suite_ptr(suite, shuffle,
 							suite_iter, case_iter, param);
 
 			count++;
@@ -1075,10 +1074,12 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 #endif
 
 #ifdef CONFIG_ZTEST_SHUFFLE
+	STRUCT_SECTION_START_EXTERN(ztest_suite_node);
 	struct ztest_suite_node *suites_to_run[ZTEST_SUITE_COUNT];
 
 	memset(suites_to_run, 0, ZTEST_SUITE_COUNT * sizeof(struct ztest_suite_node *));
-	z_ztest_shuffle(shuffle, (void **)suites_to_run, (intptr_t)_ztest_suite_node_list_start,
+	z_ztest_shuffle(shuffle, (void **)suites_to_run,
+			(intptr_t)STRUCT_SECTION_START(ztest_suite_node),
 			ZTEST_SUITE_COUNT, sizeof(struct ztest_suite_node));
 	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
 		count += __ztest_run_test_suite(suites_to_run[i], state, shuffle, suite_iter,
@@ -1092,8 +1093,7 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 		}
 	}
 #else
-	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
-	     ptr < _ztest_suite_node_list_end; ++ptr) {
+	STRUCT_SECTION_FOREACH(ztest_suite_node, ptr) {
 		count += __ztest_run_test_suite(ptr, state, shuffle, suite_iter, case_iter, param);
 		/* Stop running tests if we have a critical error or if we have a failure and
 		 * FAIL_FAST was set
@@ -1134,39 +1134,19 @@ void z_vrfy___ztest_set_test_phase(enum ztest_phase new_phase)
 
 void ztest_verify_all_test_suites_ran(void)
 {
-	bool all_tests_run = true;
-	struct ztest_suite_node *suite;
-	struct ztest_unit_test *test;
-
 	if (IS_ENABLED(CONFIG_ZTEST_VERIFY_RUN_ALL)) {
-		for (suite = _ztest_suite_node_list_start; suite < _ztest_suite_node_list_end;
-		     ++suite) {
+		STRUCT_SECTION_FOREACH(ztest_suite_node, suite) {
 			if (suite->stats->run_count < 1) {
 				PRINT_DATA("ERROR: Test suite '%s' did not run.\n", suite->name);
-				all_tests_run = false;
+				test_status = ZTEST_STATUS_HAS_FAILURE;
 			}
-		}
-
-		for (test = _ztest_unit_test_list_start; test < _ztest_unit_test_list_end; ++test) {
-			suite = ztest_find_test_suite(test->test_suite_name);
-			if (suite == NULL) {
-				PRINT_DATA("ERROR: Test '%s' assigned to test suite '%s' which "
-					   "doesn't "
-					   "exist\n",
-					   test->name, test->test_suite_name);
-				all_tests_run = false;
-			}
-		}
-
-		if (!all_tests_run) {
-			test_status = ZTEST_STATUS_HAS_FAILURE;
 		}
 	}
 
-	for (test = _ztest_unit_test_list_start; test < _ztest_unit_test_list_end; ++test) {
+	STRUCT_SECTION_FOREACH(ztest_unit_test, test) {
 		if (test->stats->fail_count + test->stats->pass_count + test->stats->skip_count !=
 		    test->stats->run_count) {
-			PRINT_DATA("Bad stats for %s.%s\n", test->test_suite_name, test->name);
+			PRINT_DATA("Bad stats for %s.%s\n", test->suite->name, test->name);
 			test_status = ZTEST_STATUS_HAS_FAILURE;
 		}
 	}
@@ -1214,9 +1194,7 @@ int main(void)
 #ifdef CONFIG_ZTEST_SHELL
 static int cmd_list_suites(const struct shell *sh, size_t argc, char **argv)
 {
-	struct ztest_suite_node *suite;
-
-	for (suite = _ztest_suite_node_list_start; suite < _ztest_suite_node_list_end; ++suite) {
+	STRUCT_SECTION_FOREACH(ztest_suite_node, suite) {
 		shell_print(sh, "%s", suite->name);
 	}
 	return 0;
@@ -1224,14 +1202,13 @@ static int cmd_list_suites(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_list_cases(const struct shell *sh, size_t argc, char **argv)
 {
-	struct ztest_suite_node *ptr;
-	struct ztest_unit_test *test = NULL;
+	struct ztest_unit_test *test;
 	int test_count = 0;
 
-	for (ptr = _ztest_suite_node_list_start; ptr < _ztest_suite_node_list_end; ++ptr) {
+	STRUCT_SECTION_FOREACH(ztest_suite_node, suite) {
 		test = NULL;
-		while ((test = z_ztest_get_next_test(ptr->name, test)) != NULL) {
-			shell_print(sh, "%s::%s", test->test_suite_name, test->name);
+		while ((test = z_ztest_get_next_test(suite, test)) != NULL) {
+			shell_print(sh, "%s::%s", test->suite->name, test->name);
 			test_count++;
 		}
 	}
@@ -1350,12 +1327,12 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 		ztest_set_test_args(argv[1]);
 	}
 
-	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
-	     ptr < _ztest_suite_node_list_end; ++ptr) {
+	STRUCT_SECTION_FOREACH(ztest_suite_node, suite) {
 		if (strcmp(shell_command, "run-testcase") == 0) {
-			count += __ztest_run_test_suite(ptr, NULL, shuffle, 1, repeat_iter, param);
+			count += __ztest_run_test_suite(suite, NULL, shuffle, 1,
+					repeat_iter, param);
 		} else if (strcmp(shell_command, "run-testsuite") == 0) {
-			count += __ztest_run_test_suite(ptr, NULL, shuffle, repeat_iter, 1, NULL);
+			count += __ztest_run_test_suite(suite, NULL, shuffle, repeat_iter, 1, NULL);
 		}
 		if (test_status == ZTEST_STATUS_CRITICAL_ERROR ||
 		    (test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
@@ -1371,8 +1348,8 @@ SHELL_DYNAMIC_CMD_CREATE(testsuite_names, testsuite_list_get);
 
 static size_t testsuite_get_all_static(struct ztest_suite_node const **suites)
 {
-	*suites = _ztest_suite_node_list_start;
-	return _ztest_suite_node_list_end - _ztest_suite_node_list_start;
+	*suites = STRUCT_SECTION_START(ztest_suite_node);
+	return ZTEST_SUITE_COUNT;
 }
 
 static const struct ztest_suite_node *suite_lookup(size_t idx, const char *prefix)
