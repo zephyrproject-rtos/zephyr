@@ -6,12 +6,13 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <string.h>
 #include <stdio.h>
 
 struct parameter {
-	struct parameter *next;
+	sys_snode_t node;
 	const char *fn;
 	const char *name;
 	uintptr_t value;
@@ -150,47 +151,33 @@ void z_init_mock(void)
 
 #endif
 
-static struct parameter *find_and_delete_value(struct parameter *param, const char *fn,
-					       const char *name)
+static struct parameter *find_and_delete_value(sys_slist_t *list, const char *fn, const char *name)
 {
-	struct parameter *value;
+	struct parameter *param;
+	sys_snode_t *prev = NULL;
 
-	if (!param->next) {
-		return NULL;
+	SYS_SLIST_FOR_EACH_CONTAINER(list, param, node) {
+		if (!strcmp(param->name, name) && !strcmp(param->fn, fn)) {
+			sys_slist_remove(list, prev, &param->node);
+			return param;
+		}
+		prev = &param->node;
 	}
-
-	if (strcmp(param->next->name, name) || strcmp(param->next->fn, fn)) {
-		return find_and_delete_value(param->next, fn, name);
-	}
-
-	value = param->next;
-	param->next = param->next->next;
-	value->next = NULL;
-
-	return value;
+	return NULL;
 }
 
-static void insert_value(struct parameter *param, const char *fn, const char *name, uintptr_t val)
+static void insert_value(sys_slist_t *list, const char *fn, const char *name, uintptr_t val)
 {
-	struct parameter *value;
+	struct parameter *value = alloc_parameter();
 
-	value = alloc_parameter();
 	value->fn = fn;
 	value->name = name;
 	value->value = val;
-
-	/* Seek to end of linked list to ensure correct discovery order in find_and_delete_value */
-	while (param->next) {
-		param = param->next;
-	}
-
-	/* Append to end of linked list */
-	value->next = param->next;
-	param->next = value;
+	sys_slist_append(list, &value->node);
 }
 
-static struct parameter parameter_list = {NULL, "", "", 0};
-static struct parameter return_value_list = {NULL, "", "", 0};
+static sys_slist_t parameter_list = SYS_SLIST_STATIC_INIT(&parameter_list);
+static sys_slist_t return_value_list = SYS_SLIST_STATIC_INIT(&return_value_list);
 
 void z_ztest_expect_value(const char *fn, const char *name, uintptr_t val)
 {
@@ -308,36 +295,37 @@ uintptr_t z_ztest_get_return_value(const char *fn)
 	return value;
 }
 
-static void free_param_list(struct parameter *param)
+static void free_param_list(sys_slist_t *list)
 {
-	struct parameter *next;
+	sys_snode_t *node;
 
-	while (param) {
-		next = param->next;
-		free_parameter(param);
-		param = next;
+	while ((node = sys_slist_get(list)) != NULL) {
+		free_parameter(CONTAINER_OF(node, struct parameter, node));
 	}
 }
 
 int z_cleanup_mock(void)
 {
 	int fail = 0;
+	sys_snode_t *head;
 
-	if (parameter_list.next) {
-		PRINT_DATA("Parameter not used by mock: %s:%s\n", parameter_list.next->fn,
-			   parameter_list.next->name);
+	head = sys_slist_peek_head(&parameter_list);
+	if (head != NULL) {
+		struct parameter *first = CONTAINER_OF(head, struct parameter, node);
+
+		PRINT_DATA("Parameter not used by mock: %s:%s\n", first->fn, first->name);
 		fail = 1;
 	}
-	if (return_value_list.next) {
-		PRINT_DATA("Return value not used by mock: %s\n", return_value_list.next->fn);
+	head = sys_slist_peek_head(&return_value_list);
+	if (head != NULL) {
+		struct parameter *first = CONTAINER_OF(head, struct parameter, node);
+
+		PRINT_DATA("Return value not used by mock: %s\n", first->fn);
 		fail = 2;
 	}
 
-	free_param_list(parameter_list.next);
-	free_param_list(return_value_list.next);
-
-	parameter_list.next = NULL;
-	return_value_list.next = NULL;
+	free_param_list(&parameter_list);
+	free_param_list(&return_value_list);
 
 	return fail;
 }
