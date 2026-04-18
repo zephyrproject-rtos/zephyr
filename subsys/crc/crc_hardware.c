@@ -194,7 +194,7 @@ uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len)
 
 	struct crc_ctx ctx = {
 		.type = CRC16,
-		.polynomial = CRC16_POLY,
+		.polynomial = poly,
 		.seed = seed,
 		.reversed = 0,
 	};
@@ -216,7 +216,7 @@ uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t 
 
 	struct crc_ctx ctx = {
 		.type = CRC16,
-		.polynomial = CRC16_POLY,
+		.polynomial = poly,
 		.seed = seed,
 		.reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT,
 	};
