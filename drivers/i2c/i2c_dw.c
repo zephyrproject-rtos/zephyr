@@ -619,11 +619,11 @@ static void i2c_dw_isr(const struct device *port)
 
 		if (intr_stat.bits.stop_det) {
 			read_clr_stop_det(reg_base);
-			dw->state = I2C_DW_STATE_READY;
-			dw->read_in_progress = false;
 			if (slave_cb->stop) {
 				slave_cb->stop(dw->slave_cfg);
 			}
+			dw->state = I2C_DW_STATE_READY;
+			dw->read_in_progress = false;
 		}
 #endif
 	}
