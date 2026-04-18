@@ -104,7 +104,7 @@ void benchmark_main(void);
  * @param setup_fn Function to run before the benchmark
  * @param teardown_fn Function to run after the benchmark
  */
-#define ZTEST_BENCHMARK_SETUP_TEARDOWN(suite_name, benchmark, samples, setup_fn, teardown_fn)	\
+#define ZTEST_BENCHMARK(suite_name, benchmark, samples, setup_fn, teardown_fn)			\
 	static __noinline void Z_ZTEST_BENCHMARK_FN(suite_name, benchmark)(void);		\
 	static const STRUCT_SECTION_ITERABLE(ztest_benchmark,					\
 					     Z_ZTEST_BENCHMARK_NODE(suite_name, benchmark)) =	\
@@ -128,7 +128,7 @@ void benchmark_main(void);
  * @param setup_fn Function to run before the benchmark
  * @param teardown_fn Function to run after the benchmark
  */
-#define ZTEST_BENCHMARK_TIMED_SETUP_TEARDOWN(testsuite, benchmark, duration, setup_fn, teardown_fn)\
+#define ZTEST_BENCHMARK_TIMED(testsuite, benchmark, duration, setup_fn, teardown_fn)		\
 	static __noinline void Z_ZTEST_BENCHMARK_FN(testsuite, benchmark)(void);		\
 	static const STRUCT_SECTION_ITERABLE(ztest_benchmark_timed,				\
 					Z_ZTEST_BENCHMARK_TIMED_NODE(testsuite, benchmark)) =	\
@@ -141,26 +141,6 @@ void benchmark_main(void);
 		.suite = &Z_ZTEST_BENCHMARK_SUITE_NODE(testsuite),				\
 	};											\
 	static __noinline void Z_ZTEST_BENCHMARK_FN(testsuite, benchmark)(void)
-
-/**
- * @brief Define a benchmark without setup and teardown functions
- *
- * @param suite Name of the suite the benchmark belongs to
- * @param benchmark Name of the benchmark
- * @param samples Number of iterations to run the benchmark
- */
-#define ZTEST_BENCHMARK(suite, benchmark, samples) \
-	ZTEST_BENCHMARK_SETUP_TEARDOWN(suite, benchmark, samples, NULL, NULL)
-
-
-/** * @brief Define a timed benchmark without setup and teardown functions
- *
- * @param suite Name of the suite the benchmark belongs to
- * @param benchmark Name of the benchmark
- * @param duration Duration in milliseconds to run the benchmark
- */
-#define ZTEST_BENCHMARK_TIMED(suite, benchmark, duration) \
-	ZTEST_BENCHMARK_TIMED_SETUP_TEARDOWN(suite, benchmark, duration, NULL, NULL)
 
 /**
  * @}
