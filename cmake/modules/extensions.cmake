@@ -739,6 +739,53 @@ function(generate_inc_file_for_target
   generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
 endfunction()
 
+function(generate_shell_aliases_inc_file
+    source_file    # The source file to be converted to array element
+    generated_file # The generated file
+    )
+  add_custom_command(
+    OUTPUT ${generated_file}
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_shell_aliases.py
+    --max-command-len ${CONFIG_SHELL_CMD_BUFF_SIZE}
+    ${source_file}
+    > ${generated_file}
+    DEPENDS ${source_file}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endfunction()
+
+function(generate_shell_aliases_inc_file_for_gen_target
+    target          # The cmake target that depends on the generated file
+    source_file     # The source file to be converted to array element
+    generated_file  # The generated file
+    gen_target      # The generated file target we depend on
+    )
+  generate_shell_aliases_inc_file(${source_file} ${generated_file})
+
+  # Ensure 'generated_file' is generated before 'target' by creating a
+  # dependency between the two targets
+
+  add_dependencies(${target} ${gen_target})
+endfunction()
+
+function(generate_shell_aliases_inc_file_for_target
+    target          # The cmake target that depends on the generated file
+    source_file     # The source file to be converted to array element
+    generated_file  # The generated file
+    )
+  # Ensure 'generated_file' is generated before 'target' by creating a
+  # 'custom_target' for it and setting up a dependency between the two
+  # targets
+
+  # But first create a unique name for the custom target
+  generate_unique_target_name_from_filename(${generated_file} generated_target_name)
+
+  add_custom_target(${generated_target_name} DEPENDS ${generated_file})
+  generate_shell_aliases_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name})
+endfunction()
+
 # 1.4. board_*
 #
 # This section is for extensions related to Zephyr board handling.
