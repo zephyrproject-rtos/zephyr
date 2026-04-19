@@ -1,0 +1,7 @@
+# AIROC CYW55513 Evaluation Kit - Murata Type 2FY
+# Copyright (c) 2026 Infineon Technologies AG.
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_BOARD_CYW55513_EVK=y
+CONFIG_BOARD_CYW55513_EVK_CYW55513_MURATA_2FY=y
+CONFIG_SOC_CYW55513_MURATA_2FY=y

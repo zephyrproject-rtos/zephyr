@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Infineon Technologies AG.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: cyw55513_evk
+  full_name: AIROC CYW55513 Evaluation Kit
+  vendor: infineon
+  socs:
+    - name: cyw20829b0lkml

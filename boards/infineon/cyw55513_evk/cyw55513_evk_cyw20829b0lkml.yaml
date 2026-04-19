@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2026 Infineon Technologies AG.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: cyw55513_evk/cyw20829b0lkml
+name: AIROC CYW55513 Evaluation Kit with CYW20829B0LKML
+type: mcu
+arch: arm
+ram: 1024
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - clock_control
+  - bluetooth
+  - wifi
+  - adc
+  - watchdog
+  - rtc
+  - dma
+  - led
+  - button
+  - pwm
+  - i2c
+  - spi
+vendor: infineon
