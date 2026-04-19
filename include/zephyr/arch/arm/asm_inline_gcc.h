@@ -105,6 +105,24 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	return key == 0U;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	return __get_PRIMASK() == 0U;
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	return __get_BASEPRI() == 0U;
+#elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
+	|| defined(CONFIG_ARMV7_A)
+	unsigned int cpsr;
+
+	__asm__ volatile("mrs %0, cpsr" : "=r" (cpsr));
+	return (cpsr & I_BIT) == 0U;
+#else
+#error Unknown ARM architecture
+#endif
+}
+
 #ifdef CONFIG_ZERO_LATENCY_IRQS
 
 static ALWAYS_INLINE unsigned int arch_zli_lock(void)

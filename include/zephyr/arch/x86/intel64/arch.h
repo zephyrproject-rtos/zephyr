@@ -63,6 +63,15 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	return (unsigned int) key;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+	unsigned long flags;
+
+	__asm__ volatile ("pushfq; popq %0" : "=g" (flags) : : "memory");
+	return (flags & 0x200UL) != 0; /* IF bit */
+}
+
 #define ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile( \
 		"movq %[reason], %%rax\n\t" \
