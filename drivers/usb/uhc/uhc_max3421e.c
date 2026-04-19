@@ -269,10 +269,14 @@ static ALWAYS_INLINE int max3421e_hxfr_start(const struct device *dev,
 }
 
 static int max3421e_xfer_data(const struct device *dev,
-			      struct net_buf *const buf,
-			      const uint8_t ep)
+			      struct uhc_transfer *const xfer)
 {
+	struct net_buf *const buf = xfer->buf;
+	const uint8_t ep = xfer->ep;
 	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
+	const uint16_t ep_size = USB_MPS_EP_SIZE(xfer->mps);
+	const uint16_t mps = ep_size ? MIN(ep_size, MAX3421E_MAX_EP_SIZE)
+				     : MAX3421E_MAX_EP_SIZE;
 	int ret;
 
 	if (USB_EP_DIR_IS_IN(ep)) {
@@ -281,7 +285,7 @@ static int max3421e_xfer_data(const struct device *dev,
 	} else {
 		size_t len;
 
-		len = MIN(MAX3421E_MAX_EP_SIZE, buf->len);
+		len = MIN(mps, buf->len);
 		LOG_DBG("bulk out %p %u", buf, len);
 
 		ret = max3421e_write(dev, MAX3421E_REG_SNDFIFO, buf->data, len);
@@ -337,7 +341,7 @@ static int max3421e_xfer_control(const struct device *dev,
 
 	if (buf != NULL && xfer->stage == UHC_CONTROL_STAGE_DATA) {
 		LOG_DBG("Handle DATA stage");
-		return max3421e_xfer_data(dev, buf, xfer->ep);
+		return max3421e_xfer_data(dev, xfer);
 	}
 
 	if (xfer->stage == UHC_CONTROL_STAGE_STATUS) {
@@ -371,7 +375,7 @@ static int max3421e_xfer_bulk(const struct device *dev,
 		return -ENODATA;
 	}
 
-	return max3421e_xfer_data(dev, buf, xfer->ep);
+	return max3421e_xfer_data(dev, xfer);
 }
 
 static int max3421e_schedule_xfer(const struct device *dev)
@@ -480,7 +484,11 @@ static int max3421e_hrslt_success(const struct device *dev)
 			}
 		}
 		break;
-	case MAX3421E_HXFR_TYPE_BULKIN:
+	case MAX3421E_HXFR_TYPE_BULKIN: {
+		const uint16_t ep_size = USB_MPS_EP_SIZE(xfer->mps);
+		const uint16_t mps = ep_size ? MIN(ep_size, MAX3421E_MAX_EP_SIZE)
+					     : MAX3421E_MAX_EP_SIZE;
+
 		err = max3421e_read(dev, MAX3421E_REG_RCVBC, &bc, sizeof(bc));
 		if (err) {
 			break;
@@ -500,7 +508,7 @@ static int max3421e_hrslt_success(const struct device *dev)
 
 		LOG_INF("bc %u tr %u", bc, net_buf_tailroom(buf));
 
-		if (bc < MAX3421E_MAX_EP_SIZE || !net_buf_tailroom(buf)) {
+		if (bc < mps || !net_buf_tailroom(buf)) {
 			LOG_INF("hrslt bulk in %u, %u", bc, len);
 			if (xfer->ep == USB_CONTROL_EP_IN) {
 				xfer->stage = UHC_CONTROL_STAGE_STATUS;
@@ -509,6 +517,7 @@ static int max3421e_hrslt_success(const struct device *dev)
 			}
 		}
 		break;
+	}
 	}
 
 	if (finished) {
