@@ -1328,9 +1328,7 @@ static int i2c_dw_initialize(const struct device *dev)
 	if (rom->sda_hold_rx != SDA_HOLD_INVALID) {
 		sda_hold.bits.sdahold_rx = rom->sda_hold_rx;
 	}
-	if (rom->sda_hold_rx != SDA_HOLD_INVALID || rom->sda_hold_tx != SDA_HOLD_INVALID) {
-		write_sdahold(sda_hold.raw, reg_base);
-	}
+	write_sdahold(sda_hold.raw, reg_base);
 
 	/*
 	 * depending on the IP configuration, we may have to disable block mode in
@@ -1459,6 +1457,7 @@ static int i2c_dw_initialize(const struct device *dev)
 #define TIMEOUT_DW_CONFIG(n)
 #endif
 
+/* clang-format off */
 #define I2C_DEVICE_INIT_DW(n)                                                                      \
 	PINCTRL_DW_DEFINE(n);                                                                      \
 	I2C_PCIE_DEFINE(n);                                                                        \
@@ -1466,7 +1465,9 @@ static int i2c_dw_initialize(const struct device *dev)
 	static const struct i2c_dw_rom_config i2c_config_dw_##n = {                                \
 		I2C_CONFIG_REG_INIT(n).config_func = i2c_config_##n,                               \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-		.sda_hold_tx = DT_INST_PROP_OR(n, sda_hold_tx, SDA_HOLD_INVALID),                  \
+		.sda_hold_tx = COND_CODE_1(DT-INST-NODE-HAS-PROP(n, i2c_sda_hold_time_ns),         \
+				 (HOLD_TIME_TO_TICKS(DT_INST_PROP(n, i2c_sda_hold_time_ns))),      \
+				 (DT_INST_PROP_OR(n, sda_hold_tx, SDA_HOLD_INVALID))),             \
 		.sda_hold_rx = DT_INST_PROP_OR(n, sda_hold_rx, SDA_HOLD_INVALID),                  \
 		.irqnumber = DT_INST_IRQN(n),                                                      \
 		.lcnt_offset = (int16_t)DT_INST_PROP_OR(n, lcnt_offset, 0),                        \
@@ -1482,5 +1483,6 @@ static int i2c_dw_initialize(const struct device *dev)
 				  &i2c_config_dw_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
 				  &funcs);                                                         \
 	I2C_DW_IRQ_CONFIG(n)
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_DEVICE_INIT_DW)
