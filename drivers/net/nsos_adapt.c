@@ -28,6 +28,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include <pthread.h>
+
 #include "nsos.h"
 #include "nsi_errno.h"
 #include "nsi_fcntl.h"
@@ -44,6 +46,7 @@
 
 static int nsos_epoll_fd;
 static int nsos_adapt_nfds;
+static pthread_mutex_t nsos_epoll_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
@@ -920,11 +923,16 @@ void nsos_adapt_poll_add(struct nsos_mid_pollfd *pollfd)
 	};
 	int err;
 
+	pthread_mutex_lock(&nsos_epoll_mutex);
 	nsos_adapt_nfds++;
-
 	err = epoll_ctl(nsos_epoll_fd, EPOLL_CTL_ADD, pollfd->fd, &ev);
+	if (err && errno == EEXIST) {
+		ev.events = nsos_poll_to_epoll_events(pollfd->events);
+		err = epoll_ctl(nsos_epoll_fd, EPOLL_CTL_MOD, pollfd->fd, &ev);
+	}
+	pthread_mutex_unlock(&nsos_epoll_mutex);
 	if (err) {
-		nsi_print_error_and_exit("error in EPOLL_CTL_ADD: errno=%d\n", errno);
+		nsi_print_error_and_exit("error in EPOLL_CTL_ADD/MOD: errno=%d\n", errno);
 		return;
 	}
 
@@ -936,7 +944,14 @@ void nsos_adapt_poll_remove(struct nsos_mid_pollfd *pollfd)
 {
 	int err;
 
+	pthread_mutex_lock(&nsos_epoll_mutex);
 	err = epoll_ctl(nsos_epoll_fd, EPOLL_CTL_DEL, pollfd->fd, NULL);
+	if (err && errno == ENOENT) {
+		pthread_mutex_unlock(&nsos_epoll_mutex);
+		nsos_adapt_nfds--;
+		return;
+	}
+	pthread_mutex_unlock(&nsos_epoll_mutex);
 	if (err) {
 		nsi_print_error_and_exit("error in EPOLL_CTL_DEL: errno=%d\n", errno);
 		return;
