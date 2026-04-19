@@ -280,6 +280,17 @@ static inline void arch_irq_unlock(unsigned int key);
  */
 static inline bool arch_irq_unlocked(unsigned int key);
 
+/**
+ * Probe the current CPU overall interrupt controller lock state without
+ * modifying it.
+ *
+ * Unlike arch_irq_unlocked() which inspects a saved key, this reports the
+ * instantaneous state of the calling CPU's overall interrupt enable.
+ *
+ * @return true if interrupts are currently enabled on the calling CPU.
+ */
+static inline bool arch_cpu_irqs_are_enabled(void);
+
 #ifdef CONFIG_ZERO_LATENCY_IRQS
 
 /**

@@ -345,6 +345,15 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	return key;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+	unsigned int flags;
+
+	__asm__ volatile ("pushfl; popl %0" : "=g" (flags) :: "memory");
+	return (flags & 0x200U) != 0; /* IF bit */
+}
+
 
 /**
  * The NANO_SOFT_IRQ macro must be used as the value for the @a irq parameter
