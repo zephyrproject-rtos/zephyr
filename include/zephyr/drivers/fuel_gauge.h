@@ -292,18 +292,18 @@ union fuel_gauge_prop_val {
 	 * FUEL_GAUGE_AVG_CURRENT
 	 * @deprecated Use @ref fuel_gauge_prop_val.avg_current_ua instead
 	 */
-	__deprecated int avg_current;
+	__deprecated int32_t avg_current;
 	/** FUEL_GAUGE_AVG_CURRENT_UA */
-	int avg_current_ua;
+	int32_t avg_current_ua;
 	/** FUEL_GAUGE_CHARGE_CUTOFF */
 	bool cutoff;
 	/**
 	 * FUEL_GAUGE_CURRENT
 	 * @deprecated Use @ref fuel_gauge_prop_val.current_ua instead
 	 */
-	__deprecated int current;
+	__deprecated int32_t current;
 	/** FUEL_GAUGE_CURRENT_UA */
-	int current_ua;
+	int32_t current_ua;
 	/** FUEL_GAUGE_CYCLE_COUNT */
 	uint32_t cycle_count;
 	/** FUEL_GAUGE_CONNECT_STATE */
@@ -367,9 +367,9 @@ union fuel_gauge_prop_val {
 	 * FUEL_GAUGE_VOLTAGE
 	 * @deprecated Use @ref fuel_gauge_prop_val.voltage_uv instead
 	 */
-	__deprecated int voltage;
+	__deprecated int32_t voltage;
 	/** FUEL_GAUGE_VOLTAGE_UV */
-	int voltage_uv;
+	int32_t voltage_uv;
 	/** FUEL_GAUGE_SBS_MODE */
 	uint16_t sbs_mode;
 	/**
