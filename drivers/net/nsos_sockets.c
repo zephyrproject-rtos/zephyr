@@ -61,6 +61,7 @@ struct nsos_socket {
 };
 
 static sys_dlist_t nsos_polls = SYS_DLIST_STATIC_INIT(&nsos_polls);
+static struct k_spinlock nsos_polls_lock;
 
 /* Forward declaration of the interface */
 NET_IF_DECLARE(nsos_socket, 0);
@@ -263,7 +264,7 @@ static ssize_t nsos_write(void *obj, const void *buf, size_t sz)
 static int nsos_close(void *obj)
 {
 	struct nsos_socket *sock = obj;
-	struct nsos_socket_poll *poll;
+
 	int ret;
 
 	ret = nsi_host_close(sock->poll.mid.fd);
@@ -271,11 +272,16 @@ static int nsos_close(void *obj)
 		errno = nsos_adapt_get_zephyr_errno();
 	}
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&nsos_polls, poll, node) {
-		if (poll == &sock->poll) {
-			poll->mid.revents = ZSOCK_POLLHUP;
-			poll->mid.cb(&poll->mid);
-		}
+	k_spinlock_key_t key = k_spin_lock(&nsos_polls_lock);
+	bool was_linked = sys_dnode_is_linked(&sock->poll.node);
+	if (was_linked) {
+		sys_dlist_remove(&sock->poll.node);
+	}
+	k_spin_unlock(&nsos_polls_lock, key);
+
+	if (was_linked) {
+		sock->poll.mid.revents = ZSOCK_POLLHUP;
+		sock->poll.mid.cb(&sock->poll.mid);
 	}
 
 	k_free(sock);
@@ -312,7 +318,22 @@ static int nsos_poll_prepare(struct nsos_socket *sock, struct zsock_pollfd *pfd,
 	k_poll_signal_init(&poll->signal);
 	k_poll_event_init(*pev, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &poll->signal);
 
+	k_spinlock_key_t key = k_spin_lock(&nsos_polls_lock);
+	bool was_linked = sys_dnode_is_linked(&poll->node);
+	if (was_linked) {
+		sys_dlist_remove(&poll->node);
+	}
+	k_spin_unlock(&nsos_polls_lock, key);
+
+	if (was_linked) {
+		nsos_adapt_poll_remove(&poll->mid);
+		nsos_adapt_poll_add(&poll->mid);
+		return -EALREADY;
+	}
+
+	k_spinlock_key_t key2 = k_spin_lock(&nsos_polls_lock);
 	sys_dlist_append(&nsos_polls, &poll->node);
+	k_spin_unlock(&nsos_polls_lock, key2);
 
 	nsos_adapt_poll_add(&poll->mid);
 
@@ -339,16 +360,22 @@ static int nsos_poll_update(struct nsos_socket *sock, struct zsock_pollfd *pfd,
 
 	(*pev)++;
 
-	signaled = 0;
-	flags = 0;
+	k_spinlock_key_t key = k_spin_lock(&nsos_polls_lock);
+	bool was_linked = sys_dnode_is_linked(&poll->node);
+	if (was_linked) {
+		sys_dlist_remove(&poll->node);
+	}
+	k_spin_unlock(&nsos_polls_lock, key);
 
-	if (!sys_dnode_is_linked(&poll->node)) {
+	if (!was_linked) {
 		nsos_adapt_poll_update(&poll->mid);
 		return 0;
 	}
 
 	nsos_adapt_poll_remove(&poll->mid);
-	sys_dlist_remove(&poll->node);
+
+	signaled = 0;
+	flags = 0;
 
 	k_poll_signal_check(&poll->signal, &signaled, &flags);
 	if (!signaled) {
