@@ -1665,6 +1665,29 @@ int i3c_reattach_i3c_device(struct i3c_device_desc *target, uint8_t old_dyn_addr
 int i3c_detach_i3c_device(struct i3c_device_desc *target);
 
 /**
+ * @brief Check if an I3C device is attached to the bus
+ *
+ * Checks whether @p target is present in the controller's attached device
+ * list.
+ *
+ * @param target Pointer to the target device descriptor
+ *
+ * @retval true  If the device is attached.
+ * @retval false If the device is not attached.
+ */
+static inline bool i3c_is_i3c_device_attached(struct i3c_device_desc *target)
+{
+	struct i3c_device_desc *desc;
+
+	I3C_BUS_FOR_EACH_I3CDEV(target->bus, desc) {
+		if (desc == target) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * @brief Attach an I2C device
  *
  * Called to attach a I2C device to the addresses. This will
@@ -1702,6 +1725,29 @@ int i3c_attach_i2c_device(struct i3c_i2c_device_desc *target);
  * @retval -EINVAL If device is already detached
  */
 int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target);
+
+/**
+ * @brief Check if an I2C device is attached to the bus
+ *
+ * Checks whether @p target is present in the controller's attached device
+ * list.
+ *
+ * @param target Pointer to the target device descriptor
+ *
+ * @retval true  If the device is attached.
+ * @retval false If the device is not attached.
+ */
+static inline bool i3c_is_i2c_device_attached(struct i3c_i2c_device_desc *target)
+{
+	struct i3c_i2c_device_desc *desc;
+
+	I3C_BUS_FOR_EACH_I2CDEV(target->bus, desc) {
+		if (desc == target) {
+			return true;
+		}
+	}
+	return false;
+}
 
 /**
  * @brief Perform Dynamic Address Assignment on the I3C bus.
