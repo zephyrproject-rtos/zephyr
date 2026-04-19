@@ -357,19 +357,8 @@ static ALWAYS_INLINE bool z_spin_is_locked(struct k_spinlock *l)
 #endif /* CONFIG_TICKET_SPINLOCKS */
 #else
 	ARG_UNUSED(l);
-	/* In UP builds a spinlock reduces to an IRQ lock. Sample the
-	 * current IRQ state by briefly locking: the returned key carries
-	 * the prior state. If IRQs were already locked, leave them so —
-	 * skipping the restoring write. Otherwise, restore the unlocked
-	 * state before returning.
-	 */
-	unsigned int key = arch_irq_lock();
-
-	if (arch_irq_unlocked(key)) {
-		arch_irq_unlock(key);
-		return false;
-	}
-	return true;
+	/* In UP builds a spinlock reduces to an IRQ lock. */
+	return !arch_cpu_irqs_are_enabled();
 #endif /* CONFIG_SMP */
 }
 #endif /* defined(CONFIG_TEST) || defined(CONFIG_ASSERT) */
