@@ -1,0 +1,11 @@
+# Copyright 2026 Sameer Srivastava <l1zard78@proton.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config SLG47910_FPGA
+	bool "Renesas SLG47910 FPGA"
+	default y
+	depends on DT_HAS_RENESAS_SLG47910_ENABLED
+	select SPI
+	select GPIO
+	help
+	  Enable Renesas SLG47910 driver support.
