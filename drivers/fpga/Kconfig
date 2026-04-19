@@ -32,6 +32,7 @@ source "drivers/fpga/Kconfig.eos_s3"
 source "drivers/fpga/Kconfig.ice40"
 source "drivers/fpga/Kconfig.mpfs"
 source "drivers/fpga/Kconfig.slg471x5"
+source "drivers/fpga/Kconfig.slg47910"
 source "drivers/fpga/Kconfig.zynqmp"
 # zephyr-keep-sorted-stop
 
