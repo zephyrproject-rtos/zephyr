@@ -142,6 +142,15 @@ static inline bool arch_irq_unlocked(unsigned int key)
 	return key != 0;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+	uint32_t psw;
+
+	__asm__ volatile("MVFC psw, %0" : "=r" (psw));
+	return (psw & BIT(16)) != 0;
+}
+
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 	return &_kernel.cpus[0];
