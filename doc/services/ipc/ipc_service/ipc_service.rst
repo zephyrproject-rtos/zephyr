@@ -186,6 +186,7 @@ backend.
 
    backends/ipc_service_icmsg.rst
    backends/ipc_service_icbmsg.rst
+   backends/ipc_service_serial.rst
 
 API Reference
 =============
