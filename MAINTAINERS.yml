@@ -5680,8 +5680,8 @@ USB:
   status: maintained
   maintainers:
     - jfischer-no
-  collaborators:
     - tmon-nordic
+  collaborators:
     - josuah
   files:
     - drivers/usb/
