@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config RPI_VIDEOCORE_FIRMWARE
+	bool "Raspberry Pi VideoCore firmware driver"
+	depends on DT_HAS_RASPBERRYPI_BCM2711_VIDEOCORE_ENABLED
+	select MBOX
+	help
+	  Raspberry Pi VideoCore firmware driver provides
+	  a frontend interface through VideoCore mailbox.
+
+config RPI_VIDEOCORE_FIRMWARE_INIT_PRIORITY
+	int "Initialization priority"
+	default 60
+	depends on RPI_VIDEOCORE_FIRMWARE
+	help
+	  Must be higher (later) than CONFIG_MBOX_INIT_PRIORITY so the
+	  mailbox device is ready before this drivers initialization runs.
