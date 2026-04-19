@@ -24,6 +24,8 @@ tests:
   pm.power_residency_time:
     platform_allow:
       - stm32l562e_dk
+      - frdm_rw612
+      - rd_rw612_bga
     tags:
       - pm
 
