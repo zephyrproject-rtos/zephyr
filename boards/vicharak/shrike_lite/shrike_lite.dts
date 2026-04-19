@@ -76,6 +76,22 @@
 	status = "okay";
 };
 
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&fpga_flash_default>;
+	pinctrl-names = "default";
+
+	fpga: fpga@0 {
+		compatible = "renesas,slg47910";
+		reg = <0>;
+		spi-max-frequency = <1600000>;
+
+		pwr-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		en-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		ss-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
 &uart1 {
 	current-speed = <115200>;
 	status = "okay";
