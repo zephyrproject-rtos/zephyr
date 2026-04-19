@@ -23,6 +23,26 @@ struct leds_group_multicolor_config {
 	const struct led_dt_spec *led;
 };
 
+static int leds_group_multicolor_off(const struct device *dev, uint32_t led)
+{
+	const struct leds_group_multicolor_config *config = dev->config;
+
+	if (led != 0) {
+		return -EINVAL;
+	}
+
+	for (uint8_t i = 0; i < config->num_leds; i++) {
+		int err;
+
+		err = led_off_dt(&config->led[i]);
+		if (err) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+
 static int leds_group_multicolor_set_color(const struct device *dev, uint32_t led,
 					   uint8_t num_colors, const uint8_t *color)
 {
@@ -64,6 +84,7 @@ static int leds_group_multicolor_init(const struct device *dev)
 }
 
 static DEVICE_API(led, leds_group_multicolor_api) = {
+	.off = leds_group_multicolor_off,
 	.set_color = leds_group_multicolor_set_color,
 };
 
