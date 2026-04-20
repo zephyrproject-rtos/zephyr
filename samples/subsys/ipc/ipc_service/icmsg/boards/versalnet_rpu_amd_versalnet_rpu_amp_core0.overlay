@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * IPC service (ICMSG) on VersalNet RPU AMP core 0: shared OCM buffers + IPI doorbells.
+ *
+ * Shared buffers in the last 8 KiB of the Zephyr OCM span
+ * (dts/vendor/amd/versalnet.dtsi: memory@bbf00000 + DT_SIZE_M(1)).
+ */
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Core 0 writes / core 1 reads */
+		amp_ipc_c0_to_c1: memory@bbffe000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xbbffe000 0x1000>;
+			zephyr,memory-region = "AMP_IPC_C0_TO_C1";
+		};
+
+		/* Core 1 writes / core 0 reads */
+		amp_ipc_c1_to_c0: memory@bbfff000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xbbfff000 0x1000>;
+			zephyr,memory-region = "AMP_IPC_C1_TO_C0";
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icmsg";
+			status = "okay";
+			tx-region = <&amp_ipc_c0_to_c1>;
+			rx-region = <&amp_ipc_c1_to_c0>;
+			mboxes = <&ipi1_to_ipi2 0>, <&ipi1_to_ipi2 1>;
+			mbox-names = "tx", "rx";
+		};
+	};
+};
+
+&ipi1 {
+	status = "okay";
+
+	ipi1_to_ipi2: mailbox@eb350000 {
+		compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
+		reg = <0xeb350000 0x20>, <0xeb3f0800 0x1000>;
+		reg-names = "ctrl", "msg";
+		xlnx,ipi-id = <4>;
+		#mbox-cells = <1>;
+	};
+};

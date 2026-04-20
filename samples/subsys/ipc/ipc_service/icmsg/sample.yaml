@@ -109,3 +109,9 @@ tests:
       - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf7120dk_nrf7120_cpuapp_icbmsg.overlay"
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
       - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf7120dk_nrf7120_cpuflpr_icbmsg.overlay"
+
+  sample.ipc.icmsg.amd_versalnet_rpu:
+    build_only: true
+    sysbuild: false
+    platform_allow:
+      - versalnet_rpu/amd_versalnet_rpu/amp/core0

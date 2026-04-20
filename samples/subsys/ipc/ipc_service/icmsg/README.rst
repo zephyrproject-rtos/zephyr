@@ -63,3 +63,19 @@ serial port, one is host another is remote:
    [00:00:00.006,378] <inf> remote: Perform sends for 1000 [ms]
    [00:00:01.006,164] <inf> remote: Sent 236797 [Bytes] over 1000 [ms]
    [00:00:01.006,195] <inf> remote: IPC-service REMOTE demo ended
+
+Building for AMD VersalNet RPU AMP (two Zephyr images)
+*******************************************************
+
+The devicetree uses ``zephyr,ipc-icmsg`` (see ``dts/bindings/ipc/zephyr,ipc-icmsg.yaml``)
+with two small non-cacheable OCM regions and Xilinx IPI mailboxes.  Because
+sysbuild is not yet reliable for all HWMv2 AMP board strings, build the host and
+remote projects separately (same pattern as ``samples/boards/amd/amp_ipi_exchange``):
+
+.. code-block:: console
+
+   west build -b versalnet_rpu/amd_versalnet_rpu/amp/core0 -d build_ipc0 samples/subsys/ipc/ipc_service/icmsg
+   west build -b versalnet_rpu/amd_versalnet_rpu/amp/core1 -d build_ipc1 samples/subsys/ipc/ipc_service/icmsg/remote
+
+Flash both ``zephyr.elf`` files with your board flow (for example XSDB with
+``--second-elf``).
