@@ -113,14 +113,15 @@
 
 	soc {
 		fmc: flash-controller@40022000 {
-			compatible = "realtek,rtl87x2g-flash-controller";
+			compatible = "realtek,bee-nor-flash-controller";
 			reg = <0x40022000 0x400>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
 
 			flash: flash@4000000 {
-				compatible = "soc-nv-flash";
+				compatible = "realtek,bee-nor-flash", "soc-nv-flash";
 				write-block-size = <1>;
 				erase-block-size = <4096>;
 				#address-cells = <1>;
