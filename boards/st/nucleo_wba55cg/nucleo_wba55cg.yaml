@@ -12,6 +12,7 @@ supported:
   - arduino_spi
   - counter
   - crc
+  - crypto
   - gpio
   - i2c
   - rng
