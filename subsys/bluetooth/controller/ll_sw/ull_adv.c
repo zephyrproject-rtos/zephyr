@@ -1305,7 +1305,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if defined(CONFIG_BT_TICKER_EXT)
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		ll_adv_ticker_ext[handle].ticks_slot_window = 0;
-#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		ll_adv_ticker_ext[handle].expire_info_id = TICKER_NULL;
@@ -1403,7 +1403,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 */
 			ticks_anchor_aux =
 				ticks_anchor + ticks_slot +
-				HAL_TICKER_US_TO_TICKS(
+				HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
@@ -1427,7 +1427,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 						PDU_AC_PAYLOAD_SIZE_MAX,
 						PDU_AC_PAYLOAD_SIZE_MAX);
 				ticks_slot_aux =
-					HAL_TICKER_US_TO_TICKS(us_slot) +
+					HAL_TICKER_US_TO_TICKS_CEIL(us_slot) +
 					ticks_slot_overhead_aux;
 #else
 				ticks_slot_aux = aux->ull.ticks_slot +
@@ -1448,7 +1448,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				 */
 				uint32_t ticks_anchor_sync = ticks_anchor_aux +
 					ticks_slot_aux +
-					HAL_TICKER_US_TO_TICKS(
+					HAL_TICKER_US_TO_TICKS_CEIL(
 						MAX(EVENT_MAFS_US,
 						    EVENT_OVERHEAD_START_US) -
 						EVENT_OVERHEAD_START_US +
@@ -1522,8 +1522,12 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #if defined(CONFIG_BT_TICKER_EXT)
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+#if defined(CONFIG_BT_CTLR_ADV_SLOT_WINDOW)
 		ll_adv_ticker_ext[handle].ticks_slot_window =
 			ULL_ADV_RANDOM_DELAY + ticks_slot;
+#else /* !CONFIG_BT_CTLR_ADV_SLOT_WINDOW */
+		ll_adv_ticker_ext[handle].ticks_slot_window = 0U;
+#endif /* !CONFIG_BT_CTLR_ADV_SLOT_WINDOW */
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)

@@ -22,6 +22,8 @@
 #include "pdu_vendor.h"
 #include "pdu.h"
 
+#include "lll/lll_prof_internal.h"
+
 #include "lll.h"
 
 #include "hal/debug.h"
@@ -32,16 +34,21 @@
  * 3 extended advertising sets, scanning on 2M PHY, scanning on Coded PHY, and
  * 2 auxiliary scan set.
  */
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-#define LLL_PROF_RADIO_MAX_US    103 /* Max. Radio Rx/Tx ISR, O(1)*/
-#define LLL_PROF_LLL_MAX_US      105 /* Max. LLL prepare, O(1) */
-#define LLL_PROF_ULL_HIGH_MAX_US 260 /* Max. Radio + LLL + ULL High, O(1) */
-#define LLL_PROF_ULL_LOW_MAX_US  306 /* Max. ULL Low, O(n) n is ticker nodes */
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+#define LLL_PROF_RADIO_MAX_US    92   /* Max. Radio Rx/Tx ISR, O(1)*/
+#define LLL_PROF_LLL_MAX_US      245  /* Max. LLL prepare, O(1) */
+#define LLL_PROF_ULL_HIGH_MAX_US 306  /* Max. Radio + LLL + ULL High, O(1) */
+#define LLL_PROF_ULL_LOW_MAX_US  794  /* Max. ULL Low, O(n) n is ticker nodes */
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#define LLL_PROF_RADIO_MAX_US    92   /* Max. Radio Rx/Tx ISR, O(1)*/
+#define LLL_PROF_LLL_MAX_US      92   /* Max. LLL prepare, O(1) */
+#define LLL_PROF_ULL_HIGH_MAX_US 214  /* Max. Radio + LLL + ULL High, O(1) */
+#define LLL_PROF_ULL_LOW_MAX_US  763  /* Max. ULL Low, O(n) n is ticker nodes */
 #else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
-#define LLL_PROF_RADIO_MAX_US    184 /* Max. Radio Rx/Tx ISR, O(1)*/
-#define LLL_PROF_LLL_MAX_US      245 /* Max. LLL prepare, O(1) */
-#define LLL_PROF_ULL_HIGH_MAX_US 458 /* Max. Radio + LLL + ULL High, O(1) */
-#define LLL_PROF_ULL_LOW_MAX_US  733 /* Max. ULL Low, O(n) n is ticker nodes */
+#define LLL_PROF_RADIO_MAX_US    184  /* Max. Radio Rx/Tx ISR, O(1)*/
+#define LLL_PROF_LLL_MAX_US      153  /* Max. LLL prepare, O(1) */
+#define LLL_PROF_ULL_HIGH_MAX_US 458  /* Max. Radio + LLL + ULL High, O(1) */
+#define LLL_PROF_ULL_LOW_MAX_US  1374 /* Max. ULL Low, O(n) n is ticker nodes */
 #endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 #define LLL_PROF_ASSERT(_val, _max) \
@@ -85,10 +92,12 @@ static uint32_t timestamp_ticks_radio;
 static uint32_t timestamp_ticks_lll;
 static uint32_t timestamp_ticks_ull_high;
 static uint32_t timestamp_ticks_ull_low;
-static uint16_t  cputime_ticks_radio;
-static uint16_t  cputime_ticks_lll;
-static uint16_t  cputime_ticks_ull_high;
-static uint16_t  cputime_ticks_ull_low;
+static uint16_t cputime_ticks_radio;
+static uint16_t cputime_ticks_lll;
+static uint16_t cputime_ticks_ull_high;
+static uint16_t cputime_ticks_ull_low;
+static uint16_t cputime_ticks_overhead;
+static uint16_t cputime_ticks_overhead_max;
 
 void lll_prof_enter_radio(void)
 {
@@ -162,6 +171,14 @@ uint16_t lll_prof_ull_low_get(void)
 	return HAL_TICKER_TICKS_TO_US(cputime_ticks_ull_low);
 }
 
+void lll_prof_overhead(uint16_t overhead_ticks)
+{
+	cputime_ticks_overhead = overhead_ticks;
+	if (overhead_ticks > cputime_ticks_overhead_max) {
+		cputime_ticks_overhead_max = overhead_ticks;
+	}
+}
+
 void lll_prof_latency_capture(void)
 {
 	/* sample the packet timer, use it to calculate ISR latency
@@ -233,7 +250,10 @@ uint16_t lll_prof_cputime_get(void)
 
 void lll_prof_send(void)
 {
-	(void)send(NULL);
+	struct node_rx_pdu *rx;
+
+	rx = lll_prof_reserve();
+	lll_prof_reserve_send(rx);
 }
 
 struct node_rx_pdu *lll_prof_reserve(void)
@@ -241,11 +261,9 @@ struct node_rx_pdu *lll_prof_reserve(void)
 	struct node_rx_pdu *rx;
 
 	rx = ull_pdu_rx_alloc_peek(3);
-	if (!rx) {
-		return NULL;
+	if (rx != NULL) {
+		(void)ull_pdu_rx_alloc();
 	}
-
-	ull_pdu_rx_alloc();
 
 	return rx;
 }
@@ -256,7 +274,7 @@ void lll_prof_reserve_send(struct node_rx_pdu *rx)
 
 	err = send(rx);
 	if ((err != 0) && (rx != NULL)) {
-		rx->hdr.type = NODE_RX_TYPE_PROFILE;
+		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 
 		ull_rx_put_sched(rx->hdr.link, rx);
 	}
@@ -317,14 +335,9 @@ static int send(struct node_rx_pdu *rx)
 		return -ENODATA;
 	}
 
-	/* Allocate if not already allocated */
-	if (!rx) {
-		rx = ull_pdu_rx_alloc_peek(3U);
-		if (!rx) {
-			return -ENOMEM;
-		}
-
-		(void)ull_pdu_rx_alloc();
+	/* Do not encode profile if no node rx allocated */
+	if (rx == NULL) {
+		return -ENOMEM;
 	}
 
 	/* Generate event with the allocated node rx */
@@ -343,6 +356,8 @@ static int send(struct node_rx_pdu *rx)
 	p->lll = cputime_lll;
 	p->ull_high = cputime_ull_high;
 	p->ull_low = cputime_ull_low;
+	p->overhead = HAL_TICKER_TICKS_TO_US(cputime_ticks_overhead);
+	p->overhead_max = HAL_TICKER_TICKS_TO_US(cputime_ticks_overhead_max);
 	p->radio_ticks = cputime_ticks_radio;
 	p->lll_ticks = cputime_ticks_lll;
 	p->ull_high_ticks = cputime_ticks_ull_high;

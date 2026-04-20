@@ -483,7 +483,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 			EVENT_US_TO_US_FRAC(cig_lll->window_widening_max_us);
 	}
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 static void isr_rx(void *param)
@@ -883,6 +883,9 @@ static void isr_rx(void *param)
 	subevent_us -= radio_rx_chain_delay_get(0U, 0U);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
+	/* +1 us radio_tmr_start_us compensation */
+	subevent_us -= 1U;
+
 	start_us = radio_tmr_start_us(0U, subevent_us);
 	LL_ASSERT_ERR(start_us == (subevent_us + 1U));
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
@@ -998,12 +1001,14 @@ static void isr_tx(void *param)
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* +1 us radio_tmr_start_us compensation */
+	subevent_us -= 1U;
+
 	start_us = radio_tmr_start_us(0U, subevent_us);
 	LL_ASSERT_ERR(start_us == (subevent_us + 1U));
 
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-	/* Compensate for the 1 us added by radio_tmr_start_us() */
-	start_us = subevent_us + 1U;
+	start_us = subevent_us;
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	hcto = start_us +
@@ -1234,6 +1239,9 @@ static void isr_prepare_subevent_common(void *param)
 		subevent_us += cis_lll->offset - cis_offset_first +
 			       (cis_lll->sub_interval * se_curr);
 	}
+
+	/* +1 us radio_tmr_start_us compensation */
+	subevent_us -= 1U;
 
 	start_us = radio_tmr_start_us(0U, subevent_us);
 	LL_ASSERT_ERR(!trx_performed_bitmask || (start_us == (subevent_us + 1U)));

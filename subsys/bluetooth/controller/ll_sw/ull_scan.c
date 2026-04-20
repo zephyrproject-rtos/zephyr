@@ -428,8 +428,12 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US));
 
 #if defined(CONFIG_BT_TICKER_EXT)
+#if defined(CONFIG_BT_CTLR_SCAN_SLOT_WINDOW)
 		ll_scan_ticker_ext[handle].ticks_slot_window =
 			scan->ull.ticks_slot + ticks_slot_overhead;
+#else /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
+		ll_scan_ticker_ext[handle].ticks_slot_window = 0U;
+#endif /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
 #endif /* CONFIG_BT_TICKER_EXT */
 
 	} else {
@@ -443,7 +447,11 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 		lll->ticks_window = 0U;
 
 #if defined(CONFIG_BT_TICKER_EXT)
+#if defined(CONFIG_BT_CTLR_SCAN_SLOT_WINDOW)
 		ll_scan_ticker_ext[handle].ticks_slot_window = ticks_interval;
+#else /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
+		ll_scan_ticker_ext[handle].ticks_slot_window = 0U;
+#endif /* !CONFIG_BT_CTLR_SCAN_SLOT_WINDOW */
 #endif /* CONFIG_BT_TICKER_EXT */
 	}
 

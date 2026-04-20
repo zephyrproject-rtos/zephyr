@@ -124,11 +124,15 @@ struct ll_sync_iso_set {
 	/* Pointer to semaphore used for LLL flushing */
 	struct k_sem *flush_sem;
 
+	uint8_t big_handle;
+
+	/* Flag to mark terminate procedure handling */
+	uint8_t is_stop:1;
+
 	/* Periodic Advertising Sync timeout */
 	uint16_t timeout;
 	uint16_t volatile timeout_reload; /* Non-zero when sync established */
 	uint16_t timeout_expire; /* timeout countdown */
-	uint8_t big_handle;
 
 	/* Encryption */
 	uint8_t gltk[16];

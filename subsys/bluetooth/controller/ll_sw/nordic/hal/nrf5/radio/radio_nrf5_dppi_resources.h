@@ -36,11 +36,19 @@
  * Start event timer on RTC tick:
  * wire the RTC0 EVENTS_COMPARE[2] event to EVENT_TIMER  TASKS_START task.
  */
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+#define HAL_EVENT_TIMER_START_PPI 0
+#else /* !CONFIG_SOC_SERIES_NRF54H */
 #define HAL_EVENT_TIMER_START_PPI 8
+#endif /* !CONFIG_SOC_SERIES_NRF54H */
 #define HAL_PPIB_SEND_EVENT_TIMER_START_PPI \
 	_CONCAT(NRF_PPIB_TASK_SEND_, HAL_EVENT_TIMER_START_PPI)
 #define HAL_PPIB_RECEIVE_EVENT_TIMER_START_PPI \
 	_CONCAT(NRF_PPIB_EVENT_RECEIVE_, HAL_EVENT_TIMER_START_PPI)
+#define HAL_IPCT_SEND_EVENT_TIMER_START_PPI \
+	_CONCAT(NRF_IPCT_TASK_SEND_, HAL_EVENT_TIMER_START_PPI)
+#define HAL_IPCT_RECEIVE_EVENT_TIMER_START_PPI \
+	_CONCAT(NRF_IPCT_EVENT_RECEIVE_, HAL_EVENT_TIMER_START_PPI)
 
 /*******************************************************************************
  * Capture event timer on Radio ready:
@@ -55,30 +63,30 @@
  *
  * Note: we do not need an additional PPI, since we have already set up
  * a PPI to publish RADIO ADDRESS event.
- * Note: For nRF54L, CCM is started on RADIO PAYLOAD, hence need an explicit
+ * Note: For nRF54L/H, CCM is started on RADIO PAYLOAD, hence need an explicit
  * PPI channel.
  */
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54H)
 #define HAL_TRIGGER_CRYPT_PPI 7
 #define HAL_PPIB_SEND_TRIGGER_CRYPT_PPI \
 	_CONCAT(NRF_PPIB_TASK_SEND_, HAL_TRIGGER_CRYPT_PPI)
 #define HAL_PPIB_RECEIVE_TRIGGER_CRYPT_PPI \
 	_CONCAT(NRF_PPIB_EVENT_RECEIVE_, HAL_TRIGGER_CRYPT_PPI)
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 #define HAL_TRIGGER_CRYPT_PPI HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 
 /*******************************************************************************
  * Trigger automatic address resolution on Bit counter match:
  * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
  */
 #define HAL_TRIGGER_AAR_PPI 6
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54H)
 #define HAL_PPIB_SEND_TRIGGER_AAR_PPI \
 	_CONCAT(NRF_PPIB_TASK_SEND_, HAL_TRIGGER_AAR_PPI)
 #define HAL_PPIB_RECEIVE_TRIGGER_AAR_PPI \
 	_CONCAT(NRF_PPIB_EVENT_RECEIVE_, HAL_TRIGGER_AAR_PPI)
-#endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF54H */
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED) && \
 	defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
@@ -184,5 +192,9 @@
 /* The 2 adjacent PPI groups used for implementing SW_SWITCH_TIMER-based
  * auto-switch for TIFS. 'index' must be 0 or 1.
  */
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+#define SW_SWITCH_TIMER_TASK_GROUP_BASE 2
+#else /* !CONFIG_SOC_SERIES_NRF54H */
 #define SW_SWITCH_TIMER_TASK_GROUP_BASE 4
+#endif /* !CONFIG_SOC_SERIES_NRF54H */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */

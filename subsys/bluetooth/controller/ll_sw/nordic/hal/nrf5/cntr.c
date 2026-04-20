@@ -56,7 +56,15 @@ void cntr_init(void)
 
 	nrf_grtc_event_clear(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_TICKER);
 
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 	nrf_grtc_int_group_enable(NRF_GRTC, 1U, HAL_CNTR_GRTC_INTENSET_COMPARE_TICKER_Msk);
+
+#elif defined(CONFIG_SOC_SERIES_NRF54H)
+	nrf_grtc_int_group_enable(NRF_GRTC, 6U, HAL_CNTR_GRTC_INTENSET_COMPARE_TICKER_Msk);
+
+#else
+#error "Unknown SoC."
+#endif
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC_START)
 	NRF_GRTC->MODE = ((GRTC_MODE_SYSCOUNTEREN_Enabled <<
