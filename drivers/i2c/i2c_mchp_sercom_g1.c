@@ -1237,7 +1237,7 @@ static int i2c_mchp_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = i2c_configure(dev, i2c_map_dt_bitrate(cfg->bitrate));
+	ret = i2c_configure(dev, I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(cfg->bitrate));
 	if (ret != 0) {
 		LOG_ERR("Failed to configure: %d", ret);
 		return ret;
