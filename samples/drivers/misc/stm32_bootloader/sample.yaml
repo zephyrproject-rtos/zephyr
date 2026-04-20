@@ -1,0 +1,15 @@
+sample:
+  name: STM32 system bootloader host sample
+  description: |
+    Demonstrates the standalone bootloader driver and its companion flash
+    adapter by programming a small payload into a target STM32 via its
+    USART ROM bootloader.
+tests:
+  sample.drivers.misc.stm32_bootloader:
+    build_only: true
+    platform_allow:
+      - stm32h573i_dk
+    tags:
+      - drivers
+      - flash
+      - misc

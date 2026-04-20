@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Alex Fabre
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Target: nucleo_g0B1re (STM32G0B1RE), 512 KiB flash, 2 KiB pages.
+ *
+ * The bootloader node describes how to reach the target. The
+ * main_flash child exposes its 512 KiB internal flash as a Zephyr
+ * flash device so the sample can stream firmware with stream_flash.
+ */
+
+&usart3 {
+	stm32_target: stm32_bootloader {
+		compatible = "st,stm32-bootloader";
+		boot0-gpios = <&gpiog 8 GPIO_ACTIVE_HIGH>;
+		nrst-gpios = <&gpiog 5 GPIO_ACTIVE_LOW>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		main_flash: main-flash@8000000 {
+			compatible = "st,stm32-bootloader-flash";
+			reg = <0x08000000 0x80000>;
+			erase-block-size = <0x800>;
+		};
+	};
+};
