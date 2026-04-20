@@ -1,0 +1,40 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 Realtek Semiconductor Corporation
+ *
+ * Button-controlled Blinky overlay for RTS5912 EVB
+ * - LED0: GPIO125 (GPIOH pin 13)
+ * - SW0:  GPIO126 (GPIOH pin 14) - active low push button
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioh 13 GPIO_ACTIVE_HIGH>;
+			label = "User LED 0";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioh 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&gpioh {
+	status = "okay";
+};
