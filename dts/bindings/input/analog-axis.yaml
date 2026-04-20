@@ -25,7 +25,10 @@ child-binding:
       type: phandle-array
       required: true
       description: |
-        ADC IO channel to use.
+        ADC IO channel to use. Note that the driver uses the adc_sequence APIs
+        so all io-channels needs to point at the same ADC device and the
+        channel numbers must be in increasing sequence. If multiple ADC are
+        used then each needs its own analog-axis node.
 
     out-min:
       type: int
