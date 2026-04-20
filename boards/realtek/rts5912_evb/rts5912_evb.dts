@@ -15,6 +15,10 @@
 	model = "Realtek RTS5912 Evaluation Board";
 	compatible = "realtek,rts5912-evb";
 
+	aliases {
+		watchdog0 = &wdog;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
@@ -101,4 +105,8 @@
 	status = "okay";
 	pinctrl-0 = <&spi_mosi_gpio096>;
 	pinctrl-names = "default";
+};
+
+&wdog {
+	status = "okay";
 };

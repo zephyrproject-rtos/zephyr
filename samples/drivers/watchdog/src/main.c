@@ -54,6 +54,11 @@
 #define WDT_OPT            0
 #elif DT_HAS_COMPAT_STATUS_OKAY(andestech_atcwdt200)
 #define WDT_MAX_WINDOW 500U
+#elif DT_HAS_COMPAT_STATUS_OKAY(realtek_rts5912_watchdog)
+/* RTS5912 watchdog only supports 1-257ms timeout range */
+#define WDT_MAX_WINDOW  200U
+#define WDG_FEED_INTERVAL 50U
+#define WDT_OPT 0
 #endif
 
 #ifndef WDT_ALLOW_CALLBACK
