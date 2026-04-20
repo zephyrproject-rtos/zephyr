@@ -1,0 +1,160 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/imxrt/nxp_rt6xx.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "mimxrt685_aud_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP MIMXRT685-AUD-EVK board";
+	compatible = "nxp,mimxrt685";
+
+	aliases {
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
+		usart-0 = &flexcomm0;
+	};
+
+	chosen {
+		zephyr,flash-controller = &mx25u51245g;
+		zephyr,flash = &mx25u51245g_flash;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &sram0;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_1: button_0 {
+			label = "User SW1";
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		user_button_2: button_1 {
+			label = "User SW2";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		green_led: led_1 {
+			gpios = <&gpio0 14 0>;
+			label = "User LED_GREEN";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpio0 26 0>;
+			label = "User LED_BLUE";
+		};
+
+		red_led: led_3 {
+			gpios = <&gpio0 31 0>;
+			label = "User LED_RED";
+		};
+	};
+};
+
+&os_timer {
+	status = "okay";
+	wakeup-source;
+};
+
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+};
+
+&flexspi {
+	status = "okay";
+
+	mx25u51245g: flash-controller@2 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(64 * 8)>;
+		reg = <2>;
+		spi-max-frequency = <DT_FREQ_M(96)>;
+		status = "okay";
+		jedec-id = [c2 25 3a];
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
+
+		mx25u51245g_flash: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <1>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				boot_partition: partition@0 {
+					label = "mcuboot";
+					reg = <0x00000000 DT_SIZE_K(128)>;
+				};
+
+				slot0_partition: partition@20000 {
+					label = "image-0";
+					reg = <0x00020000 DT_SIZE_M(3)>;
+				};
+
+				slot1_partition: partition@320000 {
+					label = "image-1";
+					reg = <0x00320000 DT_SIZE_M(3)>;
+				};
+
+				storage_partition: partition@620000 {
+					label = "storage";
+					reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+				};
+			};
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&user_button_1 {
+	status = "okay";
+};
+
+&user_button_2 {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&blue_led {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
