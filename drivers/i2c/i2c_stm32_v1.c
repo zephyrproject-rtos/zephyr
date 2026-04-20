@@ -662,9 +662,11 @@ int i2c_stm32_error(const struct device *dev)
 end:
 #if defined(CONFIG_I2C_TARGET)
 	if (!data->target_attached || data->controller_active) {
+		i2c_stm32_disable_transfer_interrupts(dev);
 		i2c_stm32_controller_mode_end(dev);
 	}
 #else
+	i2c_stm32_disable_transfer_interrupts(dev);
 	i2c_stm32_controller_mode_end(dev);
 #endif
 	return -EIO;
