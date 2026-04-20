@@ -605,3 +605,21 @@ tests:
       required_devices:
         # second device required, with the same platform and application
         - {}
+
+  bluetooth.shell.main.pytest_demo_bsim:
+    platform_allow:
+      - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpunet
+    platform_exclude:
+      - native_sim
+    integration_platforms:
+      - nrf52_bsim/native
+    extra_args:
+      - EXTRA_CONF_FILE=xterm-native-shell.conf
+      - EXTRA_DTC_OVERLAY_FILE=xterm-native-shell.overlay
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_demo_bsim.py"
+      required_devices:
+        - {}

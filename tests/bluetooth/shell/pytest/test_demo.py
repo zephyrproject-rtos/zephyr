@@ -11,7 +11,7 @@ from twister_harness import Shell
 logger = logging.getLogger(__name__)
 
 
-def test_ble_connect(shells: list[Shell]):
+def run_ble_connect(shells: list[Shell]):
     """Flash two DUTs with a Bluetooth shell image and verify they can connect to each other.
 
     Set a unique advertised device name on the peripheral, start advertising,
@@ -48,3 +48,8 @@ def test_ble_connect(shells: list[Shell]):
     time.sleep(3)
     shell_peripheral.exec_command("bt disconnect")
     dut_central.readlines_until(regex="Disconnected.*", timeout=10)
+
+
+def test_ble_connect(shells: list[Shell]):
+    """Test that two DUTs can connect to each other over Bluetooth using the shell interface."""
+    run_ble_connect(shells)
