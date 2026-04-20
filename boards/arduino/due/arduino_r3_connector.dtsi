@@ -32,7 +32,7 @@
 			   <ARDUINO_HEADER_R3_D11 0 &piod 7 0>,
 			   <ARDUINO_HEADER_R3_D12 0 &piod 8 0>,
 			   <ARDUINO_HEADER_R3_D13 0 &piob 27 0>,
-			   <ARDUINO_HEADER_R3_D14 0 &pioa 17 0>,
-			   <ARDUINO_HEADER_R3_D15 0 &pioa 18 0>;
+			   <ARDUINO_HEADER_R3_SDA 0 &pioa 17 0>,
+			   <ARDUINO_HEADER_R3_SCL 0 &pioa 18 0>;
 	};
 };

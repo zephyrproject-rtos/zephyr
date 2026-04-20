@@ -32,8 +32,8 @@
 			   <ARDUINO_HEADER_R3_D11 0 &gpiob 5 0>,
 			   <ARDUINO_HEADER_R3_D12 0 &gpiob 4 0>,
 			   <ARDUINO_HEADER_R3_D13 0 &gpioa 5 0>,
-			   <ARDUINO_HEADER_R3_D14 0 &gpioh 5 0>,
-			   <ARDUINO_HEADER_R3_D15 0 &gpioh 4 0>;
+			   <ARDUINO_HEADER_R3_SDA 0 &gpioh 5 0>,
+			   <ARDUINO_HEADER_R3_SCL 0 &gpioh 4 0>;
 	};
 };
 

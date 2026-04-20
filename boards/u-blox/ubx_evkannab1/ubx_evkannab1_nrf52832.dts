@@ -106,8 +106,8 @@
 			   <ARDUINO_HEADER_R3_D11 0 &gpio0 23 0>,
 			   <ARDUINO_HEADER_R3_D12 0 &gpio0 18 0>,
 			   <ARDUINO_HEADER_R3_D13 0 &gpio0 20 0>,
-			   <ARDUINO_HEADER_R3_D14 0 &gpio0 15 0>,
-			   <ARDUINO_HEADER_R3_D15 0 &gpio0 16 0>;
+			   <ARDUINO_HEADER_R3_SDA 0 &gpio0 15 0>,
+			   <ARDUINO_HEADER_R3_SCL 0 &gpio0 16 0>;
 	};
 
 	arduino_adc: analog-connector {

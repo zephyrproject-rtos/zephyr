@@ -40,9 +40,13 @@
 #define ARDUINO_HEADER_R3_D11 17 /**< Digital pin 11 (D11) */
 #define ARDUINO_HEADER_R3_D12 18 /**< Digital pin 12 (D12) */
 #define ARDUINO_HEADER_R3_D13 19 /**< Digital pin 13 (D13) */
-#define ARDUINO_HEADER_R3_D14 20 /**< Digital pin 14 (D14) */
-#define ARDUINO_HEADER_R3_D15 21 /**< Digital pin 15 (D15) */
+#define ARDUINO_HEADER_R3_SDA 20 /**< I2C data line */
+#define ARDUINO_HEADER_R3_SCL 21 /**< I2C clock line */
 
 /** @} */
+
+/* These pin names are not Arduino standard: use SDA/SCL */
+#define ARDUINO_HEADER_R3_D14 ARDUINO_HEADER_R3_SDA /**< @deprecated I2C data line */
+#define ARDUINO_HEADER_R3_D15 ARDUINO_HEADER_R3_SCL /**< @deprecated I2C clock line */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ARDUINO_HEADER_R3_H_ */

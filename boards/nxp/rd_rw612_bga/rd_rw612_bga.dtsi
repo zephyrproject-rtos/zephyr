@@ -68,8 +68,8 @@
 			   <ARDUINO_HEADER_R3_D11 0 &hsgpio0 2 0>,
 			   <ARDUINO_HEADER_R3_D12 0 &hsgpio0 3 0>,
 			   <ARDUINO_HEADER_R3_D13 0 &hsgpio0 4 0>,
-			   <ARDUINO_HEADER_R3_D14 0 &hsgpio0 16 0>,
-			   <ARDUINO_HEADER_R3_D15 0 &hsgpio0 17 0>;
+			   <ARDUINO_HEADER_R3_SDA 0 &hsgpio0 16 0>,
+			   <ARDUINO_HEADER_R3_SCL 0 &hsgpio0 17 0>;
 	};
 
 	/*

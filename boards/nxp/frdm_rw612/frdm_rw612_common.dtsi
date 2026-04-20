@@ -100,8 +100,8 @@
 			   <ARDUINO_HEADER_R3_D11 0 &hsgpio0 9 0>,  /* MOSI */
 			   <ARDUINO_HEADER_R3_D12 0 &hsgpio0 8 0>,  /* MISO */
 			   <ARDUINO_HEADER_R3_D13 0 &hsgpio0 7 0>,  /* SCK */
-			   <ARDUINO_HEADER_R3_D14 0 &hsgpio0 16 0>, /* SDA */
-			   <ARDUINO_HEADER_R3_D15 0 &hsgpio0 17 0>; /* SCL */
+			   <ARDUINO_HEADER_R3_SDA 0 &hsgpio0 16 0>, /* SDA */
+			   <ARDUINO_HEADER_R3_SCL 0 &hsgpio0 17 0>; /* SCL */
 	};
 };
 
