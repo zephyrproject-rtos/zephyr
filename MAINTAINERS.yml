@@ -4700,6 +4700,7 @@ RISCV arch:
     - npitre
     - VynDragon
     - ycsin
+    - maass-hamburg
   files:
     - arch/riscv/
     - boards/enjoydigital/litex_vexriscv/
