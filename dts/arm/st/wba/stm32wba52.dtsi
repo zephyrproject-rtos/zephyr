@@ -105,6 +105,15 @@
 			interrupts = <0 0>;
 			status = "disabled";
 		};
+
+		aes: aes@420c0000 {
+			compatible = "st,stm32-aes";
+			reg = <0x420c0000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
+			resets = <&rctl STM32_RESET(AHB2, 16)>;
+			interrupts = <58 0>;
+			status = "disabled";
+		};
 	};
 
 	bt_hci_wba: bt_hci_wba {
