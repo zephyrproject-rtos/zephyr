@@ -4390,6 +4390,8 @@ Networking:
   status: maintained
   maintainers:
     - awojasinski
+  collaborators:
+    - DBS06
   files:
     - doc/connectivity/networking/api/ptp.rst
     - include/zephyr/net/ptp.h
