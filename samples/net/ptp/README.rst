@@ -308,8 +308,27 @@ Expected startup output includes:
 ``Runs forever`` is expected because ``CONFIG_NET_SAMPLE_RUN_DURATION=0`` in
 the sample configuration.
 
+To automatically attach a terminal to the Zephyr shell UART PTY, start the
+executable with ``-attach_uart`` instead:
+
+.. code-block:: console
+
+    build/zephyr/zephyr.exe -attach_uart
+
+The attach command is selected by
+:kconfig:option:`CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD` and may be any
+shell command with a single ``%s`` placeholder for the PTY path. For example, to
+open ``screen`` in ``gnome-terminal``, set:
+
+.. code-block:: cfg
+
+    CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD="gnome-terminal -- screen %s"
+
 Step 5 - Attach to Zephyr shell
 -------------------------------
+
+If the executable was started without ``-attach_uart``, attach manually using
+the ``/dev/pts/<N>`` path printed at startup.
 
 If ``screen`` is installed:
 
