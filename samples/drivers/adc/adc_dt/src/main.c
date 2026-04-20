@@ -34,7 +34,11 @@ int main(void)
 {
 	int err;
 	uint32_t count = 0;
+#ifdef CONFIG_SEQUENCE_32BITS_REGISTERS
 	uint32_t buf;
+#else
+	uint16_t buf;
+#endif
 	struct adc_sequence sequence = {
 		.buffer = &buf,
 		/* buffer size in bytes, not number of samples */
