@@ -1,0 +1,44 @@
+name: Label pull requests that have AI-assisted commits
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - main
+      - collab-*
+      - v*-branch
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-ai-assisted-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    name: Sync AI-assisted label
+    runs-on: ubuntu-24.04
+    if: github.repository == 'zephyrproject-rtos/zephyr'
+    permissions:
+      pull-requests: write # add/remove label on the pull request
+    steps:
+      - name: Sync label from commit messages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          REPO="${{ github.repository }}"
+          PR="${{ github.event.pull_request.number }}"
+          if gh api --paginate \
+            -H "Accept: application/vnd.github+json" \
+            "repos/${REPO}/pulls/${PR}/commits" | jq -se \
+            'add | any(.[]; .commit.message | test("(?m)^Assisted-by:"))' \
+            >/dev/null; then
+            gh pr edit "${PR}" --repo "${REPO}" --add-label "AI-assisted"
+          else
+            gh pr edit "${PR}" --repo "${REPO}" --remove-label "AI-assisted" || true
+          fi
