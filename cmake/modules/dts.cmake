@@ -203,6 +203,7 @@ if(EXTRA_DTC_OVERLAY_FILE)
     ${EXTRA_DTC_OVERLAY_FILE_AS_LIST}
     )
 endif()
+build_info(devicetree files PATH ${dts_files})
 
 set(i 0)
 foreach(dts_file ${dts_files})
@@ -230,6 +231,7 @@ foreach(dts_root ${DTS_ROOT})
     list(APPEND EXTRA_GEN_EDT_ARGS --vendor-prefixes ${vendor_prefixes})
   endif()
 endforeach()
+build_info(devicetree bindings-dirs PATH ${DTS_ROOT_BINDINGS})
 
 # Cache the location of the root bindings so they can be used by
 # scripts which use the build directory.
@@ -251,6 +253,8 @@ if(DEFINED CMAKE_DTS_PREPROCESSOR)
 else()
   set(dts_preprocessor ${CMAKE_C_COMPILER})
 endif()
+
+build_info(devicetree include-dirs PATH ${DTS_ROOT_SYSTEM_INCLUDE_DIRS})
 zephyr_dt_preprocess(
   CPP ${dts_preprocessor}
   SOURCE_FILES ${dts_files}
@@ -407,7 +411,3 @@ execute_process(
   )
 
 endif(DTC)
-
-build_info(devicetree files PATH ${dts_files})
-build_info(devicetree include-dirs PATH ${DTS_ROOT_SYSTEM_INCLUDE_DIRS})
-build_info(devicetree bindings-dirs PATH ${DTS_ROOT_BINDINGS})
