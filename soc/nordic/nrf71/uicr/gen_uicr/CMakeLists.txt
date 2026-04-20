@@ -41,9 +41,6 @@ add_custom_target(gen_uicr ALL DEPENDS ${uicr_hex})
 
 # Create the runners_yaml_props_target that flash system expects
 add_custom_target(runners_yaml_props_target)
-set_target_properties(runners_yaml_props_target PROPERTIES
-  hex_file "zephyr.hex"
-)
 
 # Copy over Kconfig and dts files from the main image
 get_filename_component(default_image_binary_dir ${DEFAULT_IMAGE_EDT_PICKLE} DIRECTORY)
@@ -59,6 +56,11 @@ import_kconfig(CONFIG_ ${default_image_binary_dir}/.config)
 foreach(dir ${BOARD_DIRECTORIES})
   include(${dir}/board.cmake OPTIONAL)
 endforeach()
+
+# Override hex_file after board.cmake to ensure it always flash its own output
+set_target_properties(runners_yaml_props_target PROPERTIES
+  hex_file "zephyr.hex"
+)
 
 # Include flash support to automatically generate runners.yaml
 include(${ZEPHYR_BASE}/cmake/flash/CMakeLists.txt)
