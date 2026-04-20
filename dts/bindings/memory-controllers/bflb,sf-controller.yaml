@@ -1,0 +1,32 @@
+# Copyright (c) 2026 MASSDRIVER EI
+# SPDX-License-Identifier: Apache-2.0
+
+title: Bouffalolab Serial Flash controller
+
+description: |
+  The Bouffalolab Serial Flash controller controls two banks of SPI devices.
+  The second bank can be writable.
+  Using banks other than the embedded flash require pinctrl settings.
+
+compatible: "bflb,sf-controller"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  override-bank1:
+    type: boolean
+    description: |
+      Force using DTS provided settings instead of the flash header's for bank1's settings.
+
+  use-32b-addresses:
+    type: boolean
+    description: |
+      Enables using 32 bits length addresses. Must be supported by all devices connected.
+
+  no-header:
+    type: boolean
+    description: |
+      Do not use the bootheader for flash information.

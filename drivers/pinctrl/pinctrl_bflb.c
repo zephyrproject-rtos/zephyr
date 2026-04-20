@@ -23,6 +23,7 @@
 
 void pinctrl_bflb_configure_uart(uint8_t pin, uint8_t func);
 void pinctrl_bflb_init_pin(pinctrl_soc_pin_t pin);
+void pinctrl_bflb_configure_sf_pads(pinctrl_soc_pin_t pin);
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
@@ -36,6 +37,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			== BFLB_PINMUX_FUN_INST_uart0) {
 			pinctrl_bflb_configure_uart(BFLB_PINMUX_GET_PIN(pins[i]),
 			BFLB_PINMUX_GET_SIGNAL(pins[i]) + 4 * BFLB_PINMUX_GET_INST(pins[i]));
+		}
+
+		if ((BFLB_PINMUX_GET_FUN(pins[i]) & BFLB_PINMUX_FUN_MASK)
+			== (BFLB_PINMUX_FUN_INST_sf1 & BFLB_PINMUX_FUN_MASK)) {
+			pinctrl_bflb_configure_sf_pads(pins[i]);
 		}
 
 		/* gpio init*/

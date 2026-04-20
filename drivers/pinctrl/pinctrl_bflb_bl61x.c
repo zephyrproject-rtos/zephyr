@@ -88,6 +88,31 @@ void pinctrl_bflb_configure_uart(uint8_t pin, uint8_t func)
 	}
 }
 
+/* On BL616, 3 pads:
+ * SF1: Embedded pad, io3 to io0 and io2 to cs swaps, not provided, keep as default
+ * SF2: External pad, io3 to io0 swap.
+ * SF3: External pad, No swap.
+ */
+void pinctrl_bflb_configure_sf_pads(pinctrl_soc_pin_t pin)
+{
+	uint8_t funinst = (pin >> BFLB_PINMUX_FUN_INST_POS) & BFLB_PINMUX_FUN_INST_MASK;
+	uint8_t sig = BFLB_PINMUX_GET_SIGNAL(pin);
+	uint8_t real_pin = BFLB_PINMUX_GET_PIN(pin);
+	uint32_t tmp;
+
+	if (funinst == BFLB_PINMUX_FUN_INST_sf2) {
+		if (sig == BFLB_PINMUX_SIGNAL_d0 && (real_pin == 9 || real_pin == 7)) {
+			tmp = sys_read32(GLB_BASE + GLB_PARM_CFG0_OFFSET);
+			if (real_pin == 7) {
+				tmp &= ~GLB_SWAP_SFLASH2_IO_3_IO_0_MSK;
+			} else {
+				tmp |= GLB_SWAP_SFLASH2_IO_3_IO_0_MSK;
+			}
+			sys_write32(tmp, GLB_BASE + GLB_PARM_CFG0_OFFSET);
+		}
+	}
+}
+
 void pinctrl_bflb_init_pin(pinctrl_soc_pin_t pin)
 {
 	uint8_t drive;

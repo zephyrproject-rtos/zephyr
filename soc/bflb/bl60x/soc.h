@@ -20,6 +20,8 @@
 
 /* Add include for DTS generated information */
 #include <zephyr/devicetree.h>
+/* Add include for soc function attributes */
+#include "soc_function_attributes.h"
 
 #endif /* !_ASMLANGUAGE */
 
