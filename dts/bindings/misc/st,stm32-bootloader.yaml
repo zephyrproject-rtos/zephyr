@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Alex Fabre
+
+description: |
+  Common properties for STM32 system bootloader host driver bindings.
+
+  Shared by all transport-specific bindings (USART for now; I2C, CAN, SPI
+  are possible future transports). The host optionally drives the target's
+  BOOT0, BOOT1 and NRST pins through GPIO; any pin absent from the device
+  tree is skipped, so this driver also works with targets that are already
+  in bootloader mode by other means.
+
+  To expose a region of the target's memory as a Zephyr flash device, add
+  an 'st,stm32-bootloader-flash' child node.
+
+properties:
+  boot0-gpios:
+    type: phandle-array
+    description: GPIO connected to the target STM32 BOOT0 (or BOOT) pin.
+
+  boot1-gpios:
+    type: phandle-array
+    description: GPIO connected to the target STM32 BOOT1 pin (if any).
+
+  nrst-gpios:
+    type: phandle-array
+    description: GPIO connected to the target STM32 NRST (reset) pin.
+
+  reset-pulse-ms:
+    type: int
+    default: 1
+    description: NRST pulse duration in milliseconds.
+
+  boot-delay-ms:
+    type: int
+    default: 10
+    description: |
+      Delay after reset before the bootloader is ready for commands
+      (refer to AN2606 for per-product values).
+
+  erase-timeout-ms:
+    type: int
+    default: 35000
+    description: |
+      Timeout for erase/mass-erase operations. Mass erase can take 30+ s.

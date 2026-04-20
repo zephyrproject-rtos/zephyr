@@ -1,0 +1,24 @@
+# STM32 system bootloader host driver
+#
+# Copyright (c) 2026 Alex Fabre
+# SPDX-License-Identifier: Apache-2.0
+
+config STM32_BOOTLOADER
+	bool "STM32 system bootloader host driver"
+	default y
+	depends on DT_HAS_ST_STM32_BOOTLOADER_ENABLED
+	select GPIO
+	help
+	  Drive a target STM32's built-in ROM bootloader (AN2606) from a host
+	  MCU. The driver exposes the AN3155/ANxxxx command set through its
+	  own API (see <zephyr/drivers/misc/stm32_bootloader/stm32_bootloader.h>).
+
+if STM32_BOOTLOADER
+
+module = STM32_BOOTLOADER
+module-str = stm32_bootloader
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # STM32_BOOTLOADER
+
+rsource "usart/Kconfig"
