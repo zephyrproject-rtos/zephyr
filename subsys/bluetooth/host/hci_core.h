@@ -22,17 +22,17 @@
 #include <zephyr/sys/util_macro.h>
 
 /* LL connection parameters */
-#define LE_CONN_LATENCY		0x0000
-#define LE_CONN_TIMEOUT		0x002a
+#define LE_CONN_LATENCY 0x0000
+#define LE_CONN_TIMEOUT 0x002a
 
 #if defined(CONFIG_BT_CLASSIC)
-#define LMP_FEAT_PAGES_COUNT	3
+#define LMP_FEAT_PAGES_COUNT 3
 #else
-#define LMP_FEAT_PAGES_COUNT	1
+#define LMP_FEAT_PAGES_COUNT 1
 #endif
 
 /* SCO  settings */
-#define BT_VOICE_CVSD_16BIT     0x0060
+#define BT_VOICE_CVSD_16BIT 0x0060
 
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
@@ -87,16 +87,14 @@ enum {
 };
 
 /* Flags which should not be cleared upon HCI_Reset */
-#define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
-				 BIT(BT_DEV_PRESET_ID) | \
-				 BIT(BT_DEV_DISABLE))
+#define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | BIT(BT_DEV_PRESET_ID) | BIT(BT_DEV_DISABLE))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
 /* Check the feature bit for extended or legacy advertising commands */
 #define BT_DEV_FEAT_LE_EXT_ADV(feat) BT_FEAT_LE_EXT_ADV(feat)
 #else
 /* Always use extended advertising commands. */
-#define BT_DEV_FEAT_LE_EXT_ADV(feat)  1
+#define BT_DEV_FEAT_LE_EXT_ADV(feat) 1
 #endif
 
 enum {
@@ -159,31 +157,31 @@ enum {
 
 struct bt_le_ext_adv {
 	/* ID Address used for advertising */
-	uint8_t                 id;
+	uint8_t id;
 
 	/* Advertising handle */
-	uint8_t                 handle;
+	uint8_t handle;
 
 #if defined(CONFIG_BT_EXT_ADV)
 	/* TX Power in use by the controller */
-	int8_t                    tx_power;
+	int8_t tx_power;
 
 	/* Advertising Set ID */
-	uint8_t                   sid;
+	uint8_t sid;
 
 	/* Callbacks for the advertising set */
 	const struct bt_le_ext_adv_cb *cb;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 	/* Current local Random Address */
-	bt_addr_le_t            random_addr;
+	bt_addr_le_t random_addr;
 
 	/* Current target address */
-	bt_addr_le_t            target_addr;
+	bt_addr_le_t target_addr;
 
 	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
 
-	struct k_work_delayable	lim_adv_timeout_work;
+	struct k_work_delayable lim_adv_timeout_work;
 
 	/** The options used to set the parameters for this advertising set
 	 * @ref bt_le_adv_param
@@ -280,19 +278,19 @@ struct bt_dev_le {
 	/* LE features */
 	uint8_t features[BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE];
 	/* LE states */
-	uint64_t			states;
+	uint64_t states;
 
 #if defined(CONFIG_BT_CONN)
 	/* Controller buffer information */
-	uint16_t		mtu;
-	struct k_sem		pkts;
-	uint16_t		acl_mtu;
-	struct k_sem		acl_pkts;
+	uint16_t mtu;
+	struct k_sem pkts;
+	uint16_t acl_mtu;
+	struct k_sem acl_pkts;
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_ISO)
-	uint16_t		iso_mtu;
-	uint8_t			iso_limit;
-	struct k_sem		iso_pkts;
+	uint16_t iso_mtu;
+	uint8_t iso_limit;
+	struct k_sem iso_pkts;
 #endif /* CONFIG_BT_ISO */
 #if defined(CONFIG_BT_BROADCASTER)
 	uint16_t max_adv_data_len;
@@ -300,25 +298,25 @@ struct bt_dev_le {
 
 #if defined(CONFIG_BT_SMP)
 	/* Size of the controller resolving list */
-	uint8_t                    rl_size;
+	uint8_t rl_size;
 	/* Number of entries in the resolving list. rl_entries > rl_size
 	 * means that host-side resolving is used.
 	 */
-	uint8_t                    rl_entries;
+	uint8_t rl_entries;
 #endif /* CONFIG_BT_SMP */
 	/* List of `struct bt_conn` that have either pending data to send, or
 	 * something to process (e.g. a disconnection event).
 	 *
 	 * Each element in this list contains a reference to its `conn` object.
 	 */
-	sys_slist_t		conn_ready;
+	sys_slist_t conn_ready;
 };
 
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
-	uint16_t         mtu;
-	struct k_sem  pkts;
-	uint16_t         esco_pkt_type;
+	uint16_t mtu;
+	struct k_sem pkts;
+	uint16_t esco_pkt_type;
 };
 
 /* The theoretical max for these is 8 and 64, but there's no point
@@ -326,23 +324,23 @@ struct bt_dev_br {
  * These values must be updated whenever the host implementation is
  * extended beyond the current values.
  */
-#define BT_DEV_VS_FEAT_MAX  1
-#define BT_DEV_VS_CMDS_MAX  2
+#define BT_DEV_VS_FEAT_MAX 1
+#define BT_DEV_VS_CMDS_MAX 2
 
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
 	/* Local Identity Address(es) */
-	bt_addr_le_t            id_addr[CONFIG_BT_ID_MAX];
-	uint8_t                    id_count;
+	bt_addr_le_t id_addr[CONFIG_BT_ID_MAX];
+	uint8_t id_count;
 
 	struct bt_conn_le_create_param create_param;
 
 #if !defined(CONFIG_BT_EXT_ADV)
 	/* Legacy advertiser */
-	struct bt_le_ext_adv    adv;
+	struct bt_le_ext_adv adv;
 #else
 	/* Pointer to reserved advertising set */
-	struct bt_le_ext_adv    *adv;
+	struct bt_le_ext_adv *adv;
 #if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	/* When supporting multiple concurrent connectable advertising sets
 	 * with multiple identities, we need to know the identity of
@@ -356,66 +354,65 @@ struct bt_dev {
 	struct {
 		bool valid;
 		struct bt_hci_evt_le_enh_conn_complete evt;
-	} cached_conn_complete[MIN(CONFIG_BT_MAX_CONN,
-				CONFIG_BT_EXT_ADV_MAX_ADV_SET)];
+	} cached_conn_complete[MIN(CONFIG_BT_MAX_CONN, CONFIG_BT_EXT_ADV_MAX_ADV_SET)];
 #endif
 #endif
 	/* Current local Random Address */
-	bt_addr_le_t            random_addr;
-	uint8_t                    adv_conn_id;
+	bt_addr_le_t random_addr;
+	uint8_t adv_conn_id;
 
 	/* Controller version & manufacturer information */
-	uint8_t			hci_version;
-	uint8_t			lmp_version;
-	uint16_t			hci_revision;
-	uint16_t			lmp_subversion;
-	uint16_t			manufacturer;
+	uint8_t hci_version;
+	uint8_t lmp_version;
+	uint16_t hci_revision;
+	uint16_t lmp_subversion;
+	uint16_t manufacturer;
 
 	/* LMP features (pages 0, 1, 2) */
-	uint8_t			features[LMP_FEAT_PAGES_COUNT][8];
+	uint8_t features[LMP_FEAT_PAGES_COUNT][8];
 
 	/* Supported commands */
-	uint8_t			supported_commands[64];
+	uint8_t supported_commands[64];
 
 #if defined(CONFIG_BT_HCI_VS)
 	/* Vendor HCI support */
-	uint8_t                    vs_features[BT_DEV_VS_FEAT_MAX];
-	uint8_t                    vs_commands[BT_DEV_VS_CMDS_MAX];
+	uint8_t vs_features[BT_DEV_VS_FEAT_MAX];
+	uint8_t vs_commands[BT_DEV_VS_CMDS_MAX];
 #endif
 
-	struct k_work           init;
+	struct k_work init;
 
 	ATOMIC_DEFINE(flags, BT_DEV_NUM_FLAGS);
 
 	/* LE controller specific features */
-	struct bt_dev_le	le;
+	struct bt_dev_le le;
 
 #if defined(CONFIG_BT_CLASSIC)
 	/* BR/EDR controller specific features */
-	struct bt_dev_br	br;
+	struct bt_dev_br br;
 #endif
 
 	/* Number of commands controller can accept */
-	struct k_sem		ncmd_sem;
+	struct k_sem ncmd_sem;
 
 	/* Last sent HCI command */
-	struct net_buf		*sent_cmd;
+	struct net_buf *sent_cmd;
 
 	/* Queue for incoming HCI events & ACL data */
 	sys_slist_t rx_queue;
 
 	/* Queue for outgoing HCI commands */
-	struct k_fifo		cmd_tx_queue;
+	struct k_fifo cmd_tx_queue;
 
 	const struct device *hci;
 
 #if defined(CONFIG_BT_PRIVACY)
 	/* Local Identity Resolving Key */
-	uint8_t			irk[CONFIG_BT_ID_MAX][16];
+	uint8_t irk[CONFIG_BT_ID_MAX][16];
 
 #if defined(CONFIG_BT_RPA_SHARING)
 	/* Only 1 RPA per identity */
-	bt_addr_t		rpa[CONFIG_BT_ID_MAX];
+	bt_addr_t rpa[CONFIG_BT_ID_MAX];
 #endif
 
 	/* Work used for RPA rotation */
@@ -427,11 +424,11 @@ struct bt_dev {
 
 	/* Local Name */
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-	char			name[CONFIG_BT_DEVICE_NAME_MAX + 1];
+	char name[CONFIG_BT_DEVICE_NAME_MAX + 1];
 #endif
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	/* Appearance Value */
-	uint16_t		appearance;
+	uint16_t appearance;
 #endif
 };
 
@@ -455,8 +452,7 @@ struct bt_hci_cmd_state_set {
 };
 
 /* Set command state related with the command buffer */
-void bt_hci_cmd_state_set_init(struct net_buf *buf,
-			       struct bt_hci_cmd_state_set *state,
+void bt_hci_cmd_state_set_init(struct net_buf *buf, struct bt_hci_cmd_state_set *state,
 			       atomic_t *target, int bit, bool val);
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
@@ -464,8 +460,8 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason);
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_time);
 int bt_le_set_default_phy(uint8_t all_phys, uint8_t pref_tx_phy, uint8_t pref_rx_phy);
-int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
-		  uint8_t pref_tx_phy, uint8_t pref_rx_phy, uint8_t phy_opts);
+int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys, uint8_t pref_tx_phy, uint8_t pref_rx_phy,
+		  uint8_t phy_opts);
 uint8_t bt_get_phy(uint8_t hci_phy);
 /**
  * @brief Convert CTE type value from HCI format to @ref bt_df_cte_type format.
@@ -548,7 +544,6 @@ void bt_hci_le_scan_req_received(struct net_buf *buf);
 void bt_hci_conn_req(struct net_buf *buf);
 void bt_hci_conn_complete(struct net_buf *buf);
 
-
 void bt_hci_inquiry_complete(struct net_buf *buf);
 void bt_hci_inquiry_result_with_rssi(struct net_buf *buf);
 void bt_hci_extended_inquiry_result(struct net_buf *buf);
@@ -577,4 +572,6 @@ bool bt_drv_quirk_no_auto_dle(void);
 
 void bt_tx_irq_raise(void);
 
-int  bt_hci_le_rand(void *buffer, size_t len);
+int bt_hci_le_rand(void *buffer, size_t len);
+
+void bt_tx_irq_raise(void);
