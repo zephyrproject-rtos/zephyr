@@ -231,6 +231,17 @@
 					};
 				};
 			};
+
+			is31fl3193@18 {
+				compatible = "issi,is31fl3193";
+				reg = <0x18>;
+
+				led_rgb {
+					label = "led_rgb";
+					color-mapping = <0>, <1>, <2>;
+					current-limit = <10>;
+				};
+			};
 		};
 
 		test_pwm: pwm@12341234 {
