@@ -1,0 +1,17 @@
+# Copyright (c) 2025, Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: versal2_rpu/amd_versal2_rpu/amp/core1
+name: AMD Versal Gen 2 RPU Cortex-R52 AMP Core1
+arch: arm
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: amd
+supported:
+  - scsi
+  - ufs
+  - mbox

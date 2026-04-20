@@ -45,9 +45,11 @@ for usage, although nothing is placed there by default.
 Known Problems or Limitations
 ==============================
 
-The following platform features are unsupported:
-
-* Only the first core of the R52 subsystem is supported.
+The default board target (``versal2_rpu``) runs on R52 core 0 only. For asymmetric
+multi-processing (AMP), build separate images with
+``versal2_rpu/amd_versal2_rpu/amp/core0`` and ``versal2_rpu/amd_versal2_rpu/amp/core1``
+(uart0 / uart1 console respectively). Flash both with ``west flash`` using
+``--second-elf`` for the core1 image when using the XSDB runner.
 
 Programming and Debugging
 *************************
