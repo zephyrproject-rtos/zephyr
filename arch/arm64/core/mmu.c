@@ -1526,8 +1526,12 @@ void arch_mem_page_in(void *addr, uintptr_t phys)
 	/* mark as clean */
 	desc |= PTE_BLOCK_DESC_AP_RO;
 
-	/* and make it initially unaccessible to track unaccessed pages */
-	desc &= ~PTE_BLOCK_DESC_AF;
+	/* mark as accessed: the page-in was itself triggered by an access
+	 * (or an explicit k_mem_page_in pre-fetch), and the frame is added
+	 * to the LRU queue tail by the caller. Forcing an AF fault on first
+	 * use just to move tail→tail would be wasted work.
+	 */
+	desc |= PTE_BLOCK_DESC_AF;
 
 	*pte = desc;
 	MMU_DEBUG("page_in: virt=%#lx phys=%#lx\n", virt, phys);
