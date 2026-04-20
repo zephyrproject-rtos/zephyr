@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * IPC service (ICMSG) on Versal Gen 2 RPU AMP core 1: swap tx/rx vs core 0.
+ *
+ */
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		amp_ipc_c0_to_c1: memory@bbf7e000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xbbf7e000 0x1000>;
+			zephyr,memory-region = "AMP_IPC_C0_TO_C1";
+		};
+
+		amp_ipc_c1_to_c0: memory@bbf7f000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xbbf7f000 0x1000>;
+			zephyr,memory-region = "AMP_IPC_C1_TO_C0";
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icmsg";
+			status = "okay";
+			tx-region = <&amp_ipc_c1_to_c0>;
+			rx-region = <&amp_ipc_c0_to_c1>;
+			mboxes = <&ipi2_to_ipi1 0>, <&ipi2_to_ipi1 1>;
+			mbox-names = "tx", "rx";
+		};
+	};
+};
+
+&ipi2 {
+	status = "okay";
+
+	ipi2_to_ipi1: mailbox@eb340000 {
+		compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
+		reg = <0xeb340000 0x20>, <0xeb3f0600 0x1000>;
+		reg-names = "ctrl", "msg";
+		xlnx,ipi-id = <3>;
+		#mbox-cells = <1>;
+	};
+};

@@ -64,6 +64,22 @@ serial port, one is host another is remote:
    [00:00:01.006,164] <inf> remote: Sent 236797 [Bytes] over 1000 [ms]
    [00:00:01.006,195] <inf> remote: IPC-service REMOTE demo ended
 
+Building for AMD Versal RPU AMP (Cortex-R5F, two Zephyr images)
+****************************************************************
+
+IPI and message-buffer addresses match ``samples/boards/amd/amp_ipi_exchange``
+(IPI1 / IPI2 at ``0xff340000`` / ``0xff350000``).  Shared ICMSG rings use the
+last 8 KiB of the 256 KiB OCM at ``0xfffc0000`` (``0xffffa000`` and
+``0xffffb000``).
+
+.. code-block:: console
+
+   west build -b versal_rpu/versal_rpu/amp/core0 -d build_ipc0 samples/subsys/ipc/ipc_service/icmsg
+   west build -b versal_rpu/versal_rpu/amp/core1 -d build_ipc1 samples/subsys/ipc/ipc_service/icmsg/remote
+
+Flash both images with XSDB and ``--second-elf`` (use the PDI supplied for your
+Versal RPU platform / lab flow).
+
 Building for AMD VersalNet RPU AMP (two Zephyr images)
 *******************************************************
 
@@ -77,5 +93,22 @@ remote projects separately (same pattern as ``samples/boards/amd/amp_ipi_exchang
    west build -b versalnet_rpu/amd_versalnet_rpu/amp/core0 -d build_ipc0 samples/subsys/ipc/ipc_service/icmsg
    west build -b versalnet_rpu/amd_versalnet_rpu/amp/core1 -d build_ipc1 samples/subsys/ipc/ipc_service/icmsg/remote
 
+Shared ICMSG rings occupy ``0xbbffe000`` and ``0xbbfff000`` (last 8 KiB of the
+1 MiB ``memory@bbf00000`` span in ``dts/vendor/amd/versalnet.dtsi``).
+
 Flash both ``zephyr.elf`` files with your board flow (for example XSDB with
 ``--second-elf``).
+
+Building for AMD Versal Gen 2 RPU AMP (two Zephyr images)
+**********************************************************
+
+The devicetree uses the same buffer layout as ``dts/vendor/amd/versalnet.dtsi``
+OCM and Xilinx IPI mailboxes.
+
+.. code-block:: console
+
+   west build -b versal2_rpu/amd_versal2_rpu/amp/core0 -d build_ipc0 samples/subsys/ipc/ipc_service/icmsg
+   west build -b versal2_rpu/amd_versal2_rpu/amp/core1 -d build_ipc1 samples/subsys/ipc/ipc_service/icmsg/remote
+
+Flash both images with XSDB (Versal Gen 2 RPU PDI for your lab) using
+``--second-elf`` for the core1 ELF.

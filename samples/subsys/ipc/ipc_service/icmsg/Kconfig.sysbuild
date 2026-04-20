@@ -15,3 +15,5 @@ string
 	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"
 	default "versalnet_rpu/amd_versalnet_rpu/amp/core1" if BOARD = "versalnet_rpu" && BOARD_QUALIFIERS = "amd_versalnet_rpu/amp/core0"
 	default "versalnet_rpu/amd_versalnet_rpu/amp/core0" if BOARD = "versalnet_rpu" && BOARD_QUALIFIERS = "amd_versalnet_rpu/amp/core1"
+	default "versal2_rpu/amd_versal2_rpu/amp/core1" if BOARD = "versal2_rpu" && BOARD_QUALIFIERS = "amd_versal2_rpu/amp/core0"
+	default "versal2_rpu/amd_versal2_rpu/amp/core0" if BOARD = "versal2_rpu" && BOARD_QUALIFIERS = "amd_versal2_rpu/amp/core1"
