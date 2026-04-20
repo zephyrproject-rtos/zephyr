@@ -100,6 +100,8 @@ static int vregusb_disable(const struct device *const dev)
 	const struct vregusb_config *const config = dev->config;
 	NRF_VREGUSB_Type *const base = config->base;
 
+	nrf_vregusb_int_disable(base, NRF_VREGUSB_INT_VBUS_DETECTED_MASK |
+				      NRF_VREGUSB_INT_VBUS_REMOVED_MASK);
 	config->irq_disable_func(dev);
 	nrf_vregusb_task_trigger(base, NRF_VREGUSB_TASK_STOP);
 
