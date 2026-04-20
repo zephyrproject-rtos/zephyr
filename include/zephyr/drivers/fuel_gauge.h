@@ -23,6 +23,11 @@
  * @version 0.8.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup fuel_gauge_interface_ext Device-specific Fuel Gauge API extensions
+ *
+ * @{
+ * @}
  */
 
 #ifdef __cplusplus
