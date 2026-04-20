@@ -121,3 +121,9 @@ tests:
     sysbuild: false
     platform_allow:
       - versal2_rpu/amd_versal2_rpu/amp/core0
+
+  sample.ipc.icmsg.amd_versal_rpu:
+    build_only: true
+    sysbuild: false
+    platform_allow:
+      - versal_rpu/versal_rpu/amp/core0

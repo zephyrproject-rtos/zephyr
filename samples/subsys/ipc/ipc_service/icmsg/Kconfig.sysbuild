@@ -17,3 +17,5 @@ string
 	default "versalnet_rpu/amd_versalnet_rpu/amp/core0" if BOARD = "versalnet_rpu" && BOARD_QUALIFIERS = "amd_versalnet_rpu/amp/core1"
 	default "versal2_rpu/amd_versal2_rpu/amp/core1" if BOARD = "versal2_rpu" && BOARD_QUALIFIERS = "amd_versal2_rpu/amp/core0"
 	default "versal2_rpu/amd_versal2_rpu/amp/core0" if BOARD = "versal2_rpu" && BOARD_QUALIFIERS = "amd_versal2_rpu/amp/core1"
+	default "versal_rpu/versal_rpu/amp/core1" if BOARD = "versal_rpu" && BOARD_QUALIFIERS = "versal_rpu/amp/core0"
+	default "versal_rpu/versal_rpu/amp/core0" if BOARD = "versal_rpu" && BOARD_QUALIFIERS = "versal_rpu/amp/core1"

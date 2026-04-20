@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * IPC service (ICMSG) on Versal RPU (Cortex-R5F) AMP core 0.
+ *
+ * IPI layout matches samples/boards/amd/amp_ipi_exchange for this board:
+ *   IPI1 id=3 @ 0xff340000 (SPI 31), IPI2 id=4 @ 0xff350000 (SPI 32),
+ *   message RAM @ 0xff3f0600 / 0xff3f0800.
+ *
+ * Shared buffers: last 8 KiB of the 256 KiB OCM at 0xfffc0000 (see versal.dtsi).
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	chosen {
+		zephyr,ocm = &ocm;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		amp_ipc_c0_to_c1: memory@ffffa000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xffffa000 0x1000>;
+			zephyr,memory-region = "AMP_IPC_C0_TO_C1";
+		};
+
+		amp_ipc_c1_to_c0: memory@ffffb000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xffffb000 0x1000>;
+			zephyr,memory-region = "AMP_IPC_C1_TO_C0";
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icmsg";
+			status = "okay";
+			tx-region = <&amp_ipc_c0_to_c1>;
+			rx-region = <&amp_ipc_c1_to_c0>;
+			mboxes = <&ipi1_to_ipi2 0>, <&ipi1_to_ipi2 1>;
+			mbox-names = "tx", "rx";
+		};
+	};
+};
+
+&ocm {
+	status = "okay";
+};
+
+&soc {
+	ipi1: mailbox@ff340000 {
+		compatible = "xlnx,mbox-versal-ipi-mailbox";
+		status = "okay";
+		interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		reg = <0xff340000 0x10000>, <0xff3f0600 0x200>;
+		reg-names = "ctrl", "msg";
+		xlnx,ipi-id = <3>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ipi1_to_ipi2: mailbox@ff350000 {
+			compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
+			reg = <0xff350000 0x10000>, <0xff3f0800 0x200>;
+			reg-names = "ctrl", "msg";
+			xlnx,ipi-id = <4>;
+			#mbox-cells = <1>;
+		};
+	};
+};
