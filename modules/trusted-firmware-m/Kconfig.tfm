@@ -388,21 +388,6 @@ config TFM_SFN
 
 endchoice # TFM_MODEL
 
-config TFM_REGRESSION_S
-	bool "TF-M Secure Regression tests"
-	help
-	  When enabled, this option signifies that the TF-M build includes
-	  the Secure domain regression tests.
-	  The regression tests will be included in the TF-M secure firmware.
-
-config TFM_REGRESSION_NS
-	bool "TF-M Non-Secure Regression tests"
-	help
-	  When enabled, this option signifies that the TF-M build includes
-	  the Non-Secure domain regression tests.
-	  The regression tests will be included in the TF-M non-secure
-	  application.
-
 choice TFM_PSA_TEST
 	prompt "Enable a PSA test suite"
 	default TFM_PSA_TEST_NONE
