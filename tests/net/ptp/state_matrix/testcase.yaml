@@ -3,11 +3,8 @@ common:
     - net
     - ptp
     - unit
-  platform_allow:
-    - native_sim
   integration_platforms:
-    - native_sim
+    - native_sim/native/64
   depends_on: netif
 tests:
-  net.ptp.state_matrix:
-    min_ram: 32
+  net.ptp.state_matrix: {}
