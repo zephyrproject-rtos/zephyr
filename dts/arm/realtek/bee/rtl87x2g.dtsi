@@ -115,7 +115,7 @@
 			status = "okay";
 
 			flash: flash@4000000 {
-				compatible = "soc-nv-flash", "realtek,bee-nor-flash";
+				compatible = "realtek,bee-nor-flash", "soc-nv-flash";
 				write-block-size = <1>;
 				erase-block-size = <4096>;
 				#address-cells = <1>;

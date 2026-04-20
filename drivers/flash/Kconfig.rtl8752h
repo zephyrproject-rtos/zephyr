@@ -1,0 +1,62 @@
+# Copyright(c) 2026, Realtek Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_RTL8752H
+	bool "Realtek RTL8752H flash driver"
+	default y
+	depends on DT_HAS_REALTEK_RTL8752H_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable rtl8752h flash driver.
+
+if SOC_FLASH_RTL8752H
+
+choice
+	prompt "Realtek RTL8752H Flash Mode"
+	default SOC_FLASH_RTL8752H_1BIT_MODE
+	help
+	  Selects the flash bit mode to use. The available options are
+	  limited by the hardware's supported modes defined in the
+	  device tree.
+
+config SOC_FLASH_RTL8752H_1BIT_MODE
+	bool "Flash 1-bit mode"
+	help
+		Set Realtek RTL8752H Flash to 1-bit mode (default).
+		This is the standard SPI mode using CLK, CS#, DI, and DO pins.
+
+config SOC_FLASH_RTL8752H_2BIT_MODE
+	bool "Flash 2-bit mode (Dual)"
+	depends on $(dt_nodelabel_bool_prop,flash,supports-2bit)
+	help
+		Set Realtek RTL8752H Flash to 2-bit (Dual) mode.
+		Uses DI and DO as IO0 and IO1 respectively.
+
+config SOC_FLASH_RTL8752H_4BIT_MODE
+	bool "Flash 4-bit mode (Quad)"
+	depends on $(dt_nodelabel_bool_prop,flash,supports-4bit)
+	help
+		Set Realtek RTL8752H Flash to 4-bit (Quad) mode.
+		Uses all six pins (DI, DO, WP#, HOLD#) as IO0-IO3.
+		Note: The flash used by RTL8752H only partially supports quad-read
+		mode. Users should verify the flash model and characteristics in advance.
+
+config SOC_FLASH_RTL8752H_DTR_4BIT_MODE
+	bool "Flash 4-bit DTR mode (Quad)"
+	depends on $(dt_nodelabel_bool_prop,flash,supports-dtr-4bit)
+	help
+		Set Realtek RTL8752H Flash to 4-bit DTR (Double Transfer Rate) mode.
+		This provides higher performance but requires flash hardware support.
+
+endchoice
+
+config SOC_FLASH_RTL8752H_BIT_MODE
+	int
+	default 0 if SOC_FLASH_RTL8752H_1BIT_MODE
+	default 1 if SOC_FLASH_RTL8752H_2BIT_MODE
+	default 2 if SOC_FLASH_RTL8752H_4BIT_MODE
+	default 3 if SOC_FLASH_RTL8752H_DTR_4BIT_MODE
+
+endif # SOC_FLASH_RTL8752H
