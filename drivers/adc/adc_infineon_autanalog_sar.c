@@ -118,6 +118,13 @@ struct ifx_autanalog_sar_channel_dt_config {
 	uint8_t channel_id;
 	uint8_t fifo_sel;
 	bool mux_buf_bypass;
+	bool sign;
+	bool differential;
+	uint8_t neg_pin;
+	uint8_t pos_coeff;
+	uint8_t neg_coeff;
+	bool acc_shift;
+	uint8_t limit;
 };
 
 struct ifx_autanalog_sar_fir_config {
@@ -188,6 +195,20 @@ struct ifx_autanalog_sar_adc_channel_config {
 	bool mux_buf_bypass;
 	/* FIFO selection for this channel */
 	uint8_t fifo_sel;
+	/* Sign extension enable */
+	bool sign;
+	/* Differential mode enable (GPIO channels only) */
+	bool differential;
+	/* Negative GPIO pin for differential mode */
+	uint8_t neg_pin;
+	/* Positive correction coefficient */
+	uint8_t pos_coeff;
+	/* Negative correction coefficient */
+	uint8_t neg_coeff;
+	/* Accumulator shift enable */
+	bool acc_shift;
+	/* Limit status / range detection selection */
+	uint8_t limit;
 };
 
 struct ifx_autanalog_sar_adc_data {
@@ -1077,13 +1098,21 @@ static int ifx_autanalog_sar_setup_gpio_channel(struct ifx_autanalog_sar_adc_dat
 	data->pdl_adc_hs_static_obj.hsGpioChan[hw_channel] = pdl_channel;
 
 	pdl_channel->posPin = channel_cfg->input_positive;
-	pdl_channel->hsDiffEn = false;
-	pdl_channel->sign = false;
-	pdl_channel->posCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
-	pdl_channel->negPin = CY_AUTANALOG_SAR_PIN_GPIO0;
-	pdl_channel->accShift = false;
-	pdl_channel->negCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
-	pdl_channel->hsLimit = CY_AUTANALOG_SAR_LIMIT_STATUS_DISABLED;
+	pdl_channel->hsDiffEn = data->autanalog_channel_cfg[channel_cfg->channel_id].differential;
+	pdl_channel->sign = data->autanalog_channel_cfg[channel_cfg->channel_id].sign;
+	pdl_channel->posCoeff =
+		(cy_en_autanalog_sar_ch_coeff_t)data->autanalog_channel_cfg[channel_cfg->channel_id]
+			.pos_coeff;
+	pdl_channel->negPin = data->autanalog_channel_cfg[channel_cfg->channel_id].differential
+				      ? data->autanalog_channel_cfg[channel_cfg->channel_id].neg_pin
+				      : CY_AUTANALOG_SAR_PIN_GPIO0;
+	pdl_channel->accShift = data->autanalog_channel_cfg[channel_cfg->channel_id].acc_shift;
+	pdl_channel->negCoeff =
+		(cy_en_autanalog_sar_ch_coeff_t)data->autanalog_channel_cfg[channel_cfg->channel_id]
+			.neg_coeff;
+	pdl_channel->hsLimit =
+		(cy_en_autanalog_sar_limit_t)data->autanalog_channel_cfg[channel_cfg->channel_id]
+			.limit;
 	pdl_channel->fifoSel =
 		(cy_en_autanalog_fifo_sel_t)data->autanalog_channel_cfg[channel_cfg->channel_id]
 			.fifo_sel;
@@ -1125,14 +1154,20 @@ static int ifx_autanalog_sar_setup_mux_channel(struct ifx_autanalog_sar_adc_data
 	data->pdl_adc_top_static_obj.intMuxChan[mux_idx] = pdl_mux_channel;
 
 	pdl_mux_channel->posPin = (cy_en_autanalog_sar_pin_mux_t)channel_cfg->input_positive;
-	pdl_mux_channel->sign = false;
-	pdl_mux_channel->posCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
+	pdl_mux_channel->sign = data->autanalog_channel_cfg[channel_cfg->channel_id].sign;
+	pdl_mux_channel->posCoeff =
+		(cy_en_autanalog_sar_ch_coeff_t)data->autanalog_channel_cfg[channel_cfg->channel_id]
+			.pos_coeff;
 	pdl_mux_channel->negPin = (cy_en_autanalog_sar_pin_mux_t)channel_cfg->input_negative;
 	pdl_mux_channel->buffBypass =
 		data->autanalog_channel_cfg[channel_cfg->channel_id].mux_buf_bypass;
-	pdl_mux_channel->accShift = false;
-	pdl_mux_channel->negCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
-	pdl_mux_channel->muxLimit = CY_AUTANALOG_SAR_LIMIT_STATUS_DISABLED;
+	pdl_mux_channel->accShift = data->autanalog_channel_cfg[channel_cfg->channel_id].acc_shift;
+	pdl_mux_channel->negCoeff =
+		(cy_en_autanalog_sar_ch_coeff_t)data->autanalog_channel_cfg[channel_cfg->channel_id]
+			.neg_coeff;
+	pdl_mux_channel->muxLimit =
+		(cy_en_autanalog_sar_limit_t)data->autanalog_channel_cfg[channel_cfg->channel_id]
+			.limit;
 	pdl_mux_channel->fifoSel =
 		(cy_en_autanalog_fifo_sel_t)data->autanalog_channel_cfg[channel_cfg->channel_id]
 			.fifo_sel;
@@ -1237,8 +1272,8 @@ static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels not supported");
+	if (channel_cfg->differential && is_mux_channel) {
+		LOG_ERR("Differential mode for MUX channels is configured via sequencer mux-mode");
 		return -EINVAL;
 	}
 
@@ -1303,6 +1338,13 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 		data->autanalog_channel_cfg[i].sample_time_idx = 0xFF;
 		data->autanalog_channel_cfg[i].fifo_sel = IFX_AUTANALOG_SAR_FIFO_DISABLED;
 		data->autanalog_channel_cfg[i].mux_buf_bypass = false;
+		data->autanalog_channel_cfg[i].sign = false;
+		data->autanalog_channel_cfg[i].differential = false;
+		data->autanalog_channel_cfg[i].neg_pin = 0;
+		data->autanalog_channel_cfg[i].pos_coeff = 0;
+		data->autanalog_channel_cfg[i].neg_coeff = 0;
+		data->autanalog_channel_cfg[i].acc_shift = false;
+		data->autanalog_channel_cfg[i].limit = 0;
 	}
 
 	data->dev = dev;
@@ -1316,6 +1358,14 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 			data->autanalog_channel_cfg[ch].mux_buf_bypass =
 				cfg->dt_channels[i].mux_buf_bypass;
 			data->autanalog_channel_cfg[ch].fifo_sel = cfg->dt_channels[i].fifo_sel;
+			data->autanalog_channel_cfg[ch].sign = cfg->dt_channels[i].sign;
+			data->autanalog_channel_cfg[ch].differential =
+				cfg->dt_channels[i].differential;
+			data->autanalog_channel_cfg[ch].neg_pin = cfg->dt_channels[i].neg_pin;
+			data->autanalog_channel_cfg[ch].pos_coeff = cfg->dt_channels[i].pos_coeff;
+			data->autanalog_channel_cfg[ch].neg_coeff = cfg->dt_channels[i].neg_coeff;
+			data->autanalog_channel_cfg[ch].acc_shift = cfg->dt_channels[i].acc_shift;
+			data->autanalog_channel_cfg[ch].limit = cfg->dt_channels[i].limit;
 		}
 	}
 
@@ -2134,6 +2184,13 @@ static int ifx_autanalog_sar_get_decoder(const struct device *dev,
 			.channel_id = (uint8_t)DT_REG_ADDR(child_node_id),                         \
 			.mux_buf_bypass = DT_PROP_OR(child_node_id, mux_buf_bypass, 0),            \
 			.fifo_sel = (uint8_t)DT_PROP_OR(child_node_id, fifo_sel, 0),               \
+			.sign = DT_PROP_OR(child_node_id, sign, 0),                                \
+			.differential = DT_PROP_OR(child_node_id, differential, 0),                \
+			.neg_pin = (uint8_t)DT_PROP_OR(child_node_id, neg_pin, 0),                 \
+			.pos_coeff = (uint8_t)DT_PROP_OR(child_node_id, pos_coeff, 0),             \
+			.neg_coeff = (uint8_t)DT_PROP_OR(child_node_id, neg_coeff, 0),             \
+			.acc_shift = DT_PROP_OR(child_node_id, acc_shift, 0),                      \
+			.limit = (uint8_t)DT_PROP_OR(child_node_id, limit, 0),                     \
 		},), ())
 
 #define IFX_CHAN_DT_CFG_ARRAY(n)                                                                   \
