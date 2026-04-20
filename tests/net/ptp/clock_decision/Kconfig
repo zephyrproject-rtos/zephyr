@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "../Kconfig.unit"
+
+# See ../Kconfig.unit for why selected PTP Kconfig entries are redeclared here.
+
+config PTP_NUM_PORTS
+	default 8
+
+config PTP_CLOCK_TYPE
+	default 0x00
+
+config PTP_CLOCK_ACCURACY
+	default 0x31
+
+config PTP_PRIORITY1
+	default 128
+
+config PTP_PRIORITY2
+	default 128
+
+source "Kconfig.zephyr"
