@@ -88,7 +88,7 @@ config PTP_NUM_PORTS
 	  Configures the PTP stack to work with the given number of ports.
 	  The port concept is the same thing as network interface.
 
-choice
+choice PTP_NETWORKING_PROTOCOL
 	prompt "PTP Networking Protocol used by PTP Stack"
 	default PTP_UDP_IPv4_PROTOCOL
 
