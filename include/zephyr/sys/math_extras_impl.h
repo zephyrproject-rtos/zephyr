@@ -24,8 +24,14 @@
  */
 #ifdef PORTABLE_MISC_MATH_EXTRAS
 #define use_builtin(x) 0
+#define __has_type_128 0
 #else
 #define use_builtin(x) HAS_BUILTIN(x)
+#ifdef __SIZEOF_INT128__
+	#define __has_type_128 1
+#else
+	#define __has_type_128 0
+#endif
 #endif
 
 #if use_builtin(__builtin_add_overflow)
@@ -251,5 +257,60 @@ static inline int u64_count_trailing_zeros(uint64_t x)
 	}
 }
 #endif /* use_builtin(__builtin_ctzll) */
+
+/**
+ * @brief Multiply two signed 64-bit integers and store the result in a 128-bit integer.
+ *
+ * This function performs a full precision multiplication of two signed 64-bit
+ * values. The result is guaranteed to fit in a 128-bit representation without overflow.
+ *
+ * @param a Multiplicand.
+ * @param b Multiplier.
+ * @param result Pointer to the @ref int128_t structure where the result will be stored.
+ */
+#if __has_type_128
+static inline void i128_multiply_i64_i64(int64_t a, int64_t b, int128_t *result)
+{
+	__int128 c = (__int128)a * (__int128)b;
+
+	result->low = (uint64_t)c;
+	result->high = (uint64_t)(c >> 64);
+}
+#else
+static inline void i128_multiply_i64_i64(int64_t a, int64_t b, int128_t *result)
+{
+	uint64_t u_a = (a < 0) ? (uint64_t)-a : (uint64_t)a;
+	uint64_t u_b = (b < 0) ? (uint64_t)-b : (uint64_t)b;
+	int sign = (a < 0) ^ (b < 0);
+
+	/* Split to 32-bit values */
+	uint64_t a_lo = u_a & 0xFFFFFFFFULL;
+	uint64_t a_hi = u_a >> 32;
+	uint64_t b_lo = u_b & 0xFFFFFFFFULL;
+	uint64_t b_hi = u_b >> 32;
+
+	/* Calculate product, just like in school */
+	uint64_t res_0 = a_lo * b_lo;
+	uint64_t res_1 = a_hi * b_lo;
+	uint64_t res_2 = a_lo * b_hi;
+	uint64_t res_3 = a_hi * b_hi;
+
+	/* Combine values including carry */
+	uint64_t carry = 0;
+	uint64_t middle = (res_0 >> 32) + (res_1 & 0xFFFFFFFFULL) + (res_2 & 0xFFFFFFFFULL);
+
+	result->low = (res_0 & 0xFFFFFFFFULL) | (middle << 32);
+
+	/* Move the top part */
+	carry = (middle >> 32) + (res_1 >> 32) + (res_2 >> 32) + res_3;
+	result->high = carry;
+
+	/* Calculate two-complement if sign is minus */
+	if (sign) {
+		result->low = ~result->low + 1;
+		result->high = ~result->high + (result->low == 0 ? 1 : 0);
+	}
+}
+#endif /* __has_type_128 */
 
 #undef use_builtin
