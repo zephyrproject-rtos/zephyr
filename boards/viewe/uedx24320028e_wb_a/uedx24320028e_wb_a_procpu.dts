@@ -134,7 +134,7 @@
 	pinctrl-names = "default";
 
 	chsc6x: chsc6x@2e {
-		compatible = "chipsemi,chsc6x";
+		compatible = "chipsemi,chsc6540";
 		reg = <0x2e>;
 		irq-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 		screen-width = <240>;
