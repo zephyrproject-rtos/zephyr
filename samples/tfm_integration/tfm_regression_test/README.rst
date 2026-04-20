@@ -16,7 +16,7 @@ See sample.yaml for a list of supported platforms.
 Building and Running
 ********************
 
-Tests for both the secure and non-secure domain are enabled by default, controlled via the CONFIG_TFM_REGRESSION_S and CONFIG_TFM_REGRESSION_NS configs.
+Tests for both the secure and non-secure domain are enabled by default.
 
 On Target
 =========

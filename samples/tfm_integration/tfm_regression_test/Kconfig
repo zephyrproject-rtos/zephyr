@@ -1,6 +1,23 @@
 # Copyright (c) 2026, BayLibre SAS
 # SPDX-License-Identifier: Apache-2.0
 
+config TFM_REGRESSION_S
+	bool "TF-M Secure Regression tests"
+	default y
+	help
+	  When enabled, this option signifies that the TF-M build includes
+	  the Secure domain regression tests.
+	  The regression tests will be included in the TF-M secure firmware.
+
+config TFM_REGRESSION_NS
+	bool "TF-M Non-Secure Regression tests"
+	default y
+	help
+	  When enabled, this option signifies that the TF-M build includes
+	  the Non-Secure domain regression tests.
+	  The regression tests will be included in the TF-M non-secure
+	  application.
+
 config TFM_PROFILE_TYPE_NOT_SET
 	imply PSA_WANT_ALG_CBC_NO_PADDING
 	imply PSA_WANT_ALG_CBC_PKCS7
