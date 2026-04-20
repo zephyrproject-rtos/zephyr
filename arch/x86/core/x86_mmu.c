@@ -2089,14 +2089,32 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 #ifdef CONFIG_DEMAND_PAGING
 #define PTE_MASK (paging_levels[PTE_LEVEL].mask)
 
+/*
+ * LRU eviction uses MMU_G (bit 8) as a private marker, meaningful only when
+ * MMU_P is clear. It flags a PTE whose physical page is still loaded but
+ * temporarily made non-present to trap the next access. Bit G is otherwise
+ * unused by Zephyr on x86 (CR4.PGE is off in Zephyr's setup), so it does not
+ * collide with any existing PTE state.
+ *
+ * PTE states relevant to demand paging:
+ *   - PTE == 0                      : unmapped
+ *   - P=0, A=1, upper=location      : paged out
+ *   - P=0, G=1, upper=PFN           : LRU-tracked (loaded, fault-on-access)
+ *   - P=1                           : normally mapped
+ */
+#define MMU_LRU_TRACK	MMU_G
+
 __pinned_func
 void arch_mem_page_out(void *addr, uintptr_t location)
 {
 	int ret;
-	pentry_t mask = PTE_MASK | MMU_P | MMU_A;
+	pentry_t mask = PTE_MASK | MMU_P | MMU_A | MMU_LRU_TRACK;
 
 	/* Accessed bit set to guarantee the entry is not completely 0 in
 	 * case of location value 0. A totally 0 PTE is un-mapped.
+	 * MMU_LRU_TRACK cleared so the LRU tracking state is not mistaken
+	 * for the paged-out state (important when transitioning from
+	 * LRU-tracked to paged-out during eviction).
 	 */
 	ret = range_map(addr, location, CONFIG_MMU_PAGE_SIZE, MMU_A, mask,
 			OPTION_FLUSH);
@@ -2108,13 +2126,64 @@ __pinned_func
 void arch_mem_page_in(void *addr, uintptr_t phys)
 {
 	int ret;
-	pentry_t mask = PTE_MASK | MMU_P | MMU_D | MMU_A;
+	pentry_t mask = PTE_MASK | MMU_P | MMU_D | MMU_A | MMU_LRU_TRACK;
 
 	ret = range_map(addr, phys, CONFIG_MMU_PAGE_SIZE, MMU_P, mask,
 			OPTION_FLUSH);
 	__ASSERT_NO_MSG(ret == 0);
 	ARG_UNUSED(ret);
 }
+
+#ifdef CONFIG_EVICTION_LRU
+/*
+ * Make a loaded page fault-on-access so the next access re-enters the PF
+ * handler where k_mem_paging_eviction_accessed() will be called.
+ * Preserves PFN and permission bits; clears P and sets MMU_LRU_TRACK.
+ */
+__pinned_func
+static void arch_mem_page_lru_track(void *addr)
+{
+	int ret;
+	pentry_t mask = MMU_P | MMU_A | MMU_LRU_TRACK;
+
+	ret = range_map(addr, 0, CONFIG_MMU_PAGE_SIZE, MMU_LRU_TRACK, mask,
+			OPTION_FLUSH);
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
+}
+
+/*
+ * If @addr is an LRU-tracked page (physically loaded but flagged non-present
+ * to trap the next access), restore it — set P, clear MMU_LRU_TRACK, flush —
+ * store the backing physical address in *phys, and return true. Otherwise
+ * return false without touching the PTE. Called by the x86 page fault
+ * handler before k_mem_page_fault() dispatch.
+ */
+__pinned_func
+bool z_x86_lru_fault_try_handle(void *addr, uintptr_t *phys)
+{
+	pentry_t pte = 0;
+	int level = 0;
+	int ret;
+	pentry_t mask = MMU_P | MMU_LRU_TRACK;
+
+	pentry_get(&level, &pte, z_x86_kernel_ptables, addr);
+	if (level != PTE_LEVEL) {
+		return false;
+	}
+	if ((pte & (MMU_P | MMU_LRU_TRACK)) != MMU_LRU_TRACK) {
+		return false;
+	}
+
+	*phys = (uintptr_t)get_entry_phys(pte, PTE_LEVEL);
+
+	ret = range_map(addr, 0, CONFIG_MMU_PAGE_SIZE, MMU_P, mask,
+			OPTION_FLUSH);
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
+	return true;
+}
+#endif /* CONFIG_EVICTION_LRU */
 
 __pinned_func
 void arch_mem_scratch(uintptr_t phys)
@@ -2142,7 +2211,26 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
 		options = 0U;
 	}
 
+#ifdef CONFIG_EVICTION_LRU
+	/*
+	 * For LRU the "clear accessed" hook is overloaded to mean "make the
+	 * page fault on next access". Query the PTE first (so returned flags
+	 * reflect the pre-transition state) then route the transition
+	 * through the dedicated helper which updates all domain ptables.
+	 */
+	if (clear_accessed) {
+		mask = 0;
+		options = 0U;
+	}
+#endif
+
 	page_map_set(z_x86_kernel_ptables, addr, 0, &all_pte, mask, options);
+
+#ifdef CONFIG_EVICTION_LRU
+	if (clear_accessed && (all_pte & MMU_P) != 0) {
+		arch_mem_page_lru_track(addr);
+	}
+#endif
 
 	/* Un-mapped PTEs are completely zeroed. No need to report anything
 	 * else in this case.
@@ -2221,9 +2309,20 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
 
 	if ((pte & MMU_P) != 0) {
 		return ARCH_PAGE_LOCATION_PAGED_IN;
-	} else {
-		return ARCH_PAGE_LOCATION_PAGED_OUT;
 	}
+
+#ifdef CONFIG_EVICTION_LRU
+	/*
+	 * LRU-tracked pages are physically loaded but marked non-present to
+	 * trap the next access. MMU_LRU_TRACK discriminates them from truly
+	 * paged-out entries.
+	 */
+	if ((pte & MMU_LRU_TRACK) != 0) {
+		return ARCH_PAGE_LOCATION_PAGED_IN;
+	}
+#endif
+
+	return ARCH_PAGE_LOCATION_PAGED_OUT;
 }
 
 #ifdef CONFIG_X86_KPTI
