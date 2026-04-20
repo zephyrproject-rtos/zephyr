@@ -12,6 +12,7 @@ supported:
   - gpio
   - uart
   - counter
+  - watchdog
   - bluetooth
   - i2c
 testing:
