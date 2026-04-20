@@ -18,13 +18,13 @@ import logging
 import os
 import platform
 import re
-import selectors
 import shlex
 import shutil
 import signal
 import socket
 import subprocess
 import sys
+import threading
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
@@ -1034,18 +1034,29 @@ class ZephyrBinaryRunner(abc.ABC):
 
         # Otherwise, use a pure python implementation. This will work well for logging,
         # but input is line based only.
-        sel = selectors.DefaultSelector()
-        sel.register(sys.stdin, selectors.EVENT_READ)
-        sel.register(sock, selectors.EVENT_READ)
-        while True:
-            events = sel.select()
-            for key, _ in events:
-                if key.fileobj == sys.stdin:
-                    text = sys.stdin.readline()
-                    if text:
-                        sock.send(text.encode())
+        stop_event = threading.Event()
 
-                elif key.fileobj == sock:
-                    resp = sock.recv(2048)
-                    if resp:
-                        print(resp.decode(), end='')
+        def stdin_to_sock():
+            while not stop_event.is_set():
+                text = sys.stdin.readline()
+                if text:
+                    try:
+                        sock.send(text.encode())
+                    except OSError:
+                        break
+            
+        t = threading.Thread(target=stdin_to_sock, daemon=True)
+        t.start()
+
+        # Read from socket in main thread
+        while True:
+            try:
+                resp = sock.recv(2048)
+                if resp:
+                    print(resp.decode(), end='', flush=True)
+                else:
+                    break
+            except OSError:
+                break
+
+        stop_event.set()  # Signal the stdin thread to stop after next readline() unblocks
