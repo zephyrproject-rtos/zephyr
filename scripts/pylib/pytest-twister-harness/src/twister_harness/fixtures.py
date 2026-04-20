@@ -136,11 +136,15 @@ def shell(dut: DeviceAdapter) -> Shell:
     return get_ready_shell(dut)
 
 
+def get_ready_shells(duts: list[DeviceAdapter]) -> list[Shell]:
+    with ThreadPoolExecutor(max_workers=len(duts)) as executor:
+        return list(executor.map(get_ready_shell, duts))
+
+
 @pytest.fixture(scope=determine_scope)
 def shells(duts: list[DeviceAdapter]) -> list[Shell]:
     """Return ready to use shell interfaces for multiple devices"""
-    with ThreadPoolExecutor(max_workers=len(duts)) as executor:
-        return list(executor.map(get_ready_shell, duts))
+    return get_ready_shells(duts)
 
 
 @pytest.fixture(scope='session')
