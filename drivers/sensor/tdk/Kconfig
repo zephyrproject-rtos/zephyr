@@ -11,4 +11,5 @@ source "drivers/sensor/tdk/icp101xx/Kconfig"
 source "drivers/sensor/tdk/icp201xx/Kconfig"
 source "drivers/sensor/tdk/mpu6050/Kconfig"
 source "drivers/sensor/tdk/mpu9250/Kconfig"
+source "drivers/sensor/tdk/tad2144/Kconfig"
 # zephyr-keep-sorted-stop
