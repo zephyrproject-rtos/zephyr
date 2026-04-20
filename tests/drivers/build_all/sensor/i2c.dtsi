@@ -1640,5 +1640,16 @@ test_i2c_max30102: max30102@d4 {
 test_i2c_tmp451: tmp451@d5 {
 	compatible = "ti,tmp451";
 	reg = <0xd5>;
+};
+
+test_i2c_ltc4286: ltc4286@d6 {
+	compatible = "adi,ltc4286";
+	reg = <0xd6>;
+	reboot-gpios = <&test_gpio 0 0>;
+	op-status-gpios = <&test_gpio 0 0>;
+	oc-status-gpios = <&test_gpio 0 0>;
+	comp-out-gpios = <&test_gpio 0 0>;
+	fault-out-gpios = <&test_gpio 0 0>;
+	power-good-gpios = <&test_gpio 0 0>;
 	alert-gpios = <&test_gpio 0 0>;
 };
