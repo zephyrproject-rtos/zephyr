@@ -54,12 +54,17 @@
 		flash: flash-controller@40022000 {
 			compatible = "wch,ch32v20x_30x-flash-controller";
 			reg = <0x40022000 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
+				ranges = <0x0 0x08000000 DT_SIZE_K(480)>;
+
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 
