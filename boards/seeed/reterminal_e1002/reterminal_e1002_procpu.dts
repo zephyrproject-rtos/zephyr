@@ -6,6 +6,7 @@
 
 /dts-v1/;
 
+#include <freq.h>
 #include <espressif/esp32s3/esp32s3_r8.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -25,6 +26,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,sdhc = &sdcard0;
+		zephyr,display = &epd_ed2208_gca;
 	};
 
 	aliases {
@@ -90,6 +92,29 @@
 			label = "Buzzer";
 		};
 	};
+
+	mipi_dbi: mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		epd_ed2208_gca: ed2208_gca@1 {
+			compatible = "eink,el073tf1", "eink,ed2208-gca";
+			mipi-max-frequency = <DT_FREQ_M(4)>;
+			reg = <1>;
+			width = <800>;
+			height = <480>;
+			busy-gpios = <&gpio0 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+};
+
+&dma {
+	status = "okay";
 };
 
 &flash0 {
@@ -171,7 +196,7 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>, <&gpio0 10 GPIO_ACTIVE_LOW>;
 
 	sdcard0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
