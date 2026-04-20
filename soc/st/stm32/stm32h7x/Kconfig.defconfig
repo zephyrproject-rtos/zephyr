@@ -10,6 +10,16 @@ if SOC_SERIES_STM32H7X
 
 rsource "Kconfig.defconfig.stm32h7*"
 
+# NUM_IRQS must be set here (before the DT-computed configdefault in
+# soc/st/stm32/Kconfig.defconfig) because NUM_IRQS has no prompt and
+# cannot be overridden from prj.conf. Values derived from CMSIS headers.
+configdefault NUM_IRQS
+	default 163 if SOC_STM32H723XX || SOC_STM32H725XX || SOC_STM32H730XX || \
+	               SOC_STM32H730XXQ || SOC_STM32H735XX
+	default 155 if SOC_STM32H7A3XX || SOC_STM32H7A3XXQ || SOC_STM32H7B0XX || \
+	               SOC_STM32H7B0XXQ || SOC_STM32H7B3XX || SOC_STM32H7B3XXQ
+	default 150
+
 configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers12)
 	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers13)
