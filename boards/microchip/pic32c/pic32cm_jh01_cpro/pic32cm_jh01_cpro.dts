@@ -257,3 +257,17 @@
 	prescaler = <1024>;
 	status = "okay";
 };
+
+&sercom5 {
+	compatible = "microchip,sercom-g1-spi";
+	dipo = <0>;
+	dopo = <1>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&sercom5_spi_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&portb 3 GPIO_ACTIVE_LOW>;
+	dmas = <&dmac 0x4 0xc>, <&dmac 0x5 0xd>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
