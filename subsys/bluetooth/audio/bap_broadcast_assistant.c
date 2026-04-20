@@ -106,8 +106,8 @@ struct bap_broadcast_assistant_instance {
 static sys_slist_t broadcast_assistant_cbs = SYS_SLIST_STATIC_INIT(&broadcast_assistant_cbs);
 
 static struct bap_broadcast_assistant_instance broadcast_assistants[CONFIG_BT_MAX_CONN];
-static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
+static const struct bt_uuid *bass_uuid = BT_UUID_BASS;
 #define ATT_BUF_SIZE BT_ATT_MAX_ATTRIBUTE_LEN
 NET_BUF_SIMPLE_DEFINE_STATIC(att_buf, ATT_BUF_SIZE);
 
@@ -1021,9 +1021,8 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
 	/* Discover BASS on peer, setup handles and notify */
 	discover_init(inst);
 
-	(void)memcpy(&uuid, BT_UUID_BASS, sizeof(uuid));
 	inst->disc_params.func = service_discover_func;
-	inst->disc_params.uuid = &uuid.uuid;
+	inst->disc_params.uuid = bass_uuid;
 	inst->disc_params.type = BT_GATT_DISCOVER_PRIMARY;
 	inst->disc_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	inst->disc_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
