@@ -258,10 +258,50 @@ static void analog_axis_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
+static int analog_axis_validate(const struct device *dev)
+{
+	const struct analog_axis_config *cfg = dev->config;
+	int i;
+
+	if (cfg->num_channels < 1) {
+		return -EINVAL;
+	}
+
+	const struct analog_axis_channel_config *axis_0_cfg = &cfg->channel_cfg[0];
+	uint8_t channel_id = axis_0_cfg->adc.channel_id;
+
+	for (i = 1; i < cfg->num_channels; i++) {
+		const struct analog_axis_channel_config *axis_cfg = &cfg->channel_cfg[i];
+
+		if (axis_0_cfg->adc.dev != axis_cfg->adc.dev) {
+			LOG_ERR("Channels must use the same ADC: %s != %s",
+				axis_0_cfg->adc.dev->name,
+				axis_cfg->adc.dev->name);
+			return -EINVAL;
+		}
+
+		if (axis_cfg->adc.channel_id < channel_id) {
+			LOG_ERR("Channel must have increasing id: %d < %d",
+				axis_cfg->adc.channel_id,
+				channel_id);
+			return -EINVAL;
+		}
+		channel_id = axis_cfg->adc.channel_id;
+	}
+
+	return 0;
+}
+
 static int analog_axis_init(const struct device *dev)
 {
 	struct analog_axis_data *data = dev->data;
 	k_tid_t tid;
+	int ret;
+
+	ret = analog_axis_validate(dev);
+	if (ret) {
+		return ret;
+	}
 
 	k_sem_init(&data->cal_lock, 1, 1);
 	k_timer_init(&data->timer, NULL, NULL);
@@ -288,8 +328,6 @@ static int analog_axis_init(const struct device *dev)
 	k_timer_start(&data->timer,
 		      K_MSEC(cfg->poll_period_ms), K_MSEC(cfg->poll_period_ms));
 #else
-	int ret;
-
 	atomic_set(&data->suspended, 1);
 
 	pm_device_init_suspended(dev);
