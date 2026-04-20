@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,9 @@ static int esp32_temp_init(const struct device *dev)
 {
 	struct esp32_temp_data *data = dev->data;
 
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+	data->temp_sensor_config.flags.allow_pd = 1;
+#endif
 	temperature_sensor_install(&data->temp_sensor_config, &data->temp_sensor_handle);
 	temperature_sensor_enable(data->temp_sensor_handle);
 

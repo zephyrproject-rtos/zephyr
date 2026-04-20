@@ -29,6 +29,16 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/pm/policy.h>
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+#define GDMA_SLEEP_RETENTION_ENABLED 1
+#else
+#define GDMA_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if GDMA_SLEEP_RETENTION_ENABLED
+#include <esp_private/gdma_sleep_retention.h>
+#endif
+
 #define DMA_MAX_CHANNEL GDMA_LL_PAIRS_PER_INST
 
 static int get_m2m_periph_id(void)
@@ -682,6 +692,12 @@ static int dma_esp32_init(const struct device *dev)
 	};
 	gdma_ahb_hal_init(&data->hal, &hal_config);
 	gdma_ll_force_enable_reg_clock(data->hal.dev, true);
+
+#if GDMA_SLEEP_RETENTION_ENABLED
+	for (uint8_t pair = 0; pair < GDMA_LL_PAIRS_PER_INST; pair++) {
+		(void)gdma_sleep_retention_init(hal_config.group_id, pair);
+	}
+#endif
 
 	return 0;
 }

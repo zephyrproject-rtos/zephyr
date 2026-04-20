@@ -73,6 +73,17 @@
 #include <errno.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_UART_SUPPORT_SLEEP_RETENTION
+#define UART_SLEEP_RETENTION_ENABLED 1
+#else
+#define UART_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if UART_SLEEP_RETENTION_ENABLED
+#include <hal/uart_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(uart_esp32, CONFIG_UART_LOG_LEVEL);
@@ -1105,6 +1116,40 @@ unlock:
 
 #endif /* CONFIG_UART_ASYNC_API */
 
+#if UART_SLEEP_RETENTION_ENABLED
+static esp_err_t uart_create_sleep_retention_cb(void *arg)
+{
+	int port = (int)(uintptr_t)arg;
+	sleep_retention_module_t module = uart_reg_retention_info[port].module;
+
+	return sleep_retention_entries_create(uart_reg_retention_info[port].regdma_entry_array,
+					      uart_reg_retention_info[port].array_size,
+					      REGDMA_LINK_PRI_UART, module);
+}
+
+static void uart_esp32_sleep_retention_init(int port)
+{
+	if (port == CONFIG_ESP_CONSOLE_UART_NUM) {
+		return;
+	}
+
+	sleep_retention_module_t module = uart_reg_retention_info[port].module;
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = uart_create_sleep_retention_cb,
+				   .arg = (void *)(uintptr_t)port}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(module);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("UART%d sleep retention init failed (%d)", port, err);
+	}
+}
+#endif
+
 static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct uart_esp32_config *config = dev->config;
@@ -1122,6 +1167,12 @@ static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action 
 			LOG_ERR("Failed to configure UART pins (%d)", ret);
 			return ret;
 		}
+
+#if UART_SLEEP_RETENTION_ENABLED
+		struct uart_esp32_data *data = dev->data;
+
+		uart_esp32_sleep_retention_init(uart_hal_get_port_num(&data->hal));
+#endif
 		break;
 
 	case PM_DEVICE_ACTION_TURN_OFF:
