@@ -10,6 +10,9 @@
 #include <zephyr/logging/log.h>
 #include <x86_mmu.h>
 #include <mmu.h>
+#if defined(CONFIG_DEMAND_PAGING) && defined(CONFIG_EVICTION_LRU)
+#include <zephyr/kernel/mm/demand_paging.h>
+#endif
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_BOARD_QEMU_X86) || defined(CONFIG_BOARD_QEMU_X86_64)
@@ -461,6 +464,24 @@ void z_x86_page_fault_handler(struct arch_esf *esf)
 		 */
 		void *virt = z_x86_cr2_get();
 		bool was_valid_access;
+
+#ifdef CONFIG_EVICTION_LRU
+		/*
+		 * Check for an LRU-tracking fault first: a loaded page that
+		 * the eviction algorithm made non-present to trap its next
+		 * access. If so, fix it up and notify the LRU queue in-line.
+		 * This path must not call k_mem_page_fault() — the page is
+		 * not actually paged out.
+		 */
+		{
+			uintptr_t phys;
+
+			if (z_x86_lru_fault_try_handle(virt, &phys)) {
+				k_mem_paging_eviction_accessed(phys);
+				return;
+			}
+		}
+#endif /* CONFIG_EVICTION_LRU */
 
 #ifdef CONFIG_X86_KPTI
 		/* Protection ring is lowest 2 bits in interrupted CS */
