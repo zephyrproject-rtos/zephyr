@@ -1,0 +1,8 @@
+tests:
+  dfu.dfu_boot:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    tags: dfu_boot
+    integration_platforms:
+      - native_sim

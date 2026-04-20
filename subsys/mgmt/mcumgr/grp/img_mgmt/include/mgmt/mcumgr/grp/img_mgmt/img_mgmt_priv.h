@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
  * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,14 +17,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifdef CONFIG_MCUBOOT_BOOTLOADER_USES_SHA512
-#define IMAGE_TLV_SHA		IMAGE_TLV_SHA512
-#define IMAGE_SHA_LEN		64
-#else
-#define IMAGE_TLV_SHA		IMAGE_TLV_SHA256
-#define IMAGE_SHA_LEN		32
 #endif
 
 /**
@@ -55,18 +48,6 @@ int img_mgmt_write_pending(int slot, bool permanent);
  * @return 0 on success, MGMT_ERR_[...] code on failure.
  */
 int img_mgmt_write_confirmed(void);
-
-/**
- * @brief Reads the specified chunk of data from an image slot.
- *
- * @param slot		The index of the slot to read from.
- * @param offset	The offset within the slot to read from.
- * @param dst		On success, the read data gets written here.
- * @param num_bytes	The number of bytes to read.
- *
- * @return 0 on success, MGMT_ERR_[...] code on failure.
- */
-int img_mgmt_read(int slot, unsigned int offset, void *dst, unsigned int num_bytes);
 
 /**
  * @brief Writes the specified chunk of image data to slot 1.
@@ -210,13 +191,11 @@ void img_mgmt_take_lock(void);
 void img_mgmt_release_lock(void);
 
 #define ERASED_VAL_32(x) (((x) << 24) | ((x) << 16) | ((x) << 8) | (x))
-int img_mgmt_erased_val(int slot, uint8_t *erased_val);
 
 int img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver);
 int img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash);
 int img_mgmt_state_read(struct smp_streamer *ctxt);
 int img_mgmt_state_write(struct smp_streamer *njb);
-int img_mgmt_flash_area_id(int slot);
 
 #ifdef __cplusplus
 }
