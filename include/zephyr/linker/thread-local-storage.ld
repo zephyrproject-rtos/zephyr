@@ -57,12 +57,11 @@
 
 #if defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
 	PROVIDE(__tls_start = __stack_chk_start);
-	PROVIDE(__tls_end = __tbss_end);
 	PROVIDE(__tls_size = __tbss_end - __stack_chk_start);
 #else
 	PROVIDE(__tls_start = __tdata_start);
-	PROVIDE(__tls_end = __tbss_end);
 	PROVIDE(__tls_size = __tbss_end - __tdata_start);
 #endif /* CONFIG_STACK_CANARIES_TLS_PREPEND */
+	PROVIDE(__tls_end = __tbss_end);
 
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */

@@ -126,12 +126,11 @@ aa_loop:
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	/*
-	 * Initialize TLS before the first C function call. Compiler
-	 * inserts stack canary checks into C functions, and the canary
-	 * value is read from a TLS variable via tp. Without this early
-	 * init, tp is not set up and any C function called during early
-	 * boot (e.g. z_prep_c) would read the canary from an arbitrary
-	 * memory location.
+	 * Initialize TLS before the first C function call. The compiler inserts
+	 * stack canary checks into C functions, and the canary value is read from
+	 * a TLS variable via tp. Without this early init, tp is not set up and
+	 * any C function called during early boot (e.g. z_prep_c) would read the
+	 * canary from an arbitrary memory location.
 	 */
 	riscv_tls_init_early
 #endif
