@@ -89,9 +89,6 @@ alternate .overlay file using this parameter. These settings will override the \
 settings in the board's .dts file. Multiple files may be listed, e.g. \
 DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
 
-# The DTC_OVERLAY_FILE variable is now set to its final value.
-zephyr_boilerplate_watch(DTC_OVERLAY_FILE)
-
 zephyr_get(EXTRA_CONF_FILE SYSBUILD LOCAL VAR EXTRA_CONF_FILE OVERLAY_CONFIG MERGE REVERSE)
 zephyr_get(EXTRA_DTC_OVERLAY_FILE SYSBUILD LOCAL MERGE REVERSE)
 zephyr_get(DTS_EXTRA_CPPFLAGS SYSBUILD LOCAL MERGE REVERSE)
