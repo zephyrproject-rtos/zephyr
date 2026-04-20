@@ -306,3 +306,15 @@
 		rate = <1000>;
 	};
 };
+
+&sercom0 {
+	compatible = "microchip,sercom-g1-spi";
+	dipo = <3>;
+	dopo = <0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&sercom0_spi_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&portc 24 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
