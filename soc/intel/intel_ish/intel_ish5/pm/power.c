@@ -74,7 +74,7 @@ void sys_arch_reboot(int type)
 #define DO_PM_IRQ_CONNECT(node) \
 	IRQ_CONNECT(ISH_SOC_IRQ(node, irq), ISH_SOC_IRQ(node, priority), \
 			sedi_pm_isr, ISH_SOC_IRQ(node, irq), \
-			ISH_SOC_IRQ(node, sense))
+			ISH_SOC_IRQ(node, flags))
 
 static int ish_soc_pm_init(void)
 {
