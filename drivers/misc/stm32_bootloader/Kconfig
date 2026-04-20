@@ -13,11 +13,48 @@ config STM32_BOOTLOADER
 	  MCU. The driver exposes the AN3155/ANxxxx command set through its
 	  own API (see <zephyr/drivers/misc/stm32_bootloader/stm32_bootloader.h>).
 
+	  To program the target as if it were a local flash device, enable
+	  STM32_BOOTLOADER_FLASH and declare an st,stm32-bootloader-flash
+	  child node under the bootloader node.
+
 if STM32_BOOTLOADER
 
 module = STM32_BOOTLOADER
 module-str = stm32_bootloader
 source "subsys/logging/Kconfig.template.log_config"
+
+config STM32_BOOTLOADER_FLASH
+	bool "Flash-adapter view of the target"
+	default y
+	depends on DT_HAS_ST_STM32_BOOTLOADER_FLASH_ENABLED
+	depends on FLASH
+	select FLASH_PAGE_LAYOUT
+	help
+	  Enable the thin flash_driver_api adapter that exposes target memory
+	  regions declared as st,stm32-bootloader-flash child nodes. Lets
+	  callers use flash_read/write/erase, stream_flash, flash_img and
+	  mcumgr img_mgmt against the target.
+
+if STM32_BOOTLOADER_FLASH
+
+config STM32_BOOTLOADER_FLASH_INIT_PRIORITY
+	int "Flash adapter init priority"
+	default 91
+	help
+	  Must be initialised after the parent bootloader device (which uses
+	  CONFIG_STM32_BOOTLOADER_UART_INIT_PRIORITY for the UART transport).
+
+config STM32_BOOTLOADER_FLASH_MAX_PAGES_PER_ERASE
+	int "Max pages per flash_erase call"
+	default 256
+	range 1 4080
+	help
+	  Upper bound on the number of page indices the adapter may send to
+	  the parent in a single flash_erase call. The AN3155 Extended Erase
+	  command accepts up to 0xFFF0 pages; 256 covers realistic STM32
+	  flash layouts while keeping the on-stack buffer small.
+
+endif # STM32_BOOTLOADER_FLASH
 
 endif # STM32_BOOTLOADER
 
