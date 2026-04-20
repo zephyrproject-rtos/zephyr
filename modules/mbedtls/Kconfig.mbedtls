@@ -21,7 +21,6 @@ config MBEDTLS_CONFIG_FILE
 
 config MBEDTLS_USER_CONFIG_FILE
 	string "User configuration file for Mbed TLS"
-	default MBEDTLS_CFG_FILE if MBEDTLS_USER_CONFIG_ENABLE
 	help
 	  If defined, this is a header which will be included after MBEDTLS_CONFIG_FILE.
 	  This allows you to modify the default configuration,
