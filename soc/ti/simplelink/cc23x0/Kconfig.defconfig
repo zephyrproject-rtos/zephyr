@@ -22,7 +22,7 @@ endif
 if CC23X0_SYSTIM_TIMER
 
 	config SYS_CLOCK_TICKS_PER_SEC
-		default 1000000
+		default 10000
 endif
 
 config NUM_IRQS
