@@ -33,11 +33,22 @@
 		};
 
 		pcr: pcr@40080100 {
+			compatible = "microchip,xec-pcr";
+			#clock-cells = <3>;
 			reg = <0x40080100 0x100 0x4000a400 0x100>;
 			reg-names = "pcrr", "vbatr";
 			interrupts = <174 0>;
-			girqs = <20 9>;
-			status = "disabled";
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(20, 9)>;
+			core-clock-div = <1>;
+			pll-32k-src = <MCHP_XEC_PLL_CLK32K_SRC_SIL_OSC>;
+			periph-32k-src = <MCHP_XEC_PERIPH_CLK32K_SRC_SO_SO>;
+			clk32kmon-period-min = <1435>;
+			clk32kmon-period-max = <1495>;
+			clk32kmon-duty-cycle-var-max = <212>;
+			clk32kmon-valid-min = <4>;
+			xtal-enable-delay-ms = <10>;
+			pll-lock-timeout-ms = <30>;
+			hibtimer-handle = <&hibtimer1>;
 		};
 
 		ecia: ecia@4000e000 {
@@ -372,16 +383,18 @@
 		};
 
 		hibtimer0: timer@40009800 {
+			compatible = "microchip,xec-hibtimer";
 			reg = <0x40009800 0x20>;
 			interrupts = <112 0>;
-			girqs = <23 16>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 16)>;
 			status = "disabled";
 		};
 
 		hibtimer1: timer@40009820 {
+			compatible = "microchip,xec-hibtimer";
 			reg = <0x40009820 0x20>;
 			interrupts = <113 0>;
-			girqs = <23 17>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 17)>;
 			status = "disabled";
 		};
 

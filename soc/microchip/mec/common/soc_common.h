@@ -13,6 +13,7 @@
 #include <reg/mec_gpio.h>
 #include <reg/mec_kbc.h>
 #include <reg/mec_keyscan.h>
+#include <reg/mec_pcr_vbr.h>
 #include <reg/mec_peci.h>
 #include <reg/mec_ps2.h>
 #include <reg/mec_pwm.h>
