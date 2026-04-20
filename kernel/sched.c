@@ -914,5 +914,4 @@ void z_thread_suspend_current(struct k_thread *thread)
 	dequeue_thread(thread);
 	update_cache(1);
 	z_swap(&_sched_spinlock, key);
-	return;
 }
