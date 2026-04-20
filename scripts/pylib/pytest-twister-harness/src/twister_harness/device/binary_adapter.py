@@ -70,12 +70,12 @@ class BinaryAdapterBase(DeviceAdapter, abc.ABC):
         return_code: int | None = self._process.poll()
         if return_code is None:
             terminate_process(self._process, self.base_timeout)
-            return_code = self._process.wait(self.base_timeout)
+        else:
+            logger.debug('Subprocess already finished with return code %s', return_code)
         self._process = None
         for conn in self.connections:
             if hasattr(conn, '_process'):
                 conn._process = None
-        logger.debug('Running subprocess finished with return code %s', return_code)
 
     def _close_device(self) -> None:
         """Terminate subprocess"""
