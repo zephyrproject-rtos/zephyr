@@ -10,7 +10,6 @@ import time
 from pathlib import Path
 
 from serial import SerialException
-
 from twister_harness.device.device_adapter import DeviceAdapter
 from twister_harness.device.utils import log_command, terminate_process
 from twister_harness.exceptions import (
@@ -202,7 +201,6 @@ class HardwareAdapter(DeviceAdapter):
 
             except subprocess.TimeoutExpired as exc:
                 terminate_process(proc)
-                proc.communicate(timeout=timeout)
                 msg = f'Timeout occurred ({timeout}s) during execution custom script: {script_path}'
                 logger.error(msg)
                 raise TwisterHarnessTimeoutException(msg) from exc

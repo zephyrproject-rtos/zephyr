@@ -16,7 +16,6 @@ import time
 from pathlib import Path
 
 import serial
-
 from twister_harness.device.fifo_handler import FifoHandler
 from twister_harness.exceptions import TwisterHarnessException, TwisterHarnessTimeoutException
 from twister_harness.twister_harness_config import DeviceConfig, DeviceSerialConfig

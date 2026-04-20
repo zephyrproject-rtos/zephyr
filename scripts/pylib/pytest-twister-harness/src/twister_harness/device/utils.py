@@ -14,6 +14,7 @@ import subprocess
 
 import psutil
 
+logger = logging.getLogger(__name__)
 _WINDOWS = platform.system() == 'Windows'
 
 
@@ -40,7 +41,9 @@ def log_command(logger: logging.Logger, msg: str, args: list, level: int = loggi
 def terminate_process(proc: subprocess.Popen, timeout: float = 0.5) -> None:
     """
     Try to terminate provided process and all its subprocesses recursively.
+    Drains any pipe buffers so callers do not need to call communicate().
     """
+    logger.debug(f'Terminating process {proc.pid} and its children')
     with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
         for child in psutil.Process(proc.pid).children(recursive=True):
             with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
@@ -50,3 +53,6 @@ def terminate_process(proc: subprocess.Popen, timeout: float = 0.5) -> None:
         proc.wait(timeout=timeout)
     except subprocess.TimeoutExpired:
         proc.kill()
+    if proc.stdout or proc.stderr:
+        with contextlib.suppress(Exception):
+            proc.communicate(timeout=timeout)
