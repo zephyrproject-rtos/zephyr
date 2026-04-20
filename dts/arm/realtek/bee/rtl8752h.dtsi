@@ -173,6 +173,12 @@
 			status = "disabled";
 		};
 
+		core_wdt: watchdog@40006000 {
+			compatible = "realtek,bee-core-wdt";
+			reg = <0x40006000 0x10>;
+			status = "disabled";
+		};
+
 		uart0: serial@40011000 {
 			compatible = "realtek,bee-uart";
 			reg = <0x40011000 0x60>;

@@ -1,0 +1,20 @@
+description: Realtek Bee Core Watchdog Timer
+
+compatible: "realtek,bee-core-wdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  # 16Bit: 32.768k/(1+divfactor).
+  div-factor:
+    type: int
+    description: Watchdog clock divider
+
+  initial-timeout-ms:
+    type: int
+    default: 4000
+    description: |
+      Set timeout value in milliseconds.
