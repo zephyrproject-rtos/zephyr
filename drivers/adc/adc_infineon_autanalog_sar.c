@@ -132,6 +132,13 @@ struct ifx_autanalog_sar_channel_dt_config {
 	uint8_t channel_id;
 	uint8_t fifo_sel;
 	bool mux_buf_bypass;
+	bool sign;
+	bool differential;
+	uint8_t neg_pin;
+	uint8_t pos_coeff;
+	uint8_t neg_coeff;
+	bool acc_shift;
+	uint8_t limit;
 };
 
 struct ifx_autanalog_sar_fir_config {
@@ -207,8 +214,20 @@ struct ifx_autanalog_sar_adc_channel_config {
 	 * Cy_AutAnalog_SAR_LoadStaticConfig() call instead of being kept in .bss.
 	 */
 	uint8_t pos_pin;
-	/* Negative input pin for MUX channels. */
+	/* Negative input pin for MUX channels, or negative GPIO pin for differential mode. */
 	uint8_t neg_pin;
+	/* Sign extension enable */
+	bool sign;
+	/* Differential mode enable (GPIO channels only) */
+	bool differential;
+	/* Positive correction coefficient */
+	uint8_t pos_coeff;
+	/* Negative correction coefficient */
+	uint8_t neg_coeff;
+	/* Accumulator shift enable */
+	bool acc_shift;
+	/* Limit status / range detection selection */
+	uint8_t limit;
 };
 
 struct ifx_autanalog_sar_adc_data {
@@ -1105,13 +1124,15 @@ static int ifx_apply_static_config(struct ifx_autanalog_sar_adc_data *data)
 			}
 
 			hs_chans[ch].posPin = (cy_en_autanalog_sar_pin_hs_t)ccfg->pos_pin;
-			hs_chans[ch].hsDiffEn = false;
-			hs_chans[ch].sign = false;
-			hs_chans[ch].posCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
-			hs_chans[ch].negPin = CY_AUTANALOG_SAR_PIN_GPIO0;
-			hs_chans[ch].accShift = false;
-			hs_chans[ch].negCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
-			hs_chans[ch].hsLimit = CY_AUTANALOG_SAR_LIMIT_STATUS_DISABLED;
+			hs_chans[ch].hsDiffEn = ccfg->differential;
+			hs_chans[ch].sign = ccfg->sign;
+			hs_chans[ch].posCoeff = (cy_en_autanalog_sar_ch_coeff_t)ccfg->pos_coeff;
+			hs_chans[ch].negPin = ccfg->differential
+						      ? (cy_en_autanalog_sar_pin_hs_t)ccfg->neg_pin
+						      : CY_AUTANALOG_SAR_PIN_GPIO0;
+			hs_chans[ch].accShift = ccfg->acc_shift;
+			hs_chans[ch].negCoeff = (cy_en_autanalog_sar_ch_coeff_t)ccfg->neg_coeff;
+			hs_chans[ch].hsLimit = (cy_en_autanalog_sar_limit_t)ccfg->limit;
 			hs_chans[ch].fifoSel = (cy_en_autanalog_fifo_sel_t)ccfg->fifo_sel;
 
 			data->pdl_adc_hs_static_obj.hsGpioChan[ch] = &hs_chans[ch];
@@ -1130,13 +1151,13 @@ static int ifx_apply_static_config(struct ifx_autanalog_sar_adc_data *data)
 		}
 
 		mux_chans[idx].posPin = (cy_en_autanalog_sar_pin_mux_t)ccfg->pos_pin;
-		mux_chans[idx].sign = false;
-		mux_chans[idx].posCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
+		mux_chans[idx].sign = ccfg->sign;
+		mux_chans[idx].posCoeff = (cy_en_autanalog_sar_ch_coeff_t)ccfg->pos_coeff;
 		mux_chans[idx].negPin = (cy_en_autanalog_sar_pin_mux_t)ccfg->neg_pin;
 		mux_chans[idx].buffBypass = ccfg->mux_buf_bypass;
-		mux_chans[idx].accShift = false;
-		mux_chans[idx].negCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
-		mux_chans[idx].muxLimit = CY_AUTANALOG_SAR_LIMIT_STATUS_DISABLED;
+		mux_chans[idx].accShift = ccfg->acc_shift;
+		mux_chans[idx].negCoeff = (cy_en_autanalog_sar_ch_coeff_t)ccfg->neg_coeff;
+		mux_chans[idx].muxLimit = (cy_en_autanalog_sar_limit_t)ccfg->limit;
 		mux_chans[idx].fifoSel = (cy_en_autanalog_fifo_sel_t)ccfg->fifo_sel;
 
 		data->pdl_adc_top_static_obj.intMuxChan[idx] = &mux_chans[idx];
@@ -1190,6 +1211,7 @@ static int ifx_autanalog_sar_setup_gpio_channel(struct ifx_autanalog_sar_adc_dat
 
 	data->autanalog_channel_cfg[hw_channel].pos_pin = channel_cfg->input_positive;
 	data->autanalog_channel_cfg[hw_channel].sample_time_idx = sample_time_idx;
+
 	data->pdl_adc_hs_static_obj.hsGpioResultMask |= BIT(hw_channel);
 	data->enabled_channels |= BIT(hw_channel);
 
@@ -1227,6 +1249,7 @@ static int ifx_autanalog_sar_setup_mux_channel(struct ifx_autanalog_sar_adc_data
 	data->autanalog_channel_cfg[hw_channel].pos_pin = channel_cfg->input_positive;
 	data->autanalog_channel_cfg[hw_channel].neg_pin = channel_cfg->input_negative;
 	data->autanalog_channel_cfg[hw_channel].sample_time_idx = sample_time_idx;
+
 	data->pdl_adc_top_static_obj.muxResultMask |= BIT(mux_idx);
 	data->enabled_channels |= BIT(hw_channel);
 
@@ -1445,6 +1468,12 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 		data->autanalog_channel_cfg[i].mux_buf_bypass = false;
 		data->autanalog_channel_cfg[i].pos_pin = 0;
 		data->autanalog_channel_cfg[i].neg_pin = 0;
+		data->autanalog_channel_cfg[i].sign = false;
+		data->autanalog_channel_cfg[i].differential = false;
+		data->autanalog_channel_cfg[i].pos_coeff = 0;
+		data->autanalog_channel_cfg[i].neg_coeff = 0;
+		data->autanalog_channel_cfg[i].acc_shift = false;
+		data->autanalog_channel_cfg[i].limit = 0;
 	}
 
 	data->dev = dev;
@@ -1458,6 +1487,14 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 			data->autanalog_channel_cfg[ch].mux_buf_bypass =
 				cfg->dt_channels[i].mux_buf_bypass;
 			data->autanalog_channel_cfg[ch].fifo_sel = cfg->dt_channels[i].fifo_sel;
+			data->autanalog_channel_cfg[ch].sign = cfg->dt_channels[i].sign;
+			data->autanalog_channel_cfg[ch].differential =
+				cfg->dt_channels[i].differential;
+			data->autanalog_channel_cfg[ch].neg_pin = cfg->dt_channels[i].neg_pin;
+			data->autanalog_channel_cfg[ch].pos_coeff = cfg->dt_channels[i].pos_coeff;
+			data->autanalog_channel_cfg[ch].neg_coeff = cfg->dt_channels[i].neg_coeff;
+			data->autanalog_channel_cfg[ch].acc_shift = cfg->dt_channels[i].acc_shift;
+			data->autanalog_channel_cfg[ch].limit = cfg->dt_channels[i].limit;
 		}
 	}
 
@@ -2330,6 +2367,13 @@ static int ifx_autanalog_sar_get_decoder(const struct device *dev,
 			.channel_id = (uint8_t)DT_REG_ADDR(child_node_id),                         \
 			.mux_buf_bypass = DT_PROP_OR(child_node_id, mux_buf_bypass, 0),            \
 			.fifo_sel = (uint8_t)DT_PROP_OR(child_node_id, fifo_sel, 0),               \
+			.sign = DT_PROP_OR(child_node_id, sign, 0),                                \
+			.differential = DT_PROP_OR(child_node_id, differential, 0),                \
+			.neg_pin = (uint8_t)DT_PROP_OR(child_node_id, neg_pin, 0),                 \
+			.pos_coeff = (uint8_t)DT_PROP_OR(child_node_id, pos_coeff, 0),             \
+			.neg_coeff = (uint8_t)DT_PROP_OR(child_node_id, neg_coeff, 0),             \
+			.acc_shift = DT_PROP_OR(child_node_id, acc_shift, 0),                      \
+			.limit = (uint8_t)DT_PROP_OR(child_node_id, limit, 0),                     \
 		},), ())
 
 #define IFX_CHAN_DT_CFG_ARRAY(n)                                                                   \

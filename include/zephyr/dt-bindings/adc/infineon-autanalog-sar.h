@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -198,6 +198,21 @@
 #define IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME1 1 /**< Sample time slot 1 */
 #define IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME2 2 /**< Sample time slot 2 */
 #define IFX_AUTANALOG_SAR_SEQ_SAMPLE_TIME3 3 /**< Sample time slot 3 */
+/** @} */
+
+/**
+ * @name Channel correction coefficient (cy_en_autanalog_sar_ch_coeff_t)
+ * @{
+ */
+#define IFX_AUTANALOG_SAR_CH_COEFF_DISABLED 0 /**< Coefficient not used */
+#define IFX_AUTANALOG_SAR_CH_COEFF0         1 /**< Correction coefficient config 0 */
+#define IFX_AUTANALOG_SAR_CH_COEFF1         2 /**< Correction coefficient config 1 */
+#define IFX_AUTANALOG_SAR_CH_COEFF2         3 /**< Correction coefficient config 2 */
+#define IFX_AUTANALOG_SAR_CH_COEFF3         4 /**< Correction coefficient config 3 */
+#define IFX_AUTANALOG_SAR_CH_COEFF4         5 /**< Correction coefficient config 4 */
+#define IFX_AUTANALOG_SAR_CH_COEFF5         6 /**< Correction coefficient config 5 */
+#define IFX_AUTANALOG_SAR_CH_COEFF6         7 /**< Correction coefficient config 6 */
+#define IFX_AUTANALOG_SAR_CH_COEFF7         8 /**< Correction coefficient config 7 */
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_INFINEON_AUTANALOG_SAR_H_ */
