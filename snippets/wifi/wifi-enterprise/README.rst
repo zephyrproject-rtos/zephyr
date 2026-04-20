@@ -16,7 +16,7 @@ Can also be used along with the :ref:`snippet-wifi-ipv4` snippet.
 Overview
 ********
 
-This snippet enables enterprise Wi-Fi support in supported networking samples.
+This snippet enables enterprise Wi-Fi support.
 
 See :ref:`wifi_mgmt` for more information on the usage.
 
