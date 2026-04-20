@@ -14,6 +14,16 @@ set(TFM_TEST_REG_TEST_PATH  ${ZEPHYR_TF_M_TESTS_MODULE_DIR}/tests_reg/test)
 set(TFM_TEST_LIB_PATH  ${ZEPHYR_TF_M_TESTS_MODULE_DIR}/lib)
 set(TFM_API_NS_PATH ${CMAKE_BINARY_DIR}/tfm/api_ns)
 
+# This is used to pass some extra build parameters to the TF-M build.
+macro(add_tfm_build_params)
+  foreach(param ${ARGN})
+    set_property(TARGET zephyr_property_target
+                 APPEND PROPERTY TFM_CMAKE_OPTIONS
+                 ${param}
+    )
+  endforeach()
+endmacro()
+
 macro(add_inc_and_src_if_def)
   cmake_parse_arguments(
     ARG
@@ -41,6 +51,15 @@ macro(def_if_def kconfig build_flag)
     message(STATUS " ${build_flag}")
   endif()
 endmacro()
+
+add_tfm_build_params(
+  -DTEST_S=ON
+  -DTEST_NS=ON
+  -DTFM_S_REG_TEST=ON
+  -DTFM_NS_REG_TEST=ON
+  -DCONFIG_TFM_TEST_DIR="${ZEPHYR_TF_M_TESTS_MODULE_DIR}/tests_reg/test/secure_regression"
+  -DCONFIG_TFM_TEST_CONFIG_FILE="${ZEPHYR_TF_M_TESTS_MODULE_DIR}/tests_reg/test/config/config.cmake"
+)
 
 target_sources(app PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/src/main.c
