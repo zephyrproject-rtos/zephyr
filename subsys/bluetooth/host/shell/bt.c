@@ -1680,8 +1680,8 @@ static int cmd_passive_scan_on(const struct shell *sh, uint32_t options,
 	struct bt_le_scan_param param = {
 			.type       = BT_LE_SCAN_TYPE_PASSIVE,
 			.options    = BT_LE_SCAN_OPT_NONE,
-			.interval   = interval != 0U ? interval : 0x10,
-			.window     = window != 0U ? window : 0x10,
+			.interval   = interval != 0U ? interval : 0x10U,
+			.window     = window != 0U ? window : 0x10U,
 			.timeout    = timeout, };
 	int err;
 
@@ -1740,12 +1740,13 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 		{ "help", sys_getopt_no_argument, NULL, 'h' },
 		{},
 	};
+	int err = 0;
 	int opt;
 	const char *action;
 	uint32_t options = 0;
-	uint16_t timeout = 0;
-	uint16_t interval = 0U;
-	uint16_t window = 0U;
+	unsigned long timeout = 0;
+	unsigned long interval = 0U;
+	unsigned long window = 0U;
 
 	while (true) {
 		opt = sys_getopt_long(argc, argv, "h", long_options, NULL);
@@ -1755,13 +1756,25 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 
 		switch (opt) {
 		case TIMEOUT:
-			timeout = shell_strtoul(state->optarg, 0, NULL);
+			timeout = shell_strtoul(state->optarg, 0, &err);
+			if (timeout > UINT16_MAX) {
+				shell_error(sh, "Timeout value too large");
+				return -EINVAL;
+			}
 			break;
 		case INTERVAL:
-			interval = shell_strtoul(state->optarg, 0, NULL);
+			interval = shell_strtoul(state->optarg, 0, &err);
+			if (interval > UINT16_MAX) {
+				shell_error(sh, "Interval value too large");
+				return -EINVAL;
+			}
 			break;
 		case WINDOW:
-			window = shell_strtoul(state->optarg, 0, NULL);
+			window = shell_strtoul(state->optarg, 0, &err);
+			if (interval > UINT16_MAX) {
+				shell_error(sh, "Window value too large");
+				return -EINVAL;
+			}
 			break;
 		case FILTER_DUPS:
 			options |= BT_LE_SCAN_OPT_FILTER_DUPLICATE;
@@ -1792,11 +1805,16 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
+	if (err != 0) {
+		shell_error(sh, "Unable to convert integer");
+		return -EINVAL;
+	}
+
 	/* Jump to the beginning of non-getopt parameters */
 	argc -= state->optind;
 	argv += state->optind;
 
-	if (argc < 1) {
+	if (argc < 1U) {
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
 	}
