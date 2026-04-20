@@ -28,7 +28,7 @@ contributions to the Zephyr RTOS repository.
 ## Developer Certificate of Origin (DCO)
 
 - Every commit requires a `Signed-off-by` line — **only humans** may add this; AI agents
-  must not add `Signed-off-by` tags.
+  should not add `Signed-off-by` tags unless explicitly requested by humans.
 - The human submitter is responsible for reviewing all AI-generated code, ensuring license
   compliance, and signing off.
 - Use a real legal name and real email address (no pseudonyms, no noreply addresses).
@@ -152,19 +152,6 @@ All new code must comply with the Zephyr MISRA-C subset. Key required rules:
 
 ---
 
-## External Components
-
-- To import third-party code, open a GitHub issue using the **New External Source Code**
-  template before writing any code.
-- Apache-2.0 code: TSC review only.
-- Other licenses: TSC approval + Zephyr governing board approval (2-week review window).
-- Code integrated into the main tree must conform to all Zephyr style, coding, and SPDX
-  rules.
-- Modules go into `west.yml` (required) or `submanifests/optional.yml` (optional).
-- The submitter must commit to ongoing maintenance and add an entry to `MAINTAINERS.yml`.
-
----
-
 ## Commit Message Guidelines
 
 Every commit message must follow this format:
@@ -222,11 +209,6 @@ Fixes zephyrproject-rtos/zephyr#[issue number]
 ## Pull Request Guidelines
 
 - Search existing issues and PRs before starting work.
-- Discuss large changes on the mailing list or Discord first.
-- Keep PR descriptions up to date and respond to review feedback within **21 days**.
-- Draft PRs must move to ready-for-review within **30 days**.
-- PRs become stale after 30 days of inactivity; they may be closed 7 days after a stale
-  notice. This is an administrative action, not a rejection — reopen with an updated plan.
 
 ### Modifying Others' Contributions
 
