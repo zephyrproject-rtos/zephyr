@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Siemens
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	bitbang_pwm: bitbang-pwm {
+		compatible = "zephyr,pwm-bitbang";
+		status = "okay";
+		#pwm-cells = <3>;
+		timer = <&counter0>;
+		pwm-gpios = <&gpio0 0 0>,
+			    <&gpio0 1 0>;
+	};
+};
