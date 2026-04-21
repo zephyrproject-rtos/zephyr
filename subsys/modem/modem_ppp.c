@@ -549,6 +549,7 @@ int modem_ppp_attach(struct modem_ppp *ppp, struct modem_pipe *pipe)
 		return 0;
 	}
 
+	ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
 	ppp->pipe = pipe;
 	modem_pipe_attach(pipe, modem_ppp_pipe_callback, ppp);
 
