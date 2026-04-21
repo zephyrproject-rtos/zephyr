@@ -263,7 +263,7 @@ int lorawan_set_class(enum lorawan_class dev_class)
 
 void lorawan_enable_adr(bool enable)
 {
-	ARG_UNUSED(enable);
+	lwan_ctx.mac.adr_enabled = enable;
 }
 
 int lorawan_set_datarate(enum lorawan_datarate dr)
