@@ -178,7 +178,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			pin_cfg = pins[i].pincfg | STM32_MODE_INPUT | STM32_CNF_IN_ANALOG;
 		} else if (STM32_DT_PINMUX_FUNC(mux) == GPIO_IN) {
 			pin_cfg = pins[i].pincfg | STM32_MODE_INPUT;
-			pupd = pin_cfg & (STM32_PUPD_MASK << STM32_PUPD_SHIFT);
+			pupd = pin_cfg & STM32_PUPD_Msk;
 			if (pupd == STM32_PUPD_NO_PULL) {
 				pin_cfg = pin_cfg | STM32_CNF_IN_FLOAT;
 			} else {
@@ -221,7 +221,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			/* Apply output level configuration */
 			const struct gpio_stm32_config *cfg = port->config;
 			GPIO_TypeDef *gpio = cfg->base;
-			uint32_t gpio_out = pin_cfg & (STM32_ODR_MASK << STM32_ODR_SHIFT);
+			uint32_t gpio_out = pin_cfg & STM32_ODR_Msk;
 
 			if (gpio_out == STM32_ODR_1) {
 				stm32_reg_write(&gpio->BSRR, BIT(line));
