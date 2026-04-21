@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/usb/usb_ch9.h>
 
@@ -158,6 +159,19 @@ static inline uint16_t calc_packet_count(const uint16_t size, const uint8_t mps)
 	} else {
 		return DIV_ROUND_UP(size, mps);
 	}
+}
+
+static inline enum uhc_dwc2_channel_pid calc_next_pid(const enum uhc_dwc2_channel_pid pid,
+							   const uint8_t pkt_cnt)
+{
+	/* If amount of packets are even - do not toggle */
+	if ((pkt_cnt & 0x01U) == 0U) {
+		return pid;
+	}
+
+	return (pid == UHC_DWC2_CHANNEL_PID_DATA0) ?
+		UHC_DWC2_CHANNEL_PID_DATA1 :
+		UHC_DWC2_CHANNEL_PID_DATA0;
 }
 
 static inline void dwc2_hal_set_reset(struct usb_dwc2_reg *const dwc2, const bool reset_on)
@@ -999,7 +1013,8 @@ static int uhc_dwc2_channel_start_transfer_bulk_intr(struct uhc_dwc2_channel *ch
 	/* TODO: Calculate num packets */
 	const uint16_t pkt_cnt = calc_packet_count(size, channel->ep_mps);
 
-	/* TODO: Do we need to toggle PID? */
+	/* TODO: where to keep the toggle flag? How it is done in the other drivers? */
+	/* PID support to be a part of EP or XFER, not channel */
 	enum uhc_dwc2_channel_pid pid = UHC_DWC2_PID_DATA0;
 
 	uint32_t hctsiz = usb_dwc2_set_hctsiz_pid(pid) |
