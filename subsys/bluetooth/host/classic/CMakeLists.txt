@@ -48,3 +48,10 @@ zephyr_library_sources_ifdef(
 if(CONFIG_BT_AVRCP_CT_COVER_ART OR CONFIG_BT_AVRCP_TG_COVER_ART)
   zephyr_library_sources(avrcp_cover_art.c)
 endif()
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_PBAP
+  pbap.c
+  )
+
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
