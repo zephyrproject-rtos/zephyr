@@ -25,7 +25,15 @@
 
 #include <hci_onchip.h>
 
-#if defined(CONFIG_BT_BFLB_BL70X)
+#if defined(CONFIG_BT_BFLB_BL60X)
+
+#include <bflb_soc.h>
+#include <ble_lib_api.h>
+
+#define bflb_controller_init(prio)     ble_controller_init(prio)
+#define bflb_controller_deinit()       ble_controller_deinit()
+
+#elif defined(CONFIG_BT_BFLB_BL70X)
 
 #include <bflb_soc.h>
 #include <ble_lib_api.h>

@@ -8,6 +8,19 @@ config BT_BFLB
 	  Common symbol for all Bouffalo Lab on-chip BLE controllers.
 	  Selected automatically by the SoC-specific HCI driver configs.
 
+config BT_BFLB_BL60X
+	bool
+	default y
+	depends on DT_HAS_BFLB_BT_HCI_ENABLED && SOC_SERIES_BL60X
+	select BT_BFLB
+	select HAS_BT_CTLR
+	select DYNAMIC_INTERRUPTS
+	select FPU_SHARING
+	select BFLB_FREERTOS_SHIM
+	help
+	  Bouffalo Lab BL60X (BL602) on-chip BLE controller HCI driver.
+	  Uses precompiled binary blobs from the hal_bouffalolab module.
+
 config BT_BFLB_BL70X
 	bool
 	default y
@@ -97,6 +110,27 @@ config BFLB_BL70X_BLE_M16S1
 endchoice
 
 endif # BT_BFLB_BL70X
+
+if BT_BFLB_BL60X
+
+choice BFLB_BL60X_BLE_VARIANT
+	prompt "BLE controller variant"
+	default BFLB_BL60X_BLE_M8S1 if BT_HCI_RAW
+	default BFLB_BL60X_BLE_M8S1 if (BT_PERIPHERAL && BT_CENTRAL)
+	default BFLB_BL60X_BLE_M1S1 if BT_PERIPHERAL
+	default BFLB_BL60X_BLE_M8S1
+	help
+	  Select the BLE controller binary variant.
+
+config BFLB_BL60X_BLE_M1S1
+	bool "m1s1: Central + Peripheral, 1 connection each"
+
+config BFLB_BL60X_BLE_M8S1
+	bool "m8s1: 8 central + 1 peripheral"
+
+endchoice
+
+endif # BT_BFLB_BL60X
 
 config BT_BFLB_BL70XL
 	bool
