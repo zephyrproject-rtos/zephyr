@@ -182,7 +182,15 @@ int stm32_gpioport_configure_pin(const struct device *port,
 
 	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	if (mode == STM32_MODER_OUTPUT_MODE) {
+	if (mode == STM32_MODER_ALT_MODE) {
+		/* Alternate Function mode: configure AF mux */
+		if (pin < 8) {
+			LL_GPIO_SetAFPin_0_7(gpio, pin_ll, func);
+		} else {
+			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, func);
+		}
+	} else if (mode == STM32_MODER_OUTPUT_MODE) {
+		/* Output mode: configure output type and set level if requested */
 		LL_GPIO_SetPinOutputType(gpio, pin_ll, otype >> STM32_OTYPER_Pos);
 
 		if (apply_out_level) {
@@ -194,29 +202,25 @@ int stm32_gpioport_configure_pin(const struct device *port,
 				LL_GPIO_ResetOutputPin(gpio, pin_ll);
 			}
 		}
-	}
-
+	} else {
+		/*
+		 * Input/Analog mode: there's usually nothing to do...
+		 */
 #if defined(CONFIG_SOC_SERIES_STM32L4X) && defined(GPIO_ASCR_ASC0)
-	/*
-	 * For STM32L47xx/48xx, register ASCR should be configured to connect
-	 * analog switch of gpio lines to the ADC.
-	 */
-	if (mode == STM32_MODER_ANALOG_MODE) {
-		LL_GPIO_EnablePinAnalogControl(gpio, pin_ll);
+		/*
+		 * ...except for STM32L47xx/48xx where register ASCR should be
+		 * configured to connect analog switch of GPIO lines to the ADC.
+		 */
+		if (mode == STM32_MODER_ANALOG_MODE) {
+			LL_GPIO_EnablePinAnalogControl(gpio, pin_ll);
+		}
+#endif /* CONFIG_SOC_SERIES_STM32L4X && defined(GPIO_ASCR_ASC0) */
 	}
-#endif
 
+	/* Apply generic parameters (identical regardless of mode) */
 	LL_GPIO_SetPinSpeed(gpio, pin_ll, ospeed >> STM32_OSPEEDR_Pos);
 
 	ll_gpio_set_pin_pull(gpio, pin_ll, pupd >> STM32_PUPDR_Pos);
-
-	if (mode == STM32_MODER_ALT_MODE) {
-		if (pin < 8) {
-			LL_GPIO_SetAFPin_0_7(gpio, pin_ll, func);
-		} else {
-			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, func);
-		}
-	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
 	uint32_t piocfgr = _FLD2VAL(STM32_ADVCFGR, config);
@@ -241,6 +245,10 @@ int stm32_gpioport_configure_pin(const struct device *port,
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h5_pinctrl) */
 
+	/*
+	 * Configure pin mode last after all other parameters
+	 * have been applied properly.
+	 */
 	LL_GPIO_SetPinMode(gpio, pin_ll, mode >> STM32_MODER_Pos);
 
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
