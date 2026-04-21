@@ -1123,6 +1123,152 @@ static void bt_nxp_ctlr_uart_isr(const struct device *unused, void *user_data)
 	}
 }
 
+#if defined(CONFIG_HCI_NXP_CONFIG_IR_COEX)
+static int bt_nxp_ctlr_ir(void)
+{
+	int err;
+	uint32_t speed;
+	bool flowcontrol_of_hci;
+
+	if (!device_is_ready(uart_dev)) {
+		return -ENODEV;
+	}
+
+	speed = DT_PROP(DT_INST_GPARENT(0), current_speed);
+	uart_dev_data.primary_speed = DT_PROP_OR(DT_DRV_INST(0), fw_download_primary_speed, speed);
+	uart_dev_data.secondary_speed =
+		DT_PROP_OR(DT_DRV_INST(0), fw_download_secondary_speed, speed);
+
+	flowcontrol_of_hci = (bool)DT_PROP_OR(DT_DRV_INST(0), hw_flow_control, false);
+	uart_dev_data.primary_flowcontrol =
+		(bool)DT_PROP_OR(DT_DRV_INST(0), fw_download_primary_flowcontrol, false);
+	uart_dev_data.secondary_flowcontrol =
+		(bool)DT_PROP_OR(DT_DRV_INST(0), fw_download_secondary_flowcontrol, false);
+
+	uart_irq_rx_enable(uart_dev);
+
+	uint8_t ir_trigger_buf[4];
+	memset(ir_trigger_buf, 0, sizeof(ir_trigger_buf));
+
+	/*IR trigger sequence*/
+	ir_trigger_buf[0] = 0x01U;
+	ir_trigger_buf[1] = 0xFCU;
+	ir_trigger_buf[2] = 0xFCU;
+	ir_trigger_buf[3] = 0x00U; /* no data, so 0 parameter length*/
+
+	for (int i = 0; i < 4; i++) {
+		uart_poll_out(uart_dev, ir_trigger_buf[i]);
+	}
+
+	k_sleep(K_MSEC(500));
+
+	//FW Load start after IR
+
+	uart_irq_rx_disable(uart_dev);
+	uart_irq_tx_disable(uart_dev);
+
+	fw_upload.rx.head = 0;
+	fw_upload.rx.tail = 0;
+
+	k_sem_init(&fw_upload.rx.sem, 0, sizeof(fw_upload.rx.buffer));
+
+	uart_irq_callback_set(uart_dev, bt_nxp_ctlr_uart_isr);
+
+	made_table = false;
+
+	err = fw_upload_uart_reconfig(uart_dev_data.primary_speed,
+				      uart_dev_data.primary_flowcontrol);
+	if (err) {
+		LOG_ERR("Fail to config uart");
+		return err;
+	}
+
+	uart_irq_rx_enable(uart_dev);
+
+	err = fw_uploading(bt_fw_bin, bt_fw_bin_len);
+	if (err) {
+		LOG_ERR("Fail to upload firmware");
+		return err;
+	}
+
+	(void)fw_upload_uart_reconfig(speed, flowcontrol_of_hci);
+
+	uart_irq_rx_disable(uart_dev);
+	uart_irq_tx_disable(uart_dev);
+
+	k_sleep(K_MSEC(CONFIG_BT_H4_NXP_CTLR_WAIT_TIME_AFTER_UPLOAD));
+	fw_upload.is_setup_done = true;
+
+	return 0;
+}
+#endif
+
+#if defined(CONFIG_HCI_NXP_CONFIG_IR)
+static int bt_nxp_configure_ir(void)
+{
+	int ret = 0;
+	const uint8_t hci_configure_ir[HCI_CMD_BT_CONFIG_IR_LENGTH] = {
+			0x02,
+			0xFF
+	};
+	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_BT_CONFIG_IR_OCF);
+
+	LOG_INF("Configuring IR");
+
+	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
+		struct net_buf *buf;
+
+		buf = bt_hci_cmd_alloc(K_FOREVER);
+		if (buf == NULL) {
+			LOG_ERR("Unable to allocate command buffer");
+			return -ENOMEM;
+		}
+
+		net_buf_add_mem(buf, hci_configure_ir, HCI_CMD_BT_CONFIG_IR_LENGTH);
+
+		ret = bt_hci_cmd_send_sync(opcode, buf, NULL);
+		if (ret) {
+			LOG_ERR("Failed to send config IR cmd (err %d)", ret);
+			return ret;
+		}
+	}
+
+	return ret;
+}
+
+void bt_nxp_trigger_ir(void)
+{
+	uint8_t ir_trigger_buf[4];
+
+	LOG_INF("Disable BT before IR");
+
+	bt_disable();
+	k_sleep(K_MSEC(500));
+
+	memset(ir_trigger_buf, 0, sizeof(ir_trigger_buf));
+
+	/*IR trigger sequence*/
+	ir_trigger_buf[0] = 0x01U;
+	ir_trigger_buf[1] = 0xFCU;
+	ir_trigger_buf[2] = 0xFCU;
+	ir_trigger_buf[3] = 0x00U; /* no data, so 0 parameter length*/
+
+	fw_upload.is_setup_done = 0;
+
+#if defined(CONFIG_HCI_NXP_CONFIG_IR_COEX)
+	bt_nxp_ctlr_ir();
+#else
+	LOG_INF("Triggering IR.");
+	for (int i = 0; i < 4; i++) {
+		uart_poll_out(uart_dev, ir_trigger_buf[i]);
+	}
+	bt_nxp_ctlr_init();
+#endif /* defined(CONFIG_HCI_NXP_CONFIG_IR_COEX) */
+
+	LOG_INF("Perform BT Init again to activate interface.");
+}
+#endif /* defined(CONFIG_HCI_NXP_CONFIG_IR) */
+
 static int bt_nxp_ctlr_init(void)
 {
 	int err;
