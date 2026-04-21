@@ -491,7 +491,7 @@ static void init_clock_manager(const struct device *dev)
 #endif
 }
 
-static const struct _dmic_ops dmic_ops = {
+static DEVICE_API(dmic, dmic_ops) = {
 	.configure = dmic_nrfx_pdm_configure,
 	.trigger = dmic_nrfx_pdm_trigger,
 	.read = dmic_nrfx_pdm_read,

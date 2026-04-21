@@ -638,7 +638,7 @@ static void dmic_ch5_isr(const struct device *dev)
 	dmic_isr(dev, 5);
 }
 
-static const struct _dmic_ops dmic_ops = {
+static DEVICE_API(dmic, dmic_ops) = {
 	.configure = ifx_dmic_configure,
 	.trigger = ifx_dmic_trigger,
 	.read = ifx_dmic_read,
