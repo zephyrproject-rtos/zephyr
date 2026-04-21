@@ -188,7 +188,7 @@ long xtensa_semihost_open(struct semihost_open_args *args)
 				      semihost_mode(args->mode), XTENSA_SEMIHOST_OPEN);
 #else
 	return xtensa_semihost_call_4((uintptr_t)args->path, semihost_flags(args->mode),
-				      semihost_mode(args->mode), args->path_len,
+				      semihost_mode(args->mode), args->path_len + 1,
 				      XTENSA_SEMIHOST_OPEN);
 #endif /* CONFIG_SIMULATOR_XTENSA */
 }
