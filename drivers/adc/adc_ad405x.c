@@ -958,7 +958,7 @@ static int adc_ad405x_init(const struct device *dev)
 	}
 
 	reg_val_res = (reg_val_hi << 8) | reg_val;
-	if ((reg_val_res != AD4052_REG_PRODUCT_ID_VAL) &
+	if ((reg_val_res != AD4052_REG_PRODUCT_ID_VAL) &&
 	    (reg_val_res != AD4050_REG_PRODUCT_ID_VAL)) {
 		LOG_ERR("Invalid product id");
 		return -ENODEV;
