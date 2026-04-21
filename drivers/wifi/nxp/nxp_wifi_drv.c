@@ -1,5 +1,5 @@
 /**
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  * @file nxp_wifi_drv.c
@@ -2249,6 +2249,7 @@ void device_pm_dump_wakeup_source(void)
 }
 #endif
 
+#ifdef CONFIG_NXP_WIFI_HOST_SLEEP
 static bool nxp_wifi_wlan_wakeup(void)
 {
 #ifdef CONFIG_NXP_RW610
@@ -2338,6 +2339,13 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 	}
 	return ret;
 }
+#else
+static int device_wlan_pm_action(const struct device *dev, enum pm_device_action pm_action)
+{
+	/* Host sleep not enabled, no PM actions needed */
+	return 0;
+}
+#endif
 
 PM_DEVICE_DT_INST_DEFINE(0, device_wlan_pm_action);
 #endif
