@@ -164,6 +164,8 @@ static int rtc_renesas_ra_init(const struct device *dev)
 #else
 	if (!(R_BSP_ResetStatusGet() & BSP_RESET_TYPE_WARM)) {
 		R_RTC_ClockSourceSet(&data->fsp_ctrl);
+		R_RTC->RCR2_b.START = 1U;
+		FSP_HARDWARE_REGISTER_WAIT(R_RTC->RCR2_b.START, 1U);
 	}
 #endif
 
