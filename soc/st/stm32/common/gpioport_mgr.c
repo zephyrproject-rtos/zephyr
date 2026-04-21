@@ -192,8 +192,8 @@ int stm32_gpioport_configure_pin(
 	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
-	uint32_t piocfgr = _FLD2VAL(STM32_IORETIME_ADVCFGR, config);
-	uint32_t delayr = _FLD2VAL(STM32_IODELAY_LENGTH, config);
+	uint32_t piocfgr = _FLD2VAL(STM32_ADVCFGR, config);
+	uint32_t delayr = _FLD2VAL(STM32_DELAYR, config);
 
 	if (pin <= 7) {
 		LL_GPIO_SetDelayPin_0_7(gpio, pin_ll, delayr);
