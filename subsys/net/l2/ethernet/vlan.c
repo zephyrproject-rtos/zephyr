@@ -54,7 +54,6 @@ struct vlan_context {
 	uint16_t tag;
 	bool status : 1;    /* Is the interface enabled or not */
 	bool is_used : 1;   /* Is there active config on this context */
-	bool init_done : 1; /* Is interface init called for this context */
 };
 
 static const struct virtual_interface_api vlan_iface_api = {
@@ -632,18 +631,12 @@ static void vlan_iface_init(struct net_if *iface)
 	struct vlan_context *ctx = net_if_get_device(iface)->data;
 	char name[MAX_VIRT_NAME_LEN];
 
-	if (ctx->init_done) {
-		return;
-	}
-
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
 	snprintk(name, sizeof(name), "not attached");
 	net_virtual_set_name(iface, name);
 
 	(void)net_virtual_set_flags(ctx->iface, NET_L2_MULTICAST);
-
-	ctx->init_done = true;
 }
 
 #else /* CONFIG_NET_VLAN_COUNT > 0 */
