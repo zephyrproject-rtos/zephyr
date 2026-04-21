@@ -12,9 +12,6 @@
 	model = "STMicroelectronics STM32H563ZI-NUCLEO board";
 	compatible = "st,stm32h563zi-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,console = &usart3;
 		zephyr,shell-uart = &usart3;

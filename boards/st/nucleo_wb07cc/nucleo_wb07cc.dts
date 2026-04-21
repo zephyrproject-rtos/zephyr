@@ -15,9 +15,6 @@
 	model = "STMicroelectronics STM32WB07CC-NUCLEO board";
 	compatible = "st,stm32wb07cc-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
