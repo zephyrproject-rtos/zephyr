@@ -92,7 +92,32 @@ struct flash_flexspi_nor_data {
 	struct flash_pages_layout layout;
 #endif
 	struct flash_parameters flash_parameters;
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	struct k_mutex lock;
+#endif
 };
+
+static inline void flash_flexspi_nor_lock(const struct device *dev)
+{
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	struct flash_flexspi_nor_data *data = dev->data;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static inline void flash_flexspi_nor_unlock(const struct device *dev)
+{
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	struct flash_flexspi_nor_data *data = dev->data;
+
+	k_mutex_unlock(&data->lock);
+#else
+	ARG_UNUSED(dev);
+#endif
+}
 
 /*
  * FLEXSPI LUT buffer used during configuration. Stored in .data to avoid
@@ -198,8 +223,13 @@ static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 static int flash_flexspi_nor_read_jedec_id(const struct device *dev, uint8_t *vendor_id)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
+	int ret;
 
-	return flash_flexspi_nor_read_id_helper(data, vendor_id);
+	flash_flexspi_nor_lock(dev);
+	ret = flash_flexspi_nor_read_id_helper(data, vendor_id);
+	flash_flexspi_nor_unlock(dev);
+
+	return ret;
 }
 #endif
 
@@ -351,7 +381,10 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *
 		return -EINVAL;
 	}
 
+	flash_flexspi_nor_lock(dev);
+
 	if (!area_is_subregion(dev, offset, len)) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -388,6 +421,7 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *
 			if (xip) {
 				irq_unlock(key);
 			}
+			flash_flexspi_nor_unlock(dev);
 			return ret;
 		}
 
@@ -400,6 +434,8 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *
 	if (xip) {
 		irq_unlock(key);
 	}
+
+	flash_flexspi_nor_unlock(dev);
 
 	return 0;
 }
@@ -414,7 +450,10 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
+	flash_flexspi_nor_lock(dev);
+
 	if (!area_is_subregion(dev, offset, len)) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -427,6 +466,7 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 						    offset);
 
 	if (!dst) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -478,6 +518,8 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	DCACHE_InvalidateByRange((uintptr_t)dst, size);
 #endif
 
+	flash_flexspi_nor_unlock(dev);
+
 	return 0;
 }
 
@@ -486,7 +528,10 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
+	flash_flexspi_nor_lock(dev);
+
 	if (!area_is_subregion(dev, offset, size)) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -497,16 +542,19 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 						    offset);
 
 	if (!dst) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
 	if (offset % SPI_NOR_SECTOR_SIZE) {
 		LOG_ERR("Invalid offset");
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
 	if (size % SPI_NOR_SECTOR_SIZE) {
 		LOG_ERR("Invalid size");
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -570,6 +618,8 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 #ifdef CONFIG_HAS_MCUX_CACHE
 	DCACHE_InvalidateByRange((uintptr_t)dst, size);
 #endif
+
+	flash_flexspi_nor_unlock(dev);
 
 	return 0;
 }
@@ -1230,8 +1280,13 @@ static int flash_flexspi_nor_sfdp_read(const struct device *dev,
 		off_t offset, void *data, size_t len)
 {
 	struct flash_flexspi_nor_data *dev_data = dev->data;
+	int ret;
 
-	return flash_flexspi_nor_sfdp_read_helper(dev_data, offset, data, len);
+	flash_flexspi_nor_lock(dev);
+	ret = flash_flexspi_nor_sfdp_read_helper(dev_data, offset, data, len);
+	flash_flexspi_nor_unlock(dev);
+
+	return ret;
 }
 
 #endif
@@ -1701,6 +1756,10 @@ static int flash_flexspi_nor_init(const struct device *dev)
 {
 	const struct flash_flexspi_nor_config *config = dev->config;
 	struct flash_flexspi_nor_data *data = dev->data;
+
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	k_mutex_init(&data->lock);
+#endif
 
 	/* First step- use ROM pointer to controller device to create
 	 * a copy of the device structure in RAM we can use while in
