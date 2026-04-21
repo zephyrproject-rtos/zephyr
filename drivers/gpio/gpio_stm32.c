@@ -54,28 +54,20 @@ static void gpio_stm32_isr(gpio_port_pins_t pin, void *arg)
  */
 static int gpio_stm32_flags_to_conf(gpio_flags_t flags, uint32_t *pincfg)
 {
+	gpio_flags_t pupd = flags & (GPIO_PULL_UP | GPIO_PULL_DOWN);
 	uint32_t cfg;
 
 	if ((flags & GPIO_OUTPUT) != 0) {
 		/* Output only or Output/Input */
-
 		cfg = STM32_PINCFG_MODE_OUTPUT;
 
-		if ((flags & GPIO_SINGLE_ENDED) != 0) {
-			if (flags & GPIO_LINE_OPEN_DRAIN) {
-				cfg |= STM32_PINCFG_OPEN_DRAIN;
-			} else  {
-				/* Output can't be open source */
-				return -ENOTSUP;
-			}
-		} else {
+		if ((flags & GPIO_SINGLE_ENDED) == 0) {
 			cfg |= STM32_PINCFG_PUSH_PULL;
-		}
-
-		if ((flags & GPIO_PULL_UP) != 0) {
-			cfg |= STM32_PINCFG_PULL_UP;
-		} else if ((flags & GPIO_PULL_DOWN) != 0) {
-			cfg |= STM32_PINCFG_PULL_DOWN;
+		} else if ((flags & GPIO_LINE_OPEN_DRAIN) != 0) {
+			cfg |= STM32_PINCFG_OPEN_DRAIN;
+		} else {
+			/* Open Source - not supported */
+			return -ENOTSUP;
 		}
 
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
@@ -85,21 +77,28 @@ static int gpio_stm32_flags_to_conf(gpio_flags_t flags, uint32_t *pincfg)
 		} else {
 			/* No output level specified */
 		}
-	} else if  ((flags & GPIO_INPUT) != 0) {
+	} else if ((flags & GPIO_INPUT) != 0) {
 		/* Input */
-
-		cfg = STM32_PINCFG_MODE_INPUT;
-
-		if ((flags & GPIO_PULL_UP) != 0) {
-			cfg |= STM32_PINCFG_PULL_UP;
-		} else if ((flags & GPIO_PULL_DOWN) != 0) {
-			cfg |= STM32_PINCFG_PULL_DOWN;
+		if (pupd != 0) {
+			cfg = STM32_PINCFG_MODE_INPUT_PUPD;
 		} else {
-			cfg |= STM32_PINCFG_FLOATING;
+			cfg = STM32_PINCFG_MODE_INPUT_FLOAT;
 		}
 	} else {
-		/* Deactivated: Analog */
+		/* Deactivated: Analog/Hi-Z (PU/PD not supported) */
+		if (pupd != 0) {
+			return -ENOTSUP;
+		}
+
 		cfg = STM32_PINCFG_MODE_ANALOG;
+	}
+
+	if (pupd == GPIO_PULL_UP) {
+		cfg |= STM32_PINCFG_PULL_UP;
+	} else if (pupd == GPIO_PULL_DOWN) {
+		cfg |= STM32_PINCFG_PULL_DOWN;
+	} else {
+		/* No pull-up/down */
 	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
