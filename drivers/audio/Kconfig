@@ -72,9 +72,9 @@ source "subsys/logging/Kconfig.template.log_config"
 source "drivers/audio/Kconfig.dmic_ambiq_pdm"
 source "drivers/audio/Kconfig.dmic_infineon"
 source "drivers/audio/Kconfig.dmic_mcux"
+source "drivers/audio/Kconfig.dmic_mpxxdtyy"
 source "drivers/audio/Kconfig.dmic_nxp_micfil"
 source "drivers/audio/Kconfig.dmic_pdm_nrfx"
-source "drivers/audio/Kconfig.mpxxdtyy"
 # zephyr-keep-sorted-stop
 
 endif # AUDIO_DMIC

@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT st_mpxxdtyy
 
-#include "mpxxdtyy.h"
+#include "dmic_mpxxdtyy.h"
 #include <zephyr/drivers/i2s.h>
 
 #define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
