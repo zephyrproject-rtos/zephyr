@@ -23,7 +23,7 @@ enum lwan_flag {
 	LWAN_FLAG_COUNT,
 };
 
-#define LWAN_MAX_CHANNELS	16
+#define LWAN_MAX_CHANNELS	CONFIG_LORAWAN_NATIVE_MAX_CHANNELS
 
 struct lwan_session {
 	/* Device address assigned during join */
