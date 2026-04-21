@@ -138,6 +138,30 @@ static inline void vendor_specific_irq_clear(const struct device *dev)
 	preg->EVENTS_DMA.DONE = 0;
 }
 
+#if defined(CONFIG_MSPI_XIP)
+static inline int vendor_specific_xip_enable(const struct device *dev,
+					     const struct mspi_dev_id *dev_id,
+					     const struct mspi_xip_cfg *cfg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(dev_id);
+	ARG_UNUSED(cfg);
+
+	return 0;
+}
+
+static inline int vendor_specific_xip_disable(const struct device *dev,
+					      const struct mspi_dev_id *dev_id,
+					      const struct mspi_xip_cfg *cfg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(dev_id);
+	ARG_UNUSED(cfg);
+
+	return 0;
+}
+#endif /* defined(CONFIG_MSPI_XIP) */
+
 #if defined(CONFIG_MSPI_DMA)
 /* DMA support */
 #define EVDMA_ATTR_ATTR_Pos (24UL)
