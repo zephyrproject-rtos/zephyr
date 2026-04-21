@@ -77,6 +77,23 @@ static int gpio_stm32_flags_to_conf(gpio_flags_t flags, uint32_t *pincfg)
 		} else {
 			/* No output level specified */
 		}
+
+		if (IS_ENABLED(CONFIG_SOC_SERIES_STM32F1X)) {
+			/*
+			 * STM32F1 series does not support PU/PD in Output mode.
+			 *
+			 * The GPIO driver has historically ignored PU/PD in this
+			 * situation: keep ignoring it for backwards compatibility
+			 * even though we ought to return -ENOTSUP here instead.
+			 *
+			 * Clear PU/PD flags possibly provided by the caller such
+			 * that the code below does nothing - OR'ing PU/PD flags
+			 * in the configuration would mess things up because that
+			 * bit is shared with ODR on STM32F1.
+			 */
+			LOG_WRN("STM32F1: ignoring GPIO_PULL_UP/DOWN on OUTPUT pin");
+			pupd = 0;
+		}
 	} else if ((flags & GPIO_INPUT) != 0) {
 		/* Input */
 		if (pupd != 0) {
