@@ -17,6 +17,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config NXP_MONOLITHIC_NBU
 	default y if (BT || IEEE802154)
 
+configdefault NXP_COMPRESSED_WIFI_NB_FW
+	default y
+
 if BT
 
 config HCI_NXP_ENABLE_AUTO_SLEEP
