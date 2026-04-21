@@ -156,6 +156,11 @@
 				write-block-size = <4>;
 			};
 		};
+
+		bt: bt {
+			compatible = "realtek,ameba-bt-hci";
+			status = "disabled";
+		};
 	};
 };
 
