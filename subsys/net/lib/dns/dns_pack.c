@@ -510,7 +510,10 @@ int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 				len = curr_src - src + 1;
 			}
 
-			end_of_label = curr_src + 1;
+			if (end_of_label == NULL) {
+				/* First pointer entry, set end_of_label */
+				end_of_label = curr_src + 1;
+			}
 
 			/* Strip compress bits from length calculation */
 			pos = ((val & 0x3f) << 8) | (*curr_src & 0xff);
@@ -547,7 +550,21 @@ int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 			}
 			net_buf_add_mem(buf, curr_src, label_len);
 
-			curr_src += label_len;
+			/* If already handling pointers */
+			if (end_of_label != NULL) {
+				if (((*(curr_src + label_len)) & NS_CMPRSFLGS) == NS_CMPRSFLGS) {
+					/* Continue following the next pointer */
+					curr_src = curr_src + label_len;
+					continue;
+				} else if (*(curr_src + label_len) == 0) {
+					/* End of pointer sequence, break */
+					break;
+				} else {
+					return -EPROTO;
+				}
+			} else {
+				curr_src += label_len;
+			}
 		}
 	}
 
@@ -627,7 +644,7 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 		*qclass = query_class;
 	}
 
-	dns_msg->query_offset = end_of_label - dns_msg->msg + 2 + 2;
+	dns_msg->query_offset += end_of_label - dns_query + 2 + 2;
 
 	return ret;
 }
