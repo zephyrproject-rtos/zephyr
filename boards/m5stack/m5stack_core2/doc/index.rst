@@ -85,7 +85,7 @@ of the M5Stack Core2 board.
 | Built-in         | The `SPM-1423`_ I2S driven microphone.                                   | todo      |
 | microphone       |                                                                          |           |
 +------------------+--------------------------------------------------------------------------+-----------+
-| Built-in speaker | 1W speaker for audio output via I2S interface.                           | todo      |
+| Built-in speaker | 1W speaker for audio output via I2S interface.                           | supported |
 +------------------+--------------------------------------------------------------------------+-----------+
 | Battery-support  | Power supply via battery is supported automatically. But there is no     | todo      |
 |                  | possibility to query current battery status.                             |           |
