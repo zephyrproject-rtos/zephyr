@@ -19,24 +19,6 @@
 #include <stm32_bitops.h>
 #include <stm32_gpio_shared.h>
 
-/** Helper to extract IO port number from STM32_PINMUX() encoded value */
-#define STM32_DT_PINMUX_PORT(__pin) \
-	(((__pin) >> STM32_PORT_SHIFT) & STM32_PORT_MASK)
-
-/** Helper to extract IO pin number from STM32_PINMUX() encoded value */
-#define STM32_DT_PINMUX_LINE(__pin) \
-	(((__pin) >> STM32_LINE_SHIFT) & STM32_LINE_MASK)
-
-/** Helper to extract IO pin func from STM32_PINMUX() encoded value */
-#define STM32_DT_PINMUX_FUNC(__pin) \
-	(((__pin) >> STM32_MODE_SHIFT) & STM32_MODE_MASK)
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-/** Helper to extract IO pin remap from STM32_PINMUX() encoded value */
-#define STM32_DT_PINMUX_REMAP(__pin) \
-	(((__pin) >> STM32_REMAP_SHIFT) & STM32_REMAP_MASK)
-#endif
-
 #if DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), remap_pa11)
 #define REMAP_PA11	DT_PROP(DT_NODELABEL(pinctrl), remap_pa11)
 #endif
@@ -107,11 +89,13 @@ static int stm32_pins_remap(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt)
 	remap = NO_REMAP;
 
 	for (size_t i = 0U; i < pin_cnt; i++) {
+		const uint16_t pin_rmp = _FLD2VAL(STM32_REMAP, pins[i]);
+
 		if (remap == NO_REMAP) {
-			remap = STM32_DT_PINMUX_REMAP(pins[i].pinmux);
-		} else if (STM32_DT_PINMUX_REMAP(pins[i].pinmux) == NO_REMAP) {
+			remap = pin_rmp;
+		} else if (pin_rmp == NO_REMAP) {
 			continue;
-		} else if (STM32_DT_PINMUX_REMAP(pins[i].pinmux) != remap) {
+		} else if (pin_rmp != remap) {
 			return -EINVAL;
 		}
 	}
@@ -147,8 +131,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
 	const struct device *port;
-	uint32_t mux, func, line;
-	uint32_t pin_cfg = 0;
 	int ret = 0, cfg_ret;
 
 	ARG_UNUSED(reg);
@@ -161,42 +143,10 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
-		mux = pins[i].pinmux;
+		const pinctrl_soc_pin_t pin_cfg = pins[i];
+		const gpio_pin_t pin = _FLD2VAL(STM32_PIN, pin_cfg);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-		uint32_t pupd;
-
-		if (STM32_DT_PINMUX_FUNC(mux) == ALTERNATE) {
-			pin_cfg = pins[i].pincfg | STM32_MODE_OUTPUT | STM32_CNF_ALT_FUNC;
-		} else if (STM32_DT_PINMUX_FUNC(mux) == ANALOG) {
-			pin_cfg = pins[i].pincfg | STM32_MODE_INPUT | STM32_CNF_IN_ANALOG;
-		} else if (STM32_DT_PINMUX_FUNC(mux) == GPIO_IN) {
-			pin_cfg = pins[i].pincfg | STM32_MODE_INPUT;
-			pupd = pin_cfg & STM32_PUPD_Msk;
-			if (pupd == STM32_PUPD_NO_PULL) {
-				pin_cfg = pin_cfg | STM32_CNF_IN_FLOAT;
-			} else {
-				pin_cfg = pin_cfg | STM32_CNF_IN_PUPD;
-			}
-		} else if (STM32_DT_PINMUX_FUNC(mux) == GPIO_OUT) {
-			pin_cfg = pins[i].pincfg | STM32_MODE_OUTPUT | STM32_CNF_GP_OUTPUT;
-		} else {
-			/* Not supported */
-			__ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
-		}
-#else
-		if (STM32_DT_PINMUX_FUNC(mux) < STM32_ANALOG) {
-			pin_cfg = pins[i].pincfg | STM32_MODER_ALT_MODE;
-		} else if (STM32_DT_PINMUX_FUNC(mux) == STM32_ANALOG) {
-			pin_cfg = STM32_MODER_ANALOG_MODE;
-		} else if (STM32_DT_PINMUX_FUNC(mux) == STM32_GPIO) {
-			pin_cfg = pins[i].pincfg;
-		} else {
-			/* Not supported */
-			__ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
-		}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
-		port = stm32_gpioport_get(STM32_DT_PINMUX_PORT(mux));
+		port = stm32_gpioport_get(_FLD2VAL(STM32_PORT, pin_cfg));
 		if (port == NULL) {
 			return -ENODEV;
 		}
@@ -205,9 +155,6 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		if (ret < 0) {
 			return ret;
 		}
-
-		line = STM32_DT_PINMUX_LINE(mux);
-		func = STM32_DT_PINMUX_FUNC(mux);
 
 		/*
 		 * Regardless of `apply_out_level`, the output level data contained
@@ -224,7 +171,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		 * to contain either a value that was set explicitly or a documented default
 		 * value: it is safe to always apply it.
 		 */
-		cfg_ret = stm32_gpioport_configure_pin(port, line, pin_cfg, func, true);
+		cfg_ret = stm32_gpioport_configure_pin(port, pin, pin_cfg, true);
 
 		ret = pm_device_runtime_put(port);
 		if (ret < 0) {

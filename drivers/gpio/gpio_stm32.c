@@ -52,10 +52,10 @@ static void gpio_stm32_isr(gpio_port_pins_t pin, void *arg)
 /**
  * @brief Common gpio flags to custom flags
  */
-static int gpio_stm32_flags_to_conf(gpio_flags_t flags, uint32_t *pincfg)
+static int gpio_stm32_flags_to_conf(gpio_flags_t flags, pinctrl_soc_pin_t *pincfg)
 {
 	gpio_flags_t pupd = flags & (GPIO_PULL_UP | GPIO_PULL_DOWN);
-	uint32_t cfg;
+	pinctrl_soc_pin_t cfg;
 
 	if ((flags & GPIO_OUTPUT) != 0) {
 		/* Output only or Output/Input */
@@ -119,20 +119,8 @@ static int gpio_stm32_flags_to_conf(gpio_flags_t flags, uint32_t *pincfg)
 	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32F1X)
-	switch (flags & (STM32_GPIO_SPEED_MASK << STM32_GPIO_SPEED_SHIFT)) {
-	case STM32_GPIO_VERY_HIGH_SPEED:
-		cfg |= STM32_OSPEEDR_VERY_HIGH_SPEED;
-		break;
-	case STM32_GPIO_HIGH_SPEED:
-		cfg |= STM32_OSPEEDR_HIGH_SPEED;
-		break;
-	case STM32_GPIO_MEDIUM_SPEED:
-		cfg |= STM32_OSPEEDR_MEDIUM_SPEED;
-		break;
-	default:
-		cfg |= STM32_OSPEEDR_LOW_SPEED;
-		break;
-	}
+	cfg |= _VAL2FLD(STM32_OSPEEDR,
+			(flags >> STM32_GPIO_SPEED_SHIFT) & STM32_GPIO_SPEED_MASK);
 #endif /* !CONFIG_SOC_SERIES_STM32F1X */
 
 	*pincfg = cfg;
@@ -305,8 +293,8 @@ static int gpio_stm32_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
 	int err;
-	uint32_t pincfg;
 	bool apply_out_level;
+	pinctrl_soc_pin_t pincfg;
 	struct gpio_stm32_data *data = dev->data;
 
 	/* figure out if we can map the requested GPIO
@@ -335,7 +323,7 @@ static int gpio_stm32_config(const struct device *dev,
 		apply_out_level = false;
 	}
 
-	stm32_gpioport_configure_pin(dev, pin, pincfg, 0, apply_out_level);
+	stm32_gpioport_configure_pin(dev, pin, pincfg, apply_out_level);
 
 #ifdef CONFIG_STM32_WKUP_PINS
 	if (flags & STM32_GPIO_WKUP) {

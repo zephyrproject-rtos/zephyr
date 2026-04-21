@@ -94,8 +94,7 @@ const struct device *stm32_gpioport_get(uint32_t port_index)
 
 int stm32_gpioport_configure_pin(const struct device *port,
 				 gpio_pin_t pin,
-				 uint32_t config,
-				 uint32_t func,
+				 pinctrl_soc_pin_t config,
 				 bool apply_out_level)
 {
 	const struct gpio_stm32_config *dev_cfg = port->config;
@@ -103,95 +102,68 @@ int stm32_gpioport_configure_pin(const struct device *port,
 	uint32_t pin_ll = stm32_gpiomgr_pinnum_to_ll_val(pin);
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
-	ARG_UNUSED(func);
+	const uint32_t cnfmode = config & STM32_CNFMODE_Msk;
 
-	uint32_t temp = config & STM32_MODE_INOUT_Msk;
+	if (cnfmode == STM32_CNFMODE_INPUT_PUPD) {
+		/* Input with pull-up/down: configure the PU/PD resistor */
+		const uint32_t pupd = config & STM32_PUPD_Msk;
 
-	if (temp == STM32_MODE_INPUT) {
-		temp = config & STM32_CNF_IN_Msk;
-
-		if (temp == STM32_CNF_IN_ANALOG) {
-			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_ANALOG);
-		} else if (temp == STM32_CNF_IN_FLOAT) {
-			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_FLOATING);
+		if (pupd == STM32_PUPD_PULL_UP) {
+			ll_gpio_set_pin_pull(gpio, pin_ll, LL_GPIO_PULL_UP);
 		} else {
-			temp = config & STM32_PUPD_Msk;
-
-			if (temp == STM32_PUPD_PULL_UP) {
-				ll_gpio_set_pin_pull(gpio, pin_ll,
-							       LL_GPIO_PULL_UP);
-			} else {
-				ll_gpio_set_pin_pull(gpio, pin_ll,
-							     LL_GPIO_PULL_DOWN);
-			}
-
-			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_INPUT);
+			ll_gpio_set_pin_pull(gpio, pin_ll, LL_GPIO_PULL_DOWN);
 		}
-
 	} else {
-		temp = config & STM32_CNF_OUT_1_Msk;
+		/*
+		 * Requested configuration is not Input with pull-up/down.
+		 * It must be Input floating, Analog, GP Output or AF Output.
+		 *
+		 * The only one which requires special handling is GP Output
+		 * where we need to set the level if requested by caller.
+		 *
+		 * If MODE is not INPUT (i.e., it is OUT_MAX_SPEED_nMHZ),
+		 * the requested configuration is AF Output / GP Output
+		 * depending on whether the ALT_FUNCTION bit is set.
+		 */
+		const bool is_gp_output = ((cnfmode & STM32_MODE_Msk) != STM32_MODE_INPUT)
+			&& ((cnfmode & STM32_CNF_OUT_ALT_FUNCTION) == 0);
 
-		if (temp == STM32_CNF_GP_OUTPUT) {
-			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_OUTPUT);
+		if (apply_out_level && is_gp_output) {
+			const uint32_t odata = _FLD2VAL(STM32_ODR, config);
 
-			if (apply_out_level) {
-				const uint32_t odata = _FLD2VAL(STM32_ODR, config);
-
-				/* Avoid LL overhead by writing directly to BSRR/BRR */
-				if (odata == 1) {
-					stm32_reg_write(&gpio->BSRR, BIT(pin));
-				} else {
-					stm32_reg_write(&gpio->BRR, BIT(pin));
-				}
+			/* Avoid LL overhead by writing directly to BSRR/BRR */
+			if (odata == 1) {
+				stm32_reg_write(&gpio->BSRR, BIT(pin));
+			} else {
+				stm32_reg_write(&gpio->BRR, BIT(pin));
 			}
-		} else {
-			LL_GPIO_SetPinMode(gpio, pin_ll,
-							LL_GPIO_MODE_ALTERNATE);
-		}
-
-		temp = config & STM32_CNF_OUT_0_Msk;
-
-		if (temp == STM32_CNF_PUSH_PULL) {
-			LL_GPIO_SetPinOutputType(gpio, pin_ll,
-						       LL_GPIO_OUTPUT_PUSHPULL);
-		} else {
-			LL_GPIO_SetPinOutputType(gpio, pin_ll,
-						      LL_GPIO_OUTPUT_OPENDRAIN);
-		}
-
-		temp = config & STM32_MODE_OSPEED_Msk;
-
-		if (temp == STM32_MODE_OUTPUT_MAX_2) {
-			LL_GPIO_SetPinSpeed(gpio, pin_ll,
-							LL_GPIO_SPEED_FREQ_LOW);
-		} else if (temp == STM32_MODE_OUTPUT_MAX_10) {
-			LL_GPIO_SetPinSpeed(gpio, pin_ll,
-						     LL_GPIO_SPEED_FREQ_MEDIUM);
-		} else {
-			LL_GPIO_SetPinSpeed(gpio, pin_ll,
-						       LL_GPIO_SPEED_FREQ_HIGH);
 		}
 	}
-#else
-	uint32_t mode, otype, ospeed, pupd;
 
-	mode = config & STM32_MODER_Msk;
-	otype = config & STM32_OTYPER_Msk;
-	ospeed = config & STM32_OSPEEDR_Msk;
-	pupd = config & STM32_PUPDR_Msk;
+	/* Write CNFMODE value directly to avoid decoding and LL overhead */
+	volatile uint32_t *const crlh = (pin <= 7) ? &gpio->CRL : &gpio->CRH;
+	const uint32_t shift = GPIO_CRL_MODE1_Pos * (pin % 8u);
+
+	stm32_reg_modify_bits(crlh,
+		(GPIO_CRL_CNF0_Msk | GPIO_CRL_MODE0_Msk) << shift,
+		_FLD2VAL(STM32_CNFMODE, config) << shift);
+#else /* CONFIG_SOC_SERIES_STM32F1X */
+	const uint32_t mode = config & STM32_MODER_Msk;
 
 	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	if (mode == STM32_MODER_ALT_MODE) {
 		/* Alternate Function mode: configure AF mux */
-		if (pin < 8) {
-			LL_GPIO_SetAFPin_0_7(gpio, pin_ll, func);
+		const uint32_t afnum = _FLD2VAL(STM32_AF, config);
+
+		if (pin <= 7) {
+			LL_GPIO_SetAFPin_0_7(gpio, pin_ll, afnum);
 		} else {
-			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, func);
+			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, afnum);
 		}
 	} else if (mode == STM32_MODER_OUTPUT_MODE) {
 		/* Output mode: configure output type and set level if requested */
-		LL_GPIO_SetPinOutputType(gpio, pin_ll, otype >> STM32_OTYPER_Pos);
+		LL_GPIO_SetPinOutputType(gpio, pin_ll, _FLD2VAL(STM32_OTYPER, config));
 
 		if (apply_out_level) {
 			const uint32_t odata = _FLD2VAL(STM32_ODR, config);
@@ -218,9 +190,9 @@ int stm32_gpioport_configure_pin(const struct device *port,
 	}
 
 	/* Apply generic parameters (identical regardless of mode) */
-	LL_GPIO_SetPinSpeed(gpio, pin_ll, ospeed >> STM32_OSPEEDR_Pos);
+	LL_GPIO_SetPinSpeed(gpio, pin_ll, _FLD2VAL(STM32_OSPEEDR, config));
 
-	ll_gpio_set_pin_pull(gpio, pin_ll, pupd >> STM32_PUPDR_Pos);
+	ll_gpio_set_pin_pull(gpio, pin_ll, _FLD2VAL(STM32_PUPDR, config));
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
 	uint32_t piocfgr = _FLD2VAL(STM32_ADVCFGR, config);
@@ -249,7 +221,7 @@ int stm32_gpioport_configure_pin(const struct device *port,
 	 * Configure pin mode last after all other parameters
 	 * have been applied properly.
 	 */
-	LL_GPIO_SetPinMode(gpio, pin_ll, mode >> STM32_MODER_Pos);
+	LL_GPIO_SetPinMode(gpio, pin_ll, _FLD2VAL(STM32_MODER, config));
 
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 #endif  /* CONFIG_SOC_SERIES_STM32F1X */
