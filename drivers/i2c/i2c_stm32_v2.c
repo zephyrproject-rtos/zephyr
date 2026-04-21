@@ -327,8 +327,7 @@ static struct i2c_target_config *i2c_stm32_target_cfg_get(const struct device *d
 }
 
 static void i2c_stm32_target_addr_setup(const struct device *dev,
-					struct i2c_target_config *target_cfg,
-					bool clear_addr)
+					struct i2c_target_config *target_cfg, bool clear_addr)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
@@ -363,8 +362,7 @@ static void i2c_stm32_target_addr_setup(const struct device *dev,
 	LL_I2C_EnableIT_ERR(i2c);
 }
 
-static void i2c_stm32_controller_abort_to_target(const struct device *dev,
-						 bool own_addr_match)
+static void i2c_stm32_controller_abort_to_target(const struct device *dev, bool own_addr_match)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -882,8 +880,7 @@ static int i2c_stm32_irq_prepare_start(const struct device *dev, struct i2c_msg 
 	 *   has finalized its transfer and is waiting for restart
 	 * For both cases, a new start condition shall be sent
 	 */
-	__ASSERT_NO_MSG(((isr & I2C_ISR_TC) != 0U) ||
-			((msg->flags & I2C_MSG_RESTART) != 0U));
+	__ASSERT_NO_MSG(((isr & I2C_ISR_TC) != 0U) || ((msg->flags & I2C_MSG_RESTART) != 0U));
 
 	if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
 		*cr2 &= ~I2C_CR2_RD_WRN;
@@ -908,8 +905,7 @@ static int i2c_stm32_irq_prepare_start(const struct device *dev, struct i2c_msg 
 }
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
-static int i2c_stm32_irq_start_dma(const struct device *dev, struct i2c_msg *msg,
-				   I2C_TypeDef *regs)
+static int i2c_stm32_irq_start_dma(const struct device *dev, struct i2c_msg *msg, I2C_TypeDef *regs)
 {
 	struct i2c_stm32_data *data = dev->data;
 
