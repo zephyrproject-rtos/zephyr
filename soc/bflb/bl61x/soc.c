@@ -29,6 +29,10 @@
 #define SYSMAP_FLAGS_OFFSET      0x4
 #define SYSMAP_ENTRY_OFFSET      0x8
 
+/* EM_SEL selects WRAM banks for BLE exchange memory */
+#define BLE_EM_SEL_32K 0x3U
+#define BLE_EM_SEL_64K 0xFU
+
 /* Initialize memory regions */
 void system_sysmap_init(void)
 {
@@ -198,8 +202,14 @@ void soc_prep_hook(void)
 {
 	uint32_t tmp;
 
-	/* Disable default EM zone before data relocation happens */
 	tmp = sys_read32(GLB_BASE + GLB_SRAM_CFG3_OFFSET);
 	tmp &= GLB_EM_SEL_UMSK;
+#if defined(CONFIG_BT_BFLB_BL61X)
+	if (IS_ENABLED(CONFIG_BFLB_BL61X_BLE_EM_64K)) {
+		tmp |= (BLE_EM_SEL_64K << GLB_EM_SEL_POS);
+	} else {
+		tmp |= (BLE_EM_SEL_32K << GLB_EM_SEL_POS);
+	}
+#endif
 	sys_write32(tmp, GLB_BASE + GLB_SRAM_CFG3_OFFSET);
 }
