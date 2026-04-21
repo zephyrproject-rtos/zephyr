@@ -252,6 +252,13 @@ config BT_AMBIQ_HCI
 	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers.
 
+config BT_AMEBA
+	bool "AMEBA BT HCI driver"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_BT_HCI_ENABLED
+	help
+	  AMEBA BT HCI driver
+
 config BT_HCI_INIT_PRIORITY
 	int "BT HCI init priority"
 	default 75 if BT_AMBIQ_HCI
