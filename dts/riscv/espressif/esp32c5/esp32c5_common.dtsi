@@ -256,7 +256,7 @@
 		};
 
 		twai0: can@6000b000 {
-			compatible = "espressif,esp32-twai";
+			compatible = "espressif,esp32-twaifd";
 			reg = <0x6000b000 DT_SIZE_K(4)>;
 			interrupts = <TWAI0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
@@ -265,7 +265,7 @@
 		};
 
 		twai1: can@6000d000 {
-			compatible = "espressif,esp32-twai";
+			compatible = "espressif,esp32-twaifd";
 			reg = <0x6000d000 DT_SIZE_K(4)>;
 			interrupts = <TWAI1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
