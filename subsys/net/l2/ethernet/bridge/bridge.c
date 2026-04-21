@@ -258,10 +258,6 @@ static void bridge_iface_init(struct net_if *iface)
 	struct virtual_interface_context *vctx = net_if_l2_data(iface);
 	char name[MAX_BRIDGE_NAME_LEN];
 
-	if (ctx->is_init) {
-		return;
-	}
-
 	k_mutex_init(&ctx->lock);
 
 	ctx->iface = iface;
@@ -290,7 +286,6 @@ static void bridge_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, vctx->lladdr.addr,
 			     vctx->lladdr.len, vctx->lladdr.type);
 
-	ctx->is_init = true;
 	ctx->is_setup = false;
 }
 
