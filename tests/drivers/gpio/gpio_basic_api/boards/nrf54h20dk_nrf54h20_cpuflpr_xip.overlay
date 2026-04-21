@@ -15,3 +15,11 @@
 &cpuflpr_code_partition {
 	reg = <0xf4000 DT_SIZE_K(64)>;
 };
+
+&gpiote130 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
