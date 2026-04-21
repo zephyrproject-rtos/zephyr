@@ -106,6 +106,12 @@ Major enhancements with this release include:
     create cycle-accurate benchmarks, with automated data collection, overhead compensation, and
     statistical reporting.
 
+**Bluetooth LE Host qualification**
+  This release includes a successfully qualified Bluetooth Low Energy (LE) Host stack, aligned with
+  Bluetooth Core Specification 6.2. The scope of qualification covered core components (GAP, ATT,
+  GATT, L2CAP, SM) and Device Information Service (DIS). A qualified listing and corresponding
+  Design Number (DN) are available here: https://qualification.bluetooth.com/ListingDetails/332380
+
 **Expanded board support**
   This release adds support for 121 :ref:`new boards <boards_added_in_zephyr_4_4>` and 31
   :ref:`new shields <shields_added_in_zephyr_4_4>`.
