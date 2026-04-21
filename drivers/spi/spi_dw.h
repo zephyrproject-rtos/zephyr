@@ -190,6 +190,7 @@ static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 
 /* CTRLR0 settings */
 #if !defined(CONFIG_SPI_DW_HSSI)
+#define DW_SPI_CTRLR0_FRF_SHIFT		(4)
 #define DW_SPI_CTRLR0_SCPH_BIT		(6)
 #define DW_SPI_CTRLR0_SCPOL_BIT		(7)
 #define DW_SPI_CTRLR0_TMOD_SHIFT	(8)
@@ -197,12 +198,19 @@ static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 #define DW_SPI_CTRLR0_SRL_BIT		(11)
 #else
 /* The register layout is different in the HSSI variant */
+#define DW_SPI_CTRLR0_FRF_SHIFT		(6)
 #define DW_SPI_CTRLR0_SCPH_BIT		(8)
 #define DW_SPI_CTRLR0_SCPOL_BIT		(9)
 #define DW_SPI_CTRLR0_TMOD_SHIFT	(10)
 #define DW_SPI_CTRLR0_SLV_OE_BIT	(12)
 #define DW_SPI_CTRLR0_SRL_BIT		(13)
 #endif
+
+/* Frame format field values */
+#define DW_SPI_CTRLR0_FRF_MOTOROLA	(0 << DW_SPI_CTRLR0_FRF_SHIFT)
+#define DW_SPI_CTRLR0_FRF_TI_SSP	(1 << DW_SPI_CTRLR0_FRF_SHIFT)
+#define DW_SPI_CTRLR0_FRF_MICROWIRE	(2 << DW_SPI_CTRLR0_FRF_SHIFT)
+#define DW_SPI_CTRLR0_FRF_MASK		(3 << DW_SPI_CTRLR0_FRF_SHIFT)
 
 #if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
 /* TXFTLR setting. Only valid for Controller operation mode. */
