@@ -247,6 +247,7 @@ config XTENSA_SIM_CONSOLE
 	bool "Use Xtensa simulator console"
 	depends on SIMULATOR_XTENSA
 	depends on !WINSTREAM_CONSOLE
+	depends on !SEMIHOST_CONSOLE
 	select CONSOLE_HAS_DRIVER
 	default y
 	help
