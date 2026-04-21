@@ -33,15 +33,24 @@
 #define XTENSA_SEMIHOST_FSTAT  (-10)
 #endif /* CONFIG_SIMULATOR_XTENSA */
 
+#define SEMIHOST_SEEK_SET 0
+#define SEMIHOST_SEEK_CUR 1
+#define SEMIHOST_SEEK_END 2
+
 enum semihost_open_flag {
 	SEMIHOST_RDONLY = 0x0,
 	SEMIHOST_WRONLY = 0x1,
 	SEMIHOST_RDWR = 0x2,
 	SEMIHOST_APPEND = 0x8,
 #ifdef CONFIG_SIMULATOR_XTENSA
+#ifdef CONFIG_QEMU_TARGET
+	SEMIHOST_CREAT = 0x40, /* 0100 */
+	SEMIHOST_EXCL = 0x80,  /* 0200 */
+#else
 	SEMIHOST_CREAT = 0x100,
-	SEMIHOST_TRUNC = 0x200,
 	SEMIHOST_EXCL = 0x400,
+#endif /* CONFIG_QEMU_TARGET */
+	SEMIHOST_TRUNC = 0x200,
 #else
 	SEMIHOST_CREAT = 0x200,
 	SEMIHOST_TRUNC = 0x400,
@@ -230,11 +239,11 @@ long xtensa_semihost_read_char(long fd)
 	return (long)c;
 }
 
-long xtensa_semihost_seek(struct semihost_seek_args *args)
+long xtensa_semihost_seek(struct semihost_seek_args *args, int whence)
 {
 	long ret;
 
-	ret = (long)xtensa_semihost_call_3(args->fd, args->offset, 0, XTENSA_SEMIHOST_LSEEK);
+	ret = (long)xtensa_semihost_call_3(args->fd, args->offset, whence, XTENSA_SEMIHOST_LSEEK);
 
 	if (ret == args->offset) {
 		return 0;
@@ -243,6 +252,7 @@ long xtensa_semihost_seek(struct semihost_seek_args *args)
 	return ret;
 }
 
+#ifndef CONFIG_QEMU_TARGET
 long xtensa_semihost_flen(long fd)
 {
 	uint8_t buf[64] = {0};
@@ -268,6 +278,39 @@ long xtensa_semihost_flen(long fd)
 	return sys_be32_to_cpu(ret);
 #endif /* CONFIG_SIMULATOR_XTENSA */
 }
+#else
+long xtensa_semihost_flen(long fd)
+{
+	/* QEMU does not support fstat, use lseek to determine the file length. */
+	long ret, cur;
+	struct semihost_seek_args args = {
+		.fd = fd,
+		.offset = 0,
+	};
+
+	/* Save the current file position. */
+	cur = xtensa_semihost_seek(&args, SEMIHOST_SEEK_CUR);
+	if (cur < 0) {
+		return -1;
+	}
+
+	/* Find the file size by seeking to the end of the file. */
+	args.offset = 0;
+	ret = xtensa_semihost_seek(&args, SEMIHOST_SEEK_END);
+	if (ret < 0) {
+		return -1;
+	}
+
+	/* Restore the file position to the original location. */
+	args.offset = cur;
+	cur = xtensa_semihost_seek(&args, SEMIHOST_SEEK_SET);
+	if (cur < 0) {
+		return -1;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_QEMU_TARGET */
 
 long semihost_exec(enum semihost_instr instr, void *args)
 {
@@ -289,7 +332,7 @@ long semihost_exec(enum semihost_instr instr, void *args)
 	case SEMIHOST_READC:
 		return xtensa_semihost_read_char(((struct semihost_poll_in_args *)args)->zero);
 	case SEMIHOST_SEEK:
-		return xtensa_semihost_seek((struct semihost_seek_args *)args);
+		return xtensa_semihost_seek((struct semihost_seek_args *)args, SEMIHOST_SEEK_SET);
 	case SEMIHOST_FLEN:
 		return xtensa_semihost_flen(((struct semihost_flen_args *)args)->fd);
 	default:
