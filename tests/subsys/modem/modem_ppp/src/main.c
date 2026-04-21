@@ -312,6 +312,10 @@ static void test_modem_ppp_before(void *f)
 
 	/* Reset mock pipe */
 	modem_backend_mock_reset(&mock);
+
+	/* Reset the attached pipe */
+	modem_ppp_release(&ppp);
+	modem_ppp_attach(&ppp, mock_pipe);
 }
 
 /*************************************************************************************************/
