@@ -9,6 +9,9 @@ tests:
   drivers.can.build_all.esp32_twai:
     platform_allow:
       - olimex_esp32_evb/esp32/procpu
+  drivers.can.build_all.esp32_twaifd:
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
   drivers.can.build_all.fake:
     extra_configs:
       - CONFIG_CAN_LOOPBACK=n
