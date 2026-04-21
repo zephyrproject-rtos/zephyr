@@ -14,9 +14,6 @@
 	model = "WeAct Studio Black Pill STM32U585 Core Board";
 	compatible = "weact,blackpill-u585ci";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;

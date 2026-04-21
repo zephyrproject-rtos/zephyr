@@ -14,8 +14,6 @@
 
 / {
 	compatible = "arm,mps2";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	aliases {
 		led0 = &led_0;
