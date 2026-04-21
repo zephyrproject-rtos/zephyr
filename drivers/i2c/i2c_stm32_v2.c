@@ -129,18 +129,23 @@ static struct i2c_stm32_timings_t i2c_valid_timing[I2C_STM32_VALID_TIMING_NBR];
 static uint32_t i2c_valid_timing_nbr;
 #endif /* CONFIG_I2C_STM32_V2_TIMING */
 
-#define STM32_I2C_ARLO_TIMEOUT_USEC 2000U
+#define I2C_STM32_WAIT_POLL_SLEEP_USEC 10U
 
 static inline int wait_bus_idle(const struct device *dev, uint32_t timeout_us)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
-	uint32_t start = k_cycle_get_32();
+	k_timepoint_t end = sys_timepoint_calc(K_USEC(timeout_us));
+
+	/* Called from synchronous transfer path only (thread context). */
+	__ASSERT_NO_MSG(!k_is_in_isr());
 
 	while (LL_I2C_IsActiveFlag_BUSY(i2c)) {
-		if (k_cyc_to_us_near32(k_cycle_get_32() - start) > timeout_us) {
+		if (sys_timepoint_expired(end)) {
 			return -EBUSY;
 		}
+
+		(void)k_usleep(I2C_STM32_WAIT_POLL_SLEEP_USEC);
 	}
 
 	return 0;
@@ -865,7 +870,7 @@ static int i2c_stm32_irq_prepare_start(const struct device *dev, struct i2c_msg 
 
 #if defined(CONFIG_I2C_TARGET)
 	if (starting_controller_session && data->target_attached &&
-	    (wait_bus_idle(dev, STM32_I2C_ARLO_TIMEOUT_USEC) != 0)) {
+	    (wait_bus_idle(dev, CONFIG_I2C_STM32_WAIT_BUS_IDLE_TIMEOUT_USEC) != 0)) {
 		data->current.msg = NULL;
 		return -EBUSY;
 	}
@@ -941,6 +946,7 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	starting_controller_session = !data->controller_active;
 #endif
 
+	/* Drop stale completion token from a previous transfer before arming a new one. */
 	k_sem_reset(&data->device_sync_sem);
 
 	data->current.len = msg->len;
