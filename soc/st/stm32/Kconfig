@@ -10,6 +10,11 @@ if SOC_FAMILY_STM32
 
 rsource "*/Kconfig"
 
+# Add a prompt to option NUM_IRQS such that its default value
+# (derived from enabled DT nodes) can be overridden by user.
+config NUM_IRQS
+	int "Upper limit of interrupt numbers/IDs used"
+
 # Kconfig options used to configure the family-wide code
 # found in `common/` are declared in `common/Kconfig`.
 # Some options are also shared by multiple series, but not
