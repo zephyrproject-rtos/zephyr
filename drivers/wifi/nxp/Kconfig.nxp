@@ -1110,7 +1110,7 @@ config NXP_WIFI_CLOCKSYNC
 config NXP_WIFI_COMPRESS_TX_PWTBL
 	bool "Compress TX Power Table Support"
 	default y
-	depends on (NXP_RW610 || NXP_IW61X_REGION_WW || NXP_IW610)
+	depends on (NXP_RW610 || NXP_IW610 || NXP_IW61X || NXP_IW416)
 	help
 	  This option enables the use of Compress TX Power Table support.
 
