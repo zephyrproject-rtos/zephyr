@@ -620,7 +620,7 @@ void i2c_stm32_event(const struct device *dev)
 	uint32_t isr = stm32_reg_read(&regs->ISR);
 
 #if defined(CONFIG_I2C_TARGET)
-	if (i2c_stm32_target_preempt_controller_event(dev, isr)) {
+	if (i2c_stm32_target_preempt_controller_event(dev, isr) == true) {
 		return;
 	}
 #endif
