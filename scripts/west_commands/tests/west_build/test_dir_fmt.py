@@ -7,6 +7,7 @@ import copy
 import os
 from argparse import Namespace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -29,6 +30,11 @@ def setup_test_build(monkeypatch, test_args=None):
     monkeypatch.setattr('pathlib.Path.cwd', lambda *a, **kw: TEST_CWD)
     # mock os.environ to ignore all environment variables during test
     monkeypatch.setattr('os.environ', {})
+    # skip board resolution (covered by dedicated tests)
+    monkeypatch.setattr(
+        'build.Build._resolve_board_vars',
+        lambda self, board: ({'board': board, 'normalized_board': board} if board else {}),
+    )
 
     # set up Build
     b = Build()
@@ -50,9 +56,13 @@ DEFAULT_TEST_ARGS = Namespace(
     board=None, source_dir=west_topdir / 'subdir' / 'project' / 'app', build_dir=None
 )
 
+# `actual['source_dir']` returns the cwd-relative form (or '' when cwd
+# is inside source_dir) rather than the raw path, because _Context's
+# __getitem__ applies the same rewrite that build_helpers used to do
+# at format time.
 TEST_CASES_GET_DIR_FMT_CONTEXT = [
     # (test_args, source_dir, expected)
-    # fallback to cwd in default case
+    # fallback to cwd in default case: source_dir == cwd -> rewrites to ''
     (
         {},
         None,
@@ -60,7 +70,7 @@ TEST_CASES_GET_DIR_FMT_CONTEXT = [
             'board': None,
             'west_topdir': str(west_topdir),
             'app': TEST_CWD.name,
-            'source_dir': str(TEST_CWD),
+            'source_dir': '',
             'source_dir_workspace': str(TEST_CWD_RELATIVE_TO_ROOT),
         },
     ),
@@ -72,7 +82,7 @@ TEST_CASES_GET_DIR_FMT_CONTEXT = [
             'board': None,
             'west_topdir': str(west_topdir),
             'app': 'project',
-            'source_dir': str(west_topdir / 'my' / 'project'),
+            'source_dir': os.path.relpath(west_topdir / 'my' / 'project', TEST_CWD),
             'source_dir_workspace': str(Path('my') / 'project'),
         },
     ),
@@ -84,7 +94,7 @@ TEST_CASES_GET_DIR_FMT_CONTEXT = [
             'board': None,
             'west_topdir': str(west_topdir),
             'app': 'my-project',
-            'source_dir': str(ROOT / 'path' / 'to' / 'my-project'),
+            'source_dir': os.path.relpath(ROOT / 'path' / 'to' / 'my-project', TEST_CWD),
             'source_dir_workspace': str(Path('path') / 'to' / 'my-project'),
         },
     ),
@@ -96,7 +106,7 @@ TEST_CASES_GET_DIR_FMT_CONTEXT = [
             'board': 'native_sim',
             'west_topdir': str(west_topdir),
             'app': TEST_CWD.name,
-            'source_dir': str(TEST_CWD),
+            'source_dir': '',
             'source_dir_workspace': str(TEST_CWD_RELATIVE_TO_ROOT),
         },
     ),
@@ -112,7 +122,16 @@ def test_get_dir_fmt_context(monkeypatch, test_case):
     b = setup_test_build(monkeypatch, test_args)
     b.args.source_dir = source_dir
     actual = b._get_dir_fmt_context()
-    assert expected == actual
+    # `actual` is a dict subclass where 'board' is computed on first
+    # access (via __missing__). Iterate `expected` and probe each key:
+    # entries whose lazy fetcher returns None must raise KeyError so
+    # str.format_map() treats them as missing.
+    for key, value in expected.items():
+        if value is None:
+            with pytest.raises(KeyError):
+                _ = actual[key]
+        else:
+            assert actual[key] == value
 
 
 TEST_CASES_BUILD_DIR = [
@@ -153,6 +172,9 @@ TEST_CASES_BUILD_DIR = [
     ),
     # must be able to resolve board (must be specified)
     ({'dir-fmt': '{board}'}, Namespace(board='native_sim'), 'native_sim'),
+    # must be able to resolve normalized_board (CMake's
+    # NORMALIZED_BOARD_TARGET, '/' -> '_');
+    ({'dir-fmt': '{normalized_board}'}, Namespace(board='native_sim'), 'native_sim'),
 ]
 
 
@@ -175,3 +197,94 @@ def test_dir_fmt(monkeypatch, test_case):
 
     # check for expected build-dir
     assert os.path.abspath(expected) == b.build_dir
+
+
+def test_normalized_board_falls_back_when_cmake_partial(monkeypatch):
+    config = configparser.ConfigParser()
+    config.add_section('build')
+    config.set('build', 'dir-fmt', '{normalized_board}')
+    monkeypatch.setattr('build_helpers.config', config)
+    monkeypatch.setattr('build.config', config)
+
+    b = setup_test_build(monkeypatch, Namespace(board='plank/cpu'))
+    # Override the default stub so resolve returns only `board`,
+    # mimicking partial cmake output without NORMALIZED_BOARD_TARGET.
+    monkeypatch.setattr(
+        'build.Build._resolve_board_vars',
+        lambda self, board: {'board': board},
+    )
+    b._setup_build_dir()
+    # __missing__'s Tier 2 fallback returned the raw board string.
+    assert b.build_dir.endswith(os.path.normpath('plank/cpu'))
+
+
+_OK_FILLED = (
+    '-- BOARD: plank\n-- BOARD_QUALIFIERS: soc1\n-- NORMALIZED_BOARD_TARGET: plank_soc1\n',
+    0,
+)
+_OK_EMPTY_SOC_SLOT = (
+    '-- BOARD: plank\n-- BOARD_QUALIFIERS: soc1/cpu\n-- NORMALIZED_BOARD_TARGET: plank_soc1_cpu\n',
+    0,
+)
+_OK_NO_QUALS = ('-- BOARD: plank\n', 0)
+_CMAKE_FAILS = ('', 1)
+_CMAKE_NOISE_ONLY = ('-- Board: plank, qualifiers: soc1\n', 0)
+
+
+TEST_CASES_RESOLVE_BOARD = [
+    # (cmake_call, input, expected_dict)
+    # Slow path: SoC omitted -- cmake fills it in.
+    (_OK_FILLED, 'plank', {'board': 'plank/soc1', 'normalized_board': 'plank_soc1'}),
+    # Slow path: empty SoC slot.
+    (
+        _OK_EMPTY_SOC_SLOT,
+        'plank//cpu',
+        {'board': 'plank/soc1/cpu', 'normalized_board': 'plank_soc1_cpu'},
+    ),
+    # Slow path: cmake returns BOARD only; only `board` is populated,
+    # `normalized_board` is omitted so format_map sees it as missing.
+    (_OK_NO_QUALS, 'plank', {'board': 'plank'}),
+    # Slow path: cmake fails (unknown board, multi-SoC ambiguity, etc.).
+    (_CMAKE_FAILS, 'plank', {'board': 'plank'}),
+    # Slow path: cmake succeeds but only emits the unstructured STATUS
+    # line; PRINT_VAR-style output is absent, so {board} falls back raw.
+    (_CMAKE_NOISE_ONLY, 'plank', {'board': 'plank'}),
+    # Already-canonical input still goes through cmake (no Python fast
+    # path) so alias / deprecated remapping isn't silently bypassed.
+    (
+        _OK_EMPTY_SOC_SLOT,
+        'plank/soc1/cpu',
+        {'board': 'plank/soc1/cpu', 'normalized_board': 'plank_soc1_cpu'},
+    ),
+    # Falsy input: short-circuit, cmake is never invoked.
+    (None, None, {}),
+    (None, '', {}),
+]
+
+
+@pytest.mark.parametrize('test_case', TEST_CASES_RESOLVE_BOARD)
+def test_resolve_board_vars(monkeypatch, test_case):
+    cmake_call, board_in, expected = test_case
+
+    calls = []
+
+    def fake_run(cmd, **_):
+        calls.append(cmd)
+        stdout, returncode = cmake_call
+        return SimpleNamespace(stdout=stdout, returncode=returncode)
+
+    monkeypatch.setattr('build.subprocess.run', fake_run)
+
+    assert Build()._resolve_board_vars(board_in) == expected
+    # cmake_call=None asserts the early-return path: no subprocess.
+    assert bool(calls) == (cmake_call is not None)
+
+
+def test_resolve_board_vars_swallows_subprocess_errors(monkeypatch):
+    # cmake missing from PATH, hung, etc. must fall back to the raw
+    # {board} value rather than abort west build.
+    def explode(cmd, **_):
+        raise FileNotFoundError('cmake not found')
+
+    monkeypatch.setattr('build.subprocess.run', explode)
+    assert Build()._resolve_board_vars('plank//cpu') == {'board': 'plank//cpu'}

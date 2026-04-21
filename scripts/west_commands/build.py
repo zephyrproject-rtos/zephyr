@@ -6,20 +6,29 @@ import argparse
 import contextlib
 import os
 import pathlib
+import re
 import shlex
+import subprocess
 import sys
+import tempfile
 
 import yaml
 from west.commands import Verbosity
 from west.configuration import config
-from west.util import WestNotFound, west_topdir
+from west.util import WestNotFound, escapes_directory, west_topdir
 from west.version import __version__
 
 from build_helpers import FIND_BUILD_DIR_DESCRIPTION, find_build_dir, is_zephyr_build, load_domains
 from zcmake import DEFAULT_CMAKE_GENERATOR, CMakeCache, run_build, run_cmake
-from zephyr_ext_common import Forceable
+from zephyr_ext_common import ZEPHYR_BASE, Forceable
 
 _ARG_SEPARATOR = '--'
+
+# Line format produced by package_helper.cmake's PRINT_VAR option
+# (zephyrproject-rtos/zephyr#107804): '-- <NAME>: <value>'.
+_PRINT_VAR_RE = re.compile(
+    r'^-- (BOARD|BOARD_QUALIFIERS|NORMALIZED_BOARD_TARGET): (.*)$'
+)
 
 SYSBUILD_PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent.parent \
                     / pathlib.Path('share/sysbuild')
@@ -454,27 +463,109 @@ class Build(Forceable):
         with contextlib.suppress(FileNotFoundError):
             self.cmake_cache = CMakeCache.from_build_dir(self.build_dir)
 
+    def _resolve_board_vars(self, board):
+        # Resolve board-related dir-fmt placeholders by delegating to
+        # cmake/package_helper.cmake
+        if not board:
+            return {}
+        fallback = {'board': board}
+
+        package_helper = ZEPHYR_BASE / 'cmake' / 'package_helper.cmake'
+        sample = ZEPHYR_BASE / 'samples' / 'hello_world'
+        env = {**os.environ, 'ZEPHYR_BASE': str(ZEPHYR_BASE)}
+        self.dbg(f'resolving board "{board}" via package_helper.cmake',
+                 level=Verbosity.DBG_MORE)
+        with tempfile.TemporaryDirectory(prefix='west-normalize-board-') as tmp:
+            cmd = [
+                'cmake',
+                '-S', str(sample),
+                '-B', tmp,
+                f'-DBOARD={board}',
+                '-DMODULES=boards',
+                '-DPRINT_VAR=BOARD;BOARD_QUALIFIERS;NORMALIZED_BOARD_TARGET',
+                '-P', str(package_helper),
+            ]
+            try:
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, timeout=60, env=env,
+                )
+            except (OSError, subprocess.TimeoutExpired) as e:
+                self.dbg(f'board resolution skipped: {e}',
+                         level=Verbosity.DBG_EXTREME)
+                return fallback
+
+        if result.returncode != 0:
+            return fallback
+
+        raw = {}
+        for line in result.stdout.splitlines():
+            pv = _PRINT_VAR_RE.match(line.strip())
+            if pv:
+                raw[pv.group(1)] = pv.group(2).strip()
+
+        board_name = raw.get('BOARD')
+        if not board_name:
+            return fallback
+        board_qualifiers = raw.get('BOARD_QUALIFIERS')
+        board_normalized = raw.get('NORMALIZED_BOARD_TARGET')
+        resolved = {
+            'board': f'{board_name}/{board_qualifiers}' if board_qualifiers else board_name,
+        }
+        if board_normalized:
+            resolved['normalized_board'] = board_normalized
+        return resolved
+
     def _get_dir_fmt_context(self):
         # Return a dictionary of build attributes which are used while
         # substituting the placeholders in the build.dir-fmt format string.
+        outer = self
+        cwd = os.getcwd()
+
+        class _DirFmtContext(dict):
+            def __getitem__(self, key):
+                value = super().__getitem__(key)
+                if key == 'source_dir' and value:
+                    if escapes_directory(cwd, value):
+                        return os.path.relpath(value, cwd)
+                    return ''
+                return value
+
+            def __missing__(self, key):
+                if key in ('board', 'normalized_board'):
+                    board, _ = outer._find_board()
+                    if not board:
+                        raise KeyError(key)
+                    resolved = outer._resolve_board_vars(board)
+                    if key in resolved:
+                        self.update(resolved)
+                        return resolved[key]
+                    outer.dbg(
+                        f'package_helper.cmake did not produce {key!r} '
+                        f'for "{board}"; falling back to board',
+                        level=Verbosity.DBG_MORE,
+                    )
+                    self[key] = board
+                    return board
+                else:
+                    raise KeyError(key)
+
         source_dir = pathlib.Path(self._find_source_dir())
         app = source_dir.name
-        board, _ = self._find_board()
         try:
             west_top_dir = west_topdir(source_dir)
         except WestNotFound:
             west_top_dir = pathlib.Path.cwd()
-        context = {
-            "west_topdir": str(west_top_dir),
-            "source_dir": str(source_dir),
-            "app": app,
-            "board": board,
-        }
+        context = _DirFmtContext(
+            west_topdir=str(west_top_dir),
+            source_dir=str(source_dir),
+            app=app,
+        )
         if source_dir.is_relative_to(west_top_dir):
             context['source_dir_workspace'] = str(source_dir.relative_to(west_top_dir))
         else:
             context['source_dir_workspace'] = str(source_dir.relative_to(source_dir.anchor))
-        self.dbg(f'dir-fmt context: {context}', level=Verbosity.DBG_EXTREME)
+        self.dbg(f'dir-fmt eager keys: {list(context)} (others resolved on demand)',
+                 level=Verbosity.DBG_EXTREME)
         return context
 
     def _setup_build_dir(self):
@@ -484,7 +575,7 @@ class Build(Forceable):
         # The CMake Cache has not been loaded yet, so this is safe
 
         context = self._get_dir_fmt_context()
-        build_dir = find_build_dir(self.args.build_dir, **context)
+        build_dir = find_build_dir(self.args.build_dir, context=context)
         if not build_dir:
             self.die('Unable to determine a default build folder. Check '
                     'your build.dir-fmt configuration option')
@@ -605,6 +696,16 @@ class Build(Forceable):
         # Check consistency between cached board and --board.
         boards_mismatched = (self.args.board and cached_board and
                              self.args.board != cached_board)
+        if boards_mismatched:
+            # The two raw strings might still refer to the same CMake
+            # target (e.g. 'plank//cpu' vs 'plank/soc/cpu'). Ask cmake
+            # for the canonical form of each before treating them as
+            # different boards. If either side cannot be resolved,
+            # stay conservative and keep the mismatch flagged.
+            args_canonical = self._resolve_board_vars(self.args.board).get('board')
+            cached_canonical = self._resolve_board_vars(cached_board).get('board')
+            if args_canonical and cached_canonical:
+                boards_mismatched = args_canonical != cached_canonical
         self.check_force(
             not boards_mismatched or self.auto_pristine,
             f'Build directory {self.build_dir} targets board {cached_board}, '

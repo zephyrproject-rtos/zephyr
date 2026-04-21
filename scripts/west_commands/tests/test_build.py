@@ -223,6 +223,12 @@ def build_instance(monkeypatch):
     monkeypatch.setattr("build_helpers.is_zephyr_build", lambda path: False)
     # mock os.environ to make tests independent from environment variables
     monkeypatch.setattr("os.environ", {})
+    # skip cmake-backed board resolution so tests don't shell out
+    monkeypatch.setattr(
+        "build.Build._resolve_board_vars",
+        lambda self, board: ({"board": board, "normalized_board": board}
+                             if board else {}),
+    )
 
     return b
 
@@ -323,3 +329,43 @@ def test_cwd_preferred_over_non_existent_dir_fmt(monkeypatch, build_instance, te
 
     b._setup_build_dir()
     assert Path(b.build_dir) == cwd
+
+
+def test_sanity_check_accepts_canonically_equivalent_board(monkeypatch, build_instance):
+    """The CACHED_BOARD string can differ from --board while still
+    pointing to the same CMake target (e.g. ``plank//cpu`` and
+    ``plank/soc/cpu``). The check now compares canonical forms via
+    _resolve_board_vars, so these inputs must not trigger the
+    'board mismatch' fatal."""
+    b = build_instance
+    b.build_dir = str(cwd / 'build' / 'plank')
+    b.auto_pristine = False
+    b.args.board = 'plank//cpu'
+    b.args.force = False
+    b.args.source_dir = os.path.abspath(b.args.source_dir)
+    b.source_dir = b.args.source_dir
+
+    # _sanity_check_source_dir would touch the (fake) filesystem; we
+    # only care about the board-mismatch branch here.
+    monkeypatch.setattr('build.Build._sanity_check_source_dir', lambda _: None)
+
+    # Stand-in cmake cache: same source dir but a different raw board
+    # string for the equivalent target.
+    b.cmake_cache = {
+        'CMAKE_PROJECT_NAME': 'sample',
+        'APP_DIR': b.args.source_dir,
+        'APPLICATION_SOURCE_DIR': b.args.source_dir,
+        'CACHED_BOARD': 'plank/soc/cpu',
+    }
+
+    # Override the default fixture stub so both raw inputs resolve to
+    # the same canonical board target.
+    monkeypatch.setattr(
+        'build.Build._resolve_board_vars',
+        lambda self, board: ({'board': 'plank/soc/cpu'}
+                             if board in ('plank//cpu', 'plank/soc/cpu')
+                             else {}),
+    )
+
+    # Should NOT raise.
+    b._sanity_check()
