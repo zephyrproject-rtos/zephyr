@@ -197,14 +197,14 @@ typedef struct pinctrl_soc_pin {
 #define STM32_ODR_1			(0x1 << STM32_ODR_Pos)
 
 /* I/O delay length (DELAYR) */
-#define STM32_IODELAY_LENGTH_Pos	12
-#define STM32_IODELAY_LENGTH_Msk	(0xFU << STM32_IODELAY_LENGTH_Pos)
+#define STM32_DELAYR_Pos		12
+#define STM32_DELAYR_Msk		(0xFU << STM32_DELAYR_Pos)
 
 /* I/O delay & retime configuration (ADVCFGR) */
-#define STM32_IORETIME_ADVCFGR_Pos	16
-#define STM32_IORETIME_ADVCFGR_Msk	(0xFU << STM32_IORETIME_ADVCFGR_Pos)
+#define STM32_ADVCFGR_Pos		16
+#define STM32_ADVCFGR_Msk		(0xFU << STM32_ADVCFGR_Pos)
 
-#define STM32_IODELAY_DIRECTION_Pos	STM32_IORETIME_ADVCFGR_Pos
+#define STM32_IODELAY_DIRECTION_Pos	STM32_ADVCFGR_Pos
 #define STM32_IORETIME_EDGE_Pos		17
 #define STM32_IORETIME_ENABLE_Pos	19
 
@@ -237,7 +237,7 @@ typedef struct pinctrl_soc_pin {
 	((CONCAT(STM32_IOSYNC_DELAY_DIRECTION_, delay_path) << STM32_IODELAY_DIRECTION_Pos) | \
 	 ((retime_enable) << STM32_IORETIME_ENABLE_Pos) |					\
 	 (CONCAT(STM32_IOSYNC_RETIME_EDGE_, retime_edge) << STM32_IORETIME_EDGE_Pos) |	\
-	 (CONCAT(LL_GPIO_DELAY_, delay_ps) << STM32_IODELAY_LENGTH_Pos))
+	 (CONCAT(LL_GPIO_DELAY_, delay_ps) << STM32_DELAYR_Pos))
 
 /**
  * @brief Utility macro to initialize fields of @ref{pinctrl_pin_t}.pincfg
