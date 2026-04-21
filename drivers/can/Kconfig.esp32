@@ -12,3 +12,40 @@ config CAN_ESP32_TWAI
 	help
 	  This enables support for the Espressif Two-Wire Automotive Interface
 	  (TWAI) CAN driver.
+
+config CAN_ESP32_TWAIFD
+	bool "Espressif TWAI-FD CAN driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_TWAIFD_ENABLED
+	select PINCTRL
+	help
+	  Enables the Espressif TWAI-FD (CAN FD capable Two-Wire Automotive
+	  Interface) controller driver. Supports both Classic CAN 2.0 and
+	  CAN-FD frames selected per-frame via CAN_FRAME_FDF.
+
+if CAN_ESP32_TWAIFD
+
+config CAN_ESP32_TWAIFD_MAX_FILTERS
+	int "Maximum number of RX filters per TWAI-FD controller"
+	default 16
+	range 1 32
+	help
+	  Maximum number of RX filters that can be concurrently installed
+	  via can_add_rx_filter() on a TWAI-FD controller instance.
+
+config CAN_ESP32_TWAIFD_TX_BUFFER_ID
+	int "TX buffer index used for transmissions"
+	default 0
+	range 0 0
+	help
+	  Hardware TXT buffer index the driver uses when transmitting
+	  frames. The TWAI-FD IP exposes up to 4 TXT buffers on ESP32-C5,
+	  but the driver currently serialises sends through a single
+	  buffer. The range is therefore locked to 0.
+
+	  TODO: extend the driver to allow the full set of TXT buffers.
+	  Doing so requires per-buffer callback tracking, allocation in
+	  send(), and multi-buffer state handling in the ISR so that
+	  concurrent in-flight transmissions can be distinguished.
+
+endif # CAN_ESP32_TWAIFD
