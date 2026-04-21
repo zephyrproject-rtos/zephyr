@@ -309,7 +309,7 @@ static int adt7420_get_resolution(const struct device *dev,
 		return ret;
 	}
 
-	val->val1 = (ADT7420_CONFIG_RESOLUTION & uval8) ? 13 : 16;
+	val->val1 = (ADT7420_CONFIG_RESOLUTION & uval8) ? 16 : 13;
 	val->val2 = 0;
 
 	return 0;
