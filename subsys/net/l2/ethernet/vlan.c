@@ -250,7 +250,6 @@ static bool disable_vlan_iface(struct vlan_context *ctx,
 			       struct net_if *iface)
 {
 	int iface_idx = net_if_get_by_iface(iface);
-	char name[MAX_VIRT_NAME_LEN];
 
 	if (iface_idx < 0) {
 		return false;
@@ -259,8 +258,7 @@ static bool disable_vlan_iface(struct vlan_context *ctx,
 	(void)net_virtual_interface_attach(iface, NULL);
 	ctx->is_used = false;
 
-	snprintk(name, sizeof(name), "<not attached>");
-	net_virtual_set_name(iface, name);
+	net_virtual_set_name(iface, "not attached");
 
 	return true;
 }
@@ -629,12 +627,10 @@ static int vlan_interface_attach(struct net_if *vlan_iface,
 static void vlan_iface_init(struct net_if *iface)
 {
 	struct vlan_context *ctx = net_if_get_device(iface)->data;
-	char name[MAX_VIRT_NAME_LEN];
 
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
-	snprintk(name, sizeof(name), "not attached");
-	net_virtual_set_name(iface, name);
+	net_virtual_set_name(iface, "not attached");
 
 	(void)net_virtual_set_flags(ctx->iface, NET_L2_MULTICAST);
 }
