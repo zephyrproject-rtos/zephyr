@@ -53,6 +53,11 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* :abbr:`DMIC (Digital Microphone Interface)`
+
+  * The :c:struct:`_dmic_ops` struct has been deprecated. DMIC drivers are now expected to use the
+    :c:macro:`DEVICE_API` macro to declare their driver API.
+
 * LoRa
 
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`

@@ -53,6 +53,16 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+Digital Microphone
+==================
+
+* The DMIC driver backend API now uses :c:struct:`dmic_driver_api` instead of ``struct _dmic_ops``.
+
+  Out-of-tree DMIC drivers must rename their backend API struct definitions and switch their API
+  instances to ``DEVICE_API(dmic, ...)``. See :github:`107695` for examples of how in-tree drivers
+  have been updated. Application code using :c:func:`dmic_configure`, :c:func:`dmic_trigger`, and
+  :c:func:`dmic_read` is not impacted.
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
