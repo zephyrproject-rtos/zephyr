@@ -5,8 +5,8 @@
 
 choice EVICTION_CHOICE
 	prompt "Page frame eviction algorithms"
-	default EVICTION_LRU if ARM64
-	default EVICTION_LRU if X86 && !X86_KPTI
+	default EVICTION_LRU if ARCH_SUPPORTS_EVICTION_TRACKING && \
+				LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 	default EVICTION_NRU
 	depends on DEMAND_PAGING
 
@@ -32,6 +32,8 @@ config EVICTION_NRU
 
 config EVICTION_LRU
 	bool "Least Recently Used (LRU) page eviction algorithm"
+	depends on ARCH_SUPPORTS_EVICTION_TRACKING
+	depends on LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 	select EVICTION_TRACKING
 	help
 	  This implements a Least Recently Used page eviction algorithm.
