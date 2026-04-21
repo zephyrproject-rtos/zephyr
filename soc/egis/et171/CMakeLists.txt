@@ -6,6 +6,7 @@ zephyr_sources(
   soc.c
   start.S
   soc_irq.S
+  et171_otp.c
 )
 
 zephyr_linker_sources(ROM_START SORT_KEY 0x0 common_linker/init.ld)
