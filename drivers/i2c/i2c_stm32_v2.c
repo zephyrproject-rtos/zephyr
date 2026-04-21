@@ -129,6 +129,23 @@ static struct i2c_stm32_timings_t i2c_valid_timing[I2C_STM32_VALID_TIMING_NBR];
 static uint32_t i2c_valid_timing_nbr;
 #endif /* CONFIG_I2C_STM32_V2_TIMING */
 
+#define STM32_I2C_ARLO_TIMEOUT_USEC 2000U
+
+static inline int wait_bus_idle(const struct device *dev, uint32_t timeout_us)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->i2c;
+	uint32_t start = k_cycle_get_32();
+
+	while (LL_I2C_IsActiveFlag_BUSY(i2c)) {
+		if (k_cyc_to_us_near32(k_cycle_get_32() - start) > timeout_us) {
+			return -EBUSY;
+		}
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_I2C_STM32_V2_DMA
 static int configure_dma(struct stream const *dma, struct dma_config *dma_cfg,
 			 struct dma_block_config *blk_cfg)
@@ -218,6 +235,17 @@ static void dma_finish(const struct device *dev, struct i2c_msg *msg)
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 
 #ifdef CONFIG_I2C_STM32_INTERRUPT
+static inline void i2c_stm32_signal_xfer_done(const struct device *dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+
+	if (data->current.msg == NULL) {
+		return;
+	}
+
+	data->current.msg = NULL;
+	k_sem_give(&data->device_sync_sem);
+}
 
 static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 {
@@ -237,6 +265,17 @@ static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 }
 
 #if defined(CONFIG_I2C_TARGET)
+static inline void i2c_stm32_clear_controller_request(I2C_TypeDef *i2c)
+{
+	unsigned int key = irq_lock();
+
+	/* Errata 2.19.3/2.19.4: clear any pending controller request so it
+	 * cannot restart after own-address recognition.
+	 */
+	stm32_reg_clear_bits(&i2c->CR2, I2C_CR2_START | I2C_CR2_STOP);
+	irq_unlock(key);
+}
+
 static struct i2c_target_config *i2c_stm32_target_cfg_get(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -274,17 +313,28 @@ static struct i2c_target_config *i2c_stm32_target_cfg_get(const struct device *d
 		target_cfg = data->target2_cfg;
 	}
 
+	if (target_cfg == NULL) {
+		__ASSERT_NO_MSG(0);
+		return NULL;
+	}
+
 	return target_cfg;
 }
 
 static void i2c_stm32_target_addr_setup(const struct device *dev,
-					struct i2c_target_config *target_cfg)
+					struct i2c_target_config *target_cfg,
+					bool clear_addr)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
 	const struct i2c_target_callbacks *target_cb = target_cfg->callbacks;
-	uint32_t dir = LL_I2C_GetTransferDirection(i2c);
+	uint32_t dir;
 
+	if (clear_addr) {
+		LL_I2C_ClearFlag_ADDR(i2c);
+	}
+
+	dir = LL_I2C_GetTransferDirection(i2c);
 	if (dir == LL_I2C_DIRECTION_WRITE) {
 		if (target_cb->write_requested(target_cfg) < 0) {
 			LOG_ERR("Error initiating writing");
@@ -308,46 +358,35 @@ static void i2c_stm32_target_addr_setup(const struct device *dev,
 	LL_I2C_EnableIT_ERR(i2c);
 }
 
-static void i2c_stm32_target_own_addr_controller_abort(const struct device *dev)
+static void i2c_stm32_controller_abort_to_target(const struct device *dev,
+						 bool own_addr_match)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
-	I2C_TypeDef *i2c = cfg->i2c;
-	struct i2c_target_config *target_cfg = i2c_stm32_target_cfg_get(dev);
-	unsigned int key;
 
-	if (target_cfg == NULL) {
-		__ASSERT_NO_MSG(0);
-		return;
+	if (own_addr_match) {
+		LL_I2C_ClearFlag_ADDR(cfg->i2c);
+		i2c_stm32_clear_controller_request(cfg->i2c);
 	}
 
-	/*
-	 * Follow the STM32 errata workaround for own-address recognition
-	 * while START is still pending in controller mode.
-	 */
-	key = irq_lock();
-	LL_I2C_ClearFlag_ADDR(i2c);
-	stm32_reg_clear_bits(&i2c->CR2, I2C_CR2_START);
-	irq_unlock(key);
-
-	data->current.is_arlo = 1U;
-	data->controller_active = false;
-
 	i2c_stm32_disable_transfer_interrupts(dev);
-	k_sem_give(&data->device_sync_sem);
-
-	i2c_stm32_target_addr_setup(dev, target_cfg);
+#ifdef CONFIG_I2C_STM32_V2_DMA
+	LL_I2C_DisableDMAReq_RX(cfg->i2c);
+	LL_I2C_DisableDMAReq_TX(cfg->i2c);
+#endif
+	LL_I2C_ClearFlag_TXE(cfg->i2c);
+	data->controller_active = false;
+	i2c_stm32_signal_xfer_done(dev);
 }
 
 static void i2c_stm32_target_event(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
-	const struct i2c_target_callbacks *target_cb;
 	struct i2c_target_config *target_cfg = i2c_stm32_target_cfg_get(dev);
+	const struct i2c_target_callbacks *target_cb;
 
 	if (target_cfg == NULL) {
-		__ASSERT_NO_MSG(0);
 		return;
 	}
 
@@ -397,11 +436,38 @@ static void i2c_stm32_target_event(const struct device *dev)
 	}
 
 	if (LL_I2C_IsActiveFlag_ADDR(i2c)) {
-		LL_I2C_ClearFlag_ADDR(i2c);
-		i2c_stm32_target_addr_setup(dev, target_cfg);
+		i2c_stm32_target_addr_setup(dev, target_cfg, true);
 	}
 }
 
+static bool i2c_stm32_target_preempt_controller_event(const struct device *dev, uint32_t isr)
+{
+	struct i2c_stm32_data *data = dev->data;
+	struct i2c_target_config *target_cfg;
+
+	if (!data->target_attached) {
+		return false;
+	}
+
+	if (data->controller_active && ((isr & I2C_ISR_ADDR) != 0U)) {
+		target_cfg = i2c_stm32_target_cfg_get(dev);
+		if (target_cfg == NULL) {
+			return true;
+		}
+
+		data->current.is_arlo = 1U;
+		i2c_stm32_controller_abort_to_target(dev, true);
+		i2c_stm32_target_addr_setup(dev, target_cfg, false);
+		return true;
+	}
+
+	if (!data->controller_active) {
+		i2c_stm32_target_event(dev);
+		return true;
+	}
+
+	return false;
+}
 /* Attach and start I2C as target */
 int i2c_stm32_target_register(const struct device *dev,
 			      struct i2c_target_config *config)
@@ -549,16 +615,8 @@ void i2c_stm32_event(const struct device *dev)
 	uint32_t isr = stm32_reg_read(&regs->ISR);
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->target_attached) {
-		if (data->controller_active && ((isr & I2C_ISR_ADDR) != 0U)) {
-			i2c_stm32_target_own_addr_controller_abort(dev);
-			return;
-		}
-
-		if (!data->controller_active) {
-			i2c_stm32_target_event(dev);
-			return;
-		}
+	if (i2c_stm32_target_preempt_controller_event(dev, isr)) {
+		return;
 	}
 #endif
 
@@ -661,7 +719,7 @@ irq_xfer_completed:
 	/* Disable IRQ:s involved in data transfer */
 	i2c_stm32_disable_transfer_interrupts(dev);
 	/* Wakeup thread */
-	k_sem_give(&data->device_sync_sem);
+	i2c_stm32_signal_xfer_done(dev);
 }
 
 int i2c_stm32_error(const struct device *dev)
@@ -701,9 +759,10 @@ int i2c_stm32_error(const struct device *dev)
 #if defined(CONFIG_I2C_TARGET)
 		if (error_cb != NULL) {
 			error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+			goto end;
 		}
 #endif
-		goto end;
+		return 0;
 	}
 
 #if defined(CONFIG_SMBUS_STM32_SMBALERT)
@@ -725,7 +784,7 @@ end:
 #endif
 	i2c_stm32_disable_transfer_interrupts(dev);
 	/* Wakeup thread */
-	k_sem_give(&data->device_sync_sem);
+	i2c_stm32_signal_xfer_done(dev);
 	return -EIO;
 }
 
@@ -770,16 +829,7 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 	if (!keep_enabled || (ret != 0)) {
 		data->controller_active = false;
 	}
-	/* Don't disable I2C if a target is attached */
-	if (data->target_attached) {
-		keep_enabled = true;
-	}
 #endif
-
-	/* Don't disable I2C if SMBus Alert is active */
-	if (data->smbalert_active) {
-		keep_enabled = true;
-	}
 
 	disable_i2c = !keep_enabled || (ret != 0);
 #if defined(CONFIG_I2C_TARGET)
@@ -787,6 +837,9 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 		disable_i2c = false;
 	}
 #endif
+	if (data->smbalert_active) {
+		disable_i2c = false;
+	}
 
 	/* If I2C no longer need to be enabled and no other mode keeps it alive */
 	if (disable_i2c) {
@@ -796,12 +849,99 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 	return ret;
 }
 
+static int i2c_stm32_irq_prepare_start(const struct device *dev, struct i2c_msg *msg, uint32_t isr,
+				       I2C_TypeDef *regs, uint32_t *cr2,
+				       bool starting_controller_session)
+{
+	struct i2c_stm32_data *data = dev->data;
+
+#if !defined(CONFIG_I2C_TARGET)
+	ARG_UNUSED(starting_controller_session);
+#endif
+
+	if ((isr & I2C_ISR_TCR) != 0U) {
+		return 0;
+	}
+
+#if defined(CONFIG_I2C_TARGET)
+	if (starting_controller_session && data->target_attached &&
+	    (wait_bus_idle(dev, STM32_I2C_ARLO_TIMEOUT_USEC) != 0)) {
+		data->current.msg = NULL;
+		return -EBUSY;
+	}
+#endif
+
+	/* As TCR is not set, expect TC to be set or that this is a (re)start message
+	 * - msg->flags contains I2C_MSG_RESTART (for first start) or
+	 * - TC in ISR register is set which happens when IRQ handler
+	 *   has finalized its transfer and is waiting for restart
+	 * For both cases, a new start condition shall be sent
+	 */
+	__ASSERT_NO_MSG(((isr & I2C_ISR_TC) != 0U) ||
+			((msg->flags & I2C_MSG_RESTART) != 0U));
+
+	if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+		*cr2 &= ~I2C_CR2_RD_WRN;
+#ifndef CONFIG_I2C_STM32_V2_DMA
+		/* Prepare first byte in TX buffer before transfer start as a
+		 * workaround for errata: "Transmission stalled after first byte transfer"
+		 */
+		if (data->current.len > 0U) {
+			LL_I2C_TransmitData8(regs, *data->current.buf);
+			data->current.len--;
+			data->current.buf++;
+		}
+#endif
+	} else {
+		*cr2 |= I2C_CR2_RD_WRN;
+	}
+
+	/* Issue (re)start condition */
+	*cr2 |= I2C_CR2_START;
+
+	return 0;
+}
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+static int i2c_stm32_irq_start_dma(const struct device *dev, struct i2c_msg *msg,
+				   I2C_TypeDef *regs)
+{
+	struct i2c_stm32_data *data = dev->data;
+
+	if (dma_xfer_start(dev, msg) == 0) {
+		return 0;
+	}
+
+#if defined(CONFIG_I2C_TARGET)
+	data->controller_active = false;
+	if (!data->target_attached && !data->smbalert_active) {
+		LL_I2C_Disable(regs);
+	}
+#else
+	if (!data->smbalert_active) {
+		LL_I2C_Disable(regs);
+	}
+#endif
+	data->current.msg = NULL;
+
+	return -EIO;
+}
+#endif
+
 static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 			      uint8_t *next_msg_flags, uint16_t target)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *regs = cfg->i2c;
+	int ret;
+	bool starting_controller_session = false;
+
+#if defined(CONFIG_I2C_TARGET)
+	starting_controller_session = !data->controller_active;
+#endif
+
+	k_sem_reset(&data->device_sync_sem);
 
 	data->current.len = msg->len;
 	data->current.buf = msg->buf;
@@ -809,10 +949,6 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	data->current.is_nack = 0U;
 	data->current.is_err = 0U;
 	data->current.msg = msg;
-
-#if defined(CONFIG_I2C_TARGET)
-	data->controller_active = true;
-#endif
 
 #if defined(CONFIG_I2C_STM32_V2_DMA)
 	if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len) &&
@@ -868,58 +1004,29 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	 * Reload transfer will start right after writing new length
 	 * to CR2 below
 	 */
-	if ((isr & I2C_ISR_TCR) == 0U) {
-
-		/* As TCR is not set, expect TC to be set or that this is a (re)start message
-		 * - msg->flags contains I2C_MSG_RESTART (for first start) or
-		 * - TC in ISR register is set which happens when IRQ handler
-		 *   has finalized its transfer and is waiting for restart
-		 * For both cases, a new start condition shall be sent
-		 */
-		__ASSERT_NO_MSG(((isr & I2C_ISR_TC) != 0U) ||
-				((msg->flags & I2C_MSG_RESTART) != 0U));
-
-		if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			cr2 &= ~I2C_CR2_RD_WRN;
-#ifndef CONFIG_I2C_STM32_V2_DMA
-			/* Prepare first byte in TX buffer before transfer start as a
-			 * workaround for errata: "Transmission stalled after first byte transfer"
-			 */
-			if (data->current.len > 0U) {
-				LL_I2C_TransmitData8(regs, *data->current.buf);
-				data->current.len--;
-				data->current.buf++;
-			}
-#endif
-
-		} else {
-			cr2 |= I2C_CR2_RD_WRN;
-		}
-		/* Issue (re)start condition */
-		cr2 |= I2C_CR2_START;
+	ret = i2c_stm32_irq_prepare_start(dev, msg, isr, regs, &cr2, starting_controller_session);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* Set common interrupt enable bits */
 	uint32_t cr1 = I2C_CR1_ERRIE | I2C_CR1_STOPIE | I2C_CR1_TCIE | I2C_CR1_NACKIE;
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
-	if (dma_xfer_start(dev, msg) != 0) {
-#if defined(CONFIG_I2C_TARGET)
-		data->controller_active = false;
-		if (!data->target_attached && !data->smbalert_active) {
-			LL_I2C_Disable(regs);
-		}
-#else
-		if (!data->smbalert_active) {
-			LL_I2C_Disable(regs);
-		}
-#endif
-		return -EIO;
+	ret = i2c_stm32_irq_start_dma(dev, msg, regs);
+	if (ret != 0) {
+		return ret;
 	}
 #else
 	/* If not using DMA, also enable RX and TX empty interrupts */
 	cr1 |= I2C_CR1_TXIE | I2C_CR1_RXIE;
 #endif /* CONFIG_I2C_STM32_V2_DMA */
+
+#if defined(CONFIG_I2C_TARGET)
+	if (starting_controller_session) {
+		data->controller_active = true;
+	}
+#endif
 
 	/* Commit configuration to I2C controller and start transfer */
 	stm32_reg_write(&regs->CR2, cr2);
@@ -936,14 +1043,6 @@ static inline int check_errors(const struct device *dev, const char *funcname)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->i2c;
-#if defined(CONFIG_I2C_TARGET)
-	struct i2c_stm32_data *data = dev->data;
-
-	if (data->current.is_arlo) {
-		LOG_DBG("%s: ARLO", funcname);
-		goto error;
-	}
-#endif
 
 	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
 		LL_I2C_ClearFlag_NACK(i2c);
@@ -1009,12 +1108,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 		LL_I2C_DisableAutoEndMode(i2c);
 		LL_I2C_SetTransferRequest(i2c, transfer);
 		LL_I2C_SetTransferSize(i2c, msg->len);
-
-#if defined(CONFIG_I2C_TARGET)
-		data->controller_active = true;
-#endif
 		LL_I2C_Enable(i2c);
-
 		LL_I2C_GenerateStartCondition(i2c);
 	}
 }
@@ -1492,16 +1586,9 @@ int i2c_stm32_transaction(const struct device *dev,
 		if (LL_I2C_IsEnabledReloadMode(i2c)) {
 			LL_I2C_DisableReloadMode(i2c);
 		}
-#if defined(CONFIG_I2C_TARGET)
-		data->controller_active = false;
-		if (!data->target_attached && !data->smbalert_active) {
-			LL_I2C_Disable(i2c);
-		}
-#else
 		if (!data->smbalert_active) {
 			LL_I2C_Disable(i2c);
 		}
-#endif
 		return -EIO;
 	}
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
