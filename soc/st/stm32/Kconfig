@@ -55,4 +55,10 @@ config STM32_APP_IN_EXT_FLASH
 	  in external Flash and is chainloaded with MCUboot.
 	  Whether the app is eXecuted in Place (XiP) depends on the MCUboot mode used.
 
+config STM32_INT_FLASH_SECURE_BASE_ADDRESS
+	hex
+	help
+	  Secure internal flash based address when TZEN is enabled on
+	  applicable STM32 SoCs.
+
 endif # SOC_FAMILY_STM32
