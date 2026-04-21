@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2026 Analog Devices, Inc.
+ * Copyright (c) 2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/memory-controller/adi-max32-hpb.h>
 
 / {
-	model = "Analog Devices MAX32650EVKIT";
-	compatible = "adi,max32650evkit";
+	model = "Analog Devices MAX32651EVKIT";
+	compatible = "adi,max32651evkit";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -27,12 +27,12 @@
 		compatible = "gpio-leds";
 
 		led1: led_1 {
-			gpios = <&gpio2 25 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio2 25 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
 
 		led2: led_2 {
-			gpios = <&gpio2 26 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio2 26 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
 	};
@@ -57,6 +57,7 @@
 	aliases {
 		led0 = &led1;
 		led1 = &led2;
+		sw0 = &pb1;
 		watchdog0 = &wdt0;
 	};
 
@@ -74,10 +75,19 @@
 	current-speed = <115200>;
 	data-bits = <8>;
 	parity = "none";
+	dmas = <&dma0 4 MAX32_DMA_SLOT_UART0_TX>, <&dma0 5 MAX32_DMA_SLOT_UART0_RX>;
+	dma-names = "tx", "rx";
 	status = "okay";
 };
 
 &clk_ipo {
+	status = "okay";
+};
+
+/*
+ * ERTCO is required for counter RTC
+ */
+&clk_ertco {
 	status = "okay";
 };
 
@@ -138,7 +148,7 @@ zephyr_udc0: &usbhs {
 		reg = <0>;
 		base-address = <0x60000000>;
 		device-type = <ADI_MAX32_HPB_DEV_TYPE_HYPER_RAM>;
-		/* HPB runs from the 60 MHz peripheral clock on MAX32650.
+		/* HPB runs from the 60 MHz peripheral clock on MAX32651.
 		 *   - CS high 2.5 cycles = 41.7 ns
 		 *   - CS setup/hold 1 cycle = 16.7 ns
 		 */
