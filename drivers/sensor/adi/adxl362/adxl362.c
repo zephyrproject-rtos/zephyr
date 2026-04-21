@@ -513,8 +513,7 @@ int adxl362_set_interrupt_mode(const struct device *dev, uint8_t mode)
 
 	new_act_inact_reg = old_act_inact_reg &
 			    ~ADXL362_ACT_INACT_CTL_LINKLOOP(3);
-	new_act_inact_reg |= old_act_inact_reg |
-			    ADXL362_ACT_INACT_CTL_LINKLOOP(mode);
+	new_act_inact_reg |= ADXL362_ACT_INACT_CTL_LINKLOOP(mode);
 
 	ret = adxl362_set_reg(dev, new_act_inact_reg,
 			      ADXL362_REG_ACT_INACT_CTL, 1);
