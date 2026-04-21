@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx Zynq Ultrascale+ MPSoC Real Time Clock
+
+compatible: "xlnx,zynqmp-rtc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+    description: |
+      Two interrupts: alarm and seconds tick.
+      The alarm interrupt fires when the seconds counter matches the
+      alarm register. The seconds interrupt fires on each second tick.
+
+  interrupt-names:
+    required: true
+    enum:
+      - "alarm"
+      - "sec"
+
+  clock-frequency:
+    type: int
+    default: 32768
+    description: |
+      Crystal oscillator frequency in Hz.
