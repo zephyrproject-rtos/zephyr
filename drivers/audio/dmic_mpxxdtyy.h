@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef MPXXDTYY_H
-#define MPXXDTYY_H
+#ifndef ZEPHYR_DRIVERS_AUDIO_DMIC_MPXXDTYY_H_
+#define ZEPHYR_DRIVERS_AUDIO_DMIC_MPXXDTYY_H_
 
 #include <zephyr/audio/dmic.h>
 #include <zephyr/kernel.h>
@@ -46,4 +46,4 @@ int mpxxdtyy_i2s_configure(const struct device *dev, struct dmic_cfg *cfg);
 }
 #endif
 
-#endif /* MPXXDTYY_H */
+#endif /* ZEPHYR_DRIVERS_AUDIO_DMIC_MPXXDTYY_H_ */

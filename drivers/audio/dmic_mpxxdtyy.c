@@ -8,7 +8,7 @@
 
 #include <zephyr/devicetree.h>
 
-#include "mpxxdtyy.h"
+#include "dmic_mpxxdtyy.h"
 
 #define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
 #include <zephyr/logging/log.h>
