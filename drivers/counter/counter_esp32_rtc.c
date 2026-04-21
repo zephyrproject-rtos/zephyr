@@ -10,7 +10,7 @@
 #include <esp_rom_sys.h>
 #include <hal/rtc_timer_ll.h>
 
-#if defined(SOC_RTC_TIMER_V2_SUPPORTED) && SOC_RTC_TIMER_V2_SUPPORTED
+#if defined(SOC_RTC_TIMER_V2) && SOC_RTC_TIMER_V2
 #define SOC_HAS_LP_TIMER 1
 #include <soc/lp_timer_struct.h>
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
