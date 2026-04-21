@@ -42,7 +42,6 @@ __incoherent struct k_thread _thread_dummy;
 static ALWAYS_INLINE void update_cache(int preempt_ok);
 static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
-static void ready_thread(struct k_thread *thread);
 
 /* Clear the halting bits (_THREAD_ABORTING and _THREAD_SUSPENDING) */
 static inline void clear_halting(struct k_thread *thread)
@@ -201,7 +200,7 @@ static struct _cpu *thread_active_elsewhere(struct k_thread *thread)
 	return NULL;
 }
 
-static void ready_thread(struct k_thread *thread)
+static inline void ready_thread(struct k_thread *thread)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(thread));
@@ -916,81 +915,4 @@ void z_thread_suspend_current(struct k_thread *thread)
 	update_cache(1);
 	z_swap(&_sched_spinlock, key);
 	return;
-}
-
-/*
- * future scheduler.h API implementations
- */
-bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
-{
-	struct k_thread *thread;
-	bool ret = false;
-
-	K_SPINLOCK(&_sched_spinlock) {
-		thread = _priq_wait_best(&wait_q->waitq);
-
-		if (thread != NULL) {
-			z_thread_return_value_set_with_data(thread,
-							    swap_retval,
-							    swap_data);
-			unpend_thread_no_timeout(thread);
-			z_abort_thread_timeout(thread);
-			ready_thread(thread);
-			ret = true;
-		}
-	}
-
-	return ret;
-}
-
-int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
-		 _wait_q_t *wait_q, k_timeout_t timeout, void **data)
-{
-	int ret = z_pend_curr(lock, key, wait_q, timeout);
-
-	if (data != NULL) {
-		*data = _current->base.swap_data;
-	}
-	return ret;
-}
-
-int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
-		       _waitq_post_walk_cb_t post_func, void *data)
-{
-	struct k_thread *thread;
-	int  status = 0;
-
-	K_SPINLOCK(&_sched_spinlock) {
-#ifndef CONFIG_WAITQ_SCALABLE
-		struct k_thread *tmp;
-
-		_WAIT_Q_FOR_EACH_SAFE(wait_q, thread, tmp)
-#else /* !CONFIG_WAITQ_SCALABLE */
-		_WAIT_Q_FOR_EACH(wait_q, thread)
-#endif /* !CONFIG_WAITQ_SCALABLE */
-		{
-
-			/*
-			 * Invoke the callback function on each waiting thread
-			 * for as long as there are both waiting threads AND
-			 * it returns 0.
-			 */
-
-			status = walk_func(thread, data);
-			if (status != 0) {
-				break;
-			}
-		}
-
-		/*
-		 * Invoke post-walk callback. This is done while
-		 * still holding _sched_spinlock to enable atomic
-		 * operations (from the scheduler's point of view).
-		 */
-		if (post_func != NULL) {
-			post_func(status, data);
-		}
-	}
-
-	return status;
 }

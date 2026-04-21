@@ -8,6 +8,8 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <run_q.h>
+#include <wait_q.h>
+#include <scheduler.h>
 
 
 void z_sched_init(void)
@@ -76,3 +78,82 @@ static inline k_tid_t z_vrfy_k_sched_current_thread_query(void)
 }
 #include <zephyr/syscalls/k_sched_current_thread_query_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+
+int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
+		       _waitq_post_walk_cb_t post_func, void *data)
+{
+	struct k_thread *thread;
+	int  status = 0;
+
+	K_SPINLOCK(&_sched_spinlock) {
+#ifndef CONFIG_WAITQ_SCALABLE
+		struct k_thread *tmp;
+
+		_WAIT_Q_FOR_EACH_SAFE(wait_q, thread, tmp)
+#else /* !CONFIG_WAITQ_SCALABLE */
+		_WAIT_Q_FOR_EACH(wait_q, thread)
+#endif /* !CONFIG_WAITQ_SCALABLE */
+		{
+
+			/*
+			 * Invoke the callback function on each waiting thread
+			 * for as long as there are both waiting threads AND
+			 * it returns 0.
+			 */
+
+			status = walk_func(thread, data);
+			if (status != 0) {
+				break;
+			}
+		}
+
+		/*
+		 * Invoke post-walk callback. This is done while
+		 * still holding _sched_spinlock to enable atomic
+		 * operations (from the scheduler's point of view).
+		 */
+		if (post_func != NULL) {
+			post_func(status, data);
+		}
+	}
+
+	return status;
+}
+
+
+/*
+ * future scheduler.h API implementations
+ */
+bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
+{
+	struct k_thread *thread;
+	bool ret = false;
+
+	K_SPINLOCK(&_sched_spinlock) {
+		thread = _priq_wait_best(&wait_q->waitq);
+
+		if (thread != NULL) {
+			z_thread_return_value_set_with_data(thread,
+							    swap_retval,
+							    swap_data);
+			unpend_thread_no_timeout(thread);
+			z_abort_thread_timeout(thread);
+			z_sched_ready_locked(thread);
+			ret = true;
+		}
+	}
+
+	return ret;
+}
+
+int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
+		 _wait_q_t *wait_q, k_timeout_t timeout, void **data)
+{
+	int ret = z_pend_curr(lock, key, wait_q, timeout);
+
+	if (data != NULL) {
+		*data = _current->base.swap_data;
+	}
+	return ret;
+}
