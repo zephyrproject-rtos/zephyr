@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	soc {
+		/*
+		 * Sram Bank 0 (sram0) has ECC checking
+		 * Sram Bank 1 (sram1) is unchecked
+		 */
+		sram0: memory@20000000 {
+			reg = <0x20000000 DT_SIZE_K(64)>;
+		};
+
+		sram1: memory@20210000 {
+			reg = <0x20210000 DT_SIZE_K(64)>;
+		};
+
+		flashdata: serial-flash@41e00000 {
+			reg = <0x41e00000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_K(256)>;
+};
