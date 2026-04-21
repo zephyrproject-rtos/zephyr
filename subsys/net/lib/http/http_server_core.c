@@ -191,13 +191,6 @@ int http_server_init(struct http_server_ctx *ctx)
 				continue;
 			}
 
-			if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, "localhost",
-					     sizeof("localhost")) < 0) {
-				LOG_ERR("setsockopt: %d", errno);
-				zsock_close(fd);
-				continue;
-			}
-
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
 			if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST, alpn_list,
 					     sizeof(alpn_list)) < 0) {
