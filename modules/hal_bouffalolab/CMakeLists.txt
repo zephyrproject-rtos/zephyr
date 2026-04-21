@@ -11,6 +11,7 @@ if(CONFIG_SOC_FAMILY_BFLB)
     add_subdirectory(shim)
   endif()
 
+  add_subdirectory_ifdef(CONFIG_SOC_SERIES_BL61X src/bl61x)
   add_subdirectory_ifdef(CONFIG_SOC_SERIES_BL70X src/bl70x)
   add_subdirectory_ifdef(CONFIG_SOC_SERIES_BL70XL src/bl70xl)
 endif() # SOC_FAMILY_BFLB

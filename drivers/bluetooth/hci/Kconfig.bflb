@@ -21,6 +21,35 @@ config BT_BFLB_BL70X
 	  Bouffalo Lab BL70X (BL702) on-chip BLE controller HCI driver.
 	  Uses precompiled binary blobs from the hal_bouffalolab module.
 
+
+if BT_BFLB
+
+config BT_BUF_ACL_TX_COUNT
+	default 2
+
+config HEAP_MEM_POOL_ADD_SIZE_BFLB_BT
+	int
+	default 8192
+	help
+	  Additional heap memory reserved for BLE controller usage
+	  (task stacks, message queues, etc.)
+
+config BT_BFLB_CTLR_TASK_PRIO
+	int "BLE controller task priority (FreeRTOS-style)"
+	default 5
+	help
+	  Priority passed to the BLE controller init function. The RTOS
+	  shim layer maps this to a Zephyr preemptive priority.
+
+config BT_BFLB_RX_THREAD_STACK_SIZE
+	int "BLE HCI RX thread stack size"
+	default 1024
+	help
+	  Stack size for the HCI RX processing thread. The recv()
+	  callback reaches into host code, so adjust if needed.
+
+endif # BT_BFLB
+
 if BT_BFLB_BL70X
 
 choice BFLB_BL70X_BLE_VARIANT
@@ -64,11 +93,6 @@ config BFLB_BL70X_BLE_M1S1
 
 config BFLB_BL70X_BLE_M16S1
 	bool "m16s1: All roles, 16 master + 1 slave"
-
-config BFLB_BL70X_BLE_UARTHCI
-	bool "uarthci: UART HCI transport"
-	help
-	  BLE controller with UART HCI transport interface.
 
 endchoice
 
@@ -185,30 +209,57 @@ config BFLB_BL70XL_BLE_EM_16K
 
 endif # BT_BFLB_BL70XL
 
-if BT_BFLB
+config BT_BFLB_BL61X
+	bool
+	default y
+	depends on DT_HAS_BFLB_BT_HCI_ENABLED && SOC_SERIES_BL61X
+	select BT_BFLB
+	select HAS_BT_CTLR
+	select DYNAMIC_INTERRUPTS
+	select FPU_SHARING
+	select BFLB_BTBLE_PORT_OS_SHIM
+	help
+	  Bouffalo Lab BL61X (BL616/BL618) on-chip BLE controller HCI driver.
+	  Uses precompiled binary blobs from the hal_bouffalolab module.
 
-config BT_BUF_ACL_TX_COUNT
-	default 2
+if BT_BFLB_BL61X
 
-config HEAP_MEM_POOL_ADD_SIZE_BFLB_BT
-	int
+choice BFLB_BL61X_BLE_VARIANT
+	prompt "BLE controller variant"
+	default BFLB_BL61X_BLE_1M10S1 if BT_HCI_RAW
+	default BFLB_BL61X_BLE_1M2S1BREDR1 if BT_CLASSIC
+	default BFLB_BL61X_BLE_1M10S1 if (BT_PERIPHERAL && BT_CENTRAL)
+	default BFLB_BL61X_BLE_1M0S1 if BT_PERIPHERAL
+	default BFLB_BL61X_BLE_1M10S1
+	help
+	  Select the BLE controller binary variant. The default is
+	  automatically chosen based on the enabled Bluetooth roles.
+
+config BFLB_BL61X_BLE_1M0S1
+	bool "ble1m0s1bredr0: peripheral only, 1 connection"
+
+config BFLB_BL61X_BLE_1M10S1
+	bool "ble1m10s1bredr0: peripheral + central, 10 connections"
+
+config BFLB_BL61X_BLE_1M2S1BREDR1
+	bool "ble1m2s1bredr1: peripheral + central + BR/EDR, 2 connections"
+
+endchoice
+
+config BFLB_BL61X_BLE_EM_64K
+	bool "Use 64 KB exchange memory (required for BR/EDR)"
+	default y if BFLB_BL61X_BLE_1M2S1BREDR1
+	help
+	  Reserve 64 KB of WRAM for BLE exchange memory instead of the
+	  default 32 KB. Required for the BR/EDR variant. The board DTS
+	  must include bl61x_em_64kb.dtsi instead of bl61x_em_32kb.dtsi.
+
+config BFLB_BL61X_WL_RMEM_SIZE
+	int "PHY/RF retention memory size (bytes)"
 	default 8192
 	help
-	  Additional heap memory reserved for BLE controller usage
-	  (task stacks, message queues, etc.)
+	  Size in bytes of the static buffer passed to wl_cfg_get() for
+	  PHY/RF calibration data. The buffer persists for the lifetime
+	  of the application. 8192 matches the Bouffalo SDK default.
 
-config BT_BFLB_CTLR_TASK_PRIO
-	int "BLE controller task priority (FreeRTOS-style)"
-	default 5
-	help
-	  Priority passed to the BLE controller init function. The RTOS
-	  shim layer maps this to a Zephyr preemptive priority.
-
-config BT_BFLB_RX_THREAD_STACK_SIZE
-	int "BLE HCI RX thread stack size"
-	default 1024
-	help
-	  Stack size for the HCI RX processing thread. The recv()
-	  callback reaches into host code, so adjust if needed.
-
-endif # BT_BFLB
+endif # BT_BFLB_BL61X
