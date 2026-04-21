@@ -61,3 +61,7 @@
 &rng {
 	status = "disabled";
 };
+
+&clk_hse {
+	hse-trimming = <0x0c>;
+};
