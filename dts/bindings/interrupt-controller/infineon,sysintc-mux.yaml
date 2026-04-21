@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon CAT1 CPUSS interrupt multiplexer channel.
+
+  Each instance represents one NvicMux NVIC line and acts as a 2nd-level
+  interrupt aggregator. The reg property is the NvicMux line index. The
+  interrupts property on this node specifies the L1 NVIC IRQ and its
+  priority (consumed by the parent ARM NVIC controller).
+
+  Peripherals referencing this node use 2 cells:
+    cell 0 (irq)      - system interrupt number (0..CPUSS_SYSTEM_INT_NR-1)
+    cell 1 (priority) - must be 0 (no hardware priority)
+
+  The CAT1 CPUSS multiplexer arbitrates multiple system interrupts onto
+  a single NVIC line by reporting the lowest-indexed active source via
+  INTx_STATUS; there is no per-system-interrupt priority register. All
+  system interrupts routed to the same NvicMux line share that NVIC
+  line's priority, which is set on the mux node itself (cell 1 of its
+  own interrupts property). The priority cell on peripheral nodes is
+  retained only for compatibility with peripheral drivers that pass
+  DT_INST_IRQ(n, priority) to IRQ_CONNECT; it must be 0, which the
+  interrupt controller driver asserts.
+
+  When several sources on the same line are pending at once, the lowest-index
+  source is serviced first; the line stays asserted until all clear,
+  so each next-lowest follows in turn.
+
+  Note: NvicMux lines 0-7 are external system-interrupt aggregators. NVIC
+  IRQs 8-15 are reserved as Internal/software interrupts and bypass the
+  CPUSS mux; they are used directly via the ARM NVIC root controller.
+
+  Example:
+    intmux_ch3: interrupt-controller@3 {
+        compatible = "infineon,sysintc-mux";
+        reg = <3>;
+        interrupt-controller;
+        #interrupt-cells = <2>;
+        interrupts = <3 1>;     /* NVIC line 3, priority 1 */
+    };
+
+    scb0: serial@40600000 {
+        interrupt-parent = <&intmux_ch3>;
+        interrupts = <18 0>;    /* sys_irq 18, priority cell must be 0 */
+    };
+
+compatible: "infineon,sysintc-mux"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority
