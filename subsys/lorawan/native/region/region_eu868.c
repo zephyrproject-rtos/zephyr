@@ -133,15 +133,20 @@ static int eu868_get_default_channels(struct lwan_channel *ch, size_t *count)
 	return 0;
 }
 
-static int eu868_get_tx_params(uint8_t dr, struct lwan_dr_params *p,
-			       int8_t *power)
+static int eu868_get_tx_params(uint8_t dr, uint8_t tx_power_idx,
+			       struct lwan_dr_params *p, int8_t *power_dbm)
 {
+	uint8_t idx;
+
 	if (dr >= EU868_DR_COUNT) {
 		return -EINVAL;
 	}
 
+	/* Defensive clamp — validate_tx_power() is the authoritative check. */
+	idx = MIN(tx_power_idx, EU868_MAX_TX_POWER_IDX);
+
 	*p = eu868_dr_table[dr];
-	*power = EU868_MAX_EIRP_DBM;
+	*power_dbm = EU868_MAX_EIRP_DBM - (int8_t)(2 * idx);
 	return 0;
 }
 

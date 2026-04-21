@@ -490,7 +490,8 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 
 	tx_dr_idx = (uint8_t)ctx->current_dr;
 
-	ret = region->get_tx_params(tx_dr_idx, &dr_params, &tx_power);
+	ret = region->get_tx_params(tx_dr_idx, ctx->mac.tx_power_idx,
+				    &dr_params, &tx_power);
 	if (ret != 0) {
 		LOG_ERR("Invalid datarate DR%u: %d", tx_dr_idx, ret);
 		goto done;
