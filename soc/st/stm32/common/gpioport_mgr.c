@@ -9,6 +9,7 @@
 #include <stm32_ll_gpio.h>
 #include <stm32_ll_pwr.h>
 
+#include <stm32_bitops.h>
 #include <stm32_hsem.h>
 #include <stm32_gpio_shared.h>
 
@@ -91,8 +92,11 @@ const struct device *stm32_gpioport_get(uint32_t port_index)
 	return device_is_ready(dev) ? dev : NULL;
 }
 
-int stm32_gpioport_configure_pin(
-	const struct device *port, gpio_pin_t pin, uint32_t config, uint32_t func)
+int stm32_gpioport_configure_pin(const struct device *port,
+				 gpio_pin_t pin,
+				 uint32_t config,
+				 uint32_t func,
+				 bool apply_out_level)
 {
 	const struct gpio_stm32_config *dev_cfg = port->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)dev_cfg->base;
@@ -129,6 +133,17 @@ int stm32_gpioport_configure_pin(
 
 		if (temp == STM32_CNF_GP_OUTPUT) {
 			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_OUTPUT);
+
+			if (apply_out_level) {
+				const uint32_t odata = _FLD2VAL(STM32_ODR, config);
+
+				/* Avoid LL overhead by writing directly to BSRR/BRR */
+				if (odata == 1) {
+					stm32_reg_write(&gpio->BSRR, BIT(pin));
+				} else {
+					stm32_reg_write(&gpio->BRR, BIT(pin));
+				}
+			}
 		} else {
 			LL_GPIO_SetPinMode(gpio, pin_ll,
 							LL_GPIO_MODE_ALTERNATE);
@@ -167,6 +182,20 @@ int stm32_gpioport_configure_pin(
 
 	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
+	if (mode == STM32_MODER_OUTPUT_MODE) {
+		LL_GPIO_SetPinOutputType(gpio, pin_ll, otype >> STM32_OTYPER_Pos);
+
+		if (apply_out_level) {
+			const uint32_t odata = _FLD2VAL(STM32_ODR, config);
+
+			if (odata == 1) {
+				LL_GPIO_SetOutputPin(gpio, pin_ll);
+			} else {
+				LL_GPIO_ResetOutputPin(gpio, pin_ll);
+			}
+		}
+	}
+
 #if defined(CONFIG_SOC_SERIES_STM32L4X) && defined(GPIO_ASCR_ASC0)
 	/*
 	 * For STM32L47xx/48xx, register ASCR should be configured to connect
@@ -176,8 +205,6 @@ int stm32_gpioport_configure_pin(
 		LL_GPIO_EnablePinAnalogControl(gpio, pin_ll);
 	}
 #endif
-
-	LL_GPIO_SetPinOutputType(gpio, pin_ll, otype >> STM32_OTYPER_Pos);
 
 	LL_GPIO_SetPinSpeed(gpio, pin_ll, ospeed >> STM32_OSPEEDR_Pos);
 
