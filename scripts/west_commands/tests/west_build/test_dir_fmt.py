@@ -6,6 +6,7 @@ import configparser
 import copy
 import os
 from argparse import Namespace
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import pytest
@@ -29,6 +30,9 @@ def setup_test_build(monkeypatch, test_args=None):
     monkeypatch.setattr('pathlib.Path.cwd', lambda *a, **kw: TEST_CWD)
     # mock os.environ to ignore all environment variables during test
     monkeypatch.setattr('os.environ', {})
+    # skip board normalization (covered by dedicated tests) so these cases
+    # stay isolated from the zephyr tree and the west manifest.
+    monkeypatch.setattr('build.Build._normalize_board', lambda self, board: board)
 
     # set up Build
     b = Build()
@@ -175,3 +179,77 @@ def test_dir_fmt(monkeypatch, test_case):
 
     # check for expected build-dir
     assert os.path.abspath(expected) == b.build_dir
+
+
+# Lightweight stand-ins for list_boards.Board / Soc so tests do not need to
+# load YAML from the zephyr tree. Only the fields consumed by
+# Build._normalize_board are populated.
+@dataclass
+class _FakeSoc:
+    name: str
+
+
+@dataclass
+class _FakeBoard:
+    name: str
+    socs: list = field(default_factory=list)
+
+
+_SINGLE_SOC_BOARDS = {
+    'plank': _FakeBoard('plank', socs=[_FakeSoc('soc1')]),
+}
+_MULTI_SOC_BOARDS = {
+    'multi': _FakeBoard('multi', socs=[_FakeSoc('soc1'), _FakeSoc('soc2')]),
+}
+
+
+TEST_CASES_NORMALIZE_BOARD = [
+    # (boards, input, expected)
+    # Unknown board: left untouched so CMake reports the error.
+    ({}, 'unknown', 'unknown'),
+    # No auto-fill needed: fully qualified identifier already.
+    (_SINGLE_SOC_BOARDS, 'plank/soc1/cpu', 'plank/soc1/cpu'),
+    # SoC omitted entirely: single-SoC board gets the SoC filled in.
+    (_SINGLE_SOC_BOARDS, 'plank', 'plank/soc1'),
+    # Empty SoC slot (the #101819 case): '/cpu' becomes 'soc1/cpu'.
+    (_SINGLE_SOC_BOARDS, 'plank//cpu', 'plank/soc1/cpu'),
+    # Revision is preserved across normalization.
+    (_SINGLE_SOC_BOARDS, 'plank@1.0.0//cpu', 'plank@1.0.0/soc1/cpu'),
+    (_SINGLE_SOC_BOARDS, 'plank@1.0.0', 'plank@1.0.0/soc1'),
+    # Multi-SoC board: no auto-fill, input passes through unchanged.
+    (_MULTI_SOC_BOARDS, 'multi', 'multi'),
+    (_MULTI_SOC_BOARDS, 'multi//cpu', 'multi//cpu'),
+    # Non-empty qualifier that does not start with '/': no normalization.
+    (_SINGLE_SOC_BOARDS, 'plank/soc1', 'plank/soc1'),
+    # Empty / None input: returned as-is.
+    ({}, None, None),
+    ({}, '', ''),
+]
+
+
+@pytest.mark.parametrize('test_case', TEST_CASES_NORMALIZE_BOARD)
+def test_normalize_board(monkeypatch, test_case):
+    boards, board_in, expected = test_case
+
+    monkeypatch.setattr('build.zephyr_module.parse_modules', lambda *a, **kw: [])
+    monkeypatch.setattr('build.list_boards.find_v2_boards', lambda args: boards)
+
+    b = Build()
+    # Satisfy the manifest property without needing a real west workspace.
+    b._manifest = object()
+    assert b._normalize_board(board_in) == expected
+
+
+def test_normalize_board_swallows_lookup_errors(monkeypatch):
+    # Runtime errors from board lookup (e.g. missing manifest, broken
+    # module metadata) must fall back to the raw input rather than abort
+    # west build.
+    def explode(args):
+        raise RuntimeError('tree scan failed')
+
+    monkeypatch.setattr('build.zephyr_module.parse_modules', lambda *a, **kw: [])
+    monkeypatch.setattr('build.list_boards.find_v2_boards', explode)
+
+    b = Build()
+    b._manifest = object()
+    assert b._normalize_board('plank//cpu') == 'plank//cpu'

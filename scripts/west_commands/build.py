@@ -6,6 +6,7 @@ import argparse
 import contextlib
 import os
 import pathlib
+import re
 import shlex
 import sys
 
@@ -17,9 +18,17 @@ from west.version import __version__
 
 from build_helpers import FIND_BUILD_DIR_DESCRIPTION, find_build_dir, is_zephyr_build, load_domains
 from zcmake import DEFAULT_CMAKE_GENERATOR, CMakeCache, run_build, run_cmake
-from zephyr_ext_common import Forceable
+from zephyr_ext_common import ZEPHYR_BASE, Forceable
+
+sys.path.append(os.fspath(pathlib.Path(__file__).parent.parent))
+import list_boards  # noqa: E402
+import zephyr_module  # noqa: E402
 
 _ARG_SEPARATOR = '--'
+
+# Matches CMake's parse_board_components in cmake/modules/boards.cmake:
+# captures (name, revision, qualifiers) from '<board>[@<rev>][/<qualifiers>]'.
+_BOARD_IDENTIFIER_RE = re.compile(r'^([^@/]+)(?:@([^@/]+))?(?:/([^@]+))?$')
 
 SYSBUILD_PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent.parent \
                     / pathlib.Path('share/sysbuild')
@@ -454,12 +463,81 @@ class Build(Forceable):
         with contextlib.suppress(FileNotFoundError):
             self.cmake_cache = CMakeCache.from_build_dir(self.build_dir)
 
+    def _lookup_board(self, name):
+        # Look up a v2 Board definition by exact name. Returns None on any
+        # failure (missing manifest, broken tree, board not found) so the
+        # caller can fall back to the raw input.
+        args = argparse.Namespace(
+            board=name,
+            arch_roots=[],
+            board_roots=[],
+            soc_roots=[],
+            board_dir=[],
+        )
+        # Same logic with boards.py
+        module_settings = {
+            'arch_root': [ZEPHYR_BASE],
+            'board_root': [ZEPHYR_BASE],
+            'soc_root': [ZEPHYR_BASE],
+        }
+        try:
+            for module in zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest):
+                for key in module_settings:
+                    root = module.meta.get('build', {}).get('settings', {}).get(key)
+                    if root is not None:
+                        module_settings[key].append(pathlib.Path(module.project) / root)
+
+            args.arch_roots += module_settings['arch_root']
+            args.board_roots += module_settings['board_root']
+            args.soc_roots += module_settings['soc_root']
+            boards = list_boards.find_v2_boards(args)
+        except Exception as e:
+            self.dbg(f'board lookup skipped: {e}', level=Verbosity.DBG_EXTREME)
+            return None
+
+        return boards.get(name)
+
+    def _normalize_board(self, board):
+        # Canonicalize a board identifier so that equivalent user inputs
+        # (e.g. 'plank', 'plank/' and 'plank//cpu' for a single-SoC board)
+        # resolve to the same {board} value in build.dir-fmt.
+        #
+        # Mirrors the single-SoC auto-fill performed by
+        # cmake/modules/boards.cmake. Returns the input unchanged if the
+        # board cannot be resolved -- CMake will report the error later.
+        if not board:
+            return board
+
+        m = _BOARD_IDENTIFIER_RE.match(board)
+        if not m:
+            return board
+        name, revision, qualifiers = m.group(1), m.group(2), m.group(3)
+
+        # Auto-fill only applies when the SoC slot is empty.
+        if qualifiers is not None and not qualifiers.startswith('/'):
+            return board
+
+        resolved = self._lookup_board(name)
+        if resolved is None or len(resolved.socs) != 1:
+            return board
+
+        soc = resolved.socs[0].name
+        # qualifiers='/cpuapp' -> 'soc/cpuapp'; qualifiers=None -> 'soc'.
+        qualifiers = soc if qualifiers is None else soc + qualifiers
+
+        normalized = name
+        if revision:
+            normalized += '@' + revision
+        normalized += '/' + qualifiers
+        return normalized
+
     def _get_dir_fmt_context(self):
         # Return a dictionary of build attributes which are used while
         # substituting the placeholders in the build.dir-fmt format string.
         source_dir = pathlib.Path(self._find_source_dir())
         app = source_dir.name
         board, _ = self._find_board()
+        board = self._normalize_board(board)
         try:
             west_top_dir = west_topdir(source_dir)
         except WestNotFound:
