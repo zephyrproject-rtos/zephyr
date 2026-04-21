@@ -272,6 +272,7 @@ source "drivers/bluetooth/hci/Kconfig.esp32"
 source "drivers/bluetooth/hci/Kconfig.infineon"
 source "drivers/bluetooth/hci/Kconfig.nxp"
 source "drivers/bluetooth/hci/Kconfig.stm32"
+source "drivers/bluetooth/hci/Kconfig.bflb"
 source "drivers/bluetooth/hci/Kconfig.silabs"
 source "drivers/bluetooth/hci/Kconfig.bee"
 
