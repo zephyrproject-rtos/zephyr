@@ -1,4 +1,4 @@
-# Copyright 2022-2025 NXP
+# Copyright 2022-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WIFI_NXP
@@ -832,7 +832,7 @@ config NXP_WIFI_5GHz_SUPPORT
 
 config NXP_WIFI_TX_RX_ZERO_COPY
 	bool "Zero memory copy TX/RX data packets"
-	depends on NXP_RW610 || SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER
+	depends on (NXP_RW610 || SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER) && NXP_WIFI_WMM
 	select SDHC_SCATTER_GATHER_TRANSFER if !NXP_RW610
 	select NET_L2_ETHERNET_RESERVE_HEADER if !NXP_RW610
 	imply NET_IPV4_FRAGMENT
