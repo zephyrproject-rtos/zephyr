@@ -52,6 +52,13 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	 */
 	buf[1] |= (nrf_ficr_er_get(NRF_FICR, 0) & 0xFF) << 16;
 	buf[1] |= (nrf_ficr_ir_get(NRF_FICR, 0) & 0xFF) << 24;
+#elif NRF_FICR_HAS_NFC_TAGHEADER_ARRAY
+	/* DEVICEID is not accessible, use NFCID instead.
+	 * Assume that it is always accessible from the non-secure image.
+	 * Skip TAGHEADER[0] as it always contain Manufacturer ID.
+	 */
+	buf[0] = nrf_ficr_nfc_tagheader_get(NRF_FICR, 1);
+	buf[1] = nrf_ficr_nfc_tagheader_get(NRF_FICR, 2);
 #else
 #error "No suitable source for hwinfo device_id generation"
 #endif
