@@ -52,8 +52,8 @@ struct vlan_context {
 	struct net_if *iface;
 	struct net_if *attached_to;
 	uint16_t tag;
-	bool status : 1;    /* Is the interface enabled or not */
-	bool is_used : 1;   /* Is there active config on this context */
+	bool status;    /* Is the interface enabled or not */
+	bool is_used;   /* Is there active config on this context */
 };
 
 static const struct virtual_interface_api vlan_iface_api = {
