@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif ESP32 TWAI-FD (CAN-FD capable Two-Wire Automotive Interface) controller.
+
+  The driver identifies the hardware instance from the node's reg address,
+  so no separate instance-id property is required.
+
+compatible: "espressif,esp32-twaifd"
+
+include: [can-fd-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
