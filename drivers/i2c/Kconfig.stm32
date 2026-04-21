@@ -74,4 +74,12 @@ config I2C_STM32_TRANSFER_TIMEOUT_MSEC
 	  Time in milliseconds to wait for an I2C transfer to complete before
 	  considering it timed out.
 
+config I2C_STM32_WAIT_BUS_IDLE_TIMEOUT_USEC
+	int "STM32 I2C bus wait timeout (us)"
+	range 1 $(UINT32_MAX)
+	default 2000
+	help
+	  Time in microseconds to wait for the bus to become idle before
+	  starting a new controller session when target mode is attached.
+
 endif # I2C_STM32
