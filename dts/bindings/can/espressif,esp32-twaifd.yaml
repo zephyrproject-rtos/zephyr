@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif ESP32 TWAI-FD (CAN-FD capable Two-Wire Automotive Interface) controller.
+
+  The TWAI-FD controller supports both Classic CAN 2.0 and CAN-FD frames selected on a
+  per-frame basis. On supported SoCs (e.g. ESP32-C5), two independent TWAI-FD controllers
+  are available.
+
+compatible: "espressif,esp32-twaifd"
+
+include: [can-fd-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
