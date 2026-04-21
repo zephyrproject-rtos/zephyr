@@ -143,12 +143,6 @@ static int stm32_pins_remap(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt)
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-#define IS_GPIO_OUT GPIO_OUT
-#else
-#define IS_GPIO_OUT STM32_GPIO
-#endif
-
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
@@ -215,25 +209,22 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		line = STM32_DT_PINMUX_LINE(mux);
 		func = STM32_DT_PINMUX_FUNC(mux);
 
-		cfg_ret = stm32_gpioport_configure_pin(port, line, pin_cfg, func);
-
-		if (cfg_ret >= 0 && func == IS_GPIO_OUT) {
-			/* Apply output level configuration */
-			const struct gpio_stm32_config *cfg = port->config;
-			GPIO_TypeDef *gpio = cfg->base;
-			uint32_t gpio_out = pin_cfg & STM32_ODR_Msk;
-
-			if (gpio_out == STM32_ODR_1) {
-				stm32_reg_write(&gpio->BSRR, BIT(line));
-			} else {
-				/* c.f. gpio_stm32_port_clear_bits_raw() for rationale */
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-				stm32_reg_write(&gpio->BRR, BIT(line));
-#else /* CONFIG_SOC_SERIES_STM32F1X */
-				LL_GPIO_ResetOutputPin(gpio, BIT(line));
-#endif /* CONFIG_SOC_SERIES_STM32F1X */
-			}
-		}
+		/*
+		 * Regardless of `apply_out_level`, the output level data contained
+		 * in the pin configuration is ignored by stm32_gpioport_configure_pin()
+		 * unless General-Purpose Output mode is selected by the configuration.
+		 *
+		 * On non-F1 series, STM32_PINMUX(GPIO) selects GP Output mode only if
+		 * an output level was explicitly specified (GP Input otherwise).
+		 * On STM32F1 series, a dedicated STM32F1_PINMUX(GPIO_OUTPUT) must be used
+		 * to select GP Output mode, and the binding documents `output-low` as the
+		 * default configuration if no output level is specified explicitly.
+		 *
+		 * As such, if the pin configuration selects GP Output mode, it is guaranteed
+		 * to contain either a value that was set explicitly or a documented default
+		 * value: it is safe to always apply it.
+		 */
+		cfg_ret = stm32_gpioport_configure_pin(port, line, pin_cfg, func, true);
 
 		ret = pm_device_runtime_put(port);
 		if (ret < 0) {

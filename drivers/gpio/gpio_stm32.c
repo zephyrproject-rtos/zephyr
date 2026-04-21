@@ -78,6 +78,13 @@ static int gpio_stm32_flags_to_conf(gpio_flags_t flags, uint32_t *pincfg)
 			cfg |= STM32_PINCFG_PULL_DOWN;
 		}
 
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+			cfg |= STM32_ODR_1;
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+			cfg |= STM32_ODR_0;
+		} else {
+			/* No output level specified */
+		}
 	} else if  ((flags & GPIO_INPUT) != 0) {
 		/* Input */
 
@@ -283,6 +290,7 @@ static int gpio_stm32_config(const struct device *dev,
 {
 	int err;
 	uint32_t pincfg;
+	bool apply_out_level;
 	struct gpio_stm32_data *data = dev->data;
 
 	/* figure out if we can map the requested GPIO
@@ -303,15 +311,15 @@ static int gpio_stm32_config(const struct device *dev,
 		data->pin_has_clock_enabled |= BIT(pin);
 	}
 
-	if ((flags & GPIO_OUTPUT) != 0) {
-		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
-			gpio_stm32_port_set_bits_raw(dev, BIT(pin));
-		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
-			gpio_stm32_port_clear_bits_raw(dev, BIT(pin));
-		}
+	if ((flags & (GPIO_OUTPUT_INIT_HIGH | GPIO_OUTPUT_INIT_LOW)) != 0) {
+		/* Output level was specified by caller: apply it */
+		apply_out_level = true;
+	} else {
+		/* No output level specified: leave it unmodified */
+		apply_out_level = false;
 	}
 
-	stm32_gpioport_configure_pin(dev, pin, pincfg, 0);
+	stm32_gpioport_configure_pin(dev, pin, pincfg, 0, apply_out_level);
 
 #ifdef CONFIG_STM32_WKUP_PINS
 	if (flags & STM32_GPIO_WKUP) {
