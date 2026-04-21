@@ -115,6 +115,12 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 #endif /* CONFIG_PM_S2RAM */
 		break;
 	case PM_STATE_STANDBY:
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_system_timer_companion), adi_max32_rtc_counter)
+		/* For this state wait a little until RTC register being ready
+		 * otherwise seems previous RTC value being read
+		 */
+		k_busy_wait(100);
+#endif
 		LOG_DBG("exited PM state standby");
 		break;
 	default:
