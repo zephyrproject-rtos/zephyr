@@ -14,9 +14,6 @@
 	model = "STMicroelectronics STM32WBA55CG-NUCLEO board";
 	compatible = "st,stm32wba55cg-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,bt-c2h-uart = &usart1;
 		zephyr,uart-pipe = &usart1;
