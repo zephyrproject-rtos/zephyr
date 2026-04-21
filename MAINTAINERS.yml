@@ -6743,20 +6743,6 @@ West:
   labels:
     - "area: Neural Networks"
 
-"West project: thrift":
-  status: maintained
-  maintainers:
-    - cfriedt
-  files:
-    - modules/thrift/
-    - samples/modules/thrift/
-    - tests/modules/thrift/
-  labels:
-    - "area: Thrift"
-    - "area: Serialization"
-  tests:
-    - thrift
-
 "West project: trusted-firmware-a":
   status: odd fixes
   collaborators:
