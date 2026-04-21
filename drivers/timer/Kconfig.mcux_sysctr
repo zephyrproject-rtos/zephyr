@@ -1,0 +1,37 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+DT_COMPAT_NXP_SYSCTR := nxp,sysctr
+
+config MCUX_SYSCTR_TIMER
+	bool "MCUX System Counter (SYS_CTR) timer"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+	depends on $(dt_node_has_compat,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),$(DT_COMPAT_NXP_SYSCTR))
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  This module implements a kernel device driver for the NXP System
+	  Counter (SYS_CTR) and provides the standard "system clock driver"
+	  interfaces.
+
+	  SYS_CTR is a 56-bit free-running counter clocked at 24 MHz (base)
+	  with two compare frames for interrupt generation. This driver uses
+	  compare frame 0 for the system timer, leaving frame 1 available for
+	  other purposes. The instance to use is selected via the
+	  zephyr,system-timer chosen property.
+
+if MCUX_SYSCTR_TIMER
+
+config MCUX_SYSCTR_TIMER_MIN_DELAY
+	int "Minimum delay cycles for the timer match value"
+	default 1000
+	help
+	  Timer hardware requires a minimum setup time to reliably trigger
+	  interrupts. If a match value is set too close to the current timer
+	  count, the hardware may not have enough time to process it.
+	  Lower values can improve timing precision but may be less reliable.
+	  Higher values provide more safety margin but slightly reduce timing accuracy.
+
+endif # MCUX_SYSCTR_TIMER
