@@ -489,7 +489,7 @@ static int rtc_counter_set_time(const struct device *dev, const struct rtc_time 
 	/* Stop counter */
 	ret = counter_stop(config->counter_dev);
 
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOTSUP) {
 		return ret;
 	}
 
@@ -531,7 +531,7 @@ static int rtc_counter_set_time(const struct device *dev, const struct rtc_time 
 
 	/* Restart counter */
 	ret = counter_start(config->counter_dev);
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOTSUP) {
 		return ret;
 	}
 
