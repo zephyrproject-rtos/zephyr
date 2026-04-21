@@ -45,7 +45,6 @@ static int vlan_interface_send(struct net_if *iface, struct net_pkt *pkt);
 static int vlan_interface_stop(const struct device *dev);
 static enum virtual_interface_caps vlan_get_capabilities(struct net_if *iface);
 static int vlan_interface_start(const struct device *dev);
-static int virt_dev_init(const struct device *dev);
 
 static K_MUTEX_DEFINE(lock);
 
@@ -70,19 +69,23 @@ static const struct virtual_interface_api vlan_iface_api = {
 };
 
 #define ETH_DEFINE_VLAN(x, _)						\
-	static struct vlan_context vlan_context_data_##x = {		\
-		.tag = NET_VLAN_TAG_UNSPEC,				\
-	};								\
+	static struct vlan_context vlan_context_data_##x;		\
+									\
 	NET_VIRTUAL_INTERFACE_INIT_INSTANCE(vlan_##x,			\
 					    "VLAN_" #x,			\
 					    x,				\
-					    virt_dev_init,		\
+					    NULL,			\
 					    NULL,			\
 					    &vlan_context_data_##x,	\
 					    NULL, /* config */		\
 					    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, \
 					    &vlan_iface_api,		\
-					    NET_ETH_MTU)
+					    NET_ETH_MTU)		\
+									\
+	static struct vlan_context vlan_context_data_##x = {		\
+		.iface = NET_IF_GET(vlan_##x, x),			\
+		.tag = NET_VLAN_TAG_UNSPEC,				\
+	};								\
 
 LISTIFY(CONFIG_NET_VLAN_COUNT, ETH_DEFINE_VLAN, (;), _);
 
@@ -92,31 +95,6 @@ LISTIFY(CONFIG_NET_VLAN_COUNT, ETH_DEFINE_VLAN, (;), _);
 static struct vlan_context *vlan_ctx[] = {
 	LISTIFY(CONFIG_NET_VLAN_COUNT, INIT_VLAN_CONTEXT_PTR, (,), _)
 };
-
-#define INIT_VLAN_CONTEXT_IFACE(x, _)					\
-	vlan_context_data_##x.iface = NET_IF_GET(vlan_##x, x)
-
-static void init_context_iface(void)
-{
-	static bool init_done;
-
-	if (init_done) {
-		return;
-	}
-
-	init_done = true;
-
-	LISTIFY(CONFIG_NET_VLAN_COUNT, INIT_VLAN_CONTEXT_IFACE, (;), _);
-}
-
-static int virt_dev_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	init_context_iface();
-
-	return 0;
-}
 
 static struct vlan_context *get_vlan_ctx(struct net_if *main_iface,
 					 uint16_t vlan_tag,
@@ -658,7 +636,6 @@ static void vlan_iface_init(struct net_if *iface)
 		return;
 	}
 
-	ctx->iface = iface;
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
 	snprintk(name, sizeof(name), "not attached");
