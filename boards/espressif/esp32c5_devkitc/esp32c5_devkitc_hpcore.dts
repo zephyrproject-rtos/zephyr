@@ -22,6 +22,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,ieee802154 = &ieee802154;
+		zephyr,canbus = &twai0;
 	};
 
 	aliases {
@@ -91,4 +92,10 @@
 
 &esp32_bt_hci {
 	status = "okay";
+};
+
+&twai0 {
+	status = "okay";
+	pinctrl-0 = <&twai0_default>;
+	pinctrl-names = "default";
 };
