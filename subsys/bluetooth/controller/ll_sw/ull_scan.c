@@ -649,8 +649,11 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* Request Extended Scan stop */
 	scan->is_stop = 1U;
-	cpu_dmb();
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+	/* Flag LLL to stop */
+	scan->lll.is_stop = 1U;
+	cpu_dmb();
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_BASE + handle,
 					scan, &scan->lll);
