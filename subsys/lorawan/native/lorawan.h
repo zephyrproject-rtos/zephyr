@@ -53,6 +53,8 @@ struct lwan_session {
  * application (lorawan_enable_adr).
  */
 struct lwan_mac_state {
+	/* Opt-in to network-managed DR/power: sets FCtrl.ADR on uplinks */
+	bool adr_enabled;
 	/* Current TX power index (0 = region max; set by LinkADRReq) */
 	uint8_t tx_power_idx;
 };
