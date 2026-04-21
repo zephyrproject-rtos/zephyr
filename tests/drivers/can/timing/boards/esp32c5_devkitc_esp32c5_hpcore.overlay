@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,canbus = &twai0;
+	};
+};
+
+&twai0 {
+	status = "okay";
+	pinctrl-0 = <&twai0_default>;
+	pinctrl-names = "default";
+	bitrate = <500000>;
+	bitrate-data = <1000000>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};

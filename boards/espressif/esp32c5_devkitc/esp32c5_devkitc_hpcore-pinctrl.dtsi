@@ -53,4 +53,16 @@
 				 <I2S_I_SD_GPIO8>;
 		};
 	};
+
+	twai0_default: twai0_default {
+		group1 {
+			pinmux = <TWAI0_TX_GPIO14>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <TWAI0_RX_GPIO13>;
+			bias-pull-up;
+		};
+	};
 };
