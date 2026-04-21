@@ -39,7 +39,6 @@ source "modules/Kconfig.simplelink"
 source "modules/Kconfig.stm32"
 source "modules/Kconfig.syst"
 source "modules/Kconfig.telink"
-source "modules/thrift/Kconfig"
 source "modules/Kconfig.vega"
 source "modules/Kconfig.wurthelektronik"
 source "modules/Kconfig.xtensa"
@@ -108,9 +107,6 @@ comment "zcbor module not available."
 
 comment "CHRE module not available."
 	depends on !ZEPHYR_CHRE_MODULE
-
-comment "THRIFT module not available."
-	depends on !ZEPHYR_THRIFT_MODULE
 
 comment "Segger module not available."
 	depends on !ZEPHYR_SEGGER_MODULE
