@@ -10,8 +10,6 @@
 
 / {
 	compatible = "arm,v2m-musca";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	aliases {
 		led0 = &green_led;

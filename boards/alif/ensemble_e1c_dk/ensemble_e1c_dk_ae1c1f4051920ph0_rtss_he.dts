@@ -10,8 +10,6 @@
 
 / {
 	compatible = "alif,ensemble-e1c-dk-ae1c1f4051920ph0-rtss-he";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	chosen {
 		zephyr,flash = &mram;

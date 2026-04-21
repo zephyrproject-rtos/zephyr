@@ -11,8 +11,6 @@
 / {
 	model = "DA14695 series Development Kit USB";
 	compatible = "renesas,da14695_dk_usb";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	chosen {
 		zephyr,sram = &sram0;

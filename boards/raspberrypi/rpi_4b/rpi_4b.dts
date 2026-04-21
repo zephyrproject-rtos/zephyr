@@ -15,8 +15,6 @@
 / {
 	model = "Raspberry Pi 4 Model B";
 	compatible = "raspberrypi,4-model-b", "brcm,bcm2711";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	aliases {
 		led0 = &led_act;
