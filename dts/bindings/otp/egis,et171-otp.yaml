@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Egis Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Egis ET171 OTP memory controller
+
+compatible: "egis,et171-otp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Start address and size of OTP control registers

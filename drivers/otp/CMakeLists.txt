@@ -5,6 +5,7 @@ zephyr_library_sources_ifdef(CONFIG_OTP_SHELL otp_shell.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_OTP_BFLB otp_bflb.c)
+zephyr_library_sources_ifdef(CONFIG_OTP_EGIS_ET171_OTP otp_egis_et171.c)
 zephyr_library_sources_ifdef(CONFIG_OTP_EMULATOR otp_emulator.c)
 zephyr_library_sources_ifdef(CONFIG_OTP_MCUX_OCOTP otp_mcux_ocotp.c)
 zephyr_library_sources_ifdef(CONFIG_OTP_NXP_RT7XX_OCOTP otp_nxp_rt7xx_ocotp.c)

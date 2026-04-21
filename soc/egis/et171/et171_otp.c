@@ -25,13 +25,12 @@ typedef union {
 	};
 } otp_analog_option_t;
 
-#define OTP_REG_BASE                    0xF1000000
-#define OTP_DATA_BASE                   0x1000
-#define OTP_DATA_ROOT_CLOCK             0x000C
-#define OTP_DATA_ANALOG                 0x0018
+#define OTP_DATA_BASE       DT_REG_ADDR_BY_NAME(DT_INST(0, egis_et171_otp), mem)
+#define OTP_DATA_ROOT_CLOCK 0x000C
+#define OTP_DATA_ANALOG     0x0018
 
 #define LL_READ_OTP_DATA(data_offset) \
-	((uint32_t)sys_read32(OTP_REG_BASE + OTP_DATA_BASE + (data_offset)))
+	((uint32_t)sys_read32(OTP_DATA_BASE + (data_offset)))
 
 
 static otp_analog_option_t et171_otp_ll_get_analog_config(void)
