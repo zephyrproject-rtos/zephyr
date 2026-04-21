@@ -64,4 +64,12 @@
 			output-high;
 		};
 	};
+
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_O_WS_GPIO0>,
+				 <I2S0_O_BCK_GPIO12>,
+				 <I2S0_O_SD_GPIO2>;
+		};
+	};
 };

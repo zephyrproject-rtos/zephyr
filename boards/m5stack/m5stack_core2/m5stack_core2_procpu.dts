@@ -21,6 +21,7 @@
 		pwr-led = &pwr_led;
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
+		i2s-tx = &i2s0;
 		watchdog0 = &wdt0;
 		rtc = &pfc8563_rtc;
 		led0 = &led_pwr;
@@ -179,6 +180,13 @@
 				output-high;
 				line-name = "bus_pwr_en";
 			};
+
+			spk_en: axp192_gpio2 {
+				gpio-hog;
+				gpios = <2 GPIO_ACTIVE_HIGH>;
+				output-high;
+				line-name = "spk-en";
+			};
 		};
 	};
 
@@ -224,6 +232,12 @@
 			status = "okay";
 		};
 	};
+};
+
+&i2s0 {
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &timer0 {
