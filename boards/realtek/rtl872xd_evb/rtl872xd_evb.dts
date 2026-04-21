@@ -19,6 +19,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,entropy = &prng;
+		zephyr,bt-hci = &bt;
 	};
 };
 
