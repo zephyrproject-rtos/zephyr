@@ -65,6 +65,12 @@ config WHD_DISABLE_SDIO_PULLUP_DURING_SPI_SLEEP
 	  Clears SDIO pullups when the SPI bus is configured for sleep.
 	  By default, this option is set to n, so SDIO pullups will be enabled.
 
+config IFX_WIFI_SOFTAP_SUPPORT
+	bool
+	default n
+	help
+	  Enable WiFi SoftAP support in the driver
+
 config AIROC_WIFI_CUSTOM
 	bool "Custom CYW43xx device/module"
 	help
