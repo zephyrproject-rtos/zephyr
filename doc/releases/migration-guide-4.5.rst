@@ -54,6 +54,12 @@ Clock Control
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
 
+STM32
+=====
+
+* The attribute macros ``__ccm_data_section``, ``__ccm_data_section`` and ``__ccm_data_section``
+  retained in Zephyr 4.4 for backwards compatibility have been removed. (:github:`101255`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
