@@ -14,9 +14,6 @@
 	model = "STMicroelectronics STM32WBA65RI-NUCLEO board";
 	compatible = "st,stm32wba65ri-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,bt-c2h-uart = &usart1;
 		zephyr,console = &usart1;
