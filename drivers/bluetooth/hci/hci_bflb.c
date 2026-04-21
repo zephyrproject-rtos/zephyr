@@ -26,7 +26,15 @@
 
 #include <hci_onchip.h>
 
-#if defined(CONFIG_BT_BFLB_BL70X)
+#if defined(CONFIG_BT_BFLB_BL60X)
+
+#include <bflb_soc.h>
+#include <ble_lib_api.h>
+
+#define bflb_controller_init(prio)     ble_controller_init(prio)
+#define bflb_controller_deinit()       ble_controller_deinit()
+
+#elif defined(CONFIG_BT_BFLB_BL70X)
 
 #include <bflb_soc.h>
 #include <ble_lib_api.h>
@@ -62,7 +70,7 @@ static K_FIFO_DEFINE(rx_fifo);
 
 /* Forward declarations for platform shims */
 extern int bl_wireless_mac_addr_set(uint8_t mac[8]);
-#if defined(CONFIG_BT_BFLB_BL70X)
+#if defined(CONFIG_BT_BFLB_BL60X) || defined(CONFIG_BT_BFLB_BL70X)
 extern void bflb_ble_irq_setup(void);
 #endif
 
@@ -280,6 +288,7 @@ done:
 
 static void bflb_ble_rf_init(void)
 {
+#if !defined(CONFIG_BT_BFLB_BL60X)
 	uint8_t mac[8] = {0U};
 
 	/*
@@ -291,6 +300,7 @@ static void bflb_ble_rf_init(void)
 
 	bl_wireless_mac_addr_set(mac);
 	bflb_rf_set_init_tsen_value(0U);
+#endif
 }
 
 static int bt_bflb_open(const struct device *dev, bt_hci_recv_t recv)
@@ -302,7 +312,7 @@ static int bt_bflb_open(const struct device *dev, bt_hci_recv_t recv)
 
 	bflb_ble_rf_init();
 
-#if defined(CONFIG_BT_BFLB_BL70X)
+#if defined(CONFIG_BT_BFLB_BL60X) || defined(CONFIG_BT_BFLB_BL70X)
 	bflb_ble_irq_setup();
 #endif
 	bflb_controller_init(CONFIG_BT_BFLB_CTLR_TASK_PRIO);
