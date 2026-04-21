@@ -451,7 +451,7 @@ static void eth_nxp_enet_rx_thread(struct k_work *work)
 		ret = eth_nxp_enet_rx(dev);
 	} while (ret == 1);
 
-	ENET_EnableInterrupts(data->base, kENET_RxFrameInterrupt);
+	ENET_EnableInterrupts(data->base, kENET_RxFrameInterrupt | kENET_RxBufferInterrupt);
 }
 
 static void nxp_enet_phy_cb(const struct device *phy,
@@ -567,9 +567,10 @@ static void eth_nxp_enet_isr(const struct device *dev)
 
 	uint32_t eir = ENET_GetInterruptStatus(data->base);
 
-	if (eir & (kENET_RxFrameInterrupt)) {
+	if (eir & (kENET_RxFrameInterrupt | kENET_RxBufferInterrupt)) {
 		ENET_ReceiveIRQHandler(ENET_IRQ_HANDLER_ARGS(data->base, &data->enet_handle));
-		ENET_DisableInterrupts(data->base, kENET_RxFrameInterrupt);
+		ENET_DisableInterrupts(data->base,
+				      kENET_RxFrameInterrupt | kENET_RxBufferInterrupt);
 		k_work_submit_to_queue(&rx_work_queue, &data->rx_work);
 	}
 
@@ -728,6 +729,7 @@ static int eth_nxp_enet_init(const struct device *dev)
 	}
 
 	enet_config.interrupt |= kENET_RxFrameInterrupt;
+	enet_config.interrupt |= kENET_RxBufferInterrupt;
 	enet_config.interrupt |= kENET_TxFrameInterrupt;
 
 	if (config->phy_mode == NXP_ENET_MII_MODE) {
