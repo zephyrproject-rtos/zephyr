@@ -720,6 +720,8 @@ config BT_BIP
 	help
 	  This option enables the BIP profile
 
+rsource "./shell/Kconfig"
+
 endif # BT_CLASSIC
 
 endmenu

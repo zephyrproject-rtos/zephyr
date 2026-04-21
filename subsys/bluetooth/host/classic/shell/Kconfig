@@ -1,0 +1,39 @@
+# Bluetooth Classic shell configuration options
+
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BT_A2DP_SOURCE
+
+config BT_A2DP_SOURCE_SBC_AUDIO_SHELL
+	bool "A2DP Source SBC Audio Shell Support"
+	help
+	  Enable A2DP source SBC audio encoding and playback functionality
+	  in the shell. This includes SBC encoder support, audio streaming,
+	  and related shell commands for testing A2DP source functionality.
+
+config BT_A2DP_SOURCE_SBC_BIT_RATE_DEFAULT
+	int "default sbc bit rate"
+	default 229
+
+config BT_A2DP_SOURCE_DATA_SEND_INTERVAL
+	int "data send interval (ms)"
+	default 10
+
+config BT_A2DP_SOURCE_DATA_BUF_SIZE
+	int "data buffer size (bytes)"
+	default 1000
+
+config BT_A2DP_SOURCE_DATA_BUF_COUNT
+	int "data buffer count"
+	default 5
+
+config BT_A2DP_SOURCE_DATA_SEND_WORKQ_STACK_SIZE
+	int "the data sending work queue stack size"
+	default 1024
+
+config BT_A2DP_SOURCE_DATA_SEND_WORKQ_PRIORITY
+	int "the data sending work queue priority"
+	default SYSTEM_WORKQUEUE_PRIORITY
+
+endif
