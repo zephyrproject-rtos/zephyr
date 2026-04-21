@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/can.h>
+#include <zephyr/drivers/can/can_flexcan.h>
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/device.h>
@@ -69,6 +70,7 @@ struct mcux_flexcan_config {
 	uint32_t rx_mb;
 	uint32_t tx_mb;
 	uint8_t max_filters;
+	uint8_t timing_registers;
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	bool flexcan_fd;
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
@@ -123,6 +125,118 @@ struct mcux_flexcan_data {
 static inline CAN_Type *get_base(const struct device *dev)
 {
 	return (CAN_Type *)DEVICE_MMIO_NAMED_GET(dev, flexcan_mmio);
+}
+
+static void mcux_flexcan_set_bit_timing_registers(const struct device *dev,
+						  const struct can_timing *timing,
+						  const struct can_timing *timing_data)
+{
+	const struct mcux_flexcan_config *config = dev->config;
+#ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
+	struct mcux_flexcan_data *data = dev->data;
+#endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
+	CAN_Type *base = get_base(dev);
+	uint32_t reg;
+
+	switch (config->timing_registers) {
+	case CAN_FLEXCAN_TIMING_REGISTERS_CTRL1:
+		/* CTRL1 register configuration (CAN classic) */
+		reg = base->CTRL1;
+		reg &= ~(CAN_CTRL1_PRESDIV_MASK | CAN_CTRL1_RJW_MASK |
+			 CAN_CTRL1_PSEG1_MASK | CAN_CTRL1_PSEG2_MASK |
+			 CAN_CTRL1_PROPSEG_MASK);
+		reg |= FIELD_PREP(CAN_CTRL1_PRESDIV_MASK, timing->prescaler - 1U) |
+		       FIELD_PREP(CAN_CTRL1_RJW_MASK, timing->sjw - 1U) |
+		       FIELD_PREP(CAN_CTRL1_PSEG1_MASK, timing->phase_seg1 - 1U) |
+		       FIELD_PREP(CAN_CTRL1_PSEG2_MASK, timing->phase_seg2 - 1U) |
+		       FIELD_PREP(CAN_CTRL1_PROPSEG_MASK, timing->prop_seg - 1U);
+		base->CTRL1 = reg;
+		break;
+
+#ifdef CAN_CBT_EPSEG1_MASK
+	case CAN_FLEXCAN_TIMING_REGISTERS_CBT:
+		/* CBT register configuration (arbitration phase) */
+		reg = FIELD_PREP(CAN_CBT_EPRESDIV_MASK, timing->prescaler - 1U) |
+		      FIELD_PREP(CAN_CBT_ERJW_MASK, timing->sjw - 1U) |
+		      FIELD_PREP(CAN_CBT_EPSEG1_MASK, timing->phase_seg1 - 1U) |
+		      FIELD_PREP(CAN_CBT_EPSEG2_MASK, timing->phase_seg2 - 1U) |
+		      FIELD_PREP(CAN_CBT_EPROPSEG_MASK, timing->prop_seg - 1U) |
+		      CAN_CBT_BTF_MASK; /* Enable extended bit timing */
+		base->CBT = reg;
+
+#ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
+		if (timing_data != NULL) {
+			/* FDCBT register configuration (data phase) */
+			reg = FIELD_PREP(CAN_FDCBT_FPRESDIV_MASK, timing_data->prescaler - 1U) |
+			      FIELD_PREP(CAN_FDCBT_FRJW_MASK, timing_data->sjw - 1U) |
+			      FIELD_PREP(CAN_FDCBT_FPSEG1_MASK, timing_data->phase_seg1 - 1U) |
+			      FIELD_PREP(CAN_FDCBT_FPSEG2_MASK, timing_data->phase_seg2 - 1U) |
+			      FIELD_PREP(CAN_FDCBT_FPROPSEG_MASK, timing_data->prop_seg);
+			base->FDCBT = reg;
+
+			/* Configure TDC (Transmitter Delay Compensation) for CAN FD */
+			reg = base->FDCTRL;
+			reg &= ~(CAN_FDCTRL_TDCOFF_MASK);
+			reg |= FIELD_PREP(CAN_FDCTRL_TDCOFF_MASK,
+					  CAN_CALC_TDCO((&data->timing_data), 1U, 31U));
+			base->FDCTRL = reg;
+		}
+#endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
+		break;
+#endif /* CAN_CBT_EPSEG1_MASK */
+
+#ifdef CAN_ENCBT_NTSEG1_MASK
+	case CAN_FLEXCAN_TIMING_REGISTERS_ENCBT:
+		/* Enable extended bit timing registers */
+		base->CTRL2 |= CAN_CTRL2_BTE_MASK;
+
+		/* EPRS register configuration (prescaler for enhanced arbitration phase) */
+		reg = base->EPRS;
+		reg &= ~(CAN_EPRS_ENPRESDIV_MASK);
+		reg |= FIELD_PREP(CAN_EPRS_ENPRESDIV_MASK, timing->prescaler - 1U);
+		base->EPRS = reg;
+
+		/*
+		 * ENCBT register configuration (enhanced arbitration phase)
+		 * Note: ENCBT does not have PROPSEG, prop_seg should be 0
+		 */
+		reg = FIELD_PREP(CAN_ENCBT_NRJW_MASK, timing->sjw - 1U) |
+		      FIELD_PREP(CAN_ENCBT_NTSEG1_MASK, timing->phase_seg1 - 1U) |
+		      FIELD_PREP(CAN_ENCBT_NTSEG2_MASK, timing->phase_seg2 - 1U);
+		base->ENCBT = reg;
+
+#ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
+		if (timing_data != NULL) {
+			/* EPRS register configuration (prescaler for enhanced data phase) */
+			reg = base->EPRS;
+			reg &= ~(CAN_EPRS_EDPRESDIV_MASK);
+			reg |= FIELD_PREP(CAN_EPRS_EDPRESDIV_MASK, timing_data->prescaler - 1U);
+			base->EPRS = reg;
+
+			/*
+			 * EDCBT register configuration (enhanced data phase)
+			 * Note: EDCBT does not have PROPSEG, prop_seg should be 0
+			 */
+			reg = FIELD_PREP(CAN_EDCBT_DRJW_MASK, timing_data->sjw - 1U) |
+			      FIELD_PREP(CAN_EDCBT_DTSEG1_MASK, timing_data->phase_seg1 - 1U) |
+			      FIELD_PREP(CAN_EDCBT_DTSEG2_MASK, timing_data->phase_seg2 - 1U);
+			base->EDCBT = reg;
+
+			/* Configure TDC (Transmitter Delay Compensation) for CAN FD */
+			reg = base->ETDC;
+			reg &= ~(CAN_ETDC_ETDCOFF_MASK | CAN_ETDC_TDMDIS_MASK);
+			reg |= FIELD_PREP(CAN_ETDC_ETDCOFF_MASK,
+					  CAN_CALC_TDCO((&data->timing_data), 1U, 127U));
+			base->ETDC = reg;
+		}
+#endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
+		break;
+#endif /* CAN_ENCBT_NTSEG1_MASK */
+
+	default:
+		LOG_ERR("Unknown timing-registers value: %d", config->timing_registers);
+		break;
+	}
 }
 
 static int mcux_flexcan_get_core_clock(const struct device *dev, uint32_t *rate)
@@ -257,7 +371,6 @@ static int mcux_flexcan_start(const struct device *dev)
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 	CAN_Type *base = get_base(dev);
-	flexcan_timing_config_t timing;
 	int err;
 
 	if (data->common.started) {
@@ -300,30 +413,22 @@ static int mcux_flexcan_start(const struct device *dev)
 	}
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 
-	/* Delay this until start since setting the timing automatically exits freeze mode */
-	timing.preDivider = data->timing.prescaler - 1U;
-	timing.rJumpwidth = data->timing.sjw - 1U;
-	timing.phaseSeg1 = data->timing.phase_seg1 - 1U;
-	timing.phaseSeg2 = data->timing.phase_seg2 - 1U;
-	timing.propSeg = data->timing.prop_seg - 1U;
-	FLEXCAN_SetTimingConfig(base, &timing);
+	/* Enter freeze mode to configure bit timing registers */
+	FLEXCAN_EnterFreezeMode(base);
 
+	/* Configure bit timing registers */
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	if (config->flexcan_fd) {
-		timing.fpreDivider = data->timing_data.prescaler - 1U;
-		timing.frJumpwidth = data->timing_data.sjw - 1U;
-		timing.fphaseSeg1 = data->timing_data.phase_seg1 - 1U;
-		timing.fphaseSeg2 = data->timing_data.phase_seg2 - 1U;
-		timing.fpropSeg = data->timing_data.prop_seg;
-		FLEXCAN_SetFDTimingConfig(base, &timing);
-
-		FLEXCAN_EnterFreezeMode(base);
-		base->FDCTRL &= ~(CAN_FDCTRL_TDCOFF_MASK);
-		base->FDCTRL |= FIELD_PREP(CAN_FDCTRL_TDCOFF_MASK,
-						   CAN_CALC_TDCO((&data->timing_data), 1U, 31U));
-		FLEXCAN_ExitFreezeMode(base);
+		mcux_flexcan_set_bit_timing_registers(dev, &data->timing, &data->timing_data);
+	} else {
+		mcux_flexcan_set_bit_timing_registers(dev, &data->timing, NULL);
 	}
+#else
+	mcux_flexcan_set_bit_timing_registers(dev, &data->timing, NULL);
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
+
+	/* Exit freeze mode to start operation */
+	FLEXCAN_ExitFreezeMode(base);
 
 	data->common.started = true;
 
@@ -403,6 +508,7 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_3_SAMPLES;
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	const struct mcux_flexcan_config *config = dev->config;
+	uint32_t reg;
 #endif
 	CAN_Type *base = get_base(dev);
 	struct mcux_flexcan_data *data = dev->data;
@@ -477,20 +583,30 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 			mcr |= CAN_MCR_FDEN_MASK;
 
 			/* Transceiver Delay Compensation must be disabled in loopback mode */
-			if ((mode & CAN_MODE_LOOPBACK) != 0) {
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG) && \
-	 FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG)
-				base->ETDC &= ~(CAN_ETDC_ETDCEN_MASK);
-#else
-				base->FDCTRL &= ~(CAN_FDCTRL_TDCEN_MASK);
-#endif
+			if (config->timing_registers == CAN_FLEXCAN_TIMING_REGISTERS_ENCBT) {
+#ifdef CAN_ETDC_ETDCEN_MASK
+				if ((mode & CAN_MODE_LOOPBACK) != 0) {
+					reg = base->ETDC;
+					reg &= ~(CAN_ETDC_ETDCEN_MASK);
+					base->ETDC = reg;
+				} else {
+					reg = base->ETDC;
+					reg |= CAN_ETDC_ETDCEN_MASK;
+					base->ETDC = reg;
+				}
+#endif /* CAN_ETDC_ETDCEN_MASK */
 			} else {
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG) && \
-	 FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG)
-				base->ETDC |= CAN_ETDC_ETDCEN_MASK;
-#else
-				base->FDCTRL |= CAN_FDCTRL_TDCEN_MASK;
-#endif
+#ifdef CAN_FDCTRL_TDCEN_MASK
+				if ((mode & CAN_MODE_LOOPBACK) != 0) {
+					reg = base->FDCTRL;
+					reg &= ~(CAN_FDCTRL_TDCEN_MASK);
+					base->FDCTRL = reg;
+				} else {
+					reg = base->FDCTRL;
+					reg |= CAN_FDCTRL_TDCEN_MASK;
+					base->FDCTRL = reg;
+				}
+#endif /* CAN_FDCTRL_TDCEN_MASK */
 			}
 		} else {
 			/* Disable CAN FD mode */
@@ -1301,6 +1417,19 @@ static int mcux_flexcan_init(const struct device *dev)
 
 	/* Manually enter freeze mode, set normal mode, and clear error counters */
 	FLEXCAN_EnterFreezeMode(base);
+
+	/* Reset Bit Timing Expansion configuration */
+#ifdef CAN_CBT_BTF_MASK
+	if (1 == FSL_FEATURE_FLEXCAN_INSTANCE_HAS_EXTENDED_TIMING_REGISTERn(base)) {
+		base->CBT &= ~(CAN_CBT_BTF_MASK);
+	}
+#endif /* CAN_CBT_BTF_MASK */
+
+#ifdef CAN_CTRL2_BTE_MASK
+	base->CTRL2 &= ~(CAN_CTRL2_BTE_MASK);
+#endif /* CAN_CTRL2_BTE_MASK */
+
+	/* Set normal mode and clear error counters (already in freeze mode) */
 	(void)mcux_flexcan_set_mode(dev, CAN_MODE_NORMAL);
 	base->ECR &= ~(CAN_ECR_TXERRCNT_MASK | CAN_ECR_RXERRCNT_MASK);
 
@@ -1313,141 +1442,6 @@ static int mcux_flexcan_init(const struct device *dev)
 
 	return 0;
 }
-
-static DEVICE_API(can, mcux_flexcan_driver_api) __maybe_unused = {
-	.get_capabilities = mcux_flexcan_get_capabilities,
-	.start = mcux_flexcan_start,
-	.stop = mcux_flexcan_stop,
-	.set_mode = mcux_flexcan_set_mode,
-	.set_timing = mcux_flexcan_set_timing,
-	.send = mcux_flexcan_send,
-	.add_rx_filter = mcux_flexcan_add_rx_filter,
-	.remove_rx_filter = mcux_flexcan_remove_rx_filter,
-	.get_state = mcux_flexcan_get_state,
-#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
-	.recover = mcux_flexcan_recover,
-#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
-	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
-	.get_core_clock = mcux_flexcan_get_core_clock,
-	.get_max_filters = mcux_flexcan_get_max_filters,
-	/*
-	 * FlexCAN timing limits are specified in the "FLEXCANx_CTRL1 field
-	 * descriptions" table in the SoC reference manual.
-	 *
-	 * Note that the values here are the "physical" timing limits, whereas
-	 * the register field limits are physical values minus 1 (which is
-	 * handled by the flexcan_timing_config_t field assignments elsewhere
-	 * in this driver).
-	 */
-	.timing_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x02,
-		.prescaler = 0x01
-	},
-	.timing_max = {
-		.sjw = 0x04,
-		.prop_seg = 0x08,
-		.phase_seg1 = 0x08,
-		.phase_seg2 = 0x08,
-		.prescaler = 0x100
-	}
-};
-
-#ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
-static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
-	.get_capabilities = mcux_flexcan_get_capabilities,
-	.start = mcux_flexcan_start,
-	.stop = mcux_flexcan_stop,
-	.set_mode = mcux_flexcan_set_mode,
-	.set_timing = mcux_flexcan_set_timing,
-	.set_timing_data = mcux_flexcan_set_timing_data,
-	.send = mcux_flexcan_send,
-	.add_rx_filter = mcux_flexcan_add_rx_filter,
-	.remove_rx_filter = mcux_flexcan_remove_rx_filter,
-	.get_state = mcux_flexcan_get_state,
-#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
-	.recover = mcux_flexcan_recover,
-#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
-	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
-	.get_core_clock = mcux_flexcan_get_core_clock,
-	.get_max_filters = mcux_flexcan_get_max_filters,
-	/*
-	 * FlexCAN FD timing limits are specified in the "CAN Bit Timing
-	 * Register (CBT)" and "CAN FD Bit Timing Register" field description
-	 * tables in the SoC reference manual.
-	 * Some devices have enhanced bit timing registers (EPRS ENCBT EDCBT)
-	 * with different limits and do not have propagation segment configuration.
-	 *
-	 * Note that the values here are the "physical" timing limits, whereas
-	 * the register field limits are physical values minus 1 (which is
-	 * handled by the flexcan_timing_config_t field assignments elsewhere
-	 * in this driver). The exception to this are the prop_seg values for
-	 * the data phase, which correspond to the allowed register values.
-	 */
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG) && \
-	     FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG)
-	.timing_min = {
-		.sjw = 0x01,
-		.prop_seg = 0,
-		.phase_seg1 = 0x02,
-		.phase_seg2 = 0x02,
-		.prescaler = 0x01
-	},
-	.timing_max = {
-		.sjw = 0x80,
-		.prop_seg = 0,
-		.phase_seg1 = 0x100,
-		.phase_seg2 = 0x80,
-		.prescaler = 0x400
-	},
-	.timing_data_min = {
-		.sjw = 0x01,
-		.prop_seg = 0,
-		.phase_seg1 = 0x02,
-		.phase_seg2 = 0x02,
-		.prescaler = 0x01
-	},
-	.timing_data_max = {
-		.sjw = 0x10,
-		.prop_seg = 0,
-		.phase_seg1 = 0x20,
-		.phase_seg2 = 0x10,
-		.prescaler = 0x400
-	},
-#else
-	.timing_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x02,
-		.prescaler = 0x01
-	},
-	.timing_max = {
-		.sjw = 0x20,
-		.prop_seg = 0x40,
-		.phase_seg1 = 0x20,
-		.phase_seg2 = 0x20,
-		.prescaler = 0x400
-	},
-	.timing_data_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x02,
-		.prescaler = 0x01
-	},
-	.timing_data_max = {
-		.sjw = 0x08,
-		.prop_seg = 0x1f,
-		.phase_seg1 = 0x08,
-		.phase_seg2 = 0x08,
-		.prescaler = 0x400
-	},
-#endif /* FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG */
-};
-#endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 
 #define FLEXCAN_IRQ_BY_IDX(node_id, prop, idx, cell) \
 	DT_IRQ_BY_NAME(node_id, \
@@ -1474,15 +1468,6 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 		    (8000000), (1000000))
 #else /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 #define FLEXCAN_MAX_BITRATE(id) 1000000
-#endif /* !CONFIG_CAN_MCUX_FLEXCAN_FD */
-
-#ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
-#define FLEXCAN_DRIVER_API(id)							\
-	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT),		\
-		    (mcux_flexcan_fd_driver_api),				\
-		    (mcux_flexcan_driver_api))
-#else /* CONFIG_CAN_MCUX_FLEXCAN_FD */
-#define FLEXCAN_DRIVER_API(id) mcux_flexcan_driver_api
 #endif /* !CONFIG_CAN_MCUX_FLEXCAN_FD */
 
 /* Each 512-byte RAM region can contain up to 32 x 8-byte MBs or 7 x 64-byte MBs (CAN FD). */
@@ -1551,6 +1536,36 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 									\
 	static ATOMIC_DEFINE(flexcan_tx_allocs_##id, FLEXCAN_INST_TX_MB(id));	\
 									\
+	static DEVICE_API(can, mcux_flexcan_driver_api_##id) = {			\
+		.get_capabilities = mcux_flexcan_get_capabilities,			\
+		.start = mcux_flexcan_start,						\
+		.stop = mcux_flexcan_stop,						\
+		.set_mode = mcux_flexcan_set_mode,					\
+		.set_timing = mcux_flexcan_set_timing,					\
+		IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD),		\
+			DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT)),		\
+			(.set_timing_data = mcux_flexcan_set_timing_data,))		\
+		.send = mcux_flexcan_send,						\
+		.add_rx_filter = mcux_flexcan_add_rx_filter,				\
+		.remove_rx_filter = mcux_flexcan_remove_rx_filter,			\
+		.get_state = mcux_flexcan_get_state,					\
+		IF_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE,				\
+			(.recover = mcux_flexcan_recover,))				\
+		.set_state_change_callback = mcux_flexcan_set_state_change_callback,	\
+		.get_core_clock = mcux_flexcan_get_core_clock,				\
+		.get_max_filters = mcux_flexcan_get_max_filters,			\
+		.timing_min = CAN_FLEXCAN_DT_INST_TIMING_MIN(id),			\
+		.timing_max = CAN_FLEXCAN_DT_INST_TIMING_MAX(id),			\
+		IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD),		\
+			DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT)),		\
+			(.timing_data_min =						\
+				CAN_FLEXCAN_DT_INST_TIMING_DATA_MIN(id),))		\
+		IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD),		\
+			DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT)),		\
+			(.timing_data_max =						\
+				CAN_FLEXCAN_DT_INST_TIMING_DATA_MAX(id),))		\
+	};										\
+									\
 	static const struct mcux_flexcan_config mcux_flexcan_config_##id = { \
 		DEVICE_MMIO_NAMED_ROM_INIT(flexcan_mmio, DT_DRV_INST(id)),	\
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(id, 0, FLEXCAN_MAX_BITRATE(id)), \
@@ -1559,6 +1574,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 		.rx_mb = FLEXCAN_INST_RX_MB(id),			\
 		.tx_mb = FLEXCAN_INST_TX_MB(id),			\
 		.max_filters = FLEXCAN_INST_MAX_FILTERS(id),		\
+		.timing_registers = DT_INST_ENUM_IDX(id, timing_registers),	\
 		IF_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD, (		\
 			.flexcan_fd = DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT), \
 		))							\
@@ -1579,7 +1595,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 				  NULL, &mcux_flexcan_data_##id,	\
 				  &mcux_flexcan_config_##id,		\
 				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,\
-				  &FLEXCAN_DRIVER_API(id));		\
+				  &mcux_flexcan_driver_api_##id);	\
 									\
 	static void mcux_flexcan_irq_config_##id(const struct device *dev) \
 	{								\
