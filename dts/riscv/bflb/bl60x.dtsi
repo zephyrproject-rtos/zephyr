@@ -21,6 +21,11 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	bt_hci_bflb: bt-hci {
+		compatible = "bflb,bt-hci";
+		status = "disabled";
+	};
+
 	clocks {
 		clk_rc32m: clk-rc32m {
 			#clock-cells = <0>;
