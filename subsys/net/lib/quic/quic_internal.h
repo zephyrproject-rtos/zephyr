@@ -38,6 +38,7 @@
 #define MAX_CONN_ID_LEN 20
 #define MAX_MY_CONN_ID_LEN 8
 
+#define QUIC_VERSION_NEGOTIATION 0x00000000
 #define QUIC_VERSION_1 0x00000001
 
 #define QUIC_STREAM_ID_UNASSIGNED UINT64_MAX
@@ -1111,6 +1112,12 @@ int quic_decrypt_payload(struct quic_pp_cipher *pp, uint64_t packet_number,
 
 int quic_flush_deferred_crypto(struct quic_endpoint *ep);
 void quic_crypto_context_destroy(struct quic_crypto_context *ctx);
+int quic_build_version_negotiation_packet(uint8_t *out,
+					  size_t out_len,
+					  const uint8_t *peer_scid,
+					  uint8_t peer_scid_len,
+					  const uint8_t *peer_dcid,
+					  uint8_t peer_dcid_len);
 void quic_endpoint_note_unvalidated_rx(struct quic_endpoint *ep, size_t bytes);
 bool quic_endpoint_can_send_unvalidated(const struct quic_endpoint *ep, size_t bytes);
 
