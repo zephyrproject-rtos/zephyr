@@ -32,6 +32,23 @@ static int quic_handle_frame_error(struct quic_endpoint *ep, uint8_t frame_type,
 	return ret;
 }
 
+static int quic_handle_crypto_frame_error(struct quic_endpoint *ep, int ret)
+{
+	if (ret == -EPROTO) {
+		return quic_send_frame_close(ep, QUIC_FRAME_TYPE_CRYPTO,
+					     QUIC_ERROR_PROTOCOL_VIOLATION,
+					     "CRYPTO overlap mismatch");
+	}
+
+	if (ret == -ENOMEM) {
+		return quic_send_frame_close(ep, QUIC_FRAME_TYPE_CRYPTO,
+					     QUIC_ERROR_CRYPTO_BUFFER_EXCEEDED,
+					     "CRYPTO reassembly exceeded");
+	}
+
+	return quic_handle_frame_error(ep, QUIC_FRAME_TYPE_CRYPTO, ret);
+}
+
 ZTESTABLE_STATIC int quic_validate_frame_type(uint8_t frame_type,
 					      enum quic_secret_level level)
 {
@@ -1291,6 +1308,69 @@ static void crypto_reset_rx_buffer(struct quic_endpoint *ep,
 	}
 }
 
+static int crypto_compare_overlap_range(const struct quic_endpoint *ep,
+					const uint8_t *incoming,
+					uint64_t offset,
+					uint64_t crypto_len,
+					uint64_t range_start,
+					uint64_t range_end)
+{
+	uint64_t overlap_start;
+	uint64_t overlap_end;
+	size_t overlap_len;
+
+	if (incoming == NULL || range_end <= range_start) {
+		return 0;
+	}
+
+	overlap_start = MAX(offset, range_start);
+	overlap_end = MIN(offset + crypto_len, range_end);
+	if (overlap_end <= overlap_start) {
+		return 0;
+	}
+
+	overlap_len = (size_t)(overlap_end - overlap_start);
+	if (memcmp(&ep->crypto.rx_buffer[overlap_start],
+		   &incoming[overlap_start - offset], overlap_len) != 0) {
+		return -EPROTO;
+	}
+
+	return 0;
+}
+
+static int crypto_compare_overlap(const struct quic_endpoint *ep,
+				  const uint8_t *incoming,
+				  enum quic_secret_level level,
+				  uint64_t offset,
+				  uint64_t crypto_len)
+{
+	int i;
+	int ret;
+
+	ret = crypto_compare_overlap_range(ep, incoming, offset, crypto_len, 0,
+					   ep->crypto.stream[level].rx_offset);
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (i = 0; i < CONFIG_QUIC_CRYPTO_OOO_SLOTS; i++) {
+		uint64_t seg_end;
+
+		if (!ep->crypto.ooo[i].valid) {
+			continue;
+		}
+
+		seg_end = (uint64_t)ep->crypto.ooo[i].offset + ep->crypto.ooo[i].len;
+		ret = crypto_compare_overlap_range(ep, incoming, offset, crypto_len,
+						   ep->crypto.ooo[i].offset, seg_end);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 /*
  * Parse and handle CRYPTO frame
  *
@@ -1301,13 +1381,14 @@ static void crypto_reset_rx_buffer(struct quic_endpoint *ep,
  *   Crypto Data (..),
  * }
  */
-static int handle_crypto_frame(struct quic_endpoint *ep,
-			       enum quic_secret_level level,
-			       const uint8_t *data,
-			       size_t len,
-			       size_t *consumed)
+ZTESTABLE_STATIC int handle_crypto_frame(struct quic_endpoint *ep,
+					 enum quic_secret_level level,
+					 const uint8_t *data,
+					 size_t len,
+					 size_t *consumed)
 {
 	size_t pos = 0;
+	uint64_t buffer_size = CONFIG_QUIC_CRYPTO_RX_BUFFER_SIZE;
 	uint64_t offset;
 	uint64_t crypto_len;
 	uint32_t contiguous_bytes;
@@ -1342,6 +1423,26 @@ static int handle_crypto_frame(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] CRYPTO frame: offset=%" PRIu64 ", len=%" PRIu64,
 		ep, quic_get_by_ep(ep), offset, crypto_len);
 
+	/* Reset buffer if switching to a new encryption level */
+	if (ep->crypto.rx_buf_level != level) {
+		crypto_reset_rx_buffer(ep, level);
+	}
+
+	if (crypto_len > buffer_size || offset > buffer_size - crypto_len) {
+		NET_ERR("CRYPTO data exceeds buffer: offset=%" PRIu64
+			" len=%" PRIu64 " max=%" PRIu64,
+			offset, crypto_len, buffer_size);
+		return -ENOMEM;
+	}
+
+	ret = crypto_compare_overlap(ep, &data[pos], level, offset, crypto_len);
+	if (ret < 0) {
+		NET_ERR("[EP:%p/%d] Conflicting CRYPTO data at offset=%" PRIu64
+			" len=%" PRIu64,
+			ep, quic_get_by_ep(ep), offset, crypto_len);
+		return ret;
+	}
+
 	/* Check for duplicate/already-received CRYPTO data */
 	if (offset + crypto_len <= ep->crypto.stream[level].rx_offset) {
 		NET_DBG("[EP:%p/%d] Duplicate CRYPTO data: offset=%" PRIu64 " len=%" PRIu64
@@ -1350,19 +1451,6 @@ static int handle_crypto_frame(struct quic_endpoint *ep,
 			ep->crypto.stream[level].rx_offset);
 		*consumed = pos + crypto_len;
 		return 0;
-	}
-
-	/* Reset buffer if switching to a new encryption level */
-	if (ep->crypto.rx_buf_level != level) {
-		crypto_reset_rx_buffer(ep, level);
-	}
-
-	/* Check if data fits in reassembly buffer */
-	if (offset + crypto_len > CONFIG_QUIC_CRYPTO_RX_BUFFER_SIZE) {
-		NET_ERR("CRYPTO data exceeds buffer: offset=%" PRIu64
-			" len=%" PRIu64 " max=%d",
-			offset, crypto_len, CONFIG_QUIC_CRYPTO_RX_BUFFER_SIZE);
-		return -ENOMEM;
 	}
 
 	/* Copy data into reassembly buffer at the correct offset */
@@ -1378,8 +1466,7 @@ static int handle_crypto_frame(struct quic_endpoint *ep,
 		/* Out-of-order: store segment info */
 		ret = crypto_store_ooo_segment(ep, (uint32_t)offset, (uint16_t)crypto_len);
 		if (ret < 0) {
-			*consumed = pos + crypto_len;
-			return 0; /* Continue anyway, may reassemble later */
+			return ret;
 		}
 	} else {
 		/* In-order: directly advances contiguous region */
@@ -1666,7 +1753,7 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 			ret = handle_crypto_frame(ep, QUIC_SECRET_LEVEL_APPLICATION,
 						  &buf[pos], len - pos, &consumed);
 			if (ret < 0) {
-				ret = quic_handle_frame_error(ep, frame_type, ret);
+				ret = quic_handle_crypto_frame_error(ep, ret);
 				if (ret == -EPROTO) {
 					goto close;
 				}
@@ -1970,7 +2057,7 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 				"payload_len=%zu, ret=%d",
 				ep, quic_get_by_ep(ep), pos, consumed, payload_len, ret);
 			if (ret < 0) {
-				ret = quic_handle_frame_error(ep, frame_type, ret);
+				ret = quic_handle_crypto_frame_error(ep, ret);
 				NET_DBG("[EP:%p/%d] Failed to handle %s frame: %d",
 					ep, quic_get_by_ep(ep), "CRYPTO", ret);
 				return ret;

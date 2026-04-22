@@ -666,6 +666,75 @@ ZTEST(net_socket_quic, test_03ba_recovery_shutdown_stops_tracking)
 		      "Shutdown recovery must not track new in-flight bytes");
 }
 
+static void init_test_crypto_endpoint(struct quic_endpoint *ep,
+				      enum quic_secret_level level)
+{
+	memset(ep, 0, sizeof(*ep));
+	ep->crypto.initial.initialized = true;
+	ep->crypto.tls.is_initialized = true;
+	ep->crypto.rx_buf_level = level;
+}
+
+ZTEST(net_socket_quic, test_03bb_crypto_frame_duplicate_identical)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t frame[] = { QUIC_FRAME_TYPE_CRYPTO, 0x00, 0x04, 0x11, 0x22, 0x33, 0x44 };
+	size_t consumed = 0;
+	int ret;
+
+	init_test_crypto_endpoint(ep, QUIC_SECRET_LEVEL_INITIAL);
+	memcpy(ep->crypto.rx_buffer, &frame[3], 4);
+	ep->crypto.rx_buf_len = 4;
+	ep->crypto.stream[QUIC_SECRET_LEVEL_INITIAL].rx_offset = 4;
+	ep->crypto.stream[QUIC_SECRET_LEVEL_INITIAL].tls_offset = 4;
+
+	ret = handle_crypto_frame(ep, QUIC_SECRET_LEVEL_INITIAL, frame, sizeof(frame), &consumed);
+	zassert_equal(ret, 0, "Identical duplicate CRYPTO data must be accepted (%d)", ret);
+	zassert_equal(consumed, sizeof(frame), "Duplicate CRYPTO frame not fully consumed");
+	zassert_mem_equal(ep->crypto.rx_buffer, &frame[3], 4,
+			  "Duplicate CRYPTO frame must not corrupt buffer");
+}
+
+ZTEST(net_socket_quic, test_03bc_crypto_frame_overlap_mismatch)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t frame[] = { QUIC_FRAME_TYPE_CRYPTO, 0x02, 0x04, 0x33, 0xff, 0x55, 0x66 };
+	static const uint8_t orig_buffer[] = { 0x11, 0x22, 0x33, 0x44 };
+	size_t consumed = 0;
+	int ret;
+
+	init_test_crypto_endpoint(ep, QUIC_SECRET_LEVEL_INITIAL);
+	ep->crypto.rx_buffer[0] = 0x11;
+	ep->crypto.rx_buffer[1] = 0x22;
+	ep->crypto.rx_buffer[2] = 0x33;
+	ep->crypto.rx_buffer[3] = 0x44;
+	ep->crypto.rx_buf_len = 4;
+	ep->crypto.stream[QUIC_SECRET_LEVEL_INITIAL].rx_offset = 4;
+	ep->crypto.stream[QUIC_SECRET_LEVEL_INITIAL].tls_offset = 4;
+
+	ret = handle_crypto_frame(ep, QUIC_SECRET_LEVEL_INITIAL, frame, sizeof(frame), &consumed);
+	zassert_equal(ret, -EPROTO, "Mismatched overlapping CRYPTO data must fail (%d)", ret);
+	zassert_mem_equal(ep->crypto.rx_buffer,
+			  orig_buffer,
+			  4,
+			  "Rejected overlap must leave buffered CRYPTO data unchanged");
+}
+
+ZTEST(net_socket_quic, test_03bd_crypto_frame_buffer_exceeded)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t frame[] = {
+		QUIC_FRAME_TYPE_CRYPTO, 0x7f, 0xfd, 0x02, 0xaa, 0xbb
+	};
+	size_t consumed = 0;
+	int ret;
+
+	init_test_crypto_endpoint(ep, QUIC_SECRET_LEVEL_INITIAL);
+
+	ret = handle_crypto_frame(ep, QUIC_SECRET_LEVEL_INITIAL, frame, sizeof(frame), &consumed);
+	zassert_equal(ret, -ENOMEM, "Oversized CRYPTO frame must fail with ENOMEM (%d)", ret);
+}
+
 ZTEST(net_socket_quic, test_03c_anti_amplification_budget)
 {
 	struct quic_endpoint *listen_ep = reset_test_ep(&test_ep_a);
