@@ -30,6 +30,16 @@ config I2C_IT51XXX_FIFO_MODE
 	  I2C FIFO mode of IT51XXX can support I2C APIs including:
 	  i2c_write(), i2c_read(), i2c_burst_read.
 
+config I2C_IT51XXX_ALL_CH_FIFO_MODE
+	bool
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ITE_IT51XXX_I2C),fifo-ctrl-offset)
+	help
+	  For the controller role, older hardware provides only two FIFOs, while newer
+	  hardware supports FIFO mode on all channels. The presence of the
+	  fifo_ctrl_offset property in the devicetree indicates that all I2C channels
+	  support FIFO mode.
+
 endif # I2C_ITE_IT51XXX
 
 if I2C_TARGET
