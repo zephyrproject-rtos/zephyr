@@ -214,6 +214,12 @@ Sensor
   GIRQ configuration is now handled via the ``microchip,dmec-ecia-girq`` binding include
   (:github:`104808`).
 
+Serial
+======
+
+* The return type of :c:func:`uart_irq_update` is now ``void`` instead of ``int``.
+  (:github:`105231`)
+
 STM32
 =====
 
