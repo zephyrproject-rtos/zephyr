@@ -4024,6 +4024,105 @@ static int quic_apply_header_protection_split(uint8_t *header, size_t header_len
 	return 0;
 }
 
+static int quic_send_packet(struct quic_endpoint *ep,
+			    enum quic_secret_level level,
+			    const uint8_t *payload,
+			    size_t payload_len);
+
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+static struct quic_deferred_crypto_payload *
+quic_pending_crypto_payload(struct quic_endpoint *ep, enum quic_secret_level level)
+{
+	if (ep == NULL || level > QUIC_SECRET_LEVEL_HANDSHAKE) {
+		return NULL;
+	}
+
+	return &ep->crypto.pending[level];
+}
+
+static int quic_queue_deferred_crypto_payload(struct quic_endpoint *ep,
+					      enum quic_secret_level level,
+					      size_t payload_len,
+					      size_t data_len)
+{
+	struct quic_deferred_crypto_payload *pending;
+
+	pending = quic_pending_crypto_payload(ep, level);
+	if (pending == NULL) {
+		return -EAGAIN;
+	}
+
+	if (payload_len > sizeof(pending->data) - pending->len) {
+		NET_ERR("[EP:%p/%d] Deferred CRYPTO payload overflow at level %d "
+			"(pending=%zu, new=%zu, max=%zu)",
+			ep, quic_get_by_ep(ep), level,
+			pending->len, payload_len, sizeof(pending->data));
+		return -ENOBUFS;
+	}
+
+	memcpy(&pending->data[pending->len], ep->crypto.tx_buffer, payload_len);
+	pending->len += payload_len;
+	pending->valid = true;
+	ep->crypto.stream[level].tx_offset += data_len;
+
+	NET_DBG("[EP:%p/%d] Deferred %zu CRYPTO bytes at level %d "
+		"(queued payload=%zu)",
+		ep, quic_get_by_ep(ep), data_len, level, pending->len);
+
+	return 0;
+}
+
+/*
+ * Deferred CRYPTO payloads are owned by the QUIC worker thread.
+ * Flushes happen from packet processing after RX credit has already been
+ * recorded, or when address validation occurs on that same thread.
+ */
+int quic_flush_deferred_crypto(struct quic_endpoint *ep)
+{
+	enum quic_secret_level level;
+	int ret;
+
+	if (ep == NULL) {
+		return -EINVAL;
+	}
+
+	for (level = QUIC_SECRET_LEVEL_INITIAL;
+	     level <= QUIC_SECRET_LEVEL_HANDSHAKE;
+	     level++) {
+		struct quic_deferred_crypto_payload *pending =
+			quic_pending_crypto_payload(ep, level);
+
+		if (pending == NULL || !pending->valid || pending->len == 0U) {
+			continue;
+		}
+
+		ret = quic_send_packet(ep, level, pending->data, pending->len);
+		if (ret == -EAGAIN) {
+			return 0;
+		}
+
+		if (ret < 0) {
+			NET_WARN("[EP:%p/%d] Failed to flush deferred CRYPTO payload "
+				 "at level %d (%d)",
+				 ep, quic_get_by_ep(ep), level, ret);
+			return ret;
+		}
+
+		pending->len = 0U;
+		pending->valid = false;
+	}
+
+	return 0;
+}
+#else
+int quic_flush_deferred_crypto(struct quic_endpoint *ep)
+{
+	ARG_UNUSED(ep);
+
+	return 0;
+}
+#endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
+
 /*
  * Build CRYPTO frame directly into endpoint's TX buffer
  * Returns pointer to where TLS data should be written
@@ -4180,6 +4279,20 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 		return ret;
 	}
 
+	total_len = header_len + ciphertext_len;
+
+	if (!quic_endpoint_can_send_unvalidated(ep, total_len)) {
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+		NET_WARN("[EP:%p/%d] Anti-amplification budget exhausted "
+			 "(rx=%" PRIu32 ", tx=%" PRIu32 ", attempted=%zu)",
+			 ep, quic_get_by_ep(ep),
+			 ep->anti_amplification.bytes_received,
+			 ep->anti_amplification.bytes_sent,
+			 total_len);
+#endif
+		return -EAGAIN;
+	}
+
 	/* Send using scatter-gather I/O */
 	struct net_iovec iov[2] = {
 		{ .iov_base = header, .iov_len = header_len },
@@ -4220,10 +4333,11 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 	}
 
 	/* XXX: TODO: Handle partial sends properly */
-	total_len = header_len + ciphertext_len;
 	if ((size_t)sent != total_len) {
 		NET_WARN("Partial send: %zd of %zu bytes", sent, total_len);
 	}
+
+	quic_endpoint_note_unvalidated_tx(ep, MIN((size_t)sent, total_len));
 
 	quic_recovery_on_packet_sent(ep, level, packet_number, total_len, ack_eliciting);
 
@@ -4255,11 +4369,24 @@ static int quic_send_prepared_frame(struct quic_endpoint *ep,
 				    size_t data_len)
 {
 	size_t total_frame_len = frame_header_len + data_len;
+	int ret;
 
-	/* Update crypto stream offset */
-	ep->crypto.stream[level].tx_offset += data_len;
+	ret = quic_send_packet(ep, level, ep->crypto.tx_buffer, total_frame_len);
+	if (ret == -EAGAIN) {
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+		return quic_queue_deferred_crypto_payload(ep, level,
+							 total_frame_len,
+							 data_len);
+#else
+		return ret;
+#endif
+	}
 
-	return quic_send_packet(ep, level, ep->crypto.tx_buffer, total_frame_len);
+	if (ret == 0) {
+		ep->crypto.stream[level].tx_offset += data_len;
+	}
+
+	return ret;
 }
 
 /* Updated TLS send callback, zero copy for TLS data */
