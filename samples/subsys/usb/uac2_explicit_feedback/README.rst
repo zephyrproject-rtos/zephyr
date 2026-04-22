@@ -58,6 +58,19 @@ input pin (hardcoded to P1.09) on :zephyr:board:`nrf5340dk`. In the indirect mod
 no extra connections are necessary and the sample can even be used without any
 I2S device connected where I2S signals can be checked e.g. on logic analyzer.
 
+Feature Unit
+************
+
+This sample includes a Feature Unit in the audio topology, providing volume and
+mute controls that are automatically recognised by most host operating systems.
+The application registers callbacks to handle host requests for these controls.
+For a detailed description of Feature Units and the full list of supported
+controls, see :ref:`uac2_feature_unit`.
+
+This sample stores the volume and mute state in memory and logs changes to the
+console. A real application would typically forward these values to an external
+codec or amplifier over I2C.
+
 Building and Running
 ********************
 
