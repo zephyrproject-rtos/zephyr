@@ -5779,6 +5779,7 @@ Utilities:
     - dcpleung
     - peter-mitsis
   files:
+    - include/zephyr/data/cobs.h
     - lib/utils/
     - tests/unit/timeutil/
     - tests/unit/time_units/
@@ -5804,6 +5805,14 @@ Utilities:
     - utilities
     - libraries.ring_buffer
     - libraries.linear_range
+  file-groups:
+    - name: COBS
+      collaborators:
+        - pdgendt
+      files:
+        - include/zephyr/data/cobs.h
+        - lib/utils/cobs.c
+        - tests/lib/cobs/
 
 VFS:
   status: maintained
