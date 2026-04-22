@@ -163,3 +163,9 @@
 &dma {
 	status = "okay";
 };
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pa17 &i2c1_sda_pa16>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
