@@ -6,11 +6,14 @@
 
 #define DT_DRV_COMPAT zephyr_midi2_device
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/usb/class/usbd_midi2.h>
 #include <zephyr/usb/usbd.h>
+#include <errno.h>
 
 #include "usbd_uac2_macros.h"
 
@@ -23,7 +26,7 @@ LOG_MODULE_REGISTER(usbd_midi2, CONFIG_USBD_MIDI2_LOG_LEVEL);
 UDC_BUF_POOL_DEFINE(usbd_midi_buf_pool, DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2, 512U,
 		    sizeof(struct udc_buf_info), NULL);
 
-#define MIDI_QUEUE_SIZE 64
+#define MIDI_QUEUE_SIZE CONFIG_USBD_MIDI2_TX_QUEUE_SIZE
 
 /* midi20 A.1 MS Class-Specific Interface Descriptor Types */
 #define CS_GR_TRM_BLOCK	0x26
@@ -52,6 +55,47 @@ UDC_BUF_POOL_DEFINE(usbd_midi_buf_pool, DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) *
 #define MIDI_2_0			0x11
 #define MIDI_2_0_JRTS			0x12
 
+/* midi10 Table 4-1 Code Index Number values */
+#define MIDI_CIN_MISC			0x0
+#define MIDI_CIN_CABLE_EVENT		0x1
+#define MIDI_CIN_SYS_COMMON_2BYTE	0x2
+#define MIDI_CIN_SYS_COMMON_3BYTE	0x3
+#define MIDI_CIN_SYSEX_START		0x4
+#define MIDI_CIN_SYSEX_END_1BYTE	0x5
+#define MIDI_CIN_SYSEX_END_2BYTE	0x6
+#define MIDI_CIN_SYSEX_END_3BYTE	0x7
+#define MIDI_CIN_NOTE_OFF		0x8
+#define MIDI_CIN_NOTE_ON		0x9
+#define MIDI_CIN_POLY_KEYPRESS		0xA
+#define MIDI_CIN_CONTROL_CHANGE		0xB
+#define MIDI_CIN_PROGRAM_CHANGE		0xC
+#define MIDI_CIN_CHANNEL_PRESSURE	0xD
+#define MIDI_CIN_PITCH_BEND_CHANGE	0xE
+#define MIDI_CIN_SINGLE_BYTE		0xF
+
+/* midi10 6.1 MIDI Streaming Class-Specific Descriptor constants */
+#define MIDI1_IN_JACK		0x02
+#define MIDI1_OUT_JACK		0x03
+#define MIDI1_JACK_EMBEDDED	0x01
+#define MIDI1_JACK_EXTERNAL	0x02
+#define MIDI1_EMB_IN_JACK_ID	0x01
+#define MIDI1_EXT_IN_JACK_ID	0x02
+#define MIDI1_EMB_OUT_JACK_ID	0x03
+#define MIDI1_EXT_OUT_JACK_ID	0x04
+#define MIDI1_MS_TOTAL_LEN								\
+	(sizeof(struct usb_midi_header_descriptor) +					\
+	 2 * sizeof(struct usb_midi_in_jack_descriptor) +				\
+	 2 * sizeof(struct usb_midi_out_jack_descriptor) +				\
+	 2 * sizeof(struct usb_ep_descriptor) +					\
+	 2 * sizeof(struct usb_midi1_cs_endpoint_descriptor))
+#define MIDI1_EVENT_BYTES 4
+
+/* ump128 7.7.2 System Exclusive 7-bit Data Messages */
+#define SYSEX_STATUS_COMPLETE	0x00
+#define SYSEX_STATUS_START	0x01
+#define SYSEX_STATUS_CONTINUE	0x02
+#define SYSEX_STATUS_END	0x03
+
 /* midi20: B.2.2 Class-specific AC Interface Descriptor */
 struct usb_midi_cs_ac_header_descriptor {
 	uint8_t bLength;
@@ -72,6 +116,15 @@ struct usb_midi_header_descriptor {
 	uint16_t wTotalLength;
 } __packed;
 
+/* midi10 6.1.2 Class-Specific Bulk Endpoint Descriptor */
+struct usb_midi1_cs_endpoint_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bNumEmbMIDIJack;
+	uint8_t baAssocJackID[1];
+} __packed;
+
 /* midi20 5.3.2 Class-Specific MIDI Streaming Data Endpoint Descriptor */
 struct usb_midi_cs_endpoint_descriptor {
 	uint8_t bLength;
@@ -79,6 +132,29 @@ struct usb_midi_cs_endpoint_descriptor {
 	uint8_t bDescriptorSubtype;
 	uint8_t bNumGrpTrmBlock;
 	uint8_t baAssoGrpTrmBlkID[16];
+} __packed;
+
+/* midi10 6.1.1 MIDI IN Jack Descriptor */
+struct usb_midi_in_jack_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bJackType;
+	uint8_t bJackID;
+	uint8_t iJack;
+} __packed;
+
+/* midi10 6.1.2 MIDI OUT Jack Descriptor (single input pin) */
+struct usb_midi_out_jack_descriptor {
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bDescriptorSubtype;
+	uint8_t bJackType;
+	uint8_t bJackID;
+	uint8_t bNrInputPins;
+	uint8_t baSourceID;
+	uint8_t baSourcePin;
+	uint8_t iJack;
 } __packed;
 
 /* midi20 5.4.1 Class Specific Group Terminal Block Header Descriptor */
@@ -111,15 +187,19 @@ struct usbd_midi_descriptors {
 	struct usb_if_descriptor if0_std;
 	struct usb_midi_cs_ac_header_descriptor if0_cs;
 
-	/* Empty MidiStreaming 1.0 on altsetting 0 */
+	/* MidiStreaming 1.0 on altsetting 0 */
 	struct usb_if_descriptor if1_0_std;
 	struct usb_midi_header_descriptor if1_0_ms_header;
+	struct usb_midi_in_jack_descriptor if1_0_emb_in_jack;
+	struct usb_midi_in_jack_descriptor if1_0_ext_in_jack;
+	struct usb_midi_out_jack_descriptor if1_0_emb_out_jack;
+	struct usb_midi_out_jack_descriptor if1_0_ext_out_jack;
 	struct usb_ep_descriptor if1_0_out_ep_fs;
 	struct usb_ep_descriptor if1_0_out_ep_hs;
-	struct usb_midi_cs_endpoint_descriptor if1_0_cs_out_ep;
+	struct usb_midi1_cs_endpoint_descriptor if1_0_cs_out_ep;
 	struct usb_ep_descriptor if1_0_in_ep_fs;
 	struct usb_ep_descriptor if1_0_in_ep_hs;
-	struct usb_midi_cs_endpoint_descriptor if1_0_cs_in_ep;
+	struct usb_midi1_cs_endpoint_descriptor if1_0_cs_in_ep;
 
 	/* MidiStreaming 2.0 on altsetting 1 */
 	struct usb_if_descriptor if1_1_std;
@@ -141,8 +221,8 @@ struct usbd_midi_descriptors {
 /* Device driver configuration */
 struct usbd_midi_config {
 	struct usbd_midi_descriptors *desc;
-	struct usb_desc_header const **fs_descs;
-	struct usb_desc_header const **hs_descs;
+	const struct usb_desc_header **fs_descs;
+	const struct usb_desc_header **hs_descs;
 };
 
 /* Device driver data */
@@ -154,17 +234,273 @@ struct usbd_midi_data {
 	struct ring_buf tx_queue;
 	uint8_t altsetting;
 	struct usbd_midi_ops ops;
+	uint8_t sysex_buf[3];
+	uint8_t sysex_buf_len;
+	bool sysex_transfer_active;
 };
+
+static void usbd_midi2_recv(const struct device *dev, struct net_buf *const buf);
+static void usbd_midi1_recv(const struct device *dev, struct net_buf *const buf);
+
+static void usbd_midi_reset(struct usbd_midi_data *data)
+{
+	data->altsetting = MIDI1_ALTERNATE;
+	ring_buf_reset(&data->tx_queue);
+	data->sysex_transfer_active = false;
+	data->sysex_buf_len = 0;
+}
+static int midi1_cin_payload_len(const uint8_t cin)
+{
+	switch (cin) {
+	case MIDI_CIN_SYS_COMMON_2BYTE:
+	case MIDI_CIN_PROGRAM_CHANGE:
+	case MIDI_CIN_CHANNEL_PRESSURE:
+	case MIDI_CIN_SYSEX_END_2BYTE:
+		return 2;
+	case MIDI_CIN_SYS_COMMON_3BYTE:
+	case MIDI_CIN_SYSEX_START:
+	case MIDI_CIN_SYSEX_END_3BYTE:
+	case MIDI_CIN_NOTE_OFF:
+	case MIDI_CIN_NOTE_ON:
+	case MIDI_CIN_POLY_KEYPRESS:
+	case MIDI_CIN_CONTROL_CHANGE:
+	case MIDI_CIN_PITCH_BEND_CHANGE:
+		return 3;
+	case MIDI_CIN_SYSEX_END_1BYTE:
+	case MIDI_CIN_SINGLE_BYTE:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+static int midi1_status_payload_len(const uint8_t status, uint8_t *const cin)
+{
+	/* Check status is valid */
+	if (status < MIDI_STATUS_NOTE_OFF) {
+		return -EINVAL;
+	}
+
+	/* Check status is a channel voice message */
+	if (status < MIDI_STATUS_SYSEX_START) {
+		switch (status & 0xF0) {
+		case MIDI_STATUS_NOTE_OFF:
+		case MIDI_STATUS_NOTE_ON:
+		case MIDI_STATUS_POLY_KEYPRESS:
+		case MIDI_STATUS_CONTROL_CHANGE:
+		case MIDI_STATUS_PITCH_BEND:
+			if (cin != NULL) {
+				*cin = (status >> 4) & 0x0F;
+			}
+			return 3;
+		case MIDI_STATUS_PROGRAM_CHANGE:
+		case MIDI_STATUS_CHANNEL_PRESSURE:
+			if (cin != NULL) {
+				*cin = (status >> 4) & 0x0F;
+			}
+			return 2;
+		default:
+			return -ENOTSUP;
+		}
+	}
+
+	/* Handle system exclusive, system common, and system real-time messages */
+	switch (status) {
+	case MIDI_STATUS_SYSEX_START:
+		if (cin != NULL) {
+			*cin = MIDI_CIN_SYSEX_START;
+		}
+		return 3;
+	case MIDI_STATUS_TIME_CODE:
+	case MIDI_STATUS_SONG_SELECT:
+		if (cin != NULL) {
+			*cin = MIDI_CIN_SYS_COMMON_2BYTE;
+		}
+		return 2;
+	case MIDI_STATUS_SONG_POS:
+		if (cin != NULL) {
+			*cin = MIDI_CIN_SYS_COMMON_3BYTE;
+		}
+		return 3;
+	case MIDI_STATUS_TUNE_REQUEST:
+		if (cin != NULL) {
+			*cin = MIDI_CIN_SYSEX_END_1BYTE;
+		}
+		return 1;
+	case MIDI_STATUS_SYSEX_END:
+		if (cin != NULL) {
+			*cin = MIDI_CIN_SYSEX_END_1BYTE;
+		}
+		return 1;
+	default:
+		if (cin != NULL) {
+			*cin = MIDI_CIN_SINGLE_BYTE;
+		}
+		return 1;
+	}
+}
+
+static int midi1_event_to_ump(const uint32_t event_le, struct midi_ump *const ump)
+{
+	uint8_t header = event_le & 0xFF;
+	uint8_t cable = (header >> 4) & 0x0F;
+	uint8_t cin = header & 0x0F;
+	uint8_t byte0 = (event_le >> 8) & 0xFF;
+	uint8_t byte1 = (event_le >> 16) & 0xFF;
+	uint8_t byte2 = (event_le >> 24) & 0xFF;
+	uint8_t expected_cin;
+	int payload_len;
+	uint8_t command;
+	uint8_t channel;
+
+	if (cin == MIDI_CIN_SYSEX_START || cin == MIDI_CIN_SYSEX_END_1BYTE ||
+	    cin == MIDI_CIN_SYSEX_END_2BYTE || cin == MIDI_CIN_SYSEX_END_3BYTE) {
+		uint8_t status;
+		uint8_t len;
+
+		if (cin == MIDI_CIN_SYSEX_START) {
+			/* 0x1 = System Exclusive Start, 0x2 = System Exclusive Continue */
+			status = (byte0 == MIDI_STATUS_SYSEX_START) ? SYSEX_STATUS_START
+								    : SYSEX_STATUS_CONTINUE;
+			len = 3;
+		} else if (cin == MIDI_CIN_SYSEX_END_1BYTE) {
+			if (byte0 == MIDI_STATUS_TUNE_REQUEST ||
+			    byte0 >= MIDI_STATUS_TIMING_CLOCK) {
+				*ump = UMP_SYS_RT_COMMON(cable, byte0, 0, 0);
+				return 0;
+			}
+			/* 0x3 = System Exclusive End */
+			status = SYSEX_STATUS_END;
+			len = 1;
+		} else if (cin == MIDI_CIN_SYSEX_END_2BYTE) {
+			status = SYSEX_STATUS_END;
+			len = 2;
+		} else {
+			status = SYSEX_STATUS_END;
+			len = 3;
+		}
+
+		if (byte0 == MIDI_STATUS_SYSEX_START) {
+			/* 0x0 = Complete System Exclusive Message */
+			status = SYSEX_STATUS_COMPLETE;
+		}
+
+		ump->data[0] = (UMP_MT_DATA_64 << 28) | ((cable & 0xF) << 24) |
+			       ((status & 0xF) << 20) | ((len & 0xF) << 16) | (byte0 << 8) | byte1;
+		ump->data[1] = byte2 << 24;
+
+		return 0;
+	}
+
+	payload_len = midi1_status_payload_len(byte0, &expected_cin);
+
+	if (payload_len < 0) {
+		return payload_len;
+	}
+
+	if (cin != expected_cin) {
+		return -EINVAL;
+	}
+
+	if (payload_len == 2) {
+		byte2 = 0x00;
+	}
+
+	if (byte0 < MIDI_STATUS_SYSEX_START) {
+		command = (byte0 >> 4) & 0x0F;
+		channel = byte0 & 0x0F;
+
+		*ump = UMP_MIDI1_CHANNEL_VOICE(cable, command, channel, byte1, byte2);
+	} else {
+		*ump = UMP_SYS_RT_COMMON(cable, byte0, byte1, byte2);
+	}
+
+	return 0;
+}
+
+static int midi1_ump_to_event(const struct midi_ump *const ump, uint32_t *const event_le)
+{
+	uint8_t status;
+	uint8_t cin;
+	int payload_len;
+	uint8_t bytes[MIDI1_EVENT_BYTES];
+
+	/* Note: This function only handles single packet messages */
+	if (UMP_MT(*ump) != UMP_MT_MIDI1_CHANNEL_VOICE && UMP_MT(*ump) != UMP_MT_SYS_RT_COMMON) {
+		return -ENOTSUP;
+	}
+
+	status = UMP_MIDI_STATUS(*ump);
+	payload_len = midi1_status_payload_len(status, &cin);
+
+	if (payload_len < 0) {
+		return payload_len;
+	}
+
+	bytes[0] = (uint8_t)((UMP_GROUP(*ump) << 4) | cin);
+	bytes[1] = status;
+	bytes[2] = UMP_MIDI1_P1(*ump);
+	bytes[3] = (payload_len == 2) ? 0x00 : UMP_MIDI1_P2(*ump);
+
+	*event_le = (uint32_t)bytes[0] | ((uint32_t)bytes[1] << 8) | ((uint32_t)bytes[2] << 16) |
+		    ((uint32_t)bytes[3] << 24);
+
+	return 0;
+}
+
+static void usbd_midi1_recv(const struct device *dev, struct net_buf *const buf)
+{
+	struct usbd_midi_data *data = dev->data;
+	struct midi_ump ump;
+	int ret;
+	int payload_len;
+	uint32_t packet;
+	uint8_t cin;
+	struct usbd_midi1_packet midi1_packet;
+
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "MIDI1 - Rx DATA");
+	while (buf->len >= MIDI1_EVENT_BYTES) {
+		packet = net_buf_pull_le32(buf);
+
+		if (data->ops.rx_midi1_cb) {
+			cin = packet & 0x0F;
+			midi1_packet.cable_number = (packet >> 4) & 0x0F;
+			midi1_packet.len = 0U;
+
+			payload_len = midi1_cin_payload_len(cin);
+
+			if (payload_len > 0) {
+				midi1_packet.len = payload_len;
+				midi1_packet.bytes[0] = (packet >> 8) & 0xFF;
+				midi1_packet.bytes[1] = (packet >> 16) & 0xFF;
+				midi1_packet.bytes[2] = (packet >> 24) & 0xFF;
+
+				data->ops.rx_midi1_cb(dev, midi1_packet);
+				continue;
+			}
+		}
+
+		ret = midi1_event_to_ump(packet, &ump);
+		if (ret == 0 && data->ops.rx_packet_cb) {
+			data->ops.rx_packet_cb(dev, ump);
+		}
+	}
+
+	if (buf->len) {
+		LOG_HEXDUMP_WRN(buf->data, buf->len, "Trailing data in Rx buffer");
+	}
+}
 
 static void usbd_midi2_recv(const struct device *dev, struct net_buf *const buf)
 {
 	struct usbd_midi_data *data = dev->data;
 	struct midi_ump ump;
+	size_t i;
 
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "MIDI2 - Rx DATA");
 	while (buf->len >= 4) {
 		ump.data[0] = net_buf_pull_le32(buf);
-		for (size_t i = 1; i < UMP_NUM_WORDS(ump); i++) {
+		for (i = 1; i < UMP_NUM_WORDS(ump); i++) {
 			if (buf->len < 4) {
 				LOG_ERR("Incomplete UMP");
 				return;
@@ -197,7 +533,11 @@ static int usbd_midi_class_request(struct usbd_class_data *const class_data,
 		LOG_ERR("Transfer error %d", err);
 	}
 	if (USB_EP_DIR_IS_OUT(info->ep)) {
-		usbd_midi2_recv(dev, buf);
+		if (data->altsetting == MIDI1_ALTERNATE) {
+			usbd_midi1_recv(dev, buf);
+		} else {
+			usbd_midi2_recv(dev, buf);
+		}
 		k_work_submit(&data->rx_work);
 	} else {
 		LOG_HEXDUMP_DBG(buf->data, buf->len, "Tx DATA complete");
@@ -221,13 +561,22 @@ static void usbd_midi_class_update(struct usbd_class_data *const class_data,
 	switch (alternate) {
 	case MIDI1_ALTERNATE:
 		data->altsetting = MIDI1_ALTERNATE;
-		LOG_WRN("%s set USB-MIDI1.0 altsetting (not implemented !)", dev->name);
+		ready = true;
+		LOG_INF("%s set USB-MIDI1.0 altsetting", dev->name);
 		break;
 	case MIDI2_ALTERNATE:
 		data->altsetting = MIDI2_ALTERNATE;
 		ready = true;
 		LOG_INF("%s set USB-MIDI2.0 altsetting", dev->name);
 		break;
+	default:
+		LOG_WRN("%s requested unsupported altsetting %u", dev->name, alternate);
+		break;
+	}
+
+	if (ready) {
+		ring_buf_reset(&data->tx_queue);
+		k_work_submit(&data->rx_work);
 	}
 
 	if (data->ops.ready_cb) {
@@ -240,7 +589,9 @@ static void usbd_midi_class_enable(struct usbd_class_data *const class_data)
 	const struct device *dev = usbd_class_get_private(class_data);
 	struct usbd_midi_data *data = dev->data;
 
-	if (data->altsetting == MIDI2_ALTERNATE && data->ops.ready_cb) {
+	usbd_midi_reset(data);
+
+	if (data->ops.ready_cb) {
 		data->ops.ready_cb(dev, true);
 	}
 
@@ -252,26 +603,30 @@ static void usbd_midi_class_disable(struct usbd_class_data *const class_data)
 {
 	const struct device *dev = usbd_class_get_private(class_data);
 	struct usbd_midi_data *data = dev->data;
+	struct k_work_sync sync;
 
 	if (data->ops.ready_cb) {
 		data->ops.ready_cb(dev, false);
 	}
 
 	LOG_DBG("Disable %s", dev->name);
-	k_work_cancel(&data->rx_work);
+	k_work_cancel_sync(&data->rx_work, &sync);
+	usbd_midi_reset(data);
 }
 
 static void usbd_midi_class_suspended(struct usbd_class_data *const class_data)
 {
 	const struct device *dev = usbd_class_get_private(class_data);
 	struct usbd_midi_data *data = dev->data;
+	struct k_work_sync sync;
 
 	if (data->ops.ready_cb) {
 		data->ops.ready_cb(dev, false);
 	}
 
 	LOG_DBG("Suspend %s", dev->name);
-	k_work_cancel(&data->rx_work);
+	k_work_cancel_sync(&data->rx_work, &sync);
+	usbd_midi_reset(data);
 }
 
 static void usbd_midi_class_resumed(struct usbd_class_data *const class_data)
@@ -279,7 +634,7 @@ static void usbd_midi_class_resumed(struct usbd_class_data *const class_data)
 	const struct device *dev = usbd_class_get_private(class_data);
 	struct usbd_midi_data *data = dev->data;
 
-	if (data->altsetting == MIDI2_ALTERNATE && data->ops.ready_cb) {
+	if (data->ops.ready_cb) {
 		data->ops.ready_cb(dev, true);
 	}
 
@@ -327,11 +682,20 @@ static int usbd_midi_class_cth(struct usbd_class_data *const class_data,
 	return 0;
 }
 
+/* Update the Audio Control header to reference the MIDI Streaming interface
+ * number assigned by the USB stack. This is needed for composite devices where
+ * MIDI is not the first interface.
+ */
 static int usbd_midi_class_init(struct usbd_class_data *const class_data)
 {
 	const struct device *dev = usbd_class_get_private(class_data);
+	const struct usbd_midi_config *config = dev->config;
+	struct usbd_midi_descriptors *desc = config->desc;
 
 	LOG_DBG("Init %s device class", dev->name);
+
+	desc->if0_cs.baInterfaceNr1 = desc->if1_0_std.bInterfaceNumber;
+	LOG_DBG("Set baInterfaceNr1 to %u", desc->if0_cs.baInterfaceNr1);
 
 	return 0;
 }
@@ -345,12 +709,11 @@ static void *usbd_midi_class_get_desc(struct usbd_class_data *const class_data,
 	LOG_DBG("Get descriptors for %s", dev->name);
 
 	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
-		return config->hs_descs;
+		return (void *)config->hs_descs;
 	}
 
-	return config->fs_descs;
+	return (void *)config->fs_descs;
 }
-
 
 static struct usbd_class_api usbd_midi_class_api = {
 	.request = usbd_midi_class_request,
@@ -462,27 +825,110 @@ static int usbd_midi_preinit(const struct device *dev)
 	return 0;
 }
 
+static uint8_t midi1_sysex_cin_from_len(const uint8_t chunk_len)
+{
+	if (chunk_len == 1) {
+		return MIDI_CIN_SYSEX_END_1BYTE;
+	} else if (chunk_len == 2) {
+		return MIDI_CIN_SYSEX_END_2BYTE;
+	} else {
+		return MIDI_CIN_SYSEX_END_3BYTE;
+	}
+}
+
 int usbd_midi_send(const struct device *dev, const struct midi_ump ump)
 {
 	struct usbd_midi_data *data = dev->data;
 	size_t words = UMP_NUM_WORDS(ump);
 	size_t buflen = 4 * words;
+	size_t needed = buflen;
+	size_t i;
 	uint32_t word;
+	int ret;
 
 	LOG_DBG("Send MT=%X group=%X", UMP_MT(ump), UMP_GROUP(ump));
-	if (data->altsetting != MIDI2_ALTERNATE) {
-		LOG_WRN("MIDI2.0 is not enabled");
-		return -EIO;
+
+	if (data->altsetting == MIDI1_ALTERNATE) {
+		if (UMP_MT(ump) == UMP_MT_DATA_64) {
+			needed = 8; /* Worst case: 6 bytes -> 2 packets (8 bytes) */
+		} else {
+			needed = MIDI1_EVENT_BYTES;
+		}
 	}
 
-	if (buflen > ring_buf_space_get(&data->tx_queue)) {
+	if (needed > ring_buf_space_get(&data->tx_queue)) {
 		LOG_WRN("Not enough space in tx queue");
 		return -ENOBUFS;
 	}
 
-	for (size_t i = 0; i < words; i++) {
-		word = sys_cpu_to_le32(ump.data[i]);
-		ring_buf_put(&data->tx_queue, (const uint8_t *)&word, 4);
+	if (data->altsetting == MIDI2_ALTERNATE) {
+		for (i = 0; i < words; i++) {
+			word = sys_cpu_to_le32(ump.data[i]);
+			ring_buf_put(&data->tx_queue, (const uint8_t *)&word, sizeof(word));
+		}
+	} else if (data->altsetting == MIDI1_ALTERNATE) {
+		size_t processed;
+		uint8_t group;
+		uint8_t status;
+		uint8_t len;
+		uint8_t bytes[6];
+
+		if (UMP_MT(ump) == UMP_MT_DATA_64) {
+			bytes[0] = (ump.data[0] >> 8) & 0xFF;
+			bytes[1] = ump.data[0] & 0xFF;
+			bytes[2] = (ump.data[1] >> 24) & 0xFF;
+			bytes[3] = (ump.data[1] >> 16) & 0xFF;
+			bytes[4] = (ump.data[1] >> 8) & 0xFF;
+			bytes[5] = ump.data[1] & 0xFF;
+			group = UMP_GROUP(ump);
+			status = (ump.data[0] >> 20) & 0xF;
+			len = (ump.data[0] >> 16) & 0xF;
+			processed = 0;
+
+			if (len > ARRAY_SIZE(bytes)) {
+				return -EINVAL;
+			}
+
+			while (processed < len) {
+				uint8_t chunk_len = MIN(3, len - processed);
+				uint8_t cin;
+				uint32_t event_le;
+
+				if (processed + chunk_len < len) {
+					cin = MIDI_CIN_SYSEX_START;
+				} else {
+					if (status == SYSEX_STATUS_START ||
+					    status == SYSEX_STATUS_CONTINUE) {
+						cin = MIDI_CIN_SYSEX_START;
+					} else {
+						cin = midi1_sysex_cin_from_len(chunk_len);
+					}
+				}
+
+				event_le = (group << 4) | cin;
+
+				event_le |= ((uint32_t)bytes[processed] << 8);
+				if (chunk_len > 1) {
+					event_le |= ((uint32_t)bytes[processed + 1] << 16);
+				}
+				if (chunk_len > 2) {
+					event_le |= ((uint32_t)bytes[processed + 2] << 24);
+				}
+
+				event_le = sys_cpu_to_le32(event_le);
+				ring_buf_put(&data->tx_queue, (const uint8_t *)&event_le, 4);
+				processed += chunk_len;
+			}
+		} else {
+			ret = midi1_ump_to_event(&ump, &word);
+			if (ret) {
+				return ret;
+			}
+			word = sys_cpu_to_le32(word);
+			ring_buf_put(&data->tx_queue, (const uint8_t *)&word, MIDI1_EVENT_BYTES);
+		}
+	} else {
+		return -EIO;
 	}
 	k_work_submit(&data->tx_work);
 
@@ -501,12 +947,214 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 
 	LOG_DBG("Set ops for %s to %p", dev->name, ops);
 }
+static int usbd_midi_sysex_send_midi1(struct usbd_midi_data *data, uint8_t cable_number,
+				      bool is_end)
+{
+	uint8_t cin;
+
+	/* MIDI 1.0 Protocol */
+	if (is_end) {
+		cin = midi1_sysex_cin_from_len(data->sysex_buf_len);
+	} else {
+		cin = MIDI_CIN_SYSEX_START;
+	}
+
+	uint32_t event_le = (cable_number << 4) | cin;
+
+	event_le |= ((uint32_t)data->sysex_buf[0] << 8);
+	if (data->sysex_buf_len > 1) {
+		event_le |= ((uint32_t)data->sysex_buf[1] << 16);
+	}
+	if (data->sysex_buf_len > 2) {
+		event_le |= ((uint32_t)data->sysex_buf[2] << 24);
+	}
+
+	event_le = sys_cpu_to_le32(event_le);
+	if (ring_buf_space_get(&data->tx_queue) < 4) {
+		/* Restore state on error? Difficult. Return
+		 * error.
+		 */
+		return -ENOBUFS;
+	}
+	ring_buf_put(&data->tx_queue, (const uint8_t *)&event_le, 4);
+	k_work_submit(&data->tx_work);
+
+	return 0;
+}
+static int usbd_midi_sysex_send_midi2(const struct device *dev, uint8_t cable_number, bool is_end)
+{
+	struct usbd_midi_data *data = dev->data;
+	/* MIDI 2.0 Protocol (UMP) */
+	struct midi_ump ump;
+	uint8_t ump_status;
+
+	if (data->sysex_buf_len == 3 && !is_end && data->sysex_buf[0] == MIDI_STATUS_SYSEX_START) {
+		ump_status = SYSEX_STATUS_START;
+	} else if (is_end) {
+		/* If single packet total? Not tracked
+		 * easily here without more state, but
+		 * SYSEX_STATUS_END is valid for single
+		 * packet messages too if we assume previous
+		 * was Start/Continue.
+		 */
+		ump_status = SYSEX_STATUS_END;
+	} else {
+		ump_status = SYSEX_STATUS_CONTINUE;
+	}
+
+	/* Special case correction for first packet */
+	if (data->sysex_buf[0] == MIDI_STATUS_SYSEX_START && !is_end) {
+		ump_status = SYSEX_STATUS_START;
+	} else if (data->sysex_buf[0] == MIDI_STATUS_SYSEX_START && is_end) {
+		ump_status = SYSEX_STATUS_COMPLETE;
+	}
+
+	memset(&ump, 0, sizeof(ump));
+	ump.data[0] = (UMP_MT_DATA_64 << 28) | ((cable_number & 0xF) << 24) |
+		      ((ump_status & 0xF) << 20) | ((data->sysex_buf_len & 0xF) << 16) |
+		      (data->sysex_buf[0] << 8);
+
+	if (data->sysex_buf_len > 1) {
+		ump.data[0] |= data->sysex_buf[1];
+	}
+	if (data->sysex_buf_len > 2) {
+		ump.data[1] |= (data->sysex_buf[2] << 24);
+	}
+
+	return usbd_midi_send(dev, ump);
+}
+
+int usbd_midi_send_midi1(const struct device *dev, const struct usbd_midi1_packet packet)
+{
+	struct usbd_midi_data *data = dev->data;
+	int ret;
+	size_t offset = 0;
+
+	if (packet.len == 0U || packet.len > ARRAY_SIZE(packet.bytes)) {
+		return -EINVAL;
+	}
+
+	while (offset < packet.len) {
+		uint8_t byte = packet.bytes[offset];
+		uint8_t cin = 0;
+		int msg_len = 0;
+
+		/* Handle System Exclusive Messages (Stateful) */
+		if (byte == MIDI_STATUS_SYSEX_START || data->sysex_transfer_active) {
+			size_t available = packet.len - offset;
+			size_t processed = 0;
+			uint8_t b;
+			bool is_end;
+
+			if (byte == MIDI_STATUS_SYSEX_START) {
+				data->sysex_transfer_active = true;
+				data->sysex_buf_len = 0;
+			}
+
+			while (processed < available) {
+				b = packet.bytes[offset + processed];
+
+				if (data->sysex_buf_len >= ARRAY_SIZE(data->sysex_buf)) {
+					return -EINVAL;
+				}
+
+				data->sysex_buf[data->sysex_buf_len++] = b;
+				processed++;
+
+				/* Check for End of SysEx */
+				is_end = (b == MIDI_STATUS_SYSEX_END);
+
+				if (is_end) {
+					data->sysex_transfer_active = false;
+				}
+
+				/* If buffer full (3 bytes) or End of SysEx, send packet */
+				if (data->sysex_buf_len == 3 || is_end) {
+					if (data->altsetting == MIDI1_ALTERNATE) {
+						ret = usbd_midi_sysex_send_midi1(
+							data, packet.cable_number, is_end);
+					} else if (data->altsetting == MIDI2_ALTERNATE) {
+						ret = usbd_midi_sysex_send_midi2(
+							dev, packet.cable_number, is_end);
+					} else {
+						return -EIO;
+					}
+
+					if (ret < 0) {
+						return ret;
+					}
+
+					data->sysex_buf_len = 0;
+				}
+
+				if (is_end) {
+					break;
+				}
+			}
+			offset += processed;
+			continue;
+		}
+
+		if (byte >= MIDI_STATUS_NOTE_OFF) {
+			msg_len = midi1_status_payload_len(byte, &cin);
+			if (msg_len < 0) {
+				return msg_len;
+			}
+		} else {
+			return -EINVAL;
+		}
+
+		if ((offset + msg_len > packet.len) || (offset != 0U) || (msg_len != packet.len)) {
+			return -EINVAL;
+		}
+
+		if (data->altsetting == MIDI1_ALTERNATE) {
+			uint32_t event_le = (packet.cable_number << 4) | cin;
+
+			event_le |= ((uint32_t)packet.bytes[offset] << 8);
+			if (msg_len > 1) {
+				event_le |= ((uint32_t)packet.bytes[offset + 1] << 16);
+			}
+			if (msg_len > 2) {
+				event_le |= ((uint32_t)packet.bytes[offset + 2] << 24);
+			}
+
+			event_le = sys_cpu_to_le32(event_le);
+			if (ring_buf_space_get(&data->tx_queue) < 4) {
+				return -ENOBUFS;
+			}
+			ring_buf_put(&data->tx_queue, (const uint8_t *)&event_le, 4);
+			k_work_submit(&data->tx_work);
+		} else if (data->altsetting == MIDI2_ALTERNATE) {
+			struct midi_ump ump;
+			uint8_t d1 = (msg_len > 1) ? packet.bytes[offset + 1] : 0;
+			uint8_t d2 = (msg_len > 2) ? packet.bytes[offset + 2] : 0;
+
+			if (byte < MIDI_STATUS_SYSEX_START) {
+				ump = UMP_MIDI1_CHANNEL_VOICE(packet.cable_number, (byte >> 4),
+							      (byte & 0xF), d1, d2);
+			} else {
+				ump = UMP_SYS_RT_COMMON(packet.cable_number, byte, d1, d2);
+			}
+			ret = usbd_midi_send(dev, ump);
+			if (ret) {
+				return ret;
+			}
+		} else {
+			return -EIO;
+		}
+
+		return 0;
+	}
+
+	return 0;
+}
 
 /* Group Terminal Block unique identification number, type and protocol
  * see midi20 5.4.2 Group Terminal Block Descriptor
  */
 #define GRPTRM_BLOCK_ID(node) UTIL_INC(DT_NODE_CHILD_IDX(node))
-#define GRPTRM_BLOCK_TYPE(node)                                                   \
+#define GRPTRM_BLOCK_TYPE(node)                                                                   \
 	COND_CODE_1(DT_ENUM_HAS_VALUE(node, terminal_type, input_only),           \
 		(GR_TRM_INPUT_ONLY),                                              \
 		(COND_CODE_1(DT_ENUM_HAS_VALUE(node, terminal_type, output_only), \
@@ -550,10 +1198,14 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 	BUILD_ASSERT(DT_REG_ADDR(node) < 16,                               \
 		     "Group Terminal Block address must be within 0..15"); \
 	BUILD_ASSERT(DT_REG_ADDR(node) + DT_REG_SIZE(node) <= 16,          \
-		     "Too many Group Terminals in this Block");
+		     "Too many Group Terminals in this Block");              \
+	BUILD_ASSERT(DT_REG_SIZE(node) == 1,                               \
+		     "MIDI 1.0 compatibility currently supports one group per block");
 
-#define USBD_MIDI_VALIDATE_INSTANCE(n) \
-	DT_INST_FOREACH_CHILD(n, USBD_MIDI_VALIDATE_GRPTRM_BLOCK)
+#define USBD_MIDI_VALIDATE_INSTANCE(n)                                     \
+	DT_INST_FOREACH_CHILD(n, USBD_MIDI_VALIDATE_GRPTRM_BLOCK);          \
+	BUILD_ASSERT(DT_INST_CHILD_NUM_STATUS_OKAY(n) >= 1,                 \
+		     "At least one Group Terminal Block is required");
 
 #define USBD_MIDI2_INIT_GRPTRM_BLOCK_DESCRIPTOR(node)                                   \
 	{                                                                               \
@@ -566,228 +1218,295 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 		.nNumGroupTrm = DT_REG_SIZE(node),                                      \
 		.iBlockItem = 0,                                                        \
 		.bMIDIProtocol = GRPTRM_PROTOCOL(node),                                 \
-		.wMaxInputBandwidth = sys_cpu_to_le16(DT_PROP(node, serial_31250bps)),  \
-		.wMaxOutputBandwidth = sys_cpu_to_le16(DT_PROP(node, serial_31250bps)), \
+		.wMaxInputBandwidth = 0x0000,                                           \
+		.wMaxOutputBandwidth = 0x0000,                                          \
 	}
+
+#define USBD_MIDI2_BUILD_GRPTRM_BLOCK(node) USBD_MIDI2_INIT_GRPTRM_BLOCK_DESCRIPTOR(node),
 
 #define USBD_MIDI2_GRPTRM_TOTAL_LEN(n)                    \
 	sizeof(struct usb_midi_grptrm_header_descriptor)  \
 	+ DT_INST_CHILD_NUM_STATUS_OKAY(n)                \
 	* sizeof(struct usb_midi_grptrm_block_descriptor)
 
-#define USBD_MIDI_DEFINE_DESCRIPTORS(n)                                                  \
-	static struct usbd_midi_descriptors usbd_midi_desc_##n = {                       \
-		.iad = {                                                                 \
-			.bLength = sizeof(struct usb_association_descriptor),            \
-			.bDescriptorType = USB_DESC_INTERFACE_ASSOC,                     \
-			.bFirstInterface = 0,                                            \
-			.bInterfaceCount = 2,                                            \
-			.bFunctionClass = AUDIO,                                         \
-			.bFunctionSubClass = MIDISTREAMING,                              \
-		},                                                                       \
-		.if0_std = {                                                             \
-			.bLength = sizeof(struct usb_if_descriptor),                     \
-			.bDescriptorType = USB_DESC_INTERFACE,                           \
-			.bInterfaceNumber = 0,                                           \
-			.bAlternateSetting = 0,                                          \
-			.bNumEndpoints = 0,                                              \
-			.bInterfaceClass = AUDIO,                                        \
-			.bInterfaceSubClass = AUDIOCONTROL,                              \
-		},                                                                       \
-		.if0_cs = {                                                              \
-			.bLength = sizeof(struct usb_midi_cs_ac_header_descriptor),      \
-			.bDescriptorType = USB_DESC_CS_INTERFACE,                        \
-			.bDescriptorSubtype = MS_HEADER,                                 \
-			.bcdADC = sys_cpu_to_le16(0x0100),                               \
-			.wTotalLength = sizeof(struct usb_midi_cs_ac_header_descriptor), \
-			.bInCollection = 1,                                              \
-			.baInterfaceNr1 = 1,                                             \
-		},                                                                       \
-		.if1_0_std = {                                                           \
-			.bLength = sizeof(struct usb_if_descriptor),                     \
-			.bDescriptorType = USB_DESC_INTERFACE,                           \
-			.bInterfaceNumber = 1,                                           \
-			.bAlternateSetting = MIDI1_ALTERNATE,                            \
-			.bNumEndpoints = 2,                                              \
-			.bInterfaceClass = AUDIO,                                        \
-			.bInterfaceSubClass = MIDISTREAMING,                             \
-		},                                                                       \
-		.if1_0_ms_header = {                                                     \
-			.bLength = sizeof(struct usb_midi_header_descriptor),            \
-			.bDescriptorType = USB_DESC_CS_INTERFACE,                        \
-			.bDescriptorSubtype = MS_HEADER,                                 \
-			.bcdMSC = sys_cpu_to_le16(0x0100),                               \
-			.wTotalLength = sys_cpu_to_le16(                                 \
-				sizeof(struct usb_midi_header_descriptor)                \
-				+ 2 * (sizeof(struct usb_ep_descriptor) + 4)             \
-			),                                                               \
-		},                                                                       \
-		.if1_0_out_ep_fs = {                                                     \
-			.bLength = sizeof(struct usb_ep_descriptor),                     \
-			.bDescriptorType = USB_DESC_ENDPOINT,                            \
-			.bEndpointAddress = n + FIRST_OUT_EP_ADDR,                       \
-			.bmAttributes = USB_EP_TYPE_BULK,                                \
-			.wMaxPacketSize = sys_cpu_to_le16(64U),                          \
-		},                                                                       \
-		.if1_0_out_ep_hs = {                                                     \
-			.bLength = sizeof(struct usb_ep_descriptor),                     \
-			.bDescriptorType = USB_DESC_ENDPOINT,                            \
-			.bEndpointAddress = n + FIRST_OUT_EP_ADDR,                       \
-			.bmAttributes = USB_EP_TYPE_BULK,                                \
-			.wMaxPacketSize = sys_cpu_to_le16(512U),                         \
-		},                                                                       \
-		.if1_0_cs_out_ep = {                                                     \
-			.bLength = 4,                                                    \
-			.bDescriptorType = USB_DESC_CS_ENDPOINT,                         \
-			.bDescriptorSubtype = MS_GENERAL,                                \
-			.bNumGrpTrmBlock = 0,                                            \
-		},                                                                       \
-		.if1_0_in_ep_fs = {                                                      \
-			.bLength = sizeof(struct usb_ep_descriptor),                     \
-			.bDescriptorType = USB_DESC_ENDPOINT,                            \
-			.bEndpointAddress = n + FIRST_IN_EP_ADDR,                        \
-			.bmAttributes = USB_EP_TYPE_BULK,                                \
-			.wMaxPacketSize = sys_cpu_to_le16(64U),                          \
-		},                                                                       \
-		.if1_0_in_ep_hs = {                                                      \
-			.bLength = sizeof(struct usb_ep_descriptor),                     \
-			.bDescriptorType = USB_DESC_ENDPOINT,                            \
-			.bEndpointAddress = n + FIRST_IN_EP_ADDR,                        \
-			.bmAttributes = USB_EP_TYPE_BULK,                                \
-			.wMaxPacketSize = sys_cpu_to_le16(512U),                         \
-		},                                                                       \
-		.if1_0_cs_in_ep = {                                                      \
-			.bLength = 4 + N_INPUTS(n),                                      \
-			.bDescriptorType = USB_DESC_CS_ENDPOINT,                         \
-			.bDescriptorSubtype = MS_GENERAL,                                \
-			.bNumGrpTrmBlock = 0,                                            \
-		},                                                                       \
-		.if1_1_std = {                                                           \
-			.bLength = sizeof(struct usb_if_descriptor),                     \
-			.bDescriptorType = USB_DESC_INTERFACE,                           \
-			.bInterfaceNumber = 1,                                           \
-			.bAlternateSetting = MIDI2_ALTERNATE,                            \
-			.bNumEndpoints = 2,                                              \
-			.bInterfaceClass = AUDIO,                                        \
-			.bInterfaceSubClass = MIDISTREAMING,                             \
-		},                                                                       \
-		.if1_1_ms_header = {                                                     \
-			.bLength = sizeof(struct usb_midi_header_descriptor),            \
-			.bDescriptorType = USB_DESC_CS_INTERFACE,                        \
-			.bDescriptorSubtype = MS_HEADER,                                 \
-			.bcdMSC = sys_cpu_to_le16(0x0200),                               \
-			.wTotalLength = sys_cpu_to_le16(                                 \
-				sizeof(struct usb_midi_header_descriptor)),              \
-		},                                                                       \
-		.if1_1_out_ep_fs = {                                                     \
-			.bLength = sizeof(struct usb_ep_descriptor),                     \
-			.bDescriptorType = USB_DESC_ENDPOINT,                            \
-			.bEndpointAddress = n + FIRST_OUT_EP_ADDR,                       \
-			.bmAttributes = USB_EP_TYPE_BULK,                                \
-			.wMaxPacketSize = sys_cpu_to_le16(64U),                          \
-		},                                                                       \
-		.if1_1_out_ep_hs = {                                                     \
-			.bLength = sizeof(struct usb_ep_descriptor),                     \
-			.bDescriptorType = USB_DESC_ENDPOINT,                            \
-			.bEndpointAddress = n + FIRST_OUT_EP_ADDR,                       \
-			.bmAttributes = USB_EP_TYPE_BULK,                                \
-			.wMaxPacketSize = sys_cpu_to_le16(512U),                         \
-		},                                                                       \
-		.if1_1_cs_out_ep = {                                                     \
-			.bLength = 4 + N_OUTPUTS(n),                                     \
-			.bDescriptorType = USB_DESC_CS_ENDPOINT,                         \
-			.bDescriptorSubtype = MS_GENERAL_2_0,                            \
-			.bNumGrpTrmBlock = N_OUTPUTS(n),                                 \
-			.baAssoGrpTrmBlkID = {GRPTRM_OUTPUT_BLOCK_IDS(n)},               \
-		},                                                                       \
-		.if1_1_in_ep_fs = {                                                      \
-			.bLength = sizeof(struct usb_ep_descriptor),                     \
-			.bDescriptorType = USB_DESC_ENDPOINT,                            \
-			.bEndpointAddress = n + FIRST_IN_EP_ADDR,                        \
-			.bmAttributes = USB_EP_TYPE_BULK,                                \
-			.wMaxPacketSize = sys_cpu_to_le16(64U),                          \
-		},                                                                       \
-		.if1_1_in_ep_hs = {                                                      \
-			.bLength = sizeof(struct usb_ep_descriptor),                     \
-			.bDescriptorType = USB_DESC_ENDPOINT,                            \
-			.bEndpointAddress = n + FIRST_IN_EP_ADDR,                        \
-			.bmAttributes = USB_EP_TYPE_BULK,                                \
-			.wMaxPacketSize = sys_cpu_to_le16(512U),                         \
-		},                                                                       \
-		.if1_1_cs_in_ep = {                                                      \
-			.bLength = 4 + N_INPUTS(n),                                      \
-			.bDescriptorType = USB_DESC_CS_ENDPOINT,                         \
-			.bDescriptorSubtype = MS_GENERAL_2_0,                            \
-			.bNumGrpTrmBlock = N_INPUTS(n),                                  \
-			.baAssoGrpTrmBlkID = {GRPTRM_INPUT_BLOCK_IDS(n)},                \
-		},                                                                       \
-		.grptrm_header = {                                                       \
-			.bLength = sizeof(struct usb_midi_grptrm_header_descriptor),     \
-			.bDescriptorType = CS_GR_TRM_BLOCK,                              \
-			.bDescriptorSubtype = GR_TRM_BLOCK_HEADER,                       \
-			.wTotalLength = sys_cpu_to_le16(                                 \
-				USBD_MIDI2_GRPTRM_TOTAL_LEN(n)                           \
-			),                                                               \
-		},                                                                       \
-		.grptrm_blocks = {                                                       \
-			DT_INST_FOREACH_CHILD_SEP(                                       \
-				n, USBD_MIDI2_INIT_GRPTRM_BLOCK_DESCRIPTOR, (,)          \
-			)                                                                \
-		},                                                                       \
-	};                                                                               \
-	static const struct usb_desc_header *usbd_midi_desc_array_fs_##n[] = {           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.iad,                       \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_std,                   \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_cs,                    \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_std,                 \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_ms_header,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_out_ep_fs,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_cs_out_ep,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_in_ep_fs,            \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_cs_in_ep,            \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_std,                 \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_ms_header,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_out_ep_fs,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_cs_out_ep,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_in_ep_fs,            \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_cs_in_ep,            \
-		NULL,                                                                    \
-	};                                                                               \
-	static const struct usb_desc_header *usbd_midi_desc_array_hs_##n[] = {           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.iad,                       \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_std,                   \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_cs,                    \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_std,                 \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_ms_header,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_out_ep_hs,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_cs_out_ep,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_in_ep_hs,            \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_cs_in_ep,            \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_std,                 \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_ms_header,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_out_ep_hs,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_cs_out_ep,           \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_in_ep_hs,            \
-		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_cs_in_ep,            \
-		NULL,                                                                    \
+/* clang-format off */
+#define USBD_MIDI_DEFINE_DESCRIPTORS(n)                                                            \
+	static struct usbd_midi_descriptors usbd_midi_desc_##n = {                                 \
+		.iad =                                                                             \
+			{                                                                          \
+				.bLength = sizeof(struct usb_association_descriptor),              \
+				.bDescriptorType = USB_DESC_INTERFACE_ASSOC,                       \
+				.bFirstInterface = 0,                                              \
+				.bInterfaceCount = 2,                                              \
+				.bFunctionClass = AUDIO,                                           \
+				.bFunctionSubClass = MIDISTREAMING,                                \
+			},                                                                         \
+		.if0_std =                                                                         \
+			{                                                                          \
+				.bLength = sizeof(struct usb_if_descriptor),                       \
+				.bDescriptorType = USB_DESC_INTERFACE,                             \
+				.bInterfaceNumber = 0,                                             \
+				.bAlternateSetting = 0,                                            \
+				.bNumEndpoints = 0,                                                \
+				.bInterfaceClass = AUDIO,                                          \
+				.bInterfaceSubClass = AUDIOCONTROL,                                \
+			},                                                                         \
+		.if0_cs =                                                                          \
+			{                                                                          \
+				.bLength = sizeof(struct usb_midi_cs_ac_header_descriptor),        \
+				.bDescriptorType = USB_DESC_CS_INTERFACE,                          \
+				.bDescriptorSubtype = MS_HEADER,                                   \
+				.bcdADC = sys_cpu_to_le16(0x0100),                                 \
+				.wTotalLength = sizeof(struct usb_midi_cs_ac_header_descriptor),   \
+				.bInCollection = 1,                                                \
+				.baInterfaceNr1 = 1,                                               \
+			},                                                                         \
+		.if1_0_std =                                                                       \
+			{                                                                          \
+				.bLength = sizeof(struct usb_if_descriptor),                       \
+				.bDescriptorType = USB_DESC_INTERFACE,                             \
+				.bInterfaceNumber = 1,                                             \
+				.bAlternateSetting = MIDI1_ALTERNATE,                              \
+				.bNumEndpoints = 2,                                                \
+				.bInterfaceClass = AUDIO,                                          \
+				.bInterfaceSubClass = MIDISTREAMING,                               \
+			},                                                                         \
+		.if1_0_ms_header =                                                                 \
+			{                                                                          \
+				.bLength = sizeof(struct usb_midi_header_descriptor),              \
+				.bDescriptorType = USB_DESC_CS_INTERFACE,                          \
+				.bDescriptorSubtype = MS_HEADER,                                   \
+				.bcdMSC = sys_cpu_to_le16(0x0100),                                 \
+				.wTotalLength = sys_cpu_to_le16(MIDI1_MS_TOTAL_LEN),               \
+			},                                                                         \
+		.if1_0_emb_in_jack =                                                               \
+			{                                                                          \
+				.bLength = sizeof(struct usb_midi_in_jack_descriptor),             \
+				.bDescriptorType = USB_DESC_CS_INTERFACE,                          \
+				.bDescriptorSubtype = MIDI1_IN_JACK,                               \
+				.bJackType = MIDI1_JACK_EMBEDDED,                                  \
+				.bJackID = MIDI1_EMB_IN_JACK_ID,                                   \
+			},                                                                         \
+		.if1_0_ext_in_jack =                                                               \
+			{                                                                          \
+				.bLength = sizeof(struct usb_midi_in_jack_descriptor),             \
+				.bDescriptorType = USB_DESC_CS_INTERFACE,                          \
+				.bDescriptorSubtype = MIDI1_IN_JACK,                               \
+				.bJackType = MIDI1_JACK_EXTERNAL,                                  \
+				.bJackID = MIDI1_EXT_IN_JACK_ID,                                   \
+			},                                                                         \
+		.if1_0_emb_out_jack =                                                              \
+			{                                                                          \
+				.bLength = sizeof(struct usb_midi_out_jack_descriptor),            \
+				.bDescriptorType = USB_DESC_CS_INTERFACE,                          \
+				.bDescriptorSubtype = MIDI1_OUT_JACK,                              \
+				.bJackType = MIDI1_JACK_EMBEDDED,                                  \
+				.bJackID = MIDI1_EMB_OUT_JACK_ID,                                  \
+				.bNrInputPins = 1,                                                 \
+				.baSourceID = MIDI1_EXT_IN_JACK_ID,                                \
+				.baSourcePin = 0x01,                                               \
+			},                                                                         \
+		.if1_0_ext_out_jack =                                                              \
+			{                                                                          \
+				.bLength = sizeof(struct usb_midi_out_jack_descriptor),            \
+				.bDescriptorType = USB_DESC_CS_INTERFACE,                          \
+				.bDescriptorSubtype = MIDI1_OUT_JACK,                              \
+				.bJackType = MIDI1_JACK_EXTERNAL,                                  \
+				.bJackID = MIDI1_EXT_OUT_JACK_ID,                                  \
+				.bNrInputPins = 1,                                                 \
+				.baSourceID = MIDI1_EMB_IN_JACK_ID,                                \
+				.baSourcePin = 0x01,                                               \
+			},                                                                         \
+		.if1_0_out_ep_fs =                                                                 \
+			{                                                                          \
+				.bLength = sizeof(struct usb_ep_descriptor),                       \
+				.bDescriptorType = USB_DESC_ENDPOINT,                              \
+				.bEndpointAddress = n + FIRST_OUT_EP_ADDR,                         \
+				.bmAttributes = USB_EP_TYPE_BULK,                                  \
+				.wMaxPacketSize = sys_cpu_to_le16(64U),                            \
+			},                                                                         \
+		.if1_0_out_ep_hs =                                                                 \
+			{                                                                          \
+				.bLength = sizeof(struct usb_ep_descriptor),                       \
+				.bDescriptorType = USB_DESC_ENDPOINT,                              \
+				.bEndpointAddress = n + FIRST_OUT_EP_ADDR,                         \
+				.bmAttributes = USB_EP_TYPE_BULK,                                  \
+				.wMaxPacketSize = sys_cpu_to_le16(512U),                           \
+			},                                                                         \
+		.if1_0_cs_out_ep =                                                                 \
+			{                                                                          \
+				.bLength = sizeof(struct usb_midi1_cs_endpoint_descriptor),        \
+				.bDescriptorType = USB_DESC_CS_ENDPOINT,                           \
+				.bDescriptorSubtype = MS_GENERAL,                                  \
+				.bNumEmbMIDIJack = 1,                                              \
+				.baAssocJackID = {MIDI1_EMB_IN_JACK_ID},                           \
+			},                                                                         \
+		.if1_0_in_ep_fs =                                                                  \
+			{                                                                          \
+				.bLength = sizeof(struct usb_ep_descriptor),                       \
+				.bDescriptorType = USB_DESC_ENDPOINT,                              \
+				.bEndpointAddress = n + FIRST_IN_EP_ADDR,                          \
+				.bmAttributes = USB_EP_TYPE_BULK,                                  \
+				.wMaxPacketSize = sys_cpu_to_le16(64U),                            \
+			},                                                                         \
+		.if1_0_in_ep_hs =                                                                  \
+			{                                                                          \
+				.bLength = sizeof(struct usb_ep_descriptor),                       \
+				.bDescriptorType = USB_DESC_ENDPOINT,                              \
+				.bEndpointAddress = n + FIRST_IN_EP_ADDR,                          \
+				.bmAttributes = USB_EP_TYPE_BULK,                                  \
+				.wMaxPacketSize = sys_cpu_to_le16(512U),                           \
+			},                                                                         \
+		.if1_0_cs_in_ep =                                                                  \
+			{                                                                          \
+				.bLength = sizeof(struct usb_midi1_cs_endpoint_descriptor),        \
+				.bDescriptorType = USB_DESC_CS_ENDPOINT,                           \
+				.bDescriptorSubtype = MS_GENERAL,                                  \
+				.bNumEmbMIDIJack = 1,                                              \
+				.baAssocJackID = {MIDI1_EMB_OUT_JACK_ID},                          \
+			},                                                                         \
+		.if1_1_std =                                                                       \
+			{                                                                          \
+				.bLength = sizeof(struct usb_if_descriptor),                       \
+				.bDescriptorType = USB_DESC_INTERFACE,                             \
+				.bInterfaceNumber = 1,                                             \
+				.bAlternateSetting = MIDI2_ALTERNATE,                              \
+				.bNumEndpoints = 2,                                                \
+				.bInterfaceClass = AUDIO,                                          \
+				.bInterfaceSubClass = MIDISTREAMING,                               \
+			},                                                                         \
+		.if1_1_ms_header =                                                                 \
+			{                                                                          \
+				.bLength = sizeof(struct usb_midi_header_descriptor),              \
+				.bDescriptorType = USB_DESC_CS_INTERFACE,                          \
+				.bDescriptorSubtype = MS_HEADER,                                   \
+				.bcdMSC = sys_cpu_to_le16(0x0200),                                 \
+				.wTotalLength = sys_cpu_to_le16(                                   \
+					sizeof(struct usb_midi_header_descriptor)),                \
+			},                                                                         \
+		.if1_1_out_ep_fs =                                                                 \
+			{                                                                          \
+				.bLength = sizeof(struct usb_ep_descriptor),                       \
+				.bDescriptorType = USB_DESC_ENDPOINT,                              \
+				.bEndpointAddress = n + FIRST_OUT_EP_ADDR,                         \
+				.bmAttributes = USB_EP_TYPE_BULK,                                  \
+				.wMaxPacketSize = sys_cpu_to_le16(64U),                            \
+			},                                                                         \
+		.if1_1_out_ep_hs =                                                                 \
+			{                                                                          \
+				.bLength = sizeof(struct usb_ep_descriptor),                       \
+				.bDescriptorType = USB_DESC_ENDPOINT,                              \
+				.bEndpointAddress = n + FIRST_OUT_EP_ADDR,                         \
+				.bmAttributes = USB_EP_TYPE_BULK,                                  \
+				.wMaxPacketSize = sys_cpu_to_le16(512U),                           \
+			},                                                                         \
+		.if1_1_cs_out_ep =                                                                 \
+			{                                                                          \
+				.bLength = 4 + N_OUTPUTS(n),                                       \
+				.bDescriptorType = USB_DESC_CS_ENDPOINT,                           \
+				.bDescriptorSubtype = MS_GENERAL_2_0,                              \
+				.bNumGrpTrmBlock = N_OUTPUTS(n),                                   \
+				.baAssoGrpTrmBlkID = {GRPTRM_OUTPUT_BLOCK_IDS(n)},                 \
+			},                                                                         \
+		.if1_1_in_ep_fs =                                                                  \
+			{                                                                          \
+				.bLength = sizeof(struct usb_ep_descriptor),                       \
+				.bDescriptorType = USB_DESC_ENDPOINT,                              \
+				.bEndpointAddress = n + FIRST_IN_EP_ADDR,                          \
+				.bmAttributes = USB_EP_TYPE_BULK,                                  \
+				.wMaxPacketSize = sys_cpu_to_le16(64U),                            \
+			},                                                                         \
+		.if1_1_in_ep_hs =                                                                  \
+			{                                                                          \
+				.bLength = sizeof(struct usb_ep_descriptor),                       \
+				.bDescriptorType = USB_DESC_ENDPOINT,                              \
+				.bEndpointAddress = n + FIRST_IN_EP_ADDR,                          \
+				.bmAttributes = USB_EP_TYPE_BULK,                                  \
+				.wMaxPacketSize = sys_cpu_to_le16(512U),                           \
+			},                                                                         \
+		.if1_1_cs_in_ep =                                                                  \
+			{                                                                          \
+				.bLength = 4 + N_INPUTS(n),                                        \
+				.bDescriptorType = USB_DESC_CS_ENDPOINT,                           \
+				.bDescriptorSubtype = MS_GENERAL_2_0,                              \
+				.bNumGrpTrmBlock = N_INPUTS(n),                                    \
+				.baAssoGrpTrmBlkID = {GRPTRM_INPUT_BLOCK_IDS(n)},                  \
+			},                                                                         \
+		.grptrm_header =                                                                   \
+			{                                                                          \
+				.bLength = sizeof(struct usb_midi_grptrm_header_descriptor),       \
+				.bDescriptorType = CS_GR_TRM_BLOCK,                                \
+				.bDescriptorSubtype = GR_TRM_BLOCK_HEADER,                         \
+				.wTotalLength = sys_cpu_to_le16(USBD_MIDI2_GRPTRM_TOTAL_LEN(n)),   \
+			},                                                                         \
+		.grptrm_blocks = {DT_INST_FOREACH_CHILD(n, USBD_MIDI2_BUILD_GRPTRM_BLOCK)},        \
+	};                                                                                         \
+	static const struct usb_desc_header						\
+		*usbd_midi_desc_array_fs_##n[] = {					\
+		(struct usb_desc_header *)&usbd_midi_desc_##n.iad,                                 \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_std,                             \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_cs,                              \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_std,                           \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_ms_header,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_emb_in_jack,                   \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_ext_in_jack,                   \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_emb_out_jack,                  \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_ext_out_jack,                  \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_out_ep_fs,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_cs_out_ep,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_in_ep_fs,                      \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_cs_in_ep,                      \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_std,                           \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_ms_header,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_out_ep_fs,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_cs_out_ep,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_in_ep_fs,                      \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_cs_in_ep,                      \
+		NULL,                                                                              \
+	};                                                                                         \
+	static const struct usb_desc_header						\
+		*usbd_midi_desc_array_hs_##n[] = {					\
+		(struct usb_desc_header *)&usbd_midi_desc_##n.iad,                                 \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_std,                             \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_cs,                              \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_std,                           \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_ms_header,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_emb_in_jack,                   \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_ext_in_jack,                   \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_emb_out_jack,                  \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_ext_out_jack,                  \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_out_ep_hs,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_cs_out_ep,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_in_ep_hs,                      \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_0_cs_in_ep,                      \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_std,                           \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_ms_header,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_out_ep_hs,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_cs_out_ep,                     \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_in_ep_hs,                      \
+		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_cs_in_ep,                      \
+		NULL,                                                                              \
 	};
+/* clang-format on */
 
-#define USBD_MIDI_DEFINE_DEVICE(n)                                           \
-	USBD_MIDI_VALIDATE_INSTANCE(n)                                       \
-	USBD_MIDI_DEFINE_DESCRIPTORS(n);                                     \
-	USBD_DEFINE_CLASS(midi_##n, &usbd_midi_class_api,                    \
-			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);      \
-	static const struct usbd_midi_config usbd_midi_config_##n = {        \
-		.desc = &usbd_midi_desc_##n,                                 \
-		.fs_descs = usbd_midi_desc_array_fs_##n,                     \
-		.hs_descs = usbd_midi_desc_array_hs_##n,                     \
-	};                                                                   \
-	static struct usbd_midi_data usbd_midi_data_##n = {                  \
-		.class_data = &midi_##n,                                     \
-		.altsetting = MIDI1_ALTERNATE,                               \
-	};                                                                   \
-	DEVICE_DT_INST_DEFINE(n, usbd_midi_preinit, NULL,                    \
-			      &usbd_midi_data_##n, &usbd_midi_config_##n,    \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+/* clang-format off */
+#define USBD_MIDI_DEFINE_DEVICE(n)                                                                 \
+	USBD_MIDI_VALIDATE_INSTANCE(n)                                                             \
+	USBD_MIDI_DEFINE_DESCRIPTORS(n);                                                           \
+	USBD_DEFINE_CLASS(midi_##n, &usbd_midi_class_api, (void *)DEVICE_DT_GET(DT_DRV_INST(n)), \
+			  NULL);                                                                   \
+	static const struct usbd_midi_config usbd_midi_config_##n = {                              \
+		.desc = &usbd_midi_desc_##n,                                                       \
+		.fs_descs = usbd_midi_desc_array_fs_##n,                                           \
+		.hs_descs = usbd_midi_desc_array_hs_##n,                                           \
+	};                                                                                         \
+	static struct usbd_midi_data usbd_midi_data_##n = {                                        \
+		.class_data = &midi_##n,                                                           \
+		.altsetting = MIDI1_ALTERNATE,                                                     \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, usbd_midi_preinit, NULL, &usbd_midi_data_##n,                     \
+			      &usbd_midi_config_##n, POST_KERNEL,                                  \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(USBD_MIDI_DEFINE_DEVICE)

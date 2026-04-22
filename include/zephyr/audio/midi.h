@@ -356,6 +356,53 @@ struct midi_ump {
 
 /** @} */
 
+/**
+ * @defgroup midi_status_byte MIDI 1.0 Status Bytes
+ * @ingroup midi_ump
+ * @see ump112: 7.3 MIDI 1.0 Channel Voice Messages
+ * @see ump112: 7.6 System Common and System Real Time Messages
+ * @{
+ */
+/** Note Off channel voice status byte. */
+#define MIDI_STATUS_NOTE_OFF         0x80
+/** Note On channel voice status byte. */
+#define MIDI_STATUS_NOTE_ON          0x90
+/** Polyphonic Key Pressure channel voice status byte. */
+#define MIDI_STATUS_POLY_KEYPRESS    0xA0
+/** Control Change channel voice status byte. */
+#define MIDI_STATUS_CONTROL_CHANGE   0xB0
+/** Program Change channel voice status byte. */
+#define MIDI_STATUS_PROGRAM_CHANGE   0xC0
+/** Channel Pressure channel voice status byte. */
+#define MIDI_STATUS_CHANNEL_PRESSURE 0xD0
+/** Pitch Bend Change channel voice status byte. */
+#define MIDI_STATUS_PITCH_BEND       0xE0
+/** Start of a System Exclusive message. */
+#define MIDI_STATUS_SYSEX_START      0xF0
+/** MIDI Time Code quarter frame status byte. */
+#define MIDI_STATUS_TIME_CODE        0xF1
+/** Song Position Pointer status byte. */
+#define MIDI_STATUS_SONG_POS         0xF2
+/** Song Select status byte. */
+#define MIDI_STATUS_SONG_SELECT      0xF3
+/** Tune Request status byte. */
+#define MIDI_STATUS_TUNE_REQUEST     0xF6
+/** End of a System Exclusive message. */
+#define MIDI_STATUS_SYSEX_END        0xF7
+/** Timing Clock real-time status byte. */
+#define MIDI_STATUS_TIMING_CLOCK     0xF8
+/** Start real-time status byte. */
+#define MIDI_STATUS_START            0xFA
+/** Continue real-time status byte. */
+#define MIDI_STATUS_CONTINUE         0xFB
+/** Stop real-time status byte. */
+#define MIDI_STATUS_STOP             0xFC
+/** Active Sensing real-time status byte. */
+#define MIDI_STATUS_ACTIVE_SENSING   0xFE
+/** System Reset real-time status byte. */
+#define MIDI_STATUS_RESET            0xFF
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif

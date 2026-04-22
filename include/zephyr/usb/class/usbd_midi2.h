@@ -26,6 +26,21 @@ extern "C" {
 #include <zephyr/audio/midi.h>
 
 /**
+ * @brief Raw USB-MIDI 1.0 message
+ *
+ * Represents one USB-MIDI 1.0 payload with a virtual cable number and up to
+ * three MIDI bytes.
+ */
+struct usbd_midi1_packet {
+	/** Virtual cable (group) number. */
+	uint8_t cable_number;
+	/** Number of valid bytes stored in @p bytes (1 to 3). */
+	uint8_t len;
+	/** MIDI status byte followed by up to two payload bytes. */
+	uint8_t bytes[3];
+};
+
+/**
  * @brief      MIDI2 application event handlers
  */
 struct usbd_midi_ops {
@@ -35,6 +50,16 @@ struct usbd_midi_ops {
 	 * @param[in]  ump   The received packet in Universal MIDI Packet format
 	 */
 	void (*rx_packet_cb)(const struct device *dev, const struct midi_ump ump);
+
+	/**
+	 * @brief Callback type for incoming raw MIDI 1.0 messages from host
+	 * @param[in] dev     The MIDI device receiving the packet
+	 * @param[in] packet  The received USB-MIDI 1.0 payload
+	 *
+	 * Called only when the host selected the MIDI 1.0 alternate setting. When the
+	 * MIDI 2.0 alternate is active, @ref rx_packet_cb is used instead.
+	 */
+	void (*rx_midi1_cb)(const struct device *dev, const struct usbd_midi1_packet packet);
 
 	/**
 	 * @brief Callback type for MIDI2 interface runtime status change
@@ -49,7 +74,7 @@ struct usbd_midi_ops {
  * @param[in]  dev   The MIDI2 device
  * @param[in]  ump   The packet to send, in Universal MIDI Packet format
  * @return     0 on success, all other values should be treated as error
- *             -EIO if USB MIDI 2.0 is not enabled by the host
+ *             -EIO if the interface is not ready
  *             -ENOBUFS if there is no space in the TX buffer
  */
 int usbd_midi_send(const struct device *dev, const struct midi_ump ump);
@@ -60,6 +85,21 @@ int usbd_midi_send(const struct device *dev, const struct midi_ump ump);
  * @param[in]  ops   The event handlers. Pass NULL to reset all callbacks
  */
 void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops);
+
+/**
+ * @brief Send a raw MIDI 1.0 message to the host
+ *
+ * Converts the supplied MIDI 1.0 payload into a USB-MIDI 1.0 event when the
+ * host selected the legacy alternate setting, or into an equivalent
+ * Universal MIDI Packet when the host selected the MIDI 2.0 alternate setting.
+ *
+ * @param dev     MIDI device instance
+ * @param packet  USB-MIDI 1.0 payload to send
+ *
+ * @return 0 on success, -EIO if the interface is not ready, -ENOBUFS when the
+ *         transmit ring is full, or a negative errno code on invalid input.
+ */
+int usbd_midi_send_midi1(const struct device *dev, const struct usbd_midi1_packet packet);
 
 /**
  * @}
