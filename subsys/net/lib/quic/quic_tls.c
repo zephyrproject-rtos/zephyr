@@ -1182,13 +1182,13 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_MAX_IDLE_TIMEOUT);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos, CONFIG_QUIC_MAX_IDLE_TIMEOUT);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1216,13 +1216,13 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(max_payload_size);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos, max_payload_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1236,14 +1236,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_DATA);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_DATA);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1257,14 +1257,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1278,14 +1278,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1299,14 +1299,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_UNI);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_UNI);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1320,14 +1320,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1341,14 +1341,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;

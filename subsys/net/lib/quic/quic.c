@@ -215,7 +215,7 @@ enum quic_stream_states {
 	STATE_RESET_READ,
 };
 
-static int quic_put_varint(uint8_t *buf, size_t buf_len, uint64_t val);
+ZTESTABLE_STATIC int quic_put_varint(uint8_t *buf, size_t buf_len, uint64_t val);
 static struct quic_context *quic_find_context(struct quic_endpoint *ep);
 static struct quic_stream *quic_find_stream(struct quic_context *ctx,
 					    struct quic_endpoint *ep,
@@ -237,6 +237,10 @@ static void quic_stream_flush_queue(struct quic_stream *stream);
 static int quic_endpoint_send_connection_close(struct quic_endpoint *ep,
 					       uint64_t error_code,
 					       const char *reason);
+static int quic_endpoint_send_transport_close(struct quic_endpoint *ep,
+					      uint64_t error_code,
+					      uint64_t frame_type,
+					      const char *reason);
 static int derive_application_secrets(struct quic_tls_context *ctx);
 static int quic_send_max_data(struct quic_endpoint *ep);
 static int quic_send_max_stream_data(struct quic_endpoint *ep,
@@ -565,7 +569,9 @@ ZTESTABLE_STATIC int quic_get_len(const uint8_t *buf, size_t buf_len, uint64_t *
 {
 	uint32_t first_byte;
 
-	NET_ASSERT(buf_len > 0);
+	if (buf == NULL || len == NULL || buf_len == 0U) {
+		return -EINVAL;
+	}
 
 	first_byte = buf[0] & 0x3f;
 
@@ -4418,26 +4424,40 @@ static int quic_send_handshake_done(struct quic_endpoint *ep)
  *
  * For TLS alerts, use error code 0x100 + TLS_alert_code (RFC 9001 Section 4.8)
  */
-static int quic_endpoint_send_connection_close(struct quic_endpoint *ep,
-					       uint64_t error_code,
-					       const char *reason)
+static int quic_endpoint_send_transport_close(struct quic_endpoint *ep,
+					      uint64_t error_code,
+					      uint64_t frame_type,
+					      const char *reason)
 {
 	uint8_t frame[128];
 	size_t pos = 0;
 	size_t reason_len = reason != NULL ? strlen(reason) : 0;
 	enum quic_secret_level level;
+	int n;
 
 	/* Use transport error CONNECTION_CLOSE (0x1c) */
 	frame[pos++] = QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT;
 
 	/* Error Code */
-	pos += quic_put_varint(&frame[pos], sizeof(frame) - pos, error_code);
+	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, error_code);
+	if (n <= 0) {
+		return n < 0 ? n : -EINVAL;
+	}
+	pos += n;
 
 	/* Frame Type that triggered the error (0 = unknown/not applicable) */
-	frame[pos++] = 0;
+	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, frame_type);
+	if (n <= 0) {
+		return n < 0 ? n : -EINVAL;
+	}
+	pos += n;
 
 	/* Reason Phrase Length */
-	pos += quic_put_varint(&frame[pos], sizeof(frame) - pos, reason_len);
+	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, reason_len);
+	if (n <= 0) {
+		return n < 0 ? n : -EINVAL;
+	}
+	pos += n;
 
 	/* Reason Phrase */
 	if (reason_len > 0 && pos + reason_len <= sizeof(frame)) {
@@ -4463,6 +4483,13 @@ static int quic_endpoint_send_connection_close(struct quic_endpoint *ep,
 	k_work_cancel_delayable(&ep->recovery.pto_work);
 
 	return quic_send_packet(ep, level, frame, pos);
+}
+
+static int quic_endpoint_send_connection_close(struct quic_endpoint *ep,
+					       uint64_t error_code,
+					       const char *reason)
+{
+	return quic_endpoint_send_transport_close(ep, error_code, 0, reason);
 }
 
 /* Parse peer's transport parameters and initialize flow control */
@@ -4753,16 +4780,18 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 }
 
 /* Helper to encode varint in-place */
-static int quic_put_varint(uint8_t *buf, size_t buf_len, uint64_t val)
+ZTESTABLE_STATIC int quic_put_varint(uint8_t *buf, size_t buf_len, uint64_t val)
 {
 	int size = quic_get_varint_size(val);
+	int ret;
 
-	if (buf_len < size) {
+	if (buf == NULL || buf_len < size) {
 		return -EINVAL;
 	}
 
-	if (quic_put_len(buf, buf_len, val) != 0) {
-		return 0;
+	ret = quic_put_len(buf, buf_len, val);
+	if (ret != 0) {
+		return ret;
 	}
 
 	return size;
@@ -5959,6 +5988,7 @@ static int process_short_header(struct quic_endpoint *ep,
 	/* EAGAIN indicates out-of-order data. Packet was valid, fall through to ACK */
 	if (ret < 0 && ret != -EAGAIN) {
 		NET_DBG("Short header packet handling failure (%d)", ret);
+		quic_endpoint_notify_streams_closed(target_ep);
 		quic_endpoint_unref(target_ep);
 		goto out;
 	} else if (ret > 0) {
