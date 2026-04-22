@@ -1003,7 +1003,79 @@ ZTEST(dns_resolve, test_dns_unpack_name_with_pointer)
 		      "Error parsing records (%d)", ret);
 	zassert_str_equal(expected_names[1], result->data,
 			  "Parsed wrong name (%s)", result->data);
-	/* -1 as end_of_label should point to the last byte in the buffer (pointer offset) */
+	/* -1 as end_of_label should point to the null terminator in the buffer */
+	zassert_equal_ptr(test_records + sizeof(test_records) - 1, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+}
+
+ZTEST(dns_resolve, test_dns_unpack_name_with_nested_pointer)
+{
+	static const uint8_t test_records[] = {
+		/* www.example.com */
+		"\003www\007example\003com\000"
+		/* ftp.xyz.com, using pointer for .com */
+		"\003ftp\003xyz\300\014"
+		/* ssh.xyz.com, using pointer for xyz.com, which is nested */
+		"\003ssh\300\025"
+	};
+	static const uint8_t *expected_names[] = {
+		"www.example.com",
+		"ftp.xyz.com",
+		"ssh.xyz.com"
+	};
+	const size_t offset_2nd_rec = 17;
+	const size_t offset_3rd_rec = 27;
+	const uint8_t *end_of_label = NULL;
+	struct net_buf *result;
+	int ret;
+
+	/* First name */
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[0]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[0], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	zassert_equal_ptr(test_records + offset_2nd_rec, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+
+	/* Second name with a pointer within */
+	end_of_label = NULL;
+
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records + offset_2nd_rec, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[1]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[1], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	zassert_equal_ptr(test_records + offset_3rd_rec, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+
+	/* Third name with a nested pointer */
+	end_of_label = NULL;
+
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records + offset_3rd_rec, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[2]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[2], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	/* -1 as end_of_label should point to the null terminator in the buffer */
 	zassert_equal_ptr(test_records + sizeof(test_records) - 1, end_of_label,
 			  "Wrong end of label");
 
