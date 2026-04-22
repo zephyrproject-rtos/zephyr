@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 Freedom Veiculos Eletricos
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	morse_tx: transmitter {
+		compatible = "zephyr,morse-gpio-tx";
+		gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+	};
+
+	morse_rx: receiver {
+		compatible = "zephyr,morse-gpio-rx";
+		gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+	};
+
+	morse: morse {
+		compatible = "zephyr,morse";
+		status = "okay";
+		speed = <20>;
+		tmr = <&counter0>;
+		tx-tmr-chan = <1>;
+		rx-tmr-chan = <0>;
+		tx-drv = <&morse_tx>;
+		rx-drv = <&morse_rx>;
+	};
+};
