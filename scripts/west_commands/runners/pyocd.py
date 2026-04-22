@@ -18,10 +18,9 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, target,
                  pyocd='pyocd',
-                 dev_id=None, flash_addr=0x0, erase=False, flash_opts=None,
+                 dev_id=None, erase=False, flash_opts=None,
                  gdb_port=DEFAULT_PYOCD_GDB_PORT,
                  telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
-                 pyocd_config=None,
                  daparg=None, frequency=None, tool_opt=None):
         super().__init__(cfg)
 
@@ -34,7 +33,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
         self.target_args = ['-t', target]
         self.pyocd = pyocd
-        self.flash_addr_args = ['-a', hex(flash_addr)] if flash_addr else []
+        self.flash_addr_args = []
         self.erase = erase
         self.gdb_cmd = [cfg.gdb] if cfg.gdb is not None else None
         self.gdb_port = gdb_port
@@ -115,13 +114,9 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
-        build_conf = BuildConfiguration(cfg.build_dir)
-        flash_addr = cls.get_flash_address(args, build_conf)
-
         ret = PyOcdBinaryRunner(
             cfg, args.target,
-            pyocd=args.pyocd,
-            flash_addr=flash_addr, erase=args.erase, flash_opts=args.flash_opt,
+            pyocd=args.pyocd, erase=args.erase, flash_opts=args.flash_opt,
             gdb_port=args.gdb_port, telnet_port=args.telnet_port, tui=args.tui,
             dev_id=args.dev_id, daparg=args.daparg,
             frequency=args.frequency,
@@ -154,6 +149,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             fname = self.hex_name
         # Preferring .bin over .elf
         elif self.bin_name is not None and os.path.isfile(self.bin_name):
+            flash_addr = self.flash_address_from_build_conf(self.build_conf)
+            self.flash_addr_args = ['-a', hex(flash_addr)]
             fname = self.bin_name
         elif self.elf_name is not None and os.path.isfile(self.elf_name):
             fname = self.elf_name
