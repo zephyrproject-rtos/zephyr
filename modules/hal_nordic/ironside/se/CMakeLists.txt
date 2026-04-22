@@ -16,6 +16,7 @@ zephyr_library_compile_definitions(IRONSIDE_SE_GLUE_EXT_FILE_PATH="ironside_zeph
 zephyr_library_compile_definitions_ifdef(CONFIG_IRONSIDE_SE_CALL_MINIMAL IRONSIDE_SE_CALL_MINIMAL=1)
 zephyr_library_sources_ifdef(CONFIG_IRONSIDE_SE_CALL_ZEPHYR call.c)
 zephyr_library_sources_ifdef(CONFIG_IRONSIDE_SE_DVFS dvfs.c)
+zephyr_library_sources_ifdef(CONFIG_IRONSIDE_SE_L2CACHE_DISABLE l2cache_disable.c)
 
 if(CONFIG_NRF_PERIPHCONF_SECTION OR CONFIG_NRF_MPCCONF_SECTION)
   zephyr_linker_sources(SECTIONS uicr.ld)

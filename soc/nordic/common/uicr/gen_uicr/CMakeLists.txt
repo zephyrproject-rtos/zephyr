@@ -75,7 +75,7 @@ set(IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE "")
 
 if(CONFIG_SOC_NRF54H20)
   set(IRONSIDE_SE_PERIPHCONF_REGISTERS_FILE
-    "${IRONSIDE_SUPPORT_DIR}/se/resources/periphconf_registers-nrf54h20_xxaa-v23.4.0+27.json"
+    "${IRONSIDE_SUPPORT_DIR}/se/resources/periphconf_registers-nrf54h20_xxaa-v23.6.0+29.json"
   )
 endif()
 

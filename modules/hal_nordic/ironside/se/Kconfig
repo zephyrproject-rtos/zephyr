@@ -150,4 +150,10 @@ config NRF_MPCCONF_API_IN_RAM
 	  This is not supported with the default IronSide call driver in Zephyr,
 	  unless it and all of its dependencies are also relocated to be executed from RAM.
 
+config IRONSIDE_SE_L2CACHE_DISABLE
+	bool "Disable L2 cache"
+	depends on SOC_NRF54H20_CPUAPP
+	help
+	  Disable the L2 cache.
+
 endmenu # IronSide SE
