@@ -1089,6 +1089,39 @@
 				status = "disabled";
 			};
 		};
+
+		spi0: spi@4004ac00 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x4004ac00 DT_SIZE_K(1)>;
+			interrupts = <415 1>, <413 1>, <414 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@4004b000 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x4004b000 DT_SIZE_K(1)>;
+			interrupts = <418 1>, <416 1>, <417 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi@4004b400 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x4004b400 DT_SIZE_K(1)>;
+			interrupts = <421 1>, <419 1>, <420 1>;
+			interrupt-names = "error", "rx", "tx";
+			channel = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 

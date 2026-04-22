@@ -20,4 +20,13 @@
 			input-enable;
 		};
 	};
+
+	/omit-if-no-ref/ spi1_pins: spi1 {
+		spi1-pinmux {
+			pinmux = <RZG_PINMUX(PORT_04, 0, 2)>, /* cK */
+				 <RZG_PINMUX(PORT_04, 1, 2)>, /* MOSI */
+				 <RZG_PINMUX(PORT_04, 2, 2)>, /* MIS0 */
+				 <RZG_PINMUX(PORT_04, 3, 2)>; /* SSL */
+		};
+	};
 };
