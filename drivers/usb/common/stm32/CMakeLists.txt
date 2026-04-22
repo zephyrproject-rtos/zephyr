@@ -15,19 +15,15 @@ if(CONFIG_STM32_USB_COMMON)
   # PHY interface can be used by the USB controller.
   #
   # These drivers must be added to all builds where they
-  # might be useful since there is no (easy) way to detect
+  # MIGHT be useful since there is no (easy) way to detect
   # whether or not they are required; however, the linker
   # should ultimately discard their code if not needed.
-  if(CONFIG_SOC_SERIES_STM32F4X OR CONFIG_SOC_SERIES_STM32H7X)
+  # The drivers are written carefully such that they don't
+  # trigger build errors if built when not actually needed.
+  if(CONFIG_STM32_HAS_EMBEDDED_FS_ULPI_OFF_QUIRK)
     zephyr_library_sources(phy_embeddedfs_ulpi_off.c)
   endif()
-  if((CONFIG_SOC_SERIES_STM32F2X OR
-      CONFIG_SOC_SERIES_STM32F4X OR
-      CONFIG_SOC_SERIES_STM32F7X OR
-      CONFIG_SOC_SERIES_STM32H7X) AND
-     CONFIG_DT_HAS_USB_ULPI_PHY_ENABLED)
-    zephyr_library_sources(phy_ulpi_itf.c)
-  endif()
+  zephyr_library_sources_ifdef(CONFIG_STM32_PHY_EXTERNAL_ULPI phy_ulpi_itf.c)
 
   # Embedded HS PHY drivers
   if(CONFIG_STM32_PHY_USBPHYC)

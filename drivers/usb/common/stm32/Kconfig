@@ -9,6 +9,30 @@ config STM32_USB_COMMON
 	  Enable compilation of STM32 USB common code.
 	  This option is selected by the USB drivers when appropriate.
 
+config STM32_HAS_EMBEDDED_FS_ULPI_OFF_QUIRK
+	def_bool y
+	# Hand-maintained list of series affected by the quirk.
+	depends on SOC_SERIES_STM32F4X || \
+		   SOC_SERIES_STM32H7X
+	help
+	  Hidden option for series with quirk where the ULPI clock
+	  must be disabled when using the embedded Full-Speed PHY.
+
+config STM32_PHY_EXTERNAL_ULPI
+	def_bool y
+	# ULPI interface MAY be needed only if there is an active ULPI PHY,
+	# and these PHYs must have "usb-ulpi-phy" in their compatible list.
+	depends on DT_HAS_USB_ULPI_PHY_ENABLED
+	# Hand-maintained list of series with an ULPI interface.
+	# This ensures the driver isn't built on unsupported series.
+	depends on SOC_SERIES_STM32F2X || \
+		   SOC_SERIES_STM32F4X || \
+		   SOC_SERIES_STM32F7X || \
+		   SOC_SERIES_STM32H7X
+	help
+	  Enable STM32 ULPI PHY interface pseudo-PHY driver
+	  which is required to use external ULPI PHYs.
+
 config STM32_PHY_USBPHYC
 	def_bool y
 	depends on DT_HAS_ST_STM32_USBPHYC_ENABLED
