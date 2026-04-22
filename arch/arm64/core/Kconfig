@@ -13,6 +13,7 @@ config CPU_CORTEX_A
 	select ARCH_HAS_SINGLE_THREAD_SUPPORT if !SMP
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
+	select ARCH_HAS_PMU
 	imply FPU
 	imply FPU_SHARING
 	help
@@ -459,5 +460,7 @@ config ARM64_SVE_VL_MAX
 	  save some per-thread memory in which case the hardware will be
 	  limited to the specified length. Having a larger value than what
 	  the hardware supports will only waste memory.
+
+source "arch/arm64/core/Kconfig.pmu"
 
 endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R
