@@ -94,6 +94,13 @@
 #         Plain-English description. Describe what the system is about, from an
 #         outsider's perspective.
 #
+#     tests:
+#         List of test suite names that are relevant to the area. This is used to
+#         help people find tests that are relevant to the area, and also to determine
+#         which tests to run when a pull request modifies the area. The test suite names
+#         are the ones used in test case definitions, and in test suite definitions in
+#         testcase.yaml.
+#
 #
 # All areas must have a 'files' and/or 'files-regex' key. The other keys are
 # optional.
