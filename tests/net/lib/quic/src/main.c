@@ -1612,6 +1612,7 @@ ZTEST(net_socket_quic, test_15_header_protection_rfc9001)
 
 #define MAX_BUF_SIZE 1024
 #define POLL_TIMEOUT_MS 1000
+#define HELPER_POLL_TIMEOUT_MS 50
 
 struct config {
 	int sock;             /* Server listening socket */
@@ -1622,6 +1623,38 @@ struct config {
 	int counter;
 	volatile bool test_done;
 };
+
+static int wait_for_pollin(struct config *data, struct zsock_pollfd *pfd)
+{
+	int ret;
+
+	while (!data->test_done) {
+		pfd->revents = 0;
+
+		ret = zsock_poll(pfd, 1, HELPER_POLL_TIMEOUT_MS);
+		if (ret < 0) {
+			return -errno;
+		}
+
+		if (ret == 0) {
+			continue;
+		}
+
+		if (pfd->revents & ZSOCK_POLLIN) {
+			return 0;
+		}
+
+		if (pfd->revents & ZSOCK_POLLNVAL) {
+			return -EBADF;
+		}
+
+		if (pfd->revents & (ZSOCK_POLLERR | ZSOCK_POLLHUP)) {
+			return -EIO;
+		}
+	}
+
+	return -ECANCELED;
+}
 
 static void server_thread(void *p1, void *p2, void *p3)
 {
@@ -1644,9 +1677,14 @@ static void server_thread(void *p1, void *p2, void *p3)
 		.events = ZSOCK_POLLIN,
 	};
 
-	ret = zsock_poll(&pfd, 1, SYS_FOREVER_MS);
-	if (!(pfd.revents & ZSOCK_POLLIN)) {
-		data->error = -ETIMEDOUT;
+	ret = wait_for_pollin(data, &pfd);
+	if (ret == -ECANCELED) {
+		LOG_DBG("Poll cancelled while waiting for client connection");
+		return;
+	}
+
+	if (ret < 0) {
+		data->error = ret;
 		LOG_DBG("Poll error while waiting for client connection");
 		return;
 	}
@@ -1667,9 +1705,14 @@ static void server_thread(void *p1, void *p2, void *p3)
 	pfd.events = ZSOCK_POLLIN;
 	pfd.revents = 0;
 
-	ret = zsock_poll(&pfd, 1, SYS_FOREVER_MS);
-	if (!(pfd.revents & ZSOCK_POLLIN)) {
-		data->error = -ETIMEDOUT;
+	ret = wait_for_pollin(data, &pfd);
+	if (ret == -ECANCELED) {
+		LOG_DBG("Poll cancelled while waiting for client stream");
+		return;
+	}
+
+	if (ret < 0) {
+		data->error = ret;
 		LOG_DBG("Poll error while waiting for client stream");
 		return;
 	}
@@ -1690,19 +1733,15 @@ static void server_thread(void *p1, void *p2, void *p3)
 	pfd.revents = 0;
 
 	while (true) {
-		ret = zsock_poll(&pfd, 1, POLL_TIMEOUT_MS);
-		if (data->test_done) {
+		ret = wait_for_pollin(data, &pfd);
+		if (ret == -ECANCELED) {
 			break;
 		}
 
-		if (ret < 0 && errno != EAGAIN) {
-			data->error = -errno;
+		if (ret < 0) {
+			data->error = ret;
 			LOG_DBG("Poll error on stream (%d)", data->error);
 			break;
-		}
-
-		if (!(pfd.revents & ZSOCK_POLLIN)) {
-			continue;
 		}
 
 		len = zsock_recv(stream, buf, sizeof(buf), 0);
@@ -2173,9 +2212,12 @@ static void server_uni_thread(void *p1, void *p2, void *p3)
 	};
 
 	/* First accept the incoming client connection */
-	ret = zsock_poll(&pfd, 1, SYS_FOREVER_MS);
-	if (!(pfd.revents & ZSOCK_POLLIN)) {
-		data->error = -ETIMEDOUT;
+	ret = wait_for_pollin(data, &pfd);
+	if (ret == -ECANCELED) {
+		return;
+	}
+	if (ret < 0) {
+		data->error = ret;
 		LOG_DBG("Poll error while waiting for client connection");
 		return;
 	}
@@ -2196,9 +2238,12 @@ static void server_uni_thread(void *p1, void *p2, void *p3)
 	pfd.events = ZSOCK_POLLIN;
 	pfd.revents = 0;
 
-	ret = zsock_poll(&pfd, 1, SYS_FOREVER_MS);
-	if (!(pfd.revents & ZSOCK_POLLIN)) {
-		data->error = -ETIMEDOUT;
+	ret = wait_for_pollin(data, &pfd);
+	if (ret == -ECANCELED) {
+		goto out;
+	}
+	if (ret < 0) {
+		data->error = ret;
 		LOG_DBG("Poll error while waiting for client stream");
 		goto out;
 	}
@@ -2983,9 +3028,7 @@ static void quic_server_and_client_with_client_cert(const char *server,
 	}
 
 	ret = k_thread_join(&cert_server_thread_data, K_MSEC(500));
-	if (ret != -EAGAIN) {
-		zassert_equal(ret, 0, "Cannot join thread (%d)", ret);
-	}
+	zassert_equal(ret, 0, "Cannot join thread (%d)", ret);
 
 	if (setup_client_cert) {
 		server_stream_sock = cert_data.stream_recv_sock;
@@ -3155,9 +3198,7 @@ cleanup:
 	}
 
 	ret = k_thread_join(&server_auth_thread_data, K_MSEC(500));
-	if (ret != -EAGAIN) {
-		zassert_equal(ret, 0, "Cannot join thread (%d)", ret);
-	}
+	zassert_equal(ret, 0, "Cannot join thread (%d)", ret);
 
 	if (expect_success) {
 		server_stream_sock = server_auth_data.stream_recv_sock;
