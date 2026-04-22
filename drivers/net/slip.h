@@ -29,8 +29,6 @@ struct slip_context {
 	struct net_if *iface;
 	uint8_t state;
 
-	uint8_t mac_addr[6];
-
 #if defined(CONFIG_SLIP_STATISTICS)
 #define SLIP_STATS(statement)
 #else

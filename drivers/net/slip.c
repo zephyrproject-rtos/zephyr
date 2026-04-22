@@ -309,6 +309,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 void slip_iface_init(struct net_if *iface)
 {
 	struct slip_context *slip = net_if_get_device(iface)->data;
+	uint8_t mac_addr[6];
 	int err;
 
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
@@ -323,21 +324,21 @@ void slip_iface_init(struct net_if *iface)
 	slip->state = STATE_OK;
 
 	if (CONFIG_SLIP_MAC_ADDR[0] != 0) {
-		if (net_bytes_from_str(slip->mac_addr, sizeof(slip->mac_addr),
+		if (net_bytes_from_str(mac_addr, sizeof(mac_addr),
 				       CONFIG_SLIP_MAC_ADDR) < 0) {
 			goto use_random_mac;
 		}
 	} else {
 use_random_mac:
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
-		slip->mac_addr[0] = 0x00;
-		slip->mac_addr[1] = 0x00;
-		slip->mac_addr[2] = 0x5E;
-		slip->mac_addr[3] = 0x00;
-		slip->mac_addr[4] = 0x53;
-		slip->mac_addr[5] = sys_rand8_get();
+		mac_addr[0] = 0x00;
+		mac_addr[1] = 0x00;
+		mac_addr[2] = 0x5E;
+		mac_addr[3] = 0x00;
+		mac_addr[4] = 0x53;
+		mac_addr[5] = sys_rand8_get();
 	}
-	net_if_set_link_addr(iface, slip->mac_addr, sizeof(slip->mac_addr), NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
 
 	err = net_if_set_name(iface, CONFIG_SLIP_DRV_NAME);
 	if (err < 0) {
