@@ -315,12 +315,14 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         flash_and_run_args += self._download_modifiers
 
         if self._reset:
-            # '--start' is needed to start execution after flash.
-            # The default start address is the beggining of the flash,
-            # but another value can be explicitly specified if desired
-            flash_and_run_args.append("--start")
-            if self._start_address is not None:
-                flash_and_run_args.append(f"0x{self._start_address:X}")
-            flash_and_run_args += self._start_modifiers
+            # Start execution through a system reset ('-rst') unless a
+            # start address or a start modifier is provided as runner argument.
+            if self._start_address is not None or self._start_modifiers:
+                flash_and_run_args.append("--start")
+                if self._start_address is not None:
+                    flash_and_run_args.append(f"0x{self._start_address:X}")
+                flash_and_run_args += self._start_modifiers
+            else:
+                flash_and_run_args.append("-rst")
 
         self.check_call(cmd + flash_and_run_args)
