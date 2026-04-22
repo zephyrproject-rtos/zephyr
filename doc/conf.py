@@ -266,6 +266,7 @@ latex_documents = [
     ("index-tex", "zephyr.tex", "Zephyr Project Documentation", author, "manual"),
 ]
 latex_engine = "xelatex"
+figure_align = "H" # Place figures exactly where they are defined in the source file.
 
 # -- Options for zephyr.doxyrunner plugin ---------------------------------
 
