@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PSC3M6
+	select ARM
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select ARM_TRUSTZONE_M
+	select ARCH_HAS_TRUSTED_EXECUTION
+	select BUILD_OUTPUT_HEX
+	select BUILD_OUTPUT_BIN
+	select CPU_CORTEX_M_HAS_CMSE
+	select SOC_EARLY_INIT_HOOK
+	select CPU_CORTEX_M33
+	select NOINIT_SNIPPET_FIRST
+	select HAS_PM
+	select DYNAMIC_INTERRUPTS

@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @brief Infineon PSC3M6 SoC.
+ */
+
+#ifndef _SOC__H_
+#define _SOC__H_
+
+#ifndef _ASMLANGUAGE
+#include <cy_device_headers.h>
+#endif /* !_ASMLANGUAGE */
+
+#endif /* _SOC__H_ */
