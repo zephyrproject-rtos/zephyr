@@ -302,4 +302,6 @@
 
 &systick {
 	external-clock-source;
+	/* zephyr,min-timeout-cycles: 32 cycles @ 32kHz = 1ms (1 tick) */
+	zephyr,min-timeout-cycles = <32>;
 };
