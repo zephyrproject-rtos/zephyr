@@ -559,11 +559,16 @@ static int esp32_wifi_connect(const struct device *dev,
 		data->status.security = WIFI_AUTH_OPEN;
 		wifi_config.sta.pmf_cfg.required = false;
 		break;
+#if defined(CONFIG_ESP32_WIFI_OWE)
 	case WIFI_SECURITY_TYPE_OWE:
+		memset(wifi_config.sta.password, 0, sizeof(wifi_config.sta.password));
 		wifi_config.sta.owe_enabled = 1;
-		wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
-		wifi_config.sta.pmf_cfg.capable = true;
-		wifi_config.sta.pmf_cfg.required = true;
+		wifi_config.sta.threshold.authmode = WIFI_AUTH_OWE;
+		wifi_config.sta.pmf_cfg.capable = (params->mfp != WIFI_MFP_DISABLE);
+		wifi_config.sta.pmf_cfg.required = (params->mfp == WIFI_MFP_REQUIRED);
+		data->status.security = WIFI_AUTH_OWE;
+		break;
+#endif
 	case WIFI_SECURITY_TYPE_PSK:
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
 		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
@@ -726,18 +731,13 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		data->status.security = WIFI_AUTH_OPEN;
 		wifi_config.ap.pmf_cfg.required = false;
 		break;
-	case WIFI_SECURITY_TYPE_OWE:
-		wifi_config.sta.owe_enabled = 1;
-		wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
-		wifi_config.sta.pmf_cfg.capable = true;
-		wifi_config.sta.pmf_cfg.required = true;
-		break;
 	case WIFI_SECURITY_TYPE_PSK:
 		strncpy((char *) wifi_config.ap.password, params->psk, params->psk_length);
 		wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
 		data->status.security = WIFI_AUTH_WPA2_PSK;
 		wifi_config.ap.pmf_cfg.required = false;
 		break;
+	case WIFI_SECURITY_TYPE_OWE:
 	case WIFI_SECURITY_TYPE_SAE:
 	case WIFI_SECURITY_TYPE_SAE_H2E:
 	case WIFI_SECURITY_TYPE_SAE_AUTO:
@@ -938,6 +938,9 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 	switch (data->status.security) {
 	case WIFI_AUTH_OPEN:
 		status->security = WIFI_SECURITY_TYPE_NONE;
+		break;
+	case WIFI_AUTH_OWE:
+		status->security = WIFI_SECURITY_TYPE_OWE;
 		break;
 	case WIFI_AUTH_WPA2_PSK:
 		status->security = WIFI_SECURITY_TYPE_PSK;

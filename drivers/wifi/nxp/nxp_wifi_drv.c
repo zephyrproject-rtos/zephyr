@@ -1070,7 +1070,7 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 		if (params->security == WIFI_SECURITY_TYPE_NONE) {
 			nxp_wlan_network.security.type = WLAN_SECURITY_NONE;
 		}
-#if defined (CONFIG_NXP_WIFI_OWE)
+#if defined(CONFIG_NXP_WIFI_OWE)
 		else if (params->security == WIFI_SECURITY_TYPE_OWE) {
 			nxp_wlan_network.security.type = WLAN_SECURITY_OWE_ONLY;
 			nxp_wlan_network.security.key_mgmt = WLAN_KEY_MGMT_OWE;
