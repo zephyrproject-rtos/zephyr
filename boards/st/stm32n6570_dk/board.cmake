@@ -8,6 +8,7 @@ if(CONFIG_STM32N6_BOOT_SERIAL)
 else()
   board_runner_args(stm32cubeprogrammer "--port=swd")
   board_runner_args(stm32cubeprogrammer "--tool-opt= mode=HOTPLUG ap=1")
+  board_runner_args(stm32cubeprogrammer "--no-reset")
   board_runner_args(stm32cubeprogrammer "--extload=MX66UW1G45G_STM32N6570-DK.stldr")
 
   set(app_base_addr 0x70000000)
