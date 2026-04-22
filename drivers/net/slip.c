@@ -134,28 +134,8 @@ static struct net_pkt *slip_poll_handler(struct slip_context *slip)
 	return NULL;
 }
 
-static inline struct net_if *get_iface(struct slip_context *context,
-				       uint16_t vlan_tag)
-{
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(context->iface, vlan_tag);
-	if (!iface) {
-		return context->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
-	return context->iface;
-#endif
-}
-
 static void process_msg(struct slip_context *slip)
 {
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_pkt *pkt;
 
 	pkt = slip_poll_handler(slip);
@@ -163,21 +143,7 @@ static void process_msg(struct slip_context *slip)
 		return;
 	}
 
-#if defined(CONFIG_NET_VLAN)
-	{
-		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-		if (net_ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
-			struct net_eth_vlan_hdr *hdr_vlan =
-				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-
-			net_pkt_set_vlan_tci(pkt, net_ntohs(hdr_vlan->vlan.tci));
-			vlan_tag = net_pkt_vlan_tag(pkt);
-		}
-	}
-#endif
-
-	if (net_recv_data(get_iface(slip, vlan_tag), pkt) < 0) {
+	if (net_recv_data(slip->iface, pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 
