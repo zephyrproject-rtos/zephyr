@@ -54,6 +54,10 @@ LOG_MODULE_REGISTER(net_quic, CONFIG_QUIC_LOG_LEVEL);
 
 BUILD_ASSERT(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL <= CONFIG_QUIC_STREAM_RX_BUFFER_SIZE,
 	     "Flow control window must not exceed RX buffer size");
+BUILD_ASSERT(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE <= CONFIG_QUIC_STREAM_RX_BUFFER_SIZE,
+	     "Peer-initiated bidi flow control window must not exceed RX buffer size");
+BUILD_ASSERT(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_UNI <= CONFIG_QUIC_STREAM_RX_BUFFER_SIZE,
+	     "Peer-initiated uni flow control window must not exceed RX buffer size");
 
 #define SLAB_ALLOC_TIMEOUT K_MSEC(500)
 
@@ -219,11 +223,11 @@ static struct quic_stream *quic_find_stream(struct quic_context *ctx,
 static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx,
 							struct quic_endpoint *ep,
 							uint64_t stream_id);
-static int quic_stream_receive_data(struct quic_stream *stream,
-				    uint64_t offset,
-				    const uint8_t *data,
-				    size_t len,
-				    bool is_fin);
+ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
+					      uint64_t offset,
+					      const uint8_t *data,
+					      size_t len,
+					      bool is_fin);
 static struct quic_stream *quic_find_stream_by_id(struct quic_endpoint *ep,
 						  uint64_t stream_id);
 static void quic_tls_cleanup(struct quic_tls_context *tls);
@@ -325,6 +329,27 @@ static struct quic_pkt *quic_pkt_alloc(struct k_mem_slab *slab, k_timeout_t time
 	pkt->slab = slab;
 
 	return pkt;
+}
+
+ZTESTABLE_STATIC uint64_t quic_stream_local_rx_limit(const struct quic_endpoint *ep,
+						     int stream_type)
+{
+	bool is_bidi;
+	bool local_initiated;
+
+	if (ep == NULL) {
+		return 0;
+	}
+
+	is_bidi = (stream_type & QUIC_STREAM_UNIDIRECTIONAL) == 0;
+	local_initiated = ((stream_type & QUIC_STREAM_SERVER) != 0) == ep->is_server;
+
+	if (!is_bidi) {
+		return local_initiated ? 0 : CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_UNI;
+	}
+
+	return local_initiated ? CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL :
+				 CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE;
 }
 
 #if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
@@ -3897,11 +3922,11 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	stream->bytes_sent = 0;
 	stream->bytes_acked = 0;
 
-	/* RX flow control. Initialize to what we advertise in transport params */
-	stream->local_max_data = MIN(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL,
-				     sizeof(stream->rx_buf.data));
-	stream->local_max_data_sent = CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL;
+	/* RX flow control is initialized once the stream type is known. */
+	stream->local_max_data = 0;
+	stream->local_max_data_sent = 0;
 	stream->bytes_received = 0;
+	stream->highest_offset_received = 0;
 	stream->read_closed = false;
 	stream->stop_sending_error_code = QUIC_ERROR_NO_ERROR;
 	stream->tx_reset = false;
@@ -4871,15 +4896,17 @@ void quic_stream_foreach(quic_stream_cb_t cb, void *user_data)
 /*
  * Deliver received data to a stream
  */
-static int quic_stream_receive_data(struct quic_stream *stream,
-				    uint64_t offset,
-				    const uint8_t *data,
-				    size_t len,
-				    bool is_fin)
+ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
+					      uint64_t offset,
+					      const uint8_t *data,
+					      size_t len,
+					      bool is_fin)
 {
 	struct quic_stream_rx_buffer *buf = &stream->rx_buf;
 	struct quic_endpoint *ep = stream->ep;
 	bool progress = true;
+	uint64_t end;
+	uint64_t new_bytes = 0;
 	size_t available;
 	int ret = 0;
 
@@ -4897,6 +4924,37 @@ static int quic_stream_receive_data(struct quic_stream *stream,
 	}
 
 	k_mutex_lock(&stream->cond.data_available, K_FOREVER);
+
+	if (len > UINT64_MAX - offset) {
+		NET_ERR("[ST:%p/%d] Stream offset overflow: offset=%" PRIu64
+			" len=%zu", stream, quic_get_by_stream(stream), offset, len);
+		ret = -EPROTO;
+		goto flow_control_error;
+	}
+
+	end = offset + len;
+	if (end > stream->local_max_data) {
+		NET_ERR("[ST:%p/%d] Stream data exceeds MAX_STREAM_DATA: "
+			"end=%" PRIu64 " limit=%" PRIu64,
+			stream, quic_get_by_stream(stream), end, stream->local_max_data);
+		ret = -EPROTO;
+		goto flow_control_error;
+	}
+
+	if (end > stream->highest_offset_received) {
+		new_bytes = end - stream->highest_offset_received;
+		if (ep != NULL &&
+		    (new_bytes > ep->rx_fc.max_data ||
+		     ep->rx_fc.bytes_received > ep->rx_fc.max_data - new_bytes)) {
+			NET_ERR("[ST:%p/%d] Stream data exceeds MAX_DATA: "
+				"new=%" PRIu64 " conn_used=%" PRIu64
+				" conn_limit=%" PRIu64,
+				stream, quic_get_by_stream(stream), new_bytes,
+				ep->rx_fc.bytes_received, ep->rx_fc.max_data);
+			ret = -EPROTO;
+			goto flow_control_error;
+		}
+	}
 
 	/* For now, just log and store if this is in-order data */
 	if (offset != buf->read_offset + (buf->tail - buf->head)) {
@@ -4928,6 +4986,12 @@ static int quic_stream_receive_data(struct quic_stream *stream,
 				seg->offset = offset;
 				seg->len = (uint16_t)len;
 				memcpy(seg->data, data, len);
+				stream->highest_offset_received =
+					MAX(stream->highest_offset_received, end);
+				stream->bytes_received += new_bytes;
+				if (ep != NULL) {
+					ep->rx_fc.bytes_received += new_bytes;
+				}
 
 				NET_DBG("[ST:%p/%d] Stored OOO segment: offset=%" PRIu64
 					" len=%zu slots_used=%u",
@@ -4994,9 +5058,10 @@ static int quic_stream_receive_data(struct quic_stream *stream,
 	buf->tail += len;
 
 	/* Update flow control tracking */
-	stream->bytes_received += len;
+	stream->highest_offset_received = MAX(stream->highest_offset_received, end);
+	stream->bytes_received += new_bytes;
 	if (ep != NULL) {
-		ep->rx_fc.bytes_received += len;
+		ep->rx_fc.bytes_received += new_bytes;
 	}
 
 	/* Flow control window updates are sent when the application consumes
@@ -5050,6 +5115,17 @@ static int quic_stream_receive_data(struct quic_stream *stream,
 
 unlock:
 	k_mutex_unlock(&stream->cond.data_available);
+
+	return ret;
+
+flow_control_error:
+	k_mutex_unlock(&stream->cond.data_available);
+
+	if (ep != NULL) {
+		quic_endpoint_send_connection_close(ep,
+						    QUIC_ERROR_FLOW_CONTROL_ERROR,
+						    "stream data exceeds flow control");
+	}
 
 	return ret;
 }
@@ -5152,9 +5228,9 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 	}
 
 	/* Set local limits for receiving data on this stream */
-	stream->local_max_data = MIN(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL,
-				     sizeof(stream->rx_buf.data));
+	stream->local_max_data = quic_stream_local_rx_limit(ep, stream->type);
 	stream->bytes_received = 0;
+	stream->highest_offset_received = 0;
 	stream->local_max_data_sent = stream->local_max_data;
 
 	stream->tx_buf.base_offset = 0;

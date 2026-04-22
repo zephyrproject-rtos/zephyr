@@ -644,6 +644,162 @@ ZTEST(net_socket_quic, test_03b_anti_amplification_budget)
 #endif
 }
 
+static void init_test_rx_stream(struct quic_stream *stream,
+				struct quic_endpoint *ep,
+				uint64_t stream_max_data,
+				uint64_t conn_max_data,
+				uint64_t stream_id)
+{
+	memset(stream, 0, sizeof(*stream));
+	memset(ep, 0, sizeof(*ep));
+
+	stream->id = stream_id;
+	stream->ep = ep;
+	stream->local_max_data = stream_max_data;
+	stream->local_max_data_sent = stream_max_data;
+	stream->rx_buf.size = sizeof(stream->rx_buf.data);
+	stream->stop_sending_error_code = QUIC_ERROR_NO_ERROR;
+
+	k_mutex_init(&stream->cond.data_available);
+	k_condvar_init(&stream->cond.recv);
+	k_poll_signal_init(&stream->recv.signal);
+
+	ep->sock = -1;
+	ep->rx_fc.max_data = conn_max_data;
+	ep->rx_fc.max_data_sent = conn_max_data;
+}
+
+ZTEST(net_socket_quic, test_03c_stream_local_rx_limit_by_type)
+{
+	struct quic_endpoint *client_ep = reset_test_ep(&test_ep_a);
+	struct quic_endpoint *server_ep = reset_test_ep(&test_ep_b);
+
+	server_ep->is_server = true;
+
+	zassert_equal(quic_stream_local_rx_limit(client_ep,
+						 QUIC_STREAM_CLIENT |
+						 QUIC_STREAM_BIDIRECTIONAL),
+		      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL,
+		      "Wrong local bidi limit for client");
+	zassert_equal(quic_stream_local_rx_limit(client_ep,
+						 QUIC_STREAM_SERVER |
+						 QUIC_STREAM_BIDIRECTIONAL),
+		      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE,
+		      "Wrong remote bidi limit for client");
+	zassert_equal(quic_stream_local_rx_limit(client_ep,
+						 QUIC_STREAM_SERVER |
+						 QUIC_STREAM_UNIDIRECTIONAL),
+		      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_UNI,
+		      "Wrong remote uni limit for client");
+	zassert_equal(quic_stream_local_rx_limit(client_ep,
+						 QUIC_STREAM_CLIENT |
+						 QUIC_STREAM_UNIDIRECTIONAL),
+		      0, "Local uni stream should not accept peer data");
+
+	zassert_equal(quic_stream_local_rx_limit(server_ep,
+						 QUIC_STREAM_SERVER |
+						 QUIC_STREAM_BIDIRECTIONAL),
+		      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL,
+		      "Wrong local bidi limit for server");
+	zassert_equal(quic_stream_local_rx_limit(server_ep,
+						 QUIC_STREAM_CLIENT |
+						 QUIC_STREAM_BIDIRECTIONAL),
+		      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE,
+		      "Wrong remote bidi limit for server");
+	zassert_equal(quic_stream_local_rx_limit(server_ep,
+						 QUIC_STREAM_CLIENT |
+						 QUIC_STREAM_UNIDIRECTIONAL),
+		      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_UNI,
+		      "Wrong remote uni limit for server");
+	zassert_equal(quic_stream_local_rx_limit(server_ep,
+						 QUIC_STREAM_SERVER |
+						 QUIC_STREAM_UNIDIRECTIONAL),
+		      0, "Local uni stream should not accept peer data");
+}
+
+ZTEST(net_socket_quic, test_03d_stream_rx_flow_control_limit)
+{
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t data[9] = { 0 };
+	int ret;
+
+	init_test_rx_stream(&stream, ep, 8, 64, 1);
+
+	ret = quic_stream_receive_data(&stream, 0, data, sizeof(data), false);
+	zassert_equal(ret, -EPROTO, "Expected MAX_STREAM_DATA violation (%d)", ret);
+	zassert_equal(stream.bytes_received, 0, "Stream RX accounting changed unexpectedly");
+	zassert_equal(stream.highest_offset_received, 0,
+		      "Highest offset changed on rejected data");
+	zassert_equal(ep->rx_fc.bytes_received, 0,
+		      "Connection RX accounting changed on rejected data");
+}
+
+ZTEST(net_socket_quic, test_03e_connection_rx_flow_control_limit)
+{
+	static struct quic_stream stream1;
+	static struct quic_stream stream2;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t data4[4] = { 0 };
+	uint8_t data1[1] = { 0 };
+	int ret;
+
+	init_test_rx_stream(&stream1, ep, 16, 8, 0);
+	init_test_rx_stream(&stream2, ep, 16, 8, 4);
+	stream2.ep = ep;
+
+	ret = quic_stream_receive_data(&stream1, 0, data4, sizeof(data4), false);
+	zassert_equal(ret, 0, "Unexpected receive failure on stream1 (%d)", ret);
+
+	ret = quic_stream_receive_data(&stream2, 0, data4, sizeof(data4), false);
+	zassert_equal(ret, 0, "Unexpected receive failure on stream2 (%d)", ret);
+	zassert_equal(ep->rx_fc.bytes_received, 8,
+		      "Connection RX accounting should reach MAX_DATA");
+
+	ret = quic_stream_receive_data(&stream2, 4, data1, sizeof(data1), false);
+	zassert_equal(ret, -EPROTO, "Expected MAX_DATA violation (%d)", ret);
+	zassert_equal(ep->rx_fc.bytes_received, 8,
+		      "Connection RX accounting should not grow after violation");
+}
+
+ZTEST(net_socket_quic, test_03f_rx_flow_control_ooo_no_double_count)
+{
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t data4[4] = { 0 };
+	int ret;
+
+	init_test_rx_stream(&stream, ep, 16, 8, 1);
+
+	ret = quic_stream_receive_data(&stream, 4, data4, sizeof(data4), false);
+	zassert_equal(ret, -EAGAIN, "Expected out-of-order data to be queued (%d)", ret);
+	zassert_equal(stream.rx_buf.ooo_count, 1, "Expected one OOO segment");
+	zassert_equal(stream.highest_offset_received, 8,
+		      "OOO segment should advance highest received end");
+	zassert_equal(stream.bytes_received, 8,
+		      "OOO segment should count against stream flow control");
+	zassert_equal(ep->rx_fc.bytes_received, 8,
+		      "OOO segment should count against connection flow control");
+
+	ret = quic_stream_receive_data(&stream, 4, data4, sizeof(data4), false);
+	zassert_equal(ret, -EAGAIN, "Expected duplicate OOO data to remain non-fatal (%d)", ret);
+	zassert_equal(stream.rx_buf.ooo_count, 1, "Duplicate OOO data should not add slots");
+	zassert_equal(stream.bytes_received, 8,
+		      "Duplicate OOO data must not double-count stream bytes");
+	zassert_equal(ep->rx_fc.bytes_received, 8,
+		      "Duplicate OOO data must not double-count connection bytes");
+
+	ret = quic_stream_receive_data(&stream, 0, data4, sizeof(data4), false);
+	zassert_equal(ret, 0, "Expected in-order data to succeed (%d)", ret);
+	zassert_equal(stream.rx_buf.ooo_count, 0, "OOO queue should be replayed");
+	zassert_equal(stream.rx_buf.tail - stream.rx_buf.head, 8,
+		      "In-order replay should make 8 bytes readable");
+	zassert_equal(stream.bytes_received, 8,
+		      "OOO replay must not double-count stream bytes");
+	zassert_equal(ep->rx_fc.bytes_received, 8,
+		      "OOO replay must not double-count connection bytes");
+}
+
 /*
  * Test 04: RFC 9001 A.1 - Initial secret derivation
  *
