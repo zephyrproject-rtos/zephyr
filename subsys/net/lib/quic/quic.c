@@ -2290,6 +2290,13 @@ static void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep)
 {
 	int i;
 
+	/* Wake any client-side stream_open() waiters that are still blocked on the
+	 * handshake outcome.
+	 */
+	if (!ep->handshake.completed) {
+		k_sem_give(&ep->handshake.sem);
+	}
+
 	k_mutex_lock(&contexts_lock, K_FOREVER);
 
 	for (i = 0; i < ARRAY_SIZE(contexts); i++) {
@@ -5268,6 +5275,9 @@ static void process_pkt(struct quic_pkt *pkt)
 		if (ret < 0) {
 			NET_DBG("[EP:%p/%d] %s packet handling failure (%d)",
 				pkt->ep, quic_get_by_ep(pkt->ep), "Initial", ret);
+			if (!pkt->ep->handshake.completed) {
+				quic_endpoint_notify_streams_closed(pkt->ep);
+			}
 		} else if (ret == 1) {
 			NET_DBG("[EP:%p/%d] Connection closing after %s packet",
 				pkt->ep, quic_get_by_ep(pkt->ep), "Initial");
@@ -5290,6 +5300,10 @@ static void process_pkt(struct quic_pkt *pkt)
 					QUIC_ERROR_CRYPTO_BASE +
 						QUIC_CRYPTO_ERROR_CERTIFICATE_REQUIRED,
 					"Certificate required");
+			}
+
+			if (!pkt->ep->handshake.completed) {
+				quic_endpoint_notify_streams_closed(pkt->ep);
 			}
 
 		} else if (ret == 1) {
