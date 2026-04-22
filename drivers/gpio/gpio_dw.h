@@ -9,6 +9,9 @@
 
 #include <zephyr/types.h>
 #include <zephyr/drivers/gpio.h>
+#if defined(CONFIG_CLOCK_CONTROL)
+#include <zephyr/drivers/clock_control.h>
+#endif
 #include "gpio_dw_registers.h"
 
 #ifdef __cplusplus
@@ -20,15 +23,20 @@ typedef void (*gpio_config_irq_t)(const struct device *port);
 struct gpio_dw_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	uint32_t base_addr;
+	DEVICE_MMIO_NAMED_ROM(reg_base);
 	uint32_t ngpios;
 	uint32_t irq_num; /* set to 0 if GPIO port cannot interrupt */
 	gpio_config_irq_t config_func;
+#if defined(CONFIG_CLOCK_CONTROL)
+	const struct device *clk_dev;
+	const clock_control_subsys_t clk_id;
+#endif
 };
 
 struct gpio_dw_runtime {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
+	DEVICE_MMIO_NAMED_RAM(reg_base);
 	sys_slist_t callbacks;
 };
 
