@@ -229,6 +229,30 @@ extern const struct cellular_driver_api modem_cellular_api;
 void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 						 enum modem_chat_script_result result,
 						 void *user_data);
+
+void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_cgmm(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_csq(struct modem_chat *chat, char **argv, uint16_t argc,
+				void *user_data);
+void modem_cellular_chat_on_cesq(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_iccid(struct modem_chat *chat, char **argv, uint16_t argc,
+				  void *user_data);
+void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_cgmi(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_cgmr(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc,
+				  void *user_data);
+void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, uint16_t argc,
+					void *user_data);
+
 /** @} */
 
 /**

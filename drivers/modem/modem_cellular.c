@@ -291,8 +291,8 @@ static void modem_cellular_dlci2_pipe_handler(struct modem_pipe *pipe,
 }
 
 void modem_cellular_chat_callback_handler(struct modem_chat *chat,
-						 enum modem_chat_script_result result,
-						 void *user_data)
+					  enum modem_chat_script_result result,
+					  void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 
@@ -303,7 +303,7 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 	}
 }
 
-static void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, uint16_t argc,
+void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, uint16_t argc,
 					void *user_data)
 {
 	struct modem_cellular_data *data = user_data;
@@ -312,8 +312,8 @@ static void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **a
 }
 
 
-static void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t argc,
-					void *user_data)
+void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 
@@ -325,8 +325,8 @@ static void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, ui
 	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_IMEI);
 }
 
-static void modem_cellular_chat_on_cgmm(struct modem_chat *chat, char **argv, uint16_t argc,
-					void *user_data)
+void modem_cellular_chat_on_cgmm(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 
@@ -338,8 +338,8 @@ static void modem_cellular_chat_on_cgmm(struct modem_chat *chat, char **argv, ui
 	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_MODEL_ID);
 }
 
-static void modem_cellular_chat_on_cgmi(struct modem_chat *chat, char **argv, uint16_t argc,
-					void *user_data)
+void modem_cellular_chat_on_cgmi(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 
@@ -351,8 +351,8 @@ static void modem_cellular_chat_on_cgmi(struct modem_chat *chat, char **argv, ui
 	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_MANUFACTURER);
 }
 
-static void modem_cellular_chat_on_cgmr(struct modem_chat *chat, char **argv, uint16_t argc,
-					void *user_data)
+void modem_cellular_chat_on_cgmr(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 
@@ -364,8 +364,8 @@ static void modem_cellular_chat_on_cgmr(struct modem_chat *chat, char **argv, ui
 	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_FW_VERSION);
 }
 
-static void modem_cellular_chat_on_csq(struct modem_chat *chat, char **argv, uint16_t argc,
-				       void *user_data)
+void modem_cellular_chat_on_csq(struct modem_chat *chat, char **argv, uint16_t argc,
+				void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 
@@ -376,8 +376,8 @@ static void modem_cellular_chat_on_csq(struct modem_chat *chat, char **argv, uin
 	data->rssi = (uint8_t)atoi(argv[1]);
 }
 
-static void modem_cellular_chat_on_cesq(struct modem_chat *chat, char **argv, uint16_t argc,
-					void *user_data)
+void modem_cellular_chat_on_cesq(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 
@@ -389,8 +389,8 @@ static void modem_cellular_chat_on_cesq(struct modem_chat *chat, char **argv, ui
 	data->rsrp = (uint8_t)atoi(argv[6]);
 }
 
-static void modem_cellular_chat_on_iccid(struct modem_chat *chat, char **argv, uint16_t argc,
-					void *user_data)
+void modem_cellular_chat_on_iccid(struct modem_chat *chat, char **argv, uint16_t argc,
+				  void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 
@@ -402,8 +402,8 @@ static void modem_cellular_chat_on_iccid(struct modem_chat *chat, char **argv, u
 	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_SIM_ICCID);
 }
 
-static void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, uint16_t argc,
-					void *user_data)
+void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 
@@ -425,8 +425,8 @@ static bool modem_cellular_is_registered(struct modem_cellular_data *data)
 		|| (data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
 }
 
-static void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc,
-					void *user_data)
+void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc,
+				  void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 	enum cellular_registration_status registration_status = 0;
@@ -460,8 +460,8 @@ static void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, u
 	modem_cellular_emit_reg_state(data, registration_status);
 }
 
-static void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t argc,
-					void *user_data)
+void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 	bool connected;
