@@ -1041,7 +1041,9 @@ class ZephyrBinaryRunner(abc.ABC):
             events = sel.select()
             for key, _ in events:
                 if key.fileobj == sys.stdin:
-                    text = sys.stdin.readline()
+                    # mypy now assumes sys.stdin is of same type as key.fileobj, which is a "plain"
+                    # file without .readline()
+                    text = sys.stdin.readline()  # type: ignore[union-attr]
                     if text:
                         sock.send(text.encode())
 
