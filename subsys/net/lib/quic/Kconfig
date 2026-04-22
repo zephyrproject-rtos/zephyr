@@ -16,7 +16,8 @@ config QUIC
 	select NET_STATISTICS_USER_API if NET_STATISTICS_QUIC
 	help
 	  This option enables the QUIC implementation specified
-	  in RFC 9000.
+	  in RFC 9000. Server mode still does not implement Retry or
+	  NEW_TOKEN-based address-validation tokens.
 
 if QUIC
 
