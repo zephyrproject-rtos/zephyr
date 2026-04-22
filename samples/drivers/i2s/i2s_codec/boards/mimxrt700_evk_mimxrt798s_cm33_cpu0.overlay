@@ -4,6 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		i2s-codec-tx = &sai0;
+		i2s-tx = &sai0;
+	};
+};
+
 &sai0 {
 	mclk-output;
+};
+
+dmic_dev: &micfil {
+	status = "okay";
+
+	channel0: micfil-channel@0 {
+		status = "okay";
+	};
+
+	channel1: micfil-channel@1 {
+		status = "okay";
+	};
 };
