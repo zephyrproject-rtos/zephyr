@@ -13,6 +13,7 @@ config CPU_CORTEX_A
 	select ARCH_HAS_SINGLE_THREAD_SUPPORT if !SMP
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
+	select ARCH_HAS_PMU
 	imply FPU
 	imply FPU_SHARING
 	help
@@ -480,5 +481,7 @@ config ARM64_RNG
 	help
 	  This option signifies that the processor has the FEAT_RNG or FEAT_RNG_TRAP
 	  extension.
+
+source "arch/arm64/core/Kconfig.pmu"
 
 endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R
