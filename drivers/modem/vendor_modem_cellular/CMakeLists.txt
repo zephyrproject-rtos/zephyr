@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if((CONFIG_DT_HAS_QUECTEL_BG95_ENABLED) OR (CONFIG_DT_HAS_QUECTEL_BG96_ENABLED))
+  zephyr_library_sources(cellular_quectel_bg9x.c)
+endif()
+if((CONFIG_DT_HAS_TELIT_ME910G1_ENABLED) OR (CONFIG_DT_HAS_TELIT_ME310G1_ENABLED))
+  zephyr_library_sources(cellular_telit_mex10g1.c)
+endif()
+
+# zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_NORDIC_NRF91_SLM_ENABLED cellular_nordic_nrf91_slm.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_QUECTEL_EG25_G_ENABLED cellular_quectel_eg25_g.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_QUECTEL_EG800Q_ENABLED cellular_quectel_eg800q.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_SIMCOM_A76XX_ENABLED cellular_simcom_a76xx.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_SIMCOM_SIM7080_ENABLED cellular_simcom_sim7080.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_SQN_GM02S_ENABLED cellular_sqn_gm02s.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_SWIR_HL7800_ENABLED cellular_swir_hl7800.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_TELIT_LE910C1TX_ENABLED cellular_telit_le910c1tx.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_TRASNA_LEXI_R10_ENABLED cellular_trasna_lexi_r10.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_U_BLOX_LARA_R6_ENABLED cellular_u_blox_lara_r6.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_U_BLOX_SARA_R4_ENABLED cellular_u_blox_sara_r4.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_U_BLOX_SARA_R5_ENABLED cellular_u_blox_sara_r5.c)
+# zephyr-keep-sorted-stop
