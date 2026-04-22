@@ -714,15 +714,6 @@ cap_commander_recv_state_in_active_proc(struct bt_cap_common_proc *active_proc,
 		 * receive state as per BASS)
 		 */
 
-		LOG_ERR("start_param->started_recvd %d", start_param->started_recvd);
-		LOG_ERR("state %p", state);
-		LOG_ERR("state->adv_sid %d", state->adv_sid);
-		LOG_ERR("state->addr.type %d", state->addr.type);
-		LOG_ERR("state->broadcast_id %d", state->broadcast_id);
-		LOG_ERR("start_param->adv_sid %d", start_param->adv_sid);
-		LOG_ERR("start_param->addr.type %d", start_param->addr.type);
-		LOG_ERR("start_param->broadcast_id %d", start_param->broadcast_id);
-
 		return !start_param->started_recvd && state != NULL &&
 		       state->adv_sid == start_param->adv_sid &&
 		       state->addr.type == start_param->addr.type &&
@@ -777,7 +768,6 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 	}
 
 	if (!cap_commander_recv_state_in_active_proc(active_proc, conn, src_id, state)) {
-		LOG_ERR("NOT IN ACTIVE PROC");
 		bt_cap_common_unlock_proc();
 		return;
 	}
