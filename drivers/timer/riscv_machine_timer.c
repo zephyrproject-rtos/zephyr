@@ -100,7 +100,7 @@ static uint64_t mtime(void)
 #endif
 }
 
-Z_NO_THREAD_SAFETY_ANALYSIS static void timer_isr(const void *arg)
+static void timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -123,7 +123,7 @@ Z_NO_THREAD_SAFETY_ANALYSIS static void timer_isr(const void *arg)
 	sys_clock_announce_locked(dticks, key);
 }
 
-Z_NO_THREAD_SAFETY_ANALYSIS void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -144,7 +144,7 @@ Z_NO_THREAD_SAFETY_ANALYSIS void sys_clock_set_timeout(int32_t ticks, bool idle)
 	set_mtimecmp(cyc);
 }
 
-Z_NO_THREAD_SAFETY_ANALYSIS uint32_t sys_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
