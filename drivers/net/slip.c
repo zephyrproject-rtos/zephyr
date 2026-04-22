@@ -271,11 +271,6 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 		CONTAINER_OF(buf, struct slip_context, buf[0]);
 	size_t i;
 
-	if (!slip->init_done) {
-		*off = 0;
-		return buf;
-	}
-
 	for (i = 0; i < *off; i++) {
 		if (slip_input_byte(slip, buf[i])) {
 
@@ -311,25 +306,6 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 	return buf;
 }
 
-int slip_init(const struct device *dev)
-{
-	struct slip_context *slip = dev->data;
-
-	LOG_DBG("[%p] dev %p", slip, dev);
-
-	slip->state = STATE_OK;
-	slip->rx = NULL;
-	slip->first = false;
-
-#if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_IPV4)
-	LOG_DBG("ARP enabled");
-#endif
-
-	uart_pipe_register(slip->buf, sizeof(slip->buf), recv_cb);
-
-	return 0;
-}
-
 void slip_iface_init(struct net_if *iface)
 {
 	struct slip_context *slip = net_if_get_device(iface)->data;
@@ -343,12 +319,8 @@ void slip_iface_init(struct net_if *iface)
 	net_lldp_set_lldpdu(iface);
 #endif
 
-	if (slip->init_done) {
-		return;
-	}
-
-	slip->init_done = true;
 	slip->iface = iface;
+	slip->state = STATE_OK;
 
 	if (CONFIG_SLIP_MAC_ADDR[0] != 0) {
 		if (net_bytes_from_str(slip->mac_addr, sizeof(slip->mac_addr),
@@ -371,6 +343,8 @@ use_random_mac:
 	if (err < 0) {
 		LOG_ERR("Could not set the interface name: %d", err);
 	}
+
+	uart_pipe_register(slip->buf, sizeof(slip->buf), recv_cb);
 }
 
 
@@ -386,7 +360,7 @@ static const struct dummy_api slip_if_api = {
 #define _SLIP_L2_LAYER DUMMY_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
-NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, NULL,
+NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, NULL, NULL,
 		&slip_context_data, NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&slip_if_api, _SLIP_L2_LAYER, _SLIP_L2_CTX_TYPE, _SLIP_MTU);
 #endif
