@@ -653,7 +653,8 @@ int ad405x_set_sample_rate(const struct device *dev, enum ad405x_sample_rate rat
 	struct adc_ad405x_data *data = dev->data;
 	int ret;
 
-	ret = ad405x_reg_update_bits(dev, AD405X_REG_TIMER_CONFIG, AD405X_FS_BURST_AUTO_MSK, rate);
+	ret = ad405x_reg_update_bits(dev, AD405X_REG_TIMER_CONFIG, AD405X_FS_BURST_AUTO_MSK,
+				    rate << 4);
 	if (ret != 0) {
 		return ret;
 	}
