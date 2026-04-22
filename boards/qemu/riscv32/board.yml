@@ -12,3 +12,4 @@ board:
         - name: aia-direct
           variants:
             - name: smp
+        - name: zfinx
