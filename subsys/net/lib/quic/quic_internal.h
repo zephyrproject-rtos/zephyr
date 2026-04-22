@@ -1071,6 +1071,8 @@ void quic_stream_foreach(quic_stream_cb_t cb, void *user_data);
 struct quic_context *quic_get_context(int sock);
 int quic_get_len(const uint8_t *buf, size_t buf_len, uint64_t *len);
 int quic_put_len(uint8_t *buf, size_t buf_len, uint64_t len);
+int quic_put_varint(uint8_t *buf, size_t buf_len, uint64_t val);
+int quic_validate_frame_type(uint8_t frame_type, enum quic_secret_level level);
 
 bool quic_setup_initial_secrets(struct quic_endpoint *ep,
 				const uint8_t *cid, size_t cid_len,

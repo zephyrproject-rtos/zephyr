@@ -571,6 +571,19 @@ ZTEST(net_socket_quic, test_03_len_encode_decode)
 			  "Encoded 1-byte buffer does not match original");
 }
 
+ZTEST(net_socket_quic, test_03a_varint_helpers_reject_invalid_buffers)
+{
+	uint8_t buf[1] = { 0 };
+	uint64_t val = 0;
+	int ret;
+
+	ret = quic_get_len(buf, 0, &val);
+	zassert_equal(ret, -EINVAL, "Zero-length varint input must fail (%d)", ret);
+
+	ret = quic_put_varint(buf, sizeof(buf), 0x40);
+	zassert_equal(ret, -EINVAL, "Too-small varint output buffer must fail (%d)", ret);
+}
+
 ZTEST(net_socket_quic, test_03a_version_negotiation_packet)
 {
 	static const uint8_t peer_scid[] = { 0xaa, 0xbb, 0xcc, 0xdd };
@@ -612,7 +625,35 @@ ZTEST(net_socket_quic, test_03a_version_negotiation_packet)
 			  "VN packet must advertise QUIC v1");
 }
 
-ZTEST(net_socket_quic, test_03b_anti_amplification_budget)
+ZTEST(net_socket_quic, test_03b_frame_type_level_validation)
+{
+	int ret;
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_STREAM_BASE,
+					 QUIC_SECRET_LEVEL_INITIAL);
+	zassert_equal(ret, -EPROTO, "STREAM must be forbidden in Initial (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_NEW_TOKEN,
+					 QUIC_SECRET_LEVEL_HANDSHAKE);
+	zassert_equal(ret, -EPROTO, "NEW_TOKEN must be forbidden in Handshake (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_PATH_CHALLENGE,
+					 QUIC_SECRET_LEVEL_INITIAL);
+	zassert_equal(ret, -EPROTO, "PATH_CHALLENGE must be forbidden in Initial (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_HANDSHAKE_DONE,
+					 QUIC_SECRET_LEVEL_APPLICATION);
+	zassert_equal(ret, 0, "HANDSHAKE_DONE must be allowed in Application (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_CRYPTO,
+					 QUIC_SECRET_LEVEL_HANDSHAKE);
+	zassert_equal(ret, 0, "CRYPTO must be allowed in Handshake (%d)", ret);
+
+	ret = quic_validate_frame_type(0x30, QUIC_SECRET_LEVEL_APPLICATION);
+	zassert_equal(ret, -ENOTSUP, "Unknown frame type must be rejected (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_03c_anti_amplification_budget)
 {
 	struct quic_endpoint *listen_ep = reset_test_ep(&test_ep_a);
 	struct quic_endpoint *child_ep = reset_test_ep(&test_ep_b);
@@ -669,7 +710,7 @@ static void init_test_rx_stream(struct quic_stream *stream,
 	ep->rx_fc.max_data_sent = conn_max_data;
 }
 
-ZTEST(net_socket_quic, test_03c_stream_local_rx_limit_by_type)
+ZTEST(net_socket_quic, test_03d_stream_local_rx_limit_by_type)
 {
 	struct quic_endpoint *client_ep = reset_test_ep(&test_ep_a);
 	struct quic_endpoint *server_ep = reset_test_ep(&test_ep_b);
@@ -717,7 +758,7 @@ ZTEST(net_socket_quic, test_03c_stream_local_rx_limit_by_type)
 		      0, "Local uni stream should not accept peer data");
 }
 
-ZTEST(net_socket_quic, test_03d_stream_rx_flow_control_limit)
+ZTEST(net_socket_quic, test_03e_stream_rx_flow_control_limit)
 {
 	static struct quic_stream stream;
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
@@ -735,7 +776,7 @@ ZTEST(net_socket_quic, test_03d_stream_rx_flow_control_limit)
 		      "Connection RX accounting changed on rejected data");
 }
 
-ZTEST(net_socket_quic, test_03e_connection_rx_flow_control_limit)
+ZTEST(net_socket_quic, test_03f_connection_rx_flow_control_limit)
 {
 	static struct quic_stream stream1;
 	static struct quic_stream stream2;
@@ -762,7 +803,7 @@ ZTEST(net_socket_quic, test_03e_connection_rx_flow_control_limit)
 		      "Connection RX accounting should not grow after violation");
 }
 
-ZTEST(net_socket_quic, test_03f_rx_flow_control_ooo_no_double_count)
+ZTEST(net_socket_quic, test_03g_rx_flow_control_ooo_no_double_count)
 {
 	static struct quic_stream stream;
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
