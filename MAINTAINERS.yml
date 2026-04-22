@@ -4869,8 +4869,8 @@ Realtek Fingerprint Platforms:
 Release:
   status: maintained
   maintainers:
-    - MaureenHelm
-    - stephanosio
+    - henrikbrixandersen
+    - teburd
   collaborators:
     - kartben
     - nashif
