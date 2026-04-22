@@ -35,9 +35,16 @@
 	};
 
 	soc {
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0 0x40000>;
+		flash: flash-controller {
+			compatible = "simple-bus";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 0x40000>;
+			};
 		};
 
 		dma: dma@40003000 {
