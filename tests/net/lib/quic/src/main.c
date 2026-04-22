@@ -462,6 +462,31 @@ static void after(void *arg)
 	cfg->connection_count = 0;
 }
 
+static void assert_stream_type_and_id(int sock, int expected_type)
+{
+	net_socklen_t optlen = sizeof(int);
+	uint64_t stream_id = UINT64_MAX;
+	int stream_type = -1;
+	int ret;
+
+	zassert_true(quic_is_stream_socket(sock), "Socket %d must be a QUIC stream", sock);
+	zassert_false(quic_is_connection_socket(sock),
+		      "Socket %d must not be reported as a QUIC connection", sock);
+
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_STREAM_TYPE,
+			       &stream_type, &optlen);
+	zassert_equal(ret, 0, "Failed to get stream type on socket %d (%d)", sock, -errno);
+	zassert_equal(optlen, sizeof(int), "Unexpected stream type size %u", optlen);
+	zassert_equal(stream_type, expected_type,
+		      "Socket %d stream type mismatch (%d != %d)",
+		      sock, stream_type, expected_type);
+
+	ret = quic_stream_get_id(sock, &stream_id);
+	zassert_equal(ret, 0, "Failed to get stream ID on socket %d (%d)", sock, ret);
+	zassert_equal(stream_id & 0x03, expected_type,
+		      "Socket %d stream ID bits mismatch (%" PRIu64 ")", sock, stream_id);
+}
+
 /* Test 01: Basic connection open/close */
 ZTEST(net_socket_quic, test_01_open_connection_and_close)
 {
@@ -525,6 +550,89 @@ ZTEST(net_socket_quic, test_02_open_stream_and_close)
 
 	zassert_equal(0, atomic_get(&ctx->refcount),
 		      "Invalid refcount %d after close", (int)atomic_get(&ctx->refcount));
+}
+
+ZTEST(net_socket_quic, test_02a_socket_kind_helpers)
+{
+	uint64_t stream_id = UINT64_MAX;
+	int ret, conn_sock, stream_sock, udp_sock;
+
+	ret = quic_connection_open(NULL,
+				   (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
+	conn_sock = ret;
+
+	ret = quic_stream_open(conn_sock, QUIC_STREAM_SERVER,
+			       QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_true(ret >= 0, "Failed to open QUIC stream (%d)", ret);
+	stream_sock = ret;
+
+	udp_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(udp_sock >= 0, "Failed to open UDP socket (%d)", -errno);
+
+	zassert_true(quic_is_connection_socket(conn_sock),
+		     "Connection socket %d must be recognized", conn_sock);
+	zassert_false(quic_is_stream_socket(conn_sock),
+		      "Connection socket %d must not be reported as a stream", conn_sock);
+
+	zassert_true(quic_is_stream_socket(stream_sock),
+		     "Stream socket %d must be recognized", stream_sock);
+	zassert_false(quic_is_connection_socket(stream_sock),
+		      "Stream socket %d must not be reported as a connection", stream_sock);
+
+	zassert_false(quic_is_stream_socket(udp_sock),
+		      "UDP socket %d must not be reported as a QUIC stream", udp_sock);
+	zassert_false(quic_is_connection_socket(udp_sock),
+		      "UDP socket %d must not be reported as a QUIC connection", udp_sock);
+
+	ret = quic_stream_get_id(conn_sock, &stream_id);
+	zassert_equal(ret, -ENOENT, "Connection socket must reject quic_stream_get_id (%d)", ret);
+
+	ret = quic_stream_get_id(udp_sock, &stream_id);
+	zassert_equal(ret, -ENOENT, "UDP socket must reject quic_stream_get_id (%d)", ret);
+
+	ret = zsock_close(udp_sock);
+	zassert_equal(ret, 0, "Failed to close UDP socket %d (%d)", udp_sock, -errno);
+
+	ret = quic_stream_close(stream_sock);
+	zassert_equal(ret, 0, "Failed to close QUIC stream (%d)", ret);
+
+	ret = quic_connection_close(conn_sock);
+	zassert_equal(ret, 0, "Failed to close QUIC connection (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_02b_stream_type_helpers_for_local_streams)
+{
+	int ret, conn_sock, bidi_stream_sock, uni_stream_sock;
+
+	ret = quic_connection_open(NULL,
+				   (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
+	conn_sock = ret;
+
+	ret = quic_stream_open(conn_sock, QUIC_STREAM_SERVER,
+			       QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_true(ret >= 0, "Failed to open bidirectional QUIC stream (%d)", ret);
+	bidi_stream_sock = ret;
+
+	ret = quic_stream_open(conn_sock, QUIC_STREAM_SERVER,
+			       QUIC_STREAM_UNIDIRECTIONAL, 0);
+	zassert_true(ret >= 0, "Failed to open unidirectional QUIC stream (%d)", ret);
+	uni_stream_sock = ret;
+
+	assert_stream_type_and_id(bidi_stream_sock,
+				  QUIC_STREAM_SERVER | QUIC_STREAM_BIDIRECTIONAL);
+	assert_stream_type_and_id(uni_stream_sock,
+				  QUIC_STREAM_SERVER | QUIC_STREAM_UNIDIRECTIONAL);
+
+	ret = quic_stream_close(uni_stream_sock);
+	zassert_equal(ret, 0, "Failed to close unidirectional stream (%d)", ret);
+
+	ret = quic_stream_close(bidi_stream_sock);
+	zassert_equal(ret, 0, "Failed to close bidirectional stream (%d)", ret);
+
+	ret = quic_connection_close(conn_sock);
+	zassert_equal(ret, 0, "Failed to close QUIC connection (%d)", ret);
 }
 
 /* Test 03: Variable-length integer encoding/decoding */
@@ -2384,6 +2492,150 @@ static void quic_server_and_client_uni(const char *server, const char *client,
 	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
 }
 
+static void quic_stream_type_roundtrip_uni(const char *server, const char *client)
+{
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	struct net_sockaddr_storage peer_addr;
+	sec_tag_t server_sec_tags[] = {
+		SERVER_CERTIFICATE_TAG,
+	};
+	sec_tag_t client_sec_tags[] = {
+		CA_CERTIFICATE_TAG,
+	};
+	static const char * const alpn_list[] = {
+		"test-quic",
+		NULL
+	};
+	static K_THREAD_STACK_DEFINE(server_thread_stack, STACK_SIZE);
+	static struct k_thread server_thread_data;
+	static struct config data;
+	net_socklen_t peer_addr_len = sizeof(peer_addr);
+	k_tid_t tid;
+	uint8_t tx_byte = 0x5a;
+	uint8_t rx_byte = 0;
+	int server_sock, client_sock, server_connected_sock;
+	int client_stream_send_sock, client_stream_recv_sock = -1;
+	int server_stream_recv_sock;
+	int ret;
+
+	ret = k_sem_init(&data.sem, 0, 1);
+	zassert_ok(ret, "Failed to initialize semaphore (%d)", ret);
+
+	ret = net_ipaddr_parse(server, strlen(server),
+			       (struct net_sockaddr *)&server_addr);
+	zassert_true(ret, "Failed to parse server IP address %s (%d)",
+		     server, ret);
+
+	ret = net_ipaddr_parse(client, strlen(client),
+			       (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client IP address %s (%d)",
+		     client, ret);
+
+	prepare_quic_socket(&server_sock,
+			    NULL,
+			    (const struct net_sockaddr *)&server_addr);
+	prepare_quic_socket(&client_sock,
+			    (const struct net_sockaddr *)&server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+
+	setup_quic_certs(server_sock, server_sec_tags, ARRAY_SIZE(server_sec_tags));
+	setup_alpn(server_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	data.sock = server_sock;
+	data.error = 0;
+	data.stream_recv_sock = -1;
+	data.connected_sock = -1;
+	data.test_done = false;
+
+	tid = k_thread_create(&server_thread_data, server_thread_stack,
+			      K_THREAD_STACK_SIZEOF(server_thread_stack),
+			      server_uni_thread, &data, NULL, NULL,
+			      K_PRIO_PREEMPT(1), 0, K_FOREVER);
+
+	k_thread_start(tid);
+
+	ret = k_sem_take(&data.sem, K_FOREVER);
+	zassert_ok(ret, "Failed to take semaphore (%d)", ret);
+
+	setup_quic_certs(client_sock, client_sec_tags, ARRAY_SIZE(client_sec_tags));
+	setup_alpn(client_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	client_stream_send_sock = quic_stream_open(client_sock, QUIC_STREAM_CLIENT,
+						   QUIC_STREAM_UNIDIRECTIONAL, 0);
+	zassert_true(client_stream_send_sock >= 0,
+		     "Failed to open client send stream (%d)", client_stream_send_sock);
+
+	assert_stream_type_and_id(client_stream_send_sock,
+				  QUIC_STREAM_CLIENT | QUIC_STREAM_UNIDIRECTIONAL);
+	zassert_true(quic_is_connection_socket(client_sock),
+		     "Client connection socket %d must be recognized", client_sock);
+
+	ret = zsock_send(client_stream_send_sock, &tx_byte, sizeof(tx_byte), 0);
+	zassert_equal(ret, sizeof(tx_byte), "Failed to send probe byte (%d)", -errno);
+
+	for (int attempt = 0; attempt < 20 && data.stream_recv_sock < 0; attempt++) {
+		k_msleep(10);
+	}
+
+	server_stream_recv_sock = data.stream_recv_sock;
+	zassert_true(server_stream_recv_sock >= 0, "Server did not accept client stream");
+	assert_stream_type_and_id(server_stream_recv_sock,
+				  QUIC_STREAM_CLIENT | QUIC_STREAM_UNIDIRECTIONAL);
+
+	for (int attempt = 0; attempt < 20 && client_stream_recv_sock < 0; attempt++) {
+		struct zsock_pollfd pfd = {
+			.fd = client_sock,
+			.events = ZSOCK_POLLIN,
+		};
+
+		ret = zsock_poll(&pfd, 1, POLL_TIMEOUT_MS);
+		zassert_true(ret >= 0, "poll failed (%d)", -errno);
+
+		if (pfd.revents & ZSOCK_POLLIN) {
+			client_stream_recv_sock = zsock_accept(client_sock,
+							(struct net_sockaddr *)&peer_addr,
+							&peer_addr_len);
+		}
+	}
+
+	zassert_true(client_stream_recv_sock >= 0, "Client did not accept server stream");
+	assert_stream_type_and_id(client_stream_recv_sock,
+				  QUIC_STREAM_SERVER | QUIC_STREAM_UNIDIRECTIONAL);
+
+	ret = zsock_recv(client_stream_recv_sock, &rx_byte, sizeof(rx_byte), 0);
+	zassert_equal(ret, sizeof(rx_byte), "Failed to receive echoed byte (%d)", -errno);
+	zassert_equal(rx_byte, tx_byte, "Echoed byte mismatch");
+
+	data.test_done = true;
+
+	ret = quic_stream_close(client_stream_send_sock);
+	zassert_equal(ret, 0, "Failed to close client send stream (%d)", ret);
+
+	ret = k_thread_join(tid, K_MSEC(5000));
+	zassert_equal(ret, 0, "Cannot join thread (%d)", ret);
+
+	server_connected_sock = data.connected_sock;
+	zassert_true(server_connected_sock >= 0, "Invalid server connected socket (%d)",
+		     server_connected_sock);
+	zassert_equal(data.error, 0, "Server thread reported error (%d)", data.error);
+
+	ret = quic_stream_close(client_stream_recv_sock);
+	zassert_equal(ret, 0, "Failed to close client recv stream (%d)", ret);
+
+	ret = quic_stream_close(server_stream_recv_sock);
+	zassert_equal(ret, 0, "Failed to close server recv stream (%d)", ret);
+
+	ret = quic_connection_close(server_connected_sock);
+	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
+
+	ret = quic_connection_close(client_sock);
+	zassert_equal(ret, 0, "Failed to close client connection (%d)", ret);
+
+	ret = quic_connection_close(server_sock);
+	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
+}
+
 ZTEST(net_socket_quic, test_20_quic_unidirectional_streams)
 {
 	static uint8_t tx_buf[sizeof(LOREM_IPSUM_LONG)];
@@ -2401,6 +2653,16 @@ ZTEST(net_socket_quic, test_20_quic_unidirectional_streams)
 	quic_server_and_client_uni(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR,
 				   tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf),
 				   MAX_BUF_SIZE);
+}
+
+ZTEST(net_socket_quic, test_20a_quic_stream_type_bits_end_to_end)
+{
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	quic_stream_type_roundtrip_uni(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR);
 }
 
 ZTEST(net_socket_quic, test_21_client_cert_request_option)
