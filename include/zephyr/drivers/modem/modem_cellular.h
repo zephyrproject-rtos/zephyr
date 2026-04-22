@@ -123,7 +123,7 @@ struct modem_cellular_data {
 	struct modem_cmux_dlci dlci2;
 	struct modem_pipe *dlci1_pipe;
 	struct modem_pipe *dlci2_pipe;
-	/* Points to dlci2_pipe or NULL. Used for shutdown script if not NULL */
+	/* Points to dlci1_pipe or NULL. Used for shutdown script if not NULL */
 	struct modem_pipe *cmd_pipe;
 	uint8_t dlci1_receive_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
 	/* DLCI 2 is only used for chat scripts. */
