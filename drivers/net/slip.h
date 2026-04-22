@@ -19,7 +19,6 @@
 #endif /* CONFIG_SLIP_TAP */
 
 struct slip_context {
-	bool init_done;
 	bool first;		/* SLIP received it's byte or not after
 				 * driver initialization or SLIP_END byte.
 				 */
@@ -41,5 +40,4 @@ struct slip_context {
 };
 
 void slip_iface_init(struct net_if *iface);
-int slip_init(const struct device *dev);
 int slip_send(const struct device *dev, struct net_pkt *pkt);
