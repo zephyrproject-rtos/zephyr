@@ -29,6 +29,7 @@ extern "C" {
 #define I2C_DW_MAGIC_KEY 0x44570140
 
 typedef void (*i2c_isr_cb_t)(const struct device *port);
+typedef int (*i2c_api_check_bus_t)(const struct device *dev);
 
 #define IC_ACTIVITY   (1 << 0)
 #define IC_ENABLE_BIT (1 << 0)
@@ -158,9 +159,13 @@ struct i2c_dw_dev_config {
 
 	i2c_api_recover_bus_t recover_bus_cb;
 	struct device *recover_bus_dev;
+	i2c_api_check_bus_t check_bus_cb;
+	const struct device *check_bus_dev;
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 	bool need_setup;
 #endif
+	uint32_t i2c_stat_not_ready;
+	uint32_t not_ready_cnt;
 };
 
 #define Z_REG_READ(__sz)  sys_read##__sz
@@ -201,6 +206,9 @@ struct i2c_dw_dev_config {
 void i2c_dw_register_recover_bus_cb(const struct device *dw_i2c_dev,
 				    i2c_api_recover_bus_t recover_bus_cb,
 				    const struct device *wrapper_dev);
+
+void i2c_dw_register_check_bus_cb(const struct device *dw_i2c_dev, i2c_api_check_bus_t check_bus_cb,
+				  const struct device *wrapper_dev);
 
 #ifdef __cplusplus
 }
