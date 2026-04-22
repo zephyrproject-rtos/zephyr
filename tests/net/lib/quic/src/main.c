@@ -571,6 +571,47 @@ ZTEST(net_socket_quic, test_03_len_encode_decode)
 			  "Encoded 1-byte buffer does not match original");
 }
 
+ZTEST(net_socket_quic, test_03a_version_negotiation_packet)
+{
+	static const uint8_t peer_scid[] = { 0xaa, 0xbb, 0xcc, 0xdd };
+	static const uint8_t peer_dcid[] = { 0x01, 0x02, 0x03, 0x04,
+					     0x05, 0x06, 0x07, 0x08 };
+	static const uint8_t version0[] = { 0x00, 0x00, 0x00, 0x00 };
+	static const uint8_t version1[] = {
+		(QUIC_VERSION_1 >> 24) & 0xff,
+		(QUIC_VERSION_1 >> 16) & 0xff,
+		(QUIC_VERSION_1 >> 8) & 0xff,
+		QUIC_VERSION_1 & 0xff
+	};
+	uint8_t packet[32];
+	size_t pos = 0;
+	int ret;
+
+	ret = quic_build_version_negotiation_packet(packet, sizeof(packet),
+						    peer_scid, sizeof(peer_scid),
+						    peer_dcid, sizeof(peer_dcid));
+	zassert_true(ret > 0, "Failed to build Version Negotiation packet (%d)", ret);
+
+	zassert_equal(packet[pos++] & 0xc0, 0xc0, "Invalid VN first byte");
+	zassert_mem_equal(&packet[pos], version0, 4, "VN packet must use version 0");
+	pos += 4;
+
+	zassert_equal(packet[pos++], sizeof(peer_scid), "Unexpected DCID length");
+	zassert_mem_equal(&packet[pos], peer_scid, sizeof(peer_scid),
+			  "VN DCID must echo peer SCID");
+	pos += sizeof(peer_scid);
+
+	zassert_equal(packet[pos++], sizeof(peer_dcid), "Unexpected SCID length");
+	zassert_mem_equal(&packet[pos], peer_dcid, sizeof(peer_dcid),
+			  "VN SCID must echo peer DCID");
+	pos += sizeof(peer_dcid);
+
+	zassert_mem_equal(&packet[pos],
+			  version1,
+			  4,
+			  "VN packet must advertise QUIC v1");
+}
+
 ZTEST(net_socket_quic, test_03b_anti_amplification_budget)
 {
 	struct quic_endpoint *listen_ep = reset_test_ep(&test_ep_a);

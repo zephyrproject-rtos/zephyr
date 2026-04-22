@@ -422,6 +422,100 @@ static void quic_endpoint_validate_address(struct quic_endpoint *ep)
 	ARG_UNUSED(ep);
 #endif
 }
+
+ZTESTABLE_STATIC int quic_build_version_negotiation_packet(uint8_t *out,
+							   size_t out_len,
+							   const uint8_t *peer_scid,
+							   uint8_t peer_scid_len,
+							   const uint8_t *peer_dcid,
+							   uint8_t peer_dcid_len)
+{
+	size_t pos = 0;
+	uint8_t first_byte = 0;
+
+	if (out == NULL ||
+	    (peer_scid == NULL && peer_scid_len > 0U) ||
+	    (peer_dcid == NULL && peer_dcid_len > 0U)) {
+		return -EINVAL;
+	}
+
+	if (peer_scid_len > MAX_CONN_ID_LEN || peer_dcid_len > MAX_CONN_ID_LEN) {
+		return -EINVAL;
+	}
+
+	if (out_len < 1 + sizeof(uint32_t) + 1 + peer_scid_len + 1 +
+		      peer_dcid_len + sizeof(uint32_t)) {
+		return -ENOBUFS;
+	}
+
+	sys_rand_get(&first_byte, sizeof(first_byte));
+	out[pos++] = 0xc0 | (first_byte & 0x3f);
+
+	out[pos++] = 0x00;
+	out[pos++] = 0x00;
+	out[pos++] = 0x00;
+	out[pos++] = 0x00;
+
+	out[pos++] = peer_scid_len;
+	if (peer_scid_len > 0U) {
+		memcpy(&out[pos], peer_scid, peer_scid_len);
+	}
+	pos += peer_scid_len;
+
+	out[pos++] = peer_dcid_len;
+	if (peer_dcid_len > 0U) {
+		memcpy(&out[pos], peer_dcid, peer_dcid_len);
+	}
+	pos += peer_dcid_len;
+
+	out[pos++] = (QUIC_VERSION_1 >> 24) & 0xff;
+	out[pos++] = (QUIC_VERSION_1 >> 16) & 0xff;
+	out[pos++] = (QUIC_VERSION_1 >> 8) & 0xff;
+	out[pos++] = QUIC_VERSION_1 & 0xff;
+
+	return (int)pos;
+}
+
+static int quic_send_version_negotiation(struct quic_endpoint *ep,
+					 const struct net_sockaddr *addr,
+					 net_socklen_t addrlen,
+					 const uint8_t *peer_scid,
+					 uint8_t peer_scid_len,
+					 const uint8_t *peer_dcid,
+					 uint8_t peer_dcid_len)
+{
+	uint8_t packet[1 + sizeof(uint32_t) + 1 + MAX_CONN_ID_LEN + 1 +
+		       MAX_CONN_ID_LEN + sizeof(uint32_t)];
+	ssize_t sent;
+	int ret;
+
+	if (ep == NULL || addr == NULL) {
+		return -EINVAL;
+	}
+
+	ret = quic_build_version_negotiation_packet(packet, sizeof(packet),
+						     peer_scid, peer_scid_len,
+						     peer_dcid, peer_dcid_len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	sent = zsock_sendto(ep->sock, packet, ret, 0, addr, addrlen);
+	if (sent < 0) {
+		return -errno;
+	}
+
+	if (sent != ret) {
+		NET_WARN("[EP:%p/%d] Partial Version Negotiation send: %zd of %d bytes",
+			 ep, quic_get_by_ep(ep), sent, ret);
+		return -EIO;
+	}
+
+	NET_DBG("[EP:%p/%d] Sent Version Negotiation packet", ep, quic_get_by_ep(ep));
+
+	return 0;
+}
+
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
 static int quic_endpoint_unref_debug(struct quic_endpoint *ep,
 				     const char *caller, int line);
@@ -5432,12 +5526,6 @@ static int process_long_header(struct quic_endpoint *ep,
 		buf[0]);
 
 	version = sys_get_be32(&buf[pos]);
-	if (version != QUIC_VERSION_1) {
-		NET_DBG("[EP:%p/%d] Unsupported QUIC version: 0x%08x",
-			ep, quic_get_by_ep(ep), version);
-		return -EINVAL;
-	}
-
 	pos += sizeof(uint32_t);
 	if ((size_t)pos >= total_len) {
 		NET_DBG("[EP:%p/%d] Packet too short for connection IDs",
@@ -5479,6 +5567,26 @@ static int process_long_header(struct quic_endpoint *ep,
 
 	NET_HEXDUMP_DBG(dst_conn_id, dst_conn_id_len, "Destination Conn ID:");
 	NET_HEXDUMP_DBG(src_conn_id, src_conn_id_len, "Source Conn ID:");
+
+	if (version != QUIC_VERSION_1) {
+		if (version == QUIC_VERSION_NEGOTIATION) {
+			NET_DBG("[EP:%p/%d] Ignoring Version Negotiation packet",
+				ep, quic_get_by_ep(ep));
+			return 1;
+		}
+
+		NET_DBG("[EP:%p/%d] Unsupported QUIC version: 0x%08x",
+			ep, quic_get_by_ep(ep), version);
+
+		if (quic_send_version_negotiation(ep, addr, addrlen,
+						  src_conn_id, src_conn_id_len,
+						  dst_conn_id, dst_conn_id_len) < 0) {
+			NET_WARN("[EP:%p/%d] Failed to send Version Negotiation for version 0x%08x",
+				 ep, quic_get_by_ep(ep), version);
+		}
+
+		return 1;
+	}
 
 	/* All the crypto stuff is done in a separate thread.
 	 * We next find the correct endpoint and pass the data to it.
