@@ -20,9 +20,6 @@ common:
       - "Test suite 'Crypto non-secure interface test.*' has.*PASSED"
       - "Test suite 'Platform Service Non-Secure interface tests.*' has.*PASSED"
 
-sample:
-  name: "TFM Regression Test"
-
 tests:
   tf-m.regression.ipc.lvl1:
     extra_args:
