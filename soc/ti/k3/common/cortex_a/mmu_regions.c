@@ -10,13 +10,11 @@
 
 static const struct arm_mmu_region mmu_regions[] = {
 
-	MMU_REGION_FLAT_ENTRY("GIC",
-			      DT_REG_ADDR_BY_IDX(DT_NODELABEL(gic), 0),
+	MMU_REGION_FLAT_ENTRY("GIC", DT_REG_ADDR_BY_IDX(DT_NODELABEL(gic), 0),
 			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(gic), 0),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
 
-	MMU_REGION_FLAT_ENTRY("GIC",
-			      DT_REG_ADDR_BY_IDX(DT_NODELABEL(gic), 1),
+	MMU_REGION_FLAT_ENTRY("GIC", DT_REG_ADDR_BY_IDX(DT_NODELABEL(gic), 1),
 			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(gic), 1),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
 };
