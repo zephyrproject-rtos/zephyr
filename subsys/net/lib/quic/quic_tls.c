@@ -180,6 +180,19 @@ static int quic_tls_set_own_cert(struct quic_tls_context *ctx,
 	return 0;
 }
 
+static int quic_tls_effective_verify_level(const struct quic_tls_context *ctx)
+{
+	if (ctx->options.verify_level != -1) {
+		return ctx->options.verify_level;
+	}
+
+	if (ctx->ep != NULL && !ctx->ep->is_server) {
+		return MBEDTLS_SSL_VERIFY_REQUIRED;
+	}
+
+	return MBEDTLS_SSL_VERIFY_NONE;
+}
+
 /*
  * Verify peer certificate using mbedtls
  * Called when processing Certificate message from peer
@@ -190,6 +203,7 @@ static int verify_peer_certificate(struct quic_tls_context *ctx,
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_x509_crt peer_crt;
 	uint32_t flags = 0;
+	int verify_level = quic_tls_effective_verify_level(ctx);
 	int ret;
 	psa_key_attributes_t pk_attr = PSA_KEY_ATTRIBUTES_INIT;
 	mbedtls_svc_key_id_t pub_key_id = MBEDTLS_SVC_KEY_ID_INIT;
@@ -214,14 +228,20 @@ static int verify_peer_certificate(struct quic_tls_context *ctx,
 			NET_WARN("Certificate verification failed: -0x%04x, flags=0x%08x",
 				 -ret, flags);
 
-			/* Check verification level */
-			if (ctx->options.verify_level > 0) {
+			if (verify_level == MBEDTLS_SSL_VERIFY_REQUIRED) {
 				ret = -EACCES;
 				goto out;
 			}
-			/* If verify_level is 0, continue despite errors */
+
+			ret = 0;
 		}
 	} else {
+		if (verify_level == MBEDTLS_SSL_VERIFY_REQUIRED) {
+			NET_WARN("No CA certificate configured for required peer verification");
+			ret = -EACCES;
+			goto out;
+		}
+
 		NET_WARN("No CA certificate configured, skipping verification");
 	}
 
@@ -3366,7 +3386,7 @@ static int process_handshake_message(struct quic_tls_context *ctx,
 			ret = verify_peer_certificate(ctx, ctx->peer_cert, ctx->peer_cert_len);
 			if (ret != 0) {
 				NET_DBG("Peer certificate verification failed: %d", ret);
-				/* Continue if verify_level allows it (checked inside function) */
+				return ret;
 			}
 		}
 		break;
