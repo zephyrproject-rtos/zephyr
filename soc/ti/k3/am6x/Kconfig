@@ -47,3 +47,14 @@ config SOC_PART_NUMBER
 	default "AM6442" if SOC_AM6442_R5F1_0
 	default "AM6442" if SOC_AM6442_R5F1_1
 	default "J721e" if SOC_J721E_MAIN_R5F0_0
+
+if SOC_SERIES_AM6X_R5
+
+config R5_BOOT_SPRINGBOARD
+	def_bool ($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM)) >= 0x80000000)
+	help
+	  If Zephyr code area is in DRAM which is MPU protected from execution
+	  by default then this option enables a boot springboard in ATCM to set
+	  executable permissions before jumping to the code area in DRAM
+
+endif # SOC_SERIES_AM6X_R5

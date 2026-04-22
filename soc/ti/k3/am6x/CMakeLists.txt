@@ -23,6 +23,7 @@ elseif(CONFIG_SOC_SERIES_AM6X_M4)
 elseif(CONFIG_SOC_SERIES_AM6X_R5)
   zephyr_sources(r5/soc.c)
   zephyr_sources_ifdef(CONFIG_ARM_MPU r5/arm_mpu_regions.c)
+  zephyr_sources_ifdef(CONFIG_R5_BOOT_SPRINGBOARD r5/boot.S)
 
   zephyr_include_directories(r5)
 
