@@ -488,7 +488,7 @@ static int lis2dw12_power_up(const struct device *dev)
 	}
 
 	/* reset device */
-	ret = lis2dw12_reset_set(ctx);
+	ret = lis2dw12_reset_set(ctx, PROPERTY_ENABLE);
 	if (ret < 0) {
 		return ret;
 	}
