@@ -151,7 +151,12 @@ static void pull_data(const struct device *dev)
 	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
 
-	while (read_rxflr(dev)) {
+	/*
+	 * Use SR.RFNE instead of RXFLR.  RXFLR is a CDC-crossed counter
+	 * that may read stale zero after RXFIS; RFNE is a single-bit
+	 * status flag that settles faster on any bus interface.
+	 */
+	while (test_bit_sr_rfne(dev)) {
 		uint32_t data = read_dr(dev);
 
 		if (spi_context_rx_buf_on(&spi->ctx)) {
@@ -176,8 +181,11 @@ static void pull_data(const struct device *dev)
 
 	if (!spi->ctx.rx_len && spi->ctx.tx_len < info->fifo_depth) {
 		write_rxftlr(dev, spi->ctx.tx_len - 1);
-	} else if (read_rxftlr(dev) >= spi->ctx.rx_len) {
-		write_rxftlr(dev, spi->ctx.rx_len - 1);
+	} else {
+		if (spi->ctx.rx_len > 0 &&
+		    read_rxftlr(dev) >= spi->ctx.rx_len) {
+			write_rxftlr(dev, spi->ctx.rx_len - 1);
+		}
 	}
 }
 
@@ -488,12 +496,10 @@ static int transceive(const struct device *dev,
 	 * is active.
 	 */
 
-	if (spi_dw_is_slave(spi) && tx_bufs && tx_bufs->buffers) {
-		LOG_DBG("Prefilling TX FIFO");
-		push_data(dev);
-	}
-
 	if (spi_dw_is_slave(spi)) {
+		if (tx_bufs && tx_bufs->buffers) {
+			push_data(dev);
+		}
 		/* SSI is enabled and any TX prefill is done: enable interrupts. */
 		write_imr(dev, reg_data);
 	}
