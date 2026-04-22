@@ -1038,7 +1038,7 @@ Continuous Integration:
     - kartben
   files:
     - .github/
-    - scripts/requirements-actions.*
+    - scripts/requirements-*
     - scripts/ci/
     - scripts/make_bugs_pickle.py
     - .checkpatch.conf
