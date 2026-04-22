@@ -3494,7 +3494,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 				       void *user_data);
 #endif /* CONFIG_NET_STATISTICS_VIA_PROMETHEUS */
 
-#define NET_IF_INIT(dev_id, sfx, _l2, _mtu)				\
+#define NET_IF_INIT(node_id, dev_id, sfx, _l2, _mtu)			\
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
 				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_id)),			\
@@ -3503,8 +3503,8 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 		.mtu = _mtu,						\
 		.flags = {BIT(NET_IF_LOWER_UP)},			\
 	};								\
-	static STRUCT_SECTION_ITERABLE(net_if,				\
-				NET_IF_GET_NAME(dev_id, sfx)) = {	\
+	IF_DISABLED(DT_NODE_EXISTS(node_id), (static))                  \
+	STRUCT_SECTION_ITERABLE(net_if,					\
 		.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),		\
 		NET_IF_CONFIG_INIT					\
 	};								\
@@ -3517,7 +3517,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 		    NET_STATS_PROMETHEUS(NET_IF_GET(dev_id, sfx),	\
 					 dev_id, sfx);))
 
-#define NET_IF_OFFLOAD_INIT(dev_id, sfx, _mtu)				\
+#define NET_IF_OFFLOAD_INIT(node_id, dev_id, sfx, _mtu)			\
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
 				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_id)),			\
@@ -3525,7 +3525,8 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 		.l2 = &(NET_L2_GET_NAME(OFFLOADED_NETDEV)),		\
 		.flags = {BIT(NET_IF_LOWER_UP)},			\
 	};								\
-	static STRUCT_SECTION_ITERABLE(net_if,				\
+	IF_DISABLED(DT_NODE_EXISTS(node_id), (static))                  \
+	STRUCT_SECTION_ITERABLE(net_if,					\
 				NET_IF_GET_NAME(dev_id, sfx)) = {	\
 		.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),		\
 		NET_IF_CONFIG_INIT					\
@@ -3551,13 +3552,14 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  *
  * @param dev_id Device ID provided to `NET_IF_INIT` or `NET_IF_OFFLOAD_INIT`
  */
-#define NET_IF_DECLARE(dev_id, inst) \
-	static struct net_if NET_IF_GET_NAME(dev_id, inst)
+#define NET_IF_DECLARE(node_id, dev_id, inst) \
+	IF_DISABLED(DT_NODE_EXISTS(node_id), (static))                  \
+	struct net_if NET_IF_GET_NAME(dev_id, inst)
 
-#define Z_NET_DEVICE_IF_INIT_INSTANCE(dev_id, instance, l2,		\
+#define Z_NET_DEVICE_IF_INIT_INSTANCE(node_id, dev_id, instance, l2,	\
 				      l2_ctx_type, mtu)			\
 	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_id, instance, l2, mtu)
+	NET_IF_INIT(node_id, dev_id, instance, l2, mtu)
 
 #define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
 				   init_fn, pm, data, config, prio,	\
@@ -3567,7 +3569,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 			Z_DEVICE_DT_FLAGS(node_id), pm, data,		\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
-	Z_NET_DEVICE_IF_INIT_INSTANCE(dev_id, instance, l2,		\
+	Z_NET_DEVICE_IF_INIT_INSTANCE(node_id, dev_id, instance, l2,	\
 				      l2_ctx_type, mtu)
 
 #define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
@@ -3583,7 +3585,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  * @param instance Instance identifier
  */
 #define NET_IF_DT_DECLARE(node_id, instance) \
-	NET_IF_DECLARE(Z_DEVICE_DT_DEV_ID(node_id), instance)
+	NET_IF_DECLARE(node_id, Z_DEVICE_DT_DEV_ID(node_id), instance)
 
 /**
  * @brief Forward declaration of a network interface
@@ -3649,7 +3651,8 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  * NET_DEVICE_DT_DEFINE, start from 1 for additional interfaces).
  */
 #define NET_DEVICE_DT_ADD_IFACE(node_id, l2, l2_ctx_type, mtu, instance)                           \
-	Z_NET_DEVICE_IF_INIT_INSTANCE(Z_DEVICE_DT_DEV_ID(node_id), instance, l2, l2_ctx_type, mtu)
+	Z_NET_DEVICE_IF_INIT_INSTANCE(node_id, Z_DEVICE_DT_DEV_ID(node_id), instance, l2,          \
+				      l2_ctx_type, mtu)
 
 /**
  * @brief Like NET_DEVICE_DT_ADD_IFACE for an instance of a DT_DRV_COMPAT compatible
@@ -3777,7 +3780,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 			Z_DEVICE_DT_FLAGS(node_id), pm, data,		\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_IF_OFFLOAD_INIT(dev_id, 0, mtu)
+	NET_IF_OFFLOAD_INIT(node_id, dev_id, 0, mtu)
 
 /**
  * @brief Create a offloaded network interface and bind it to network device.
