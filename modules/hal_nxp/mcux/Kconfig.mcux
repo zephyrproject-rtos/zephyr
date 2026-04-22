@@ -13,6 +13,26 @@ config HAS_MCUX
 
 if	HAS_MCUX
 
+config MCUX_OPTIMIZED_MEMCPY
+	bool "Use NXP optimized memcpy"
+	depends on !MINIMAL_LIBC
+	depends on CPU_CORTEX_M
+	# Doesn't support CM0+ and CM23
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	default y if "$(TOOLCHAIN_VARIANT_COMPILER)" = "gnu"
+	help
+	  Use NXP's optimized assembly memcpy
+
+config MCUX_OPTIMIZED_MEMSET
+	bool "Use NXP optimized memset"
+	depends on !MINIMAL_LIBC
+	depends on CPU_CORTEX_M
+	# Doesn't support CM0+ and CM23
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	default y if "$(TOOLCHAIN_VARIANT_COMPILER)" = "gnu"
+	help
+	  Use NXP's optimized assembly memset
+
 config MCUX_CORE_SUFFIX
 	string
 	help
