@@ -5493,15 +5493,15 @@ static void quic_service_thread(void *p1, void *p2, void *p3)
  * checks and then store the remaining packet data in the endpoint's
  * pending buffer for further processing done by QUIC handler thread.
  */
-static int process_long_header(struct quic_endpoint *ep,
-			       struct net_sockaddr *addr,
-			       net_socklen_t addrlen,
-			       uint8_t *buf,
-			       size_t payload_len,
-			       uint64_t token,
-			       size_t total_len,
-			       size_t pn_offset,
-			       size_t datagram_len)
+ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
+					 struct net_sockaddr *addr,
+					 net_socklen_t addrlen,
+					 uint8_t *buf,
+					 size_t payload_len,
+					 uint64_t token,
+					 size_t total_len,
+					 size_t pn_offset,
+					 size_t datagram_len)
 {
 	uint8_t dst_conn_id[MAX_CONN_ID_LEN];
 	uint8_t src_conn_id[MAX_CONN_ID_LEN];
@@ -5567,6 +5567,13 @@ static int process_long_header(struct quic_endpoint *ep,
 
 	NET_HEXDUMP_DBG(dst_conn_id, dst_conn_id_len, "Destination Conn ID:");
 	NET_HEXDUMP_DBG(src_conn_id, src_conn_id_len, "Source Conn ID:");
+
+	if (ptype == QUIC_PACKET_TYPE_INITIAL &&
+	    dst_conn_id_len < QUIC_INITIAL_DCID_MIN_LEN) {
+		NET_WARN("[EP:%p/%d] Dropping Initial packet with too-short DCID len %d",
+			 ep, quic_get_by_ep(ep), dst_conn_id_len);
+		return -EINVAL;
+	}
 
 	if (version != QUIC_VERSION_1) {
 		if (version == QUIC_VERSION_NEGOTIATION) {

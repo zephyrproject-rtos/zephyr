@@ -40,6 +40,7 @@
 
 #define QUIC_VERSION_NEGOTIATION 0x00000000
 #define QUIC_VERSION_1 0x00000001
+#define QUIC_INITIAL_DCID_MIN_LEN 8
 
 #define QUIC_STREAM_ID_UNASSIGNED UINT64_MAX
 
@@ -1120,5 +1121,14 @@ int quic_build_version_negotiation_packet(uint8_t *out,
 					  uint8_t peer_dcid_len);
 void quic_endpoint_note_unvalidated_rx(struct quic_endpoint *ep, size_t bytes);
 bool quic_endpoint_can_send_unvalidated(const struct quic_endpoint *ep, size_t bytes);
+int process_long_header(struct quic_endpoint *ep,
+			struct net_sockaddr *addr,
+			net_socklen_t addrlen,
+			uint8_t *buf,
+			size_t payload_len,
+			uint64_t token,
+			size_t total_len,
+			size_t pn_offset,
+			size_t datagram_len);
 
 #endif /* CONFIG_NET_TEST */
