@@ -151,7 +151,12 @@ static void pull_data(const struct device *dev)
 	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
 
-	while (read_rxflr(dev)) {
+	/*
+	 * Use SR.RFNE instead of RXFLR.  RXFLR is a CDC-crossed counter
+	 * that may read stale zero after RXFIS; RFNE is a single-bit
+	 * status flag that settles faster on any bus interface.
+	 */
+	while (test_bit_sr_rfne(dev)) {
 		uint32_t data = read_dr(dev);
 
 		if (spi_context_rx_buf_on(&spi->ctx)) {
@@ -176,8 +181,11 @@ static void pull_data(const struct device *dev)
 
 	if (!spi->ctx.rx_len && spi->ctx.tx_len < info->fifo_depth) {
 		write_rxftlr(dev, spi->ctx.tx_len - 1);
-	} else if (read_rxftlr(dev) >= spi->ctx.rx_len) {
-		write_rxftlr(dev, spi->ctx.rx_len - 1);
+	} else {
+		if (spi->ctx.rx_len > 0 &&
+		    read_rxftlr(dev) >= spi->ctx.rx_len) {
+			write_rxftlr(dev, spi->ctx.rx_len - 1);
+		}
 	}
 }
 
