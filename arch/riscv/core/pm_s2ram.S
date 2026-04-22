@@ -21,7 +21,7 @@
 #define REGBYTES 4
 #endif
 
-#ifdef CONFIG_FPU
+#if defined(CONFIG_FPU) && defined(CONFIG_RISCV_ISA_EXT_F)
 #ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
 #define FREGBYTES 8
 #else
@@ -35,8 +35,9 @@
 #endif
 
 /* Stack layout: ra, gp, tp, s0-s11 (s0-s1 only on RV32E), optional
- * fs0-fs11 + fcsr. Padded up to the 16-byte sp alignment the RISC-V
- * psABI requires at function call boundaries.
+ * fs0-fs11 + fcsr (only fcsr with Zfinx, whose floating-point state
+ * lives in the integer registers). Padded up to the 16-byte sp
+ * alignment the RISC-V psABI requires at function call boundaries.
  */
 #ifdef CONFIG_RISCV_ISA_RV32E
 #define GPR_AREA_BYTES   (5 * REGBYTES)
@@ -44,9 +45,12 @@
 #define GPR_AREA_BYTES   (15 * REGBYTES)
 #endif
 
-#ifdef CONFIG_FPU
+#if defined(CONFIG_FPU) && defined(CONFIG_RISCV_ISA_EXT_F)
 #define FPR_AREA_OFF  GPR_AREA_BYTES
 #define FCSR_OFF   (FPR_AREA_OFF + 12 * FREGBYTES)
+#define STACK_RAW_BYTES  (FCSR_OFF + REGBYTES)
+#elif defined(CONFIG_FPU) && defined(CONFIG_RISCV_ISA_EXT_ZFINX)
+#define FCSR_OFF   GPR_AREA_BYTES
 #define STACK_RAW_BYTES  (FCSR_OFF + REGBYTES)
 #else
 #define STACK_RAW_BYTES  GPR_AREA_BYTES
@@ -79,8 +83,10 @@
 /* FP save/restore is gated at runtime on mstatus.FS != Off. The slot
  * is always reserved in the stack frame so the offsets stay constant;
  * only the load/store work is skipped when there's no FP state.
+ * With Zfinx, mstatus.FS is hardwired to zero and the only
+ * floating-point state outside the integer registers is fcsr.
  */
-#ifdef CONFIG_FPU
+#if defined(CONFIG_FPU) && defined(CONFIG_RISCV_ISA_EXT_F)
 #define DO_STACK_FPRS(op) \
 	op fs0,  (FPR_AREA_OFF +  0 * FREGBYTES)(sp); \
 	op fs1,  (FPR_AREA_OFF +  1 * FREGBYTES)(sp); \
@@ -114,6 +120,14 @@
 	lr t0, FCSR_OFF(sp); \
 	fscsr t0; \
 	98:
+#elif defined(CONFIG_FPU) && defined(CONFIG_RISCV_ISA_EXT_ZFINX)
+#define PM_S2RAM_SAVE_FP \
+	frcsr t0; \
+	sr t0, FCSR_OFF(sp)
+
+#define PM_S2RAM_LOAD_FP \
+	lr t0, FCSR_OFF(sp); \
+	fscsr t0
 #else
 #define PM_S2RAM_SAVE_FP
 #define PM_S2RAM_LOAD_FP
@@ -224,7 +238,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 
 	lr sp, ___cpu_context_t_sp_OFFSET(a0)
 
-#ifdef CONFIG_FPU
+#if defined(CONFIG_FPU) && defined(CONFIG_RISCV_ISA_EXT_F)
 	/* Skip FP restore (and FPU access) if suspending FS == Off. */
 	li t2, MSTATUS_FS
 	and t0, t1, t2
@@ -234,6 +248,8 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 	lr t0, FCSR_OFF(sp)
 	fscsr t0
 97:
+#elif defined(CONFIG_FPU) && defined(CONFIG_RISCV_ISA_EXT_ZFINX)
+	PM_S2RAM_LOAD_FP
 #endif
 
 	DO_STACK_GPRS(lr)

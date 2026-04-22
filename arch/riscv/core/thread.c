@@ -329,6 +329,30 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 }
 #endif /* !CONFIG_MULTITHREADING */
 
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_ZFINX)
+int arch_float_disable(struct k_thread *thread)
+{
+	if (thread == NULL) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Zfinx keeps floating-point values in the integer registers, which
+	 * are always preserved. There is no FPU context to release, only the
+	 * thread option has to be cleared.
+	 */
+	thread->base.user_options &= ~K_FP_REGS;
+
+	return 0;
+}
+
+int arch_float_enable(struct k_thread *thread __unused, unsigned int options __unused)
+{
+	/* floats always gets enabled automatically at the moment */
+	return 0;
+}
+#endif /* CONFIG_FPU_SHARING && CONFIG_RISCV_ISA_EXT_ZFINX */
+
 int arch_coprocessors_disable(struct k_thread *thread)
 {
 #ifdef CONFIG_FPU_SHARING
