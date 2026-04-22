@@ -487,8 +487,8 @@ static void assert_stream_type_and_id(int sock, int expected_type)
 		      "Socket %d stream ID bits mismatch (%" PRIu64 ")", sock, stream_id);
 }
 
-/* Test 01: Basic connection open/close */
-ZTEST(net_socket_quic, test_01_open_connection_and_close)
+/* Test 010: Basic connection open/close */
+ZTEST(net_socket_quic, test_010_open_connection_and_close)
 {
 	struct quic_context *ctx;
 	int ret;
@@ -510,8 +510,8 @@ ZTEST(net_socket_quic, test_01_open_connection_and_close)
 		      "Invalid refcount %d after close", (int)atomic_get(&ctx->refcount));
 }
 
-/* Test 02: Stream open/close */
-ZTEST(net_socket_quic, test_02_open_stream_and_close)
+/* Test 020: Stream open/close */
+ZTEST(net_socket_quic, test_020_open_stream_and_close)
 {
 	struct quic_context *ctx;
 	int ret, conn_sock, stream_sock;
@@ -552,7 +552,7 @@ ZTEST(net_socket_quic, test_02_open_stream_and_close)
 		      "Invalid refcount %d after close", (int)atomic_get(&ctx->refcount));
 }
 
-ZTEST(net_socket_quic, test_02a_socket_kind_helpers)
+ZTEST(net_socket_quic, test_030_socket_kind_helpers)
 {
 	uint64_t stream_id = UINT64_MAX;
 	int ret, conn_sock, stream_sock, udp_sock;
@@ -601,7 +601,7 @@ ZTEST(net_socket_quic, test_02a_socket_kind_helpers)
 	zassert_equal(ret, 0, "Failed to close QUIC connection (%d)", ret);
 }
 
-ZTEST(net_socket_quic, test_02b_stream_type_helpers_for_local_streams)
+ZTEST(net_socket_quic, test_040_stream_type_helpers_for_local_streams)
 {
 	int ret, conn_sock, bidi_stream_sock, uni_stream_sock;
 
@@ -635,8 +635,8 @@ ZTEST(net_socket_quic, test_02b_stream_type_helpers_for_local_streams)
 	zassert_equal(ret, 0, "Failed to close QUIC connection (%d)", ret);
 }
 
-/* Test 03: Variable-length integer encoding/decoding */
-ZTEST(net_socket_quic, test_03_len_encode_decode)
+/* Test 050: Variable-length integer encoding/decoding */
+ZTEST(net_socket_quic, test_050_len_encode_decode)
 {
 	/* The values here are taken from RFC9000 Appending A.1 */
 	uint8_t buf8[] = { 0xc2, 0x19, 0x7c, 0x5e, 0xff, 0x14, 0xe8, 0x8c };
@@ -679,7 +679,7 @@ ZTEST(net_socket_quic, test_03_len_encode_decode)
 			  "Encoded 1-byte buffer does not match original");
 }
 
-ZTEST(net_socket_quic, test_03a_varint_helpers_reject_invalid_buffers)
+ZTEST(net_socket_quic, test_060_varint_helpers_reject_invalid_buffers)
 {
 	uint8_t buf[1] = { 0 };
 	uint64_t val = 0;
@@ -692,7 +692,7 @@ ZTEST(net_socket_quic, test_03a_varint_helpers_reject_invalid_buffers)
 	zassert_equal(ret, -EINVAL, "Too-small varint output buffer must fail (%d)", ret);
 }
 
-ZTEST(net_socket_quic, test_03a_version_negotiation_packet)
+ZTEST(net_socket_quic, test_070_version_negotiation_packet)
 {
 	static const uint8_t peer_scid[] = { 0xaa, 0xbb, 0xcc, 0xdd };
 	static const uint8_t peer_dcid[] = { 0x01, 0x02, 0x03, 0x04,
@@ -733,7 +733,7 @@ ZTEST(net_socket_quic, test_03a_version_negotiation_packet)
 			  "VN packet must advertise QUIC v1");
 }
 
-ZTEST(net_socket_quic, test_03b_frame_type_level_validation)
+ZTEST(net_socket_quic, test_080_frame_type_level_validation)
 {
 	int ret;
 
@@ -761,7 +761,7 @@ ZTEST(net_socket_quic, test_03b_frame_type_level_validation)
 	zassert_equal(ret, -ENOTSUP, "Unknown frame type must be rejected (%d)", ret);
 }
 
-ZTEST(net_socket_quic, test_03ba_recovery_shutdown_stops_tracking)
+ZTEST(net_socket_quic, test_090_recovery_shutdown_stops_tracking)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 
@@ -783,7 +783,7 @@ static void init_test_crypto_endpoint(struct quic_endpoint *ep,
 	ep->crypto.rx_buf_level = level;
 }
 
-ZTEST(net_socket_quic, test_03bb_crypto_frame_duplicate_identical)
+ZTEST(net_socket_quic, test_100_crypto_frame_duplicate_identical)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	uint8_t frame[] = { QUIC_FRAME_TYPE_CRYPTO, 0x00, 0x04, 0x11, 0x22, 0x33, 0x44 };
@@ -803,7 +803,7 @@ ZTEST(net_socket_quic, test_03bb_crypto_frame_duplicate_identical)
 			  "Duplicate CRYPTO frame must not corrupt buffer");
 }
 
-ZTEST(net_socket_quic, test_03bc_crypto_frame_overlap_mismatch)
+ZTEST(net_socket_quic, test_110_crypto_frame_overlap_mismatch)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	uint8_t frame[] = { QUIC_FRAME_TYPE_CRYPTO, 0x02, 0x04, 0x33, 0xff, 0x55, 0x66 };
@@ -828,7 +828,7 @@ ZTEST(net_socket_quic, test_03bc_crypto_frame_overlap_mismatch)
 			  "Rejected overlap must leave buffered CRYPTO data unchanged");
 }
 
-ZTEST(net_socket_quic, test_03bd_crypto_frame_buffer_exceeded)
+ZTEST(net_socket_quic, test_120_crypto_frame_buffer_exceeded)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	uint8_t frame[] = {
@@ -843,7 +843,7 @@ ZTEST(net_socket_quic, test_03bd_crypto_frame_buffer_exceeded)
 	zassert_equal(ret, -ENOMEM, "Oversized CRYPTO frame must fail with ENOMEM (%d)", ret);
 }
 
-ZTEST(net_socket_quic, test_03c_anti_amplification_budget)
+ZTEST(net_socket_quic, test_130_anti_amplification_budget)
 {
 	struct quic_endpoint *listen_ep = reset_test_ep(&test_ep_a);
 	struct quic_endpoint *child_ep = reset_test_ep(&test_ep_b);
@@ -900,7 +900,7 @@ static void init_test_rx_stream(struct quic_stream *stream,
 	ep->rx_fc.max_data_sent = conn_max_data;
 }
 
-ZTEST(net_socket_quic, test_03d_stream_local_rx_limit_by_type)
+ZTEST(net_socket_quic, test_140_stream_local_rx_limit_by_type)
 {
 	struct quic_endpoint *client_ep = reset_test_ep(&test_ep_a);
 	struct quic_endpoint *server_ep = reset_test_ep(&test_ep_b);
@@ -948,7 +948,7 @@ ZTEST(net_socket_quic, test_03d_stream_local_rx_limit_by_type)
 		      0, "Local uni stream should not accept peer data");
 }
 
-ZTEST(net_socket_quic, test_03e_stream_rx_flow_control_limit)
+ZTEST(net_socket_quic, test_150_stream_rx_flow_control_limit)
 {
 	static struct quic_stream stream;
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
@@ -966,7 +966,7 @@ ZTEST(net_socket_quic, test_03e_stream_rx_flow_control_limit)
 		      "Connection RX accounting changed on rejected data");
 }
 
-ZTEST(net_socket_quic, test_03f_connection_rx_flow_control_limit)
+ZTEST(net_socket_quic, test_160_connection_rx_flow_control_limit)
 {
 	static struct quic_stream stream1;
 	static struct quic_stream stream2;
@@ -993,7 +993,7 @@ ZTEST(net_socket_quic, test_03f_connection_rx_flow_control_limit)
 		      "Connection RX accounting should not grow after violation");
 }
 
-ZTEST(net_socket_quic, test_03g_rx_flow_control_ooo_no_double_count)
+ZTEST(net_socket_quic, test_170_rx_flow_control_ooo_no_double_count)
 {
 	static struct quic_stream stream;
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
@@ -1037,7 +1037,7 @@ ZTEST(net_socket_quic, test_03g_rx_flow_control_ooo_no_double_count)
  * This test verifies the HKDF functions by deriving secrets directly
  * and comparing against RFC test vectors.
  */
-ZTEST(net_socket_quic, test_04_rfc9001_initial_secret_derivation)
+ZTEST(net_socket_quic, test_180_rfc9001_initial_secret_derivation)
 {
 	uint8_t client_secret[QUIC_HASH_SHA2_256_LEN];
 	uint8_t server_secret[QUIC_HASH_SHA2_256_LEN];
@@ -1074,8 +1074,8 @@ ZTEST(net_socket_quic, test_04_rfc9001_initial_secret_derivation)
 			  "Server initial secret mismatch");
 }
 
-/* Test 05: RFC 9001 A.1 - Client key derivation */
-ZTEST(net_socket_quic, test_05_rfc9001_client_key_derivation)
+/* Test 190: RFC 9001 A.1 - Client key derivation */
+ZTEST(net_socket_quic, test_190_rfc9001_client_key_derivation)
 {
 	uint8_t key[QUIC_HASH_SHA2_128_LEN];
 	uint8_t iv[TLS13_AEAD_NONCE_LENGTH];
@@ -1110,8 +1110,8 @@ ZTEST(net_socket_quic, test_05_rfc9001_client_key_derivation)
 			  "Client HP key mismatch");
 }
 
-/* Test 06: RFC 9001 A.1 - Server key derivation */
-ZTEST(net_socket_quic, test_06_rfc9001_server_key_derivation)
+/* Test 200: RFC 9001 A.1 - Server key derivation */
+ZTEST(net_socket_quic, test_200_rfc9001_server_key_derivation)
 {
 	uint8_t key[QUIC_HASH_SHA2_128_LEN];
 	uint8_t iv[TLS13_AEAD_NONCE_LENGTH];
@@ -1146,8 +1146,8 @@ ZTEST(net_socket_quic, test_06_rfc9001_server_key_derivation)
 			  "Server HP key mismatch");
 }
 
-/* Test 07: RFC 9001 A. 2 - Header protection mask generation */
-ZTEST(net_socket_quic, test_07_rfc9001_hp_mask)
+/* Test 210: RFC 9001 A. 2 - Header protection mask generation */
+ZTEST(net_socket_quic, test_210_rfc9001_hp_mask)
 {
 	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
 	psa_key_id_t hp_key_id;
@@ -1192,8 +1192,8 @@ ZTEST(net_socket_quic, test_07_rfc9001_hp_mask)
 	psa_destroy_key(hp_key_id);
 }
 
-/* Test 08: RFC 9001 A.2 - Header decryption */
-ZTEST(net_socket_quic, test_08_rfc9001_header_decryption)
+/* Test 220: RFC 9001 A.2 - Header decryption */
+ZTEST(net_socket_quic, test_220_rfc9001_header_decryption)
 {
 	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
 	psa_key_id_t hp_key_id;
@@ -1264,8 +1264,8 @@ ZTEST(net_socket_quic, test_08_rfc9001_header_decryption)
 	psa_destroy_key(hp_key_id);
 }
 
-/* Test 09: Full cipher setup from connection ID */
-ZTEST(net_socket_quic, test_09_rfc9001_full_cipher_setup)
+/* Test 230: Full cipher setup from connection ID */
+ZTEST(net_socket_quic, test_230_rfc9001_full_cipher_setup)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	bool ret;
@@ -1295,8 +1295,8 @@ ZTEST(net_socket_quic, test_09_rfc9001_full_cipher_setup)
 	quic_crypto_context_destroy(&ep->crypto.initial);
 }
 
-/* Test 10: Nonce construction */
-ZTEST(net_socket_quic, test_10_nonce_construction)
+/* Test 240: Nonce construction */
+ZTEST(net_socket_quic, test_240_nonce_construction)
 {
 	uint8_t nonce[12];
 	uint8_t expected_last;
@@ -1322,8 +1322,8 @@ ZTEST(net_socket_quic, test_10_nonce_construction)
 	zassert_mem_equal(nonce, rfc9001_client_iv, 11, "Nonce prefix mismatch");
 }
 
-/* Test 11: Packet number reconstruction */
-ZTEST(net_socket_quic, test_11_pn_reconstruction)
+/* Test 250: Packet number reconstruction */
+ZTEST(net_socket_quic, test_250_pn_reconstruction)
 {
 	uint64_t full_pn;
 
@@ -1352,8 +1352,8 @@ ZTEST(net_socket_quic, test_11_pn_reconstruction)
 	zassert_equal(full_pn, 0xa82f9b32ULL, "PN reconstruction failed for case 5");
 }
 
-/* Test 12: AEAD encryption/decryption round-trip */
-ZTEST(net_socket_quic, test_12_aead_roundtrip)
+/* Test 260: AEAD encryption/decryption round-trip */
+ZTEST(net_socket_quic, test_260_aead_roundtrip)
 {
 	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
 	struct quic_pp_cipher pp = {0};
@@ -1399,8 +1399,8 @@ ZTEST(net_socket_quic, test_12_aead_roundtrip)
 	psa_destroy_key(pp.key_id);
 }
 
-/* Test 13: Header protection round-trip */
-ZTEST(net_socket_quic, test_13_header_protection_roundtrip)
+/* Test 270: Header protection round-trip */
+ZTEST(net_socket_quic, test_270_header_protection_roundtrip)
 {
 	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
 	psa_key_id_t hp_key_id;
@@ -1487,8 +1487,8 @@ ZTEST(net_socket_quic, test_13_header_protection_roundtrip)
 	psa_destroy_key(hp_key_id);
 }
 
-/* Test 14: Full packet decryption simulation */
-ZTEST(net_socket_quic, test_14_full_packet_decrypt_setup)
+/* Test 280: Full packet decryption simulation */
+ZTEST(net_socket_quic, test_280_full_packet_decrypt_setup)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	bool ret;
@@ -1531,7 +1531,7 @@ ZTEST(net_socket_quic, test_14_full_packet_decrypt_setup)
  *
  * Uses the exact packet structure from RFC 9001 Appendix A.2
  */
-ZTEST(net_socket_quic, test_15_header_protection_rfc9001)
+ZTEST(net_socket_quic, test_290_header_protection_rfc9001)
 {
 	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
 	psa_key_id_t hp_key_id;
@@ -1999,7 +1999,7 @@ static void quic_server_and_client(const char *server, const char *client,
 
 #define SMALL_BUF_SIZE 128
 
-ZTEST(net_socket_quic, test_16_quic_ipv6_server_and_client)
+ZTEST(net_socket_quic, test_300_quic_ipv6_server_and_client)
 {
 	static uint8_t tx_buf[SMALL_BUF_SIZE];
 	static uint8_t rx_buf[SMALL_BUF_SIZE];
@@ -2020,7 +2020,7 @@ ZTEST(net_socket_quic, test_16_quic_ipv6_server_and_client)
 #define LOCAL_ADDR_IPV4_STR "127.0.0.1:54321"
 #define REMOTE_ADDR_IPV4_STR "127.0.0.1:19999"
 
-ZTEST(net_socket_quic, test_17_quic_ipv4_server_and_client)
+ZTEST(net_socket_quic, test_310_quic_ipv4_server_and_client)
 {
 	static uint8_t tx_buf[SMALL_BUF_SIZE];
 	static uint8_t rx_buf[SMALL_BUF_SIZE];
@@ -2084,7 +2084,7 @@ static const uint8_t too_short_initial_msg[] =
 "\xc8\x52\xd0\x4e\x5c\x37\xb8\xd8\x89\xfe\xae\x70\xe4\x52\x54\x53"
 "\x5e\x6f\x97\x98\x9f\x0d\xa0\xf0\xf6\x6a\xb0\x68\x78\x11\xa4\xc2";
 
-ZTEST(net_socket_quic, test_18_quic_initial_too_short)
+ZTEST(net_socket_quic, test_320_quic_initial_too_short)
 {
 	/* Make sure that if we receive an Initial packet that is too short to contain the
 	 * full header, we drop the packet.
@@ -2147,7 +2147,7 @@ ZTEST(net_socket_quic, test_18_quic_initial_too_short)
 	zassert_ok(ret, "Cannot close server socket %d (%d)", server_sock, -errno);
 }
 
-ZTEST(net_socket_quic, test_18a_quic_initial_dcid_too_short)
+ZTEST(net_socket_quic, test_330_quic_initial_dcid_too_short)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	struct net_sockaddr_in src_addr = { 0 };
@@ -2174,7 +2174,7 @@ ZTEST(net_socket_quic, test_18a_quic_initial_dcid_too_short)
 	zassert_equal(ret, -EINVAL, "Expected too-short DCID to be rejected (%d)", ret);
 }
 
-ZTEST(net_socket_quic, test_19_quic_check_retransmissions)
+ZTEST(net_socket_quic, test_340_quic_check_retransmissions)
 {
 	static uint8_t tx_buf[sizeof(LOREM_IPSUM_LONG)];
 	static uint8_t rx_buf[sizeof(LOREM_IPSUM_LONG)];
@@ -2681,7 +2681,7 @@ static void quic_stream_type_roundtrip_uni(const char *server, const char *clien
 	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
 }
 
-ZTEST(net_socket_quic, test_20_quic_unidirectional_streams)
+ZTEST(net_socket_quic, test_350_quic_unidirectional_streams)
 {
 	static uint8_t tx_buf[sizeof(LOREM_IPSUM_LONG)];
 	static uint8_t rx_buf[sizeof(LOREM_IPSUM_LONG)];
@@ -2700,7 +2700,7 @@ ZTEST(net_socket_quic, test_20_quic_unidirectional_streams)
 				   MAX_BUF_SIZE);
 }
 
-ZTEST(net_socket_quic, test_20a_quic_stream_type_bits_end_to_end)
+ZTEST(net_socket_quic, test_360_quic_stream_type_bits_end_to_end)
 {
 	int ret;
 
@@ -2710,7 +2710,7 @@ ZTEST(net_socket_quic, test_20a_quic_stream_type_bits_end_to_end)
 	quic_stream_type_roundtrip_uni(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR);
 }
 
-ZTEST(net_socket_quic, test_21_client_cert_request_option)
+ZTEST(net_socket_quic, test_370_client_cert_request_option)
 {
 	int sock;
 	int ret;
@@ -2751,7 +2751,7 @@ ZTEST(net_socket_quic, test_21_client_cert_request_option)
 	zassert_equal(ret, 0, "Failed to close connection (%d)", ret);
 }
 
-ZTEST(net_socket_quic, test_22_cert_chain_add_option)
+ZTEST(net_socket_quic, test_380_cert_chain_add_option)
 {
 	int sock;
 	int ret;
@@ -2787,7 +2787,7 @@ ZTEST(net_socket_quic, test_22_cert_chain_add_option)
 	zassert_equal(ret, 0, "Failed to close connection (%d)", ret);
 }
 
-ZTEST(net_socket_quic, test_22_cert_chain_del_option)
+ZTEST(net_socket_quic, test_390_cert_chain_del_option)
 {
 	int sock;
 	int ret;
@@ -2845,7 +2845,7 @@ ZTEST(net_socket_quic, test_22_cert_chain_del_option)
 	zassert_equal(ret, 0, "Failed to close connection (%d)", ret);
 }
 
-ZTEST(net_socket_quic, test_23_invalid_quic_sockopt)
+ZTEST(net_socket_quic, test_400_invalid_quic_sockopt)
 {
 	int sock;
 	int ret;
@@ -3229,7 +3229,7 @@ cleanup:
 	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
 }
 
-ZTEST(net_socket_quic, test_24_client_cert_optional)
+ZTEST(net_socket_quic, test_410_client_cert_optional)
 {
 	int ret;
 
@@ -3244,7 +3244,7 @@ ZTEST(net_socket_quic, test_24_client_cert_optional)
 						true /* Set up client cert */);
 }
 
-ZTEST(net_socket_quic, test_25_client_cert_mandatory)
+ZTEST(net_socket_quic, test_420_client_cert_mandatory)
 {
 	int ret;
 
@@ -3259,7 +3259,7 @@ ZTEST(net_socket_quic, test_25_client_cert_mandatory)
 						true /* Set up client cert */);
 }
 
-ZTEST(net_socket_quic, test_26_client_cert_mandatory_and_failing)
+ZTEST(net_socket_quic, test_430_client_cert_mandatory_and_failing)
 {
 	int ret;
 
@@ -3274,7 +3274,7 @@ ZTEST(net_socket_quic, test_26_client_cert_mandatory_and_failing)
 						false /* Don't set up client cert */);
 }
 
-ZTEST(net_socket_quic, test_27_client_requires_server_ca_by_default)
+ZTEST(net_socket_quic, test_440_client_requires_server_ca_by_default)
 {
 	int ret;
 
@@ -3286,7 +3286,7 @@ ZTEST(net_socket_quic, test_27_client_requires_server_ca_by_default)
 						-1, false, false);
 }
 
-ZTEST(net_socket_quic, test_28_client_can_disable_server_verification)
+ZTEST(net_socket_quic, test_450_client_can_disable_server_verification)
 {
 	int ret;
 
