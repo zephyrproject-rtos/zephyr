@@ -397,8 +397,6 @@ static int flash_sf32lb_mpi_qspi_nor_erase(const struct device *dev, off_t offse
 		return -EINVAL;
 	}
 
-	qspi_nor_cinstr(dev, SPI_NOR_CMD_WREN);
-
 	do {
 		uint8_t cmd;
 		uint32_t adj;
@@ -425,6 +423,7 @@ static int flash_sf32lb_mpi_qspi_nor_erase(const struct device *dev, off_t offse
 		}
 
 		key = k_spin_lock(&data->lock);
+		qspi_nor_cinstr(dev, SPI_NOR_CMD_WREN);
 		qspi_nor_cinstr_seq_ready_wait(dev, cmd, ccrx, offset);
 		k_spin_unlock(&data->lock, key);
 
