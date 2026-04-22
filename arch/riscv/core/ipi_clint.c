@@ -35,13 +35,13 @@ void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 	arch_irq_unlock(key);
 }
 
-#ifdef CONFIG_FPU_SHARING
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
 void arch_flush_fpu_ipi(unsigned int cpu)
 {
 	atomic_set_bit(&cpu_pending_ipi[cpu], IPI_FPU_FLUSH);
 	MSIP(_kernel.cpus[cpu].arch.hartid) = 1;
 }
-#endif /* CONFIG_FPU_SHARING */
+#endif /* CONFIG_FPU_SHARING && CONFIG_RISCV_ISA_EXT_F */
 
 static void sched_ipi_handler(const void *unused)
 {
@@ -54,7 +54,7 @@ static void sched_ipi_handler(const void *unused)
 	if (pending_ipi & ATOMIC_MASK(IPI_SCHED)) {
 		z_sched_ipi();
 	}
-#ifdef CONFIG_FPU_SHARING
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
 	if (pending_ipi & ATOMIC_MASK(IPI_FPU_FLUSH)) {
 		/* disable IRQs */
 		csr_clear(mstatus, MSTATUS_IEN);
@@ -65,10 +65,10 @@ static void sched_ipi_handler(const void *unused)
 		 * this remains the last case.
 		 */
 	}
-#endif /* CONFIG_FPU_SHARING */
+#endif /* CONFIG_FPU_SHARING && CONFIG_RISCV_ISA_EXT_F */
 }
 
-#ifdef CONFIG_FPU_SHARING
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
 /*
  * Make sure there is no pending FPU flush request for this CPU while
  * waiting for a contended spinlock to become available. This prevents
@@ -88,7 +88,7 @@ void arch_spin_relax(void)
 		arch_float_disable(_current_cpu->arch.fpu_owner);
 	}
 }
-#endif /* CONFIG_FPU_SHARING */
+#endif /* CONFIG_FPU_SHARING && CONFIG_RISCV_ISA_EXT_F */
 
 int arch_smp_init(void)
 {

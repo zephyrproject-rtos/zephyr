@@ -215,7 +215,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	csrr t2, mstatus
 	sr t2, __struct_arch_esf_mstatus_OFFSET(sp)
 
-#if defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
 	/* determine if FPU access was disabled */
 	li t1, MSTATUS_FS
 	and t1, t1, t2
@@ -316,7 +316,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 
 	/* configure the FPU for exception mode */
 	call z_riscv_fpu_enter_exc
-#endif /* CONFIG_FPU_SHARING */
+#endif /* CONFIG_FPU_SHARING && CONFIG_RISCV_ISA_EXT_F */
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Handle context saving at SOC level. */
@@ -451,7 +451,7 @@ is_kernel_syscall:
 	lr a0, __struct_arch_esf_a0_OFFSET(sp)
 	lr a1, __struct_arch_esf_a1_OFFSET(sp)
 
-#ifdef CONFIG_FPU_SHARING
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
 	/*
 	 * When an ECALL is used for a context-switch, the current thread has
 	 * been updated to the next thread.
@@ -779,7 +779,7 @@ no_reschedule:
 	jal ra, __soc_restore_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
-#if defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
 	/* FPU handling upon exception mode exit */
 	mv a0, sp
 	call z_riscv_fpu_exit_exc

@@ -129,6 +129,20 @@ if(CONFIG_RISCV_ISA_EXT_ZBS)
   string(APPEND riscv_march "_zbs")
 endif()
 
+if(CONFIG_FPU)
+  if(CONFIG_RISCV_ISA_EXT_ZFINX)
+    string(APPEND riscv_march "_zfinx")
+  endif()
+
+  if(CONFIG_RISCV_ISA_EXT_ZDINX)
+    string(APPEND riscv_march "_zdinx")
+  endif()
+
+  if(CONFIG_RISCV_ISA_EXT_ZHINX)
+    string(APPEND riscv_march "_zhinx")
+  endif()
+endif()
+
 # Check whether we already imply Zmmul by selecting the M extension; if not - enable it
 if(NOT CONFIG_RISCV_ISA_EXT_M AND
    CONFIG_RISCV_ISA_EXT_ZMMUL AND

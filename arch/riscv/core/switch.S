@@ -84,7 +84,7 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	lr tp, _thread_offset_to_tls(a0)
 #endif
 
-#if defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
 	 /* Preserve a0 across following call. s0 is not yet restored. */
 	mv s0, a0
 	call z_riscv_fpu_thread_context_switch
