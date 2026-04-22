@@ -130,6 +130,7 @@ struct gpio_bee_data {
 	const struct device *dev;
 	sys_slist_t cb;
 	struct gpio_pad_node *array;
+	uint32_t connect_pin;
 };
 
 static uint32_t gpio_bee_get_pull_config(gpio_flags_t flags)
@@ -202,6 +203,7 @@ static int gpio_bee_pin_configure(const struct device *port, gpio_pin_t pin, gpi
 		Pinmux_Deinit(pad_pin);
 		Pad_Config(pad_pin, PAD_SW_MODE, PAD_NOT_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE,
 			   PAD_OUT_HIGH);
+		data->connect_pin &= ~gpio_bit;
 		return 0;
 	}
 
@@ -246,6 +248,8 @@ static int gpio_bee_pin_configure(const struct device *port, gpio_pin_t pin, gpi
 	} else {
 		BEE_GPIO_INIT(port_base, &gpio_init_struct);
 	}
+
+	data->connect_pin |= gpio_bit;
 
 	return 0;
 }
@@ -420,14 +424,15 @@ int gpio_bee_port_get_direction(const struct device *port, gpio_port_pins_t map,
 {
 	const struct gpio_bee_config *config = port->config;
 	GPIO_TypeDef *port_base = config->port_base;
+	struct gpio_bee_data *data = port->data;
 	gpio_port_pins_t gpio_dir_status = GPIO_GET_PORT_DIRECTION(port_base);
 
 	if (inputs != NULL) {
-		*inputs = gpio_dir_status;
+		*inputs = ~gpio_dir_status & data->connect_pin;
 	}
 
 	if (outputs != NULL) {
-		*outputs = ~gpio_dir_status;
+		*outputs = gpio_dir_status & data->connect_pin;
 	}
 
 	return 0;
