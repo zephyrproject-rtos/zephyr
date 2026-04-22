@@ -165,6 +165,21 @@ config QUIC_MAX_ENDPOINTS
 	  server has more than one UDP port, then each one is
 	  a separate endpoint.
 
+config QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT
+	bool "Enforce server anti-amplification limit"
+	default y
+	help
+	  Enforce the RFC 9000 Section 8.1 limit that a server must not
+	  send more than three times as many bytes as it has received from
+	  a client address before that address is validated.
+
+	  In the current implementation, CRYPTO transmissions that would
+	  exceed this budget are deferred until more credit arrives or the
+	  peer address becomes validated, rather than immediately closing
+	  the connection.
+	  Disable this option only for interoperability or feature-testing
+	  scenarios where you explicitly want to bypass the limit.
+
 config QUIC_ENDPOINT_USE_IPV4_MAPPING_TO_IPV6
 	bool "Set IPv4-to-IPv6-mapping to listening endpoint UDP socket"
 	depends on NET_IPV4_MAPPING_TO_IPV6

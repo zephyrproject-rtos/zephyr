@@ -464,6 +464,14 @@ struct quic_crypto_stream {
 	size_t rx_buffer_len;
 };
 
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+struct quic_deferred_crypto_payload {
+	size_t len;
+	bool valid;
+	uint8_t data[CONFIG_QUIC_TX_BUFFER_SIZE];
+};
+#endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
+
 /**
  * QUIC endpoint information
  */
@@ -523,6 +531,15 @@ struct quic_endpoint {
 
 		/** Out-of-order segment tracking (shared across levels) */
 		struct quic_crypto_ooo_seg ooo[CONFIG_QUIC_CRYPTO_OOO_SLOTS];
+
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+		/** Deferred CRYPTO frame payloads for Initial and Handshake levels.
+		 * TLS send callbacks currently emit CRYPTO data only at these two
+		 * levels, so two slots preserve ordering without growing every
+		 * endpoint by an unused Application-level buffer.
+		 */
+		struct quic_deferred_crypto_payload pending[2];
+#endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 	} crypto;
 
 	/** Largest packet number tracking per encryption level for TX */
@@ -624,6 +641,15 @@ struct quic_endpoint {
 		uint64_t max_data_sent;  /* Last MAX_DATA value we sent */
 		bool need_window_update; /* Flag to send MAX_DATA */
 	} rx_fc;
+
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+	/** Server anti-amplification state before peer address validation. */
+	struct {
+		uint32_t bytes_received;
+		uint32_t bytes_sent;
+		bool validated;
+	} anti_amplification;
+#endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 
 	/** Stream-count limits, how many streams we allow the peer to open.
 	 * Mirrored from our own transport parameters and grown in response to
@@ -1083,6 +1109,9 @@ int quic_decrypt_payload(struct quic_pp_cipher *pp, uint64_t packet_number,
 			 uint8_t *plaintext, size_t plaintext_size,
 			 size_t *plaintext_len);
 
+int quic_flush_deferred_crypto(struct quic_endpoint *ep);
 void quic_crypto_context_destroy(struct quic_crypto_context *ctx);
+void quic_endpoint_note_unvalidated_rx(struct quic_endpoint *ep, size_t bytes);
+bool quic_endpoint_can_send_unvalidated(const struct quic_endpoint *ep, size_t bytes);
 
 #endif /* CONFIG_NET_TEST */
