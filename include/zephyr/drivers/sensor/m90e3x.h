@@ -232,7 +232,7 @@ struct m90e3x_sensor_data {
 	 * This union allows to use the same data structure for both ICs.
 	 */
 
-	union {
+	union common_section {
 		struct m90e32as_peak_sensor_data {
 			struct sensor_value UpkA; /* [V] */
 			struct sensor_value UpkB; /* [V] */
@@ -249,7 +249,7 @@ struct m90e3x_sensor_data {
 			struct sensor_value THDNIB; /* [%] */
 			struct sensor_value THDNIC; /* [%] */
 		} thd_sensor_values;
-	};
+	} common;
 
 	struct m90e3x_phase_angle_sensor_data {
 		struct sensor_value PAngleA; /* [degrees] */

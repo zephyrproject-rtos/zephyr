@@ -34,9 +34,42 @@ LOG_MODULE_REGISTER(m90e32as, CONFIG_SENSOR_LOG_LEVEL);
 
 #define M90E32AS_RETRY_COUNT 5
 
+/**
+ * @brief Generic macro template to read a register and store the value in the corresponding field
+ * of the data structure. It also checks for errors and logs them.
+ *
+ * @param ret Variable to store the return value of the read operation.
+ * @param reg_enum The register enum to read from.
+ * @param field_name The field name in the data structure where the read value should be stored
+ */
+#define READ_REGISTER(ret, reg_enum, field_name)                                                   \
+	ret = m90e32as_read_register(dev, reg_enum, (m90e3x_data_value_t *)&data->field_name);     \
+	if (ret < 0) {                                                                             \
+		LOG_ERR("Failed to read register " #reg_enum "(%d) for device %s.", reg_enum,      \
+			dev->name);                                                                \
+		return ret;                                                                        \
+	}
+
+/**
+ * @brief Generic macro template to write a value to a register from the corresponding field of the
+ * data structure. It also checks for errors and logs them.
+ *
+ * @param ret Variable to store the return value of the write operation.
+ * @param reg_enum The register enum to write to.
+ * @param value The value to be written to the register, typically a pointer to the field in the
+ * data structure.
+ */
+#define WRITE_REGISTER(ret, reg_enum, value)                                                       \
+	ret = m90e32as_write_register(dev, reg_enum, value);                                       \
+	if (ret < 0) {                                                                             \
+		LOG_ERR("Failed to write register " #reg_enum "(%d) for device %s.", reg_enum,     \
+			dev->name);                                                                \
+		return ret;                                                                        \
+	}
+
 static inline int m90e32as_bus_check(const struct device *dev)
 {
-	const struct m90e3x_config *cfg = (struct m90e3x_config *)dev->config;
+	const struct m90e3x_config *cfg = (const struct m90e3x_config *)dev->config;
 
 	return cfg->bus_io->bus_check(dev);
 }
@@ -44,7 +77,7 @@ static inline int m90e32as_bus_check(const struct device *dev)
 static inline int m90e32as_read_register(const struct device *dev, const m90e3x_register_t reg,
 					 m90e3x_data_value_t *value)
 {
-	const struct m90e3x_config *cfg = (struct m90e3x_config *)dev->config;
+	const struct m90e3x_config *cfg = (const struct m90e3x_config *)dev->config;
 	struct m90e3x_data *data = (struct m90e3x_data *)dev->data;
 	int ret = 0;
 
@@ -91,7 +124,7 @@ end:
 static inline int m90e32as_write_register(const struct device *dev, const m90e3x_register_t addr,
 					  const m90e3x_data_value_t *value)
 {
-	const struct m90e3x_config *cfg = (struct m90e3x_config *)dev->config;
+	const struct m90e3x_config *cfg = (const struct m90e3x_config *)dev->config;
 	struct m90e3x_data *data = (struct m90e3x_data *)dev->data;
 	int ret = 0;
 
@@ -159,111 +192,140 @@ static int m90e32as_config_access_disable(const struct device *dev)
 	return m90e32as_write_register(dev, CFGREGACCEN, &value);
 }
 
-static void m90e32as_reload_config(const struct device *dev)
+static int m90e32as_reload_config(const struct device *dev)
 {
 	struct m90e3x_data *data = (struct m90e3x_data *)dev->data;
+	int ret;
 
-	m90e32as_config_access_enable(dev);
+	ret = m90e32as_config_access_enable(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable config access for device %s. [%d]", dev->name, ret);
+		return ret;
+	}
 
 	/* Status and Special Registers */
 
-	m90e32as_write_register(dev, METEREN, &data->m90e32as_config_registers.MeterEn);
-	m90e32as_write_register(dev, CHANNELMAPI, &data->m90e32as_config_registers.ChannelMapI);
-	m90e32as_write_register(dev, CHANNELMAPU, &data->m90e32as_config_registers.ChannelMapU);
-	m90e32as_write_register(dev, SAGPEAKDETCFG, &data->m90e32as_config_registers.SagPeakDetCfg);
-	m90e32as_write_register(dev, OVTHCFG, &data->m90e32as_config_registers.OVthCfg);
-	m90e32as_write_register(dev, ZXCONFIG, &data->m90e32as_config_registers.ZXConfig);
-	m90e32as_write_register(dev, SAGTH, &data->m90e32as_config_registers.SagTh);
-	m90e32as_write_register(dev, PHASELOSSTH, &data->m90e32as_config_registers.PhaseLossTh);
-	m90e32as_write_register(dev, INWARNTH, &data->m90e32as_config_registers.InWarnTh);
-	m90e32as_write_register(dev, OITH, &data->m90e32as_config_registers.OIth);
-	m90e32as_write_register(dev, FREQLOTH, &data->m90e32as_config_registers.FreqLoTh);
-	m90e32as_write_register(dev, FREQHITH, &data->m90e32as_config_registers.FreqHiTh);
-	m90e32as_write_register(dev, PMPWRCTRL, &data->m90e32as_config_registers.PMPwrCtrl);
-	m90e32as_write_register(dev, IRQ0MERGECFG, &data->m90e32as_config_registers.IRQ0MergeCfg);
+	WRITE_REGISTER(ret, METEREN, &data->m90e32as_config_registers.MeterEn);
+	WRITE_REGISTER(ret, CHANNELMAPI, &data->m90e32as_config_registers.ChannelMapI);
+	WRITE_REGISTER(ret, CHANNELMAPU, &data->m90e32as_config_registers.ChannelMapU);
+	WRITE_REGISTER(ret, SAGPEAKDETCFG, &data->m90e32as_config_registers.SagPeakDetCfg);
+	WRITE_REGISTER(ret, OVTHCFG, &data->m90e32as_config_registers.OVthCfg);
+	WRITE_REGISTER(ret, ZXCONFIG, &data->m90e32as_config_registers.ZXConfig);
+	WRITE_REGISTER(ret, SAGTH, &data->m90e32as_config_registers.SagTh);
+	WRITE_REGISTER(ret, PHASELOSSTH, &data->m90e32as_config_registers.PhaseLossTh);
+	WRITE_REGISTER(ret, INWARNTH, &data->m90e32as_config_registers.InWarnTh);
+	WRITE_REGISTER(ret, OITH, &data->m90e32as_config_registers.OIth);
+	WRITE_REGISTER(ret, FREQLOTH, &data->m90e32as_config_registers.FreqLoTh);
+	WRITE_REGISTER(ret, FREQHITH, &data->m90e32as_config_registers.FreqHiTh);
+	WRITE_REGISTER(ret, PMPWRCTRL, &data->m90e32as_config_registers.PMPwrCtrl);
+	WRITE_REGISTER(ret, IRQ0MERGECFG, &data->m90e32as_config_registers.IRQ0MergeCfg);
 
 	/* Low Power Mode Registers */
 
-	m90e32as_write_register(dev, DETECTCTRL, &data->m90e32as_config_registers.DetectCtrl);
-	m90e32as_write_register(dev, DETECTTH1, &data->m90e32as_config_registers.DetectTh1);
-	m90e32as_write_register(dev, DETECTTH2, &data->m90e32as_config_registers.DetectTh2);
-	m90e32as_write_register(dev, DETECTTH3, &data->m90e32as_config_registers.DetectTh3);
-	m90e32as_write_register(dev, IDCOFFSETA, &data->m90e32as_config_registers.IDCoffsetA);
-	m90e32as_write_register(dev, IDCOFFSETB, &data->m90e32as_config_registers.IDCoffsetB);
-	m90e32as_write_register(dev, IDCOFFSETC, &data->m90e32as_config_registers.IDCoffsetC);
-	m90e32as_write_register(dev, UDCOFFSETA, &data->m90e32as_config_registers.UDCoffsetA);
-	m90e32as_write_register(dev, UDCOFFSETB, &data->m90e32as_config_registers.UDCoffsetB);
-	m90e32as_write_register(dev, UDCOFFSETC, &data->m90e32as_config_registers.UDCoffsetC);
-	m90e32as_write_register(dev, UGAINTAB, &data->m90e32as_config_registers.UGainTAB);
-	m90e32as_write_register(dev, UGAINTC, &data->m90e32as_config_registers.UGainTC);
-	m90e32as_write_register(dev, PHIFREQCOMP, &data->m90e32as_config_registers.PhiFreqComp);
-	m90e32as_write_register(dev, LOGIRMS0, &data->m90e32as_config_registers.LOGIrms0);
-	m90e32as_write_register(dev, LOGIRMS1, &data->m90e32as_config_registers.LOGIrms1);
-	m90e32as_write_register(dev, F0, &data->m90e32as_config_registers.F0);
-	m90e32as_write_register(dev, T0, &data->m90e32as_config_registers.T0);
-	m90e32as_write_register(dev, PHIAIRMS01, &data->m90e32as_config_registers.PhiAIrms01);
-	m90e32as_write_register(dev, PHIAIRMS2, &data->m90e32as_config_registers.PhiAIrms2);
-	m90e32as_write_register(dev, GAINAIRMS01, &data->m90e32as_config_registers.GainAIrms01);
-	m90e32as_write_register(dev, GAINAIRMS2, &data->m90e32as_config_registers.GainAIrms2);
-	m90e32as_write_register(dev, PHIBIRMS01, &data->m90e32as_config_registers.PhiBIrms01);
-	m90e32as_write_register(dev, PHIBIRMS2, &data->m90e32as_config_registers.PhiBIrms2);
-	m90e32as_write_register(dev, GAINBIRMS01, &data->m90e32as_config_registers.GainBIrms01);
-	m90e32as_write_register(dev, GAINBIRMS2, &data->m90e32as_config_registers.GainBIrms2);
-	m90e32as_write_register(dev, PHICIRMS01, &data->m90e32as_config_registers.PhiCIrms01);
-	m90e32as_write_register(dev, PHICIRMS2, &data->m90e32as_config_registers.PhiCIrms2);
-	m90e32as_write_register(dev, GAINCIRMS01, &data->m90e32as_config_registers.GainCIrms01);
-	m90e32as_write_register(dev, GAINCIRMS2, &data->m90e32as_config_registers.GainCIrms2);
+	WRITE_REGISTER(ret, DETECTCTRL, &data->m90e32as_config_registers.DetectCtrl);
+	WRITE_REGISTER(ret, DETECTTH1, &data->m90e32as_config_registers.DetectTh1);
+	WRITE_REGISTER(ret, DETECTTH2, &data->m90e32as_config_registers.DetectTh2);
+	WRITE_REGISTER(ret, DETECTTH3, &data->m90e32as_config_registers.DetectTh3);
+	WRITE_REGISTER(ret, IDCOFFSETA, &data->m90e32as_config_registers.IDCoffsetA);
+	WRITE_REGISTER(ret, IDCOFFSETB, &data->m90e32as_config_registers.IDCoffsetB);
+	WRITE_REGISTER(ret, IDCOFFSETC, &data->m90e32as_config_registers.IDCoffsetC);
+	WRITE_REGISTER(ret, UDCOFFSETA, &data->m90e32as_config_registers.UDCoffsetA);
+	WRITE_REGISTER(ret, UDCOFFSETB, &data->m90e32as_config_registers.UDCoffsetB);
+	WRITE_REGISTER(ret, UDCOFFSETC, &data->m90e32as_config_registers.UDCoffsetC);
+	WRITE_REGISTER(ret, UGAINTAB, &data->m90e32as_config_registers.UGainTAB);
+	WRITE_REGISTER(ret, UGAINTC, &data->m90e32as_config_registers.UGainTC);
+	WRITE_REGISTER(ret, PHIFREQCOMP, &data->m90e32as_config_registers.PhiFreqComp);
+	WRITE_REGISTER(ret, LOGIRMS0, &data->m90e32as_config_registers.LOGIrms0);
+	WRITE_REGISTER(ret, LOGIRMS1, &data->m90e32as_config_registers.LOGIrms1);
+	WRITE_REGISTER(ret, F0, &data->m90e32as_config_registers.F0);
+	WRITE_REGISTER(ret, T0, &data->m90e32as_config_registers.T0);
+	WRITE_REGISTER(ret, PHIAIRMS01, &data->m90e32as_config_registers.PhiAIrms01);
+	WRITE_REGISTER(ret, PHIAIRMS2, &data->m90e32as_config_registers.PhiAIrms2);
+	WRITE_REGISTER(ret, GAINAIRMS01, &data->m90e32as_config_registers.GainAIrms01);
+	WRITE_REGISTER(ret, GAINAIRMS2, &data->m90e32as_config_registers.GainAIrms2);
+	WRITE_REGISTER(ret, PHIBIRMS01, &data->m90e32as_config_registers.PhiBIrms01);
+	WRITE_REGISTER(ret, PHIBIRMS2, &data->m90e32as_config_registers.PhiBIrms2);
+	WRITE_REGISTER(ret, GAINBIRMS01, &data->m90e32as_config_registers.GainBIrms01);
+	WRITE_REGISTER(ret, GAINBIRMS2, &data->m90e32as_config_registers.GainBIrms2);
+	WRITE_REGISTER(ret, PHICIRMS01, &data->m90e32as_config_registers.PhiCIrms01);
+	WRITE_REGISTER(ret, PHICIRMS2, &data->m90e32as_config_registers.PhiCIrms2);
+	WRITE_REGISTER(ret, GAINCIRMS01, &data->m90e32as_config_registers.GainCIrms01);
+	WRITE_REGISTER(ret, GAINCIRMS2, &data->m90e32as_config_registers.GainCIrms2);
 
 	/* Configuration Registers */
 
-	m90e32as_write_register(dev, PLCONSTH, &data->m90e32as_config_registers.PLconstH);
-	m90e32as_write_register(dev, PLCONSTL, &data->m90e32as_config_registers.PLconstL);
-	m90e32as_write_register(dev, MMODE0, &data->m90e32as_config_registers.MMode0);
-	m90e32as_write_register(dev, MMODE1, &data->m90e32as_config_registers.MMode1);
-	m90e32as_write_register(dev, PSTARTTH, &data->m90e32as_config_registers.PStartTh);
-	m90e32as_write_register(dev, QSTARTTH, &data->m90e32as_config_registers.QStartTh);
-	m90e32as_write_register(dev, SSTARTTH, &data->m90e32as_config_registers.SStartTh);
-	m90e32as_write_register(dev, PPHASETH, &data->m90e32as_config_registers.PPhaseTh);
-	m90e32as_write_register(dev, QPHASETH, &data->m90e32as_config_registers.QPhaseTh);
-	m90e32as_write_register(dev, SPHASETH, &data->m90e32as_config_registers.SPhaseTh);
-
-	/* Calibration Registers */
-
-	m90e32as_write_register(dev, POFFSETA, &data->m90e32as_config_registers.PoffsetA);
-	m90e32as_write_register(dev, QOFFSETA, &data->m90e32as_config_registers.QoffsetA);
-	m90e32as_write_register(dev, POFFSETB, &data->m90e32as_config_registers.PoffsetB);
-	m90e32as_write_register(dev, QOFFSETB, &data->m90e32as_config_registers.QoffsetB);
-	m90e32as_write_register(dev, POFFSETC, &data->m90e32as_config_registers.PoffsetC);
-	m90e32as_write_register(dev, QOFFSETC, &data->m90e32as_config_registers.QoffsetC);
-	m90e32as_write_register(dev, PQGAINA, &data->m90e32as_config_registers.PQGainA);
-	m90e32as_write_register(dev, PHIA, &data->m90e32as_config_registers.PhiA);
-	m90e32as_write_register(dev, PQGAINB, &data->m90e32as_config_registers.PQGainB);
-	m90e32as_write_register(dev, PHIB, &data->m90e32as_config_registers.PhiB);
-	m90e32as_write_register(dev, PQGAINC, &data->m90e32as_config_registers.PQGainC);
-	m90e32as_write_register(dev, PHIC, &data->m90e32as_config_registers.PhiC);
+	WRITE_REGISTER(ret, PLCONSTH, &data->m90e32as_config_registers.PLconstH);
+	WRITE_REGISTER(ret, PLCONSTL, &data->m90e32as_config_registers.PLconstL);
+	WRITE_REGISTER(ret, MMODE0, &data->m90e32as_config_registers.MMode0);
+	WRITE_REGISTER(ret, MMODE1, &data->m90e32as_config_registers.MMode1);
+	WRITE_REGISTER(ret, PSTARTTH, &data->m90e32as_config_registers.PStartTh);
+	WRITE_REGISTER(ret, QSTARTTH, &data->m90e32as_config_registers.QStartTh);
+	WRITE_REGISTER(ret, SSTARTTH, &data->m90e32as_config_registers.SStartTh);
+	WRITE_REGISTER(ret, PPHASETH, &data->m90e32as_config_registers.PPhaseTh);
+	WRITE_REGISTER(ret, QPHASETH, &data->m90e32as_config_registers.QPhaseTh);
+	WRITE_REGISTER(ret, SPHASETH, &data->m90e32as_config_registers.SPhaseTh);
+	WRITE_REGISTER(ret, POFFSETA, &data->m90e32as_config_registers.PoffsetA);
+	WRITE_REGISTER(ret, QOFFSETA, &data->m90e32as_config_registers.QoffsetA);
+	WRITE_REGISTER(ret, POFFSETB, &data->m90e32as_config_registers.PoffsetB);
+	WRITE_REGISTER(ret, QOFFSETB, &data->m90e32as_config_registers.QoffsetB);
+	WRITE_REGISTER(ret, POFFSETC, &data->m90e32as_config_registers.PoffsetC);
+	WRITE_REGISTER(ret, QOFFSETC, &data->m90e32as_config_registers.QoffsetC);
+	WRITE_REGISTER(ret, PQGAINA, &data->m90e32as_config_registers.PQGainA);
+	WRITE_REGISTER(ret, PHIA, &data->m90e32as_config_registers.PhiA);
+	WRITE_REGISTER(ret, PQGAINB, &data->m90e32as_config_registers.PQGainB);
+	WRITE_REGISTER(ret, PHIB, &data->m90e32as_config_registers.PhiB);
+	WRITE_REGISTER(ret, PQGAINC, &data->m90e32as_config_registers.PQGainC);
+	WRITE_REGISTER(ret, PHIC, &data->m90e32as_config_registers.PhiC);
 
 	/* Fundamental/Harmonic Calibration Registers */
 
-	m90e32as_write_register(dev, POFFSETAF, &data->m90e32as_config_registers.PoffsetAF);
-	m90e32as_write_register(dev, POFFSETBF, &data->m90e32as_config_registers.PoffsetBF);
-	m90e32as_write_register(dev, POFFSETCF, &data->m90e32as_config_registers.PoffsetCF);
-	m90e32as_write_register(dev, PGAINAF, &data->m90e32as_config_registers.PGainAF);
-	m90e32as_write_register(dev, PGAINBF, &data->m90e32as_config_registers.PGainBF);
-	m90e32as_write_register(dev, PGAINCF, &data->m90e32as_config_registers.PGainCF);
+	WRITE_REGISTER(ret, POFFSETAF, &data->m90e32as_config_registers.PoffsetAF);
+	WRITE_REGISTER(ret, POFFSETBF, &data->m90e32as_config_registers.PoffsetBF);
+	WRITE_REGISTER(ret, POFFSETCF, &data->m90e32as_config_registers.PoffsetCF);
+	WRITE_REGISTER(ret, PGAINAF, &data->m90e32as_config_registers.PGainAF);
+	WRITE_REGISTER(ret, PGAINBF, &data->m90e32as_config_registers.PGainBF);
+	WRITE_REGISTER(ret, PGAINCF, &data->m90e32as_config_registers.PGainCF);
 
 	/* Measurement Calibration Registers */
 
-	m90e32as_write_register(dev, UGAINA, &data->m90e32as_config_registers.UgainA);
-	m90e32as_write_register(dev, IGAINA, &data->m90e32as_config_registers.IgainA);
-	m90e32as_write_register(dev, UOFFSETA, &data->m90e32as_config_registers.UoffsetA);
-	m90e32as_write_register(dev, UGAINB, &data->m90e32as_config_registers.UgainB);
-	m90e32as_write_register(dev, IGAINB, &data->m90e32as_config_registers.IgainB);
-	m90e32as_write_register(dev, UOFFSETB, &data->m90e32as_config_registers.UoffsetB);
-	m90e32as_write_register(dev, UGAINC, &data->m90e32as_config_registers.UgainC);
-	m90e32as_write_register(dev, IGAINC, &data->m90e32as_config_registers.IgainC);
-	m90e32as_write_register(dev, UOFFSETC, &data->m90e32as_config_registers.UoffsetC);
+	WRITE_REGISTER(ret, UGAINA, &data->m90e32as_config_registers.UgainA);
+	WRITE_REGISTER(ret, IGAINA, &data->m90e32as_config_registers.IgainA);
+	WRITE_REGISTER(ret, UOFFSETA, &data->m90e32as_config_registers.UoffsetA);
+	WRITE_REGISTER(ret, UGAINB, &data->m90e32as_config_registers.UgainB);
+	WRITE_REGISTER(ret, IGAINB, &data->m90e32as_config_registers.IgainB);
+	WRITE_REGISTER(ret, UOFFSETB, &data->m90e32as_config_registers.UoffsetB);
+	WRITE_REGISTER(ret, UGAINC, &data->m90e32as_config_registers.UgainC);
+	WRITE_REGISTER(ret, IGAINC, &data->m90e32as_config_registers.IgainC);
+	WRITE_REGISTER(ret, UOFFSETC, &data->m90e32as_config_registers.UoffsetC);
 
-	m90e32as_config_access_disable(dev);
+	/* Fundamental/Harmonic Calibration Registers */
+
+	WRITE_REGISTER(ret, POFFSETAF, &data->m90e32as_config_registers.PoffsetAF);
+	WRITE_REGISTER(ret, POFFSETBF, &data->m90e32as_config_registers.PoffsetBF);
+	WRITE_REGISTER(ret, POFFSETCF, &data->m90e32as_config_registers.PoffsetCF);
+	WRITE_REGISTER(ret, PGAINAF, &data->m90e32as_config_registers.PGainAF);
+	WRITE_REGISTER(ret, PGAINBF, &data->m90e32as_config_registers.PGainBF);
+	WRITE_REGISTER(ret, PGAINCF, &data->m90e32as_config_registers.PGainCF);
+
+	/* Measurement Calibration Registers */
+
+	WRITE_REGISTER(ret, UGAINA, &data->m90e32as_config_registers.UgainA);
+	WRITE_REGISTER(ret, IGAINA, &data->m90e32as_config_registers.IgainA);
+	WRITE_REGISTER(ret, UOFFSETA, &data->m90e32as_config_registers.UoffsetA);
+	WRITE_REGISTER(ret, UGAINB, &data->m90e32as_config_registers.UgainB);
+	WRITE_REGISTER(ret, IGAINB, &data->m90e32as_config_registers.IgainB);
+	WRITE_REGISTER(ret, UOFFSETB, &data->m90e32as_config_registers.UoffsetB);
+	WRITE_REGISTER(ret, UGAINC, &data->m90e32as_config_registers.UgainC);
+	WRITE_REGISTER(ret, IGAINC, &data->m90e32as_config_registers.IgainC);
+	WRITE_REGISTER(ret, UOFFSETC, &data->m90e32as_config_registers.UoffsetC);
+
+	ret = m90e32as_config_access_disable(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to disable config access for device %s. [%d]", dev->name, ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 static int m90e32as_reset(const struct device *dev)
@@ -278,7 +340,11 @@ static int m90e32as_reset(const struct device *dev)
 
 	k_sleep(K_MSEC(40)); /* Wait for reset to complete (T1) */
 
-	m90e32as_reload_config(dev);
+	ret = m90e32as_reload_config(dev);
+	if (ret < 0) {
+		LOG_ERR("Could not reload configuration for %s.", dev->name);
+		return ret;
+	}
 
 	LOG_DBG("Reset done.");
 
@@ -1043,6 +1109,7 @@ m90e32as_phase_angle_values_to_sensor(const struct device *dev,
 static int m90e32as_sample_fetch(const struct device *dev, enum sensor_channel channel)
 {
 	const struct m90e3x_data *data = (const struct m90e3x_data *)dev->data;
+	int ret;
 
 #if CONFIG_PM_DEVICE
 	if (data->current_power_mode == M90E3X_IDLE) {
@@ -1057,272 +1124,140 @@ static int m90e32as_sample_fetch(const struct device *dev, enum sensor_channel c
 	switch ((uint16_t)channel) {
 	case SENSOR_CHAN_ALL:
 		LOG_WRN("Fetching for all channels is not available.");
+		ret = -ENOTSUP;
 		break;
 	case M90E3X_SENSOR_CHANNEL_ENERGY:
-		m90e32as_read_register(dev, APENERGYT,
-				       (m90e3x_data_value_t *)&data->energy_values.APenergyT);
-		m90e32as_read_register(dev, APENERGYA,
-				       (m90e3x_data_value_t *)&data->energy_values.APenergyA);
-		m90e32as_read_register(dev, APENERGYB,
-				       (m90e3x_data_value_t *)&data->energy_values.APenergyB);
-		m90e32as_read_register(dev, APENERGYC,
-				       (m90e3x_data_value_t *)&data->energy_values.APenergyC);
-		m90e32as_read_register(dev, ANENERGYT,
-				       (m90e3x_data_value_t *)&data->energy_values.ANenergyT);
-		m90e32as_read_register(dev, ANENERGYA,
-				       (m90e3x_data_value_t *)&data->energy_values.ANenergyA);
-		m90e32as_read_register(dev, ANENERGYB,
-				       (m90e3x_data_value_t *)&data->energy_values.ANenergyB);
-		m90e32as_read_register(dev, ANENERGYC,
-				       (m90e3x_data_value_t *)&data->energy_values.ANenergyC);
-		m90e32as_read_register(dev, RPENERGYT,
-				       (m90e3x_data_value_t *)&data->energy_values.RPenergyT);
-		m90e32as_read_register(dev, RPENERGYA,
-				       (m90e3x_data_value_t *)&data->energy_values.RPenergyA);
-		m90e32as_read_register(dev, RPENERGYB,
-				       (m90e3x_data_value_t *)&data->energy_values.RPenergyB);
-		m90e32as_read_register(dev, RPENERGYC,
-				       (m90e3x_data_value_t *)&data->energy_values.RPenergyC);
-		m90e32as_read_register(dev, RNENERGYT,
-				       (m90e3x_data_value_t *)&data->energy_values.RNenergyT);
-		m90e32as_read_register(dev, RNENERGYA,
-				       (m90e3x_data_value_t *)&data->energy_values.RNenergyA);
-		m90e32as_read_register(dev, RNENERGYB,
-				       (m90e3x_data_value_t *)&data->energy_values.RNenergyB);
-		m90e32as_read_register(dev, RNENERGYC,
-				       (m90e3x_data_value_t *)&data->energy_values.RNenergyC);
-		m90e32as_read_register(dev, SAENERGYT,
-				       (m90e3x_data_value_t *)&data->energy_values.SAenergyT);
-		m90e32as_read_register(dev, SENERGYA,
-				       (m90e3x_data_value_t *)&data->energy_values.SenergyA);
-		m90e32as_read_register(dev, SENERGYB,
-				       (m90e3x_data_value_t *)&data->energy_values.SenergyB);
-		m90e32as_read_register(dev, SENERGYC,
-				       (m90e3x_data_value_t *)&data->energy_values.SenergyC);
+		READ_REGISTER(ret, APENERGYT, energy_values.APenergyT)
+		READ_REGISTER(ret, APENERGYA, energy_values.APenergyA)
+		READ_REGISTER(ret, APENERGYB, energy_values.APenergyB)
+		READ_REGISTER(ret, APENERGYC, energy_values.APenergyC)
+		READ_REGISTER(ret, ANENERGYT, energy_values.ANenergyT)
+		READ_REGISTER(ret, ANENERGYA, energy_values.ANenergyA)
+		READ_REGISTER(ret, ANENERGYB, energy_values.ANenergyB)
+		READ_REGISTER(ret, ANENERGYC, energy_values.ANenergyC)
+		READ_REGISTER(ret, RPENERGYT, energy_values.RPenergyT)
+		READ_REGISTER(ret, RPENERGYA, energy_values.RPenergyA)
+		READ_REGISTER(ret, RPENERGYB, energy_values.RPenergyB)
+		READ_REGISTER(ret, RPENERGYC, energy_values.RPenergyC)
+		READ_REGISTER(ret, RNENERGYT, energy_values.RNenergyT)
+		READ_REGISTER(ret, RNENERGYA, energy_values.RNenergyA)
+		READ_REGISTER(ret, RNENERGYB, energy_values.RNenergyB)
+		READ_REGISTER(ret, RNENERGYC, energy_values.RNenergyC)
+		READ_REGISTER(ret, SAENERGYT, energy_values.SAenergyT)
+		READ_REGISTER(ret, SENERGYA, energy_values.SenergyA)
+		READ_REGISTER(ret, SENERGYB, energy_values.SenergyB)
+		READ_REGISTER(ret, SENERGYC, energy_values.SenergyC)
 		break;
 	case M90E3X_SENSOR_CHANNEL_FUNDAMENTAL_ENERGY:
-		m90e32as_read_register(
-			dev, APENERGYTF,
-			(m90e3x_data_value_t *)&data->fundamental_energy_values.APenergyTF);
-		m90e32as_read_register(
-			dev, APENERGYAF,
-			(m90e3x_data_value_t *)&data->fundamental_energy_values.APenergyAF);
-		m90e32as_read_register(
-			dev, APENERGYBF,
-			(m90e3x_data_value_t *)&data->fundamental_energy_values.APenergyBF);
-		m90e32as_read_register(
-			dev, APENERGYCF,
-			(m90e3x_data_value_t *)&data->fundamental_energy_values.APenergyCF);
-		m90e32as_read_register(
-			dev, ANENERGYTF,
-			(m90e3x_data_value_t *)&data->fundamental_energy_values.ANenergyTF);
-		m90e32as_read_register(
-			dev, ANENERGYAF,
-			(m90e3x_data_value_t *)&data->fundamental_energy_values.ANenergyAF);
-		m90e32as_read_register(
-			dev, ANENERGYBF,
-			(m90e3x_data_value_t *)&data->fundamental_energy_values.ANenergyBF);
-		m90e32as_read_register(
-			dev, ANENERGYCF,
-			(m90e3x_data_value_t *)&data->fundamental_energy_values.ANenergyCF);
+		READ_REGISTER(ret, APENERGYTF, fundamental_energy_values.APenergyTF)
+		READ_REGISTER(ret, APENERGYAF, fundamental_energy_values.APenergyAF)
+		READ_REGISTER(ret, APENERGYBF, fundamental_energy_values.APenergyBF)
+		READ_REGISTER(ret, APENERGYCF, fundamental_energy_values.APenergyCF)
+		READ_REGISTER(ret, ANENERGYTF, fundamental_energy_values.ANenergyTF)
+		READ_REGISTER(ret, ANENERGYAF, fundamental_energy_values.ANenergyAF)
+		READ_REGISTER(ret, ANENERGYBF, fundamental_energy_values.ANenergyBF)
+		READ_REGISTER(ret, ANENERGYCF, fundamental_energy_values.ANenergyCF)
 		break;
 	case M90E3X_SENSOR_CHANNEL_HARMONIC_ENERGY:
-		m90e32as_read_register(
-			dev, APENERGYTH,
-			(m90e3x_data_value_t *)&data->harmonic_energy_values.APenergyTH);
-		m90e32as_read_register(
-			dev, APENERGYAH,
-			(m90e3x_data_value_t *)&data->harmonic_energy_values.APenergyAH);
-		m90e32as_read_register(
-			dev, APENERGYBH,
-			(m90e3x_data_value_t *)&data->harmonic_energy_values.APenergyBH);
-		m90e32as_read_register(
-			dev, APENERGYCH,
-			(m90e3x_data_value_t *)&data->harmonic_energy_values.APenergyCH);
-		m90e32as_read_register(
-			dev, ANENERGYTH,
-			(m90e3x_data_value_t *)&data->harmonic_energy_values.ANenergyTH);
-		m90e32as_read_register(
-			dev, ANENERGYAH,
-			(m90e3x_data_value_t *)&data->harmonic_energy_values.ANenergyAH);
-		m90e32as_read_register(
-			dev, ANENERGYBH,
-			(m90e3x_data_value_t *)&data->harmonic_energy_values.ANenergyBH);
-		m90e32as_read_register(
-			dev, ANENERGYCH,
-			(m90e3x_data_value_t *)&data->harmonic_energy_values.ANenergyCH);
+		READ_REGISTER(ret, APENERGYTH, harmonic_energy_values.APenergyTH)
+		READ_REGISTER(ret, APENERGYAH, harmonic_energy_values.APenergyAH)
+		READ_REGISTER(ret, APENERGYBH, harmonic_energy_values.APenergyBH)
+		READ_REGISTER(ret, APENERGYCH, harmonic_energy_values.APenergyCH)
+		READ_REGISTER(ret, ANENERGYTH, harmonic_energy_values.ANenergyTH)
+		READ_REGISTER(ret, ANENERGYAH, harmonic_energy_values.ANenergyAH)
+		READ_REGISTER(ret, ANENERGYBH, harmonic_energy_values.ANenergyBH)
+		READ_REGISTER(ret, ANENERGYCH, harmonic_energy_values.ANenergyCH)
 		break;
 	case M90E3X_SENSOR_CHANNEL_POWER:
-		m90e32as_read_register(dev, PMEANT,
-				       (m90e3x_data_value_t *)&data->power_values.PmeanT);
-		m90e32as_read_register(dev, PMEANTLSB,
-				       (m90e3x_data_value_t *)&data->power_values.PmeanTLSB);
-		m90e32as_read_register(dev, PMEANA,
-				       (m90e3x_data_value_t *)&data->power_values.PmeanA);
-		m90e32as_read_register(dev, PMEANALSB,
-				       (m90e3x_data_value_t *)&data->power_values.PmeanALSB);
-		m90e32as_read_register(dev, PMEANB,
-				       (m90e3x_data_value_t *)&data->power_values.PmeanB);
-		m90e32as_read_register(dev, PMEANBLSB,
-				       (m90e3x_data_value_t *)&data->power_values.PmeanBLSB);
-		m90e32as_read_register(dev, PMEANC,
-				       (m90e3x_data_value_t *)&data->power_values.PmeanC);
-		m90e32as_read_register(dev, PMEANCLSB,
-				       (m90e3x_data_value_t *)&data->power_values.PmeanCLSB);
-		m90e32as_read_register(dev, QMEANT,
-				       (m90e3x_data_value_t *)&data->power_values.QmeanT);
-		m90e32as_read_register(dev, QMEANTLSB,
-				       (m90e3x_data_value_t *)&data->power_values.QmeanTLSB);
-		m90e32as_read_register(dev, QMEANA,
-				       (m90e3x_data_value_t *)&data->power_values.QmeanA);
-		m90e32as_read_register(dev, QMEANALSB,
-				       (m90e3x_data_value_t *)&data->power_values.QmeanALSB);
-		m90e32as_read_register(dev, QMEANB,
-				       (m90e3x_data_value_t *)&data->power_values.QmeanB);
-		m90e32as_read_register(dev, QMEANBLSB,
-				       (m90e3x_data_value_t *)&data->power_values.QmeanBLSB);
-		m90e32as_read_register(dev, QMEANC,
-				       (m90e3x_data_value_t *)&data->power_values.QmeanC);
-		m90e32as_read_register(dev, QMEANCLSB,
-				       (m90e3x_data_value_t *)&data->power_values.QmeanCLSB);
-		m90e32as_read_register(dev, SMEANT,
-				       (m90e3x_data_value_t *)&data->power_values.SmeanT);
-		m90e32as_read_register(dev, SAMEANTLSB,
-				       (m90e3x_data_value_t *)&data->power_values.SAmeanTLSB);
-		m90e32as_read_register(dev, SMEANA,
-				       (m90e3x_data_value_t *)&data->power_values.SmeanA);
-		m90e32as_read_register(dev, SMEANALSB,
-				       (m90e3x_data_value_t *)&data->power_values.SmeanALSB);
-		m90e32as_read_register(dev, SMEANB,
-				       (m90e3x_data_value_t *)&data->power_values.SmeanB);
-		m90e32as_read_register(dev, SMEANBLSB,
-				       (m90e3x_data_value_t *)&data->power_values.SmeanBLSB);
-		m90e32as_read_register(dev, SMEANC,
-				       (m90e3x_data_value_t *)&data->power_values.SmeanC);
-		m90e32as_read_register(dev, SMEANCLSB,
-				       (m90e3x_data_value_t *)&data->power_values.SmeanCLSB);
+		READ_REGISTER(ret, PMEANT, power_values.PmeanT)
+		READ_REGISTER(ret, PMEANTLSB, power_values.PmeanTLSB)
+		READ_REGISTER(ret, PMEANA, power_values.PmeanA)
+		READ_REGISTER(ret, PMEANALSB, power_values.PmeanALSB)
+		READ_REGISTER(ret, PMEANB, power_values.PmeanB)
+		READ_REGISTER(ret, PMEANBLSB, power_values.PmeanBLSB)
+		READ_REGISTER(ret, PMEANC, power_values.PmeanC)
+		READ_REGISTER(ret, PMEANCLSB, power_values.PmeanCLSB)
+		READ_REGISTER(ret, QMEANT, power_values.QmeanT)
+		READ_REGISTER(ret, QMEANTLSB, power_values.QmeanTLSB)
+		READ_REGISTER(ret, QMEANA, power_values.QmeanA)
+		READ_REGISTER(ret, QMEANALSB, power_values.QmeanALSB)
+		READ_REGISTER(ret, QMEANB, power_values.QmeanB)
+		READ_REGISTER(ret, QMEANBLSB, power_values.QmeanBLSB)
+		READ_REGISTER(ret, QMEANC, power_values.QmeanC)
+		READ_REGISTER(ret, QMEANCLSB, power_values.QmeanCLSB)
+		READ_REGISTER(ret, SMEANT, power_values.SmeanT)
+		READ_REGISTER(ret, SAMEANTLSB, power_values.SAmeanTLSB)
+		READ_REGISTER(ret, SMEANA, power_values.SmeanA)
+		READ_REGISTER(ret, SMEANALSB, power_values.SmeanALSB)
+		READ_REGISTER(ret, SMEANB, power_values.SmeanB)
+		READ_REGISTER(ret, SMEANBLSB, power_values.SmeanBLSB)
+		READ_REGISTER(ret, SMEANC, power_values.SmeanC)
+		READ_REGISTER(ret, SMEANCLSB, power_values.SmeanCLSB)
 		break;
 	case M90E3X_SENSOR_CHANNEL_POWER_FACTOR:
-		m90e32as_read_register(dev, PFMEANT,
-				       (m90e3x_data_value_t *)&data->power_factor_values.PFmeanT);
-		m90e32as_read_register(dev, PFMEANA,
-				       (m90e3x_data_value_t *)&data->power_factor_values.PFmeanA);
-		m90e32as_read_register(dev, PFMEANB,
-				       (m90e3x_data_value_t *)&data->power_factor_values.PFmeanB);
-		m90e32as_read_register(dev, PFMEANC,
-				       (m90e3x_data_value_t *)&data->power_factor_values.PFmeanC);
+		READ_REGISTER(ret, PFMEANT, power_factor_values.PFmeanT)
+		READ_REGISTER(ret, PFMEANA, power_factor_values.PFmeanA)
+		READ_REGISTER(ret, PFMEANB, power_factor_values.PFmeanB)
+		READ_REGISTER(ret, PFMEANC, power_factor_values.PFmeanC)
 		break;
 	case M90E3X_SENSOR_CHANNEL_FUNDAMENTAL_POWER:
-		m90e32as_read_register(
-			dev, PMEANTF,
-			(m90e3x_data_value_t *)&data->fundamental_power_values.PmeanTF);
-		m90e32as_read_register(
-			dev, PMEANTFLSB,
-			(m90e3x_data_value_t *)&data->fundamental_power_values.PmeanTFLSB);
-		m90e32as_read_register(
-			dev, PMEANAF,
-			(m90e3x_data_value_t *)&data->fundamental_power_values.PmeanAF);
-		m90e32as_read_register(
-			dev, PMEANAFLSB,
-			(m90e3x_data_value_t *)&data->fundamental_power_values.PmeanAFLSB);
-		m90e32as_read_register(
-			dev, PMEANBF,
-			(m90e3x_data_value_t *)&data->fundamental_power_values.PmeanBF);
-		m90e32as_read_register(
-			dev, PMEANBFLSB,
-			(m90e3x_data_value_t *)&data->fundamental_power_values.PmeanBFLSB);
-		m90e32as_read_register(
-			dev, PMEANCF,
-			(m90e3x_data_value_t *)&data->fundamental_power_values.PmeanCF);
-		m90e32as_read_register(
-			dev, PMEANCFLSB,
-			(m90e3x_data_value_t *)&data->fundamental_power_values.PmeanCFLSB);
+		READ_REGISTER(ret, PMEANTF, fundamental_power_values.PmeanTF)
+		READ_REGISTER(ret, PMEANTFLSB, fundamental_power_values.PmeanTFLSB)
+		READ_REGISTER(ret, PMEANAF, fundamental_power_values.PmeanAF)
+		READ_REGISTER(ret, PMEANAFLSB, fundamental_power_values.PmeanAFLSB)
+		READ_REGISTER(ret, PMEANBF, fundamental_power_values.PmeanBF)
+		READ_REGISTER(ret, PMEANBFLSB, fundamental_power_values.PmeanBFLSB)
+		READ_REGISTER(ret, PMEANCF, fundamental_power_values.PmeanCF)
+		READ_REGISTER(ret, PMEANCFLSB, fundamental_power_values.PmeanCFLSB)
 		break;
 	case M90E3X_SENSOR_CHANNEL_HARMONIC_POWER:
-		m90e32as_read_register(dev, PMEANTH,
-				       (m90e3x_data_value_t *)&data->harmonic_power_values.PmeanTH);
-		m90e32as_read_register(
-			dev, PMEANTHLSB,
-			(m90e3x_data_value_t *)&data->harmonic_power_values.PmeanTHLSB);
-		m90e32as_read_register(dev, PMEANAH,
-				       (m90e3x_data_value_t *)&data->harmonic_power_values.PmeanAH);
-		m90e32as_read_register(
-			dev, PMEANAHLSB,
-			(m90e3x_data_value_t *)&data->harmonic_power_values.PmeanAHLSB);
-		m90e32as_read_register(dev, PMEANBH,
-				       (m90e3x_data_value_t *)&data->harmonic_power_values.PmeanBH);
-		m90e32as_read_register(
-			dev, PMEANBHLSB,
-			(m90e3x_data_value_t *)&data->harmonic_power_values.PmeanBHLSB);
-		m90e32as_read_register(dev, PMEANCH,
-				       (m90e3x_data_value_t *)&data->harmonic_power_values.PmeanCH);
-		m90e32as_read_register(
-			dev, PMEANCHLSB,
-			(m90e3x_data_value_t *)&data->harmonic_power_values.PmeanCHLSB);
+		READ_REGISTER(ret, PMEANTH, harmonic_power_values.PmeanTH)
+		READ_REGISTER(ret, PMEANTHLSB, harmonic_power_values.PmeanTHLSB)
+		READ_REGISTER(ret, PMEANAH, harmonic_power_values.PmeanAH)
+		READ_REGISTER(ret, PMEANAHLSB, harmonic_power_values.PmeanAHLSB)
+		READ_REGISTER(ret, PMEANBH, harmonic_power_values.PmeanBH)
+		READ_REGISTER(ret, PMEANBHLSB, harmonic_power_values.PmeanBHLSB)
+		READ_REGISTER(ret, PMEANCH, harmonic_power_values.PmeanCH)
+		READ_REGISTER(ret, PMEANCHLSB, harmonic_power_values.PmeanCHLSB)
 		break;
 	case M90E3X_SENSOR_CHANNEL_VOLTAGE:
-		m90e32as_read_register(dev, URMSA,
-				       (m90e3x_data_value_t *)&data->voltage_rms_values.UrmsA);
-		m90e32as_read_register(dev, URMSALSB,
-				       (m90e3x_data_value_t *)&data->voltage_rms_values.UrmsALSB);
-		m90e32as_read_register(dev, URMSB,
-				       (m90e3x_data_value_t *)&data->voltage_rms_values.UrmsB);
-		m90e32as_read_register(dev, URMSBLSB,
-				       (m90e3x_data_value_t *)&data->voltage_rms_values.UrmsBLSB);
-		m90e32as_read_register(dev, URMSC,
-				       (m90e3x_data_value_t *)&data->voltage_rms_values.UrmsC);
-		m90e32as_read_register(dev, URMSCLSB,
-				       (m90e3x_data_value_t *)&data->voltage_rms_values.UrmsCLSB);
+		READ_REGISTER(ret, URMSA, voltage_rms_values.UrmsA)
+		READ_REGISTER(ret, URMSALSB, voltage_rms_values.UrmsALSB)
+		READ_REGISTER(ret, URMSB, voltage_rms_values.UrmsB)
+		READ_REGISTER(ret, URMSBLSB, voltage_rms_values.UrmsBLSB)
+		READ_REGISTER(ret, URMSC, voltage_rms_values.UrmsC)
+		READ_REGISTER(ret, URMSCLSB, voltage_rms_values.UrmsCLSB)
 		break;
 	case M90E3X_SENSOR_CHANNEL_CURRENT:
-		m90e32as_read_register(dev, IRMSN,
-				       (m90e3x_data_value_t *)&data->current_rms_values.IrmsN);
-		m90e32as_read_register(dev, IRMSA,
-				       (m90e3x_data_value_t *)&data->current_rms_values.IrmsA);
-		m90e32as_read_register(dev, IRMSALSB,
-				       (m90e3x_data_value_t *)&data->current_rms_values.IrmsALSB);
-		m90e32as_read_register(dev, IRMSB,
-				       (m90e3x_data_value_t *)&data->current_rms_values.IrmsB);
-		m90e32as_read_register(dev, IRMSBLSB,
-				       (m90e3x_data_value_t *)&data->current_rms_values.IrmsBLSB);
-		m90e32as_read_register(dev, IRMSC,
-				       (m90e3x_data_value_t *)&data->current_rms_values.IrmsC);
-		m90e32as_read_register(dev, IRMSCLSB,
-				       (m90e3x_data_value_t *)&data->current_rms_values.IrmsCLSB);
+		READ_REGISTER(ret, IRMSN, current_rms_values.IrmsN)
+		READ_REGISTER(ret, IRMSA, current_rms_values.IrmsA)
+		READ_REGISTER(ret, IRMSALSB, current_rms_values.IrmsALSB)
+		READ_REGISTER(ret, IRMSB, current_rms_values.IrmsB)
+		READ_REGISTER(ret, IRMSBLSB, current_rms_values.IrmsBLSB)
+		READ_REGISTER(ret, IRMSC, current_rms_values.IrmsC)
+		READ_REGISTER(ret, IRMSCLSB, current_rms_values.IrmsCLSB)
 		break;
 	case M90E3X_SENSOR_CHANNEL_PEAK:
-		m90e32as_read_register(dev, UPEAKA,
-				       (m90e3x_data_value_t *)&data->peak_values.UPeakA);
-		m90e32as_read_register(dev, UPEAKB,
-				       (m90e3x_data_value_t *)&data->peak_values.UPeakB);
-		m90e32as_read_register(dev, UPEAKC,
-				       (m90e3x_data_value_t *)&data->peak_values.UPeakC);
-		m90e32as_read_register(dev, IPEAKA,
-				       (m90e3x_data_value_t *)&data->peak_values.IPeakA);
-		m90e32as_read_register(dev, IPEAKB,
-				       (m90e3x_data_value_t *)&data->peak_values.IPeakB);
-		m90e32as_read_register(dev, IPEAKC,
-				       (m90e3x_data_value_t *)&data->peak_values.IPeakC);
+		READ_REGISTER(ret, UPEAKA, peak_values.UPeakA)
+		READ_REGISTER(ret, UPEAKB, peak_values.UPeakB)
+		READ_REGISTER(ret, UPEAKC, peak_values.UPeakC)
+		READ_REGISTER(ret, IPEAKA, peak_values.IPeakA)
+		READ_REGISTER(ret, IPEAKB, peak_values.IPeakB)
+		READ_REGISTER(ret, IPEAKC, peak_values.IPeakC)
 		break;
 	case M90E3X_SENSOR_CHANNEL_FREQUENCY:
-		m90e32as_read_register(dev, FREQ, (m90e3x_data_value_t *)&data->Freq);
+		READ_REGISTER(ret, FREQ, Freq)
 		break;
 	case M90E3X_SENSOR_CHANNEL_PHASE_ANGLE:
-		m90e32as_read_register(dev, PANGLEA,
-				       (m90e3x_data_value_t *)&data->phase_angle_values.PAngleA);
-		m90e32as_read_register(dev, PANGLEB,
-				       (m90e3x_data_value_t *)&data->phase_angle_values.PAngleB);
-		m90e32as_read_register(dev, PANGLEC,
-				       (m90e3x_data_value_t *)&data->phase_angle_values.PAngleC);
-		m90e32as_read_register(dev, UANGLEA,
-				       (m90e3x_data_value_t *)&data->phase_angle_values.UangleA);
-		m90e32as_read_register(dev, UANGLEB,
-				       (m90e3x_data_value_t *)&data->phase_angle_values.UangleB);
-		m90e32as_read_register(dev, UANGLEC,
-				       (m90e3x_data_value_t *)&data->phase_angle_values.UangleC);
+		READ_REGISTER(ret, PANGLEA, phase_angle_values.PAngleA)
+		READ_REGISTER(ret, PANGLEB, phase_angle_values.PAngleB)
+		READ_REGISTER(ret, PANGLEC, phase_angle_values.PAngleC)
+		READ_REGISTER(ret, UANGLEA, phase_angle_values.UangleA)
+		READ_REGISTER(ret, UANGLEB, phase_angle_values.UangleB)
+		READ_REGISTER(ret, UANGLEC, phase_angle_values.UangleC)
 		break;
 	case M90E3X_SENSOR_CHANNEL_TEMPERATURE:
-		m90e32as_read_register(dev, TEMP, (m90e3x_data_value_t *)&data->Temp);
+		READ_REGISTER(ret, TEMP, Temp)
 		break;
 	default:
 		return -ENOTSUP;
@@ -1332,7 +1267,7 @@ static int m90e32as_sample_fetch(const struct device *dev, enum sensor_channel c
 	pm_device_busy_clear(dev);
 #endif /* CONFIG_PM_DEVICE */
 
-	return 0;
+	return ret;
 }
 
 static int m90e32as_channel_get(const struct device *dev, enum sensor_channel channel,
@@ -1400,7 +1335,9 @@ static int m90e32as_channel_get(const struct device *dev, enum sensor_channel ch
 static void m90e32as_gpio_callback_irq0(const struct device *port, struct gpio_callback *cb,
 					uint32_t pins)
 {
-	struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, irq0_ctx.gpio_cb);
+	ARG_UNUSED(pins);
+
+	const struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, irq0_ctx.gpio_cb);
 
 	if (data->irq0_ctx.handler) {
 		data->irq0_ctx.handler(port, &data->irq0_ctx.trigger);
@@ -1410,7 +1347,9 @@ static void m90e32as_gpio_callback_irq0(const struct device *port, struct gpio_c
 static void m90e32as_gpio_callback_irq1(const struct device *port, struct gpio_callback *cb,
 					uint32_t pins)
 {
-	struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, irq1_ctx.gpio_cb);
+	ARG_UNUSED(pins);
+
+	const struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, irq1_ctx.gpio_cb);
 
 	if (data->irq1_ctx.handler) {
 		data->irq1_ctx.handler(port, &data->irq1_ctx.trigger);
@@ -1420,7 +1359,9 @@ static void m90e32as_gpio_callback_irq1(const struct device *port, struct gpio_c
 static void m90e32as_gpio_callback_wrn_out(const struct device *port, struct gpio_callback *cb,
 					   uint32_t pins)
 {
-	struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, wrn_out_ctx.gpio_cb);
+	ARG_UNUSED(pins);
+
+	const struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, wrn_out_ctx.gpio_cb);
 
 	if (data->wrn_out_ctx.handler) {
 		data->wrn_out_ctx.handler(port, &data->wrn_out_ctx.trigger);
@@ -1430,7 +1371,9 @@ static void m90e32as_gpio_callback_wrn_out(const struct device *port, struct gpi
 static void m90e32as_gpio_callback_cf1(const struct device *port, struct gpio_callback *cb,
 				       uint32_t pins)
 {
-	struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, cf1.gpio_cb);
+	ARG_UNUSED(pins);
+
+	const struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, cf1.gpio_cb);
 
 	if (data->cf1.handler) {
 		data->cf1.handler(port, &data->cf1.trigger);
@@ -1440,7 +1383,9 @@ static void m90e32as_gpio_callback_cf1(const struct device *port, struct gpio_ca
 static void m90e32as_gpio_callback_cf2(const struct device *port, struct gpio_callback *cb,
 				       uint32_t pins)
 {
-	struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, cf2.gpio_cb);
+	ARG_UNUSED(pins);
+
+	const struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, cf2.gpio_cb);
 
 	if (data->cf2.handler) {
 		data->cf2.handler(port, &data->cf2.trigger);
@@ -1450,7 +1395,9 @@ static void m90e32as_gpio_callback_cf2(const struct device *port, struct gpio_ca
 static void m90e32as_gpio_callback_cf3(const struct device *port, struct gpio_callback *cb,
 				       uint32_t pins)
 {
-	struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, cf3.gpio_cb);
+	ARG_UNUSED(pins);
+
+	const struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, cf3.gpio_cb);
 
 	if (data->cf3.handler) {
 		data->cf3.handler(port, &data->cf3.trigger);
@@ -1460,7 +1407,9 @@ static void m90e32as_gpio_callback_cf3(const struct device *port, struct gpio_ca
 static void m90e32as_gpio_callback_cf4(const struct device *port, struct gpio_callback *cb,
 				       uint32_t pins)
 {
-	struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, cf4.gpio_cb);
+	ARG_UNUSED(pins);
+
+	const struct m90e3x_data *data = CONTAINER_OF(cb, struct m90e3x_data, cf4.gpio_cb);
 
 	if (data->cf4.handler) {
 		data->cf4.handler(port, &data->cf4.trigger);

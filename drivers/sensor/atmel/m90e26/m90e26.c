@@ -34,6 +34,14 @@ LOG_MODULE_REGISTER(m90e26, CONFIG_SENSOR_LOG_LEVEL);
 
 #define M90E26_RETRY_COUNT 5
 
+#define READ_REGISTER(ret, reg_enum, field_name)                                                   \
+	ret = m90e26_read_register(dev, reg_enum, (m90e26_data_value_t *)&data->field_name);       \
+	if (ret < 0) {                                                                             \
+		LOG_ERR("Failed to read register " #reg_enum "(%d) for device %s.", reg_enum,      \
+			dev->name);                                                                \
+		return ret;                                                                        \
+	}
+
 static inline int m90e26_bus_check(const struct device *dev)
 {
 	const struct m90e26_config *cfg = (const struct m90e26_config *)dev->config;
@@ -383,60 +391,47 @@ static int m90e26_init(const struct device *dev)
 
 static int m90e26_sample_fetch(const struct device *dev, enum sensor_channel channel)
 {
-	int ret = 0;
+	int ret;
 	struct m90e26_data *data = (struct m90e26_data *)dev->data;
 
 	switch ((uint16_t)channel) {
 	case SENSOR_CHAN_ALL:
 		LOG_WRN("Fetching for all channels is not available.");
+		ret = -ENOTSUP;
 		break;
 	case M90E26_SENSOR_CHANNEL_ENERGY:
-		m90e26_read_register(dev, APENERGY,
-				     (m90e26_data_value_t *)&data->energy_values.APenergy);
-		m90e26_read_register(dev, ANENERGY,
-				     (m90e26_data_value_t *)&data->energy_values.ANenergy);
-		m90e26_read_register(dev, ATENERGY,
-				     (m90e26_data_value_t *)&data->energy_values.ATenergy);
-		m90e26_read_register(dev, RPENERGY,
-				     (m90e26_data_value_t *)&data->energy_values.RPenergy);
-		m90e26_read_register(dev, RNENERGY,
-				     (m90e26_data_value_t *)&data->energy_values.RNenergy);
-		m90e26_read_register(dev, RTENERGY,
-				     (m90e26_data_value_t *)&data->energy_values.RTenergy);
+		READ_REGISTER(ret, APENERGY, energy_values.APenergy);
+		READ_REGISTER(ret, ANENERGY, energy_values.ANenergy);
+		READ_REGISTER(ret, ATENERGY, energy_values.ATenergy);
+		READ_REGISTER(ret, RPENERGY, energy_values.RPenergy);
+		READ_REGISTER(ret, RNENERGY, energy_values.RNenergy);
+		READ_REGISTER(ret, RTENERGY, energy_values.RTenergy);
 		break;
 	case M90E26_SENSOR_CHANNEL_POWER:
-		m90e26_read_register(dev, PMEAN, (m90e26_data_value_t *)&data->power_values.Pmean);
-		m90e26_read_register(dev, PMEAN2,
-				     (m90e26_data_value_t *)&data->power_values.Pmean2);
-		m90e26_read_register(dev, QMEAN, (m90e26_data_value_t *)&data->power_values.Qmean);
-		m90e26_read_register(dev, QMEAN2,
-				     (m90e26_data_value_t *)&data->power_values.Qmean2);
-		m90e26_read_register(dev, SMEAN, (m90e26_data_value_t *)&data->power_values.Smean);
-		m90e26_read_register(dev, SMEAN2,
-				     (m90e26_data_value_t *)&data->power_values.Smean2);
+		READ_REGISTER(ret, PMEAN, power_values.Pmean);
+		READ_REGISTER(ret, PMEAN2, power_values.Pmean2);
+		READ_REGISTER(ret, QMEAN, power_values.Qmean);
+		READ_REGISTER(ret, QMEAN2, power_values.Qmean2);
+		READ_REGISTER(ret, SMEAN, power_values.Smean);
+		READ_REGISTER(ret, SMEAN2, power_values.Smean2);
 		break;
 	case M90E26_SENSOR_CHANNEL_VOLTAGE:
-		m90e26_read_register(dev, URMS, (m90e26_data_value_t *)&data->Urms);
+		READ_REGISTER(ret, URMS, Urms);
 		break;
 	case M90E26_SENSOR_CHANNEL_CURRENT:
-		m90e26_read_register(dev, IRMS, (m90e26_data_value_t *)&data->current_values.Irms);
-		m90e26_read_register(dev, IRMS2,
-				     (m90e26_data_value_t *)&data->current_values.Irms2);
+		READ_REGISTER(ret, IRMS, current_values.Irms);
+		READ_REGISTER(ret, IRMS2, current_values.Irms2);
 		break;
 	case M90E26_SENSOR_CHANNEL_FREQUENCY:
-		m90e26_read_register(dev, FREQ, (m90e26_data_value_t *)&data->Freq);
+		READ_REGISTER(ret, FREQ, Freq);
 		break;
 	case M90E26_SENSOR_CHANNEL_PHASE_ANGLE:
-		m90e26_read_register(dev, PANGLE,
-				     (m90e26_data_value_t *)&data->pangle_values.Pangle);
-		m90e26_read_register(dev, PANGLE2,
-				     (m90e26_data_value_t *)&data->pangle_values.Pangle2);
+		READ_REGISTER(ret, PANGLE, pangle_values.Pangle);
+		READ_REGISTER(ret, PANGLE2, pangle_values.Pangle2);
 		break;
 	case M90E26_SENSOR_CHANNEL_POWER_FACTOR:
-		m90e26_read_register(dev, POWERF,
-				     (m90e26_data_value_t *)&data->pfactor_values.PowerF);
-		m90e26_read_register(dev, POWERF2,
-				     (m90e26_data_value_t *)&data->pfactor_values.PowerF2);
+		READ_REGISTER(ret, POWERF, pfactor_values.PowerF);
+		READ_REGISTER(ret, POWERF2, pfactor_values.PowerF2);
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -588,7 +583,7 @@ static int m90e26_trigger_set(const struct device *dev, const struct sensor_trig
 	pm_device_busy_set(dev);
 #endif /* CONFIG_PM_DEVICE */
 
-	if (trig->type == M90E26_SENSOR_TRIG_TYPE_IRQ) {
+	if ((enum m90e26_sensor_trigger_type)trig->type == M90E26_SENSOR_TRIG_TYPE_IRQ) {
 		if (gpio_is_ready_dt(&cfg->irq)) {
 			data->irq_ctx.trigger = *trig;
 			data->irq_ctx.handler = handler;
@@ -600,7 +595,7 @@ static int m90e26_trigger_set(const struct device *dev, const struct sensor_trig
 								      GPIO_INT_EDGE_TO_ACTIVE);
 			}
 		}
-	} else if (trig->type == M90E26_SENSOR_TRIG_TYPE_WRN_OUT) {
+	} else if ((enum m90e26_sensor_trigger_type)trig->type == M90E26_SENSOR_TRIG_TYPE_WRN_OUT) {
 		if (gpio_is_ready_dt(&cfg->wrn_out)) {
 			data->wrn_out_ctx.trigger = *trig;
 			data->wrn_out_ctx.handler = handler;
@@ -612,7 +607,7 @@ static int m90e26_trigger_set(const struct device *dev, const struct sensor_trig
 								      GPIO_INT_EDGE_TO_ACTIVE);
 			}
 		}
-	} else if (trig->type == M90E26_SENSOR_TRIG_TYPE_CF1) {
+	} else if ((enum m90e26_sensor_trigger_type)trig->type == M90E26_SENSOR_TRIG_TYPE_CF1) {
 		if (gpio_is_ready_dt(&cfg->cf1)) {
 			data->cf1.trigger = *trig;
 			data->cf1.handler = handler;
@@ -624,7 +619,7 @@ static int m90e26_trigger_set(const struct device *dev, const struct sensor_trig
 								      GPIO_INT_EDGE_TO_ACTIVE);
 			}
 		}
-	} else if (trig->type == M90E26_SENSOR_TRIG_TYPE_CF2) {
+	} else if ((enum m90e26_sensor_trigger_type)trig->type == M90E26_SENSOR_TRIG_TYPE_CF2) {
 		if (gpio_is_ready_dt(&cfg->cf2)) {
 			data->cf2.trigger = *trig;
 			data->cf2.handler = handler;
@@ -682,11 +677,11 @@ static DEVICE_API(sensor, m90e26_api) = {
 	}
 
 /* Initializes a struct m90e26_config for an instance on a SPI bus. */
-#define M90E26_CONFIG_SPI                                                                          \
+#define M90E26_CONFIG_SPI(inst)                                                                    \
 	.bus.spi = SPI_DT_SPEC_INST_GET(inst, M90E26_SPI_OPERATION), .bus_io = &m90e26_bus_io_spi,
 
 /* Initializes a struct m90e26_config for an instance on a UART bus. */
-#define M90E26_CONFIG_UART                                                                         \
+#define M90E26_CONFIG_UART(inst)                                                                   \
 	.bus.uart.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 	.bus.uart.config = {.baudrate = DT_PROP(DT_INST_PARENT(inst), current_speed),              \
 			    .parity = UART_CFG_PARITY_NONE,                                        \
@@ -695,31 +690,32 @@ static DEVICE_API(sensor, m90e26_api) = {
 			    .flow_ctrl = UART_CFG_FLOW_CTRL_NONE},                                 \
 	.bus_io = &m90e26_bus_io_uart,
 
-#define M90E26_ASSIGN_PIN(pin_name)                                                                \
-	IF_ENABLED(DT_INST_NODE_HAS_PROP( \
-		inst, pin_name##_gpios), \
-		(.pin_name = GPIO_DT_SPEC_INST_GET(inst, pin_name##_gpios),))
+#define M90E26_ASSIGN_PIN(inst, pin_name)                                                          \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(                                                                \
+    inst, pin_name##_gpios),                                                                       \
+    (.pin_name = GPIO_DT_SPEC_INST_GET(inst, pin_name##_gpios),))
 
-#define M90E26_DT_BUS COND_CODE_1(DT_INST_ON_BUS(inst, spi), \
-			(M90E26_CONFIG_SPI), \
-			(M90E26_CONFIG_UART) \
-	)
+#define M90E26_DT_BUS(inst)                                                                        \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),                                 \
+      (M90E26_CONFIG_SPI(inst)),                                                                   \
+      (M90E26_CONFIG_UART(inst))                                                                   \
+  )
 
-#define M90E26_DEVICE                                                                              \
-	static struct m90e26_data m90e26_data_##inst = {                                           \
-		.bus_lock = Z_MUTEX_INITIALIZER(m90e26_data_##inst.bus_lock),                      \
-		.config_lock = Z_MUTEX_INITIALIZER(m90e26_data_##inst.config_lock),                \
-		.config_registers = M90E26_DEFAULT_CONFIG_REGISTER_VALUES,                         \
-	};                                                                                         \
-                                                                                                   \
-	static const struct m90e26_config m90e26_config_##inst = {                                 \
-		M90E26_DT_BUS, IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, irq0_gpios), ( \
-	.irq = GPIO_DT_SPEC_INST_GET(inst, irq0_gpios),))             \
-						M90E26_ASSIGN_PIN(wrn_out) M90E26_ASSIGN_PIN(cf1)  \
-							M90E26_ASSIGN_PIN(cf2)};                   \
-                                                                                                   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, m90e26_init, NULL, &m90e26_data_##inst,                 \
-				     &m90e26_config_##inst, POST_KERNEL,                           \
+#define M90E26_DEVICE(inst)                                                                                                                                       \
+	static struct m90e26_data m90e26_data_##inst = {                                                                                                          \
+		.bus_lock = Z_MUTEX_INITIALIZER(m90e26_data_##inst.bus_lock),                                                                                     \
+		.config_lock = Z_MUTEX_INITIALIZER(m90e26_data_##inst.config_lock),                                                                               \
+		.config_registers = M90E26_DEFAULT_CONFIG_REGISTER_VALUES,                                                                                        \
+	};                                                                                                                                                        \
+                                                                                                                                                                  \
+	static const struct m90e26_config m90e26_config_##inst = {M90E26_DT_BUS(inst) IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, irq0_gpios), (                     \
+  .irq = GPIO_DT_SPEC_INST_GET(inst, irq0_gpios),)) \
+					       M90E26_ASSIGN_PIN(inst, wrn_out)                                                                                   \
+						       M90E26_ASSIGN_PIN(inst, cf1)                                                                               \
+							       M90E26_ASSIGN_PIN(inst, cf2)};                                                                     \
+                                                                                                                                                                  \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, m90e26_init, NULL, &m90e26_data_##inst,                                                                                \
+				     &m90e26_config_##inst, POST_KERNEL,                                                                                          \
 				     CONFIG_SENSOR_INIT_PRIORITY, &m90e26_api)
 
 /* Create the struct device for every status "okay" node in the devicetree. */

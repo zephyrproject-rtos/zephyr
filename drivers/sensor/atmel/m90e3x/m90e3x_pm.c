@@ -21,8 +21,8 @@ static int m90e3x_pm_idle_mode(const struct device *dev)
 	LOG_DBG("Entering IDLE power mode.");
 
 	int ret = 0;
-	const struct m90e3x_config *cfg = (struct m90e3x_config *)dev->config;
-	const struct m90e3x_data *data = (struct m90e3x_data *)dev->data;
+	const struct m90e3x_config *cfg = (const struct m90e3x_config *)dev->config;
+	const struct m90e3x_data *data = (const struct m90e3x_data *)dev->data;
 
 	if (data->current_power_mode == M90E3X_IDLE) {
 		LOG_DBG("Device %s is already in IDLE power mode.", dev->name);
@@ -34,9 +34,6 @@ static int m90e3x_pm_idle_mode(const struct device *dev)
 		return ret;
 	}
 	ret = gpio_pin_set_dt(&cfg->pm1, M90E3X_PM1_IDLE_BIT);
-	if (ret < 0) {
-		return ret;
-	}
 
 	return ret;
 }
@@ -46,8 +43,8 @@ static int m90e3x_pm_detection_mode(const struct device *dev)
 	LOG_DBG("Entering DETECTION power mode.");
 
 	int ret = 0;
-	const struct m90e3x_config *cfg = (struct m90e3x_config *)dev->config;
-	const struct m90e3x_data *data = (struct m90e3x_data *)dev->data;
+	const struct m90e3x_config *cfg = (const struct m90e3x_config *)dev->config;
+	const struct m90e3x_data *data = (const struct m90e3x_data *)dev->data;
 
 	if (data->current_power_mode == M90E3X_DETECTION) {
 		LOG_DBG("Device %s is already in DETECTION power mode.", dev->name);
@@ -70,9 +67,6 @@ static int m90e3x_pm_detection_mode(const struct device *dev)
 		return ret;
 	}
 	ret = gpio_pin_set_dt(&cfg->pm1, M90E3X_PM1_DETECTION_BIT);
-	if (ret < 0) {
-		return ret;
-	}
 
 	return ret;
 }
@@ -82,8 +76,8 @@ static int m90e3x_pm_partial_measurement_mode(const struct device *dev)
 	LOG_DBG("Entering PARTIAL MEASUREMENT power mode.");
 
 	int ret = 0;
-	const struct m90e3x_config *cfg = (struct m90e3x_config *)dev->config;
-	const struct m90e3x_data *data = (struct m90e3x_data *)dev->data;
+	const struct m90e3x_config *cfg = (const struct m90e3x_config *)dev->config;
+	const struct m90e3x_data *data = (const struct m90e3x_data *)dev->data;
 
 	if (data->current_power_mode == M90E3X_PARTIAL) {
 		LOG_DBG("Device %s is already in PARTIAL MEASUREMENT power mode.", dev->name);
@@ -106,9 +100,6 @@ static int m90e3x_pm_partial_measurement_mode(const struct device *dev)
 		return ret;
 	}
 	ret = gpio_pin_set_dt(&cfg->pm1, M90E3X_PM1_PARTIAL_MEASUREMENT_BIT);
-	if (ret < 0) {
-		return ret;
-	}
 
 	return ret;
 }
@@ -118,8 +109,8 @@ static int m90e3x_pm_normal_mode(const struct device *dev)
 	LOG_DBG("Entering NORMAL power mode.");
 
 	int ret = 0;
-	const struct m90e3x_config *cfg = (struct m90e3x_config *)dev->config;
-	const struct m90e3x_data *data = (struct m90e3x_data *)dev->data;
+	const struct m90e3x_config *cfg = (const struct m90e3x_config *)dev->config;
+	const struct m90e3x_data *data = (const struct m90e3x_data *)dev->data;
 
 	if (data->current_power_mode == M90E3X_NORMAL) {
 		LOG_DBG("Device %s is already in NORMAL power mode.", dev->name);
@@ -142,9 +133,6 @@ static int m90e3x_pm_normal_mode(const struct device *dev)
 		return ret;
 	}
 	ret = gpio_pin_set_dt(&cfg->pm1, M90E3X_PM1_NORMAL_BIT);
-	if (ret < 0) {
-		return ret;
-	}
 
 	return ret;
 }
