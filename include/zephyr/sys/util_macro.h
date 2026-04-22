@@ -489,6 +489,16 @@ extern "C" {
  */
 #define UTIL_X2(y) UTIL_PRIMITIVE_CAT(Z_UTIL_X2_, y)
 
+/**
+ * @brief UTIL_ZFILL4(x) for an integer literal x from 0 to 4096 expands to a
+ * zero-padded 4-digit decimal token.
+ *
+ * Example expansions:
+ * - ``UTIL_ZFILL4(1)`` -> ``0001``
+ * - ``UTIL_ZFILL4(22)`` -> ``0022``
+ * - ``UTIL_ZFILL4(357)`` -> ``0357``
+ */
+#define UTIL_ZFILL4(x) UTIL_PRIMITIVE_CAT(Z_UTIL_ZFILL4_, x)
 
 /**
  * @brief Generates a sequence of code with configurable separator.

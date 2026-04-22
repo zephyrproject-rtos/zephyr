@@ -239,4 +239,7 @@
 /* Used by UTIL_X2 */
 #include "util_internal_util_x2.h"
 
+/* Used by UTIL_ZFILL4 */
+#include "util_internal_util_zfill4.h"
+
 #endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */
