@@ -134,6 +134,9 @@ struct net_stats_quic_global *quic_stats = &quic_stats_vars;
 #endif /* CONFIG_NET_STATISTICS_QUIC */
 
 static K_FIFO_DEFINE(quic_queue);
+static struct k_work_q quic_recovery_work_q;
+static K_KERNEL_STACK_DEFINE(quic_recovery_work_q_stack,
+			     CONFIG_QUIC_SERVICE_STACK_SIZE);
 
 enum quic_header_type {
 	QUIC_HEADER_TYPE_INVALID = 0,
@@ -241,6 +244,8 @@ static int quic_endpoint_send_transport_close(struct quic_endpoint *ep,
 					      uint64_t error_code,
 					      uint64_t frame_type,
 					      const char *reason);
+static void quic_recovery_release_work_handler(struct k_work *work);
+ZTESTABLE_STATIC void quic_recovery_begin_shutdown(struct quic_endpoint *ep);
 static int derive_application_secrets(struct quic_tls_context *ctx);
 static int quic_send_max_data(struct quic_endpoint *ep);
 static int quic_send_max_stream_data(struct quic_endpoint *ep,
@@ -250,7 +255,6 @@ static int quic_send_data_blocked(struct quic_endpoint *ep);
 static int quic_send_stream_data_blocked(struct quic_endpoint *ep,
 					 struct quic_stream *stream);
 static void quic_pto_work_handler(struct k_work *work);
-static void quic_reset_pto_timer(struct quic_endpoint *ep);
 static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 				       enum quic_secret_level level,
 				       size_t payload_len);
@@ -2372,6 +2376,8 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 		quic_get_by_ep(ep), ep->sock, caller, line);
 #endif
 
+	quic_recovery_begin_shutdown(ep);
+
 	/* Only close socket if we own it (parent endpoint with valid socket) */
 	if (ep->sock >= 0 && ep->parent == NULL) {
 		const struct net_socket_service_desc *svc;
@@ -2414,12 +2420,6 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 		}
 
 		zsock_close(ep->sock);
-	}
-
-	ret = k_work_cancel_delayable(&ep->recovery.pto_work);
-	if (ret != 0) {
-		NET_DBG("[EP:%p/%d] PTO work cancel issue (%d)",
-			ep, quic_get_by_ep(ep), ret);
 	}
 
 	if (ep->is_closing_notified) {
@@ -2834,9 +2834,63 @@ static inline int level_to_pn_space(enum quic_secret_level level)
 /* RFC 9002 Section 6.4: discard all in-flight packet state for a PN space.
  * Must be called when Initial or Handshake keys are dropped.
  */
+static void quic_reset_pto_timer_locked(struct quic_endpoint *ep);
+
+ZTESTABLE_STATIC void quic_recovery_begin_shutdown(struct quic_endpoint *ep)
+{
+	struct k_work_sync sync;
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+	ep->recovery.closing = true;
+	k_mutex_unlock(&ep->recovery.lock);
+
+	(void)k_work_cancel_delayable_sync(&ep->recovery.pto_work, &sync);
+}
+
+static void quic_recovery_release_work_handler(struct k_work *work)
+{
+	struct quic_endpoint *ep = CONTAINER_OF(work, struct quic_endpoint,
+						recovery.release_work);
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+	ep->recovery.release_pending = false;
+	k_mutex_unlock(&ep->recovery.lock);
+
+	quic_endpoint_unref(ep);
+}
+
+static void quic_recovery_schedule_release(struct quic_endpoint *ep)
+{
+	bool submit = false;
+	int ret;
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+	if (!ep->recovery.release_pending) {
+		ep->recovery.release_pending = true;
+		submit = true;
+	}
+	k_mutex_unlock(&ep->recovery.lock);
+
+	if (!submit) {
+		return;
+	}
+
+	quic_endpoint_ref(ep);
+
+	ret = k_work_submit(&ep->recovery.release_work);
+	if (ret < 0) {
+		k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+		ep->recovery.release_pending = false;
+		k_mutex_unlock(&ep->recovery.lock);
+		quic_endpoint_unref(ep);
+	}
+}
+
 static void quic_recovery_discard_pn_space(struct quic_endpoint *ep, int pn_space)
 {
 	uint64_t discarded = 0;
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
 	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
 		struct quic_sent_pkt_info *info;
@@ -2849,6 +2903,7 @@ static void quic_recovery_discard_pn_space(struct quic_endpoint *ep, int pn_spac
 		}
 
 		/* Clear the slot entirely so the ring buffer is clean for any reuse */
+		info->retransmit_pending = false;
 		info->has_stream_frame = false;
 	}
 
@@ -2864,11 +2919,15 @@ static void quic_recovery_discard_pn_space(struct quic_endpoint *ep, int pn_spac
 	 * updated bytes_in_flight, the timer was armed before the discard
 	 * and would otherwise fire based on stale state.
 	 */
-	quic_reset_pto_timer(ep);
+	quic_reset_pto_timer_locked(ep);
+	k_mutex_unlock(&ep->recovery.lock);
 }
 
-static void quic_recovery_init(struct quic_endpoint *ep)
+ZTESTABLE_STATIC void quic_recovery_init(struct quic_endpoint *ep)
 {
+	k_mutex_init(&ep->recovery.lock);
+	k_work_init(&ep->recovery.release_work, quic_recovery_release_work_handler);
+
 	/* RFC 9002 Section 6.2.2: Initialize RTT with initial estimate */
 	ep->recovery.smoothed_rtt = QUIC_INITIAL_RTT_US;
 	ep->recovery.rtt_var = QUIC_INITIAL_RTT_US / 2;
@@ -2877,6 +2936,8 @@ static void quic_recovery_init(struct quic_endpoint *ep)
 	ep->recovery.rtt_initialized = false;
 	ep->recovery.bytes_in_flight = 0;
 	ep->recovery.pto_count = 0;
+	ep->recovery.closing = false;
+	ep->recovery.release_pending = false;
 
 	/* Clear sent packet history */
 	for (int pn_space = 0; pn_space < 3; pn_space++) {
@@ -2885,6 +2946,7 @@ static void quic_recovery_init(struct quic_endpoint *ep)
 
 		for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
 			ep->recovery.sent_pkts[pn_space][i].in_flight = false;
+			ep->recovery.sent_pkts[pn_space][i].retransmit_pending = false;
 			ep->recovery.sent_pkts[pn_space][i].has_stream_frame = false;
 		}
 	}
@@ -2895,15 +2957,25 @@ static void quic_recovery_init(struct quic_endpoint *ep)
 		ep, quic_get_by_ep(ep), ep->recovery.smoothed_rtt);
 }
 
-static void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
-					 enum quic_secret_level level,
-					 uint64_t pkt_num,
-					 size_t sent_bytes,
-					 bool ack_eliciting)
+ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
+						   enum quic_secret_level level,
+						   uint64_t pkt_num,
+						   size_t sent_bytes,
+						   bool ack_eliciting)
 {
 	int pn_space = level_to_pn_space(level);
-	uint16_t idx = ep->recovery.sent_pkts_idx[pn_space];
-	struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[pn_space][idx];
+	uint16_t idx;
+	struct quic_sent_pkt_info *info;
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
+	if (ep->recovery.closing) {
+		k_mutex_unlock(&ep->recovery.lock);
+		return;
+	}
+
+	idx = ep->recovery.sent_pkts_idx[pn_space];
+	info = &ep->recovery.sent_pkts[pn_space][idx];
 
 	/* If we're overwriting a packet still in flight, decrement bytes_in_flight */
 	if (info->in_flight) {
@@ -2916,12 +2988,13 @@ static void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 	info->sent_bytes = (uint16_t)MIN(sent_bytes, UINT16_MAX);
 	info->ack_eliciting = ack_eliciting;
 	info->in_flight = ack_eliciting; /* Only ack-eliciting packets count */
+	info->retransmit_pending = false;
 	info->has_stream_frame  = false;
 
 	/* Update bytes in flight */
 	if (ack_eliciting) {
 		ep->recovery.bytes_in_flight += info->sent_bytes;
-		quic_reset_pto_timer(ep);
+		quic_reset_pto_timer_locked(ep);
 	}
 
 	/* Advance ring buffer index */
@@ -2932,6 +3005,8 @@ static void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 		"bytes_in_flight=%" PRIu64,
 		ep, quic_get_by_ep(ep), pkt_num, sent_bytes, ack_eliciting,
 		ep->recovery.bytes_in_flight);
+
+	k_mutex_unlock(&ep->recovery.lock);
 }
 
 static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
@@ -3016,17 +3091,28 @@ static void quic_annotate_last_sent_stream(struct quic_endpoint *ep,
 					   bool stream_fin)
 {
 	int pn_space = level_to_pn_space(level);
-	uint16_t last_idx = (ep->recovery.sent_pkts_idx[pn_space] +
-			     CONFIG_QUIC_SENT_PKT_HISTORY_SIZE - 1) %
+	uint16_t last_idx;
+	struct quic_sent_pkt_info *info;
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
+	if (ep->recovery.closing) {
+		k_mutex_unlock(&ep->recovery.lock);
+		return;
+	}
+
+	last_idx = (ep->recovery.sent_pkts_idx[pn_space] +
+		    CONFIG_QUIC_SENT_PKT_HISTORY_SIZE - 1) %
 		CONFIG_QUIC_SENT_PKT_HISTORY_SIZE;
-	struct quic_sent_pkt_info *info =
-		&ep->recovery.sent_pkts[pn_space][last_idx];
+	info = &ep->recovery.sent_pkts[pn_space][last_idx];
 
 	info->has_stream_frame  = true;
 	info->stream_id         = stream_id;
 	info->stream_offset     = stream_offset;
 	info->stream_data_len   = stream_data_len;
 	info->stream_fin        = stream_fin;
+
+	k_mutex_unlock(&ep->recovery.lock);
 }
 
 static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
@@ -3119,9 +3205,9 @@ static bool pkt_num_in_ack_ranges(uint64_t pkt_num,
 	return false;
 }
 
-static void quic_detect_lost_packets(struct quic_endpoint *ep,
-				     int pn_space,
-				     uint64_t largest_ack)
+static void quic_detect_lost_packets_locked(struct quic_endpoint *ep,
+					    int pn_space,
+					    uint64_t largest_ack)
 {
 	int64_t  now_ms = k_uptime_get();
 
@@ -3170,9 +3256,42 @@ static void quic_detect_lost_packets(struct quic_endpoint *ep,
 		info->in_flight = false;
 
 		if (info->has_stream_frame) {
-			quic_retransmit_stream_frame(ep, info);
+			info->retransmit_pending = true;
 		}
 	}
+}
+
+static bool quic_recovery_take_pending_retransmit(struct quic_endpoint *ep,
+						  struct quic_sent_pkt_info *lost)
+{
+	bool found = false;
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
+	if (ep->recovery.closing) {
+		k_mutex_unlock(&ep->recovery.lock);
+		return false;
+	}
+
+	for (int pn_space = 0; pn_space < 3 && !found; pn_space++) {
+		for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+			struct quic_sent_pkt_info *info =
+				&ep->recovery.sent_pkts[pn_space][i];
+
+			if (!info->retransmit_pending) {
+				continue;
+			}
+
+			*lost = *info;
+			info->retransmit_pending = false;
+			found = true;
+			break;
+		}
+	}
+
+	k_mutex_unlock(&ep->recovery.lock);
+
+	return found;
 }
 
 static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
@@ -3186,8 +3305,16 @@ static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
 	bool found_largest = false;
 	int64_t largest_sent_time = 0;
 	uint64_t largest_ack;
+	struct quic_sent_pkt_info lost;
 
 	if (range_count <= 0) {
+		return;
+	}
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
+	if (ep->recovery.closing) {
+		k_mutex_unlock(&ep->recovery.lock);
 		return;
 	}
 
@@ -3289,11 +3416,16 @@ static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
 	}
 
 	/* Run loss detection after processing the ACK */
-	quic_detect_lost_packets(ep, pn_space, largest_ack);
+	quic_detect_lost_packets_locked(ep, pn_space, largest_ack);
 
 	/* Reset PTO timer aspackets are moving */
 	ep->recovery.pto_count = 0;
-	quic_reset_pto_timer(ep);
+	quic_reset_pto_timer_locked(ep);
+	k_mutex_unlock(&ep->recovery.lock);
+
+	while (quic_recovery_take_pending_retransmit(ep, &lost)) {
+		quic_retransmit_stream_frame(ep, &lost);
+	}
 }
 
 /* RFC 9002 specifies minimum PTO count of 3 */
@@ -3339,26 +3471,32 @@ static uint64_t quic_compute_pto_ms(struct quic_endpoint *ep)
 	return MIN(pto, (uint64_t)CONFIG_QUIC_MAX_PTO_TIMEOUT_MS);
 }
 
-static void quic_reset_pto_timer(struct quic_endpoint *ep)
+static void quic_reset_pto_timer_locked(struct quic_endpoint *ep)
 {
-	if (ep->recovery.bytes_in_flight == 0) {
+	if (ep->recovery.closing || ep->recovery.bytes_in_flight == 0) {
 		k_work_cancel_delayable(&ep->recovery.pto_work);
 		return;
 	}
 
-	k_work_reschedule(&ep->recovery.pto_work,
-			  K_MSEC(quic_compute_pto_ms(ep)));
+	k_work_reschedule_for_queue(&quic_recovery_work_q, &ep->recovery.pto_work,
+				    K_MSEC(quic_compute_pto_ms(ep)));
 }
 
 /* Send a PING to elicit an ACK, or retransmit the oldest unACKed
  * stream frame if one is available. RFC 9002 Section 6.2.4.
  */
-static void quic_pto_probe(struct quic_endpoint *ep)
+static int quic_pto_probe(struct quic_endpoint *ep)
 {
 	int pn_space = level_to_pn_space(QUIC_SECRET_LEVEL_APPLICATION);
+	struct quic_sent_pkt_info oldest = { 0 };
+	bool found = false;
 
-	/* Find the oldest in-flight stream frame */
-	struct quic_sent_pkt_info *oldest = NULL;
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
+	if (ep->recovery.closing) {
+		k_mutex_unlock(&ep->recovery.lock);
+		return -ESHUTDOWN;
+	}
 
 	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
 		struct quic_sent_pkt_info *info =
@@ -3368,15 +3506,19 @@ static void quic_pto_probe(struct quic_endpoint *ep)
 			continue;
 		}
 
-		if (oldest == NULL || info->sent_time < oldest->sent_time) {
-			oldest = info;
+		if (!found || info->sent_time < oldest.sent_time) {
+			oldest = *info;
+			found = true;
 		}
 	}
 
-	if (oldest != NULL) {
+	k_mutex_unlock(&ep->recovery.lock);
+
+	if (found) {
 		NET_DBG("[EP:%p/%d] PTO: retransmitting oldest stream frame pn=%" PRIu64,
-			ep, quic_get_by_ep(ep), oldest->pkt_num);
-		quic_retransmit_stream_frame(ep, oldest);
+			ep, quic_get_by_ep(ep), oldest.pkt_num);
+		quic_retransmit_stream_frame(ep, &oldest);
+		return 0;
 	} else {
 		/* No stream frame to retransmit, send a PING to keep the
 		 * connection alive and elicit an ACK.
@@ -3384,7 +3526,7 @@ static void quic_pto_probe(struct quic_endpoint *ep)
 		uint8_t ping = QUIC_FRAME_TYPE_PING;
 
 		NET_DBG("[EP:%p/%d] PTO: sending PING probe", ep, quic_get_by_ep(ep));
-		quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, &ping, 1);
+		return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, &ping, 1);
 	}
 }
 
@@ -3393,6 +3535,14 @@ static void quic_pto_work_handler(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct quic_endpoint *ep = CONTAINER_OF(dwork, struct quic_endpoint,
 						recovery.pto_work);
+	int ret;
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
+	if (ep->recovery.closing) {
+		k_mutex_unlock(&ep->recovery.lock);
+		return;
+	}
 
 	NET_DBG("[EP:%p/%d] PTO fired (count=%u)", ep, quic_get_by_ep(ep),
 		ep->recovery.pto_count);
@@ -3405,14 +3555,21 @@ static void quic_pto_work_handler(struct k_work *work)
 			"timeouts (was %d, max %d)", ep, quic_get_by_ep(ep),
 			(int)ep->recovery.pto_count,
 			(int)ep->recovery.max_pto_count);
-		quic_endpoint_unref(ep);
+		ep->recovery.closing = true;
+		k_mutex_unlock(&ep->recovery.lock);
+		quic_endpoint_notify_streams_closed(ep);
+		quic_recovery_schedule_release(ep);
 		return;
 	}
 
-	quic_pto_probe(ep);
+	k_mutex_unlock(&ep->recovery.lock);
 
-	/* Reschedule with backoff for the next probe */
-	quic_reset_pto_timer(ep);
+	ret = quic_pto_probe(ep);
+	if (ret != 0 && ret != -ESHUTDOWN) {
+		k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+		quic_reset_pto_timer_locked(ep);
+		k_mutex_unlock(&ep->recovery.lock);
+	}
 }
 
 static void quic_endpoint_init_idle_timeout(struct quic_endpoint *ep,
@@ -4480,7 +4637,7 @@ static int quic_endpoint_send_transport_close(struct quic_endpoint *ep,
 	/* Cancel any PTO work to avoid unnecessary retransmissions after
 	 * connection close.
 	 */
-	k_work_cancel_delayable(&ep->recovery.pto_work);
+	quic_recovery_begin_shutdown(ep);
 
 	return quic_send_packet(ep, level, frame, pos);
 }
@@ -6335,6 +6492,17 @@ static void init_quic_service(void)
 	k_thread_name_set(tid, "quic_service");
 }
 
+static void init_quic_recovery_service(void)
+{
+	k_work_queue_start(&quic_recovery_work_q, quic_recovery_work_q_stack,
+			   K_KERNEL_STACK_SIZEOF(quic_recovery_work_q_stack),
+			   CLAMP(CONFIG_QUIC_SERVICE_THREAD_PRIO,
+				 K_HIGHEST_APPLICATION_THREAD_PRIO,
+				 K_LOWEST_APPLICATION_THREAD_PRIO),
+			   NULL);
+	k_thread_name_set(&quic_recovery_work_q.thread, "quic_recovery");
+}
+
 /**
  * @brief Internal initialization function for QUIC library.
  *
@@ -6362,6 +6530,7 @@ void net_quic_init(void)
 #endif
 
 	tls_subsystem_init();
+	init_quic_recovery_service();
 	init_quic_service();
 }
 
