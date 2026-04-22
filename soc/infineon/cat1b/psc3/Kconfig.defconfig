@@ -1,5 +1,5 @@
-# copyright (c) (2016-2025), Cypress Semiconductor Corporation
-# (an Infineon company) or an affiliate of Cypress Semiconductor Corporation.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -23,7 +23,14 @@ config CORTEX_M_SYSTICK
 	default n if INFINEON_LP_TIMER_PDL
 
 config NUM_IRQS
+	default 167 if SOC_DIE_PSC3M6
 	default 140
+
+# MPU-based null-pointer dereferencing detection cannot be applied on PSC3M6 as
+# the (0x0 - 0x400) is unmapped target.
+choice NULL_POINTER_EXCEPTION_DETECTION
+	default NULL_POINTER_EXCEPTION_DETECTION_NONE if SOC_DIE_PSC3M6
+endchoice
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
