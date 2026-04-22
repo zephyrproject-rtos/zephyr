@@ -26,6 +26,16 @@ void nsi_host_free(void *ptr)
 	free(ptr);
 }
 
+int nsi_host_fsync(int fd)
+{
+	return fsync(fd);
+}
+
+int nsi_host_ftruncate(int fd, long long length)
+{
+	return ftruncate(fd, length);
+}
+
 char *nsi_host_getcwd(char *buf, unsigned long size)
 {
 	return getcwd(buf, size);
