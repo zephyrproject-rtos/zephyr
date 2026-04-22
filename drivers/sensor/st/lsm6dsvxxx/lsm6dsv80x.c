@@ -133,7 +133,7 @@ static int lsm6dsv80x_accel_set_odr_raw(const struct device *dev, uint8_t odr)
 			return -EIO;
 		}
 	} else {
-		if (lsm6dsv80x_xl_setup(ctx, odr, LSM6DSV80X_XL_UNCHANGED_MD) < 0) {
+		if (lsm6dsv80x_xl_data_rate_set(ctx, odr) < 0) {
 			return -EIO;
 		}
 	}
@@ -233,7 +233,7 @@ static int32_t lsm6dsv80x_accel_set_mode(const struct device *dev, int32_t mode)
 		return -EIO;
 	}
 
-	return lsm6dsv80x_xl_setup(ctx, LSM6DSV80X_ODR_UNCHANGED, mode);
+	return lsm6dsv80x_xl_mode_set(ctx, mode);
 }
 
 static int32_t lsm6dsv80x_accel_get_fs(const struct device *dev, int32_t *range)
@@ -369,7 +369,7 @@ static int lsm6dsv80x_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dsvxxx_data *data = dev->data;
 
-	if (lsm6dsv80x_gy_setup(ctx, odr, LSM6DSV80X_GY_UNCHANGED_MD) < 0) {
+	if (lsm6dsv80x_gy_data_rate_set(ctx, odr) < 0) {
 		return -EIO;
 	}
 
@@ -419,7 +419,7 @@ static int32_t lsm6dsv80x_gyro_set_mode(const struct device *dev, int32_t mode)
 		return -EIO;
 	}
 
-	return lsm6dsv80x_gy_setup(ctx, LSM6DSV80X_ODR_UNCHANGED, mode);
+	return lsm6dsv80x_gy_mode_set(ctx, mode);
 }
 
 static int32_t lsm6dsv80x_gyro_get_fs(const struct device *dev, int32_t *range)
@@ -614,23 +614,21 @@ static int lsm6dsv80x_pm_action(const struct device *dev, enum pm_device_action 
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (lsm6dsv80x_xl_setup(ctx, data->accel_freq, LSM6DSV80X_XL_UNCHANGED_MD) < 0) {
+		if (lsm6dsv80x_xl_data_rate_set(ctx, data->accel_freq) < 0) {
 			LOG_ERR("failed to set accelerometer odr %d", (int)data->accel_freq);
 			ret = -EIO;
 		}
-		if (lsm6dsv80x_gy_setup(ctx, data->gyro_freq, LSM6DSV80X_GY_UNCHANGED_MD) < 0) {
+		if (lsm6dsv80x_gy_data_rate_set(ctx, data->gyro_freq) < 0) {
 			LOG_ERR("failed to set gyroscope odr %d", (int)data->gyro_freq);
 			ret = -EIO;
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		if (lsm6dsv80x_xl_setup(ctx, LSM6DSVXXX_DT_ODR_OFF,
-					LSM6DSV80X_XL_UNCHANGED_MD) < 0) {
+		if (lsm6dsv80x_xl_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
 			LOG_ERR("failed to disable accelerometer");
 			ret = -EIO;
 		}
-		if (lsm6dsv80x_gy_setup(ctx, LSM6DSV80X_XL_UNCHANGED_MD,
-					LSM6DSV80X_GY_UNCHANGED_MD) < 0) {
+		if (lsm6dsv80x_gy_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
 			LOG_ERR("failed to disable gyroscope");
 			ret = -EIO;
 		}
