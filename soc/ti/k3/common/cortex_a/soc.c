@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <common/ctrl_partitions.h>
+#include "ctrl_partitions.h"
 
 void soc_early_init_hook(void)
 {
