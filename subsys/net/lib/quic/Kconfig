@@ -82,7 +82,7 @@ config QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL
 
 config QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE
 	int "Initial remote bidirectional stream max data"
-	default 16384
+	default QUIC_STREAM_RX_BUFFER_SIZE
 	range 1 $(UINT64_MAX)
 	help
 	  This parameter is an integer value specifying the initial flow
@@ -96,7 +96,7 @@ config QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE
 
 config QUIC_INITIAL_MAX_STREAM_DATA_UNI
 	int "Initial unidirectional stream max data"
-	default 16384
+	default QUIC_STREAM_RX_BUFFER_SIZE
 	range 1 $(UINT64_MAX)
 	help
 	  This parameter is an integer value specifying the initial flow
