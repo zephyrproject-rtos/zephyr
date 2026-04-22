@@ -355,7 +355,7 @@ static int flash_sf32lb_mpi_qspi_nor_write(const struct device *dev, off_t offse
 		/* wait for DMA completion (polling) */
 		do {
 			ret = sf32lb_dma_get_status_dt(&data->dma, &status);
-		} while ((ret == 0) && status.busy);
+		} while ((ret == 0) && (status.pending_length != 0U));
 
 		(void)sf32lb_dma_stop_dt(&data->dma);
 
