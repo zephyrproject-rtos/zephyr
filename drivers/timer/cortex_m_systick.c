@@ -46,8 +46,12 @@ extern unsigned int z_clock_hw_cycles_per_sec;
  * set to be larger than the maximum time the interrupt might be
  * masked.  Choosing a fraction of a tick is probably a good enough
  * default, with an absolute minimum of 1k cyc.
+ *
+ * The min-delay can be overridden via device tree property "min-delay"
+ * for boards with low-frequency clock sources (e.g., 32kHz).
  */
-#define MIN_DELAY MAX(1024U, ((uint32_t)CYC_PER_TICK/16U))
+#define MIN_DELAY DT_PROP_OR(DT_NODELABEL(systick), min_delay, \
+			MAX(1024U, ((uint32_t)CYC_PER_TICK/16U)))
 
 static struct k_spinlock lock;
 
