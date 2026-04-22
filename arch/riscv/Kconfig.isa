@@ -73,6 +73,39 @@ config RISCV_ISA_EXT_F
 	  floating-point computational instructions compliant with the IEEE
 	  754-2008 arithmetic standard.
 
+config RISCV_ISA_EXT_ZFINX
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zfinx)
+	depends on !RISCV_ISA_EXT_F
+	select CPU_HAS_FPU
+	help
+	  (Zfinx) - Floating-point in Integer Registers (single-precision)
+
+	  The Zfinx extension uses the integer registers for
+	  single-precision floating-point computation instead of the
+	  dedicated floating-point registers.
+
+config RISCV_ISA_EXT_ZDINX
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zdinx)
+	depends on RISCV_ISA_EXT_ZFINX
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	help
+	  (Zdinx) - Floating-point in Integer Registers (double-precision)
+
+	  The Zdinx extension adds double-precision floating-point
+	  computational instructions using the integer registers.
+
+config RISCV_ISA_EXT_ZHINX
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zhinx)
+	depends on RISCV_ISA_EXT_ZFINX
+	help
+	  (Zhinx) - Floating-point in Integer Registers (half-precision)
+
+	  The Zhinx extension adds half-precision floating-point
+	  computational instructions using the integer registers.
+
 config RISCV_ISA_EXT_D
 	bool
 	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),d)

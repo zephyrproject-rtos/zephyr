@@ -855,6 +855,7 @@ config RISCV_M_MODE_STACK_SIZE
 config RISCV_FPU_INSN_VALIDATE
 	bool
 	depends on FPU_SHARING
+	depends on RISCV_ISA_EXT_F
 	depends on ASSERT
 	default y
 	help
