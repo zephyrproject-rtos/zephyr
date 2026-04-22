@@ -95,6 +95,12 @@ Bluetooth HCI
 Networking
 **********
 
+Ethernet
+========
+
+* :kconfig:option:`CONFIG_NET_DEFAULT_IF_ETHERNET` now allows to get the first ethernet interface,
+  instead of the first between ethernet and wifi.
+
 Other subsystems
 ****************
 
