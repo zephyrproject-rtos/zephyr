@@ -1506,7 +1506,19 @@ static int dns_read(struct dns_resolve_context *ctx,
 
 #if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING)
 	if (ctx->pkt_fw_cb != NULL) {
-		ctx->pkt_fw_cb(dns_data, data_len, ctx->queries[query_idx].user_data);
+		/* Some packets are discarded by dns_validate_msg function
+		 *(DNS_HEADER_REFUSED, or ANCOUNT < 1). Applications that install this callback
+		 * might require such packets, so try to update query_idx and forward them.
+		 */
+		if (query_idx < 0 && dns_msg.msg_size > DNS_MSG_HEADER_SIZE &&
+		    dns_header_qdcount(dns_msg.msg) > 0 && *dns_id > 0 &&
+		    dns_unpack_response_query(&dns_msg) == 0) {
+			update_query_idx(ctx, &dns_msg, dns_id, &query_idx, query_hash);
+		}
+		/* Make sure that query index is in a valid range */
+		if (query_idx >= 0 && query_idx < CONFIG_DNS_NUM_CONCUR_QUERIES) {
+			ctx->pkt_fw_cb(dns_data, data_len, ctx->queries[query_idx].user_data);
+		}
 	}
 #endif /* CONFIG_DNS_RESOLVER_PACKET_FORWARDING */
 
