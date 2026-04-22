@@ -634,6 +634,20 @@ struct net_if *net_if_lookup_by_dev(const struct device *dev)
 	return NULL;
 }
 
+struct net_if *net_if_lookup_by_dev_index(const struct device *dev, unsigned int index)
+{
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (net_if_get_device(iface) == dev) {
+			if (index == 0U) {
+				return iface;
+			}
+			index--;
+		}
+	}
+
+	return NULL;
+}
+
 void net_if_set_default(struct net_if *iface)
 {
 	default_iface = iface;
