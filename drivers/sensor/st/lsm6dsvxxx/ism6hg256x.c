@@ -139,7 +139,7 @@ static int ism6hg256x_accel_set_odr_raw(const struct device *dev, uint8_t odr)
 			return -EIO;
 		}
 	} else {
-		if (ism6hg256x_xl_data_rate_set(ctx, odr) < 0) {
+		if (ism6hg256x_xl_setup(ctx, odr, ISM6HG256X_XL_UNCHANGED_MD) < 0) {
 			return -EIO;
 		}
 	}
@@ -239,7 +239,7 @@ static int32_t ism6hg256x_accel_set_mode(const struct device *dev, int32_t mode)
 		return -EIO;
 	}
 
-	return ism6hg256x_xl_mode_set(ctx, mode);
+	return ism6hg256x_xl_setup(ctx, ISM6HG256X_ODR_UNCHANGED, mode);
 }
 
 static int32_t ism6hg256x_accel_get_fs(const struct device *dev, int32_t *range)
@@ -375,7 +375,7 @@ static int ism6hg256x_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dsvxxx_data *data = dev->data;
 
-	if (ism6hg256x_gy_data_rate_set(ctx, odr) < 0) {
+	if (ism6hg256x_gy_setup(ctx, odr, ISM6HG256X_GY_UNCHANGED_MD) < 0) {
 		return -EIO;
 	}
 
@@ -425,7 +425,7 @@ static int32_t ism6hg256x_gyro_set_mode(const struct device *dev, int32_t mode)
 		return -EIO;
 	}
 
-	return ism6hg256x_gy_mode_set(ctx, mode);
+	return ism6hg256x_gy_setup(ctx, ISM6HG256X_ODR_UNCHANGED, mode);
 }
 
 static int32_t ism6hg256x_gyro_get_fs(const struct device *dev, int32_t *range)
@@ -621,21 +621,23 @@ static int ism6hg256x_pm_action(const struct device *dev, enum pm_device_action 
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (ism6hg256x_xl_data_rate_set(ctx, data->accel_freq) < 0) {
+		if (ism6hg256x_xl_setup(ctx, data->accel_freq, ISM6HG256X_XL_UNCHANGED_MD) < 0) {
 			LOG_ERR("failed to set accelerometer odr %d", (int)data->accel_freq);
 			ret = -EIO;
 		}
-		if (ism6hg256x_gy_data_rate_set(ctx, data->gyro_freq) < 0) {
+		if (ism6hg256x_gy_setup(ctx, data->gyro_freq, ISM6HG256X_GY_UNCHANGED_MD) < 0) {
 			LOG_ERR("failed to set gyroscope odr %d", (int)data->gyro_freq);
 			ret = -EIO;
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		if (ism6hg256x_xl_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
+		if (ism6hg256x_xl_setup(ctx, LSM6DSVXXX_DT_ODR_OFF,
+					ISM6HG256X_XL_UNCHANGED_MD) < 0) {
 			LOG_ERR("failed to disable accelerometer");
 			ret = -EIO;
 		}
-		if (ism6hg256x_gy_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
+		if (ism6hg256x_gy_setup(ctx, LSM6DSVXXX_DT_ODR_OFF,
+					ISM6HG256X_GY_UNCHANGED_MD) < 0) {
 			LOG_ERR("failed to disable gyroscope");
 			ret = -EIO;
 		}
