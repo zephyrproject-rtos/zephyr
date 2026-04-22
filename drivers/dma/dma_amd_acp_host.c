@@ -17,6 +17,11 @@
 #include <acp70_chip_offsets.h>
 #include <acp70_chip_reg.h>
 #endif
+#ifdef CONFIG_SOC_ACP_7_X
+#include <acp7x_fw_scratch_mem.h>
+#include <acp7x_chip_offsets.h>
+#include <acp7x_chip_reg.h>
+#endif
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
