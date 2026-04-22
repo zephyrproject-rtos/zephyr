@@ -758,11 +758,7 @@ static int imxrt_init(void)
 	/* Initialize system clock */
 	clock_init();
 
-#if defined(CONFIG_IMX_USDHC) && defined(CONFIG_CPU_CORTEX_M7) &&                                  \
-	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) ||                                          \
-	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)))
-	/* USDHC ERR050396 workaround */
-
+#if defined(CONFIG_CPU_CORTEX_M7)
 	/* ERR050396
 	 * Errata description:
 	 *  AXI to AHB conversion for CM7 AHBS port (port to access CM7 to TCM) is by a NIC301
@@ -772,9 +768,20 @@ static int imxrt_init(void)
 	 * Errata workaround:
 	 *  For uSDHC, don't set the bit#1 of IOMUXC_GPR28 (AXI transaction is cacheable), if write
 	 *  data to TCM aligned in 4 bytes; No such write access limitation for OCRAM or external
-	 *  RAM
+	 *  RAM.
+	 *  For ENET, clear CACHE_ENET if TCM is used as the write destination.
 	 */
+#if defined(CONFIG_IMX_USDHC) && \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) || \
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)))
+	/* USDHC ERR050396 workaround */
 	IOMUXC_GPR->GPR28 &= (~IOMUXC_GPR_GPR28_AWCACHE_USDHC_MASK);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)) && defined(IOMUXC_GPR_GPR28_CACHE_ENET_MASK)
+	/* ENET ERR050396 workaround */
+	IOMUXC_GPR->GPR28 &= (~IOMUXC_GPR_GPR28_CACHE_ENET_MASK);
+#endif
 #endif
 
 	return 0;

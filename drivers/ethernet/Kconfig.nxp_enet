@@ -32,6 +32,9 @@ config ETH_NXP_ENET_1G
 
 config ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
 	bool "Use DTCM for hardware DMA buffers"
+	# ERR050396: ENET writes to TCM require CACHE_ENET to be cleared, while
+	# ENET_1G writes to TCM can still corrupt data on Cortex-M7.
+	default n if CPU_CORTEX_M7
 	default y
 	help
 	  Place the hardware DMA buffers into DTCM for better
