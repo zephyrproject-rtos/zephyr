@@ -455,19 +455,48 @@ static int transceive(const struct device *dev,
 	reg_data = !rx_bufs ?
 		DW_SPI_IMR_UNMASK & DW_SPI_IMR_MASK_RX :
 		DW_SPI_IMR_UNMASK;
-	write_imr(dev, reg_data);
 
 	if (!spi_dw_is_slave(spi)) {
+		/*Controller enable the interrupt */
+		write_imr(dev, reg_data);
+
 		/* if cs is not defined as gpio, use hw cs */
 		if (spi_cs_is_gpio(config)) {
 			spi_context_cs_control(&spi->ctx, true);
 		} else {
 			write_ser(dev, BIT(config->slave));
 		}
+	} else {
+		/*
+		 * In peripheral mode, keep interrupts masked until after SSI is
+		 * enabled and the TX FIFO is prefilled.  Some controllers fault
+		 * on DR writes while SSIENR is 0, but waiting for TXEIS leaves
+		 * a window where the master can clock an empty TX FIFO.
+		 */
+		write_imr(dev, DW_SPI_IMR_MASK);
 	}
 
 	LOG_DBG("Enabling controller");
 	set_bit_ssienr(dev);
+
+	/*
+	 * Prefill the Peripheral TX FIFO immediately after enabling the
+	 * controller.  This guarantees the first byte is valid on MISO
+	 * as soon as the Controller starts clocking, independent of ISR
+	 * latency.  DR must only be written after SSIENR=1 because
+	 * some IP variants gate the data register until the controller
+	 * is active.
+	 */
+
+	if (spi_dw_is_slave(spi) && tx_bufs && tx_bufs->buffers) {
+		LOG_DBG("Prefilling TX FIFO");
+		push_data(dev);
+	}
+
+	if (spi_dw_is_slave(spi)) {
+		/* SSI is enabled and any TX prefill is done: enable interrupts. */
+		write_imr(dev, reg_data);
+	}
 
 	ret = spi_context_wait_for_completion(&spi->ctx);
 
