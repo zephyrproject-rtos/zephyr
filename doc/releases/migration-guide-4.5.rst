@@ -73,6 +73,10 @@ Ethernet
   been removed. :c:func:`phy_set_plca_cfg` together with :c:func:`net_eth_get_phy` should be
   used instead to set these parameters (:github:`108136`).
 
+* In the functions implemented by the :c:struct:`ethernet_api` a additional argument was added for
+  a pointer to :c:struct:`net_if`. This api is not directly exposed to the application, so only
+  out-of-tree drivers need to be updated. (:github:`106086`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
@@ -97,6 +101,14 @@ STM32
 * SoC DTSI files now consistently use interrupt priority zero for all peripherals.
   Applications must now explicitly configure interrupt priorities using Devicetree
   if they previously relied on the values found in SoC DTSI files. (:github:`106188`)
+
+WiFi
+====
+
+* In the functions implemented by the :c:struct:`net_wifi_mgmt_offload`, internally
+  :c:struct:`ethernet_api` and :c:struct:`wifi_mgmt_ops`, a additional argument was added for
+  a pointer to :c:struct:`net_if`. This api is not directly exposed to the application, so only
+  out-of-tree drivers need to be updated. (:github:`106086`)
 
 .. zephyr-keep-sorted-stop
 
