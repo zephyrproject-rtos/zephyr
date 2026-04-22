@@ -469,6 +469,17 @@ SECTIONS {
   {
     __bss_start = .;
 
+#if defined(CONFIG_XTENSA_MMU)
+    /* Explicitly place these here and together instead of letting linker
+     * decide where to put these. This keeps a large piece of memory
+     * allocated continuously to avoid fragmenting the virtual address
+     * space.
+     */
+    *:ptables.c.obj(.bss.l1_page_tables)
+    *:ptables.c.obj(.bss.l2_page_tables)
+    *:ptables.c.obj(.bss.l1_page_tables_track .bss.l2_page_tables_counter)
+#endif /* CONFIG_XTENSA_MMU */
+
 #if defined(CONFIG_ZTEST) && defined(CONFIG_SIMULATOR_XTENSA)
     /* For some weird unknown reasons, the simulator really do not
      * like these cpuhold_* variables to be tightly packed together.
