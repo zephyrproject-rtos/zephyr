@@ -1451,6 +1451,18 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
 struct net_if *net_if_lookup_by_dev(const struct device *dev);
 
 /**
+ * @brief Find an interface from it's related device
+ *
+ * @param dev A valid struct device pointer to relate with an interface
+ * @param index One device can have multiple interfaces, this index can be used to find the correct
+ * one among them. The index is zero-based, so the first interface has index 0, the second interface
+ * has index 1, and so on.
+ *
+ * @return a valid struct net_if pointer on success, NULL otherwise
+ */
+struct net_if *net_if_lookup_by_dev_index(const struct device *dev, unsigned int index);
+
+/**
  * @brief Get network interface IP config
  *
  * @param iface Interface to use.
