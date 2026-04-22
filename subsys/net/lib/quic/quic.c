@@ -5283,11 +5283,10 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 
 	if (ptype == QUIC_PACKET_TYPE_INITIAL) {
 		if (pkt->token > 0) {
-			NET_DBG("[EP:%p/%d] Initial packet with token: %" PRIu64,
-				ep, quic_get_by_ep(ep), pkt->token);
+			NET_WARN("[EP:%p/%d] Initial packet carried token length %" PRIu64
+				 ", but Retry/NEW_TOKEN token handling is not implemented",
+				 ep, quic_get_by_ep(ep), pkt->token);
 		}
-
-		/* TODO: store the token somewhere */
 	}
 
 	if (ptype == QUIC_PACKET_TYPE_INITIAL) {
