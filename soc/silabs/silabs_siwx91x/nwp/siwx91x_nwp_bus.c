@@ -2,6 +2,33 @@
  * Copyright (c) 2026 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
+/* This file mainly defines the communication thread for the NWP
+ * (siwx91x_nwp_thread()). The events managed by this thread mainly come from
+ * the ISR (trough siwx91x_nwp_isr()) or from the WiFi/BT layers (trough
+ * siwx91x_nwp_send_frame()). Attentive reader will also find events to restart
+ * the processing after buffers exhaustion (either on Zephyr side or on NWP
+ * side).
+ *
+ * siwx91x_nwp_thread() enables/disables events of the k_poll_event structure.
+ * The real work is delegated to the three main workhorses:
+ * siwx91x_nwp_handle_tx(), siwx91x_nwp_handle_rx() and
+ * siwx91x_nwp_feed_rx_buffer().
+ *
+ * siwx91x_nwp_send_frame() is the main entry point for the upper layers. It
+ * contains the boilerplate to pass the requested buffer to the NWP thread.
+ * Later, siwx91x_nwp_handle_tx() will submit the buffer to the NWP via shared
+ * memory descriptors.
+ *
+ * On Rx side, in many cases, the caller gets the answer to the request through
+ * the parameters of siwx91x_nwp_send_frame(). For asynchronous frames,
+ * siwx91x_nwp_handle_rx() relies on two layers of function pointers.
+ * siwx91x_nwp_rsp_list provides a first layer with a very generic prototype.
+ * These functions are supposed to cook the data in order to call a second layer
+ * of callbacks with specific prototypes for BT and Wifi subsystems.
+ *
+ * All callbacks are called from the context of the NWP thread. To keep correct
+ * performance, the caller is supposed to delay long processing to workqueues.
+ */
 #include <zephyr/net_buf.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/logging/log.h>
@@ -196,7 +223,7 @@ struct siwx91x_nwp_cmd_queue *siwx91x_nwp_get_queue(const struct device *dev, in
 	return NULL;
 }
 
-
+/* Declare a new buffer and return the previous one in rx_buf */
 static int siwx91x_nwp_feed_rx_buffer(const struct device *dev, struct net_buf **rx_buf)
 {
 	const struct siwx91x_nwp_config *config = dev->config;
