@@ -168,7 +168,9 @@ static void pull_data(const struct device *dev)
 			}
 		}
 
-		spi_context_update_rx(&spi->ctx, spi->dfs, 1);
+		if (spi_context_rx_on(&spi->ctx)) {
+			spi_context_update_rx(&spi->ctx, spi->dfs, 1);
+		}
 		spi->fifo_diff--;
 	}
 
