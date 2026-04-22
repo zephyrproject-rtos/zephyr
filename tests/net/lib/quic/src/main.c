@@ -40,6 +40,9 @@ static struct net_sockaddr_in6 local_addr_ipv6;
 static struct net_sockaddr_in remote_addr_ipv4;
 static struct net_sockaddr_in6 remote_addr_ipv6;
 
+static struct quic_endpoint test_ep_a;
+static struct quic_endpoint test_ep_b;
+
 static bool test_started;
 static bool test_failure;
 
@@ -146,6 +149,14 @@ struct eth_fake_context {
 };
 
 static struct eth_fake_context eth_fake_data;
+
+static struct quic_endpoint *reset_test_ep(struct quic_endpoint *ep)
+{
+	memset(ep, 0, sizeof(*ep));
+	ep->sock = -1;
+
+	return ep;
+}
 
 static void eth_fake_iface_init(struct net_if *iface)
 {
@@ -560,6 +571,38 @@ ZTEST(net_socket_quic, test_03_len_encode_decode)
 			  "Encoded 1-byte buffer does not match original");
 }
 
+ZTEST(net_socket_quic, test_03b_anti_amplification_budget)
+{
+	struct quic_endpoint *listen_ep = reset_test_ep(&test_ep_a);
+	struct quic_endpoint *child_ep = reset_test_ep(&test_ep_b);
+
+	child_ep->is_server = true;
+	child_ep->parent = listen_ep;
+
+	quic_endpoint_note_unvalidated_rx(child_ep, 1200);
+
+	zassert_true(quic_endpoint_can_send_unvalidated(child_ep, 0),
+		     "Zero-byte send should always fit");
+
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+	zassert_equal(child_ep->anti_amplification.bytes_received, 1200,
+		      "Unexpected RX credit");
+	zassert_true(quic_endpoint_can_send_unvalidated(child_ep, 3600),
+		     "3x budget should allow exactly 3600 bytes");
+	zassert_equal((uint64_t)child_ep->anti_amplification.bytes_received * 3U, 3600ULL,
+		      "Unexpected anti-amplification budget");
+
+	child_ep->anti_amplification.bytes_sent = 3590;
+	zassert_true(quic_endpoint_can_send_unvalidated(child_ep, 10),
+		     "Remaining budget should allow final bytes");
+	zassert_false(quic_endpoint_can_send_unvalidated(child_ep, 11),
+		      "Send beyond remaining budget must fail");
+#else
+	zassert_true(quic_endpoint_can_send_unvalidated(child_ep, SIZE_MAX),
+		     "Budget check should be disabled");
+#endif
+}
+
 /*
  * Test 04: RFC 9001 A.1 - Initial secret derivation
  *
@@ -570,10 +613,10 @@ ZTEST(net_socket_quic, test_04_rfc9001_initial_secret_derivation)
 {
 	uint8_t client_secret[QUIC_HASH_SHA2_256_LEN];
 	uint8_t server_secret[QUIC_HASH_SHA2_256_LEN];
-	struct quic_endpoint ep = {0};
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	bool ret;
 
-	ret = quic_setup_initial_secrets(&ep,
+	ret = quic_setup_initial_secrets(ep,
 					 rfc9001_dcid, sizeof(rfc9001_dcid),
 					 client_secret, server_secret);
 	zassert_true(ret, "Failed to derive initial secrets");
@@ -796,32 +839,32 @@ ZTEST(net_socket_quic, test_08_rfc9001_header_decryption)
 /* Test 09: Full cipher setup from connection ID */
 ZTEST(net_socket_quic, test_09_rfc9001_full_cipher_setup)
 {
-	struct quic_endpoint ep = {0};
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	bool ret;
 
-	ep.is_server = true;
+	ep->is_server = true;
 
-	ret = quic_conn_init_setup(&ep, rfc9001_dcid, sizeof(rfc9001_dcid));
+	ret = quic_conn_init_setup(ep, rfc9001_dcid, sizeof(rfc9001_dcid));
 	zassert_true(ret, "Failed to setup initial ciphers");
 
 	/* Verify TX (server) ciphers are initialized */
-	zassert_true(ep.crypto.initial.tx.hp.initialized, "TX HP not initialized");
-	zassert_true(ep.crypto.initial.tx.pp.initialized, "TX PP not initialized");
+	zassert_true(ep->crypto.initial.tx.hp.initialized, "TX HP not initialized");
+	zassert_true(ep->crypto.initial.tx.pp.initialized, "TX PP not initialized");
 
 	/* Verify RX (client) ciphers are initialized */
-	zassert_true(ep.crypto.initial.rx.hp.initialized, "RX HP not initialized");
-	zassert_true(ep.crypto.initial.rx.pp.initialized, "RX PP not initialized");
+	zassert_true(ep->crypto.initial.rx.hp.initialized, "RX HP not initialized");
+	zassert_true(ep->crypto.initial.rx.pp.initialized, "RX PP not initialized");
 
 	/* Verify IV matches expected client IV (since we're server, RX = client) */
-	zassert_mem_equal(ep.crypto.initial.rx.pp.iv, rfc9001_client_iv,
+	zassert_mem_equal(ep->crypto.initial.rx.pp.iv, rfc9001_client_iv,
 			  sizeof(rfc9001_client_iv), "RX IV mismatch");
 
 	/* Verify TX IV matches expected server IV */
-	zassert_mem_equal(ep.crypto.initial.tx.pp.iv, rfc9001_server_iv,
+	zassert_mem_equal(ep->crypto.initial.tx.pp.iv, rfc9001_server_iv,
 			  sizeof(rfc9001_server_iv), "TX IV mismatch");
 
 	/* Clean up */
-	quic_crypto_context_destroy(&ep.crypto.initial);
+	quic_crypto_context_destroy(&ep->crypto.initial);
 }
 
 /* Test 10: Nonce construction */
@@ -1019,24 +1062,24 @@ ZTEST(net_socket_quic, test_13_header_protection_roundtrip)
 /* Test 14: Full packet decryption simulation */
 ZTEST(net_socket_quic, test_14_full_packet_decrypt_setup)
 {
-	struct quic_endpoint ep = {0};
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	bool ret;
 
 	/*
 	 * Setup endpoint as server to decrypt client Initial packet.
 	 * Server RX keys = Client TX keys
 	 */
-	ep.is_server = true;
+	ep->is_server = true;
 
-	ret = quic_conn_init_setup(&ep, rfc9001_dcid, sizeof(rfc9001_dcid));
+	ret = quic_conn_init_setup(ep, rfc9001_dcid, sizeof(rfc9001_dcid));
 	zassert_true(ret, "Failed to setup ciphers");
 
 	/* Verify we can access the decryption keys */
-	zassert_true(ep.crypto.initial.rx.hp.initialized, "RX HP not ready");
-	zassert_true(ep.crypto.initial.rx.pp.initialized, "RX PP not ready");
+	zassert_true(ep->crypto.initial.rx.hp.initialized, "RX HP not ready");
+	zassert_true(ep->crypto.initial.rx.pp.initialized, "RX PP not ready");
 
 	/*
-	 * At this point, ep.crypto.initial.rx contains the client's
+	 * At this point, ep->crypto.initial.rx contains the client's
 	 * keys (HP and PP), which can be used to decrypt client Initial
 	 * packets like rfc9001_client_initial_packet.
 	 *
@@ -1047,12 +1090,12 @@ ZTEST(net_socket_quic, test_14_full_packet_decrypt_setup)
 	/* TBD: Implement full packet decryption test */
 
 	/* Clean up */
-	quic_crypto_context_destroy(&ep.crypto.initial);
-	zassert_true(ep.crypto.initial.rx.hp.initialized == false, "RX HP not destroyed");
-	zassert_true(ep.crypto.initial.rx.pp.initialized == false, "RX PP not destroyed");
-	zassert_true(ep.crypto.initial.tx.hp.initialized == false, "TX HP not destroyed");
-	zassert_true(ep.crypto.initial.tx.pp.initialized == false, "TX PP not destroyed");
-	zassert_true(ep.crypto.initial.initialized == false, "Initial context not cleared");
+	quic_crypto_context_destroy(&ep->crypto.initial);
+	zassert_true(ep->crypto.initial.rx.hp.initialized == false, "RX HP not destroyed");
+	zassert_true(ep->crypto.initial.rx.pp.initialized == false, "RX PP not destroyed");
+	zassert_true(ep->crypto.initial.tx.hp.initialized == false, "TX HP not destroyed");
+	zassert_true(ep->crypto.initial.tx.pp.initialized == false, "TX PP not destroyed");
+	zassert_true(ep->crypto.initial.initialized == false, "Initial context not cleared");
 }
 
 /*

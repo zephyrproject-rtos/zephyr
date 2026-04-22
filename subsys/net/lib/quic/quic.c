@@ -253,6 +253,7 @@ static int quic_send_packet(struct quic_endpoint *ep,
 static int quic_send_stop_sending(struct quic_endpoint *ep,
 				  uint64_t stream_id,
 				  uint64_t error_code);
+int quic_flush_deferred_crypto(struct quic_endpoint *ep);
 
 static int quic_get_by_ep(struct quic_endpoint *ep)
 {
@@ -326,6 +327,101 @@ static struct quic_pkt *quic_pkt_alloc(struct k_mem_slab *slab, k_timeout_t time
 	return pkt;
 }
 
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+static bool quic_endpoint_requires_amp_limit(const struct quic_endpoint *ep)
+{
+	return ep != NULL && ep->is_server && ep->parent != NULL &&
+	       !ep->anti_amplification.validated;
+}
+#endif
+
+ZTESTABLE_STATIC void quic_endpoint_note_unvalidated_rx(struct quic_endpoint *ep,
+							size_t bytes)
+{
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+	if (!quic_endpoint_requires_amp_limit(ep) || bytes == 0U) {
+		return;
+	}
+
+	if (bytes >= UINT32_MAX - ep->anti_amplification.bytes_received) {
+		ep->anti_amplification.bytes_received = UINT32_MAX;
+	} else {
+		ep->anti_amplification.bytes_received += (uint32_t)bytes;
+	}
+#else
+	ARG_UNUSED(ep);
+	ARG_UNUSED(bytes);
+#endif
+}
+
+ZTESTABLE_STATIC bool quic_endpoint_can_send_unvalidated(const struct quic_endpoint *ep,
+							 size_t bytes)
+{
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+	uint64_t budget;
+	uint64_t bytes_sent;
+
+	if (!quic_endpoint_requires_amp_limit(ep)) {
+		return true;
+	}
+
+	budget = (uint64_t)ep->anti_amplification.bytes_received * 3U;
+	bytes_sent = (uint64_t)ep->anti_amplification.bytes_sent + bytes;
+
+	return bytes_sent <= budget;
+#else
+	ARG_UNUSED(ep);
+	ARG_UNUSED(bytes);
+	return true;
+#endif
+}
+
+static void quic_endpoint_note_unvalidated_tx(struct quic_endpoint *ep, size_t bytes)
+{
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+	if (!quic_endpoint_requires_amp_limit(ep) || bytes == 0U) {
+		return;
+	}
+
+	if (bytes >= UINT32_MAX - ep->anti_amplification.bytes_sent) {
+		ep->anti_amplification.bytes_sent = UINT32_MAX;
+	} else {
+		ep->anti_amplification.bytes_sent += (uint32_t)bytes;
+	}
+#else
+	ARG_UNUSED(ep);
+	ARG_UNUSED(bytes);
+#endif
+}
+
+static void quic_endpoint_validate_address(struct quic_endpoint *ep)
+{
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+	int ret;
+
+	if (ep == NULL || !ep->is_server || ep->parent == NULL ||
+	    ep->anti_amplification.validated) {
+		return;
+	}
+
+	ep->anti_amplification.validated = true;
+
+	NET_DBG("[EP:%p/%d] Peer address validated after %" PRIu32
+		" RX bytes and %" PRIu32 " TX bytes",
+		ep, quic_get_by_ep(ep),
+		ep->anti_amplification.bytes_received,
+		ep->anti_amplification.bytes_sent);
+
+	ret = quic_flush_deferred_crypto(ep);
+	if (ret < 0) {
+		NET_WARN("[EP:%p/%d] Failed to flush deferred CRYPTO after "
+			 "address validation (%d)",
+			 ep, quic_get_by_ep(ep), ret);
+	}
+#else
+	ARG_UNUSED(ep);
+#endif
+}
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
 static int quic_endpoint_unref_debug(struct quic_endpoint *ep,
 				     const char *caller, int line);
@@ -4986,6 +5082,13 @@ static void process_pkt(struct quic_pkt *pkt)
 {
 	int ret = 0;
 
+	ret = quic_flush_deferred_crypto(pkt->ep);
+	if (ret < 0) {
+		NET_WARN("[EP:%p/%d] Failed to flush deferred CRYPTO before "
+			 "packet processing (%d)",
+			 pkt->ep, quic_get_by_ep(pkt->ep), ret);
+	}
+
 	switch (pkt->ptype) {
 	case QUIC_PACKET_TYPE_INITIAL:
 		ret = handle_initial_packet(pkt->ep,
@@ -5145,6 +5248,10 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 	}
 
 	pkt->pkt_num = decrypted.packet_number;
+
+	if (ptype == QUIC_PACKET_TYPE_HANDSHAKE) {
+		quic_endpoint_validate_address(ep);
+	}
 
 	NET_DBG("[EP:%p/%d] Decrypted packet %" PRIu64 ", payload %zu bytes", ep,
 		quic_get_by_ep(ep), decrypted.packet_number, decrypted.payload_len);
@@ -5455,6 +5562,8 @@ static int process_long_header(struct quic_endpoint *ep,
 		}
 	}
 
+	quic_endpoint_note_unvalidated_rx(existing_ep, total_len);
+
 	if (total_len > sizeof(((struct quic_pkt *)0)->data)) {
 		NET_DBG("Packet too large: %zu > %zu", total_len,
 			sizeof(((struct quic_pkt *)0)->data));
@@ -5567,6 +5676,8 @@ static int process_short_header(struct quic_endpoint *ep,
 		NET_DBG("No endpoint found for short header DCID");
 		return 0; /* Silently ignore, might be for unknown connection */
 	}
+
+	quic_endpoint_note_unvalidated_rx(target_ep, len);
 
 	/* Update idle timer on ANY received packet */
 	if (!ep->idle.idle_timeout_disabled) {
