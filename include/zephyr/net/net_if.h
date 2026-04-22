@@ -3553,6 +3553,11 @@ struct net_if_api {
 #define NET_IF_GET(dev_id, sfx)						\
 	((struct net_if *)&NET_IF_GET_NAME(dev_id, sfx))
 
+#define NET_IF_GET_SORT_NAME(node_id, dev_id, sfx)                      \
+	CONCAT(COND_CODE_1(DT_NODE_EXISTS(node_id),                     \
+		    (DT_DEP_ORD_STR_SORTABLE(node_id)), (9999)),        \
+						    _##dev_id##_, UTIL_ZFILL4(sfx))
+
 #if defined(CONFIG_NET_STATISTICS_VIA_PROMETHEUS)
 extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 				       struct prometheus_metric *metric,
@@ -3569,8 +3574,9 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 		.flags = {BIT(NET_IF_LOWER_UP)},			\
 	};								\
 	IF_DISABLED(DT_NODE_EXISTS(node_id), (static))                  \
-	STRUCT_SECTION_ITERABLE(net_if,					\
-				NET_IF_GET_NAME(dev_id, sfx)) = {	\
+	STRUCT_SECTION_ITERABLE_NAMED(net_if,				\
+			NET_IF_GET_SORT_NAME(node_id, dev_id, sfx),	\
+			NET_IF_GET_NAME(dev_id, sfx)) = {		\
 		.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),		\
 		NET_IF_CONFIG_INIT					\
 	};								\
