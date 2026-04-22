@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_QUIC_LOG_LEVEL);
 
 #include "net_private.h"
 #include "quic_internal.h"
+#include "quic_stats.h"
 #include "quic_test.h"
 #include "certificate.h"
 
@@ -485,6 +486,158 @@ static void assert_stream_type_and_id(int sock, int expected_type)
 	zassert_equal(ret, 0, "Failed to get stream ID on socket %d (%d)", sock, ret);
 	zassert_equal(stream_id & 0x03, expected_type,
 		      "Socket %d stream ID bits mismatch (%" PRIu64 ")", sock, stream_id);
+}
+
+static void copy_quic_connection_stats(int sock, struct net_stats_quic *stats)
+{
+	struct quic_context *ctx;
+
+	zassert_not_null(stats, "Missing stats storage");
+
+	ctx = quic_get_context(sock);
+	zassert_not_null(ctx, "Failed to get QUIC context for socket %d", sock);
+
+	memcpy(stats, &ctx->stats, sizeof(*stats));
+}
+
+static void copy_quic_global_stats(struct net_stats_quic_global *stats)
+{
+	zassert_not_null(stats, "Missing global stats storage");
+	zassert_not_null(quic_stats, "Missing QUIC global stats");
+
+	memcpy(stats, quic_stats, sizeof(*stats));
+}
+
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+struct quic_closed_stats_snapshot {
+	struct quic_closed_context_stats entries[CONFIG_QUIC_STATS_HISTORY_SIZE];
+	size_t count;
+};
+
+static void copy_quic_closed_context_stats_cb(const struct quic_closed_context_stats *stats,
+					      void *user_data)
+{
+	struct quic_closed_stats_snapshot *snapshot = user_data;
+
+	zassert_not_null(snapshot, "Missing closed stats snapshot");
+	zassert_true(snapshot->count < ARRAY_SIZE(snapshot->entries),
+		     "Too many closed stats entries (%zu)", snapshot->count);
+
+	snapshot->entries[snapshot->count++] = *stats;
+}
+
+static void copy_quic_closed_context_stats(struct quic_closed_stats_snapshot *snapshot)
+{
+	zassert_not_null(snapshot, "Missing closed stats snapshot");
+
+	memset(snapshot, 0, sizeof(*snapshot));
+	quic_closed_context_stats_foreach(copy_quic_closed_context_stats_cb, snapshot);
+}
+
+static int max_quic_closed_context_id(const struct quic_closed_stats_snapshot *snapshot)
+{
+	int max_id = -1;
+
+	for (size_t i = 0; i < snapshot->count; i++) {
+		if (snapshot->entries[i].id > max_id) {
+			max_id = snapshot->entries[i].id;
+		}
+	}
+
+	return max_id;
+}
+
+static uint16_t quic_sockaddr_port(const struct net_sockaddr_storage *addr)
+{
+	if (addr == NULL) {
+		return 0U;
+	}
+
+	if (addr->ss_family == NET_AF_INET6) {
+		return net_ntohs(net_sin6(net_sad(addr))->sin6_port);
+	}
+
+	if (addr->ss_family == NET_AF_INET) {
+		return net_ntohs(net_sin(net_sad(addr))->sin_port);
+	}
+
+	return 0U;
+}
+
+static size_t count_new_quic_closed_contexts(const struct quic_closed_stats_snapshot *snapshot,
+					     int baseline_id)
+{
+	size_t count = 0U;
+
+	for (size_t i = 0; i < snapshot->count; i++) {
+		if (snapshot->entries[i].id > baseline_id) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+static const struct quic_closed_context_stats *find_new_quic_closed_context_stats(
+	const struct quic_closed_stats_snapshot *snapshot, int baseline_id, bool is_server,
+	uint16_t local_port, uint16_t remote_port)
+{
+	for (size_t i = 0; i < snapshot->count; i++) {
+		const struct quic_closed_context_stats *stats = &snapshot->entries[i];
+
+		if (stats->id <= baseline_id) {
+			continue;
+		}
+
+		if (stats->is_server != is_server) {
+			continue;
+		}
+
+		if (quic_sockaddr_port(&stats->local_addr) != local_port) {
+			continue;
+		}
+
+		if (quic_sockaddr_port(&stats->remote_addr) != remote_port) {
+			continue;
+		}
+
+		return stats;
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_QUIC_STATS_HISTORY */
+
+static void assert_quic_stats_zero(const struct net_stats_quic *stats, const char *who)
+{
+	zassert_equal(stats->handshake_init_rx, 0, "%s handshake_init_rx", who);
+	zassert_equal(stats->handshake_init_tx, 0, "%s handshake_init_tx", who);
+	zassert_equal(stats->handshake_resp_rx, 0, "%s handshake_resp_rx", who);
+	zassert_equal(stats->handshake_resp_tx, 0, "%s handshake_resp_tx", who);
+	zassert_equal(stats->invalid_handshake, 0, "%s invalid_handshake", who);
+	zassert_equal(stats->peer_not_found, 0, "%s peer_not_found", who);
+	zassert_equal(stats->invalid_packet, 0, "%s invalid_packet", who);
+	zassert_equal(stats->invalid_key, 0, "%s invalid_key", who);
+	zassert_equal(stats->invalid_packet_len, 0, "%s invalid_packet_len", who);
+	zassert_equal(stats->decrypt_failed, 0, "%s decrypt_failed", who);
+	zassert_equal(stats->drop_rx, 0, "%s drop_rx", who);
+	zassert_equal(stats->drop_tx, 0, "%s drop_tx", who);
+	zassert_equal(stats->alloc_failed, 0, "%s alloc_failed", who);
+	zassert_equal(stats->valid_rx, 0, "%s valid_rx", who);
+	zassert_equal(stats->valid_tx, 0, "%s valid_tx", who);
+}
+
+static void assert_quic_stats_no_errors(const struct net_stats_quic *stats, const char *who)
+{
+	zassert_equal(stats->invalid_handshake, 0, "%s invalid_handshake", who);
+	zassert_equal(stats->peer_not_found, 0, "%s peer_not_found", who);
+	zassert_equal(stats->invalid_packet, 0, "%s invalid_packet", who);
+	zassert_equal(stats->invalid_key, 0, "%s invalid_key", who);
+	zassert_equal(stats->invalid_packet_len, 0, "%s invalid_packet_len", who);
+	zassert_equal(stats->decrypt_failed, 0, "%s decrypt_failed", who);
+	zassert_equal(stats->drop_rx, 0, "%s drop_rx", who);
+	zassert_equal(stats->drop_tx, 0, "%s drop_tx", who);
+	zassert_equal(stats->alloc_failed, 0, "%s alloc_failed", who);
 }
 
 /* Test 010: Basic connection open/close */
@@ -1898,10 +2051,12 @@ static void server_thread(void *p1, void *p2, void *p3)
 
 }
 
-static void quic_server_and_client(const char *server, const char *client,
-				   char *tx_buf, size_t tx_buf_len,
-				   char *rx_buf, size_t rx_buf_len,
-				   size_t batch_size)
+static void quic_server_and_client_with_stats(const char *server, const char *client,
+					      char *tx_buf, size_t tx_buf_len,
+					      char *rx_buf, size_t rx_buf_len,
+					      size_t batch_size,
+					      struct net_stats_quic *client_stats,
+					      struct net_stats_quic *server_stats)
 {
 	/* Implement a test that sets up a QUIC server and client
 	 * using the socket API, performs a handshake, and exchanges
@@ -2112,6 +2267,15 @@ static void quic_server_and_client(const char *server, const char *client,
 
 	zassert_equal(data.error, 0, "Server thread reported error (%d)", data.error);
 
+	if (client_stats != NULL) {
+		copy_quic_connection_stats(client_sock, client_stats);
+	}
+
+	if (server_stats != NULL) {
+		zassert_true(server_connected_sock >= 0, "Server did not accept a connection");
+		copy_quic_connection_stats(server_connected_sock, server_stats);
+	}
+
 	ret = quic_stream_close(server_stream_sock);
 	zassert_equal(ret, 0, "Failed to close server stream %d (%d)",
 		      server_stream_sock, ret);
@@ -2124,6 +2288,16 @@ static void quic_server_and_client(const char *server, const char *client,
 
 	ret = quic_connection_close(server_sock);
 	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
+}
+
+static void quic_server_and_client(const char *server, const char *client,
+				   char *tx_buf, size_t tx_buf_len,
+				   char *rx_buf, size_t rx_buf_len,
+				   size_t batch_size)
+{
+	quic_server_and_client_with_stats(server, client, tx_buf, tx_buf_len,
+					  rx_buf, rx_buf_len, batch_size,
+					  NULL, NULL);
 }
 
 #define LOCAL_ADDR_IPV6_STR "[::1]:12345"
@@ -2221,6 +2395,9 @@ ZTEST(net_socket_quic, test_320_quic_initial_too_short)
 	/* Make sure that if we receive an Initial packet that is too short to contain the
 	 * full header, we drop the packet.
 	 */
+	struct quic_context *server_ctx;
+	struct net_stats_quic_global stats_before;
+	struct net_stats_quic_global stats_after;
 	struct net_sockaddr_storage server_addr;
 	struct net_sockaddr_storage client_addr;
 	int server_sock, client_sock;
@@ -2257,9 +2434,10 @@ ZTEST(net_socket_quic, test_320_quic_initial_too_short)
 			 sizeof(client_addr));
 	zassert_ok(ret, "Could not bind client socket (%d)", client_sock);
 
-	/* TODO: Implement statistics support in Quic code and check here that
-	 *  the packet is dropped and not processed by the server.
-	 */
+	server_ctx = quic_get_context(server_sock);
+	zassert_not_null(server_ctx, "Could not get server QUIC context");
+	assert_quic_stats_zero(&server_ctx->stats, "listener");
+	copy_quic_global_stats(&stats_before);
 
 	/* Send the short Initial packet to the server socket */
 	ret = zsock_sendto(client_sock, too_short_initial_msg,
@@ -2270,7 +2448,25 @@ ZTEST(net_socket_quic, test_320_quic_initial_too_short)
 		      "Failed to send full Initial packet (%d)", -errno);
 
 	/* Let the socket service to forward the packet to the QUIC server */
-	k_msleep(10);
+	for (int i = 0; i < 10 && server_ctx->stats.drop_rx == 0; i++) {
+		k_msleep(10);
+	}
+
+	zassert_equal(server_ctx->stats.invalid_packet_len, 1,
+		      "Expected one invalid_packet_len update, got %u",
+		      server_ctx->stats.invalid_packet_len);
+	zassert_equal(server_ctx->stats.drop_rx, 1,
+		      "Expected one drop_rx update, got %u",
+		      server_ctx->stats.drop_rx);
+	zassert_equal(server_ctx->stats.handshake_init_rx, 0,
+		      "Too-short Initial must not be counted as valid handshake RX");
+	zassert_equal(server_ctx->stats.valid_rx, 0,
+		      "Too-short Initial must not be counted as valid RX");
+	zassert_equal(server_ctx->stats.valid_tx, 0,
+		      "Server must not send application packets for malformed Initial");
+	copy_quic_global_stats(&stats_after);
+	zassert_equal(stats_after.packets_rx - stats_before.packets_rx, 1U,
+		      "Malformed Initial must still count as one received packet");
 
 	ret = zsock_close(client_sock);
 	zassert_ok(ret, "Cannot close client socket %d (%d)", client_sock, -errno);
@@ -3523,6 +3719,93 @@ ZTEST(net_socket_quic, test_460_required_peer_verification_rejects_finished_with
 		      ret);
 	zassert_not_equal(ctx.state, QUIC_TLS_STATE_CONNECTED,
 			  "Handshake must not reach CONNECTED without peer certificate");
+}
+
+#define LOCAL_ADDR_IPV4_STR4 "127.0.0.1:54324"
+#define REMOTE_ADDR_IPV4_STR4 "127.0.0.1:19996"
+
+/* Test 470: Connection statistics are updated for successful traffic */
+ZTEST(net_socket_quic, test_470_connection_statistics_track_traffic)
+{
+	static uint8_t tx_buf[SMALL_BUF_SIZE];
+	static uint8_t rx_buf[SMALL_BUF_SIZE];
+	struct net_stats_quic client_stats;
+	struct net_stats_quic server_stats;
+	struct net_stats_quic_global stats_before;
+	struct net_stats_quic_global stats_after;
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	struct quic_closed_stats_snapshot closed_before;
+	struct quic_closed_stats_snapshot closed_after;
+	const struct quic_closed_context_stats *closed_client;
+	const struct quic_closed_context_stats *closed_server;
+	int closed_baseline_id;
+#endif
+	int ret;
+
+	memset(tx_buf, 0x5a, sizeof(tx_buf));
+	memset(rx_buf, 0, sizeof(rx_buf));
+	memset(&client_stats, 0, sizeof(client_stats));
+	memset(&server_stats, 0, sizeof(server_stats));
+	copy_quic_global_stats(&stats_before);
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	copy_quic_closed_context_stats(&closed_before);
+	closed_baseline_id = max_quic_closed_context_id(&closed_before);
+#endif
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	quic_server_and_client_with_stats(LOCAL_ADDR_IPV4_STR4, REMOTE_ADDR_IPV4_STR4,
+					  tx_buf, sizeof(tx_buf),
+					  rx_buf, sizeof(rx_buf),
+					  sizeof(tx_buf),
+					  &client_stats, &server_stats);
+	copy_quic_global_stats(&stats_after);
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	copy_quic_closed_context_stats(&closed_after);
+#endif
+
+	zassert_true(client_stats.handshake_init_tx > 0,
+		     "Client handshake_init_tx not updated");
+	zassert_true(client_stats.handshake_resp_rx > 0,
+		     "Client handshake_resp_rx not updated");
+	zassert_true(client_stats.valid_tx > 0,
+		     "Client valid_tx not updated");
+	zassert_true(client_stats.valid_rx > 0,
+		     "Client valid_rx not updated");
+	assert_quic_stats_no_errors(&client_stats, "client");
+
+	zassert_true(server_stats.handshake_init_rx > 0,
+		     "Server handshake_init_rx not updated");
+	zassert_true(server_stats.handshake_resp_tx > 0,
+		     "Server handshake_resp_tx not updated");
+	zassert_true(server_stats.valid_tx > 0,
+		     "Server valid_tx not updated");
+	zassert_true(server_stats.valid_rx > 0,
+		     "Server valid_rx not updated");
+	assert_quic_stats_no_errors(&server_stats, "server");
+	zassert_equal(stats_after.connections_opened - stats_before.connections_opened, 3U,
+		      "Expected listener, client, and accepted server connection opens");
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	zassert_equal(count_new_quic_closed_contexts(&closed_after, closed_baseline_id), 2U,
+		      "Expected only client and accepted server contexts in closed stats history");
+
+	closed_client = find_new_quic_closed_context_stats(&closed_after, closed_baseline_id, false,
+							       19996U, 54324U);
+	zassert_not_null(closed_client, "Missing closed client stats entry");
+	zassert_true(closed_client->duration_ms > 0U, "Closed client lifetime was not tracked");
+	zassert_true(closed_client->stats.valid_tx > 0U, "Closed client valid_tx missing");
+	zassert_true(closed_client->stats.valid_rx > 0U, "Closed client valid_rx missing");
+	assert_quic_stats_no_errors(&closed_client->stats, "closed client");
+
+	closed_server = find_new_quic_closed_context_stats(&closed_after, closed_baseline_id, true,
+							       54324U, 19996U);
+	zassert_not_null(closed_server, "Missing closed server stats entry");
+	zassert_true(closed_server->duration_ms > 0U, "Closed server lifetime was not tracked");
+	zassert_true(closed_server->stats.valid_tx > 0U, "Closed server valid_tx missing");
+	zassert_true(closed_server->stats.valid_rx > 0U, "Closed server valid_rx missing");
+	assert_quic_stats_no_errors(&closed_server->stats, "closed server");
+#endif
 }
 
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
