@@ -67,6 +67,15 @@ static int quic_connection_init(struct quic_context *ctx,
 	ctx->stream_id_counter = 0ULL;
 	ctx->id = connection_ids++;
 
+#if defined(CONFIG_NET_STATISTICS_QUIC)
+	if (!ctx->is_listening) {
+		ctx->stats_is_server = ep->is_server;
+		memcpy(&ctx->stats_local_addr, &ep->local_addr, sizeof(ctx->stats_local_addr));
+		memcpy(&ctx->stats_remote_addr, &ep->remote_addr, sizeof(ctx->stats_remote_addr));
+		ctx->stats_metadata_valid = true;
+	}
+#endif /* CONFIG_NET_STATISTICS_QUIC */
+
 	/* Create the actual UDP socket here and do the QUIC handshake.
 	 */
 	if (ep->sock < 0) {
@@ -1353,6 +1362,8 @@ static int quic_connection_accept(struct quic_context *listen_ctx,
 
 	child_ctx->sock = fd;
 	*new_ctx_out = child_ctx;
+
+	quic_stats_update_connection_opened();
 
 	NET_DBG("[CO:%p/%d] Accepted connection context %p/%d on fd %d",
 		listen_ctx, quic_get_by_conn(listen_ctx),

@@ -131,6 +131,113 @@ static struct zsock_pollfd quic_ipv6_pollfds[QUIC_IPV6_SVC_POLL_COUNT];
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 static struct net_stats_quic_global quic_stats_vars;
 struct net_stats_quic_global *quic_stats = &quic_stats_vars;
+
+static uint64_t quic_stats_uptime_ms(void)
+{
+	int64_t uptime_ms = k_uptime_get();
+
+	return uptime_ms > 0 ? (uint64_t)uptime_ms : 0U;
+}
+
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+static struct quic_closed_context_stats quic_closed_contexts[CONFIG_QUIC_STATS_HISTORY_SIZE];
+static size_t quic_closed_contexts_next;
+static size_t quic_closed_contexts_count;
+static K_MUTEX_DEFINE(quic_closed_contexts_lock);
+
+static bool quic_prepare_closed_context_stats(struct quic_context *ctx,
+					      struct quic_closed_context_stats *stats)
+{
+	if (ctx == NULL || stats == NULL || ctx->is_listening) {
+		return false;
+	}
+
+	memset(stats, 0, sizeof(*stats));
+
+	stats->id = ctx->id;
+	stats->error_code = ctx->error_code;
+	stats->is_server = ctx->stats_is_server;
+	stats->valid = true;
+
+	if (ctx->stats_metadata_valid) {
+		memcpy(&stats->local_addr, &ctx->stats_local_addr, sizeof(stats->local_addr));
+		memcpy(&stats->remote_addr, &ctx->stats_remote_addr, sizeof(stats->remote_addr));
+	}
+
+	return true;
+}
+
+static void quic_store_closed_context_stats(struct quic_context *ctx,
+					    struct quic_closed_context_stats *stats)
+{
+	if (ctx == NULL || stats == NULL || !stats->valid) {
+		return;
+	}
+
+	stats->stats = ctx->stats;
+	stats->duration_ms = quic_stats_uptime_ms();
+
+	if (stats->duration_ms > ctx->stats_started_at_ms) {
+		stats->duration_ms -= ctx->stats_started_at_ms;
+	} else {
+		stats->duration_ms = 0U;
+	}
+
+	k_mutex_lock(&quic_closed_contexts_lock, K_FOREVER);
+
+	quic_closed_contexts[quic_closed_contexts_next] = *stats;
+	quic_closed_contexts_next =
+		(quic_closed_contexts_next + 1U) % ARRAY_SIZE(quic_closed_contexts);
+	quic_closed_contexts_count = MIN(quic_closed_contexts_count + 1U,
+					 ARRAY_SIZE(quic_closed_contexts));
+
+	k_mutex_unlock(&quic_closed_contexts_lock);
+}
+
+void quic_closed_context_stats_foreach(quic_closed_context_stats_cb_t cb, void *user_data)
+{
+	struct quic_closed_context_stats snapshot[CONFIG_QUIC_STATS_HISTORY_SIZE];
+	size_t count;
+
+	if (cb == NULL) {
+		return;
+	}
+
+	k_mutex_lock(&quic_closed_contexts_lock, K_FOREVER);
+
+	count = quic_closed_contexts_count;
+
+	for (size_t i = 0; i < count; i++) {
+		size_t idx;
+
+		idx = (quic_closed_contexts_next + ARRAY_SIZE(quic_closed_contexts) - 1U - i) %
+			ARRAY_SIZE(quic_closed_contexts);
+
+		snapshot[i] = quic_closed_contexts[idx];
+	}
+
+	k_mutex_unlock(&quic_closed_contexts_lock);
+
+	for (size_t i = 0; i < count; i++) {
+		if (snapshot[i].valid) {
+			cb(&snapshot[i], user_data);
+		}
+	}
+}
+#endif /* CONFIG_QUIC_STATS_HISTORY */
+
+static void quic_stats_set_context_metadata(struct quic_context *ctx,
+					    const struct quic_endpoint *ep)
+{
+	if (ctx == NULL || ep == NULL) {
+		return;
+	}
+
+	ctx->stats_is_server = ep->is_server;
+	memcpy(&ctx->stats_local_addr, &ep->local_addr, sizeof(ctx->stats_local_addr));
+	memcpy(&ctx->stats_remote_addr, &ep->remote_addr, sizeof(ctx->stats_remote_addr));
+	ctx->stats_metadata_valid = true;
+}
 #endif /* CONFIG_NET_STATISTICS_QUIC */
 
 static K_FIFO_DEFINE(quic_queue);
@@ -266,6 +373,80 @@ static int quic_send_stop_sending(struct quic_endpoint *ep,
 				  uint64_t stream_id,
 				  uint64_t error_code);
 int quic_flush_deferred_crypto(struct quic_endpoint *ep);
+
+#if defined(CONFIG_NET_STATISTICS_QUIC)
+static struct net_stats_quic *quic_stats_get_for_ep(struct quic_endpoint *ep)
+{
+	struct quic_context *ctx;
+
+	if (ep == NULL) {
+		return NULL;
+	}
+
+	ctx = quic_find_context(ep);
+	if (ctx != NULL) {
+		if (ep->parent != NULL && ctx->is_listening) {
+			return &ep->stats;
+		}
+
+		return &ctx->stats;
+	}
+
+	return &ep->stats;
+}
+
+static void quic_stats_merge_endpoint(struct quic_context *ctx,
+				      struct quic_endpoint *ep)
+{
+	struct net_stats_quic *dst;
+	struct net_stats_quic *src;
+
+	if (ctx == NULL || ep == NULL) {
+		return;
+	}
+
+	dst = &ctx->stats;
+	src = &ep->stats;
+
+#define QUIC_STATS_MERGE(field) dst->field += src->field
+	QUIC_STATS_MERGE(handshake_init_rx);
+	QUIC_STATS_MERGE(handshake_init_tx);
+	QUIC_STATS_MERGE(handshake_resp_rx);
+	QUIC_STATS_MERGE(handshake_resp_tx);
+	QUIC_STATS_MERGE(invalid_handshake);
+	QUIC_STATS_MERGE(peer_not_found);
+	QUIC_STATS_MERGE(invalid_packet);
+	QUIC_STATS_MERGE(invalid_key);
+	QUIC_STATS_MERGE(invalid_packet_len);
+	QUIC_STATS_MERGE(decrypt_failed);
+	QUIC_STATS_MERGE(drop_rx);
+	QUIC_STATS_MERGE(drop_tx);
+	QUIC_STATS_MERGE(alloc_failed);
+	QUIC_STATS_MERGE(valid_rx);
+	QUIC_STATS_MERGE(valid_tx);
+#undef QUIC_STATS_MERGE
+
+	memset(src, 0, sizeof(*src));
+}
+
+#define QUIC_EP_STAT_INC(ep, field)					\
+	do {								\
+		struct net_stats_quic *__stats = quic_stats_get_for_ep(ep); \
+									\
+		if (__stats != NULL) {					\
+			__stats->field++;				\
+		}							\
+	} while (false)
+#else
+static void quic_stats_merge_endpoint(struct quic_context *ctx,
+				      struct quic_endpoint *ep)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(ep);
+}
+
+#define QUIC_EP_STAT_INC(ep, field) do { } while (false)
+#endif /* CONFIG_NET_STATISTICS_QUIC */
 
 static int quic_get_by_ep(struct quic_endpoint *ep)
 {
@@ -1939,6 +2120,8 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 	crypto = quic_get_crypto_context(ep, ptype);
 	if (crypto == NULL) {
 		NET_DBG("No crypto context for packet type %d", ptype);
+		QUIC_EP_STAT_INC(ep, invalid_key);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -ENOENT;
 	}
 
@@ -1951,6 +2134,12 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 				  &pn_length);
 	if (ret != 0) {
 		NET_DBG("Header protection removal failed (%d)", ret);
+		if (ret == -EINVAL || ret == -ENOBUFS) {
+			QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		} else {
+			QUIC_EP_STAT_INC(ep, decrypt_failed);
+		}
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return ret;
 	}
 
@@ -1968,11 +2157,15 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 
 	if (header_len > sizeof(header_aad)) {
 		NET_DBG("Header too large for AAD buffer");
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -ENOBUFS;
 	}
 
 	if (header_len > packet_len) {
 		NET_DBG("Header length exceeds packet length");
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -1998,6 +2191,8 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 	if (ciphertext_len < QUIC_AEAD_TAG_LEN) {
 		NET_DBG("Packet too short for AEAD tag (%zu < %d)",
 			ciphertext_len, QUIC_AEAD_TAG_LEN);
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -2014,6 +2209,14 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 				   &result->payload_len);
 	if (ret != 0) {
 		NET_DBG("Payload decryption failed (%d)", ret);
+		if (ret == -EBADMSG) {
+			QUIC_EP_STAT_INC(ep, decrypt_failed);
+		} else if (ret == -EINVAL || ret == -ENOBUFS) {
+			QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		} else {
+			QUIC_EP_STAT_INC(ep, invalid_key);
+		}
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return ret;
 	}
 
@@ -2090,6 +2293,10 @@ static int quic_context_unref(struct quic_context *ctx)
 #endif
 {
 	struct quic_endpoint *ep, *tmp;
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	struct quic_closed_context_stats closed_stats;
+	bool keep_closed_stats;
+#endif
 	atomic_val_t ref;
 
 	do {
@@ -2115,7 +2322,12 @@ static int quic_context_unref(struct quic_context *ctx)
 
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	keep_closed_stats = quic_prepare_closed_context_stats(ctx, &closed_stats);
+#endif
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->endpoints, ep, tmp, node) {
+		quic_stats_merge_endpoint(ctx, ep);
 		sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
 		quic_endpoint_send_connection_close(ep, 0, NULL);
 		quic_endpoint_unref(ep);
@@ -2131,6 +2343,12 @@ static int quic_context_unref(struct quic_context *ctx)
 	}
 
 	k_mutex_unlock(&endpoints_lock);
+
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	if (keep_closed_stats) {
+		quic_store_closed_context_stats(ctx, &closed_stats);
+	}
+#endif
 
 	if (ctx->sock >= 0) {
 		zsock_close(ctx->sock);
@@ -2449,6 +2667,7 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 		}
 
 		if (sys_slist_find_and_remove(&contexts[i].endpoints, &ep->node)) {
+			quic_stats_merge_endpoint(&contexts[i], ep);
 			break;
 		}
 	}
@@ -4042,6 +4261,15 @@ static struct quic_context *quic_context_init(struct quic_context *ctx)
 
 	ctx->error_code = 0;
 
+#if defined(CONFIG_NET_STATISTICS_QUIC)
+	memset(&ctx->stats, 0, sizeof(ctx->stats));
+	ctx->stats_started_at_ms = quic_stats_uptime_ms();
+	memset(&ctx->stats_local_addr, 0, sizeof(ctx->stats_local_addr));
+	memset(&ctx->stats_remote_addr, 0, sizeof(ctx->stats_remote_addr));
+	ctx->stats_is_server = false;
+	ctx->stats_metadata_valid = false;
+#endif /* CONFIG_NET_STATISTICS_QUIC */
+
 	return ctx;
 }
 
@@ -4454,8 +4682,18 @@ static int handle_initial_packet(struct quic_endpoint *ep,
 				 size_t payload_len,
 				 size_t packet_len)
 {
-	return handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_INITIAL,
-					  payload, payload_len, packet_len, NULL);
+	int ret;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_INITIAL,
+					 payload, payload_len, packet_len, NULL);
+	if (ret >= 0) {
+		QUIC_EP_STAT_INC(ep, handshake_init_rx);
+	} else {
+		QUIC_EP_STAT_INC(ep, invalid_handshake);
+		QUIC_EP_STAT_INC(ep, drop_rx);
+	}
+
+	return ret;
 }
 
 /*
@@ -4466,8 +4704,18 @@ static int handle_handshake_packet(struct quic_endpoint *ep,
 				   size_t payload_len,
 				   size_t packet_len)
 {
-	return handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_HANDSHAKE,
-					  payload, payload_len, packet_len, NULL);
+	int ret;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_HANDSHAKE,
+					 payload, payload_len, packet_len, NULL);
+	if (ret >= 0) {
+		QUIC_EP_STAT_INC(ep, handshake_resp_rx);
+	} else {
+		QUIC_EP_STAT_INC(ep, invalid_handshake);
+		QUIC_EP_STAT_INC(ep, drop_rx);
+	}
+
+	return ret;
 }
 
 /*
@@ -4876,6 +5124,10 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 	child_ctx->stream_id_counter = 0ULL;
 	child_ctx->id = connection_ids++;
 	child_ctx->is_listening = false;
+	quic_stats_merge_endpoint(child_ctx, child_ep);
+#if defined(CONFIG_NET_STATISTICS_QUIC)
+	quic_stats_set_context_metadata(child_ctx, child_ep);
+#endif /* CONFIG_NET_STATISTICS_QUIC */
 
 	NET_DBG("[EP:%p/%d] Enqueueing accept CO:%p/%d to CO:%p/%d; parent EP:%p/%d",
 		child_ep, quic_get_by_ep(child_ep),
@@ -5432,6 +5684,7 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 	stream = quic_get_stream(ctx);
 	if (stream == NULL) {
 		NET_DBG("[CO:%p/%d] No available stream slots", ctx, quic_get_by_conn(ctx));
+		QUIC_EP_STAT_INC(ep, alloc_failed);
 		quic_stats_update_stream_open_failed();
 		return NULL;
 	}
@@ -5613,6 +5866,8 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 						  ep->peer_orig_dcid_len)) {
 				NET_DBG("[EP:%p/%d] Cannot setup initial connection ID",
 					ep, quic_get_by_ep(ep));
+				QUIC_EP_STAT_INC(ep, invalid_key);
+				QUIC_EP_STAT_INC(ep, drop_rx);
 				goto fail;
 			}
 
@@ -5635,6 +5890,8 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 	if (pkt->total_len > pkt->len + pkt->pn_offset) {
 		NET_DBG("[EP:%p/%d] Actual packet length %zu exceeds calculated length %zu",
 			ep, quic_get_by_ep(ep), pkt->total_len, pkt->len + pkt->pn_offset);
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		goto fail;
 	}
 
@@ -5676,6 +5933,8 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 					  ep->peer_orig_dcid_len)) {
 			NET_ERR("[EP:%p/%d] Failed to setup Initial crypto for new endpoint",
 				ep, quic_get_by_ep(ep));
+			QUIC_EP_STAT_INC(ep, invalid_key);
+			QUIC_EP_STAT_INC(ep, drop_rx);
 			goto free_ep;
 		}
 
@@ -5692,6 +5951,8 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 		if (clone_ret != 0) {
 			NET_ERR("[EP:%p/%d] Failed to clone TLS context for Initial", ep,
 				quic_get_by_ep(ep));
+			QUIC_EP_STAT_INC(ep, invalid_handshake);
+			QUIC_EP_STAT_INC(ep, drop_rx);
 			goto free_ep;
 		}
 
@@ -5739,6 +6000,8 @@ static bool process_short_header_msg(struct quic_pkt *pkt)
 	if (crypto_ctx == NULL || !crypto_ctx->initialized) {
 		NET_DBG("[%p] Application crypto context still not ready for endpoint %d",
 			ep, quic_get_by_ep(ep));
+		QUIC_EP_STAT_INC(ep, invalid_key);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return false;
 	}
 
@@ -5846,6 +6109,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	if ((size_t)pos >= total_len) {
 		NET_DBG("[EP:%p/%d] Packet too short for connection IDs",
 			ep, quic_get_by_ep(ep));
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -5854,6 +6119,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	if (dst_conn_id_len > MAX_CONN_ID_LEN) {
 		NET_DBG("[EP:%p/%d] Invalid QUIC connection ID len %d",
 			ep, quic_get_by_ep(ep), dst_conn_id_len);
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -5862,6 +6129,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	if ((size_t)pos >= total_len) {
 		NET_DBG("[EP:%p/%d] Packet too short for %s connection ID",
 			ep, quic_get_by_ep(ep), "destination");
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -5870,6 +6139,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	if (src_conn_id_len > MAX_CONN_ID_LEN) {
 		NET_DBG("[EP:%p/%d] Invalid QUIC connection ID len %d",
 			ep, quic_get_by_ep(ep), src_conn_id_len);
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -5878,6 +6149,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	if ((size_t)pos >= total_len) {
 		NET_DBG("[EP:%p/%d] Packet too short for %s connection ID",
 			ep, quic_get_by_ep(ep), "source");
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -5908,6 +6181,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	    dst_conn_id_len < QUIC_INITIAL_DCID_MIN_LEN) {
 		NET_WARN("[EP:%p/%d] Dropping Initial packet with too-short DCID len %d",
 			 ep, quic_get_by_ep(ep), dst_conn_id_len);
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -5927,6 +6202,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		if (ptype == QUIC_PACKET_TYPE_INITIAL && datagram_len < 1200) {
 			NET_DBG("[EP:%p/%d] Initial datagram too short: %zu bytes",
 				ep, quic_get_by_ep(ep), datagram_len);
+			QUIC_EP_STAT_INC(ep, invalid_packet_len);
+			QUIC_EP_STAT_INC(ep, drop_rx);
 			return -EINVAL;
 		}
 
@@ -5945,6 +6222,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		if (new_ep == NULL) {
 			NET_DBG("[EP:%p/%d] Cannot create new endpoint",
 				ep, quic_get_by_ep(ep));
+			QUIC_EP_STAT_INC(ep, alloc_failed);
+			QUIC_EP_STAT_INC(ep, drop_rx);
 			return -ENOMEM;
 		}
 
@@ -5998,6 +6277,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	if (total_len > sizeof(((struct quic_pkt *)0)->data)) {
 		NET_DBG("Packet too large: %zu > %zu", total_len,
 			sizeof(((struct quic_pkt *)0)->data));
+		QUIC_EP_STAT_INC(existing_ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(existing_ep, drop_rx);
 		return -ENOBUFS;
 	}
 
@@ -6012,6 +6293,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	pkt = quic_pkt_alloc(&quic_pkts, K_MSEC(CONFIG_QUIC_PKT_ALLOC_TIMEOUT));
 	if (pkt == NULL) {
 		NET_DBG("Cannot allocate QUIC packet");
+		QUIC_EP_STAT_INC(existing_ep, alloc_failed);
+		QUIC_EP_STAT_INC(existing_ep, drop_rx);
 		return -ENOMEM;
 	}
 
@@ -6068,6 +6351,8 @@ static int process_short_header(struct quic_endpoint *ep,
 	ARG_UNUSED(addrlen);
 
 	if (len < 1) {
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -6076,10 +6361,14 @@ static int process_short_header(struct quic_endpoint *ep,
 	/* Verify it's a short header (bit 7 = 0) with fixed bit set (bit 6 = 1) */
 	if ((first_byte & 0x80) != 0) {
 		NET_ERR("Not a short header packet");
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 	if ((first_byte & 0x40) == 0) {
 		NET_ERR("Fixed bit not set in short header");
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -6096,6 +6385,8 @@ static int process_short_header(struct quic_endpoint *ep,
 
 	if (len < 1 + dcid_len + 1) {
 		NET_ERR("Short header packet too small for CID");
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -6105,6 +6396,8 @@ static int process_short_header(struct quic_endpoint *ep,
 	target_ep = quic_endpoint_lookup(addr, NULL, NULL, 0, dcid, dcid_len);
 	if (target_ep == NULL || target_ep->sock == -1) {
 		NET_DBG("No endpoint found for short header DCID");
+		QUIC_EP_STAT_INC(ep, peer_not_found);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return 0; /* Silently ignore, might be for unknown connection */
 	}
 
@@ -6136,6 +6429,8 @@ static int process_short_header(struct quic_endpoint *ep,
 		pkt = quic_pkt_alloc(&quic_pkts, K_MSEC(CONFIG_QUIC_PKT_ALLOC_TIMEOUT));
 		if (pkt == NULL) {
 			NET_DBG("Cannot allocate QUIC packet for short header");
+			QUIC_EP_STAT_INC(target_ep, alloc_failed);
+			QUIC_EP_STAT_INC(target_ep, drop_rx);
 			quic_endpoint_unref(target_ep);
 			return -ENOMEM;
 		}
@@ -6186,10 +6481,12 @@ static int process_short_header(struct quic_endpoint *ep,
 	/* EAGAIN indicates out-of-order data. Packet was valid, fall through to ACK */
 	if (ret < 0 && ret != -EAGAIN) {
 		NET_DBG("Short header packet handling failure (%d)", ret);
+		QUIC_EP_STAT_INC(target_ep, drop_rx);
 		quic_endpoint_notify_streams_closed(target_ep);
 		quic_endpoint_unref(target_ep);
 		goto out;
 	} else if (ret > 0) {
+		QUIC_EP_STAT_INC(target_ep, valid_rx);
 		/* Close the connection */
 		NET_DBG("[EP:%p/%d] Connection closing after short header packet",
 			target_ep, quic_get_by_ep(target_ep));
@@ -6201,6 +6498,8 @@ static int process_short_header(struct quic_endpoint *ep,
 		ret = 0;
 		goto out;
 	}
+
+	QUIC_EP_STAT_INC(target_ep, valid_rx);
 
 	/* Send ACK for 1-RTT packets, but NOT for ACK-only packets.
 	 * Per RFC 9000 Section 13.2.1: "A sender MUST NOT send an ACK frame
@@ -6328,10 +6627,12 @@ static int get_long_header_packet_length(const uint8_t *data, size_t data_len,
 static int handle_datagram(struct quic_endpoint *ep,
 			   uint8_t *data, size_t data_len,
 			   struct net_sockaddr *src_addr,
-			   net_socklen_t addr_len)
+			   net_socklen_t addr_len,
+			   int *packets_seen)
 {
 	size_t offset = 0;
 	int packets_processed = 0;
+	int seen = 0;
 	bool long_header_queued = false;
 	int ret;
 
@@ -6346,6 +6647,8 @@ static int handle_datagram(struct quic_endpoint *ep,
 			continue;
 		}
 
+		seen++;
+
 		if (quic_is_long_header(first_byte)) {
 			/* Long header packet, need to parse to find length */
 			ret = get_long_header_packet_length(data + offset,
@@ -6354,6 +6657,8 @@ static int handle_datagram(struct quic_endpoint *ep,
 							    &pn_offset);
 			if (ret < 0) {
 				NET_DBG("Failed to get long header packet length:  %d", ret);
+				QUIC_EP_STAT_INC(ep, invalid_packet_len);
+				QUIC_EP_STAT_INC(ep, drop_rx);
 				break;
 			}
 
@@ -6368,6 +6673,8 @@ static int handle_datagram(struct quic_endpoint *ep,
 		if (offset + total_len > data_len) {
 			NET_ERR("Total packet length %zu exceeds datagram at offset %zu",
 				total_len, offset);
+			QUIC_EP_STAT_INC(ep, invalid_packet_len);
+			QUIC_EP_STAT_INC(ep, drop_rx);
 			break;
 		}
 
@@ -6400,6 +6707,10 @@ static int handle_datagram(struct quic_endpoint *ep,
 		packets_processed++;
 	}
 
+	if (packets_seen != NULL) {
+		*packets_seen = seen;
+	}
+
 	return packets_processed > 0 ? packets_processed :  -EINVAL;
 }
 
@@ -6413,6 +6724,7 @@ static void receive_data(int sock, struct quic_endpoint *ep_hint)
 	struct quic_endpoint *ep;
 	ssize_t len;
 	int packets;
+	int packets_seen = 0;
 
 	/* The ep_hint from socket service user_data may not be correct if multiple
 	 * endpoints share the same socket service. Look up the endpoint by socket.
@@ -6460,6 +6772,8 @@ static void receive_data(int sock, struct quic_endpoint *ep_hint)
 	if (ep->remote_addr.ss_family != addr.sin6_family) {
 		NET_ERR("[EP:%p/%d] Address family mismatch: endpoint %d vs packet %d",
 			ep, quic_get_by_ep(ep), ep->remote_addr.ss_family, addr.sin6_family);
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		quic_endpoint_unref(ep);
 		return;
 	}
@@ -6481,7 +6795,10 @@ static void receive_data(int sock, struct quic_endpoint *ep_hint)
 	sock_obj_core_update_recv_stats(sock, ep->pending.len);
 
 	packets = handle_datagram(ep, ep->pending.data, ep->pending.len,
-				  (struct net_sockaddr *)&addr, addrlen);
+				  (struct net_sockaddr *)&addr, addrlen,
+				  &packets_seen);
+	quic_stats_update_packets_rx(packets_seen);
+
 	if (packets < 0) {
 		NET_DBG("[EP:%p/%d] Failed to handle QUIC datagram (%d)", ep,
 			quic_get_by_ep(ep), packets);
@@ -6489,8 +6806,6 @@ static void receive_data(int sock, struct quic_endpoint *ep_hint)
 		NET_DBG("[EP:%p/%d] Read %d QUIC packet%sfrom datagram", ep,
 			quic_get_by_ep(ep), packets,
 			packets > 1 ? "s " : " ");
-
-		quic_stats_update_packets_rx(packets);
 	}
 }
 

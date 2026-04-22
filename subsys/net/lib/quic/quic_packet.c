@@ -1960,6 +1960,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 	 * Per RFC 9000 Section 13.2.1: "A sender MUST NOT send an ACK frame
 	 * in response to a packet containing only ACK frames."
 	 */
+	QUIC_EP_STAT_INC(ep, valid_rx);
+
 	if (ack_eliciting) {
 		ret = quic_send_ack(ep, QUIC_SECRET_LEVEL_APPLICATION, pkt->pkt_num);
 		if (ret != 0) {
@@ -1971,12 +1973,19 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 	return ret;
 
 close:
+	if (ret == 0) {
+		QUIC_EP_STAT_INC(ep, valid_rx);
+	} else {
+		QUIC_EP_STAT_INC(ep, drop_rx);
+	}
+
 	/* Connection closed by peer. Notify streams and release endpoint */
 	quic_endpoint_notify_streams_closed(ep);
 	quic_endpoint_unref(ep);
 	return ret;
 
 fail:
+	QUIC_EP_STAT_INC(ep, drop_rx);
 	quic_endpoint_unref(ep);
 	return ret;
 }

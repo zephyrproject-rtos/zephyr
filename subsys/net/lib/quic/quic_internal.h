@@ -550,6 +550,11 @@ struct quic_endpoint {
 #endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 	} crypto;
 
+#if defined(CONFIG_NET_STATISTICS_QUIC)
+	/** Per-endpoint staging stats used before an accepted connection gets its own context. */
+	struct net_stats_quic stats;
+#endif /* CONFIG_NET_STATISTICS_QUIC */
+
 	/** Largest packet number tracking per encryption level for TX */
 	struct {
 		uint64_t initial;
@@ -987,6 +992,11 @@ __net_socket struct quic_context {
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 	struct net_stats_quic stats;
+	uint64_t stats_started_at_ms;
+	struct net_sockaddr_storage stats_local_addr;
+	struct net_sockaddr_storage stats_remote_addr;
+	bool stats_is_server;
+	bool stats_metadata_valid;
 #endif /* CONFIG_NET_STATISTICS_QUIC */
 
 	/** Stream id counter */
@@ -1004,6 +1014,19 @@ __net_socket struct quic_context {
 	/** Information whether this context is the listening one */
 	bool is_listening : 1;
 };
+
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+struct quic_closed_context_stats {
+	int id;
+	int error_code;
+	struct net_stats_quic stats;
+	struct net_sockaddr_storage local_addr;
+	struct net_sockaddr_storage remote_addr;
+	uint64_t duration_ms;
+	bool is_server;
+	bool valid;
+};
+#endif /* CONFIG_QUIC_STATS_HISTORY */
 
 /**
  * @typedef quic_context_cb_t
@@ -1023,6 +1046,28 @@ typedef void (*quic_context_cb_t)(struct quic_context *ctx,
  * @param user_data Caller specific data.
  */
 void quic_context_foreach(quic_context_cb_t cb, void *user_data);
+
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+/**
+ * @typedef quic_closed_context_stats_cb_t
+ * @brief Callback used while iterating over closed Quic context statistics.
+ *
+ * @param stats A valid pointer on current closed Quic context statistics
+ * @param user_data A valid pointer on some user data or NULL
+ */
+typedef void (*quic_closed_context_stats_cb_t)(const struct quic_closed_context_stats *stats,
+					       void *user_data);
+
+/**
+ * @brief Iterate over stored statistics for closed Quic contexts.
+ *
+ * Entries are returned from newest to oldest.
+ *
+ * @param cb Closed Quic context statistics callback
+ * @param user_data Caller specific data.
+ */
+void quic_closed_context_stats_foreach(quic_closed_context_stats_cb_t cb, void *user_data);
+#endif /* CONFIG_QUIC_STATS_HISTORY */
 
 /**
  * @typedef quic_endpoint_cb_t

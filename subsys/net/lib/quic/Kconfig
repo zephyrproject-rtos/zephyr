@@ -28,6 +28,23 @@ config QUIC_SHELL
 	  This option enables Quic shell support and allow user
 	  to monitor Quic connections.
 
+config QUIC_STATS_HISTORY
+	bool "Keep closed QUIC stats history"
+	depends on NET_STATISTICS_QUIC
+	default y
+	help
+	  Keep a bounded history of closed non-listening QUIC contexts so
+	  their final statistics can still be shown after teardown.
+
+config QUIC_STATS_HISTORY_SIZE
+	int "Closed QUIC stats history size"
+	depends on QUIC_STATS_HISTORY
+	default 4
+	range 1 32
+	help
+	  Number of closed non-listening QUIC contexts to keep in
+	  statistics history.
+
 config QUIC_MAX_CONTEXTS
 	int "Max number of QUIC connections to allocate"
 	default QUIC_MAX_ENDPOINTS

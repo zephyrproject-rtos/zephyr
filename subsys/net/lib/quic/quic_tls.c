@@ -4171,6 +4171,8 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 	crypto_ctx = quic_get_crypto_context_by_level(ep, level);
 	if (crypto_ctx == NULL || !crypto_ctx->initialized) {
 		NET_DBG("Crypto context not initialized for level %d", level);
+		QUIC_EP_STAT_INC(ep, invalid_key);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return -EINVAL;
 	}
 
@@ -4185,6 +4187,7 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 
 	/* Verify we have space for ciphertext */
 	if (plaintext_len + QUIC_AEAD_TAG_LEN > ciphertext_size) {
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return -ENOBUFS;
 	}
 
@@ -4195,6 +4198,7 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 				  &header_len, &pn_offset);
 	if (ret != 0) {
 		NET_DBG("Failed to build packet header (%d)", ret);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return ret;
 	}
 
@@ -4216,6 +4220,7 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 				   &ciphertext_len);
 	if (ret != 0) {
 		NET_DBG("Failed to encrypt payload (%d)", ret);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return ret;
 	}
 
@@ -4233,6 +4238,7 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 						 crypto_ctx->tx.hp.cipher_algo);
 	if (ret != 0) {
 		NET_DBG("Failed to apply header protection (%d)", ret);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return ret;
 	}
 
@@ -4247,6 +4253,7 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 			 ep->anti_amplification.bytes_sent,
 			 total_len);
 #endif
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return -EAGAIN;
 	}
 
@@ -4286,17 +4293,33 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 		ret = -errno;
 
 		NET_DBG("Failed to send packet (%d)", ret);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return ret;
 	}
 
 	/* XXX: TODO: Handle partial sends properly */
 	if ((size_t)sent != total_len) {
 		NET_WARN("Partial send: %zd of %zu bytes", sent, total_len);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 	}
 
 	quic_endpoint_note_unvalidated_tx(ep, MIN((size_t)sent, total_len));
 
 	quic_recovery_on_packet_sent(ep, level, packet_number, total_len, ack_eliciting);
+
+	switch (level) {
+	case QUIC_SECRET_LEVEL_INITIAL:
+		QUIC_EP_STAT_INC(ep, handshake_init_tx);
+		break;
+	case QUIC_SECRET_LEVEL_HANDSHAKE:
+		QUIC_EP_STAT_INC(ep, handshake_resp_tx);
+		break;
+	case QUIC_SECRET_LEVEL_APPLICATION:
+		QUIC_EP_STAT_INC(ep, valid_tx);
+		break;
+	default:
+		break;
+	}
 
 	NET_DBG("[EP:%p/%d] Sent %zd bytes at level %d, pn=%" PRIu64 ", ack-eliciting=%d",
 		ep, quic_get_by_ep(ep), sent, level, packet_number, ack_eliciting);
