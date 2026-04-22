@@ -236,7 +236,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 				LOG_WRN("Received 'NO CARRIER' event");
 				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
 				atomic_set_bit(&ppp->state, MODEM_PPP_STATE_DEAD_BIT);
-				/* TODO: Notify L2 PPP that link is dead */
+				net_if_carrier_off(ppp->iface);
 			}
 			break;
 		}
@@ -622,6 +622,7 @@ int modem_ppp_attach(struct modem_ppp *ppp, struct modem_pipe *pipe)
 
 	atomic_clear(&ppp->state);
 	atomic_set_bit(&ppp->state, MODEM_PPP_STATE_ATTACHED_BIT);
+	net_if_carrier_on(ppp->iface);
 	return 0;
 }
 
@@ -639,6 +640,7 @@ void modem_ppp_release(struct modem_ppp *ppp)
 		return;
 	}
 
+	net_if_carrier_off(ppp->iface);
 	modem_pipe_release(ppp->pipe);
 	k_work_cancel_sync(&ppp->send_work, &sync);
 	k_work_cancel_sync(&ppp->process_work, &sync);
