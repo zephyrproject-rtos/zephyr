@@ -455,6 +455,19 @@ static int transceive(const struct device *dev,
 	LOG_DBG("Enabling controller");
 	set_bit_ssienr(dev);
 
+	/*
+	 * Prefill the slave TX FIFO immediately after enabling the
+	 * controller.  This guarantees the first byte is valid on MISO
+	 * as soon as the master starts clocking, independent of ISR
+	 * latency.  DR must only be written after SSIENR=1 because
+	 * some IP variants gate the data register until the controller
+	 * is active.
+	 */
+	LOG_DBG("Prefilling TX FIFO");
+	if (spi_dw_is_slave(spi) && tx_bufs && tx_bufs->buffers) {
+		push_data(dev);
+	}
+
 	ret = spi_context_wait_for_completion(&spi->ctx);
 
 #ifdef CONFIG_SPI_SLAVE
