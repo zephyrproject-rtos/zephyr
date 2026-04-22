@@ -14,6 +14,7 @@ menuconfig I2C_MCUX_FLEXCOMM
 
 config I2C_MCUX_FLEXCOMM_BUS_RECOVERY
 	bool "Bus recovery support"
+	default y if I2C_BUS_RECOVERY
 	depends on I2C_MCUX_FLEXCOMM && PINCTRL
 	select I2C_BITBANG
 	help

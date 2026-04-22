@@ -82,6 +82,12 @@ config LLEXT_HEAP_MEMBLK
 
 endchoice
 
+config LLEXT_CUSTOM_HEAP_PLACEMENT
+	bool "Custom placement of llext heap sections"
+	help
+	  Remove default placements of LLEXT heap sections in the linker script,
+	  allowing the user to place the heap(s) themselves.
+
 config LLEXT_HEAP_SIZE
 	int "llext heap memory size in kilobytes"
 	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD && !LLEXT_HEAP_MEMBLK
@@ -112,9 +118,9 @@ config LLEXT_HEAP_MEMBLK_BLOCK_SIZE
 	default 32
 	help
 	  Block size in bytes for LLEXT sys_mem_blocks heap(s). Must be equal to or
-	  a multiple of LLEXT_PAGE_SIZE. The block size must also be equal to or a
-	  multiple of the largest alignment needed for any extension region.
-	  If MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT is selected and regions are large,
+	  a multiple of LLEXT_PAGE_SIZE if MMU or MPU are enabled. The block size must also
+	  be equal to or a multiple of the largest alignment needed for any extension
+	  region. If MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT is selected and regions are large,
 	  an unreasonably large block size may be needed to satisfy alignment requirements.
 
 endif

@@ -796,6 +796,17 @@ void k_object_access_revoke(const void *object, struct k_thread *thread)
 	}
 }
 
+void k_object_access_revoke_others(const void *object)
+{
+	struct k_object *ko = k_object_find(object);
+
+	if (ko != NULL) {
+		(void)memset(ko->perms, 0, sizeof(ko->perms));
+		k_thread_perms_set(ko, _current);
+		ko->flags &= ~K_OBJ_FLAG_PUBLIC;
+	}
+}
+
 void z_impl_k_object_release(const void *object)
 {
 	k_object_access_revoke(object, _current);

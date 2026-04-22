@@ -1,0 +1,25 @@
+#
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: kit_psc3m5_evk/psc3m5fds2afq1/norflash
+name: The Infineon PSOC™ Control C3M5 Evaluation Kit (KIT_PSC3M5_EVK) NOR Flash
+type: mcu
+arch: arm
+ram: 64
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - can
+  - dma
+  - flash
+  - gpio
+  - spi
+  - timer
+  - uart
+vendor: infineon

@@ -33,6 +33,8 @@ source "subsys/net/lib/sntp/Kconfig"
 
 source "subsys/net/lib/ocpp/Kconfig"
 
+source "subsys/net/lib/quic/Kconfig"
+
 endmenu
 
 menu "Network Libraries"

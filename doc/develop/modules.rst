@@ -969,8 +969,8 @@ requires the following folder structure:
    ├── modules
    └── soc
 
-Twister (Test Runner)
-=====================
+Test Runner (Twister) integration
+=================================
 
 To execute both tests and samples available in modules, the Zephyr test runner
 (twister) should be pointed to the directories containing those samples and
@@ -978,7 +978,6 @@ tests. This can be done by specifying the path to both samples and tests in the
 :file:`zephyr/module.yml` file.  Additionally, if a module defines out of tree
 boards, the module file can point twister to the path where those files
 are maintained in the module. For example:
-
 
 .. code-block:: yaml
 
@@ -990,6 +989,19 @@ are maintained in the module. For example:
       - tests
     boards:
       - boards
+
+Tests and Samples defined in the :file:`zephyr/module.yml` file are not detected
+by twister automatically. To make twister aware of the tests and samples defined
+in modules, the path for those tests and samples must be added to the command line
+when executing twister, for example:
+
+.. code-block:: shell
+
+  ./scripts/zephyr_module.py --twister-out module_tests.args
+  if [ -s module_tests.args ]; then
+      ./scripts/twister +module_tests.args --outdir module_tests ...
+  fi
+
 
 .. _modules-bin-blobs:
 

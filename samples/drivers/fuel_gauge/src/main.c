@@ -2,6 +2,7 @@
  * Copyright (c) 2023 Alvaro Garcia Gomez <maxpowel@gmail.com>
  * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * Copyright (c) 2026 Analog Devices Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,6 +88,8 @@ const char *fuel_gauge_prop_to_str(enum fuel_gauge_prop_type prop)
 		return "FUEL_GAUGE_STATE_OF_CHARGE_ALARM";
 	case FUEL_GAUGE_LOW_VOLTAGE_ALARM:
 		return "FUEL_GAUGE_LOW_VOLTAGE_ALARM";
+	case FUEL_GAUGE_THERM_VOLTAGE_UV:
+		return "FUEL_GAUGE_THERM_VOLTAGE_UV";
 	default:
 		return "Unknown fuel gauge property";
 	}
@@ -151,6 +154,7 @@ int main(void)
 			FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
 			FUEL_GAUGE_LOW_VOLTAGE_ALARM,
 			FUEL_GAUGE_STATE_OF_HEALTH,
+			FUEL_GAUGE_THERM_VOLTAGE_UV,
 		};
 
 		union fuel_gauge_prop_val test_vals[ARRAY_SIZE(test_props)];
@@ -340,11 +344,14 @@ int main(void)
 					case FUEL_GAUGE_LOW_VOLTAGE_ALARM:
 						LOG_INF("  Low voltage alarm: %" PRIu32,
 							test_vals[i].low_voltage_alarm);
-
+						break;
 					case FUEL_GAUGE_STATE_OF_HEALTH:
 						LOG_INF(" State of Health (SOH): %" PRIu32,
 							test_vals[i].state_of_health);
-
+						break;
+					case FUEL_GAUGE_THERM_VOLTAGE_UV:
+						LOG_INF(" Thermistor Voltage: %" PRIu32,
+							test_vals[i].therm_voltage_uv);
 						break;
 					}
 				}

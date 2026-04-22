@@ -20,4 +20,5 @@ supported:
   - uart
   - dma
   - comparator
+  - rtc
 vendor: infineon

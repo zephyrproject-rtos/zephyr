@@ -46,7 +46,9 @@ static struct bt_keys key_pool[CONFIG_BT_MAX_PAIRED];
 /* Configuration version used to detect if the device has configuration flags present in the stored
  * keys. Shall be higher than the maximum value of the `enc_size` field (16).
  */
-#define STORAGE_CFG_VERSION 17U
+#define STORAGE_CFG_VERSION_MIN		17U
+#define STORAGE_CFG_VERSION		17U
+BUILD_ASSERT(STORAGE_CFG_VERSION >= STORAGE_CFG_VERSION_MIN, "STORAGE_CFG_VERSION is too small");
 BUILD_ASSERT(STORAGE_CFG_VERSION <= UINT8_MAX, "STORAGE_CFG_VERSION is too large");
 /* Configuration flags for storage. Based on the bt_keys_cfg_flags enum. */
 #define STORAGE_CFG_FLAGS                                                                          \
@@ -424,7 +426,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return -ENOMEM;
 	}
 	if (len != BT_KEYS_STORAGE_LEN) {
-		if ((uint8_t)val[0] != (uint8_t)STORAGE_CFG_VERSION &&
+		if ((uint8_t)val[0] < (uint8_t)STORAGE_CFG_VERSION_MIN &&
 		    len == BT_KEYS_STORAGE_LEN_COMPAT) {
 			/* This check migrates keys without configuration flags to the new format
 			 * granted only the configuration version and flags are missing. Older keys
@@ -447,6 +449,35 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 			bt_keys_clear(keys);
 
 			return -EINVAL;
+		}
+	} else if (!IS_ENABLED(CONFIG_BT_SIGNING) && IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) &&
+		   (uint8_t)val[0] < (uint8_t)STORAGE_CFG_VERSION_MIN) {
+		/* Migrate `bt_keys` stored with extra data to the new format in the most common
+		 * scenario where both legacy pairing and signing support are disabled. This allows
+		 * to still properly load and use the keys after firmware upgrade.
+		 */
+		size_t load_size = BT_KEYS_STORAGE_LEN_COMPAT;
+
+		if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)) {
+			/* Restoring aging counter is not implemented for this use-case. */
+			LOG_WRN("Skip aging counter - keys for %s", bt_addr_le_str(&addr));
+			/* `aging_counter` is an `uint32_t` */
+			load_size -= sizeof(uint32_t);
+		}
+
+		if (len >= load_size) {
+			LOG_DBG("Adding configuration flags to keys for %s", bt_addr_le_str(&addr));
+			keys->cfg_version = STORAGE_CFG_VERSION;
+			sys_put_le24(STORAGE_CFG_FLAGS, keys->cfg_flags);
+			(void)memcpy((char *)keys + offsetof(struct bt_keys, enc_size),
+				     val, load_size);
+			/* Ensure no unsupported key types are set. */
+			keys->keys &= (BT_KEYS_IRK | BT_KEYS_LTK_P256);
+			if ((keys->keys & BT_KEYS_LTK_P256) == 0U) {
+				LOG_WRN("Dropping keys for %s, no SC LTK", bt_addr_le_str(&addr));
+				bt_keys_clear(keys);
+				return -EINVAL;
+			}
 		}
 	} else {
 		memcpy(keys->storage_start, val, len);

@@ -333,11 +333,6 @@ static int on_headers_complete(struct http_parser *parser)
 		return 1;
 	}
 
-	if (parser->status_code >= 500 && parser->status_code < 600) {
-		NET_DBG("Status %d, skipping body", parser->status_code);
-		return 1;
-	}
-
 	if ((req->method == HTTP_HEAD || req->method == HTTP_OPTIONS) &&
 	    req->internal.response.content_length > 0) {
 		NET_DBG("No body expected");

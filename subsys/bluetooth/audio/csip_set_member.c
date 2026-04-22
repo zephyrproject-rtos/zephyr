@@ -802,19 +802,17 @@ static void deferred_nfy_work_handler(struct k_work *work)
 
 static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void *data)
 {
-
 	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
 
 		for (size_t j = 0U; j < ARRAY_SIZE(svc_inst->clients); j++) {
 			/* Check if device is registered, it not, add it */
-			if (!atomic_test_bit(svc_inst->clients[j].flags, FLAG_ACTIVE)) {
-				atomic_set_bit(svc_inst->clients[j].flags, FLAG_ACTIVE);
+			if (!atomic_test_and_set_bit(svc_inst->clients[j].flags, FLAG_ACTIVE)) {
 				memcpy(&svc_inst->clients[j].addr, &info->addr,
 				       sizeof(bt_addr_le_t));
 				LOG_DBG("Added %s to bonded list\n",
 					bt_addr_le_str(&svc_inst->clients[j].addr));
-				return;
+				break;
 			}
 		}
 	}

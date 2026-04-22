@@ -423,7 +423,7 @@
 		};
 
 		bt_hci_bflb: bt-hci {
-			compatible = "bflb,bl70x-bt-hci";
+			compatible = "bflb,bt-hci";
 			status = "disabled";
 		};
 	};

@@ -70,9 +70,15 @@ static bool test_failed;
 static bool test_started;
 static bool do_timestamp;
 static bool timestamp_cb_called;
+static int self_unregister_called;
+static int unregister_other_called;
+static int unregistered_target_called;
 static struct net_if_timestamp_cb timestamp_cb;
 static struct net_if_timestamp_cb timestamp_cb_2;
 static struct net_if_timestamp_cb timestamp_cb_3;
+static struct net_if_timestamp_cb timestamp_cb_self_unregister;
+static struct net_if_timestamp_cb timestamp_cb_unregister_other;
+static struct net_if_timestamp_cb timestamp_cb_unregister_target;
 
 static K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
@@ -228,6 +234,31 @@ static void timestamp_callback_2(struct net_pkt *pkt)
 	}
 }
 
+static void timestamp_callback_self_unregister(struct net_pkt *pkt)
+{
+	self_unregister_called++;
+
+	net_if_unregister_timestamp_cb(&timestamp_cb_self_unregister);
+
+	net_pkt_unref(pkt);
+}
+
+static void timestamp_callback_unregister_target(struct net_pkt *pkt)
+{
+	unregistered_target_called++;
+
+	net_pkt_unref(pkt);
+}
+
+static void timestamp_callback_unregister_other(struct net_pkt *pkt)
+{
+	unregister_other_called++;
+
+	net_if_unregister_timestamp_cb(&timestamp_cb_unregister_target);
+
+	net_pkt_unref(pkt);
+}
+
 void test_timestamp_setup_2nd_iface(void)
 {
 	struct net_if *iface;
@@ -299,6 +330,64 @@ void test_timestamp_cleanup(void)
 	zassert_false(atomic_get(&pkt->atomic_ref) < 1, "Pkt %p released\n", pkt);
 
 	net_pkt_unref(pkt);
+}
+
+void test_timestamp_unregister_self(void)
+{
+	struct net_if *iface = eth_interfaces[0];
+	struct net_pkt *pkt;
+
+	self_unregister_called = 0;
+
+	net_if_register_timestamp_cb(&timestamp_cb_self_unregister, NULL, iface,
+				     timestamp_callback_self_unregister);
+
+	pkt = net_pkt_alloc_on_iface(iface, K_FOREVER);
+	net_if_call_timestamp_cb(pkt);
+
+	zassert_equal(self_unregister_called, 1,
+		      "Self unregister callback count %d",
+		      self_unregister_called);
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0,
+		      "Pkt %p not released\n", pkt);
+
+	pkt = net_pkt_alloc_on_iface(iface, K_FOREVER);
+	net_if_call_timestamp_cb(pkt);
+
+	zassert_equal(self_unregister_called, 1,
+		      "Self unregister callback called after removal");
+	zassert_true(atomic_get(&pkt->atomic_ref) > 0,
+		     "Pkt %p released\n", pkt);
+
+	net_pkt_unref(pkt);
+}
+
+void test_timestamp_unregister_other(void)
+{
+	struct net_if *iface = eth_interfaces[0];
+	struct net_pkt *pkt;
+
+	unregister_other_called = 0;
+	unregistered_target_called = 0;
+
+	net_if_register_timestamp_cb(&timestamp_cb_unregister_target, NULL, iface,
+				     timestamp_callback_unregister_target);
+	net_if_register_timestamp_cb(&timestamp_cb_unregister_other, NULL, iface,
+				     timestamp_callback_unregister_other);
+
+	pkt = net_pkt_alloc_on_iface(iface, K_FOREVER);
+	net_if_call_timestamp_cb(pkt);
+
+	zassert_equal(unregister_other_called, 1,
+		      "Unregister-other callback count %d",
+		      unregister_other_called);
+	zassert_equal(unregistered_target_called, 0,
+		      "Removed callback was still invoked");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0,
+		      "Pkt %p not released\n", pkt);
+
+	net_if_unregister_timestamp_cb(&timestamp_cb_unregister_other);
+	net_if_unregister_timestamp_cb(&timestamp_cb_unregister_target);
 }
 
 struct user_data {
@@ -493,5 +582,7 @@ ZTEST(net_tx_timestamp, test_tx_timestamp)
 	test_timestamp_setup_all();
 	test_check_timestamp_after_enabling();
 	test_timestamp_cleanup();
+	test_timestamp_unregister_self();
+	test_timestamp_unregister_other();
 }
 ZTEST_SUITE(net_tx_timestamp, NULL, NULL, NULL, NULL, NULL);

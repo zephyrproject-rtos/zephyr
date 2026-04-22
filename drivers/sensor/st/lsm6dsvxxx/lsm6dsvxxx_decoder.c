@@ -131,9 +131,11 @@ static int lsm6dsvxxx_decoder_get_frame_count(const uint8_t *buffer,
 			*frame_count = rdata->has_accel ? 1 : 0;
 			return 0;
 
+#if defined(CONFIG_LSM6DSVXXX_ENABLE_TEMP)
 		case SENSOR_CHAN_DIE_TEMP:
 			*frame_count = rdata->has_temp ? 1 : 0;
 			return 0;
+#endif
 
 		default:
 			*frame_count = 0;
@@ -606,15 +608,31 @@ static int lsm6dsvxxx_decode_sample(const uint8_t *buffer, struct sensor_chan_sp
 		}
 
 		struct sensor_three_axis_data *out = data_out;
+		struct sensor_q31_data *out_q31 = data_out;
 
 		out->header.base_timestamp_ns = edata->header.timestamp;
 		out->header.reading_count = 1;
-
 		out->shift = cfg->accel_bit_shift[header->accel_fs];
 
-		out->readings[0].x = Q31_SHIFT_MICROVAL(scale * edata->accel[0], out->shift);
-		out->readings[0].y = Q31_SHIFT_MICROVAL(scale * edata->accel[1], out->shift);
-		out->readings[0].z = Q31_SHIFT_MICROVAL(scale * edata->accel[2], out->shift);
+		if (chan_spec.chan_type == SENSOR_CHAN_ACCEL_XYZ) {
+			out->readings[0].x =
+			       Q31_SHIFT_MICROVAL(scale * edata->accel[0], out->shift);
+			out->readings[0].y =
+			       Q31_SHIFT_MICROVAL(scale * edata->accel[1], out->shift);
+			out->readings[0].z =
+			       Q31_SHIFT_MICROVAL(scale * edata->accel[2], out->shift);
+		} else if (chan_spec.chan_type == SENSOR_CHAN_ACCEL_X) {
+			out_q31->readings[0].value =
+			       Q31_SHIFT_MICROVAL(scale * edata->accel[0], out->shift);
+		} else if (chan_spec.chan_type == SENSOR_CHAN_ACCEL_Y) {
+			out_q31->readings[0].value =
+			       Q31_SHIFT_MICROVAL(scale * edata->accel[1], out->shift);
+		} else if (chan_spec.chan_type == SENSOR_CHAN_ACCEL_Z) {
+			out_q31->readings[0].value =
+			       Q31_SHIFT_MICROVAL(scale * edata->accel[2], out->shift);
+		} else {
+			return -ENOTSUP;
+		}
 		*fit = 1;
 		return 1;
 	}
@@ -674,10 +692,12 @@ static int lsm6dsvxxx_decoder_get_size_info(struct sensor_chan_spec chan_spec, s
 		*base_size = sizeof(struct sensor_three_axis_data);
 		*frame_size = sizeof(struct sensor_three_axis_sample_data);
 		return 0;
+#if defined(CONFIG_LSM6DSVXXX_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
 		*base_size = sizeof(struct sensor_q31_data);
 		*frame_size = sizeof(struct sensor_q31_sample_data);
 		return 0;
+#endif
 	default:
 		return -ENOTSUP;
 	}

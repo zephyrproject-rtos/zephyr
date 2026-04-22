@@ -2232,6 +2232,13 @@ static int supplicant_wps_pin(const struct device *dev, struct wifi_wps_config_p
 		if (zephyr_wpa_cli_cmd_resp(wpa_s->ctrl_conn, get_pin_cmd, params->pin)) {
 			goto out;
 		}
+
+		if (!wpa_cli_cmd_v("wps_pin any %s", params->pin)) {
+			goto out;
+		}
+
+		wpas_api_ctrl.dev = dev;
+		wpas_api_ctrl.requested_op = WPS_PIN;
 	} else if (params->oper == WIFI_WPS_PIN_SET) {
 		if (!wpa_cli_cmd_v("wps_check_pin %s", params->pin)) {
 			goto out;
@@ -2994,13 +3001,12 @@ int supplicant_p2p_oper(const struct device *dev, struct wifi_p2p_params *params
 				 join_str);
 			break;
 		case WIFI_P2P_METHOD_KEYPAD:
-			method_str = "keypad";
 			if (params->connect.pin[0] == '\0') {
 				wpa_printf(MSG_ERROR, "PIN required for keypad method");
 				return -EINVAL;
 			}
-			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s %s go_intent=%d%s%s",
-				 addr_str, method_str, params->connect.pin,
+			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s go_intent=%d%s%s",
+				 addr_str, params->connect.pin,
 				 params->connect.go_intent, freq_str, join_str);
 			break;
 		default:

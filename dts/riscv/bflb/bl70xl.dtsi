@@ -149,6 +149,30 @@
 		sram0: memory@42024000 {
 			compatible = "mmio-sram";
 			reg = <0x42024000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x42024000 DT_SIZE_K(64)>;
+
+			/*
+			 * When BLE is enabled, the hardware reserves exchange
+			 * memory (EM) at the top of SRAM (GLB_EM_SEL set in
+			 * soc_early_init_hook), reducing usable RAM:
+			 *
+			 *  - 8 KB EM (EM_SEL=0x3): 64 - 8 = 56 KB (default)
+			 *  - 16 KB EM (EM_SEL=0xF): 64 - 16 = 48 KB
+			 *    (BFLB_BL70XL_BLE_EM_16K / m8s1p variant)
+			 *
+			 * Point chosen zephyr,sram to the matching node.
+			 */
+			sram0_btle: sram@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(56)>;
+			};
+
+			sram0_btle_em16k: sram@c000 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(48)>;
+			};
 		};
 
 		pinctrl: pin-controller@40000000 {
@@ -334,6 +358,11 @@
 		reg_aon: regulator-aon@4000f000 {
 			compatible = "bflb,aon-regulator";
 			reg = <0x4000f000 0x1000>;
+		};
+
+		bt_hci_bflb: bt-hci {
+			compatible = "bflb,bt-hci";
+			status = "disabled";
 		};
 	};
 };

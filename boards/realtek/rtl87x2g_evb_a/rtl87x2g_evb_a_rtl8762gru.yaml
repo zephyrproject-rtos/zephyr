@@ -2,7 +2,7 @@ identifier: rtl87x2g_evb_a/rtl8762gru
 name: RTL87x2G Model A Evaluation Board with RTL8762GRU Daughter Board
 type: mcu
 arch: arm
-ram: 384
+ram: 100
 flash: 316
 toolchain:
   - zephyr

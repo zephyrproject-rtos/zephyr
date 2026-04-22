@@ -720,6 +720,117 @@ config BT_BIP
 	help
 	  This option enables the BIP profile
 
+config BT_PBAP
+	bool
+	select BT_GOEP
+	select PSA_WANT_ALG_MD5
+	help
+	  This option enables the PBAP profile
+
+config BT_PBAP_PSE
+	bool "Bluetooth PBAP Profile Server [EXPERIMENTAL]"
+	select BT_PBAP
+	help
+	  This option enables the PSE
+
+config BT_PBAP_PCE
+	bool "Bluetooth PBAP Profile Client [EXPERIMENTAL]"
+	select BT_PBAP
+	help
+	  This option enables the PCE
+
+if BT_PBAP_PSE
+
+config BT_PBAP_PSE_DOWNLOAD
+	bool "PBAP PSE Download feature"
+	default y
+	help
+	  Enable support for phone book download feature on PSE.
+
+config BT_PBAP_PSE_BROWSING
+	bool "PBAP PSE Browsing feature"
+	default y
+	help
+	  Enable support for phone book browsing feature on PSE.
+
+config BT_PBAP_PSE_DATABASE_IDENTIFIER
+	bool "PBAP PSE Database Identifier feature"
+	default y
+	help
+	  Enable support for database change tracking feature on PSE.
+
+config BT_PBAP_PSE_FOLDER_VERSION_COUNTERS
+	bool "PBAP PSE Folder Version Counters feature"
+	default y
+	help
+	  Enable support for folder version tracking feature on PSE.
+
+config BT_PBAP_PSE_VCARD_SELECTOR
+	bool "PBAP PSE vCard Selector feature"
+	default y
+	help
+	  Enable support for vCard property filtering feature on PSE.
+
+config BT_PBAP_PSE_ENHANCED_MISSED_CALLS
+	bool "PBAP PSE Enhanced Missed Calls feature"
+	default y
+	help
+	  Enable support for enhanced missed call handling feature on PSE.
+
+config BT_PBAP_PSE_UCI_VCARD_PROPERTY
+	bool "PBAP PSE UCI vCard Property feature"
+	default y
+	help
+	  Enable support for Unique Contact Identifier feature on PSE.
+
+config BT_PBAP_PSE_UID_VCARD_PROPERTY
+	bool "PBAP PSE UID vCard Property feature"
+	default y
+	help
+	  Enable support for vCard UID property feature on PSE.
+
+config BT_PBAP_PSE_CONTACT_REFERENCING
+	bool "PBAP PSE Contact Referencing feature"
+	default y
+	help
+	  Enable support for contact reference handling feature on PSE.
+
+config BT_PBAP_PSE_DEFAULT_CONTACT_IMAGE
+	bool "PBAP PSE Default Contact Image feature"
+	default y
+	help
+	  Enable support for default contact images feature on PSE.
+
+config BT_PBAP_PSE_REPOSITORY_LOCAL_PHONE_BOOK
+	bool "PBAP PSE Local phonebook Repository"
+	default y
+	help
+	  Enable support for local phone book repository on PSE.
+	  This includes contacts stored in device local memory.
+
+config BT_PBAP_PSE_REPOSITORY_SIM
+	bool "PBAP PSE SIM Repository"
+	default y
+	help
+	  Enable support for SIM card phone book repository on PSE.
+	  This includes contacts stored on the SIM card.
+
+config BT_PBAP_PSE_REPOSITORY_SPEED_DIAL
+	bool "PBAP PSE Speed Dial Repository"
+	default y
+	help
+	  Enable support for speed dial repository on PSE.
+	  This includes speed dial entries.
+
+config BT_PBAP_PSE_REPOSITORY_FAVORITES
+	bool "PBAP PSE Favorites Repository"
+	default y
+	help
+	  Enable support for favorites repository on PSE.
+	  This includes favorite contacts.
+
+endif # BT_PBAP_PSE
+
 endif # BT_CLASSIC
 
 endmenu

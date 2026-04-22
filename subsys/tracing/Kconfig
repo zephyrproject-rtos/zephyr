@@ -142,7 +142,7 @@ choice TRACING_BACKEND_CHOICE
 
 config TRACING_BACKEND_UART
 	bool "UART backend"
-	depends on UART_CONSOLE
+	depends on SERIAL
 
 	help
 	  Use UART to output tracing data.

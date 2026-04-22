@@ -51,13 +51,27 @@ class Shell:
         return False
 
     def exec_command(
-        self, command: str, timeout: float | None = None, print_output: bool = True
+        self,
+        command: str,
+        timeout: float | None = None,
+        print_output: bool = True,
+        *,
+        get_full_output: bool = False,
+        full_output_timeout: float | None = None,
     ) -> list[str]:
         """
         Send shell command to a device and return response. Passed command
         is extended by double enter sings - first one to execute this command
         on a device, second one to receive next prompt what is a signal that
         execution was finished. Method returns printout of the executed command.
+
+        :param get_full_output: If True, after the shell prompt is seen, keep
+            reading lines until ``full_output_timeout`` elapses (wall clock).
+            Use this when output (e.g. decoded logs) continues to arrive after
+            the prompt.
+        :param full_output_timeout: Seconds to spend draining additional lines
+            after the prompt. When ``get_full_output`` is True and this is
+            omitted, ``timeout`` (or :attr:`base_timeout`) is used.
         """
         timeout = timeout or self.base_timeout
         command_ext = f'{command}\n\n'
@@ -78,6 +92,24 @@ class Shell:
                 regex=regex_prompt, timeout=timeout, print_output=print_output
             )
         )
+        if get_full_output:
+            drain_budget = full_output_timeout if full_output_timeout is not None else timeout
+            lines.extend(self._read_lines_for_duration(drain_budget, print_output=print_output))
+        return lines
+
+    def _read_lines_for_duration(self, duration_s: float, print_output: bool) -> list[str]:
+        """Read lines from the device for up to ``duration_s`` wall-clock seconds."""
+        lines: list[str] = []
+        deadline = time.time() + duration_s
+        while time.time() < deadline:
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                break
+            try:
+                line = self._device.readline(timeout=min(0.2, remaining), print_output=print_output)
+                lines.append(line)
+            except TwisterHarnessTimeoutException:
+                pass
         return lines
 
     def get_filtered_output(self, command_lines: list[str]) -> list[str]:

@@ -19,6 +19,7 @@
 	#size-cells = <1>;
 
 	chosen {
+		zephyr,canbus = &fdcan1;
 		zephyr,console = &lpuart1;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,shell-uart = &lpuart1;
@@ -67,13 +68,13 @@
 
 &adc1 {
 	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
-		 <&rcc STM32_SRC_PSIK ADCDAC_SEL(2)>;
+		 <&rcc STM32_SRC_HSIK ADCDAC_SEL(3)>;
 	status = "okay";
 };
 
 &adc2 {
 	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
-		 <&rcc STM32_SRC_PSIK ADCDAC_SEL(2)>;
+		 <&rcc STM32_SRC_HSIK ADCDAC_SEL(3)>;
 	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc2_in12_ph4 &adc2_in13_ph5>; /* Arduino A1 & A2 */
 	pinctrl-names = "default";
@@ -101,6 +102,16 @@
 	status = "okay";
 };
 
+&clk_hsik {
+	clock-frequency = <DT_FREQ_M(32)>;
+	xsik-div = "4.5";
+	status = "okay";
+};
+
+&clk_hsis {
+	status = "okay";
+};
+
 &clk_lse {
 	status = "okay";
 };
@@ -109,14 +120,26 @@
 	status = "okay";
 };
 
-&clk_psis {
-	clock-frequency = <DT_FREQ_M(144)>;
+&clk_psik {
+	clock-frequency = <DT_FREQ_M(80)>;
+	xsik-div = "2";
 	status = "okay";
 };
 
-&clk_psik {
-	clock-frequency = <DT_FREQ_M(32)>;
-	xsik-div = "4.5";
+&clk_psis {
+	clock-frequency = <DT_FREQ_M(160)>;
+	status = "okay";
+};
+
+&fdcan1 {
+	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
+		 <&rcc STM32_SRC_PSIK FDCAN_SEL(2)>;
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
 
@@ -177,14 +200,20 @@
 };
 
 &rcc {
-	clocks = <&clk_psis>;
+	clocks = <&clk_hsis>;
 	clock-frequency = <DT_FREQ_M(144)>;
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <2>;
 	apb3-prescaler = <2>;
-	st,psi-frequency = <144>;
+	st,psi-frequency = <160>;
 	st,psi-source = "HSE";
+};
+
+&rng {
+	clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
+		 <&rcc STM32_SRC_CK48 CK48_SEL(2)>;
+	status = "okay";
 };
 
 &rtc {

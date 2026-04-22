@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
+ * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -294,6 +295,8 @@ struct ptp_msg {
 	} timestamp;
 	/** Reference counter. */
 	atomic_t ref;
+	/** True if transport layer provided RX hardware timestamp for this message. */
+	bool rx_timestamp_valid;
 	/** List object. */
 	sys_snode_t node;
 	/** Single-linked list of TLVs attached to the message. */

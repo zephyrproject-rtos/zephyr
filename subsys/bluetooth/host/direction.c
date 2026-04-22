@@ -477,8 +477,7 @@ static bool valid_conn_cte_tx_params(const struct bt_df_conn_cte_tx_param *param
 	/* If AoD is not enabled, ant_ids are ignored by controller:
 	 * BT Core spec 5.2 Vol 4, Part E sec. 7.8.84.
 	 */
-	if ((params->cte_types & BT_DF_CTE_TYPE_AOD_1US ||
-	     params->cte_types & BT_DF_CTE_TYPE_AOD_1US) &&
+	if ((params->cte_types & (BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US)) &&
 	    (params->num_ant_ids < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
 	     params->num_ant_ids > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX || !params->ant_ids ||
 	     !BT_FEAT_LE_ANT_SWITCH_TX_AOD(bt_dev.le.features))) {

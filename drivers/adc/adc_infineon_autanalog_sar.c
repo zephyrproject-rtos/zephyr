@@ -16,7 +16,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
-#include <ifx_autanalog.h>
+#include <infineon_autanalog.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -48,6 +48,7 @@ enum ifx_autanalog_sar_vref_source {
 
 struct ifx_autanalog_sar_adc_config {
 	void (*irq_func)(void);
+	const struct device *mfd;
 	enum ifx_autanalog_sar_vref_source vref_source;
 	bool linear_cal;
 	bool offset_cal;
@@ -64,9 +65,9 @@ struct ifx_autanalog_sar_adc_data {
 	struct adc_context ctx;
 	const struct device *dev;
 	/* Conversion Buffer */
-	uint16_t *conversion_buffer;
+	uint32_t *conversion_buffer;
 	/* Repeat buffer for continuous sampling */
-	uint16_t *repeat_buffer;
+	uint32_t *repeat_buffer;
 	/* Conversion result */
 	int conversion_result;
 	/* Bitmask of enabled channels */
@@ -293,6 +294,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct ifx_autanalog_sar_adc_data *data =
 		CONTAINER_OF(ctx, struct ifx_autanalog_sar_adc_data, ctx);
+	const struct ifx_autanalog_sar_adc_config *cfg = data->dev->config;
 	const struct adc_sequence *sequence = &ctx->sequence;
 	uint32_t result_status;
 
@@ -319,7 +321,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	}
 
 	/* Stop the Autonomous Controller while we reconfigure the sequencer */
-	ifx_autanalog_pause_sar_autonomous_control();
+	ifx_autanalog_pause_autonomous_control(cfg->mfd);
 	result_status = Cy_AutAnalog_SAR_LoadHSseqTable(0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS,
 							&data->pdl_adc_seq_hs_cfg_obj[0]);
 	if (result_status != CY_AUTANALOG_SUCCESS) {
@@ -329,7 +331,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		return;
 	}
 
-	ifx_autanalog_start_sar_autonomous_control();
+	ifx_autanalog_start_autonomous_control(cfg->mfd);
 	Cy_AutAnalog_SAR_ClearHSchanResultStatus(0, sequence->channels);
 	Cy_AutAnalog_FwTrigger(CY_AUTANALOG_FW_TRIGGER0);
 
@@ -380,7 +382,7 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 {
 	struct ifx_autanalog_sar_adc_data *data = dev->data;
 
-	if (sequence->buffer_size < (sizeof(int16_t) * POPCOUNT(sequence->channels))) {
+	if (sequence->buffer_size < (sizeof(int32_t) * POPCOUNT(sequence->channels))) {
 		LOG_ERR("Buffer too small");
 		return -ENOMEM;
 	}
@@ -653,6 +655,11 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 	struct ifx_autanalog_sar_adc_data *data = dev->data;
 	cy_en_autanalog_status_t result_val;
 
+	if (!device_is_ready(cfg->mfd)) {
+		LOG_ERR("AutAnalog MFD device not ready");
+		return -ENODEV;
+	}
+
 	memset(data->autanalog_channel_cfg, 0xFF, sizeof(data->autanalog_channel_cfg));
 
 	data->dev = dev;
@@ -705,6 +712,7 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 	static void ifx_autanalog_sar_adc_config_func_##n(void);                                   \
 	static const struct ifx_autanalog_sar_adc_config ifx_autanalog_sar_adc_config_##n = {      \
 		.irq_func = ifx_autanalog_sar_adc_config_func_##n,                                 \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
 		.vref_source = DT_INST_ENUM_IDX(n, vref_source),                                   \
 		.linear_cal = DT_INST_PROP(n, linear_cal),                                         \
 		.offset_cal = DT_INST_PROP(n, offset_cal)};                                        \
@@ -720,8 +728,9 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
                                                                                                    \
 	static void ifx_autanalog_sar_adc_config_func_##n(void)                                    \
 	{                                                                                          \
-		ifx_autanalog_register_adc_handler(ifx_autanalog_sar_adc_isr,                      \
-						   DEVICE_DT_INST_GET(n));                         \
+		ifx_autanalog_set_irq_handler(DEVICE_DT_GET(DT_INST_PARENT(n)),                    \
+					      DEVICE_DT_INST_GET(n), IFX_AUTANALOG_PERIPH_SAR_ADC, \
+					      ifx_autanalog_sar_adc_isr);                          \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_AUTANALOG_SAR_ADC_INIT)

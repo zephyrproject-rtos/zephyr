@@ -36,4 +36,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           issue_labels: Backport
           labels_template: '["Backport"]'
-          body_template: "Backport <%= mergeCommitSha %> from #<%= number %>.\n\n<%= body %>"
+          body_template: "Backport <%= mergeCommitSha %> from #<%= number %>.\n\n_Original PR description:_\n\n---\n\n<%= body %>"

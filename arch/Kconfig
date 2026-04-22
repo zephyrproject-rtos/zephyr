@@ -599,9 +599,36 @@ config GEN_SW_ISR_TABLE
 	depends on GEN_ISR_TABLES
 	help
 	  This option controls whether a platform using gen_isr_tables
-	  needs a software ISR table table created. This is an array of struct
-	  _isr_table_entry containing the interrupt service routine and supplied
-	  parameter.
+	  needs a software ISR table created.
+	  It can be generated as either an array or a switch-case.
+	  See CONFIG_GEN_SW_ISR_TABLE_TYPE.
+
+choice GEN_SW_ISR_TABLE_TYPE
+	prompt "Allows to chose how ISR table is implemented"
+	depends on GEN_SW_ISR_TABLE
+	default GEN_SW_ISR_TABLE_ARRAY
+	help
+	  CONFIG_GEN_SW_ISR_TABLE_ARRAY is a default option.
+	  It should be used when in doubt.
+	  GEN_SW_ISR_TABLE_SWITCH allows for binary size optimization
+	  in certain scenarios, but may also increase latency, to execution of ISR with higher number, if there is significant number of ISR assigned in your system.
+
+config GEN_SW_ISR_TABLE_ARRAY
+	bool "Generate an array of ISR entries"
+	help
+	  This is an array of struct _isr_table_entry containing
+	  the interrupt service routine and supplied parameter.
+	  All interrupts have their own entry.
+
+config GEN_SW_ISR_TABLE_SWITCH
+	bool "Generate a function with a switch-case"
+	help
+	  Use a switch-case instead of an array.
+	  This helps to limit binary size when most of the IRQs are not used.
+	  In such case common, duplicated entries are grouped in a single default block
+	  while few used interrupts have their own case blocks.
+
+endchoice
 
 config ARCH_SW_ISR_TABLE_ALIGN
 	int "Alignment size of a software ISR table"

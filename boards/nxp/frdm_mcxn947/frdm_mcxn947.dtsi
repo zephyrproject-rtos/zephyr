@@ -358,6 +358,10 @@ arduino_serial: &flexcomm2_lpuart2 {};
 	};
 };
 
+&enet_ptp_clock {
+	status = "okay";
+};
+
 &flexpwm1_pwm0 {
 	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
 	pinctrl-names = "default";

@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define BT_AICS_MAX_OUTPUT_DESCRIPTION_SIZE 16
 
 static struct bt_vcp_vol_rend_register_param vcp_register_param;
-static struct bt_vcp_vol_ctlr *vol_ctlr;
+static struct bt_vcp_vol_ctlr *vol_ctlrs[CONFIG_BT_MAX_CONN];
 static struct bt_vcp_included included;
 extern struct btp_aics_instance aics_server_instance;
 extern struct btp_aics_instance aics_client_instance;
@@ -65,7 +65,23 @@ struct service_handles {
 	} aics_handles;
 };
 
-struct service_handles chrc_handles;
+static struct service_handles chrc_handles[CONFIG_BT_MAX_CONN];
+
+static struct bt_vcp_vol_ctlr *lookup_vol_ctlr_by_addr(const bt_addr_le_t *addr)
+{
+	struct bt_conn *conn;
+	struct bt_vcp_vol_ctlr *ctlr;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
+	if (conn == NULL) {
+		return NULL;
+	}
+
+	ctlr = vol_ctlrs[bt_conn_index(conn)];
+	bt_conn_unref(conn);
+
+	return ctlr;
+}
 
 /* Volume Control Service */
 static uint8_t vcs_supported_commands(const void *cmd, uint16_t cmd_len,
@@ -654,6 +670,7 @@ static void vcp_vol_ctlr_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err, 
 				     uint8_t aics_count)
 {
 	struct bt_conn *conn;
+	uint8_t conn_idx;
 
 	if (err) {
 		LOG_DBG("Discovery failed (%d)", err);
@@ -664,11 +681,14 @@ static void vcp_vol_ctlr_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err, 
 		vocs_count, aics_count);
 
 	bt_vcp_vol_ctlr_conn_get(vol_ctlr, &conn);
+	conn_idx = bt_conn_index(conn);
 
 	if (bt_vcp_vol_ctlr_included_get(vol_ctlr, &included) != 0) {
 		LOG_DBG("Could not get included services");
-		memset(&chrc_handles.vocs_handles, 0, sizeof(chrc_handles.vocs_handles));
-		memset(&chrc_handles.aics_handles, 0, sizeof(chrc_handles.aics_handles));
+		(void)memset(&chrc_handles[conn_idx].vocs_handles, 0,
+			     sizeof(chrc_handles[conn_idx].vocs_handles));
+		(void)memset(&chrc_handles[conn_idx].aics_handles, 0,
+			     sizeof(chrc_handles[conn_idx].aics_handles));
 	} else {
 		aics_client_instance.aics_cnt = included.aics_cnt;
 		aics_client_instance.aics = included.aics;
@@ -679,22 +699,22 @@ static void vcp_vol_ctlr_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err, 
 			CONTAINER_OF(vol_ctlr->vocs[0], struct bt_vocs_client, vocs);
 		struct bt_aics_client *aics_cli = &vol_ctlr->aics[0]->cli;
 
-		chrc_handles.vocs_handles.state = vocs_cli->state_handle;
-		chrc_handles.vocs_handles.location = vocs_cli->location_handle;
-		chrc_handles.vocs_handles.control = vocs_cli->control_handle;
-		chrc_handles.vocs_handles.desc = vocs_cli->desc_handle;
-		chrc_handles.aics_handles.state = aics_cli->state_handle;
-		chrc_handles.aics_handles.gain = aics_cli->gain_handle;
-		chrc_handles.aics_handles.type = aics_cli->type_handle;
-		chrc_handles.aics_handles.status = aics_cli->status_handle;
-		chrc_handles.aics_handles.control = aics_cli->control_handle;
-		chrc_handles.aics_handles.desc = aics_cli->desc_handle;
+		chrc_handles[conn_idx].vocs_handles.state = vocs_cli->state_handle;
+		chrc_handles[conn_idx].vocs_handles.location = vocs_cli->location_handle;
+		chrc_handles[conn_idx].vocs_handles.control = vocs_cli->control_handle;
+		chrc_handles[conn_idx].vocs_handles.desc = vocs_cli->desc_handle;
+		chrc_handles[conn_idx].aics_handles.state = aics_cli->state_handle;
+		chrc_handles[conn_idx].aics_handles.gain = aics_cli->gain_handle;
+		chrc_handles[conn_idx].aics_handles.type = aics_cli->type_handle;
+		chrc_handles[conn_idx].aics_handles.status = aics_cli->status_handle;
+		chrc_handles[conn_idx].aics_handles.control = aics_cli->control_handle;
+		chrc_handles[conn_idx].aics_handles.desc = aics_cli->desc_handle;
 	}
 
-	chrc_handles.vcp_handles.ctrl_pt = vol_ctlr->control_handle;
-	chrc_handles.vcp_handles.flags = vol_ctlr->vol_flag_handle;
-	chrc_handles.vcp_handles.state = vol_ctlr->state_handle;
-	btp_send_vcp_found_ev(conn, err, &chrc_handles);
+	chrc_handles[conn_idx].vcp_handles.ctrl_pt = vol_ctlr->control_handle;
+	chrc_handles[conn_idx].vcp_handles.flags = vol_ctlr->vol_flag_handle;
+	chrc_handles[conn_idx].vcp_handles.state = vol_ctlr->state_handle;
+	btp_send_vcp_found_ev(conn, err, &chrc_handles[conn_idx]);
 }
 
 static void vcp_vol_ctlr_state_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err, uint8_t volume,
@@ -805,6 +825,7 @@ static uint8_t vcp_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 {
 	const struct btp_vcp_discover_cmd *cp = cmd;
 	struct bt_conn *conn;
+	uint8_t conn_idx;
 	int err;
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -813,7 +834,10 @@ static uint8_t vcp_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 		return BTP_STATUS_FAILED;
 	}
 
-	err = bt_vcp_vol_ctlr_discover(conn, &vol_ctlr);
+	conn_idx = bt_conn_index(conn);
+
+	err = bt_vcp_vol_ctlr_discover(conn, &vol_ctlrs[conn_idx]);
+	bt_conn_unref(conn);
 	if (err) {
 		LOG_DBG("Fail: %d", err);
 		return BTP_STATUS_FAILED;
@@ -824,9 +848,16 @@ static uint8_t vcp_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 
 static uint8_t vcp_state_read(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
+	const struct btp_vcp_state_read_cmd *cp = cmd;
+	struct bt_vcp_vol_ctlr *vol_ctlr;
 	int err;
 
 	LOG_DBG("VCP State read");
+
+	vol_ctlr = lookup_vol_ctlr_by_addr(&cp->address);
+	if (vol_ctlr == NULL) {
+		return BTP_STATUS_FAILED;
+	}
 
 	err = bt_vcp_vol_ctlr_read_state(vol_ctlr);
 	if (err) {
@@ -839,9 +870,16 @@ static uint8_t vcp_state_read(const void *cmd, uint16_t cmd_len, void *rsp, uint
 static uint8_t vcp_volume_flags_read(const void *cmd, uint16_t cmd_len, void *rsp,
 				     uint16_t *rsp_len)
 {
+	const struct btp_vcp_flags_read_cmd *cp = cmd;
+	struct bt_vcp_vol_ctlr *vol_ctlr;
 	int err;
 
 	LOG_DBG("VCP Volume Flags read");
+
+	vol_ctlr = lookup_vol_ctlr_by_addr(&cp->address);
+	if (vol_ctlr == NULL) {
+		return BTP_STATUS_FAILED;
+	}
 
 	err = bt_vcp_vol_ctlr_read_flags(vol_ctlr);
 	if (err) {
@@ -853,9 +891,16 @@ static uint8_t vcp_volume_flags_read(const void *cmd, uint16_t cmd_len, void *rs
 
 static uint8_t vcp_ctlr_vol_down(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
+	const struct btp_vcp_ctlr_vol_down_cmd *cp = cmd;
+	struct bt_vcp_vol_ctlr *vol_ctlr;
 	int err;
 
 	LOG_DBG("VCP CTLR Volume down");
+
+	vol_ctlr = lookup_vol_ctlr_by_addr(&cp->address);
+	if (vol_ctlr == NULL) {
+		return BTP_STATUS_FAILED;
+	}
 
 	err = bt_vcp_vol_ctlr_vol_down(vol_ctlr);
 	if (err) {
@@ -867,9 +912,16 @@ static uint8_t vcp_ctlr_vol_down(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 static uint8_t vcp_ctlr_vol_up(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
+	const struct btp_vcp_ctlr_vol_up_cmd *cp = cmd;
+	struct bt_vcp_vol_ctlr *vol_ctlr;
 	int err;
 
 	LOG_DBG("VCP CTLR Volume up");
+
+	vol_ctlr = lookup_vol_ctlr_by_addr(&cp->address);
+	if (vol_ctlr == NULL) {
+		return BTP_STATUS_FAILED;
+	}
 
 	err = bt_vcp_vol_ctlr_vol_up(vol_ctlr);
 	if (err) {
@@ -882,9 +934,16 @@ static uint8_t vcp_ctlr_vol_up(const void *cmd, uint16_t cmd_len, void *rsp, uin
 static uint8_t vcp_ctlr_unmute_vol_down(const void *cmd, uint16_t cmd_len, void *rsp,
 					uint16_t *rsp_len)
 {
+	const struct btp_vcp_ctlr_unmute_vol_down_cmd *cp = cmd;
+	struct bt_vcp_vol_ctlr *vol_ctlr;
 	int err;
 
 	LOG_DBG("VCP CTLR Unmute, vol down");
+
+	vol_ctlr = lookup_vol_ctlr_by_addr(&cp->address);
+	if (vol_ctlr == NULL) {
+		return BTP_STATUS_FAILED;
+	}
 
 	err = bt_vcp_vol_ctlr_unmute_vol_down(vol_ctlr);
 	if (err) {
@@ -897,9 +956,16 @@ static uint8_t vcp_ctlr_unmute_vol_down(const void *cmd, uint16_t cmd_len, void 
 static uint8_t vcp_ctlr_unmute_vol_up(const void *cmd, uint16_t cmd_len, void *rsp,
 				      uint16_t *rsp_len)
 {
+	const struct btp_vcp_ctlr_unmute_vol_up_cmd *cp = cmd;
+	struct bt_vcp_vol_ctlr *vol_ctlr;
 	int err;
 
 	LOG_DBG("VCP CTLR Unmute, Volume up");
+
+	vol_ctlr = lookup_vol_ctlr_by_addr(&cp->address);
+	if (vol_ctlr == NULL) {
+		return BTP_STATUS_FAILED;
+	}
 
 	err = bt_vcp_vol_ctlr_unmute_vol_up(vol_ctlr);
 	if (err) {
@@ -912,9 +978,15 @@ static uint8_t vcp_ctlr_unmute_vol_up(const void *cmd, uint16_t cmd_len, void *r
 static uint8_t vcp_ctlr_set_vol(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_vcp_ctlr_set_vol_cmd *cp = cmd;
+	struct bt_vcp_vol_ctlr *vol_ctlr;
 	int err;
 
 	LOG_DBG("VCP CTLR Set absolute volume %d", cp->volume);
+
+	vol_ctlr = lookup_vol_ctlr_by_addr(&cp->address);
+	if (vol_ctlr == NULL) {
+		return BTP_STATUS_FAILED;
+	}
 
 	err = bt_vcp_vol_ctlr_set_vol(vol_ctlr, cp->volume);
 	if (err) {
@@ -926,9 +998,16 @@ static uint8_t vcp_ctlr_set_vol(const void *cmd, uint16_t cmd_len, void *rsp, ui
 
 static uint8_t vcp_ctlr_unmute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
+	const struct btp_vcp_ctlr_unmute_cmd *cp = cmd;
+	struct bt_vcp_vol_ctlr *vol_ctlr;
 	int err;
 
 	LOG_DBG("VCP CTLR Unmute");
+
+	vol_ctlr = lookup_vol_ctlr_by_addr(&cp->address);
+	if (vol_ctlr == NULL) {
+		return BTP_STATUS_FAILED;
+	}
 
 	err = bt_vcp_vol_ctlr_unmute(vol_ctlr);
 	if (err) {
@@ -940,9 +1019,16 @@ static uint8_t vcp_ctlr_unmute(const void *cmd, uint16_t cmd_len, void *rsp, uin
 
 static uint8_t vcp_ctlr_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
+	const struct btp_vcp_ctlr_mute_cmd *cp = cmd;
+	struct bt_vcp_vol_ctlr *vol_ctlr;
 	int err;
 
 	LOG_DBG("VCP CTLR Mute");
+
+	vol_ctlr = lookup_vol_ctlr_by_addr(&cp->address);
+	if (vol_ctlr == NULL) {
+		return BTP_STATUS_FAILED;
+	}
 
 	err = bt_vcp_vol_ctlr_mute(vol_ctlr);
 	if (err) {

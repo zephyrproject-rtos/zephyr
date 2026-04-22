@@ -467,3 +467,6 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
       - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}.overlay"
+  drivers.spi.mspm0.loopback:
+    platform_allow:
+      - lp_mspm0g3507

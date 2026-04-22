@@ -88,7 +88,7 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 			 */
 			nrfx_twi_disable(&data->twi);
 			(void)i2c_nrfx_twi_recover_bus(dev);
-			ret = -EIO;
+			ret = -ETIMEDOUT;
 			break;
 		}
 

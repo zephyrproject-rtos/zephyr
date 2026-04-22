@@ -7,8 +7,8 @@
 #include <helpers/nrfx_gppi.h>
 #if defined(NRFX_GPPI_MULTI_DOMAIN) && !defined(NRFX_GPPI_FIXED_CONNECTIONS)
 #include <soc/interconnect/nrfx_gppi_d2ppi.h>
-#elif defined(CONFIG_SOC_NRF54H20_CPUAPP)
-#include <nrfx_gppi_nrf54h_global.h>
+#elif defined(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL)
+#include <nrfx_gppi_sd2ppi_global.h>
 #elif defined(CONFIG_SOC_NRF54H20_CPURAD)
 #include <nrfx_gppi_cpurad.h>
 #endif
@@ -51,7 +51,7 @@ static int gppi_init(void)
 			NRFX_BIT_MASK(DPPIC20_GROUP_NUM_SIZE) & ~NRFX_DPPI20_GROUPS_USED);
 	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC30,
 			NRFX_BIT_MASK(DPPIC30_GROUP_NUM_SIZE) & ~NRFX_DPPI30_GROUPS_USED);
-#elif defined(CONFIG_SOC_NRF54H20_CPUAPP)
+#elif defined(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL)
 	gppi_instance.routes = nrfx_gppi_routes_get();
 	gppi_instance.route_map = nrfx_gppi_route_map_get();
 	gppi_instance.nodes = nrfx_gppi_nodes_get();
@@ -67,10 +67,14 @@ static int gppi_init(void)
 		BIT_MASK(DT_PROP(DT_NODELABEL(dppic133), channels)));
 	nrfx_gppi_channel_init(NRFX_GPPI_NODE_DPPIC134,
 		BIT_MASK(DT_PROP(DT_NODELABEL(dppic134), channels)));
+#if DT_NODE_EXISTS(DT_NODELABEL(dppic135))
 	nrfx_gppi_channel_init(NRFX_GPPI_NODE_DPPIC135,
 		BIT_MASK(DT_PROP(DT_NODELABEL(dppic135), channels)));
+#endif
+#if DT_NODE_EXISTS(DT_NODELABEL(dppic136))
 	nrfx_gppi_channel_init(NRFX_GPPI_NODE_DPPIC136,
 		BIT_MASK(DT_PROP(DT_NODELABEL(dppic136), channels)));
+#endif
 	nrfx_gppi_channel_init(NRFX_GPPI_NODE_DPPIC120,
 		BIT_MASK(DT_PROP(DT_NODELABEL(dppic120), channels)));
 
@@ -85,10 +89,14 @@ static int gppi_init(void)
 		BIT_MASK(DT_PROP(DT_NODELABEL(dppic133), groups)));
 	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC134,
 		BIT_MASK(DT_PROP(DT_NODELABEL(dppic134), groups)));
+#if DT_NODE_EXISTS(DT_NODELABEL(dppic135))
 	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC135,
 		BIT_MASK(DT_PROP(DT_NODELABEL(dppic135), groups)));
+#endif
+#if DT_NODE_EXISTS(DT_NODELABEL(dppic136))
 	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC136,
 		BIT_MASK(DT_PROP(DT_NODELABEL(dppic136), groups)));
+#endif
 	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC120,
 		BIT_MASK(DT_PROP(DT_NODELABEL(dppic120), groups)));
 
@@ -101,10 +109,14 @@ static int gppi_init(void)
 			BIT_MASK(DT_PROP(DT_NODELABEL(ppib134), channels)));
 	nrfx_gppi_channel_init(NRFX_GPPI_NODE_PPIB130_135,
 			BIT_MASK(DT_PROP(DT_NODELABEL(ppib135), channels)));
+#if DT_NODE_EXISTS(DT_NODELABEL(dppic135))
 	nrfx_gppi_channel_init(NRFX_GPPI_NODE_PPIB131_136,
 			BIT_MASK(DT_PROP(DT_NODELABEL(ppib136), channels)));
+#endif
+#if DT_NODE_EXISTS(DT_NODELABEL(dppic136))
 	nrfx_gppi_channel_init(NRFX_GPPI_NODE_PPIB131_137,
 			BIT_MASK(DT_PROP(DT_NODELABEL(ppib137), channels)));
+#endif
 	nrfx_gppi_channel_init(NRFX_GPPI_NODE_PPIB131_121,
 			BIT_MASK(DT_PROP(DT_NODELABEL(ppib121), channels)));
 #elif defined(CONFIG_SOC_NRF54H20_CPURAD)

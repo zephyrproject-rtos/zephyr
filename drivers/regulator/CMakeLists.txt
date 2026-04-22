@@ -7,6 +7,7 @@ zephyr_library_sources(regulator_common.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_SHELL regulator_shell.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_include_directories_ifdef(CONFIG_REGULATOR_ADP5360 ${ZEPHYR_BASE}/drivers/mfd)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_ADP5360 regulator_adp5360.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_AXP192_AXP2101 regulator_axp192.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_BFLB regulator_bflb.c)

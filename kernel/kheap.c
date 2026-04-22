@@ -197,9 +197,10 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 		key = k_spin_lock(&heap->lock);
 	}
 
+	k_spin_unlock(&heap->lock, key);
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, realloc, heap, ptr, bytes, timeout, ret);
 
-	k_spin_unlock(&heap->lock, key);
 	return ret;
 }
 

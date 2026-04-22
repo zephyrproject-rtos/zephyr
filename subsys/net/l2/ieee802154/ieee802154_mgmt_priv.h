@@ -12,7 +12,7 @@
 #ifndef __IEEE802154_MGMT_PRIV_H__
 #define __IEEE802154_MGMT_PRIV_H__
 
-#include "ieee802154_frame.h"
+#include <zephyr/net/ieee802154_frame.h>
 
 #ifdef CONFIG_NET_MGMT
 

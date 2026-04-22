@@ -113,10 +113,6 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
-	k_busy_wait(10);
-#endif
-
 	int cpol = (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0;
 	int cpha = (SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0;
 
@@ -132,10 +128,6 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	if (ret) {
 		return -EINVAL;
 	}
-
-#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
-	k_busy_wait(1);
-#endif
 
 	ret = MXC_SPI_SetDataSize(regs, SPI_WORD_SIZE_GET(config->operation));
 	if (ret) {
@@ -162,10 +154,6 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	if (ret) {
 		return -EINVAL;
 	}
-#endif
-
-#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
-	k_busy_wait(1);
 #endif
 
 	data->ctx.config = config;
@@ -330,12 +318,12 @@ static int spi_max32_transceive(const struct device *dev)
 		len = sqe->rx.buf_len;
 		data->req.rxData = sqe->rx.buf;
 		data->req.rxLen = sqe->rx.buf_len;
-#ifndef CONFIG_SPI_MAX32_DMA
-		if (data->req.rxData == NULL) {
+		if (data->req.rxData == NULL &&
+		    (COND_CODE_1(IS_ENABLED(CONFIG_SPI_MAX32_DMA),
+				 (cfg->rx_dma.channel == 0xFF), (true)))) {
 			data->req.rxData = data->dummy;
 			data->req.rxLen = 0;
 		}
-#endif
 		data->req.txData = NULL;
 		data->req.txLen = len;
 		break;
@@ -359,12 +347,12 @@ static int spi_max32_transceive(const struct device *dev)
 		data->req.rxData = sqe->txrx.rx_buf;
 		data->req.txLen = len;
 		data->req.rxLen = len;
-#ifndef CONFIG_SPI_MAX32_DMA
-		if (data->req.rxData == NULL) {
+		if (data->req.rxData == NULL &&
+		    (COND_CODE_1(IS_ENABLED(CONFIG_SPI_MAX32_DMA),
+				 (cfg->rx_dma.channel == 0xFF), (true)))) {
 			data->req.rxData = data->dummy;
 			data->req.rxLen = 0;
 		}
-#endif
 		break;
 	default:
 		break;
@@ -1061,8 +1049,7 @@ static void spi_max32_isr(const struct device *dev)
 	mxc_spi_regs_t *spi = cfg->regs;
 	uint32_t flags;
 
-	flags = MXC_SPI_GetFlags(spi);
-	MXC_SPI_ClearFlags(spi);
+	flags = MXC_SPI_GetAndClearFlags(spi);
 
 #if defined(CONFIG_SPI_MAX32_DMA) && defined(CONFIG_SPI_MAX32_RTIO)
 	if (cfg->tx_dma.channel != 0xFF && cfg->rx_dma.channel != 0xFF) {

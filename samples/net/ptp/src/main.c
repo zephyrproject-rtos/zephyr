@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
+ * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,14 +50,14 @@ static int get_current_status(void)
 	case PTP_PS_PRE_TIME_TRANSMITTER:
 	case PTP_PS_PASSIVE:
 	case PTP_PS_UNCALIBRATED:
-		printk("FAIL\n");
+		LOG_INF("FAIL");
 		return 0;
 	case PTP_PS_TIME_RECEIVER:
-		printk("TIME RECEIVER\n");
+		LOG_INF("TIME RECEIVER");
 		return 2;
 	case PTP_PS_TIME_TRANSMITTER:
 	case PTP_PS_GRAND_MASTER:
-		printk("TIME TRANSMITTER\n");
+		LOG_INF("TIME TRANSMITTER");
 		return 1;
 	}
 
@@ -69,8 +70,11 @@ void init_testing(void)
 	int ret;
 
 	if (run_duration == 0) {
+		LOG_INF("Runs forever");
 		return;
 	}
+
+	LOG_INF("Stopping after %u seconds", run_duration);
 
 	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
@@ -79,8 +83,7 @@ void init_testing(void)
 
 	k_sem_take(&quit_lock, K_FOREVER);
 
-	LOG_INF("Stopping after %u seconds",
-		(k_uptime_get_32() - uptime) / 1000);
+	LOG_INF("Stopped after %u seconds", (k_uptime_get_32() - uptime) / 1000);
 
 	/* Try to figure out what is the sync state.
 	 * Return:
@@ -91,6 +94,8 @@ void init_testing(void)
 	 */
 	ret = get_current_status();
 
+	/* sleep gives deferred logs time to flush */
+	k_msleep(2000);
 	exit(ret);
 }
 

@@ -48,4 +48,27 @@ config ILM_MAX_SIZE
 	int "ILM Size in kB"
 	default 4
 
+config SOC_IT51XXX_SIGNATURE_FLAG
+	hex "Hardware mirror signature flag"
+	range 0x0 0xFF
+	default 0xB4
+	help
+	  Hardware mirror signature flag.
+
+config SOC_IT51XXX_CMP_RANGE_ADDR
+	hex "Comparison range address"
+	range 0x0 0xFF
+	default 0xAA
+	help
+	  Specifies the comparison range address [17:10] between e-flash and SPI
+	  flash. When bit[5] of SOC_IT51XXX_SIGNATURE_FLAG is set (1'b1), this
+	  option must be 0xAA.
+
+config SOC_IT51XXX_SIGNATURE_DATA_EXTENSION
+	bool "Custom signature extension"
+	help
+	  Enable project-specific signature extension data appended to the vector
+	  table. When enabled, signature_custom.S is included into the SoC vector
+	  layout. The custom signature extension starts at offset 0x50.
+
 endif # SOC_SERIES_IT51XXX

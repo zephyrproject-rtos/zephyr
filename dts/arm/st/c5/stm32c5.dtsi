@@ -16,6 +16,8 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
+		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -102,6 +104,20 @@
 		};
 	};
 
+	mcos {
+		mco1: mco1 {
+			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
+			status = "disabled";
+		};
+
+		mco2: mco2 {
+			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		adc1: adc@42028000 {
 			compatible = "st,stm32n6-adc", "st,stm32-adc";
@@ -118,6 +134,14 @@
 			st,adc-internal-regulator = "startup-hw-status";
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
+			status = "disabled";
+		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
+			resets = <&rctl STM32_RESET(AHB1, 12)>;
 			status = "disabled";
 		};
 
@@ -174,9 +198,9 @@
 			};
 
 			/* "FLASH read-only area" */
-			flash@bfa0500 {
+			flash@8fff800 {
 				compatible = "st,stm32-nvm-otp";
-				reg = <0x0bfa0500 1536>; /* 1.5KB */
+				reg = <0x8fff800 1536>; /* 1.5KB */
 
 				nvmem-layout {
 					compatible = "fixed-layout";
@@ -321,6 +345,16 @@
 				compatible = "st,stm32-rcc-rctl";
 				#reset-cells = <1>;
 			};
+		};
+
+		rng: rng@420c0800 {
+			compatible = "st,stm32-rng";
+			reg = <0x420c0800 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 18)>;
+			interrupts = <64 0>;
+			nist-config = <0x8451f00>;
+			health-test-config = <0xaac7>;
+			status = "disabled";
 		};
 
 		rtc: rtc@44007800 {

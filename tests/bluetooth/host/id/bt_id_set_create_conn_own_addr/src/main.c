@@ -83,7 +83,7 @@ ZTEST(bt_id_set_create_conn_own_addr, test_setting_conn_own_rpa_address_no_priva
 	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_RPA_LE_ADDR);
 
 	/* This will make set_random_address() succeeds and returns 0 */
-	bt_addr_copy(&bt_dev.random_addr.a, &BT_RPA_LE_ADDR->a);
+	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
 
 	err = bt_id_set_create_conn_own_addr(false, &own_addr_type);
 

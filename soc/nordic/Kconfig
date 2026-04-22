@@ -219,7 +219,7 @@ endchoice
 config NRF_SKIP_CLOCK_CONFIG
 	bool
 	prompt "Skip clock frequency configuration" if TRUSTED_EXECUTION_SECURE
-	depends on NRF_PLATFORM_LUMOS
+	depends on SOC_SERIES_NRF54L || SOC_SERIES_NRF71
 	default y if TRUSTED_EXECUTION_NONSECURE
 	help
 	  With this option, the CPU clock frequency is not set during system initialization.
@@ -233,18 +233,13 @@ config NRF_TRACE_PORT
 	  Unit) for tracing using a hardware probe. If disabled, the trace
 	  pins will be used as GPIO.
 
-config NRF_PLATFORM_HALTIUM
-	bool
+config NRF_CUSTOM_ON_ENTER_CPU_IDLE_HOOK
+	bool "Custom on enter CPU idle hook"
+	depends on ARM_ON_ENTER_CPU_IDLE_HOOK
 	help
-	  SoC series based on the Nordic nRF Haltium platform need to select
-	  this option. This allows to easily enable common functionality on
-	  SoCs based on the Haltium platform.
-
-config NRF_PLATFORM_LUMOS
-	bool
-	help
-	  SoC series based on the Nordic nRF Lumos platform such as nRF54Lx
-	  series. This allows to easily enable common functionality on
-	  SoCs based on the Lumos platform.
+	  Select this option to use a custom on enter CPU idle hook. If enabled,
+	  the hook is implemented by the user. It is the user's responsibility to
+	  implement the SoC-specific code in the hook that is present in the default
+	  implementation.
 
 endif # SOC_FAMILY_NORDIC_NRF

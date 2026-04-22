@@ -154,6 +154,11 @@ config NET_SHELL_POWER_MANAGEMENT_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_POWER_MANAGEMENT
 
+config NET_SHELL_PTP_SUPPORTED
+	bool "PTP monitoring"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || PTP
+
 config NET_SHELL_ROUTE_SUPPORTED
 	bool "IP routing config"
 	default y
@@ -206,6 +211,11 @@ config NET_SHELL_WIREGUARD_SUPPORTED
 	bool "Wireguard VPN config and status"
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || WIREGUARD_SHELL
+
+config NET_SHELL_QUIC_SUPPORTED
+	bool "Quic connectivity status"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || QUIC_SHELL
 
 config NET_SHELL_DYN_CMD_COMPLETION
 	bool "Network shell dynamic command completion"

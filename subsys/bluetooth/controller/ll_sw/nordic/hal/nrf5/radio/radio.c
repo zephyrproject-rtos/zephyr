@@ -2044,7 +2044,7 @@ void radio_gpio_pa_lna_disable(void)
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN || HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(EASYVDMA_PRESENT)
 struct ccm_job_ptr {
 	void *ptr;
 	struct {
@@ -2073,9 +2073,9 @@ static struct {
 	struct ccm_job_ptr out[6];
 } ccm_job;
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* EASYVDMA_PRESENT */
 static uint8_t MALIGN(4) _ccm_scratch[(HAL_RADIO_PDU_LEN_MAX - 4) + 16];
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* EASYVDMA_PRESENT */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_SYNC_ISO)
 static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_type, void *pkt)
@@ -2220,7 +2220,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	NRF_CCM->MAXPACKETSIZE = CLAMP((max_len - PDU_MIC_SIZE), 0x001B, 0x00FB);
 #endif
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(EASYVDMA_PRESENT)
 	/* Configure the CCM key, nonce and pointers */
 	NRF_CCM->KEY.VALUE[3] = sys_get_be32(&cnf->key[0]);
 	NRF_CCM->KEY.VALUE[2] = sys_get_be32(&cnf->key[4]);
@@ -2294,7 +2294,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_END);
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* EASYVDMA_PRESENT */
 	NRF_CCM->CNFPTR = (uint32_t)cnf;
 	NRF_CCM->INPTR = (uint32_t)_pkt_scratch;
 	NRF_CCM->OUTPTR = (uint32_t)pkt;
@@ -2306,7 +2306,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* EASYVDMA_PRESENT */
 
 	return _pkt_scratch;
 }
@@ -2409,7 +2409,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	NRF_CCM->MAXPACKETSIZE = CLAMP((max_len - PDU_MIC_SIZE), 0x001B, 0x00FB);
 #endif
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(EASYVDMA_PRESENT)
 	/* Configure the CCM key, nonce and pointers */
 	NRF_CCM->KEY.VALUE[3] = sys_get_be32(&cnf->key[0]);
 	NRF_CCM->KEY.VALUE[2] = sys_get_be32(&cnf->key[4]);
@@ -2480,7 +2480,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_START);
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* EASYVDMA_PRESENT */
 	NRF_CCM->CNFPTR = (uint32_t)cnf;
 	NRF_CCM->INPTR = (uint32_t)pkt;
 	NRF_CCM->OUTPTR = (uint32_t)_pkt_scratch;
@@ -2492,7 +2492,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* EASYVDMA_PRESENT */
 
 	return _pkt_scratch;
 }
@@ -2533,7 +2533,7 @@ void radio_ccm_disable(void)
 #endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(EASYVDMA_PRESENT)
 struct aar_job_ptr {
 	void *ptr;
 	struct {
@@ -2572,9 +2572,9 @@ static struct {
 	/* NOTE: Refer to the AAR section in the SoC product specification for details */
 } aar_job;
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* EASYVDMA_PRESENT */
 static uint8_t MALIGN(4) _aar_scratch[3];
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* EASYVDMA_PRESENT */
 
 void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 {
@@ -2612,7 +2612,7 @@ void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(EASYVDMA_PRESENT)
 	/* Input, Resolvable Address Hash offset in the legacy or extended advertising PDU.
 	 * Radio packet pointer offset by 3 compared to legacy AAR in nRF51/52/53 SoCs that took
 	 * Radio packet pointer value.
@@ -2656,12 +2656,12 @@ void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 	NRF_AAR->OUT.PTR = (uint32_t)&aar_job.out[0];
 	NRF_AAR->MAXRESOLVED = AAR_JOB_OUT_MAX_RESOLVED;
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* EASYVDMA_PRESENT */
 	NRF_AAR->NIRK = nirk;
 	NRF_AAR->IRKPTR = (uint32_t)irk;
 	NRF_AAR->ADDRPTR = addrptr;
 	NRF_AAR->SCRATCHPTR = (uint32_t)&_aar_scratch[0];
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* EASYVDMA_PRESENT */
 
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_END);
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_RESOLVED);
@@ -2676,11 +2676,11 @@ void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 
 uint32_t radio_ar_match_get(void)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(EASYVDMA_PRESENT)
 	return aar_job.status;
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* EASYVDMA_PRESENT */
 	return NRF_AAR->STATUS;
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* EASYVDMA_PRESENT */
 }
 
 void radio_ar_status_reset(void)
@@ -2743,7 +2743,7 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos) &
 			  AAR_ENABLE_ENABLE_Msk;
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(EASYVDMA_PRESENT)
 	/* Input, Resolvable Address Hash offset in the supplied address buffer */
 	aar_job.in[0].ptr = (void *)&addr[BDADDR_HASH_OFFSET];
 
@@ -2759,9 +2759,9 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 	NRF_AAR->OUT.PTR = (uint32_t)&aar_job.out[0];
 	NRF_AAR->MAXRESOLVED = AAR_JOB_OUT_MAX_RESOLVED;
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* EASYVDMA_PRESENT */
 	NRF_AAR->ADDRPTR = (uint32_t)addr - 3;
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* EASYVDMA_PRESENT */
 
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_END);
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_RESOLVED);

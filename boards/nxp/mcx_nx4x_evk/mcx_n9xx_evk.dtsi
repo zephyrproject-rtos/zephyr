@@ -16,3 +16,7 @@
 &dac2 {
 	status = "okay";
 };
+
+&enet_ptp_clock {
+	status = "okay";
+};

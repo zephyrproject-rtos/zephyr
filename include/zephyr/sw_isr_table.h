@@ -41,14 +41,18 @@ struct _isr_table_entry {
 	void (*isr)(const void *);
 };
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
 /* The software ISR table itself, an array of these structures indexed by the
  * irq line
  */
 extern
 #ifndef CONFIG_DYNAMIC_INTERRUPTS
-const
-#endif
-struct _isr_table_entry _sw_isr_table[];
+	const
+#endif /* CONFIG_DYNAMIC_INTERRUPTS */
+	struct _isr_table_entry _sw_isr_table[];
+#elif defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+extern void __sw_isr_table get_isr_entry(int irq_number, struct _isr_table_entry *entry);
+#endif /* CONFIG_GEN_SW_ISR_TABLE_ARRAY */
 
 struct _irq_parent_entry {
 	const struct device *dev;

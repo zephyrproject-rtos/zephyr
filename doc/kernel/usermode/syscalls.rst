@@ -166,7 +166,7 @@ the project out directory under ``include/generated/``:
   API call, but the sensor subsystem is not enabled, the weak verifier
   will be invoked instead.
 
-* An unmarshalling function is defined in ``include/generated/<name>_mrsh.c``
+* An unmarshalling function is defined in ``include/generated/zephyr/syscalls/<name>_mrsh.c``
 
 The body of the API is created in the generated system header. Using the
 example of :c:func:`k_sem_init()`, this API is declared in

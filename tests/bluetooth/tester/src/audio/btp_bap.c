@@ -472,6 +472,11 @@ static const struct btp_handler bap_handlers[] = {
 		.func = btp_bap_broadcast_assistant_set_broadcast_code,
 	},
 	{
+		.opcode = BTP_BAP_BROADCAST_SINK_SET_BROADCAST_CODE,
+		.expect_len = sizeof(struct btp_bap_broadcast_sink_set_broadcast_code_cmd),
+		.func = btp_bap_set_sink_broadcast_code,
+	},
+	{
 		.opcode = BTP_BAP_SEND_PAST,
 		.expect_len = sizeof(struct btp_bap_send_past_cmd),
 		.func = btp_bap_broadcast_assistant_send_past,

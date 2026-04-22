@@ -72,6 +72,12 @@
 			};
 		};
 
+		spi2: spi@4046c000 {
+			compatible = "ti,mspm0-spi";
+			reg = <0x4046c000 0x2000>;
+			status = "disabled";
+		};
+
 		canfd0: can@40508000 {
 			compatible = "ti,mspm0-canfd";
 			reg = <0x40508000 0x8000>, <0x4050f000 0x1000>, <0x40508000 0x400>;

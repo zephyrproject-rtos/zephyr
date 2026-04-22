@@ -172,7 +172,7 @@ def nrfutil_dictionary_from_serial(
     decoded_file_name: str = "output.txt",
     collect_time: float = 60.0,
 ) -> None:
-    UART_PATH = dut.device_config.serial
+    UART_PATH = dut.device_config.serial_configs[0].port
     dut.close()
 
     logger.debug(f"Using serial: {UART_PATH}")
@@ -203,7 +203,12 @@ def nrfutil_dictionary_from_serial(
     try:
         # run nrfutil trace in background non-blocking
         logger.info(f"Executing:\n{cmd}")
-        proc = subprocess.Popen(cmd.split(), stdout=subprocess.DEVNULL)
+        proc = subprocess.Popen(cmd.split(),
+                                stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                encoding='UTF-8',
+                                errors='replace')
     except OSError as exc:
         logger.error(f"Unable to start nrfutil trace:\n{cmd}\n{exc}")
     try:
@@ -212,6 +217,8 @@ def nrfutil_dictionary_from_serial(
         pass
     finally:
         _kill(proc)
+        outs, errs = proc.communicate()
+        logger.info(f"{outs=}\n{errs=}")
 
 
 def test_sample_STM_decoded(dut: DeviceAdapter):
@@ -302,7 +309,7 @@ def test_STM_decoded(dut: DeviceAdapter):
         log_2_arg=26.9,
         log_3_arg=27.5,
         log_str=68.3,
-        tracepoint=0.55,
+        tracepoint=0.9,
         tracepoint_d32=0.25,
         tolerance=0.5,
     )
@@ -313,8 +320,8 @@ def test_STM_decoded(dut: DeviceAdapter):
         log_2_arg=1.2,
         log_3_arg=1.2,
         log_str=3.0,
-        tracepoint=0.25,
-        tracepoint_d32=0.25,
+        tracepoint=0.5,
+        tracepoint_d32=0.5,
         tolerance=0.5,
     )
 

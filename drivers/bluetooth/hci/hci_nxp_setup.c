@@ -534,7 +534,7 @@ static uint16_t fw_upload_wait_length(uint8_t flag)
 	}
 
 	len = sys_get_le16(buffer);
-	len_comp = sys_get_le16(buffer);
+	len_comp = sys_get_le16(&buffer[2]);
 
 	if ((len ^ len_comp) == 0xFFFF) {
 		LOG_DBG("remote asks for %d bytes", len);
@@ -734,7 +734,9 @@ static int fw_upload_write_hdr_and_payload(uint16_t len_to_send, uint8_t *buffer
 		}
 
 		if (fw_upload_len_valid(fw_upload.last_5bytes_buffer, &len_to_send) == 0) {
-			fw_upload_send_ack(V1_REQUEST_ACK);
+			uint8_t ack = V1_REQUEST_ACK;
+
+			fw_upload_write_data(&ack, sizeof(ack));
 			LOG_DBG("BOOT_HEADER_ACK 0x5a sent");
 		}
 	}

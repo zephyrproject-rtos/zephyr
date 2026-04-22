@@ -32,7 +32,7 @@ ZTEST_SUITE(bt_id_set_adv_random_addr_invalid_cases, NULL, NULL, NULL, NULL, NUL
 ZTEST(bt_id_set_adv_random_addr_invalid_cases, test_null_adv_params_reference)
 {
 	expect_assert();
-	bt_id_set_adv_random_addr(NULL, &BT_RPA_LE_ADDR->a);
+	bt_id_set_adv_random_addr(NULL, BT_RPA_ADDR);
 }
 
 /*
@@ -94,7 +94,7 @@ ZTEST(bt_id_set_adv_random_addr_invalid_cases, test_bt_hci_cmd_alloc_returns_nul
 
 	bt_hci_cmd_alloc_fake.return_val = NULL;
 
-	err = bt_id_set_adv_random_addr(&adv_param, &BT_RPA_LE_ADDR->a);
+	err = bt_id_set_adv_random_addr(&adv_param, BT_RPA_ADDR);
 
 	zassert_true(err < 0, "Unexpected error code '%d' was returned", err);
 }
@@ -128,7 +128,7 @@ ZTEST(bt_id_set_adv_random_addr_invalid_cases, test_bt_hci_cmd_send_sync_fails)
 	bt_hci_cmd_alloc_fake.return_val = &net_buff;
 	bt_hci_cmd_send_sync_fake.return_val = -1;
 
-	err = bt_id_set_adv_random_addr(&adv_param, &BT_RPA_LE_ADDR->a);
+	err = bt_id_set_adv_random_addr(&adv_param, BT_RPA_ADDR);
 
 	zassert_true(err < 0, "Unexpected error code '%d' was returned", err);
 }

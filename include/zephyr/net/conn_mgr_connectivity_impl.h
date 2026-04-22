@@ -42,6 +42,22 @@ struct conn_mgr_conn_binding;
  */
 struct conn_mgr_conn_api {
 	/**
+	 * @brief When called, the connectivity implementation should return whether it
+	 * has the configuration needed to attempt a connection.
+	 *
+	 * If this check fails on a non-persistent connection, the interface is never
+	 * brought up and @a connect is never called.
+	 *
+	 * An example of this check is whether a WiFi connectivity binding has been configured
+	 * with an SSID to connect to.
+	 *
+	 * Must be non-blocking.
+	 *
+	 * Called by @ref conn_mgr_if_connect.
+	 */
+	bool (*has_connection_config)(struct conn_mgr_conn_binding *const binding);
+
+	/**
 	 * @brief When called, the connectivity implementation should start attempting to
 	 * establish connectivity (association with a network) for the bound iface pointed
 	 * to by if_conn->iface.

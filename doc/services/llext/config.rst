@@ -98,9 +98,9 @@ Another option controls block size.
 :kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE`
 
         Block size in bytes for LLEXT :c:type:`sys_mem_blocks_t` heap(s).
-        Must be equal to or a multiple of ``LLEXT_PAGE_SIZE``. The block size
-        must also be equal to or a multiple of the largest alignment needed
-        for any extension region. If
+        Must be equal to or a multiple of ``LLEXT_PAGE_SIZE`` if MMU or MPU
+        are enabled. The block size must also be equal to or a multiple of the
+        largest alignment needed for any extension region. If
         :kconfig:option:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT` is
         selected and regions are large, an unreasonably large block size may be
         needed to satisfy alignment requirements.
@@ -136,11 +136,11 @@ Then create a file in the same directory as your :file:`CMakeFiles.txt` named
 
 .. code-block:: none
 
-   #ifdef CONFIG_LLEXT
+   #if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
    *(.llext_heap)
    *(.llext_ext_heap)
    *(.llext_metadata_heap)
-   #endif /* CONFIG_LLEXT */
+   #endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
 
 For ARC, the Harvard instruction and data heap sections (``.llext_instr_heap``
 and ``.llext_data_heap``) are placed in instruction and data memory at the
@@ -154,8 +154,7 @@ architecture, you will need to manually place ``.llext_instr_heap`` and
    ``.llext_instr_heap`` is placed in is not writable at the time the
    extensions are loaded and linked.
 
-Placements can also be specified, or default placements overridden, by
-providing a custom linker script.
+Placements can also be specified by providing a custom linker script.
 
 :kconfig:option:`CONFIG_CUSTOM_LINKER_SCRIPT`
 
@@ -168,6 +167,17 @@ providing a custom linker script.
         This is useful when an application needs to add sections into the
         linker script and avoid having to change the script provided by
         Zephyr.
+
+While using a custom linker script, you may need to override default
+placements. For example, you may wish to include
+:file:`include/zephyr/linker/common-noinit.ld` in your linker script
+but place the heap section(s) elsewhere. To do this, select the following
+option.
+
+:kconfig:option:`CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT`
+
+        Remove default placements of LLEXT heap sections in the linker script,
+        allowing the user to place the heap(s) themselves.
 
 .. _llext_kconfig_type:
 

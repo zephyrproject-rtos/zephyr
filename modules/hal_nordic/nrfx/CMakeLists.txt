@@ -139,9 +139,7 @@ zephyr_library_sources_ifdef(CONFIG_HAS_NORDIC_RAM_CTRL       ${HELPERS_DIR}/nrf
 
 if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
   zephyr_library_sources_ifdef(CONFIG_HAS_HW_NRF_PPI ${HELPERS_DIR}/nrfx_gppi_ppi.c)
-  if(CONFIG_SOC_SERIES_NRF54H OR CONFIG_SOC_SERIES_NRF54L OR CONFIG_SOC_SERIES_NRF71 OR CONFIG_HAS_HW_NRF_DPPIC)
-    zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi.c)
-  endif()
+  zephyr_library_sources_ifndef(CONFIG_HAS_HW_NRF_PPI ${HELPERS_DIR}/nrfx_gppi_dppi.c)
   if(CONFIG_SOC_COMPATIBLE_NRF54LX OR CONFIG_SOC_SERIES_NRF71)
     zephyr_library_sources(${BSP_DIR}/soc/interconnect/nrfx_gppi_d2ppi.c)
   endif()
@@ -247,6 +245,7 @@ endif()
 
 zephyr_compile_definitions_ifdef(CONFIG_NRF_SKIP_CLOCK_CONFIG NRF_SKIP_CLOCK_CONFIGURATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_DISABLE_FICR_TRIMCNF NRF_DISABLE_FICR_TRIMCNF)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_TAMPC_SETUP NRF_SKIP_TAMPC_SETUP)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE NRF_SKIP_GLITCHDETECTOR_DISABLE)
 zephyr_compile_definitions_ifndef(CONFIG_SOC_NRF54L_ANOMALY_56_WORKAROUND NRF54L_CONFIGURATION_56_ENABLE=0)
 

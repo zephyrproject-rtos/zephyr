@@ -14,6 +14,7 @@ This incorporates results from various other scripts:
 '''
 
 import argparse
+import contextlib
 import glob
 import html
 import io
@@ -27,6 +28,8 @@ import subprocess
 import sys
 import webbrowser
 from datetime import datetime
+from functools import partial
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
 import jinja2
@@ -386,6 +389,7 @@ class ZephyrDashboard:
             str(self.elf_file),
             '-z',
             str(self.zephyr_base.absolute()),
+            f'--workspace={self.topdir}',
             '--json',
             str(self.output_path / '{target}_report.json'),
             '--quiet',
@@ -773,10 +777,18 @@ class ZephyrDashboard:
     def open_browser(self):
         '''
         Open the default web browser to the index page of the dashboard.
+
+        Uses a one-shot HTTP server so that the browser loads from
+        http://localhost, which works reliably across most platforms.
         '''
 
-        fname = self.output_path / "index.html"
-        webbrowser.open(str(fname))
+        handler = partial(SimpleHTTPRequestHandler, directory=str(self.output_path))
+        server = HTTPServer(("127.0.0.1", 0), handler)
+        url = f"http://127.0.0.1:{server.server_port}/index.html"
+        logger.info("Serving dashboard at %s (Ctrl+C to stop)", url)
+        webbrowser.open(url)
+        with contextlib.suppress(KeyboardInterrupt):
+            server.serve_forever()
 
 
 def parse_args():

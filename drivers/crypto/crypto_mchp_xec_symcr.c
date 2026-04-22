@@ -9,9 +9,8 @@
 #include <errno.h>
 #include <string.h>
 #include <zephyr/kernel.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/crypto/crypto.h>
-#include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(xec_symcr, CONFIG_CRYPTO_LOG_LEVEL);
@@ -116,9 +115,8 @@ struct xec_symcr_hash_session {
 };
 
 struct xec_symcr_config {
-	uint32_t regbase;
-	const struct device *clk_dev;
-	struct mchp_xec_pcr_clk_ctrl clk_ctrl;
+	mm_reg_t regbase;
+	uint8_t enc_pcr;
 	uint8_t irq_num;
 	uint8_t girq;
 	uint8_t girq_pos;
@@ -495,16 +493,8 @@ static int xec_symcr_init(const struct device *dev)
 	const struct xec_symcr_config *cfg = dev->config;
 	int ret;
 
-	if (!device_is_ready(cfg->clk_dev)) {
-		LOG_ERR("clock device not ready");
-		return -ENODEV;
-	}
-
-	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t *)&cfg->clk_ctrl);
-	if (ret < 0) {
-		LOG_ERR("clock on error %d", ret);
-		return ret;
-	}
+	/* clear PCR sleep enable bit for this controller */
+	soc_xec_pcr_sleep_en_clear(cfg->enc_pcr);
 
 	ret = mchp_xec_rom_ah_dma_init(MCHP_ROM_AH_DMA_INIT_WITH_RESET);
 	if (ret) {
@@ -520,29 +510,23 @@ static DEVICE_API(crypto, xec_symcr_api) = {
 	.hash_free_session = xec_symcr_hash_session_free,
 };
 
-#define XEC_SYMCR_PCR_INFO(i)						\
-	MCHP_XEC_PCR_SCR_ENCODE(DT_INST_CLOCKS_CELL(i, regidx),		\
-				DT_INST_CLOCKS_CELL(i, bitpos),		\
-				DT_INST_CLOCKS_CELL(i, domain))
+#define XEC_SYMCR_DT_GIRQ(inst)     MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, 0))
+#define XEC_SYMCR_DT_GIRQ_POS(inst) MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, 0))
 
-#define XEC_SYMCR_INIT(inst)								\
-											\
-	static struct xec_symcr_data xec_symcr_data_##inst;				\
-											\
-	static const struct xec_symcr_config xec_symcr_cfg_##inst = {			\
-		.regbase = DT_INST_REG_ADDR(inst),					\
-		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),			\
-		.clk_ctrl = {								\
-			.pcr_info = XEC_SYMCR_PCR_INFO(inst),				\
-		},									\
-		.irq_num = DT_INST_IRQN(inst),						\
-		.girq = DT_INST_PROP_BY_IDX(inst, girqs, 0),				\
-		.girq_pos = DT_INST_PROP_BY_IDX(inst, girqs, 1),			\
-	};										\
-											\
-	DEVICE_DT_INST_DEFINE(inst, &xec_symcr_init, NULL,				\
-			      &xec_symcr_data_##inst, &xec_symcr_cfg_##inst,		\
-			      POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,			\
+#define XEC_SYMCR_INIT(inst)                                                                       \
+                                                                                                   \
+	static struct xec_symcr_data xec_symcr_data_##inst;                                        \
+                                                                                                   \
+	static const struct xec_symcr_config xec_symcr_cfg_##inst = {                              \
+		.regbase = (mm_reg_t)DT_INST_REG_ADDR(inst),                                       \
+		.irq_num = DT_INST_IRQN(inst),                                                     \
+		.enc_pcr = DT_INST_PROP(inst, pcr),                                                \
+		.girq = (uint8_t)XEC_SYMCR_DT_GIRQ(inst),                                          \
+		.girq_pos = (uint8_t)XEC_SYMCR_DT_GIRQ_POS(inst),                                  \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &xec_symcr_init, NULL, &xec_symcr_data_##inst,                 \
+			      &xec_symcr_cfg_##inst, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,     \
 			      &xec_symcr_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_SYMCR_INIT)

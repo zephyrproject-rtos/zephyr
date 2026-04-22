@@ -2315,15 +2315,16 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	ARG_UNUSED(net_conn);
 	ARG_UNUSED(proto);
 
+	th = th_get(pkt);
+	if (th == NULL || th_off(th) < 5) {
+		goto out;
+	}
+
 	conn = tcp_conn_search(pkt);
 	if (conn) {
 		goto in;
 	}
 
-	th = th_get(pkt);
-	if (th == NULL || th_off(th) < 5) {
-		goto out;
-	}
 
 	if (th_flags(th) & SYN && !(th_flags(th) & ACK)) {
 		struct tcp *conn_old = ((struct net_context *)user_data)->tcp;
@@ -4280,7 +4281,7 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 	struct tcphdr *th = th_get(pkt);
 	enum net_verdict verdict = NET_DROP;
 
-	if (th && (th_off(th) < 5)) {
+	if (th && (th_off(th) >= 5)) {
 		struct tcp *conn = tcp_conn_search(pkt);
 
 		if (conn == NULL && SYN == th_flags(th)) {

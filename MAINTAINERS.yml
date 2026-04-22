@@ -165,6 +165,7 @@ ADI Platforms:
   files:
     - boards/adi/
     - boards/common/*adi*
+    - boards/shields/ad_apardpfw_sl/
     - boards/shields/eval*ardz/
     - boards/shields/pmod_acl/
     - drivers/*/*max*
@@ -180,6 +181,7 @@ ADI Platforms:
     - dts/bindings/*/adi,*
     - dts/bindings/*/lltc,*
     - dts/bindings/*/maxim,*
+    - dts/vendor/adi/
     - soc/adi/
   files-regex:
     - ^drivers/(adc|dac|gpio|mfd|regulator)/.*adp?\d+
@@ -212,7 +214,6 @@ ARM Platforms:
   status: maintained
   maintainers:
     - wearyzen
-  collaborators:
     - ithinuel
   files:
     - boards/arm/mps*/
@@ -238,6 +239,7 @@ ARM SiP SVC:
     - include/zephyr/drivers/sip_svc/
     - drivers/sip_svc/
     - samples/subsys/sip_svc/
+    - dts/bindings/sip_svc/
   labels:
     - "area: ARM SiP SVC"
   tests:
@@ -247,10 +249,10 @@ ARM arch:
   status: maintained
   maintainers:
     - wearyzen
+    - ithinuel
   collaborators:
     - MaureenHelm
     - stephanosio
-    - ithinuel
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -398,6 +400,7 @@ Base OS:
     - peter-mitsis
   files:
     - include/zephyr/sys/
+    - include/zephyr/zvfs/eventfd.h
     - lib/os/
     - tests/misc/print_format/
     - tests/lib/p4workq/
@@ -467,6 +470,7 @@ Biometrics Drivers:
     - drivers/biometrics/
     - dts/bindings/biometrics/
     - include/zephyr/drivers/biometrics.h
+    - include/zephyr/drivers/biometrics/
     - samples/drivers/biometrics/
     - tests/drivers/biometrics/
     - doc/hardware/peripherals/biometrics.rst
@@ -891,7 +895,7 @@ CMSIS API layer:
   collaborators:
     - nashif
   files:
-    - subsys/portability/
+    - subsys/portability/cmsis*/
     - include/zephyr/portability/cmsis*
     - samples/subsys/portability/cmsis_rtos_v*/
     - tests/subsys/portability/cmsis_rtos_v*/
@@ -973,6 +977,7 @@ Cache:
     - drivers/cache/
     - tests/kernel/cache/
     - doc/hardware/cache/
+    - dts/bindings/cache/
   labels:
     - "area: Cache"
   tests:
@@ -1051,6 +1056,7 @@ DAP:
     - maxd-nordic
   files:
     - include/zephyr/drivers/swdp.h
+    - include/zephyr/dap/
     - drivers/dp/
     - subsys/dap/
     - samples/subsys/dap/
@@ -1212,6 +1218,7 @@ Disk:
   files:
     - include/zephyr/storage/disk_access.h
     - include/zephyr/drivers/disk.h
+    - include/zephyr/drivers/disk/
     - drivers/disk/
     - subsys/disk/
     - subsys/sd/
@@ -1248,6 +1255,7 @@ Display drivers:
     - include/zephyr/dt-bindings/display/
     - include/zephyr/drivers/display.h
     - include/zephyr/display/
+    - include/zephyr/drivers/display/
     - include/zephyr/drivers/display.h
     - subsys/fb/
     - samples/subsys/display/
@@ -1353,6 +1361,8 @@ Documentation Infrastructure:
     - tests/drivers/audio/
   labels:
     - "area: Audio"
+  tests:
+    - drivers.audio
 
 "Drivers: Aux display":
   status: maintained
@@ -1431,6 +1441,8 @@ Documentation Infrastructure:
     - tests/drivers/crc/
   labels:
     - "area: CRC"
+  tests:
+    - drivers.crc
 
 "Drivers: Charger":
   status: maintained
@@ -1662,6 +1674,7 @@ Documentation Infrastructure:
   files:
     - drivers/eeprom/
     - include/zephyr/drivers/eeprom/eeprom_fake.h
+    - include/zephyr/drivers/eeprom/
     - dts/bindings/mtd/*eeprom*
     - include/zephyr/drivers/eeprom.h
     - samples/drivers/eeprom/
@@ -1770,12 +1783,15 @@ Documentation Infrastructure:
     - yongxu-wang15
   files:
     - drivers/firmware/
+    - tests/drivers/firmware/
     - include/zephyr/drivers/firmware/
     - dts/bindings/firmware/
     - doc/hardware/arch/arm-scmi.rst
     - samples/drivers/firmware/
   labels:
     - "area: Firmware"
+  tests:
+    - drivers.firmware
 
 "Drivers: Flash":
   status: maintained
@@ -1808,8 +1824,6 @@ Documentation Infrastructure:
     - aaronemassey
     - DBS06
     - teburd
-  collaborators:
-    - DBS06
   files:
     - drivers/fuel_gauge/
     - dts/bindings/fuel-gauge/
@@ -1862,6 +1876,7 @@ Documentation Infrastructure:
     - include/zephyr/dt-bindings/gpio/
     - tests/drivers/gpio/
     - tests/drivers/build_all/gpio/
+    - samples/drivers/gpio/
   labels:
     - "area: GPIO"
   tests:
@@ -1907,8 +1922,12 @@ Documentation Infrastructure:
     - drivers/hwspinlock/
     - dts/bindings/hwspinlock/
     - include/zephyr/drivers/hwspinlock.h
+    - doc/hardware/peripherals/hwspinlock.rst
+    - samples/drivers/hwspinlock/
   labels:
     - "area: Hardware Spinlock"
+  tests:
+    - sample.drivers.hwspinlock
 
 "Drivers: I2C":
   status: maintained
@@ -1979,6 +1998,7 @@ Documentation Infrastructure:
     - include/zephyr/drivers/ieee802154/
     - include/zephyr/net/ieee802154_radio.h
     - tests/drivers/build_all/ieee802154/
+    - dts/bindings/ieee802154/
   labels:
     - "area: IEEE 802.15.4"
   tests:
@@ -2088,8 +2108,11 @@ Documentation Infrastructure:
     - include/zephyr/drivers/mipi_dbi.h
     - dts/bindings/mipi-dbi/
     - include/zephyr/dt-bindings/mipi_dbi/
+    - tests/drivers/mipi_dbi/
   labels:
     - "area: Display Controller"
+  tests:
+    - drivers.mipi_dbi
 
 "Drivers: MIPI-DSI":
   status: odd fixes
@@ -2161,6 +2184,8 @@ Documentation Infrastructure:
     - dts/bindings/mm/
   labels:
     - "area: Memory Management"
+  tests:
+    - boards.intel_adsp.mm
 
 "Drivers: Modem":
   status: maintained
@@ -2174,6 +2199,7 @@ Documentation Infrastructure:
     - dts/bindings/modem/
     - include/zephyr/drivers/modem/
     - tests/drivers/modem/
+    - samples/drivers/modem/
   labels:
     - "area: Modem Drivers"
   tests:
@@ -2299,6 +2325,7 @@ Documentation Infrastructure:
     - include/zephyr/drivers/pwm.h
     - include/zephyr/drivers/pwm/
     - samples/basic/blinky_pwm/
+    - samples/drivers/pwm/
   labels:
     - "area: PWM"
   tests:
@@ -2371,11 +2398,15 @@ Documentation Infrastructure:
   files:
     - drivers/reset/
     - include/zephyr/drivers/reset.h
+    - include/zephyr/drivers/reset/
+    - doc/hardware/peripherals/reset.rst
     - dts/bindings/reset/
     - include/zephyr/dt-bindings/reset/
     - tests/drivers/reset/
   labels:
     - "area: Reset"
+  tests:
+    - drivers.reset
 
 "Drivers: Retained Memory":
   status: maintained
@@ -2385,6 +2416,7 @@ Documentation Infrastructure:
     - drivers/retained_mem/
     - dts/bindings/retained_mem/
     - include/zephyr/drivers/retained_mem.h
+    - include/zephyr/drivers/retained_mem/
     - tests/drivers/retained_mem/
     - doc/hardware/peripherals/retained_mem.rst
     - dts/bindings/retained_mem/
@@ -2543,6 +2575,7 @@ Documentation Infrastructure:
     - include/zephyr/drivers/syscon.h
     - drivers/syscon/
     - tests/drivers/syscon/
+    - dts/bindings/syscon/
   tests:
     - drivers.syscon
   labels:
@@ -2558,9 +2591,12 @@ Documentation Infrastructure:
     - drivers/timer/
     - include/zephyr/drivers/timer/
     - dts/bindings/timer/
+    - tests/drivers/timer/
     - include/zephyr/dt-bindings/timer/
   labels:
     - "area: Timer"
+  tests:
+    - drivers.timer
 
 "Drivers: Time Aware GPIO":
   status: maintained
@@ -2603,6 +2639,7 @@ Documentation Infrastructure:
   files:
     - drivers/video/
     - include/zephyr/drivers/video.h
+    - include/zephyr/drivers/video/
     - include/zephyr/drivers/video-controls.h
     - include/zephyr/dt-bindings/video/
     - doc/hardware/peripherals/video.rst
@@ -2682,8 +2719,12 @@ Documentation Infrastructure:
     - drivers/wifi/
     - dts/bindings/wifi/
     - tests/drivers/build_all/wifi/
+    - include/zephyr/drivers/wifi/
+    - tests/drivers/wifi/
   labels:
     - "area: Wi-Fi"
+  tests:
+    - drivers.wifi
 
 "Drivers: Wi-Fi as nRF Wi-Fi":
   status: maintained
@@ -3292,6 +3333,7 @@ Key-Value Storage Systems:
     - subsys/llext/
     - doc/services/llext/
     - include/zephyr/linker/llext-sections.ld
+    - scripts/build/llext_*
   labels:
     - "area: llext"
   tests:
@@ -3409,6 +3451,19 @@ LoRa and LoRaWAN:
     - sample.driver.lora
     - lorawan
 
+LoRaWAN native backend:
+  status: maintained
+  maintainers:
+    - carlocaione
+  collaborators:
+    - JordanYates
+    - martinjaeger
+    - mniestroj
+  files:
+    - subsys/lorawan/native/
+  labels:
+    - "area: LoRa"
+
 Logging:
   status: maintained
   maintainers:
@@ -3476,8 +3531,6 @@ MIPS arch:
     - boards/qemu/malta/
   labels:
     - "area: MIPS"
-  tests:
-    - arch.mips
 
 Memory Management:
   status: maintained
@@ -3588,6 +3641,7 @@ Microchip SAM Platforms:
   files:
     - boards/atmel/
     - dts/arm/atmel/
+    - dts/arm/microchip/sam/
     - soc/atmel/
     - soc/microchip/sam/sama*/
     - drivers/*/*sam*
@@ -4339,10 +4393,12 @@ Networking:
     - include/zephyr/net/ptp.h
     - subsys/net/lib/ptp/
     - samples/net/ptp/
+    - tests/net/ptp/
   labels:
     - "area: PTP"
   tests:
     - sample.net.ptp
+    - net.ptp
 
 "Networking: Wi-Fi":
   status: maintained
@@ -4503,8 +4559,6 @@ OpenRISC Arch:
     - soc/qemu/or1k/
   labels:
     - "area: OpenRISC"
-  tests:
-    - arch.openrisc
 
 OpenTitan Platforms:
   status: maintained
@@ -4739,6 +4793,7 @@ Raspberry Pi Pico Platforms:
     - boards/wiznet/w5500_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
+    - dts/vendor/raspberrypi/
     - dts/riscv/raspberrypi/
     - drivers/*/*rpi_pico
     - drivers/*/*rpi_pico*/
@@ -5298,6 +5353,7 @@ Stats:
   files:
     - subsys/stats/
     - include/zephyr/stats/stats.h
+    - include/zephyr/stats/
   labels:
     - "area: Stats"
 
@@ -5785,6 +5841,7 @@ West:
     - mbolivar
     - carlescufi
     - marc-hb
+    - sylvioalves
   files:
     - scripts/west-commands.yml
     - scripts/west_commands/
@@ -5950,9 +6007,9 @@ West:
   status: maintained
   maintainers:
     - wearyzen
+    - ithinuel
   collaborators:
     - tomi-font
-    - ithinuel
   files:
     - modules/cmsis_6/
   labels:
@@ -6077,8 +6134,8 @@ West:
   maintainers:
     - kristofer-jonsson-arm
     - wearyzen
-  collaborators:
     - ithinuel
+  collaborators:
     - ccli8
     - johan-alfven-arm
   files:
@@ -6634,6 +6691,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
     - valeriosetti
     - JordanYates
   files: []
@@ -6657,6 +6715,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
     - valeriosetti
     - JordanYates
   files: []
@@ -6718,6 +6777,7 @@ West:
   collaborators:
     - Vge0rge
     - wearyzen
+    - ithinuel
     - valeriosetti
     - JordanYates
   files:

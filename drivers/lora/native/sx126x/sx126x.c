@@ -18,76 +18,114 @@ LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 	(IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP) \
 	 ? SX126X_STATE_SLEEP : SX126X_STATE_IDLE)
 
-static uint8_t bandwidth_to_reg(enum lora_signal_bandwidth bw)
+#define SX126X_SF56_MIN_PREAMBLE_LEN	12
+
+static int bandwidth_to_reg(enum lora_signal_bandwidth bw, uint8_t *reg)
 {
 	switch (bw) {
 	case BW_7_KHZ:
-		return SX126X_LORA_BW_7_8;
+		*reg = SX126X_LORA_BW_7_8;
+		return 0;
 	case BW_10_KHZ:
-		return SX126X_LORA_BW_10_4;
+		*reg = SX126X_LORA_BW_10_4;
+		return 0;
 	case BW_15_KHZ:
-		return SX126X_LORA_BW_15_6;
+		*reg = SX126X_LORA_BW_15_6;
+		return 0;
 	case BW_20_KHZ:
-		return SX126X_LORA_BW_20_8;
+		*reg = SX126X_LORA_BW_20_8;
+		return 0;
 	case BW_31_KHZ:
-		return SX126X_LORA_BW_31_25;
+		*reg = SX126X_LORA_BW_31_25;
+		return 0;
 	case BW_41_KHZ:
-		return SX126X_LORA_BW_41_7;
+		*reg = SX126X_LORA_BW_41_7;
+		return 0;
 	case BW_62_KHZ:
-		return SX126X_LORA_BW_62_5;
+		*reg = SX126X_LORA_BW_62_5;
+		return 0;
 	case BW_125_KHZ:
-		return SX126X_LORA_BW_125;
+		*reg = SX126X_LORA_BW_125;
+		return 0;
 	case BW_250_KHZ:
-		return SX126X_LORA_BW_250;
+		*reg = SX126X_LORA_BW_250;
+		return 0;
 	case BW_500_KHZ:
-		return SX126X_LORA_BW_500;
+		*reg = SX126X_LORA_BW_500;
+		return 0;
 	default:
-		return SX126X_LORA_BW_125;
+		return -EINVAL;
 	}
 }
 
-static uint32_t bandwidth_to_hz(enum lora_signal_bandwidth bw)
+static int bandwidth_to_hz(enum lora_signal_bandwidth bw, uint32_t *bw_hz)
 {
 	switch (bw) {
 	case BW_7_KHZ:
-		return 7810;
+		*bw_hz = 7810;
+		return 0;
 	case BW_10_KHZ:
-		return 10420;
+		*bw_hz = 10420;
+		return 0;
 	case BW_15_KHZ:
-		return 15630;
+		*bw_hz = 15630;
+		return 0;
 	case BW_20_KHZ:
-		return 20830;
+		*bw_hz = 20830;
+		return 0;
 	case BW_31_KHZ:
-		return 31250;
+		*bw_hz = 31250;
+		return 0;
 	case BW_41_KHZ:
-		return 41670;
+		*bw_hz = 41670;
+		return 0;
 	case BW_62_KHZ:
-		return 62500;
+		*bw_hz = 62500;
+		return 0;
 	case BW_125_KHZ:
-		return 125000;
+		*bw_hz = 125000;
+		return 0;
 	case BW_250_KHZ:
-		return 250000;
+		*bw_hz = 250000;
+		return 0;
 	case BW_500_KHZ:
-		return 500000;
+		*bw_hz = 500000;
+		return 0;
 	default:
-		return 125000;
+		return -EINVAL;
 	}
 }
 
 static bool should_enable_ldro(enum lora_datarate sf, enum lora_signal_bandwidth bw,
 			       const struct sx126x_hal_config *config)
 {
+	uint32_t bw_hz;
+	int ret;
+
 	if (config->force_ldro) {
 		return true;
 	}
 
-	uint32_t bw_hz = bandwidth_to_hz(bw);
+	ret = bandwidth_to_hz(bw, &bw_hz);
+	__ASSERT_NO_MSG(ret == 0);
 	/* Symbol time = 2^SF / BW (in seconds) */
 	/* 16.38 ms = 16380 us */
 	/* 2^SF / BW > 0.01638 => 2^SF * 1000000 / BW > 16380 */
 	uint32_t symbol_time_us = ((1 << sf) * 1000000UL) / bw_hz;
 
 	return symbol_time_us > 16380;
+}
+
+static int sx126x_validate_config(const struct lora_modem_config *config)
+{
+	uint8_t bw_reg;
+
+	if (bandwidth_to_reg(config->bandwidth, &bw_reg) < 0) {
+		LOG_ERR("Unsupported bandwidth: %d kHz", config->bandwidth);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static int sx126x_set_standby(const struct device *dev, uint8_t mode)
@@ -216,12 +254,40 @@ static int sx126x_set_modulation_params(const struct device *dev,
 	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_MODULATION_PARAMS, buf, 4);
 }
 
+/*
+ * Workaround — Modulation Quality with 500 kHz LoRa Bandwidth
+ * (DS_SX1261-2_V1.2, chapter 15.1)
+ *
+ * Must be called before each packet transmission.
+ */
+static int sx126x_apply_tx_modulation_workaround(const struct device *dev,
+						  enum lora_signal_bandwidth bw)
+{
+	uint8_t reg_val;
+	int ret;
+
+	ret = sx126x_hal_read_regs(dev, SX126X_REG_TX_MODULATION, &reg_val, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (bw == BW_500_KHZ) {
+		reg_val &= ~BIT(2);
+	} else {
+		reg_val |= BIT(2);
+	}
+
+	return sx126x_hal_write_regs(dev, SX126X_REG_TX_MODULATION, &reg_val, 1);
+}
+
 static int sx126x_set_packet_params(const struct device *dev,
 				    uint16_t preamble_len, uint8_t header_type,
 				    uint8_t payload_len, uint8_t crc_mode,
 				    uint8_t invert_iq)
 {
 	uint8_t buf[6];
+	uint8_t reg_val;
+	int ret;
 
 	sys_put_be16(preamble_len, &buf[0]);
 	buf[2] = header_type;
@@ -229,7 +295,27 @@ static int sx126x_set_packet_params(const struct device *dev,
 	buf[4] = crc_mode;
 	buf[5] = invert_iq;
 
-	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_PACKET_PARAMS, buf, 6);
+	ret = sx126x_hal_write_cmd(dev, SX126X_CMD_SET_PACKET_PARAMS, buf, 6);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/*
+	 * Workaround — Optimizing the Inverted IQ Operation
+	 * (DS_SX1261-2_V1.2, chapter 15.4)
+	 */
+	ret = sx126x_hal_read_regs(dev, SX126X_REG_IQ_POLARITY, &reg_val, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (invert_iq == SX126X_LORA_IQ_INVERTED) {
+		reg_val &= ~BIT(2);
+	} else {
+		reg_val |= BIT(2);
+	}
+
+	return sx126x_hal_write_regs(dev, SX126X_REG_IQ_POLARITY, &reg_val, 1);
 }
 
 static int sx126x_set_sync_word(const struct device *dev, bool public_network)
@@ -333,6 +419,40 @@ static int sx126x_get_packet_status(const struct device *dev,
 	return ret;
 }
 
+/*
+ * Add a register to the chip's internal retention list so its value
+ * survives warm-start sleep cycles (STDBY_RC -> SLEEP -> STDBY_RC).
+ */
+static int sx126x_add_reg_to_retention(const struct device *dev, uint16_t addr)
+{
+	uint8_t buf[9];
+	uint8_t n;
+	int ret;
+
+	ret = sx126x_hal_read_regs(dev, SX126X_REG_RETENTION_LIST, buf, sizeof(buf));
+	if (ret < 0) {
+		return ret;
+	}
+
+	n = buf[0];
+
+	for (uint8_t i = 0; i < n; i++) {
+		if (sys_get_be16(&buf[1 + 2 * i]) == addr) {
+			return 0;
+		}
+	}
+
+	if (n >= SX126X_MAX_RETENTION_REGS) {
+		LOG_ERR("Retention list full");
+		return -ENOSPC;
+	}
+
+	buf[0] = n + 1;
+	sys_put_be16(addr, &buf[1 + 2 * n]);
+
+	return sx126x_hal_write_regs(dev, SX126X_REG_RETENTION_LIST, buf, sizeof(buf));
+}
+
 static int sx126x_chip_init(const struct device *dev)
 {
 	const struct sx126x_hal_config *config = dev->config;
@@ -413,6 +533,22 @@ static int sx126x_chip_init(const struct device *dev)
 	ret = sx126x_clear_irq_status(dev, SX126X_IRQ_ALL);
 	if (ret < 0) {
 		LOG_ERR("Clear IRQ failed: %d", ret);
+		return ret;
+	}
+
+	/*
+	 * Preserve RX gain and TX modulation settings across warm-start
+	 * sleep cycles by adding them to the chip's retention list.
+	 */
+	ret = sx126x_add_reg_to_retention(dev, SX126X_REG_RX_GAIN);
+	if (ret < 0) {
+		LOG_ERR("Add RX_GAIN to retention failed: %d", ret);
+		return ret;
+	}
+
+	ret = sx126x_add_reg_to_retention(dev, SX126X_REG_TX_MODULATION);
+	if (ret < 0) {
+		LOG_ERR("Add TX_MODULATION to retention failed: %d", ret);
 		return ret;
 	}
 
@@ -702,8 +838,14 @@ static int sx126x_lora_config(const struct device *dev,
 {
 	struct sx126x_data *data = dev->data;
 	const struct sx126x_hal_config *hal_config = dev->config;
+	uint8_t bw_reg;
 	bool ldro;
 	int ret;
+
+	ret = sx126x_validate_config(config);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_IDLE)) {
 		return -EBUSY;
@@ -720,6 +862,18 @@ static int sx126x_lora_config(const struct device *dev,
 
 	/* Store configuration */
 	memcpy(&data->config, config, sizeof(*config));
+
+	/*
+	 * SX126x requires a minimum preamble length of 12 symbols for SF5
+	 * and SF6 (DS.SX1261-2.W.APP, Rev 2.2, section 6.1.1).
+	 */
+	if ((config->datarate == SF_5 || config->datarate == SF_6) &&
+	    data->config.preamble_len < SX126X_SF56_MIN_PREAMBLE_LEN) {
+		LOG_WRN("SF%d requires minimum %d preamble symbols, clamping from %d",
+			config->datarate, SX126X_SF56_MIN_PREAMBLE_LEN,
+			data->config.preamble_len);
+		data->config.preamble_len = SX126X_SF56_MIN_PREAMBLE_LEN;
+	}
 
 	/* Run image calibration for frequency band */
 	ret = sx126x_calibrate_image(dev, config->frequency);
@@ -742,10 +896,12 @@ static int sx126x_lora_config(const struct device *dev,
 	}
 
 	/* Set modulation parameters */
+	ret = bandwidth_to_reg(config->bandwidth, &bw_reg);
+	__ASSERT_NO_MSG(ret == 0);
 	ldro = should_enable_ldro(config->datarate, config->bandwidth, hal_config);
 	ret = sx126x_set_modulation_params(dev,
 					   config->datarate,
-					   bandwidth_to_reg(config->bandwidth),
+					   bw_reg,
 					   config->coding_rate,
 					   ldro);
 	if (ret < 0) {
@@ -824,6 +980,11 @@ static int sx126x_lora_send_async(const struct device *dev,
 
 	/* Write payload to buffer */
 	ret = sx126x_hal_write_buffer(dev, 0x00, data_buf, data_len);
+	if (ret < 0) {
+		goto out_error;
+	}
+
+	ret = sx126x_apply_tx_modulation_workaround(dev, data->config.bandwidth);
 	if (ret < 0) {
 		goto out_error;
 	}
@@ -1170,13 +1331,15 @@ static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
 	uint8_t sf, cr;
 	int32_t tmp;
 	bool de, crc;
+	int ret;
 
 	if (!data->config_valid) {
 		return 0;
 	}
 
 	/* Calculate symbol time in microseconds */
-	bw_hz = bandwidth_to_hz(data->config.bandwidth);
+	ret = bandwidth_to_hz(data->config.bandwidth, &bw_hz);
+	__ASSERT_NO_MSG(ret == 0);
 	sf = data->config.datarate;
 
 	/* Symbol time = 2^SF / BW (seconds) */
@@ -1192,7 +1355,6 @@ static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
 	crc = !data->config.packet_crc_disable;
 	cr = data->config.coding_rate;
 
-	/* ih (implicit header) = false for explicit header mode */
 	tmp = 8 * data_len - 4 * sf + 28 + 16 * crc;
 	if (tmp < 0) {
 		tmp = 0;
@@ -1212,7 +1374,7 @@ static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
 	struct sx126x_data *data = dev->data;
 	int ret;
 
-	if (atomic_get(&data->state) != SX126X_REST_STATE) {
+	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_TX)) {
 		return -EBUSY;
 	}
 
@@ -1220,25 +1382,20 @@ static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
 
 	ret = sx126x_ensure_ready(dev);
 	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
-		return ret;
+		goto out_unlock;
 	}
 
 	/* Set frequency */
 	ret = sx126x_set_rf_frequency(dev, frequency);
 	if (ret < 0) {
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
+		goto out_sleep;
 	}
 
 	/* Set PA config and TX power */
 	ret = sx126x_hal_configure_tx_params(dev, tx_power, frequency,
 						SX126X_RAMP_200_US);
 	if (ret < 0) {
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
+		goto out_sleep;
 	}
 
 	/* Enable antenna and TX path */
@@ -1247,9 +1404,7 @@ static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
 	/* Start CW transmission */
 	ret = sx126x_hal_write_cmd(dev, SX126X_CMD_SET_TX_CONTINUOUS_WAVE, NULL, 0);
 	if (ret < 0) {
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
+		goto out_sleep;
 	}
 
 	k_mutex_unlock(&data->lock);
@@ -1260,10 +1415,14 @@ static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
 	/* Stop CW */
 	k_mutex_lock(&data->lock, K_FOREVER);
 	sx126x_set_standby(dev, SX126X_STANDBY_RC);
-	sx126x_set_sleep(dev);
-	k_mutex_unlock(&data->lock);
 
-	return 0;
+out_sleep:
+	sx126x_set_sleep(dev);
+out_unlock:
+	k_mutex_unlock(&data->lock);
+	atomic_set(&data->state, SX126X_REST_STATE);
+
+	return ret;
 }
 
 static DEVICE_API(lora, sx126x_lora_api) = {

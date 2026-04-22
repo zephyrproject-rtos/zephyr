@@ -10,6 +10,7 @@ if PTP_CLOCK
 
 # zephyr-keep-sorted-start
 source "drivers/ptp_clock/Kconfig.nxp_enet"
+source "drivers/ptp_clock/Kconfig.nxp_enet_qos"
 source "drivers/ptp_clock/Kconfig.nxp_netc"
 # zephyr-keep-sorted-stop
 

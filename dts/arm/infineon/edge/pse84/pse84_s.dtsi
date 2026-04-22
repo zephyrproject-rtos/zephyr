@@ -306,11 +306,11 @@
 		};
 
 		autanalog: analog@52e00000 {
+			compatible = "infineon,autanalog";
 			reg = <0x52e00000 0x100000>;
 			interrupts = <57 4>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			#io-channel-cells = <1>;
 			ranges;
 
 			adc0: adc0@80000 {
@@ -457,6 +457,14 @@
 			compatible = "infineon,lp-timer";
 			reg = <0x5240d040 0x40>;
 			interrupts = <0 4>;
+			status = "disabled";
+		};
+
+		rtc0: rtc@52420000 {
+			compatible = "infineon,rtc";
+			reg = <0x52420000 0x1140>;
+			interrupts = <56 4>;
+			alarms-count = <2>;
 			status = "disabled";
 		};
 
