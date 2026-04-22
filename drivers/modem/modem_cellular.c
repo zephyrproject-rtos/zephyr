@@ -1256,7 +1256,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_chat_attach(&data->chat, data->dlci1_pipe);
+		modem_chat_attach(&data->chat, data->dlci2_pipe);
 		modem_chat_run_script_async(&data->chat, config->dial_chat_script);
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
@@ -1302,7 +1302,7 @@ static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_
 	/* PHY is now up and searching for network */
 	net_if_carrier_on(modem_ppp_get_iface(data->ppp));
 
-	if (modem_ppp_attach(data->ppp, data->dlci1_pipe) < 0) {
+	if (modem_ppp_attach(data->ppp, data->dlci2_pipe) < 0) {
 		return -EAGAIN;
 	}
 
@@ -1312,7 +1312,7 @@ static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_
 	}
 
 	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
-	return modem_chat_attach(&data->chat, data->dlci2_pipe);
+	return modem_chat_attach(&data->chat, data->dlci1_pipe);
 }
 
 static void modem_cellular_await_registered_event_handler(struct modem_cellular_data *data,
