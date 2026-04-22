@@ -459,6 +459,11 @@ struct quic_crypto_ooo_seg {
 	bool valid;       /* Slot in use */
 };
 
+BUILD_ASSERT(CONFIG_QUIC_CRYPTO_RX_BUFFER_SIZE <= UINT16_MAX,
+	     "CRYPTO RX buffer must fit quic_crypto_ooo_seg.len");
+BUILD_ASSERT(CONFIG_QUIC_CRYPTO_RX_BUFFER_SIZE <= UINT32_MAX,
+	     "CRYPTO RX buffer must fit quic_crypto_ooo_seg.offset");
+
 /**
  * Crypto stream state per encryption level
  */
@@ -1149,6 +1154,11 @@ void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 				  uint64_t pkt_num,
 				  size_t sent_bytes,
 				  bool ack_eliciting);
+int handle_crypto_frame(struct quic_endpoint *ep,
+			 enum quic_secret_level level,
+			 const uint8_t *data,
+			 size_t len,
+			 size_t *consumed);
 int quic_stream_receive_data(struct quic_stream *stream,
 			     uint64_t offset,
 			     const uint8_t *data,
