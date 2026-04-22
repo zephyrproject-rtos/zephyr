@@ -1758,7 +1758,7 @@ int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
 		/* Use net_buf as a temporary buffer to store the packed
 		 * DNS name.
 		 */
-		buf = net_buf_alloc(&dns_msg_pool, ctx->buf_timeout);
+		buf = net_buf_alloc(&dns_msg_pool, K_FOREVER);
 		if (!buf) {
 			return -ENOMEM;
 		}
