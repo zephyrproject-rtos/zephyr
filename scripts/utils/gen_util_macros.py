@@ -4,6 +4,7 @@ Utility script to generate headers for the following macros
 - Z_UTIL_INC
 - Z_UTIL_DEC
 - Z_UTIL_X2
+- Z_UTIL_ZFILL4
 - Z_IS_EQ
 
 .. note::
@@ -149,6 +150,28 @@ please include util_internal.h instead\"\n")
         write_hidden_stop(file)
 
 
+def gen_util_internal_util_zfill4(limit):
+    with open("util_internal_util_zfill4.h", "w") as file:
+        write_hidden_start(file)
+        file.write("\n")
+        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_\n")
+        file.write("#error \"This header should not be used directly, \
+please include util_internal.h instead\"\n")
+        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */\n")
+        file.write("\n")
+        file.write("#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_ZFILL4_H_\n")
+        file.write("#define ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_ZFILL4_H_\n")
+        file.write("\n")
+
+        for i in range(0, limit + 2):
+            file.write(f"#define Z_UTIL_ZFILL4_{i} {i:04d}\n")
+
+        file.write("\n")
+        file.write("#endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_ZFILL4_H_ */\n")
+        file.write("\n")
+        write_hidden_stop(file)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument(
@@ -161,3 +184,4 @@ if __name__ == "__main__":
     gen_util_internal_util_inc(args.limit)
     gen_util_internal_util_dec(args.limit)
     gen_util_internal_util_x2(args.limit)
+    gen_util_internal_util_zfill4(args.limit)
