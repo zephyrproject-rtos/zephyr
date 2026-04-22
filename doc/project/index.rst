@@ -8,7 +8,7 @@ Project and Governance
    :maxdepth: 1
 
    tsc
-   project_roles.rst
+   project_roles
    working_groups
    release_process
    proposals
