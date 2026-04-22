@@ -129,3 +129,9 @@
 	pinctrl-0 = <&canfd0_cantx_pa12 &canfd0_canrx_pa13>;
 	pinctrl-names = "default";
 };
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pa17 &i2c1_sda_pa16>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
