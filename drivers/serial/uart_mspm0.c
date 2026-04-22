@@ -132,7 +132,7 @@ static int uart_mspm0_install_configuration(const struct device *dev)
 	 * from the selected current-speed
 	 */
 	ret = clock_control_get_rate(clk_dev, (struct mspm0_sys_clock *)config->clock_subsys,
-				     &clock_rate);
+					 &clock_rate);
 	if (ret < 0) {
 		return ret;
 	}
@@ -185,7 +185,7 @@ static int uart_mspm0_translate_in(const uint32_t value_array[], int value_array
 }
 
 static int uart_mspm0_translate_out(const uint32_t value_array[], int value_array_length,
-				    uint32_t mspm0_cfg_value, uint8_t *uart_cfg_value)
+					uint32_t mspm0_cfg_value, uint8_t *uart_cfg_value)
 {
 	int idx;
 
@@ -216,7 +216,7 @@ static int uart_mspm0_configure(const struct device *dev, const struct uart_conf
 	data->current_speed = cfg->baudrate;
 
 	ret = uart_mspm0_translate_in(uart_parity_to_mspm0, ARRAY_SIZE(uart_parity_to_mspm0),
-				      cfg->parity, &value);
+					  cfg->parity, &value);
 	if (ret != 0) {
 		return ret;
 	}
@@ -224,7 +224,7 @@ static int uart_mspm0_configure(const struct device *dev, const struct uart_conf
 	data->uart_config.parity = value;
 
 	ret = uart_mspm0_translate_in(uart_stop_bits_to_mspm0, ARRAY_SIZE(uart_stop_bits_to_mspm0),
-				      cfg->stop_bits, &value);
+					  cfg->stop_bits, &value);
 	if (ret != 0) {
 		return ret;
 	}
@@ -232,7 +232,7 @@ static int uart_mspm0_configure(const struct device *dev, const struct uart_conf
 	data->uart_config.stopBits = value;
 
 	ret = uart_mspm0_translate_in(uart_data_bits_to_mspm0, ARRAY_SIZE(uart_data_bits_to_mspm0),
-				      cfg->data_bits, &value);
+					  cfg->data_bits, &value);
 	if (ret != 0) {
 		return ret;
 	}
@@ -240,8 +240,8 @@ static int uart_mspm0_configure(const struct device *dev, const struct uart_conf
 	data->uart_config.wordLength = value;
 
 	ret = uart_mspm0_translate_in(uart_flow_control_to_mspm0,
-				      ARRAY_SIZE(uart_flow_control_to_mspm0), cfg->flow_ctrl,
-				      &value);
+					  ARRAY_SIZE(uart_flow_control_to_mspm0), cfg->flow_ctrl,
+					  &value);
 	if (ret != 0) {
 		return ret;
 	}
@@ -266,26 +266,26 @@ static int uart_mspm0_config_get(const struct device *dev, struct uart_config *c
 	cfg->baudrate = data->current_speed;
 
 	ret = uart_mspm0_translate_out(uart_parity_to_mspm0, ARRAY_SIZE(uart_parity_to_mspm0),
-				       data->uart_config.parity, &cfg->parity);
+					   data->uart_config.parity, &cfg->parity);
 	if (ret != 0) {
 		return ret;
 	}
 
 	ret = uart_mspm0_translate_out(uart_stop_bits_to_mspm0, ARRAY_SIZE(uart_stop_bits_to_mspm0),
-				       data->uart_config.stopBits, &cfg->stop_bits);
+					   data->uart_config.stopBits, &cfg->stop_bits);
 	if (ret != 0) {
 		return ret;
 	}
 
 	ret = uart_mspm0_translate_out(uart_data_bits_to_mspm0, ARRAY_SIZE(uart_data_bits_to_mspm0),
-				       data->uart_config.wordLength, &cfg->data_bits);
+					   data->uart_config.wordLength, &cfg->data_bits);
 	if (ret != 0) {
 		return ret;
 	}
 
 	ret = uart_mspm0_translate_out(uart_flow_control_to_mspm0,
-				       ARRAY_SIZE(uart_flow_control_to_mspm0),
-				       data->uart_config.flowControl, &cfg->flow_ctrl);
+					   ARRAY_SIZE(uart_flow_control_to_mspm0),
+					   data->uart_config.flowControl, &cfg->flow_ctrl);
 	if (ret != 0) {
 		return ret;
 	}
@@ -513,6 +513,7 @@ static void uart_mspm0_async_rx_timeout(struct k_timer *timer)
 
 	if (data->rx_counter > data->rx_offset) {
 		uart_mspm0_async_evt_handler(dev, UART_RX_RDY, NULL, 0);
+		k_timer_start(&data->rx_timeout_timer, K_USEC(data->rx_timeout), K_NO_WAIT);
 	}
 }
 
@@ -697,8 +698,8 @@ static void uart_mspm0_async_tx_isr(const struct device *dev)
 		return;
 	}
 
-	size_t c = DL_UART_Main_fillTXFIFO(config->regs, &data->tx_buf[data->tx_counter], data->tx_len - data->tx_counter);
-	data->tx_counter += c;
+	size_t count = data->tx_len - data->tx_counter;
+	data->tx_counter += DL_UART_Main_fillTXFIFO(config->regs, &data->tx_buf[data->tx_counter], count);
 
 	if (data->tx_timeout != SYS_FOREVER_US) {
 		k_timer_start(&data->tx_timeout_timer, K_USEC(data->tx_timeout), K_NO_WAIT);
@@ -775,6 +776,10 @@ static void uart_mspm0_async_rx_isr(const struct device *dev)
 			data->rx_secondary_buffer_length = 0;
 
 			uart_mspm0_async_evt_handler(dev, UART_RX_BUF_REQUEST, NULL, 0);
+
+			if (data->rx_timeout != SYS_FOREVER_US) {
+				k_timer_start(&data->rx_timeout_timer, K_USEC(data->rx_timeout), K_NO_WAIT);
+			}
 
 		} else {
 
@@ -948,7 +953,7 @@ static void uart_mspm0_combined_isr(const struct device *dev)
 	static void uart_mspm0_##inst##_irq_register(const struct device *dev)                     \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),                       \
-			    uart_mspm0_combined_isr, DEVICE_DT_INST_GET(inst), 0);                 \
+				uart_mspm0_combined_isr, DEVICE_DT_INST_GET(inst), 0);                 \
 		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}
 #else
@@ -958,14 +963,14 @@ static void uart_mspm0_combined_isr(const struct device *dev)
 #define MSPM0_MAIN_CLK_DIV(n) CONCAT(DL_UART_MAIN_CLOCK_DIVIDE_RATIO_, DT_INST_PROP(n, clk_div))
 
 #define MSPM0_UART_INIT_FN(index)                                                                  \
-                                                                                                   \
+																								   \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
-                                                                                                   \
+																								   \
 	static const struct mspm0_sys_clock mspm0_uart_sys_clock##index =                          \
 		MSPM0_CLOCK_SUBSYS_FN(index);                                                      \
-                                                                                                   \
+																								   \
 	MSP_UART_IRQ_DEFINE(index);                                                                \
-                                                                                                   \
+																								   \
 	static const struct uart_mspm0_config uart_mspm0_cfg_##index = {                           \
 		.regs = (UART_Regs *)DT_INST_REG_ADDR(index),                                      \
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                  \
@@ -974,7 +979,7 @@ static void uart_mspm0_combined_isr(const struct device *dev)
 			   (.irq_config_func = uart_mspm0_##index##_irq_register,))                \
 				   IF_ENABLED(CONFIG_UART_ASYNC_API,                               \
 			   (.irq_config_func = uart_mspm0_##index##_irq_register,)) };             \
-                                                                                                   \
+																								   \
 	static struct uart_mspm0_data uart_mspm0_data_##index = {                                  \
 		.uart_clockconfig =                                                                \
 			{                                                                          \
@@ -995,9 +1000,9 @@ static void uart_mspm0_combined_isr(const struct device *dev)
 				.stopBits = DL_UART_MAIN_STOP_BITS_ONE,                            \
 			},                                                                         \
 	};                                                                                         \
-                                                                                                   \
+																								   \
 	DEVICE_DT_INST_DEFINE(index, &uart_mspm0_init, NULL, &uart_mspm0_data_##index,             \
-			      &uart_mspm0_cfg_##index, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
-			      &uart_mspm0_driver_api);
+				  &uart_mspm0_cfg_##index, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
+				  &uart_mspm0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSPM0_UART_INIT_FN)
