@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <common/ctrl_partitions.h>
+#include "ctrl_partitions.h"
 #include <zephyr/arch/cpu.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -16,22 +16,22 @@
 static struct address_trans_region_config am6x_region_config[] = {
 	{
 		.system_addr = 0x00000000u,
-		.local_addr =  0x60000000u,
+		.local_addr = 0x60000000u,
 		.size = address_trans_region_size_256M,
 	},
 	{
 		.system_addr = 0x20000000u,
-		.local_addr =  0xc0000000u,
+		.local_addr = 0xc0000000u,
 		.size = address_trans_region_size_512M,
 	},
 	{
 		.system_addr = 0x40000000u,
-		.local_addr =  0x70000000u,
+		.local_addr = 0x70000000u,
 		.size = address_trans_region_size_256M,
 	},
-/*
- * Add regions here if you want to map more memory.
- */
+	/*
+	 * Add regions here if you want to map more memory.
+	 */
 };
 
 void soc_early_init_hook(void)
