@@ -1177,7 +1177,7 @@ static void server_thread(void *p1, void *p2, void *p3)
 	if (!(pfd.revents & ZSOCK_POLLIN)) {
 		data->error = -ETIMEDOUT;
 		LOG_DBG("Poll error while waiting for client connection");
-		goto out;
+		return;
 	}
 
 	connected_sock = zsock_accept(server_sock,
@@ -1186,7 +1186,7 @@ static void server_thread(void *p1, void *p2, void *p3)
 	if (connected_sock < 0) {
 		data->error = errno;
 		LOG_DBG("Connection accept failed (%d)", -data->error);
-		goto out;
+		return;
 	}
 
 	data->connected_sock = connected_sock;
@@ -1200,7 +1200,7 @@ static void server_thread(void *p1, void *p2, void *p3)
 	if (!(pfd.revents & ZSOCK_POLLIN)) {
 		data->error = -ETIMEDOUT;
 		LOG_DBG("Poll error while waiting for client stream");
-		goto out;
+		return;
 	}
 
 	stream = zsock_accept(connected_sock,
@@ -1209,7 +1209,7 @@ static void server_thread(void *p1, void *p2, void *p3)
 	if (stream < 0) {
 		data->error = errno;
 		LOG_DBG("Stream accept failed (%d)", -data->error);
-		goto out;
+		return;
 	}
 
 	data->stream_recv_sock = stream;
@@ -1254,7 +1254,6 @@ static void server_thread(void *p1, void *p2, void *p3)
 		}
 	}
 
-out:
 }
 
 static void quic_server_and_client(const char *server, const char *client,
