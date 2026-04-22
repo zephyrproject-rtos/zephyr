@@ -12,6 +12,7 @@
 #include <zephyr/version.h>
 
 #include <zephyr/drivers/bluetooth.h>
+#include <zephyr/pm/device.h>
 
 #include <esp_bt.h>
 #include <esp_mac.h>
@@ -27,6 +28,10 @@ extern const char *btdm_controller_get_compile_version(void);
 #else
 extern char *ble_controller_get_compile_version(void);
 #define esp32_get_controller_version() ble_controller_get_compile_version()
+#endif
+
+#if defined(CONFIG_ESP32_BT_LE_SLEEP_ENABLE) && defined(CONFIG_ESP32_SOC_PAU_SUPPORTED)
+extern bool r_ble_lll_sleep_should_skip_light_sleep_check(void);
 #endif
 
 #if defined(CONFIG_SOC_SERIES_ESP32)
@@ -842,6 +847,33 @@ static int bt_esp32_close(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int bt_esp32_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+#if defined(CONFIG_ESP32_BT_LE_SLEEP_ENABLE) && defined(CONFIG_ESP32_SOC_PAU_SUPPORTED)
+		if (r_ble_lll_sleep_should_skip_light_sleep_check()) {
+			return -EBUSY;
+		}
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(bt_hci, drv) = {
 	.open = bt_esp32_open,
 	.send = bt_esp32_send,
@@ -852,7 +884,9 @@ static DEVICE_API(bt_hci, drv) = {
 	static struct bt_hci_driver_data bt_esp32_data_##inst = {};                                \
 	static const struct bt_hci_driver_config bt_esp32_config_##inst =                          \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bt_esp32_data_##inst, &bt_esp32_config_##inst,    \
+	PM_DEVICE_DT_INST_DEFINE(inst, bt_esp32_pm_action);                                        \
+	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst),                             \
+			      &bt_esp32_data_##inst, &bt_esp32_config_##inst,                      \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 BT_ESP32_DEVICE_INIT(0)
