@@ -800,6 +800,7 @@ Bouffalolab Platforms:
     - boards/sipeed/m1s_dock/
     - boards/sipeed/maix_m0s_dock/
     - drivers/*/*bflb*
+    - drivers/sensor/bflb/
     - dts/riscv/bflb/
     - dts/bindings/*/bflb,*
     - soc/bflb/
