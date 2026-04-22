@@ -134,6 +134,9 @@ struct quic_sent_pkt_info {
 	/** True if packet is still in flight (not yet acked/lost) */
 	bool in_flight;
 
+	/** True if loss detection queued this frame for retransmission */
+	bool retransmit_pending;
+
 	/* Stream frame carried by this packet (for retransmission).
 	 * Only valid when has_stream_frame is true.
 	 * One STREAM frame per packet is assumed, which matches the
@@ -744,11 +747,23 @@ struct quic_endpoint {
 		/** Probe Timeout (RFC 9002 Section 6.2) */
 		struct k_work_delayable pto_work;
 
+		/** Serializes recovery state updates across TX, RX and PTO contexts */
+		struct k_mutex lock;
+
+		/** Deferred release path used when PTO handling needs to drop a ref */
+		struct k_work release_work;
+
 		/** Max. PTO count */
 		uint32_t max_pto_count;
 
 		/** Incremented on each PTO expiry for backoff */
 		uint32_t pto_count;
+
+		/** Suppress further PTO tracking once teardown/close begins */
+		bool closing;
+
+		/** Prevent duplicate deferred release submissions */
+		bool release_pending;
 	} recovery;
 
 	/** Max TX payload size for this endpoint, based on path MTU discovery.
@@ -1127,6 +1142,13 @@ int quic_build_version_negotiation_packet(uint8_t *out,
 void quic_endpoint_note_unvalidated_rx(struct quic_endpoint *ep, size_t bytes);
 bool quic_endpoint_can_send_unvalidated(const struct quic_endpoint *ep, size_t bytes);
 uint64_t quic_stream_local_rx_limit(const struct quic_endpoint *ep, int stream_type);
+void quic_recovery_init(struct quic_endpoint *ep);
+void quic_recovery_begin_shutdown(struct quic_endpoint *ep);
+void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
+				  enum quic_secret_level level,
+				  uint64_t pkt_num,
+				  size_t sent_bytes,
+				  bool ack_eliciting);
 int quic_stream_receive_data(struct quic_stream *stream,
 			     uint64_t offset,
 			     const uint8_t *data,

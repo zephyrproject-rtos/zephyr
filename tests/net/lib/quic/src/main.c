@@ -653,6 +653,19 @@ ZTEST(net_socket_quic, test_03b_frame_type_level_validation)
 	zassert_equal(ret, -ENOTSUP, "Unknown frame type must be rejected (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_03ba_recovery_shutdown_stops_tracking)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+
+	quic_recovery_init(ep);
+	quic_recovery_begin_shutdown(ep);
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, 1, 123, true);
+
+	zassert_true(ep->recovery.closing, "Recovery must stay in shutdown state");
+	zassert_equal(ep->recovery.bytes_in_flight, 0,
+		      "Shutdown recovery must not track new in-flight bytes");
+}
+
 ZTEST(net_socket_quic, test_03c_anti_amplification_budget)
 {
 	struct quic_endpoint *listen_ep = reset_test_ep(&test_ep_a);
