@@ -17,7 +17,7 @@
  * @brief Interfaces for biometric sensors.
  * @defgroup biometrics_interface Biometrics
  * @since 4.4
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup io_interfaces
  * @{
  */
@@ -32,15 +32,21 @@
 extern "C" {
 #endif
 
-/**
- * @brief Biometrics sensor types
- */
-enum biometric_sensor_type {
-	BIOMETRIC_TYPE_FINGERPRINT, /**< Fingerprint sensor */
-	BIOMETRIC_TYPE_IRIS,        /**< Iris scanner */
-	BIOMETRIC_TYPE_FACE,        /**< Face recognition */
-	BIOMETRIC_TYPE_VOICE,       /**< Voice recognition */
-};
+/** @brief Biometric modality flags */
+#define BIOMETRIC_MODALITY_FINGERPRINT BIT(0) /**< Fingerprint sensor */
+#define BIOMETRIC_MODALITY_IRIS        BIT(1) /**< Iris scanner */
+#define BIOMETRIC_MODALITY_FACE        BIT(2) /**< Face recognition */
+#define BIOMETRIC_MODALITY_VOICE       BIT(3) /**< Voice recognition */
+#define BIOMETRIC_MODALITY_PALM        BIT(4) /**< Palm recognition */
+
+/** @brief Auto-assign template ID (sensor picks next available) */
+#define BIOMETRIC_TEMPLATE_ID_AUTO 0
+
+/** @brief Maximum serial number string length */
+#define BIOMETRIC_SERIAL_NUMBER_MAX_LEN 16
+
+/** @brief Maximum user name string length */
+#define BIOMETRIC_USER_NAME_MAX_LEN 32
 
 /**
  * @brief Biometric matching modes
@@ -82,6 +88,8 @@ enum biometric_attribute {
 	BIOMETRIC_ATTR_ANTI_SPOOF_LEVEL,
 	/** Last captured image quality score (sensor-specific range), read-only */
 	BIOMETRIC_ATTR_IMAGE_QUALITY,
+	/** Duplicate enrollment policy (0 = reject duplicates, 1 = allow) */
+	BIOMETRIC_ATTR_DUPLICATE_POLICY,
 	/**
 	 * Number of all common biometric attributes.
 	 */
@@ -101,8 +109,8 @@ enum biometric_attribute {
  * @brief Biometric sensor capabilities
  */
 struct biometric_capabilities {
-	/** Biometric sensor type */
-	enum biometric_sensor_type type;
+	/** Bitmask of supported modalities */
+	uint32_t supported_modalities;
 	/** Maximum templates device can store */
 	uint16_t max_templates;
 	/** Size of each template in bytes */
@@ -111,6 +119,8 @@ struct biometric_capabilities {
 	uint8_t storage_modes;
 	/** Number of samples needed for enrollment */
 	uint8_t enrollment_samples_required;
+	/** Device serial number (empty if unavailable) */
+	char serial_number[BIOMETRIC_SERIAL_NUMBER_MAX_LEN];
 };
 
 /**
@@ -123,7 +133,23 @@ struct biometric_match_result {
 	uint16_t template_id;
 	/** Quality score of the captured sample used for matching (0-100) */
 	uint8_t image_quality;
+	/** Modality that produced this result */
+	uint32_t modality;
 };
+
+/**
+ * @brief Callback handler for asynchronous match results
+ *
+ * Called by the driver when a match result is available during continuous
+ * matching.
+ *
+ * @param dev Pointer to the biometric device
+ * @param result Pointer to the match result (only valid during callback)
+ * @param user_data User data pointer provided during callback registration
+ */
+typedef void (*biometric_match_handler_t)(const struct device *dev,
+					  const struct biometric_match_result *result,
+					  void *user_data);
 
 /**
  * @brief Result from an enrollment capture operation
@@ -137,6 +163,18 @@ struct biometric_capture_result {
 	uint8_t samples_required;
 	/** Quality score of the captured sample (0-100) */
 	uint8_t quality;
+	/** Assigned template ID */
+	uint16_t template_id;
+};
+
+/**
+ * @brief On-device user metadata
+ */
+struct biometric_user_info {
+	/** User name */
+	char name[BIOMETRIC_USER_NAME_MAX_LEN];
+	/** Privilege level (0 = normal, 1 = admin) */
+	uint8_t privilege;
 };
 
 /**
@@ -238,6 +276,54 @@ typedef int (*biometric_api_match)(const struct device *dev, enum biometric_matc
 typedef int (*biometric_api_led_control)(const struct device *dev, enum biometric_led_state state);
 
 /**
+ * @brief Callback API to get user info.
+ * See biometric_user_info_get() for argument description
+ */
+typedef int (*biometric_api_user_info_get)(const struct device *dev, uint16_t template_id,
+					   struct biometric_user_info *info);
+
+/**
+ * @brief Callback API to set user info.
+ * See biometric_user_info_set() for argument description
+ */
+typedef int (*biometric_api_user_info_set)(const struct device *dev, uint16_t template_id,
+					   const struct biometric_user_info *info);
+
+/**
+ * @brief Callback API to get extra match data.
+ * See biometric_match_get_data() for argument description
+ */
+typedef int (*biometric_api_match_get_data)(const struct device *dev, uint8_t *buf, size_t max_len,
+					    size_t *len);
+
+/**
+ * @brief Callback API to set match result callback.
+ * See biometric_match_set_callback() for argument description
+ */
+typedef int (*biometric_api_match_set_cb)(const struct device *dev,
+					  biometric_match_handler_t handler, void *user_data);
+
+/**
+ * @brief Callback API to start continuous matching.
+ * See biometric_match_start() for argument description
+ */
+typedef int (*biometric_api_match_start)(const struct device *dev, enum biometric_match_mode mode,
+					 uint16_t template_id);
+
+/**
+ * @brief Callback API to stop continuous matching.
+ * See biometric_match_stop() for argument description
+ */
+typedef int (*biometric_api_match_stop)(const struct device *dev);
+
+/**
+ * @brief Callback API to enroll from image data.
+ * See biometric_enroll_from_image() for argument description
+ */
+typedef int (*biometric_api_enroll_from_image)(const struct device *dev, uint16_t template_id,
+					       const uint8_t *data, size_t size);
+
+/**
  * @driver_ops{Biometrics}
  */
 __subsystem struct biometric_driver_api {
@@ -297,6 +383,34 @@ __subsystem struct biometric_driver_api {
 	 * @driver_ops_optional @copybrief biometric_led_control
 	 */
 	biometric_api_led_control led_control;
+	/**
+	 * @driver_ops_optional @copybrief biometric_user_info_get
+	 */
+	biometric_api_user_info_get user_info_get;
+	/**
+	 * @driver_ops_optional @copybrief biometric_user_info_set
+	 */
+	biometric_api_user_info_set user_info_set;
+	/**
+	 * @driver_ops_optional @copybrief biometric_match_get_data
+	 */
+	biometric_api_match_get_data match_get_data;
+	/**
+	 * @driver_ops_optional @copybrief biometric_match_set_callback
+	 */
+	biometric_api_match_set_cb match_set_cb;
+	/**
+	 * @driver_ops_optional @copybrief biometric_match_start
+	 */
+	biometric_api_match_start match_start;
+	/**
+	 * @driver_ops_optional @copybrief biometric_match_stop
+	 */
+	biometric_api_match_stop match_stop;
+	/**
+	 * @driver_ops_optional @copybrief biometric_enroll_from_image
+	 */
+	biometric_api_enroll_from_image enroll_from_image;
 };
 
 /**
@@ -666,6 +780,217 @@ static inline int z_impl_biometric_led_control(const struct device *dev,
 	}
 
 	return api->led_control(dev, state);
+}
+
+/**
+ * @brief Get on-device user metadata
+ *
+ * @param dev Biometric device
+ * @param template_id Template ID to query
+ * @param info Pointer to user info structure to populate
+ *
+ * @retval 0 on success
+ * @retval -ENOSYS Not supported by device
+ * @retval -ENOENT Template not found
+ * @retval -errno code on failure
+ */
+__syscall int biometric_user_info_get(const struct device *dev, uint16_t template_id,
+				      struct biometric_user_info *info);
+
+static inline int z_impl_biometric_user_info_get(const struct device *dev, uint16_t template_id,
+						 struct biometric_user_info *info)
+{
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	__ASSERT_NO_MSG(info != NULL);
+
+	if (api->user_info_get == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->user_info_get(dev, template_id, info);
+}
+
+/**
+ * @brief Set on-device user metadata
+ *
+ * @param dev Biometric device
+ * @param template_id Template ID to set metadata for
+ * @param info Pointer to user info to store
+ *
+ * @retval 0 on success
+ * @retval -ENOSYS Not supported by device
+ * @retval -ENOENT Template not found
+ * @retval -errno code on failure
+ */
+__syscall int biometric_user_info_set(const struct device *dev, uint16_t template_id,
+				      const struct biometric_user_info *info);
+
+static inline int z_impl_biometric_user_info_set(const struct device *dev, uint16_t template_id,
+						 const struct biometric_user_info *info)
+{
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	__ASSERT_NO_MSG(info != NULL);
+
+	if (api->user_info_set == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->user_info_set(dev, template_id, info);
+}
+
+/**
+ * @brief Retrieve extra data from the last match result
+ *
+ * Returns modality-specific auxiliary data when provided by the driver.
+ * Must be called before the next match operation (data is overwritten).
+ *
+ * @param dev Biometric device
+ * @param buf Buffer to receive data
+ * @param max_len Buffer size
+ * @param len Actual data length written
+ *
+ * @retval 0 on success
+ * @retval -ENODATA No extra data available
+ * @retval -ENOSYS Not supported by device
+ * @retval -errno code on failure
+ */
+__syscall int biometric_match_get_data(const struct device *dev, uint8_t *buf, size_t max_len,
+				       size_t *len);
+
+static inline int z_impl_biometric_match_get_data(const struct device *dev, uint8_t *buf,
+						  size_t max_len, size_t *len)
+{
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	__ASSERT_NO_MSG(buf != NULL);
+	__ASSERT_NO_MSG(len != NULL);
+
+	if (api->match_get_data == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->match_get_data(dev, buf, max_len, len);
+}
+
+/**
+ * @brief Set callback for asynchronous match results
+ *
+ * Registers a callback function that will be invoked for each match result
+ * during continuous matching.
+ *
+ * @param dev Biometric device
+ * @param handler Callback function, or NULL to clear
+ * @param user_data User data passed to callback
+ *
+ * @retval 0 on success
+ * @retval -EBUSY Continuous matching is active
+ * @retval -ENOSYS Not supported by device
+ * @retval -errno code on failure
+ */
+__syscall int biometric_match_set_callback(const struct device *dev,
+					   biometric_match_handler_t handler, void *user_data);
+
+static inline int z_impl_biometric_match_set_callback(const struct device *dev,
+						      biometric_match_handler_t handler,
+						      void *user_data)
+{
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	if (api->match_set_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->match_set_cb(dev, handler, user_data);
+}
+
+/**
+ * @brief Start continuous biometric matching
+ *
+ * Begins continuous matching. Each time a biometric is recognized, the
+ * callback registered with biometric_match_set_callback() is invoked.
+ * Call biometric_match_stop() to end continuous matching.
+ *
+ * @param dev Biometric device
+ * @param mode Verify or identify mode
+ * @param template_id Template ID for verify mode (ignored in identify mode)
+ *
+ * @retval 0 on success
+ * @retval -EINVAL No callback registered
+ * @retval -EBUSY Already in continuous matching mode
+ * @retval -ENOSYS Not supported by device
+ * @retval -errno code on failure
+ */
+__syscall int biometric_match_start(const struct device *dev, enum biometric_match_mode mode,
+				    uint16_t template_id);
+
+static inline int z_impl_biometric_match_start(const struct device *dev,
+					       enum biometric_match_mode mode, uint16_t template_id)
+{
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	if (api->match_start == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->match_start(dev, mode, template_id);
+}
+
+/**
+ * @brief Stop continuous biometric matching
+ *
+ * @param dev Biometric device
+ *
+ * @retval 0 on success
+ * @retval -EALREADY Not currently in continuous matching mode
+ * @retval -ENOSYS Not supported by device
+ * @retval -errno code on failure
+ */
+__syscall int biometric_match_stop(const struct device *dev);
+
+static inline int z_impl_biometric_match_stop(const struct device *dev)
+{
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	if (api->match_stop == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->match_stop(dev);
+}
+
+/**
+ * @brief Enroll a biometric template from image data
+ *
+ * Enrolls from a pre-captured image rather than live sensor capture.
+ *
+ * @param dev Biometric device
+ * @param template_id Template ID to assign (or BIOMETRIC_TEMPLATE_ID_AUTO)
+ * @param data Image data (format is sensor-dependent, like JPEG)
+ * @param size Image data size in bytes
+ *
+ * @retval 0 on success
+ * @retval -ENOSYS Not supported by device
+ * @retval -EINVAL Invalid image data
+ * @retval -ENOSPC Storage full
+ * @retval -errno code on failure
+ */
+__syscall int biometric_enroll_from_image(const struct device *dev, uint16_t template_id,
+					  const uint8_t *data, size_t size);
+
+static inline int z_impl_biometric_enroll_from_image(const struct device *dev, uint16_t template_id,
+						     const uint8_t *data, size_t size)
+{
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
+
+	__ASSERT_NO_MSG(data != NULL);
+
+	if (api->enroll_from_image == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->enroll_from_image(dev, template_id, data, size);
 }
 
 #ifdef __cplusplus

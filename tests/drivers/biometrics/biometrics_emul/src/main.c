@@ -29,7 +29,8 @@ ZTEST(biometrics_emul, test_get_capabilities)
 	ret = biometric_get_capabilities(dev, &caps);
 	zassert_equal(ret, 0, "Failed to get capabilities: %d", ret);
 
-	zassert_equal(caps.type, BIOMETRIC_TYPE_FINGERPRINT, "Expected fingerprint sensor type");
+	zassert_true(caps.supported_modalities & BIOMETRIC_MODALITY_FINGERPRINT,
+		     "Expected fingerprint modality");
 	zassert_true(caps.max_templates > 0, "max_templates should be > 0");
 	zassert_true(caps.template_size > 0, "template_size should be > 0");
 	zassert_true(caps.storage_modes & BIOMETRIC_STORAGE_DEVICE,

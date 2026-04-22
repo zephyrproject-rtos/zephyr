@@ -59,7 +59,7 @@ struct biometrics_emul_data {
 };
 
 struct biometrics_emul_config {
-	enum biometric_sensor_type type;
+	uint32_t supported_modalities;
 };
 
 static int biometrics_emul_get_capabilities(const struct device *dev,
@@ -67,11 +67,12 @@ static int biometrics_emul_get_capabilities(const struct device *dev,
 {
 	const struct biometrics_emul_config *cfg = dev->config;
 
-	caps->type = cfg->type;
+	caps->supported_modalities = cfg->supported_modalities;
 	caps->max_templates = BIOMETRICS_EMUL_MAX_TEMPLATES;
 	caps->template_size = BIOMETRICS_EMUL_TEMPLATE_SIZE;
 	caps->storage_modes = BIOMETRIC_STORAGE_DEVICE | BIOMETRIC_STORAGE_HOST;
 	caps->enrollment_samples_required = BIOMETRICS_EMUL_ENROLL_SAMPLES;
+	caps->serial_number[0] = '\0';
 
 	return 0;
 }
@@ -542,6 +543,7 @@ static int biometrics_emul_match(const struct device *dev, enum biometric_match_
 			result->confidence = score;
 			result->template_id = data->last_matched_id;
 			result->image_quality = (uint8_t)data->last_image_quality;
+			result->modality = BIOMETRIC_MODALITY_FINGERPRINT;
 		}
 		ret = 0;
 	} else {
@@ -680,7 +682,7 @@ static int biometrics_emul_init(const struct device *dev)
 	static struct biometrics_emul_data biometrics_emul_data_##inst;                            \
                                                                                                    \
 	static const struct biometrics_emul_config biometrics_emul_config_##inst = {               \
-		.type = BIOMETRIC_TYPE_FINGERPRINT,                                                \
+		.supported_modalities = BIOMETRIC_MODALITY_FINGERPRINT,                            \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, biometrics_emul_init, NULL, &biometrics_emul_data_##inst,      \
