@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,4 +12,4 @@
  * It must be used in conjunction with the NOINIT_SNIPPET_FIRST configuration option that has
  * been added to the Kconfig file.
  */
-. = MAX(ABSOLUTE(.), 0x34002000);
+. = MAX(ABSOLUTE(.), CONFIG_SRAM_BASE_ADDRESS + 0x2000);
