@@ -136,6 +136,12 @@
 	status = "okay";
 };
 
+&adc2 {
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <8>;
+	status = "okay";
+};
+
 &die_temp {
 	status = "okay";
 };
