@@ -5161,39 +5161,57 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 		}
 
 		/* offset > expected: out-of-order, stash it if we have room */
-		if (buf->ooo_count < ARRAY_SIZE(buf->ooo) &&
-		    len <= sizeof(buf->ooo[0].data)) {
-			/* Check not already stored */
-			bool already_stored = false;
+		bool already_stored = false;
 
-			for (int i = 0; i < buf->ooo_count; i++) {
-				if (buf->ooo[i].offset == offset) {
-					already_stored = true;
-					break;
-				}
+		for (int i = 0; i < buf->ooo_count; i++) {
+			if (buf->ooo[i].offset == offset) {
+				already_stored = true;
+				break;
 			}
+		}
 
-			if (!already_stored) {
-				struct quic_ooo_segment *seg = &buf->ooo[buf->ooo_count++];
-
-				seg->offset = offset;
-				seg->len = (uint16_t)len;
-				memcpy(seg->data, data, len);
-				stream->highest_offset_received =
-					MAX(stream->highest_offset_received, end);
-				stream->bytes_received += new_bytes;
-				if (ep != NULL) {
-					ep->rx_fc.bytes_received += new_bytes;
-				}
-
-				NET_DBG("[ST:%p/%d] Stored OOO segment: offset=%" PRIu64
-					" len=%zu slots_used=%u",
-					stream, quic_get_by_stream(stream), offset, len,
-					buf->ooo_count);
-			}
-		} else {
-			NET_DBG("[ST:%p/%d] OOO queue full, dropping offset=%" PRIu64,
+		if (already_stored) {
+			NET_DBG("[ST:%p/%d] Duplicate OOO data at offset %" PRIu64,
 				stream, quic_get_by_stream(stream), offset);
+			ret = -EAGAIN;
+			goto unlock;
+		}
+
+		if (len > sizeof(buf->ooo[0].data)) {
+			NET_ERR("[ST:%p/%d] OOO segment too large: offset=%" PRIu64
+				" len=%zu max=%zu",
+				stream, quic_get_by_stream(stream), offset, len,
+				sizeof(buf->ooo[0].data));
+			ret = -EPROTO;
+			goto ooo_flow_control_error;
+		}
+
+		if (buf->ooo_count >= ARRAY_SIZE(buf->ooo)) {
+			NET_ERR("[ST:%p/%d] OOO queue full at offset %" PRIu64
+				" (%u slots used)",
+				stream, quic_get_by_stream(stream), offset,
+				buf->ooo_count);
+			ret = -EPROTO;
+			goto ooo_flow_control_error;
+		}
+
+		{
+			struct quic_ooo_segment *seg = &buf->ooo[buf->ooo_count++];
+
+			seg->offset = offset;
+			seg->len = (uint16_t)len;
+			memcpy(seg->data, data, len);
+			stream->highest_offset_received =
+				MAX(stream->highest_offset_received, end);
+			stream->bytes_received += new_bytes;
+			if (ep != NULL) {
+				ep->rx_fc.bytes_received += new_bytes;
+			}
+
+			NET_DBG("[ST:%p/%d] Stored OOO segment: offset=%" PRIu64
+				" len=%zu slots_used=%u",
+				stream, quic_get_by_stream(stream), offset, len,
+				buf->ooo_count);
 		}
 
 		ret = -EAGAIN;
@@ -5318,6 +5336,17 @@ flow_control_error:
 		quic_endpoint_send_connection_close(ep,
 						    QUIC_ERROR_FLOW_CONTROL_ERROR,
 						    "stream data exceeds flow control");
+	}
+
+	return ret;
+
+ooo_flow_control_error:
+	k_mutex_unlock(&stream->cond.data_available);
+
+	if (ep != NULL) {
+		quic_endpoint_send_connection_close(
+			ep, QUIC_ERROR_FLOW_CONTROL_ERROR,
+			"out-of-order stream data exceeds receive capacity");
 	}
 
 	return ret;
