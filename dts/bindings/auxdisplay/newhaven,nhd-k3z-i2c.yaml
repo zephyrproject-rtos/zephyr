@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Newhaven NHD K3Z family serial character LCD character displays on I2C bus
+
+compatible: "newhaven,nhd-k3z"
+
+include: [i2c-device.yaml, "newhaven,nhd-k3z-common.yaml"]

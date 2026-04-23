@@ -26,9 +26,6 @@
 
 			/* one entry for every devices at spi.dtsi */
 			cs-gpios = <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_pt6314: pt6314@0 {
@@ -37,6 +34,15 @@
 				status = "okay";
 				spi-max-frequency = <1000000>;
 				columns = <20>;
+				rows = <2>;
+			};
+
+			test_nhd_k3z: nhd-k3z@1 {
+				compatible = "newhaven,nhd-k3z";
+				reg = <1>;
+				status = "okay";
+				spi-max-frequency = <1000000>;
+				columns = <16>;
 				rows = <2>;
 			};
 		};

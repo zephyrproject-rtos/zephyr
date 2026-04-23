@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_NHD_K3Z
+	bool "Newhaven NHD K3Z serial OLED display driver"
+	default y
+	depends on DT_HAS_NEWHAVEN_NHD_K3Z_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_NEWHAVEN_NHD_K3Z),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_NEWHAVEN_NHD_K3Z),spi)
+	select SERIAL if $(dt_compat_on_bus,$(DT_COMPAT_NEWHAVEN_NHD_K3Z),uart)
+	help
+	  Enable driver for Newhaven NHD K3Z family character OLED modules.

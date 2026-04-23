@@ -41,6 +41,14 @@
 				columns = <16>;
 				rows = <2>;
 			};
+
+			test_nhd_k3z: nhd-k3z@72 {
+				compatible = "newhaven,nhd-k3z";
+				reg = <0x72>;
+				status = "okay";
+				columns = <16>;
+				rows = <2>;
+			};
 		};
 	};
 };
