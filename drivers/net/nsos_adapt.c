@@ -996,7 +996,11 @@ static int addrinfo_to_nsos_mid(struct addrinfo *res,
 
 		wrap->addrinfo = res_p;
 
-		wrap->addrinfo_mid.ai_flags = res_p->ai_flags;
+		ret = addrinfo_flags_to_nsos_mid(res_p->ai_flags,
+						 &wrap->addrinfo_mid.ai_flags);
+		if (ret < 0) {
+			goto free_wraps;
+		}
 
 		ret = socket_family_to_nsos_mid(res_p->ai_family, &wrap->addrinfo_mid.ai_family);
 		if (ret < 0) {
@@ -1057,7 +1061,11 @@ int nsos_adapt_getaddrinfo(const char *node, const char *service,
 	int ret;
 
 	if (hints_mid) {
-		hints.ai_flags = hints_mid->ai_flags;
+		ret = addrinfo_flags_from_nsos_mid(hints_mid->ai_flags,
+						   &hints.ai_flags);
+		if (ret < 0) {
+			return NSOS_MID_EAI_BADFLAGS;
+		}
 
 		ret = socket_family_from_nsos_mid(hints_mid->ai_family, &hints.ai_family);
 		if (ret < 0) {
