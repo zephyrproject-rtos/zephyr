@@ -200,7 +200,7 @@ static int nsos_socket_create(int family, int type, int proto)
 		return -1;
 	}
 
-	sock = k_malloc(sizeof(*sock));
+	sock = nsi_host_malloc(sizeof(*sock));
 	if (!sock) {
 		errno = ENOMEM;
 		goto free_fd;
@@ -221,7 +221,7 @@ static int nsos_socket_create(int family, int type, int proto)
 	return fd;
 
 free_sock:
-	k_free(sock);
+	nsi_host_free(sock);
 
 free_fd:
 	zvfs_free_fd(fd);
@@ -278,7 +278,7 @@ static int nsos_close(void *obj)
 		}
 	}
 
-	k_free(sock);
+	nsi_host_free(sock);
 
 	return ret;
 }
@@ -794,7 +794,7 @@ static int nsos_accept(void *obj, struct net_sockaddr *addr, net_socklen_t *addr
 		goto close_adapt_fd;
 	}
 
-	conn_sock = k_malloc(sizeof(*conn_sock));
+	conn_sock = nsi_host_malloc(sizeof(*conn_sock));
 	if (!conn_sock) {
 		ret = -NSI_ERRNO_MID_ENOMEM;
 		goto free_zephyr_fd;
@@ -885,7 +885,7 @@ static ssize_t nsos_sendmsg(void *obj, const struct net_msghdr *msg, int flags)
 		goto return_ret;
 	}
 
-	msg_iov = k_calloc(msg->msg_iovlen, sizeof(*msg_iov));
+	msg_iov = nsi_host_calloc(msg->msg_iovlen, sizeof(*msg_iov));
 	if (!msg_iov) {
 		ret = -NSI_ERRNO_MID_ENOMEM;
 		goto return_ret;
@@ -912,7 +912,7 @@ static ssize_t nsos_sendmsg(void *obj, const struct net_msghdr *msg, int flags)
 	ret = nsos_adapt_sendmsg(sock->poll.mid.fd, &msg_mid, flags_mid);
 
 free_msg_iov:
-	k_free(msg_iov);
+	nsi_host_free(msg_iov);
 
 return_ret:
 	if (ret < 0) {
@@ -1531,7 +1531,7 @@ static int addrinfo_from_nsos_mid(struct nsos_mid_addrinfo *nsos_res,
 		return 0;
 	}
 
-	res_wraps = k_calloc(n_res, sizeof(*res_wraps));
+	res_wraps = nsi_host_calloc(n_res, sizeof(*res_wraps));
 	if (!res_wraps) {
 		return -ENOMEM;
 	}
@@ -1578,7 +1578,7 @@ static int addrinfo_from_nsos_mid(struct nsos_mid_addrinfo *nsos_res,
 				       res_p->ai_addr, res_p->ai_addrlen);
 
 		wrap->addrinfo.ai_canonname =
-			res_p->ai_canonname ? strdup(res_p->ai_canonname) : NULL;
+			res_p->ai_canonname ? nsi_host_strdup(res_p->ai_canonname) : NULL;
 		wrap->addrinfo.ai_next = &wrap[1].addrinfo;
 	}
 
@@ -1590,10 +1590,10 @@ static int addrinfo_from_nsos_mid(struct nsos_mid_addrinfo *nsos_res,
 
 free_wraps:
 	for (size_t i = 0; i < idx_res; i++) {
-		free(res_wraps[i].addrinfo.ai_canonname);
+		nsi_host_free(res_wraps[i].addrinfo.ai_canonname);
 	}
 
-	k_free(res_wraps);
+	nsi_host_free(res_wraps);
 
 	return ret;
 }
@@ -1667,11 +1667,11 @@ static void nsos_freeaddrinfo(struct zsock_addrinfo *res)
 		CONTAINER_OF(res, struct zsock_addrinfo_wrap, addrinfo);
 
 	for (struct zsock_addrinfo *res_p = res; res_p; res_p = res_p->ai_next) {
-		free(res_p->ai_canonname);
+		nsi_host_free(res_p->ai_canonname);
 	}
 
 	nsos_adapt_freeaddrinfo(wrap->addrinfo_mid);
-	k_free(wrap);
+	nsi_host_free(wrap);
 }
 
 static const struct socket_dns_offload nsos_dns_ops = {
