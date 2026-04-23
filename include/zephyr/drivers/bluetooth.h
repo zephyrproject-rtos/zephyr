@@ -101,6 +101,45 @@ enum __deprecated bt_hci_bus { /* Use macro BT_DT_HCI_BUS_GET() instead */
 #define BT_DT_HCI_BUS_INST_GET(inst) BT_DT_HCI_BUS_GET(DT_DRV_INST(inst))
 
 /**
+ * @brief Common Bluetooth HCI driver configuration.
+ *
+ * This structure is common to all Bluetooth HCI drivers and is expected to be
+ * the first element in the object pointed to by the config field in the device
+ * structure.
+ */
+struct bt_hci_driver_config {
+};
+
+/**
+ * @brief Static initializer for @p bt_hci_driver_config struct
+ *
+ * @param node_id Devicetree node identifier
+ */
+#define BT_DT_HCI_DRIVER_CONFIG_GET(node_id)                                                    \
+	{                                                                                       \
+	}
+
+/**
+ * @brief Static initializer for @p bt_hcidriver_config struct from
+ * DT_DRV_COMPAT instance.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @see BT_HCI_DT_DRIVER_CONFIG_GET()
+ */
+
+#define BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst)                                                  \
+	BT_DT_HCI_DRIVER_CONFIG_GET(DT_DRV_INST(inst))
+
+/**
+ * @brief Common Bluetooth HCI driver data.
+ *
+ * This structure is common to all Bluetooth HCI drivers and is expected to be
+ * the first element in the driver's struct driver_data declaration.
+ */
+struct bt_hci_driver_data {
+};
+
+/**
  * @def_driverbackendgroup{Bluetooth HCI,bt_hci_api}
  * @{
  */
