@@ -313,6 +313,12 @@
 	status = "okay";
 };
 
+&adc2 {
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <6>;
+	status = "okay";
+};
+
 &spi2 {
 	pinctrl-0 = <&spi2_nss_pa3 &spi2_sck_pi1
 		     &spi2_miso_pi2 &spi2_mosi_pb15>;
