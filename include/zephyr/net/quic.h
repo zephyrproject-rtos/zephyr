@@ -134,9 +134,16 @@ enum {
 /**
  * @brief Creates a new QUIC connection socket.
  *
- * @param remote_addr Remote connection endpoint address.
- * @param local_addr Local connection endpoint address. If set to NULL,
- *        the local address is selected according to the remote address.
+ * @details Creates a new QUIC connection context. This serves as a foundation
+ *          for all subsequent communication.
+ *
+ * @param remote_addr Remote connection endpoint address. In client mode, this
+ *        is the server address to connect to. In server mode, this is NULL
+ *        or unspecified if binding a listener.
+ * @param local_addr Local connection endpoint address. In client mode, if set
+ *        to NULL, the system will auto-bind the socket to an ephemeral port
+ *        and select the local address. In server mode, this is the address to
+ *        listen on.
  *
  * @return New QUIC connection socket on success, <0 on failure.
  */
@@ -146,6 +153,9 @@ int quic_connection_open(const struct net_sockaddr *remote_addr,
 /**
  * @brief Closes the QUIC socket.
  *
+ * @details Closes the connection and terminates the TLS session.
+ *          Does the same thing as ``zsock_close`` for a connection socket.
+ *
  * @param  sock QUIC connection socket to close.
  *
  * @return 0 success, <0 on failure.
@@ -153,12 +163,16 @@ int quic_connection_open(const struct net_sockaddr *remote_addr,
 int quic_connection_close(int sock);
 
 /**
- * @brief Creates a new QUIC stream socket.
+ * @brief Creates a new QUIC stream socket within an established QUIC connection.
  *
- * @param  connection_sock Connection to create the stream on.
- * @param  initiator       Stream initiator (client or server).
- * @param  direction       Stream direction (uni- or bidirectional).
- * @param  priority        Stream priority (0-255).
+ * @param  connection_sock Connection to create the stream on. This is the
+ *         socket id returned by quic_connection_open().
+ * @param  initiator Stream initiator (client or server). This is either
+ *         QUIC_STREAM_CLIENT or QUIC_STREAM_SERVER.
+ * @param  direction Stream direction (uni- or bidirectional). If set to
+ *         QUIC_STREAM_BIDIRECTIONAL, then both sides can read/write.
+ *         If set to QUIC_STREAM_UNIDIRECTIONAL, then only the initiator can write.
+ * @param  priority Priority level (0-255) for scheduling stream data.
  *
  * @return New QUIC stream socket on success, <0 on failure.
  */
@@ -171,6 +185,9 @@ int quic_stream_open(int connection_sock,
  * @brief Closes the QUIC stream socket.
  *
  * @param  sock QUIC stream socket to close.
+ *
+ * @details Closes a specific stream without closing the underlying connection.
+ *          Does the same thing as ``zsock_close`` for a stream socket.
  *
  * @return 0 success, <0 on failure.
  */
