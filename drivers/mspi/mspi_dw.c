@@ -1721,9 +1721,11 @@ static int _api_xip_config(const struct device *dev,
 		write_xip_incr_inst(dev, params->read_cmd);
 		write_xip_wrap_inst(dev, params->read_cmd);
 		write_xip_ctrl(dev, ctrl.read);
+#if XIP_WRITE_SUPPORT_INSTANCES != 0
 		write_xip_write_incr_inst(dev, params->write_cmd);
 		write_xip_write_wrap_inst(dev, params->write_cmd);
 		write_xip_write_ctrl(dev, ctrl.write);
+#endif
 	} else if (dev_data->xip_params_active.read_cmd !=
 		   dev_data->xip_params_stored.read_cmd ||
 		   dev_data->xip_params_active.write_cmd !=
