@@ -105,6 +105,10 @@ config XTENSA_CPU_HAS_HIFI4
 	select XTENSA_CPU_HAS_HIFI
 	bool
 
+config XTENSA_CPU_HAS_HIFI5
+	select XTENSA_CPU_HAS_HIFI
+	bool
+
 # Selected when at least one XTENSA_HIFIn version has been configured
 config XTENSA_HIFI
 	bool
@@ -126,6 +130,14 @@ config XTENSA_HIFI4
 	select XTENSA_HIFI
 	help
 	  This option enables HiFi 4 instruction support.
+
+config XTENSA_HIFI5
+	bool "HiFi5 AudioEngine instructions"
+	depends on XTENSA_CPU_HAS_HIFI5
+	default y
+	select XTENSA_HIFI
+	help
+	  This option enables HiFi 5 instruction support.
 
 config XTENSA_HIFI_SHARING
 	bool "HiFi register sharing"
