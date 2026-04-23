@@ -26,6 +26,12 @@ void __weak sys_trace_isr_exit_user(void) {}
 void __weak sys_trace_idle_user(void) {}
 void __weak sys_trace_sys_init_enter_user(const struct init_entry *entry, int level) {}
 void __weak sys_trace_sys_init_exit_user(const struct init_entry *entry, int level, int result) {}
+void __weak sys_trace_k_thread_sleep_enter_user(k_timeout_t timeout) {}
+void __weak sys_trace_k_thread_sleep_exit_user(k_timeout_t timeout, int32_t ret) {}
+void __weak sys_trace_k_thread_msleep_enter_user(int32_t ms) {}
+void __weak sys_trace_k_thread_msleep_exit_user(int32_t ms, int32_t ret) {}
+void __weak sys_trace_k_thread_usleep_enter_user(int32_t us) {}
+void __weak sys_trace_k_thread_usleep_exit_user(int32_t us, int32_t ret) {}
 void __weak sys_trace_gpio_pin_interrupt_configure_enter_user(const struct device *port,
 							      gpio_pin_t pin, gpio_flags_t flags) {}
 void __weak sys_trace_gpio_pin_interrupt_configure_exit_user(const struct device *port,
@@ -247,6 +253,36 @@ void sys_trace_sys_init_enter(const struct init_entry *entry, int level)
 void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result)
 {
 	sys_trace_sys_init_exit_user(entry, level, result);
+}
+
+void sys_trace_k_thread_sleep_enter(k_timeout_t timeout)
+{
+	sys_trace_k_thread_sleep_enter_user(timeout);
+}
+
+void sys_trace_k_thread_sleep_exit(k_timeout_t timeout, int32_t ret)
+{
+	sys_trace_k_thread_sleep_exit_user(timeout, ret);
+}
+
+void sys_trace_k_thread_msleep_enter(int32_t ms)
+{
+	sys_trace_k_thread_msleep_enter_user(ms);
+}
+
+void sys_trace_k_thread_msleep_exit(int32_t ms, int32_t ret)
+{
+	sys_trace_k_thread_msleep_exit_user(ms, ret);
+}
+
+void sys_trace_k_thread_usleep_enter(int32_t us)
+{
+	sys_trace_k_thread_usleep_enter_user(us);
+}
+
+void sys_trace_k_thread_usleep_exit(int32_t us, int32_t ret)
+{
+	sys_trace_k_thread_usleep_exit_user(us, ret);
 }
 
 void sys_trace_gpio_pin_interrupt_configure_enter(const struct device *port, gpio_pin_t pin,
