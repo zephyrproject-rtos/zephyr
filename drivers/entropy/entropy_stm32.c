@@ -451,6 +451,8 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 	do {
 		while (ll_rng_is_active_drdy(
 				entropy_stm32_rng_data.rng) != 1) {
+
+#if !defined(CONFIG_PM_S2RAM)
 #if !IRQLESS_TRNG
 			/*
 			 * Enter low-power mode while waiting for event
@@ -468,6 +470,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 			__SEV();
 			__WFE();
 #endif /* !IRQLESS_TRNG */
+#endif /* !CONFIG_PM_S2RAM */
 		}
 
 		ret = random_sample_get(&rnd_sample);
