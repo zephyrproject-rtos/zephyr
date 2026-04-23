@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Luca Gessi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bosch BMA400 3-axis acceleration sensors in SPI mode.  See more info at:
+  https://www.bosch-sensortec.com/products/motion-sensors/accelerometers/
+
+compatible: "bosch,bma400"
+
+include: [spi-device.yaml, "bosch,bma400-common.yaml"]
