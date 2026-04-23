@@ -40,7 +40,12 @@ void prepare_quic_socket(int *sock,
 
 void setup_quic_certs(int sock, sec_tag_t sec_tag_list[], size_t sec_tag_list_size)
 {
-	/* Currently not set, update this if needed */
+	int ret;
+
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
+			       sec_tag_list,
+			       sec_tag_list_size * sizeof(sec_tag_list[0]));
+	zassert_equal(ret, 0, "Failed to set TLS sec tags (%d)", -errno);
 }
 
 void setup_alpn(int sock, const char * const alpn_list[], size_t alpn_list_size)
