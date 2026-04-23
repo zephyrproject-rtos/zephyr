@@ -188,7 +188,7 @@ static int pwm_max32_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("PWM pinctrl initialization failed (%d)", ret);
+		LOG_ERROR("PWM pinctrl initialization failed (%d)", ret);
 	}
 
 #ifdef CONFIG_PWM_EVENT

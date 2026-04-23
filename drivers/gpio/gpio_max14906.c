@@ -31,7 +31,7 @@ static int max14906_pars_spi_diag(const struct device *dev, uint8_t *rx_diag_buf
 	int diag_ret;
 
 	if (rx_diag_buff[0]) {
-		LOG_ERR("[DIAG] MAX14906 in SPI diag - error detected\n");
+		LOG_ERROR("[DIAG] MAX14906 in SPI diag - error detected\n");
 		data->glob.interrupt.reg_bits.SHT_VDD_FAULT = MAX149X6_GET_BIT(rx_diag_buff[0], 5);
 		data->glob.interrupt.reg_bits.ABOVE_VDD_FAULT =
 			MAX149X6_GET_BIT(rx_diag_buff[0], 4);
@@ -61,10 +61,11 @@ static int max14906_pars_spi_diag(const struct device *dev, uint8_t *rx_diag_buf
 		 * +--------+--------+--------+--------+--------+--------+--------+--------+
 		 */
 
-		LOG_ERR("[DIAG] Flt1[%x] Flt2[%x] Flt3[%x] Flt4[%x]",
+		LOG_ERROR(
+			"[DIAG] Flt1[%x] Flt2[%x] Flt3[%x] Flt4[%x]",
 			MAX149X6_GET_BIT(rx_diag_buff[1], 0), MAX149X6_GET_BIT(rx_diag_buff[1], 1),
 			MAX149X6_GET_BIT(rx_diag_buff[1], 2), MAX149X6_GET_BIT(rx_diag_buff[1], 3));
-		LOG_ERR("[DIAG] gpio_max14906_diag_chan_get(%x)\n", rx_diag_buff[1] & 0x0f);
+		LOG_ERROR("[DIAG] gpio_max14906_diag_chan_get(%x)\n", rx_diag_buff[1] & 0x0f);
 		diag_ret = gpio_max14906_diag_chan_get(dev);
 		if (diag_ret < 0) {
 			ret = diag_ret;
@@ -82,7 +83,7 @@ static int max14906_reg_trans_spi_diag(const struct device *dev, uint8_t addr, u
 	int trans_ret, parse_ret;
 
 	if (config->fault_gpio.port && !gpio_pin_get_dt(&config->fault_gpio)) {
-		LOG_ERR("[FAULT] pin triggered");
+		LOG_ERROR("[FAULT] pin triggered");
 	}
 
 	trans_ret = max149x6_reg_transceive(dev, addr, tx, rx_diag_buff, rw);
@@ -137,7 +138,7 @@ static int gpio_max14906_diag_chan_get(const struct device *dev)
 	int ret;
 
 	if (config->fault_gpio.port && !gpio_pin_get_dt(&config->fault_gpio)) {
-		LOG_ERR("[DIAG] FAULT flag is rised");
+		LOG_ERROR("[DIAG] FAULT flag is rised");
 	}
 
 	ret = max149x6_reg_transceive(dev, MAX14906_INT_REG, 0, NULL, MAX149x6_READ);
@@ -215,7 +216,7 @@ static int gpio_max14906_diag_chan_get(const struct device *dev)
 			PRINT_ERR(data->glob.glob_err.reg_bits.WDOG_ERR);
 		}
 		if (data->glob.interrupt.reg_bits.COM_ERR) {
-			LOG_ERR("[DIAG] MAX14906 Communication Error");
+			LOG_ERROR("[DIAG] MAX14906 Communication Error");
 		}
 	}
 
@@ -353,7 +354,7 @@ static int gpio_max14906_config(const struct device *dev, gpio_pin_t pin, gpio_f
 		LOG_DBG("SETUP AS OUTPUT %d", pin);
 		break;
 	default:
-		LOG_ERR("On MAX14906 only input option is available!");
+		LOG_ERROR("On MAX14906 only input option is available!");
 		err = -ENOTSUP;
 		break;
 	}
@@ -402,25 +403,25 @@ static int gpio_max14906_clean_on_power(const struct device *dev)
 	/* Clear the latched faults generated at power up */
 	ret = MAX14906_REG_READ(dev, MAX14906_OPN_WIR_FLT_REG);
 	if (ret < 0) {
-		LOG_ERR("Error reading MAX14906_OPN_WIR_FLT_REG");
+		LOG_ERROR("Error reading MAX14906_OPN_WIR_FLT_REG");
 		goto err_clean_on_power_max14906;
 	}
 
 	ret = MAX14906_REG_READ(dev, MAX14906_OVR_LD_REG);
 	if (ret < 0) {
-		LOG_ERR("Error reading MAX14906_OVR_LD_REG");
+		LOG_ERROR("Error reading MAX14906_OVR_LD_REG");
 		goto err_clean_on_power_max14906;
 	}
 
 	ret = MAX14906_REG_READ(dev, MAX14906_SHT_VDD_FLT_REG);
 	if (ret < 0) {
-		LOG_ERR("Error reading MAX14906_SHD_VDD_FLT_REG");
+		LOG_ERROR("Error reading MAX14906_SHD_VDD_FLT_REG");
 		goto err_clean_on_power_max14906;
 	}
 
 	ret = MAX14906_REG_READ(dev, MAX14906_GLOB_ERR_REG);
 	if (ret < 0) {
-		LOG_ERR("Error reading MAX14906_GLOBAL_FLT_REG");
+		LOG_ERROR("Error reading MAX14906_GLOBAL_FLT_REG");
 		goto err_clean_on_power_max14906;
 	}
 
@@ -467,20 +468,20 @@ static int gpio_max14906_init(const struct device *dev)
 	LOG_DBG(" --- GPIO MAX14906 init IN ---");
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus is not ready\n");
+		LOG_ERROR("SPI bus is not ready\n");
 		return -ENODEV;
 	}
 
 	/* setup READY gpio - normal low */
 	if (config->ready_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->ready_gpio)) {
-			LOG_ERR("READY GPIO device not ready");
+			LOG_ERROR("READY GPIO device not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->ready_gpio, GPIO_INPUT);
 		if (err < 0) {
-			LOG_ERR("Failed to configure reset GPIO");
+			LOG_ERROR("Failed to configure reset GPIO");
 			return err;
 		}
 	}
@@ -488,13 +489,13 @@ static int gpio_max14906_init(const struct device *dev)
 	/* setup FAULT gpio - normal high */
 	if (config->fault_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->fault_gpio)) {
-			LOG_ERR("FAULT GPIO device not ready");
+			LOG_ERROR("FAULT GPIO device not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->fault_gpio, GPIO_INPUT);
 		if (err < 0) {
-			LOG_ERR("Failed to configure DC GPIO");
+			LOG_ERROR("Failed to configure DC GPIO");
 			return err;
 		}
 	}
@@ -502,13 +503,13 @@ static int gpio_max14906_init(const struct device *dev)
 	/* setup LATCH gpio - normal high */
 	if (config->sync_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->sync_gpio)) {
-			LOG_ERR("SYNC GPIO device not ready");
+			LOG_ERROR("SYNC GPIO device not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->sync_gpio, GPIO_OUTPUT_INACTIVE);
 		if (err < 0) {
-			LOG_ERR("Failed to configure busy GPIO");
+			LOG_ERROR("Failed to configure busy GPIO");
 			return err;
 		}
 
@@ -518,13 +519,13 @@ static int gpio_max14906_init(const struct device *dev)
 	/* setup LATCH gpio - normal high */
 	if (config->en_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->en_gpio)) {
-			LOG_ERR("SYNC GPIO device not ready");
+			LOG_ERROR("SYNC GPIO device not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->en_gpio, GPIO_OUTPUT_INACTIVE);
 		if (err < 0) {
-			LOG_ERR("Failed to configure busy GPIO");
+			LOG_ERROR("Failed to configure busy GPIO");
 			return err;
 		}
 

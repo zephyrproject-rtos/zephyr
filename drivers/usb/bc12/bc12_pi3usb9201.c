@@ -283,7 +283,7 @@ static void pi3usb9201_client_detect_finish(const struct device *dev, const int 
 
 	/* bc1.2 is complete and start bit does not auto clear */
 	if (pi3usb9201_bc12_detect_ctrl(dev, false) < 0) {
-		LOG_ERR("failed to clear client detect");
+		LOG_ERROR("failed to clear client detect");
 	}
 
 	/* If DCP mode, disable USB switch */
@@ -293,7 +293,7 @@ static void pi3usb9201_client_detect_finish(const struct device *dev, const int 
 		enable_usb_data = true;
 	}
 	if (pi3usb9201_bc12_usb_switch(dev, enable_usb_data) < 0) {
-		LOG_ERR("failed to set USB data mode");
+		LOG_ERROR("failed to set USB data mode");
 	}
 
 	/* Inform charge manager of new supplier type and current limit */
@@ -411,7 +411,7 @@ static int pi3usb9201_set_portable_device(const struct device *dev)
 		partner_state.type = BC12_TYPE_UNKNOWN;
 		/* Save supplier type and notify callbacks */
 		pi3usb9201_update_charging_partner(dev, &partner_state);
-		LOG_ERR("bc1.2 detection failed, using defaults");
+		LOG_ERROR("bc1.2 detection failed, using defaults");
 
 		return -EIO;
 	}
@@ -496,7 +496,7 @@ static void pi3usb9201_isr_work(struct k_work *item)
 
 	rv = pi3usb9201_get_status(dev, &client, &host);
 	if (rv < 0) {
-		LOG_ERR("Failed to get host/client status");
+		LOG_ERROR("Failed to get host/client status");
 		return;
 	}
 
@@ -531,7 +531,7 @@ static int pi3usb9201_set_role(const struct device *dev, const enum bc12_role ro
 	case BC12_CHARGING_PORT:
 		return pi3usb9201_set_charging_mode(dev);
 	default:
-		LOG_ERR("unsupported BC12 role: %d", role);
+		LOG_ERROR("unsupported BC12 role: %d", role);
 		return -EINVAL;
 	}
 
@@ -560,12 +560,12 @@ static int pi3usb9201_init(const struct device *dev)
 	int rv;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("Bus device is not ready.");
+		LOG_ERROR("Bus device is not ready.");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->intb_gpio)) {
-		LOG_ERR("intb_gpio device is not ready.");
+		LOG_ERROR("intb_gpio device is not ready.");
 		return -ENODEV;
 	}
 

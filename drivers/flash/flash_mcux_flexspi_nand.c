@@ -455,7 +455,7 @@ static int flash_flexspi_nand_check_ecc(const struct device *dev)
 	ecc = (status & SPI_NAND_STATUS_ECC_MASK) >> SPI_NAND_STATUS_ECC_SHIFT;
 
 	if (ecc == 0x3U) {
-		LOG_ERR("Uncorrectable ECC error (STATUS=0x%02x)", status);
+		LOG_ERROR("Uncorrectable ECC error (STATUS=0x%02x)", status);
 		return -EIO;
 	}
 	if (ecc != 0U) {
@@ -853,7 +853,7 @@ static int flash_flexspi_nand_init(const struct device *dev)
 	k_mutex_init(&nand->lock);
 
 	if (!device_is_ready(nand->controller)) {
-		LOG_ERR("FlexSPI controller not ready");
+		LOG_ERROR("FlexSPI controller not ready");
 		return -ENODEV;
 	}
 
@@ -861,14 +861,14 @@ static int flash_flexspi_nand_init(const struct device *dev)
 		nand->controller, &nand->config, (const uint32_t *)flexspi_lut,
 		sizeof(flexspi_lut) / MEMC_FLEXSPI_CMD_SIZE, nand->port);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure FlexSPI NAND (%d)", ret);
+		LOG_ERROR("Failed to configure FlexSPI NAND (%d)", ret);
 		return ret;
 	}
 
 	/* Apply FlexSPI pinmux for the NAND port. */
 	ret = memc_flexspi_apply_pinctrl(nand->controller, PINCTRL_STATE_DEFAULT);
 	if (ret != 0 && ret != -ENOENT) {
-		LOG_ERR("Failed to apply FlexSPI pinctrl (%d)", ret);
+		LOG_ERROR("Failed to apply FlexSPI pinctrl (%d)", ret);
 		return ret;
 	}
 
@@ -876,7 +876,7 @@ static int flash_flexspi_nand_init(const struct device *dev)
 
 	ret = flash_flexspi_nand_reset(dev);
 	if (ret != 0) {
-		LOG_ERR("NAND reset failed (%d)", ret);
+		LOG_ERROR("NAND reset failed (%d)", ret);
 		return ret;
 	}
 
@@ -888,29 +888,29 @@ static int flash_flexspi_nand_init(const struct device *dev)
 
 	ret = flash_flexspi_nand_read_id(dev, id);
 	if (ret != 0) {
-		LOG_ERR("NAND read-id failed (%d)", ret);
+		LOG_ERROR("NAND read-id failed (%d)", ret);
 		return ret;
 	}
 	LOG_DBG("JEDEC ID (raw): %02X %02X %02X", id[0], id[1], id[2]);
 
 	ret = flash_flexspi_nand_onfi_read(dev);
 	if (ret != 0) {
-		LOG_ERR("ONFI parameter read/CRC failed (%d)", ret);
+		LOG_ERROR("ONFI parameter read/CRC failed (%d)", ret);
 		return ret;
 	}
 
 	ret = flash_flexspi_nand_enable_ecc(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable on-die ECC (%d)", ret);
+		LOG_ERROR("Failed to enable on-die ECC (%d)", ret);
 		return ret;
 	}
 
 	if (nand->page_size == 0U) {
-		LOG_ERR("ONFI did not provide a valid page size");
+		LOG_ERROR("ONFI did not provide a valid page size");
 		return -EIO;
 	}
 	if ((nand->pages_per_block == 0U) || (nand->block_size == 0U)) {
-		LOG_ERR("ONFI did not provide a valid block geometry");
+		LOG_ERROR("ONFI did not provide a valid block geometry");
 		return -EIO;
 	}
 

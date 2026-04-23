@@ -92,7 +92,7 @@ static void send_invite(void)
 	       PDU_LEN_INVITE);
 
 	if (bt_mesh_prov_send(&inv, NULL)) {
-		LOG_ERR("Failed to send invite");
+		LOG_ERROR("Failed to send invite");
 		return;
 	}
 
@@ -130,16 +130,17 @@ static void send_start(void)
 
 	memcpy(bt_mesh_prov_link.conf_inputs.start, &start.data[1], PDU_LEN_START);
 
-	if (bt_mesh_prov_auth(true, bt_mesh_prov_link.oob_method,
-		bt_mesh_prov_link.oob_action, bt_mesh_prov_link.oob_size) < 0) {
-		LOG_ERR("Invalid authentication method: 0x%02x; "
-		       "action: 0x%02x; size: 0x%02x", bt_mesh_prov_link.oob_method,
-		       bt_mesh_prov_link.oob_action, bt_mesh_prov_link.oob_size);
+	if (bt_mesh_prov_auth(true, bt_mesh_prov_link.oob_method, bt_mesh_prov_link.oob_action,
+			      bt_mesh_prov_link.oob_size) < 0) {
+		LOG_ERROR("Invalid authentication method: 0x%02x; "
+			  "action: 0x%02x; size: 0x%02x",
+			  bt_mesh_prov_link.oob_method, bt_mesh_prov_link.oob_action,
+			  bt_mesh_prov_link.oob_size);
 		return;
 	}
 
 	if (bt_mesh_prov_send(&start, start_sent)) {
-		LOG_ERR("Failed to send Provisioning Start");
+		LOG_ERROR("Failed to send Provisioning Start");
 		return;
 	}
 }
@@ -229,7 +230,7 @@ static void prov_capabilities(const uint8_t *data)
 	}
 
 	if (!(is_sha256 || is_aes128)) {
-		LOG_ERR("Invalid encryption algorithm");
+		LOG_ERROR("Invalid encryption algorithm");
 		prov_fail(PROV_ERR_NVAL_FMT);
 		return;
 	}
@@ -252,7 +253,7 @@ static void prov_capabilities(const uint8_t *data)
 
 	provisionee.elem_count = caps.elem_count;
 	if (provisionee.elem_count == 0) {
-		LOG_ERR("Invalid number of elements");
+		LOG_ERROR("Invalid number of elements");
 		prov_fail(PROV_ERR_NVAL_FMT);
 		return;
 	}
@@ -263,7 +264,7 @@ static void prov_capabilities(const uint8_t *data)
 			(caps.oob_type & BT_MESH_STATIC_OOB_AVAILABLE);
 
 		if (!oob_availability && !is_sha256) {
-			LOG_ERR("Invalid capabilities for OOB authentication");
+			LOG_ERROR("Invalid capabilities for OOB authentication");
 			prov_fail(PROV_ERR_NVAL_FMT);
 			return;
 		}
@@ -277,7 +278,7 @@ static void prov_capabilities(const uint8_t *data)
 			bt_mesh_prov_link.addr = bt_mesh_cdb_free_addr_get(
 				provisionee.elem_count);
 			if (!bt_mesh_prov_link.addr) {
-				LOG_ERR("Failed allocating address for node");
+				LOG_ERROR("Failed allocating address for node");
 				prov_fail(PROV_ERR_ADDR);
 				return;
 			}
@@ -289,7 +290,7 @@ static void prov_capabilities(const uint8_t *data)
 					       provisionee.elem_count,
 					       provisionee.net_idx);
 		if (provisionee.node == NULL) {
-			LOG_ERR("Failed allocating node 0x%04x", bt_mesh_prov_link.addr);
+			LOG_ERROR("Failed allocating node 0x%04x", bt_mesh_prov_link.addr);
 			prov_fail(PROV_ERR_RESOURCES);
 			return;
 		}
@@ -328,7 +329,7 @@ static void send_confirm(void)
 	if (bt_mesh_prov_conf_salt(bt_mesh_prov_link.algorithm,
 				   inputs,
 				   bt_mesh_prov_link.conf_salt)) {
-		LOG_ERR("Unable to generate confirmation salt");
+		LOG_ERROR("Unable to generate confirmation salt");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -345,7 +346,7 @@ static void send_confirm(void)
 
 	if (bt_mesh_prov_conf_key(bt_mesh_prov_link.algorithm, conf_key_input,
 				  bt_mesh_prov_link.conf_salt, bt_mesh_prov_link.conf_key)) {
-		LOG_ERR("Unable to generate confirmation key");
+		LOG_ERROR("Unable to generate confirmation key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -353,7 +354,7 @@ static void send_confirm(void)
 	LOG_DBG("ConfirmationKey: %s", bt_hex(bt_mesh_prov_link.conf_key, auth_size));
 
 	if (bt_rand(bt_mesh_prov_link.rand, auth_size)) {
-		LOG_ERR("Unable to generate random number");
+		LOG_ERROR("Unable to generate random number");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -365,7 +366,7 @@ static void send_confirm(void)
 	if (bt_mesh_prov_conf(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_key,
 			      bt_mesh_prov_link.rand, bt_mesh_prov_link.auth,
 			      bt_mesh_prov_link.conf)) {
-		LOG_ERR("Unable to generate confirmation value");
+		LOG_ERROR("Unable to generate confirmation value");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -373,7 +374,7 @@ static void send_confirm(void)
 	net_buf_simple_add_mem(&cfm, bt_mesh_prov_link.conf, auth_size);
 
 	if (bt_mesh_prov_send(&cfm, NULL)) {
-		LOG_ERR("Failed to send Provisioning Confirm");
+		LOG_ERROR("Failed to send Provisioning Confirm");
 		return;
 	}
 
@@ -398,7 +399,7 @@ static void send_pub_key(void)
 
 	key = bt_mesh_pub_key_get();
 	if (!key) {
-		LOG_ERR("No public key available");
+		LOG_ERROR("No public key available");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -411,7 +412,7 @@ static void send_pub_key(void)
 	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_provisioner, &buf.data[1], PDU_LEN_PUB_KEY);
 
 	if (bt_mesh_prov_send(&buf, public_key_sent)) {
-		LOG_ERR("Failed to send Public Key");
+		LOG_ERROR("Failed to send Public Key");
 		return;
 	}
 
@@ -427,13 +428,13 @@ static void prov_dh_key_gen(void)
 	remote_pk = bt_mesh_prov_link.conf_inputs.pub_key_device;
 
 	if (!memcmp(local_pk, remote_pk, PUB_KEY_SIZE)) {
-		LOG_ERR("Public keys are identical");
+		LOG_ERROR("Public keys are identical");
 		prov_fail(PROV_ERR_NVAL_FMT);
 		return;
 	}
 
 	if (bt_mesh_dhkey_gen(remote_pk, NULL, bt_mesh_prov_link.dhkey)) {
-		LOG_ERR("Failed to generate DHKey");
+		LOG_ERROR("Failed to generate DHKey");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 	}
 
@@ -505,7 +506,7 @@ static void send_prov_data(void)
 	err = bt_mesh_session_key(bt_mesh_prov_link.dhkey,
 				  bt_mesh_prov_link.prov_salt, &session_key);
 	if (err) {
-		LOG_ERR("Unable to generate session key");
+		LOG_ERROR("Unable to generate session key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -513,7 +514,7 @@ static void send_prov_data(void)
 	err = bt_mesh_prov_nonce(bt_mesh_prov_link.dhkey,
 				 bt_mesh_prov_link.prov_salt, nonce);
 	if (err) {
-		LOG_ERR("Unable to generate session nonce");
+		LOG_ERROR("Unable to generate session nonce");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		goto session_key_destructor;
 	}
@@ -523,21 +524,21 @@ static void send_prov_data(void)
 	err = bt_mesh_dev_key(bt_mesh_prov_link.dhkey,
 			      bt_mesh_prov_link.prov_salt, provisionee.new_dev_key);
 	if (err) {
-		LOG_ERR("Unable to generate device key");
+		LOG_ERROR("Unable to generate device key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		goto session_key_destructor;
 	}
 
 	sub = bt_mesh_cdb_subnet_get(provisionee.node->net_idx);
 	if (sub == NULL) {
-		LOG_ERR("No subnet with net_idx %u", provisionee.node->net_idx);
+		LOG_ERROR("No subnet with net_idx %u", provisionee.node->net_idx);
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		goto session_key_destructor;
 	}
 
 	err = bt_mesh_key_export(net_key, &sub->keys[SUBNET_KEY_TX_IDX(sub)].net_key);
 	if (err) {
-		LOG_ERR("Unable to export network key");
+		LOG_ERROR("Unable to export network key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		goto session_key_destructor;
 	}
@@ -557,13 +558,13 @@ static void send_prov_data(void)
 	err = bt_mesh_prov_encrypt(&session_key, nonce, &pdu.data[1],
 				   &pdu.data[1]);
 	if (err) {
-		LOG_ERR("Unable to encrypt provisioning data");
+		LOG_ERROR("Unable to encrypt provisioning data");
 		prov_fail(PROV_ERR_DECRYPT);
 		goto session_key_destructor;
 	}
 
 	if (bt_mesh_prov_send(&pdu, NULL)) {
-		LOG_ERR("Failed to send Provisioning Data");
+		LOG_ERROR("Failed to send Provisioning Data");
 		goto session_key_destructor;
 	}
 
@@ -594,7 +595,7 @@ static void prov_node_add(void)
 
 	err = bt_mesh_cdb_node_key_import(node, provisionee.new_dev_key);
 	if (err) {
-		LOG_ERR("Failed to import node device key");
+		LOG_ERROR("Failed to import node device key");
 		return;
 	}
 
@@ -622,7 +623,7 @@ static void send_random(void)
 	net_buf_simple_add_mem(&rnd, bt_mesh_prov_link.rand, rand_size);
 
 	if (bt_mesh_prov_send(&rnd, NULL)) {
-		LOG_ERR("Failed to send Provisioning Random");
+		LOG_ERROR("Failed to send Provisioning Random");
 		return;
 	}
 
@@ -636,20 +637,20 @@ static void prov_random(const uint8_t *data)
 
 	LOG_DBG("Remote Random: %s", bt_hex(data, rand_size));
 	if (!memcmp(data, bt_mesh_prov_link.rand, rand_size)) {
-		LOG_ERR("Random value is identical to ours, rejecting.");
+		LOG_ERROR("Random value is identical to ours, rejecting.");
 		prov_fail(PROV_ERR_CFM_FAILED);
 		return;
 	}
 
-	if (bt_mesh_prov_conf(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_key,
-		data, bt_mesh_prov_link.auth, conf_verify)) {
-		LOG_ERR("Unable to calculate confirmation verification");
+	if (bt_mesh_prov_conf(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_key, data,
+			      bt_mesh_prov_link.auth, conf_verify)) {
+		LOG_ERROR("Unable to calculate confirmation verification");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
 	if (memcmp(conf_verify, bt_mesh_prov_link.conf, rand_size)) {
-		LOG_ERR("Invalid confirmation value");
+		LOG_ERROR("Invalid confirmation value");
 		LOG_DBG("Received:   %s", bt_hex(bt_mesh_prov_link.conf, rand_size));
 		LOG_DBG("Calculated: %s",  bt_hex(conf_verify, rand_size));
 		prov_fail(PROV_ERR_CFM_FAILED);
@@ -657,8 +658,8 @@ static void prov_random(const uint8_t *data)
 	}
 
 	if (bt_mesh_prov_salt(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_salt,
-		bt_mesh_prov_link.rand, data, bt_mesh_prov_link.prov_salt)) {
-		LOG_ERR("Failed to generate provisioning salt");
+			      bt_mesh_prov_link.rand, data, bt_mesh_prov_link.prov_salt)) {
+		LOG_ERROR("Failed to generate provisioning salt");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -675,7 +676,7 @@ static void prov_confirm(const uint8_t *data)
 	LOG_DBG("Remote Confirm: %s", bt_hex(data, conf_size));
 
 	if (!memcmp(data, bt_mesh_prov_link.conf, conf_size)) {
-		LOG_ERR("Confirm value is identical to ours, rejecting.");
+		LOG_ERROR("Confirm value is identical to ours, rejecting.");
 		prov_fail(PROV_ERR_CFM_FAILED);
 		return;
 	}
@@ -898,12 +899,12 @@ static int reprovision_local_client_server(uint16_t addr)
 	}
 
 	if (!pub_key) {
-		LOG_ERR("No public key available");
+		LOG_ERROR("No public key available");
 		return -ENOEXEC;
 	}
 
 	if (bt_mesh_dhkey_gen(pub_key, priv_key, bt_mesh_prov_link.dhkey)) {
-		LOG_ERR("Failed to generate DHKey");
+		LOG_ERROR("Failed to generate DHKey");
 		return -ENOEXEC;
 	}
 	LOG_DBG("DHkey: %s", bt_hex(bt_mesh_prov_link.dhkey, DH_KEY_SIZE));
@@ -911,7 +912,7 @@ static int reprovision_local_client_server(uint16_t addr)
 	err = bt_mesh_dev_key(bt_mesh_prov_link.dhkey,
 			      bt_mesh_prov_link.prov_salt, provisionee.new_dev_key);
 	if (err) {
-		LOG_ERR("Unable to generate device key");
+		LOG_ERROR("Unable to generate device key");
 		return err;
 	}
 
@@ -946,7 +947,7 @@ int bt_mesh_pb_remote_open_node(struct bt_mesh_rpr_cli *cli,
 
 	provisionee.node = bt_mesh_cdb_node_get(srv->addr);
 	if (!provisionee.node) {
-		LOG_ERR("No CDB node for 0x%04x", srv->addr);
+		LOG_ERROR("No CDB node for 0x%04x", srv->addr);
 		return -ENOENT;
 	}
 

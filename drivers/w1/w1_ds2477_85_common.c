@@ -80,7 +80,7 @@ int ds2477_85_reset_master(const struct device *dev)
 
 	ret = i2c_write_dt(&cfg->i2c_spec, buf, 1);
 	if (ret < 0) {
-		LOG_ERR("initiate reset failed");
+		LOG_ERROR("initiate reset failed");
 		return ret;
 	}
 
@@ -206,7 +206,7 @@ int ds2477_85_write_block(const struct device *dev, const uint8_t *buffer, size_
 
 	ret = i2c_transfer_dt(&cfg->i2c_spec, tx_msg, 2);
 	if (ret < 0) {
-		LOG_ERR("write block fail: %x", ret);
+		LOG_ERROR("write block fail: %x", ret);
 		return ret;
 	}
 
@@ -243,7 +243,7 @@ int ds2477_85_read_block(const struct device *dev, uint8_t *buffer, size_t rx_le
 
 	ret = i2c_write_dt(&cfg->i2c_spec, buf, (CMD_RD_BLOCK_LEN + CMD_OVERHEAD_LEN));
 	if (ret < 0) {
-		LOG_ERR("read block fail: %x", ret);
+		LOG_ERROR("read block fail: %x", ret);
 		return ret;
 	}
 

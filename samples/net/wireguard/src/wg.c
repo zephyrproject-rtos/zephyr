@@ -75,7 +75,7 @@ static int setup_iface(struct net_if *iface,
 	memset(private_key, 0, sizeof(private_key));
 
 	if (ret < 0) {
-		LOG_ERR("Cannot set private key (%d)", ret);
+		LOG_ERROR("Cannot set private key (%d)", ret);
 		return ret;
 	}
 
@@ -87,7 +87,7 @@ static int setup_iface(struct net_if *iface,
 		next = net_ipaddr_parse_mask(addr_str, strlen(addr_str),
 					     paddr, &mask_len);
 		if (next == NULL) {
-			LOG_ERR("Cannot parse IP address \"%s\"", my_addresses);
+			LOG_ERROR("Cannot parse IP address \"%s\"", my_addresses);
 			return -EINVAL;
 		}
 
@@ -104,7 +104,7 @@ static int setup_iface(struct net_if *iface,
 			ret = net_mask_len_to_netmask(AF_INET, mask_len,
 						      (struct sockaddr *)&mask);
 			if (ret < 0) {
-				LOG_ERR("Invalid network mask length (%d)", ret);
+				LOG_ERROR("Invalid network mask length (%d)", ret);
 				return ret;
 			}
 
@@ -125,19 +125,19 @@ static int setup_iface(struct net_if *iface,
 
 			if (!net_if_ipv6_prefix_add(iface, &netaddr6, mask_len,
 						    (uint32_t)0xffffffff)) {
-				LOG_ERR("Cannot add %s to interface %d", my_addr,
-					net_if_get_by_iface(iface));
+				LOG_ERROR("Cannot add %s to interface %d", my_addr,
+					  net_if_get_by_iface(iface));
 				return -EINVAL;
 			}
 
 		} else {
-			LOG_ERR("Cannot parse IP address \"%s\"", my_addr);
+			LOG_ERROR("Cannot parse IP address \"%s\"", my_addr);
 			return -EAFNOSUPPORT;
 		}
 
 		if (ifaddr == NULL) {
-			LOG_ERR("Cannot add IP address \"%s\" to interface %d",
-				my_addr, net_if_get_by_iface(iface));
+			LOG_ERROR("Cannot add IP address \"%s\" to interface %d", my_addr,
+				  net_if_get_by_iface(iface));
 			return -ENOENT;
 		}
 
@@ -153,7 +153,7 @@ static int setup_iface(struct net_if *iface,
 		next = net_ipaddr_parse_mask(addr_str, strlen(addr_str),
 					     paddr, &mask_len);
 		if (next == NULL) {
-			LOG_ERR("Cannot parse IP address \"%s\"", allowed_ip_addr);
+			LOG_ERROR("Cannot parse IP address \"%s\"", allowed_ip_addr);
 			return -EINVAL;
 		}
 
@@ -185,7 +185,7 @@ static int setup_iface(struct net_if *iface,
 				found = true;
 
 			} else {
-				LOG_ERR("Cannot parse IP address \"%s\"", allowed_ip_addr);
+				LOG_ERROR("Cannot parse IP address \"%s\"", allowed_ip_addr);
 				return -EAFNOSUPPORT;
 			}
 
@@ -196,20 +196,19 @@ static int setup_iface(struct net_if *iface,
 	} while (addr_str != NULL && *addr_str != '\0');
 
 	if (!found) {
-		LOG_ERR("Not enough space for allowed IP addresses");
+		LOG_ERROR("Not enough space for allowed IP addresses");
 		return -ENOMEM;
 	}
 
 	if (CONFIG_NET_SAMPLE_COMMON_VPN_PEER_IP_ADDR[0] == '\0') {
-		LOG_ERR("Peer IP address is not set");
+		LOG_ERROR("Peer IP address is not set");
 		return -EINVAL;
 	}
 
 	if (!net_ipaddr_parse(CONFIG_NET_SAMPLE_COMMON_VPN_PEER_IP_ADDR,
-			      strlen(CONFIG_NET_SAMPLE_COMMON_VPN_PEER_IP_ADDR),
-			      paddr)) {
-		LOG_ERR("Cannot parse peer IP address \"%s\"",
-			CONFIG_NET_SAMPLE_COMMON_VPN_PEER_IP_ADDR);
+			      strlen(CONFIG_NET_SAMPLE_COMMON_VPN_PEER_IP_ADDR), paddr)) {
+		LOG_ERROR("Cannot parse peer IP address \"%s\"",
+			  CONFIG_NET_SAMPLE_COMMON_VPN_PEER_IP_ADDR);
 		return -EINVAL;
 	}
 
@@ -223,7 +222,7 @@ static int setup_iface(struct net_if *iface,
 
 	ret = wireguard_peer_add(&peer_config, &peer_iface);
 	if (ret < 0) {
-		LOG_ERR("Cannot add peer (%d)", ret);
+		LOG_ERROR("Cannot add peer (%d)", ret);
 	} else if (ret > 0) {
 		if (peer_iface != NULL) {
 			LOG_INF("Added peer id %d using interface %d", ret,

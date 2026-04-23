@@ -224,7 +224,7 @@ static int va_set(const char *name, size_t len_rd,
 	}
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -237,7 +237,7 @@ static int va_set(const char *name, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &va, sizeof(va));
 	if (err) {
-		LOG_ERR("Failed to set \'virtual address\'");
+		LOG_ERROR("Failed to set \'virtual address\'");
 		return err;
 	}
 
@@ -292,8 +292,8 @@ void bt_mesh_va_pending_store(void)
 		}
 
 		if (err) {
-			LOG_ERR("Failed to %s %s value (err %d)",
-				IS_VA_DEL(lab) ? "delete" : "store", path, err);
+			LOG_ERROR("Failed to %s %s value (err %d)",
+				  IS_VA_DEL(lab) ? "delete" : "store", path, err);
 		} else {
 			LOG_DBG("%s %s value", IS_VA_DEL(lab) ? "Deleted" : "Stored", path);
 		}

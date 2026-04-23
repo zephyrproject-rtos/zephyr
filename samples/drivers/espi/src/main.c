@@ -106,7 +106,7 @@ static void espi_ch_handler(const struct device *dev, struct espi_callback *cb,
 			LOG_INF("OOB channel event %d", event.evt_data);
 			break;
 		default:
-			LOG_ERR("Unknown channel event");
+			LOG_ERROR("Unknown channel event");
 		}
 	}
 }
@@ -180,8 +180,8 @@ int espi_init(void)
 
 	ret = espi_config(espi_dev, &cfg);
 	if (ret) {
-		LOG_ERR("Failed to configure eSPI target channels:%x err: %d", cfg.channel_caps,
-			ret);
+		LOG_ERROR("Failed to configure eSPI target channels:%x err: %d", cfg.channel_caps,
+			  ret);
 		return ret;
 	} else {
 		LOG_INF("eSPI target configured successfully!");
@@ -226,7 +226,7 @@ static int wait_for_pin(const struct gpio_dt_spec *gpio, uint16_t timeout, int e
 	do {
 		level = gpio_pin_get_dt(gpio);
 		if (level < 0) {
-			LOG_ERR("Failed to read %x %d", gpio->pin, level);
+			LOG_ERROR("Failed to read %x %d", gpio->pin, level);
 			return -EIO;
 		}
 
@@ -240,7 +240,7 @@ static int wait_for_pin(const struct gpio_dt_spec *gpio, uint16_t timeout, int e
 	} while (loop_cnt > 0);
 
 	if (loop_cnt == 0) {
-		LOG_ERR("Timeout for %x %x", gpio->pin, level);
+		LOG_ERROR("Timeout for %x %x", gpio->pin, level);
 		return -ETIMEDOUT;
 	}
 
@@ -258,7 +258,7 @@ static int wait_for_vwire(const struct device *espi_dev, enum espi_vwire_signal 
 	do {
 		ret = espi_receive_vwire(espi_dev, signal, &level);
 		if (ret) {
-			LOG_ERR("Failed to read %x %d", signal, ret);
+			LOG_ERROR("Failed to read %x %d", signal, ret);
 			return -EIO;
 		}
 
@@ -271,7 +271,7 @@ static int wait_for_vwire(const struct device *espi_dev, enum espi_vwire_signal 
 	} while (loop_cnt > 0);
 
 	if (loop_cnt == 0) {
-		LOG_ERR("VWIRE %d is %x", signal, level);
+		LOG_ERROR("VWIRE %d is %x", signal, level);
 		return -ETIMEDOUT;
 	}
 
@@ -305,7 +305,7 @@ int espi_handshake(void)
 	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SUS_WARN, CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT,
 			     1);
 	if (ret) {
-		LOG_ERR("SUS_WARN Timeout");
+		LOG_ERROR("SUS_WARN Timeout");
 		return ret;
 	}
 
@@ -313,21 +313,21 @@ int espi_handshake(void)
 	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S5, CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT,
 			     1);
 	if (ret) {
-		LOG_ERR("SLP_S5 Timeout");
+		LOG_ERROR("SLP_S5 Timeout");
 		return ret;
 	}
 
 	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S4, CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT,
 			     1);
 	if (ret) {
-		LOG_ERR("SLP_S4 Timeout");
+		LOG_ERROR("SLP_S4 Timeout");
 		return ret;
 	}
 
 	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_SLP_S3, CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT,
 			     1);
 	if (ret) {
-		LOG_ERR("SLP_S3 Timeout");
+		LOG_ERROR("SLP_S3 Timeout");
 		return ret;
 	}
 
@@ -336,7 +336,7 @@ int espi_handshake(void)
 	ret = wait_for_vwire(espi_dev, ESPI_VWIRE_SIGNAL_PLTRST, CONFIG_ESPI_VIRTUAL_WIRE_TIMEOUT,
 			     1);
 	if (ret) {
-		LOG_ERR("PLT_RST Timeout");
+		LOG_ERROR("PLT_RST Timeout");
 		return ret;
 	}
 
@@ -375,16 +375,16 @@ int espi_test(void)
 
 #ifdef CONFIG_ESPI_USE_BOARD_POWER
 	if (!gpio_is_ready_dt(&pwrgd_gpio)) {
-		LOG_ERR("%s: device not ready.", pwrgd_gpio.port->name);
+		LOG_ERROR("%s: device not ready.", pwrgd_gpio.port->name);
 		return -ENODEV;
 	}
 	if (!gpio_is_ready_dt(&rsm_gpio)) {
-		LOG_ERR("%s: device not ready.", rsm_gpio.port->name);
+		LOG_ERROR("%s: device not ready.", rsm_gpio.port->name);
 		return -ENODEV;
 	}
 #endif
 	if (!device_is_ready(espi_dev)) {
-		LOG_ERR("%s: device not ready.", espi_dev->name);
+		LOG_ERROR("%s: device not ready.", espi_dev->name);
 		return -ENODEV;
 	}
 
@@ -393,12 +393,12 @@ int espi_test(void)
 	const struct device *const espi_saf_dev = DEVICE_DT_GET(DT_NODELABEL(espi_saf0));
 
 	if (!device_is_ready(qspi_dev)) {
-		LOG_ERR("%s: device not ready.", qspi_dev->name);
+		LOG_ERROR("%s: device not ready.", qspi_dev->name);
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(espi_saf_dev)) {
-		LOG_ERR("%s: device not ready.", espi_saf_dev->name);
+		LOG_ERROR("%s: device not ready.", espi_saf_dev->name);
 		return -ENODEV;
 	}
 #endif
@@ -408,19 +408,19 @@ int espi_test(void)
 #ifdef CONFIG_ESPI_USE_BOARD_POWER
 	ret = gpio_pin_configure_dt(&pwrgd_gpio, GPIO_INPUT);
 	if (ret) {
-		LOG_ERR("Unable to configure %d:%d", pwrgd_gpio.pin, ret);
+		LOG_ERROR("Unable to configure %d:%d", pwrgd_gpio.pin, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&rsm_gpio, GPIO_OUTPUT);
 	if (ret) {
-		LOG_ERR("Unable to config %d: %d", rsm_gpio.pin, ret);
+		LOG_ERROR("Unable to config %d: %d", rsm_gpio.pin, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_set_dt(&rsm_gpio, 0);
 	if (ret) {
-		LOG_ERR("Unable to initialize %d", rsm_gpio.pin);
+		LOG_ERROR("Unable to initialize %d", rsm_gpio.pin);
 		return -1;
 	}
 #endif
@@ -435,13 +435,13 @@ int espi_test(void)
 	 */
 	ret = spi_saf_init();
 	if (ret) {
-		LOG_ERR("Unable to configure %d:%s", ret, qspi_dev->name);
+		LOG_ERROR("Unable to configure %d:%s", ret, qspi_dev->name);
 		return ret;
 	}
 
 	ret = espi_saf_init();
 	if (ret) {
-		LOG_ERR("Unable to configure %d:%s", ret, espi_saf_dev->name);
+		LOG_ERROR("Unable to configure %d:%s", ret, espi_saf_dev->name);
 		return ret;
 	}
 
@@ -454,13 +454,13 @@ int espi_test(void)
 #ifdef CONFIG_ESPI_USE_BOARD_POWER
 	ret = wait_for_pin(&pwrgd_gpio, PWR_SEQ_TIMEOUT, 1);
 	if (ret) {
-		LOG_ERR("RSMRST_PWRGD timeout");
+		LOG_ERROR("RSMRST_PWRGD timeout");
 		return ret;
 	}
 
 	ret = gpio_pin_set_dt(&rsm_gpio, 1);
 	if (ret) {
-		LOG_ERR("Failed to set rsm err: %d", ret);
+		LOG_ERROR("Failed to set rsm err: %d", ret);
 		return ret;
 	}
 #endif
@@ -510,7 +510,7 @@ int espi_test(void)
 	/* Showcase VW channel by exchanging virtual wires with eSPI host */
 	ret = espi_handshake();
 	if (ret) {
-		LOG_ERR("eSPI VW handshake failed %d", ret);
+		LOG_ERROR("eSPI VW handshake failed %d", ret);
 		return ret;
 	}
 

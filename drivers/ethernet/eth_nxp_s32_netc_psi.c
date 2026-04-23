@@ -42,14 +42,14 @@ static void nxp_s32_eth_configure_port(uint8_t port_idx, enum phy_link_speed spe
 	baudrate = PHY_TO_NETC_SPEED(speed);
 	status = Netc_EthSwt_Ip_SetPortSpeed(NETC_SWITCH_IDX, port_idx, baudrate);
 	if (status != E_OK) {
-		LOG_ERR("Failed to set port %d speed: %d", port_idx, status);
+		LOG_ERROR("Failed to set port %d speed: %d", port_idx, status);
 		return;
 	}
 
 	duplex = PHY_TO_NETC_DUPLEX_MODE(speed);
 	status = Netc_EthSwt_Ip_SetPortMacLayerDuplexMode(NETC_SWITCH_IDX, port_idx, duplex);
 	if (status != E_OK) {
-		LOG_ERR("Failed to set port %d duplex mode: %d", port_idx, status);
+		LOG_ERROR("Failed to set port %d duplex mode: %d", port_idx, status);
 		return;
 	}
 
@@ -150,7 +150,7 @@ static int nxp_s32_eth_initialize(const struct device *dev)
 
 	err = nxp_s32_eth_configure_cgm(cfg->port_idx);
 	if (err != 0) {
-		LOG_ERR("Failed to configure NETC Switch CGM");
+		LOG_ERROR("Failed to configure NETC Switch CGM");
 		return -EIO;
 	}
 
@@ -181,8 +181,7 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 	 * immediately after setting it.
 	 */
 	if (!device_is_ready(cfg->phy_dev)) {
-		LOG_ERR("PHY device (%p) is not ready, cannot init iface",
-			cfg->phy_dev);
+		LOG_ERROR("PHY device (%p) is not ready, cannot init iface", cfg->phy_dev);
 		return;
 	}
 
@@ -195,8 +194,8 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 		msix = &cfg->msix[i];
 		if (mbox_is_ready_dt(&msix->mbox_spec)) {
 			if (mbox_set_enabled_dt(&msix->mbox_spec, true)) {
-				LOG_ERR("Failed to enable MRU channel %u",
-					msix->mbox_spec.channel_id);
+				LOG_ERROR("Failed to enable MRU channel %u",
+					  msix->mbox_spec.channel_id);
 			}
 		}
 	}
@@ -447,8 +446,7 @@ static int nxp_s32_eth_switch_init(void)
 
 	swt_status = Netc_EthSwt_Ip_Init(NETC_SWITCH_IDX, &nxp_s32_eth0_switch_cfg);
 	if (swt_status != E_OK) {
-		LOG_ERR("Failed to initialize NETC Switch %d (%d)",
-			NETC_SWITCH_IDX, swt_status);
+		LOG_ERROR("Failed to initialize NETC Switch %d (%d)", NETC_SWITCH_IDX, swt_status);
 		return -EIO;
 	}
 

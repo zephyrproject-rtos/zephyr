@@ -20,7 +20,7 @@ int main(void)
 	int ret;
 
 	if (!device_is_ready(pwm)) {
-		LOG_ERR("%s: pwm device not ready", pwm->name);
+		LOG_ERROR("%s: pwm device not ready", pwm->name);
 		return 0;
 	}
 
@@ -29,7 +29,7 @@ int main(void)
 	ret = pwm_set(pwm, 1, PWM_USEC(PWM_PERIOD_US), PWM_USEC(PWM_PULSE_TIME_US),
 		      PWM_POLARITY_NORMAL);
 	if (ret < 0) {
-		LOG_ERR("pwm_set() failed");
+		LOG_ERROR("pwm_set() failed");
 		return 0;
 	}
 

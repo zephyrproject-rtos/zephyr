@@ -878,7 +878,7 @@ static isoal_status_t isoal_rx_unframed_consume(struct isoal_sink *sink,
 		} else  {
 			/* Unsupported case */
 			err = ISOAL_STATUS_ERR_UNSPECIFIED;
-			LOG_ERR("Invalid unframed LLID (%d)", llid);
+			LOG_ERROR("Invalid unframed LLID (%d)", llid);
 			LL_ASSERT_ERR(0);
 		}
 		break;
@@ -1495,7 +1495,7 @@ static isoal_status_t isoal_check_source_hdl_valid(isoal_source_handle_t hdl)
 		return ISOAL_STATUS_OK;
 	}
 
-	LOG_ERR("Invalid source handle (0x%02x)", hdl);
+	LOG_ERROR("Invalid source handle (0x%02x)", hdl);
 
 	return ISOAL_STATUS_ERR_UNSPECIFIED;
 }
@@ -1717,7 +1717,7 @@ static isoal_status_t isoal_tx_pdu_emit(const struct isoal_source *source_ctx,
 		/* If it fails, the node will be released and no further attempt
 		 * will be possible
 		 */
-		LOG_ERR("Failed to enqueue node (%p)", node_tx);
+		LOG_ERROR("Failed to enqueue node (%p)", node_tx);
 		source_ctx->session.pdu_release(node_tx, handle, status);
 	}
 

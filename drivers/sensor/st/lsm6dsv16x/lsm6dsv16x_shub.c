@@ -702,7 +702,7 @@ int lsm6dsv16x_shub_get_idx(const struct device *dev, enum sensor_channel type)
 		}
 	}
 
-	LOG_ERR("shub: dev %s type %d not supported", dev->name, type);
+	LOG_ERROR("shub: dev %s type %d not supported", dev->name, type);
 	return -ENOTSUP;
 }
 
@@ -821,7 +821,7 @@ int lsm6dsv16x_shub_init(const struct device *dev)
 
 	LOG_DBG("shub: dev %s - num_ext_dev %d", dev->name, data->num_ext_dev);
 	if (data->num_ext_dev == 0) {
-		LOG_ERR("shub: no target devices found");
+		LOG_ERROR("shub: no target devices found");
 		return -EINVAL;
 	}
 

@@ -1186,7 +1186,7 @@ int net_port_set_default(struct net_sockaddr *addr, uint16_t default_port)
 		   (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6)) {
 		; /* Port is already set */
 	} else {
-		LOG_ERR("Unknown address family");
+		LOG_ERROR("Unknown address family");
 		return -EINVAL;
 	}
 

@@ -29,7 +29,7 @@ static bool check_add_partition(struct k_mem_domain *domain,
 	uintptr_t pstart, pend, dstart, dend;
 
 	if (part == NULL) {
-		LOG_ERR("NULL k_mem_partition provided");
+		LOG_ERROR("NULL k_mem_partition provided");
 		return false;
 	}
 
@@ -37,17 +37,14 @@ static bool check_add_partition(struct k_mem_domain *domain,
 	/* Arches where execution cannot be disabled should always return
 	 * false to this check
 	 */
-	if (K_MEM_PARTITION_IS_EXECUTABLE(part->attr) &&
-	    K_MEM_PARTITION_IS_WRITABLE(part->attr)) {
-		LOG_ERR("partition is writable and executable <start %lx>",
-			part->start);
+	if (K_MEM_PARTITION_IS_EXECUTABLE(part->attr) && K_MEM_PARTITION_IS_WRITABLE(part->attr)) {
+		LOG_ERROR("partition is writable and executable <start %lx>", part->start);
 		return false;
 	}
 #endif /* CONFIG_EXECUTE_XOR_WRITE */
 
 	if (part->size == 0U) {
-		LOG_ERR("zero sized partition at %p with base 0x%lx",
-			part, part->start);
+		LOG_ERROR("zero sized partition at %p with base 0x%lx", part, part->start);
 		return false;
 	}
 
@@ -55,8 +52,8 @@ static bool check_add_partition(struct k_mem_domain *domain,
 	pend = part->start + part->size;
 
 	if (pend <= pstart) {
-		LOG_ERR("invalid partition %p, wraparound detected. base 0x%lx size %zu",
-			part, part->start, part->size);
+		LOG_ERROR("invalid partition %p, wraparound detected. base 0x%lx size %zu", part,
+			  part->start, part->size);
 		return false;
 	}
 
@@ -75,9 +72,9 @@ static bool check_add_partition(struct k_mem_domain *domain,
 		dend = dstart + dpart->size;
 
 		if (pend > dstart && dend > pstart) {
-			LOG_ERR("partition %p base %lx (size %zu) overlaps existing base %lx (size %zu)",
-				part, part->start, part->size,
-				dpart->start, dpart->size);
+			LOG_ERROR("partition %p base %lx (size %zu) overlaps existing base %lx "
+				  "(size %zu)",
+				  part, part->start, part->size, dpart->start, dpart->size);
 			return false;
 		}
 	}
@@ -97,14 +94,14 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 	}
 
 	CHECKIF(!(num_parts == 0U || parts != NULL)) {
-		LOG_ERR("parts array is NULL and num_parts is nonzero");
+		LOG_ERROR("parts array is NULL and num_parts is nonzero");
 		ret = -EINVAL;
 		goto out;
 	}
 
 	CHECKIF(!(num_parts <= max_partitions)) {
-		LOG_ERR("num_parts of %d exceeds maximum allowable partitions (%d)",
-			num_parts, max_partitions);
+		LOG_ERROR("num_parts of %d exceeds maximum allowable partitions (%d)", num_parts,
+			  max_partitions);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -122,8 +119,8 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 	ret = arch_mem_domain_init(domain);
 
 	if (ret != 0) {
-		LOG_ERR("architecture-specific initialization failed for domain %p with %d",
-			domain, ret);
+		LOG_ERROR("architecture-specific initialization failed for domain %p with %d",
+			  domain, ret);
 		ret = -ENOMEM;
 		goto unlock_out;
 	}
@@ -133,8 +130,7 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 
 		for (i = 0U; i < num_parts; i++) {
 			CHECKIF(!check_add_partition(domain, parts[i])) {
-				LOG_ERR("invalid partition index %d (%p)",
-					i, parts[i]);
+				LOG_ERROR("invalid partition index %d (%p)", i, parts[i]);
 				ret = -EINVAL;
 				goto unlock_out;
 			}
@@ -189,8 +185,8 @@ int k_mem_domain_deinit(struct k_mem_domain *domain)
 
 	ret = arch_mem_domain_deinit(domain);
 	if (ret != 0) {
-		LOG_ERR("architecture-specific de-initialization failed for domain %p with %d",
-			domain, ret);
+		LOG_ERROR("architecture-specific de-initialization failed for domain %p with %d",
+			  domain, ret);
 		ret = -ENOMEM;
 		goto unlock_out;
 	}
@@ -218,7 +214,7 @@ int k_mem_domain_add_partition(struct k_mem_domain *domain,
 	}
 
 	CHECKIF(!check_add_partition(domain, part)) {
-		LOG_ERR("invalid partition %p", part);
+		LOG_ERROR("invalid partition %p", part);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -233,7 +229,7 @@ int k_mem_domain_add_partition(struct k_mem_domain *domain,
 	}
 
 	CHECKIF(!(p_idx < max_partitions)) {
-		LOG_ERR("no free partition slots available");
+		LOG_ERROR("no free partition slots available");
 		ret = -ENOSPC;
 		goto unlock_out;
 	}
@@ -281,7 +277,7 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 	}
 
 	CHECKIF(!(p_idx < max_partitions)) {
-		LOG_ERR("no matching partition found");
+		LOG_ERROR("no matching partition found");
 		ret = -ENOENT;
 		goto unlock_out;
 	}

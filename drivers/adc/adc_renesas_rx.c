@@ -91,22 +91,22 @@ static int adc_rx_channel_setup(const struct device *dev, const struct adc_chann
 	const struct adc_rx_config *config = dev->config;
 
 	if (!((config->channel_available_mask & (1 << channel_cfg->channel_id)) != 0)) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Acquisition time is not valid");
+		LOG_ERROR("Acquisition time is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential mode is not supported");
+		LOG_ERROR("Differential mode is not supported");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Gain is not valid");
+		LOG_ERROR("Gain is not valid");
 		return -EINVAL;
 	}
 
@@ -118,7 +118,7 @@ static int adc_rx_channel_setup(const struct device *dev, const struct adc_chann
 		data->p_regs->ADHVREFCNT.BIT.HVSEL = 1;
 		break;
 	default:
-		LOG_ERR("Invalid reference. (valid: INTERNAL, EXTERNAL0)");
+		LOG_ERROR("Invalid reference. (valid: INTERNAL, EXTERNAL0)");
 		return -EINVAL;
 	}
 
@@ -214,29 +214,29 @@ static int adc_rx_start_read(const struct device *dev, const struct adc_sequence
 	int err;
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No channel to read");
+		LOG_ERROR("No channel to read");
 		return -EINVAL;
 	}
 
 	if (sequence->resolution > ADC_RX_MAX_RESOLUTION || sequence->resolution == 0) {
-		LOG_ERR("Unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("Unsupported resolution %d", sequence->resolution);
 		return -EINVAL;
 	}
 
 	if (find_msb_set(sequence->channels) > config->num_channels) {
-		LOG_ERR("Unsupported channels in mask: 0x%08x", sequence->channels);
+		LOG_ERROR("Unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
 	err = validate_read_channels(dev, sequence);
 	if (err) {
-		LOG_ERR("One or more channels are not setup");
+		LOG_ERROR("One or more channels are not setup");
 		return err;
 	}
 
 	err = adc_rx_check_buffer_size(dev, sequence);
 	if (err) {
-		LOG_ERR("Buffer size too small");
+		LOG_ERROR("Buffer size too small");
 		return err;
 	}
 
@@ -255,7 +255,7 @@ static int adc_rx_start_read(const struct device *dev, const struct adc_sequence
 		data->p_regs->ADADC.BIT.ADC = 0x5;
 		break;
 	default:
-		LOG_ERR("Invalid oversampling time (valid value: 0, 1, 2, 4)");
+		LOG_ERROR("Invalid oversampling time (valid value: 0, 1, 2, 4)");
 		return -EINVAL;
 	}
 
@@ -317,13 +317,13 @@ static int adc_rx_init(const struct device *dev)
 	/* Set pinctrl */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("ADC: Failed to init pinctrl");
+		LOG_ERROR("ADC: Failed to init pinctrl");
 		return ret;
 	}
 
 	err = R_ADC_Open(data->unit_id, ADC_MODE_SS_MULTI_CH, &data->adc_config, NULL);
 	if (err != ADC_SUCCESS) {
-		LOG_ERR("ADC: Failed to open module");
+		LOG_ERROR("ADC: Failed to open module");
 		return -EIO;
 	}
 

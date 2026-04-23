@@ -87,7 +87,7 @@ static int init_modem_pipe(void)
 
 	data.uart_pipe = modem_backend_uart_init(&data.uart_backend, &uart_backend_config);
 	if (data.uart_pipe == NULL) {
-		LOG_ERR("Failed to initialize modem backend");
+		LOG_ERROR("Failed to initialize modem backend");
 		return -1;
 	}
 
@@ -95,7 +95,7 @@ static int init_modem_pipe(void)
 
 	ret = modem_pipe_open(data.uart_pipe, K_MSEC(100));
 	if (ret < 0) {
-		LOG_ERR("Failed to open modem pipe");
+		LOG_ERROR("Failed to open modem pipe");
 		return ret;
 	}
 
@@ -112,7 +112,7 @@ static uint8_t *console_recv_cb(uint8_t *buf, size_t *off)
 	if (*off > 0) {
 		ret = modem_pipe_transmit(data.uart_pipe, buf, *off);
 		if (ret < 0) {
-			LOG_ERR("Failed to transmit to modem: %d", ret);
+			LOG_ERROR("Failed to transmit to modem: %d", ret);
 		}
 		*off = 0;
 	}
@@ -128,13 +128,13 @@ int main(void)
 
 	/* Verify console device is ready */
 	if (!device_is_ready(DEV_CONSOLE)) {
-		LOG_ERR("Console device not ready");
+		LOG_ERROR("Console device not ready");
 		return -ENODEV;
 	}
 
 	/* Verify modem device is ready */
 	if (!device_is_ready(DEV_MODEM)) {
-		LOG_ERR("Modem device not ready");
+		LOG_ERROR("Modem device not ready");
 		return -ENODEV;
 	}
 
@@ -145,7 +145,7 @@ int main(void)
 	/* Initialize modem pipe */
 	ret = init_modem_pipe();
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize modem pipe: %d", ret);
+		LOG_ERROR("Failed to initialize modem pipe: %d", ret);
 		return ret;
 	}
 

@@ -97,7 +97,7 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		return 0;
 	}
 
-	LOG_ERR("No available SMP context for conn %p", conn);
+	LOG_ERROR("No available SMP context for conn %p", conn);
 
 	return -ENOMEM;
 }

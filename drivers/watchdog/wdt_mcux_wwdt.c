@@ -47,7 +47,7 @@ static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32
 	int ret;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -80,7 +80,7 @@ static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32
 
 	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, freq);
 	if (ret) {
-		LOG_ERR("Failed to get clock frequency: %d", ret);
+		LOG_ERROR("Failed to get clock frequency: %d", ret);
 		return ret;
 	}
 
@@ -94,7 +94,7 @@ static int mcux_wwdt_setup(const struct device *dev, uint8_t options)
 	WWDT_Type *base = config->base;
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
@@ -133,7 +133,7 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 	int ret;
 
 	if (data->timeout_valid) {
-		LOG_ERR("No more timeouts can be installed");
+		LOG_ERROR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
@@ -151,8 +151,8 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 
 	if (data->wwdt_config.timeoutValue > MAX_TIMEOUT ||
 	    data->wwdt_config.timeoutValue < MIN_TIMEOUT) {
-		LOG_ERR("Timeout value %d out of range %d - %d", data->wwdt_config.timeoutValue,
-			MIN_TIMEOUT, MAX_TIMEOUT);
+		LOG_ERROR("Timeout value %d out of range %d - %d", data->wwdt_config.timeoutValue,
+			  MIN_TIMEOUT, MAX_TIMEOUT);
 		return -EINVAL;
 	}
 
@@ -184,8 +184,8 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 		} else if ((cfg->flags & WDT_FLAG_RESET_MASK) == WDT_FLAG_RESET_NONE) {
 			data->callback = cfg->callback;
 		} else {
-			LOG_ERR("Callback without warning requires WDT_FLAG_RESET_NONE or "
-				"CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0");
+			LOG_ERROR("Callback without warning requires WDT_FLAG_RESET_NONE or "
+				  "CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG > 0");
 			return -ENOTSUP;
 		}
 	}
@@ -203,7 +203,7 @@ static int mcux_wwdt_feed(const struct device *dev, int channel_id)
 	WWDT_Type *base = config->base;
 
 	if (channel_id != 0) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -272,14 +272,14 @@ static int mcux_wwdt_init(const struct device *dev)
 	ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
 	if (ret && ret != -ENOSYS) {
 		/* Real error occurred */
-		LOG_ERR("Failed to configure clock: %d", ret);
+		LOG_ERROR("Failed to configure clock: %d", ret);
 		return ret;
 	}
 
 #if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret) {
-		LOG_ERR("Failed to enable clock: %d", ret);
+		LOG_ERROR("Failed to enable clock: %d", ret);
 		return ret;
 	}
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */

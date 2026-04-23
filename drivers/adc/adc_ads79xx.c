@@ -67,27 +67,27 @@ static int ads79xx_channel_setup(const struct device *dev,
 	const struct ads79xx_config *config = dev->config;
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("unsupported channel gain %d", channel_cfg->gain);
+		LOG_ERROR("unsupported channel gain %d", channel_cfg->gain);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_VDD_1) {
-		LOG_ERR("unsupported channel reference '%d'", channel_cfg->reference);
+		LOG_ERROR("unsupported channel reference '%d'", channel_cfg->reference);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("unsupported acquisition time '%d'", channel_cfg->acquisition_time);
+		LOG_ERROR("unsupported acquisition time '%d'", channel_cfg->acquisition_time);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->channel_id >= config->channels) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("unsupported differential mode");
+		LOG_ERROR("unsupported differential mode");
 		return -ENOTSUP;
 	}
 
@@ -271,28 +271,28 @@ static int ads79xx_start_read(const struct device *dev, const struct adc_sequenc
 	int ret;
 
 	if (sequence->resolution != cfg->resolution) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (find_msb_set(sequence->channels) > cfg->channels) {
-		LOG_ERR("unsupported channels in mask: 0x%08x", sequence->channels);
+		LOG_ERROR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
 	if (sequence->calibrate) {
-		LOG_ERR("unsupported calibration");
+		LOG_ERROR("unsupported calibration");
 		return -ENOTSUP;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("oversampling not supported");
+		LOG_ERROR("oversampling not supported");
 		return -ENOTSUP;
 	}
 
 	ret = ads79xx_validate_sequence(dev, sequence);
 	if (ret) {
-		LOG_ERR("invalid sequence / buffer too small");
+		LOG_ERROR("invalid sequence / buffer too small");
 		return ret;
 	}
 
@@ -348,7 +348,7 @@ static void ads79xx_acquisition_thread(void *p1, void *p2, void *p3)
 	/* Prime the ads79xx */
 	ret = ads79xx_spi_transfer(dev, ads79xx_manual_command(cfg, 0), &dummy);
 	if (ret) {
-		LOG_ERR("SPI transfer failed (err %d)", ret);
+		LOG_ERROR("SPI transfer failed (err %d)", ret);
 	}
 
 	while (true) {
@@ -358,20 +358,20 @@ static void ads79xx_acquisition_thread(void *p1, void *p2, void *p3)
 			LOG_DBG("programming auto-1 channel mask");
 			ret = ads79xx_prog_auto1_mask(dev, data->channels);
 			if (ret) {
-				LOG_ERR("failed to configure acquisition (err %d)", ret);
+				LOG_ERROR("failed to configure acquisition (err %d)", ret);
 				ads79xx_fail(data, ret);
 				continue;
 			}
 			ret = ads79xx_set_mode_auto1(dev, true);
 			if (ret) {
-				LOG_ERR("failed to enter auto-1 (err %d)", ret);
+				LOG_ERROR("failed to enter auto-1 (err %d)", ret);
 				ads79xx_fail(data, ret);
 				continue;
 			}
 			/* consume the first frame - its junk. */
 			ret = ads79xx_continue(dev, NULL);
 			if (ret) {
-				LOG_ERR("SPI transfer failed (err %d)", ret);
+				LOG_ERROR("SPI transfer failed (err %d)", ret);
 				ads79xx_fail(data, ret);
 				continue;
 			}
@@ -384,7 +384,7 @@ static void ads79xx_acquisition_thread(void *p1, void *p2, void *p3)
 		for (int i = 0; i < nsamples; i++) {
 			ret = ads79xx_continue(dev, &rx);
 			if (ret) {
-				LOG_ERR("acquisition failed (err %d)", ret);
+				LOG_ERROR("acquisition failed (err %d)", ret);
 				ads79xx_fail(data, ret);
 				goto acquisition_failed;
 			}
@@ -408,7 +408,7 @@ int ads79xx_init(const struct device *dev)
 	k_sem_init(&data->sem, 0, 1);
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus %s not ready", config->spi.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->spi.bus->name);
 		return -ENODEV;
 	}
 

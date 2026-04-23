@@ -131,7 +131,7 @@ static inline int spi_it8xxx2_set_freq(const struct device *dev, const uint32_t 
 	clk_pll = chip_get_pll_freq();
 	clk_sspi = clk_pll / (((IT8XXX2_ECPM_SCDCR2 & 0xF0) >> 4) + 1U);
 	if (frequency < (clk_sspi / 16) || frequency > clk_sspi) {
-		LOG_ERR("Unsupported frequency %d", frequency);
+		LOG_ERROR("Unsupported frequency %d", frequency);
 		return -ENOTSUP;
 	}
 
@@ -141,7 +141,7 @@ static inline int spi_it8xxx2_set_freq(const struct device *dev, const uint32_t 
 	} else {
 		for (int i = 0; i <= ARRAY_SIZE(freq_div); i++) {
 			if (i == ARRAY_SIZE(freq_div)) {
-				LOG_ERR("Unknown frequency %d", frequency);
+				LOG_ERROR("Unknown frequency %d", frequency);
 				return -ENOTSUP;
 			}
 			if (frequency == (clk_sspi / freq_div[i])) {
@@ -168,24 +168,24 @@ static int spi_it8xxx2_configure(const struct device *dev, const struct spi_conf
 	uint8_t reg_val;
 
 	if (spi_cfg->slave > (SPI_CHIP_SELECT_COUNT - 1)) {
-		LOG_ERR("Slave %d is greater than %d", spi_cfg->slave, SPI_CHIP_SELECT_COUNT - 1);
+		LOG_ERROR("Slave %d is greater than %d", spi_cfg->slave, SPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
 	}
 
 	LOG_DBG("chip select: %d, operation: 0x%x", spi_cfg->slave, spi_cfg->operation);
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Unsupported SPI slave mode");
+		LOG_ERROR("Unsupported SPI slave mode");
 		return -ENOTSUP;
 	}
 
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP) {
-		LOG_ERR("Unsupported loopback mode");
+		LOG_ERROR("Unsupported loopback mode");
 		return -ENOTSUP;
 	}
 
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA) {
-		LOG_ERR("Unsupported cpha mode");
+		LOG_ERROR("Unsupported cpha mode");
 		return -ENOTSUP;
 	}
 
@@ -203,7 +203,7 @@ static int spi_it8xxx2_configure(const struct device *dev, const struct spi_conf
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only single line mode is supported");
+		LOG_ERROR("Only single line mode is supported");
 		return -EINVAL;
 	}
 
@@ -504,7 +504,7 @@ static int spi_it8xxx2_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Failed to set default pinctrl");
+		LOG_ERROR("Failed to set default pinctrl");
 		return ret;
 	}
 

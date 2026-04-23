@@ -532,7 +532,7 @@ static int drv2605_check_devid(const struct device *dev)
 	case DRV2605_DEVICE_ID_DRV2605L:
 		break;
 	default:
-		LOG_ERR("Invalid device ID found");
+		LOG_ERROR("Invalid device ID found");
 		return -ENOTSUP;
 	}
 

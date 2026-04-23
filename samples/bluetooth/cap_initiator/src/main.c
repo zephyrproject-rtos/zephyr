@@ -23,7 +23,7 @@ int main(void)
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		LOG_ERR("Bluetooth enable failed: %d", err);
+		LOG_ERROR("Bluetooth enable failed: %d", err);
 
 		return 0;
 	}
@@ -35,7 +35,7 @@ int main(void)
 		err = cap_initiator_broadcast();
 
 		if (err != 0) {
-			LOG_ERR("Failed to run CAP Initiator as broadcaster: %d", err);
+			LOG_ERROR("Failed to run CAP Initiator as broadcaster: %d", err);
 		}
 	}
 
@@ -50,7 +50,7 @@ int main(void)
 		err = cap_initiator_unicast();
 
 		if (err != 0) {
-			LOG_ERR("Failed to run CAP Initiator as unicast: %d", err);
+			LOG_ERROR("Failed to run CAP Initiator as unicast: %d", err);
 		}
 	}
 

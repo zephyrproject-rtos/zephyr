@@ -147,14 +147,14 @@ static int terminate_stream(const struct i2s_max32_stream *stream)
 	struct i2s_max32_stream_data *stream_data = stream->data;
 
 	if (stream_data->state != I2S_STATE_RUNNING) {
-		LOG_ERR("Stream not running, state: %d", (int)stream_data->state);
+		LOG_ERROR("Stream not running, state: %d", (int)stream_data->state);
 		return -EIO;
 	}
 	stream_data->state = I2S_STATE_STOPPING;
 	/* stop dma immediately */
 	ret = dma_stop(stream->dma.dev, stream->dma.channel);
 	if (ret < 0) {
-		LOG_ERR("Failed to stop DMA channel[%d]: %d", (int)stream->dma.channel, ret);
+		LOG_ERROR("Failed to stop DMA channel[%d]: %d", (int)stream->dma.channel, ret);
 		return ret;
 	}
 	/* Clear the queue */
@@ -183,12 +183,12 @@ static inline int start_stream(const struct i2s_max32_stream *stream, enum i2s_d
 	};
 
 	if ((dir != I2S_DIR_RX) && (dir != I2S_DIR_TX)) {
-		LOG_ERR("Invalid I2S direction: %d", (int)dir);
+		LOG_ERROR("Invalid I2S direction: %d", (int)dir);
 		return -EINVAL;
 	}
 
 	if (stream_data->cur_block.block != NULL) {
-		LOG_ERR("Stream already running");
+		LOG_ERROR("Stream already running");
 		return -EIO;
 	}
 
@@ -196,7 +196,7 @@ static inline int start_stream(const struct i2s_max32_stream *stream, enum i2s_d
 		ret = k_mem_slab_alloc(stream_data->i2s_cfg.mem_slab, &stream_data->cur_block.block,
 				       K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("Failed to allocate RX mem block: %d", ret);
+			LOG_ERROR("Failed to allocate RX mem block: %d", ret);
 			return -ENOMEM;
 		}
 
@@ -215,7 +215,7 @@ static inline int start_stream(const struct i2s_max32_stream *stream, enum i2s_d
 	} else {
 		ret = k_msgq_get(stream_data->queue, &stream_data->cur_block, K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("Failed to get item from TX queue: %d", ret);
+			LOG_ERROR("Failed to get item from TX queue: %d", ret);
 			return ret;
 		}
 		/* Configure DMA Block */
@@ -233,7 +233,7 @@ static inline int start_stream(const struct i2s_max32_stream *stream, enum i2s_d
 	/* Configure DMA channel */
 	ret = dma_config(stream->dma.dev, stream->dma.channel, &dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("DMA config failed with error: %d", ret);
+		LOG_ERROR("DMA config failed with error: %d", ret);
 		free_mem_block(stream);
 		return ret;
 	}
@@ -250,7 +250,7 @@ static inline int start_stream(const struct i2s_max32_stream *stream, enum i2s_d
 	/* Start DMA transfer */
 	ret = dma_start(stream->dma.dev, stream->dma.channel);
 	if (ret < 0) {
-		LOG_ERR("DMA start failed with error: %d", ret);
+		LOG_ERROR("DMA start failed with error: %d", ret);
 		free_mem_block(stream);
 		return ret;
 	}
@@ -266,17 +266,17 @@ static inline int restart_stream(const struct i2s_max32_stream *stream, enum i2s
 
 	if ((stream_data->state != I2S_STATE_RUNNING) &&
 	    (stream_data->state != I2S_STATE_STOPPING)) {
-		LOG_ERR("Stream not running");
+		LOG_ERROR("Stream not running");
 		return -EIO;
 	}
 
 	if ((dir != I2S_DIR_TX) && (dir != I2S_DIR_RX)) {
-		LOG_ERR("Invalid I2S direction: %d", (int)dir);
+		LOG_ERROR("Invalid I2S direction: %d", (int)dir);
 		return -ENOTSUP;
 	}
 
 	if (stream_data->cur_block.block != NULL) {
-		LOG_ERR("Stream already running");
+		LOG_ERROR("Stream already running");
 		return -EIO;
 	}
 
@@ -284,13 +284,13 @@ static inline int restart_stream(const struct i2s_max32_stream *stream, enum i2s
 		ret = k_mem_slab_alloc(stream_data->i2s_cfg.mem_slab, &stream_data->cur_block.block,
 				       K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("Failed to allocate RX mem block: %d", ret);
+			LOG_ERROR("Failed to allocate RX mem block: %d", ret);
 			return -ENOMEM;
 		}
 	} else {
 		ret = k_msgq_get(stream_data->queue, &stream_data->cur_block, K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("Failed to get item from TX queue: %d", ret);
+			LOG_ERROR("Failed to get item from TX queue: %d", ret);
 			return ret;
 		}
 	}
@@ -303,14 +303,14 @@ static inline int restart_stream(const struct i2s_max32_stream *stream, enum i2s
 			 (uint32_t)stream_data->cur_block.block,
 			 (uint32_t)stream_data->cur_block.block, stream_data->i2s_cfg.block_size);
 	if (ret < 0) {
-		LOG_ERR("Error reloading DMA channel[%d]: %d", (int)stream->dma.channel, ret);
+		LOG_ERROR("Error reloading DMA channel[%d]: %d", (int)stream->dma.channel, ret);
 		free_mem_block(stream);
 		return ret;
 	}
 
 	ret = dma_start(stream->dma.dev, stream->dma.channel);
 	if (ret < 0) {
-		LOG_ERR("Error starting DMA channel[%d]: %d", (int)stream->dma.channel, ret);
+		LOG_ERROR("Error starting DMA channel[%d]: %d", (int)stream->dma.channel, ret);
 		free_mem_block(stream);
 		return ret;
 	}
@@ -326,7 +326,7 @@ static void i2s_max32_tx_dma_callback(const struct device *dma_dev, void *arg, u
 	struct i2s_max32_stream_data *stream_data = stream->data;
 
 	if (stream_data->cur_block.block == NULL) {
-		LOG_ERR("TX DMA callback called with NULL block");
+		LOG_ERROR("TX DMA callback called with NULL block");
 		stream_data->state = I2S_STATE_ERROR;
 		return;
 	}
@@ -336,7 +336,7 @@ static void i2s_max32_tx_dma_callback(const struct device *dma_dev, void *arg, u
 
 	/* check the status of the DMA transfer */
 	if (status < 0) {
-		LOG_ERR("TX DMA status bad: %d", status);
+		LOG_ERROR("TX DMA status bad: %d", status);
 		stream_data->state = I2S_STATE_ERROR;
 		return;
 	}
@@ -354,7 +354,7 @@ static void i2s_max32_tx_dma_callback(const struct device *dma_dev, void *arg, u
 
 	err = restart_stream(stream, I2S_DIR_TX);
 	if (err < 0) {
-		LOG_ERR("Failed to restart TX transfer: %d", err);
+		LOG_ERROR("Failed to restart TX transfer: %d", err);
 		stream_data->state = I2S_STATE_ERROR;
 	}
 }
@@ -367,13 +367,13 @@ static void i2s_max32_rx_dma_callback(const struct device *dma_dev, void *arg, u
 	struct i2s_max32_stream_data *stream_data = stream->data;
 
 	if (stream_data->cur_block.block == NULL) {
-		LOG_ERR("RX DMA callback called with NULL block");
+		LOG_ERROR("RX DMA callback called with NULL block");
 		stream_data->state = I2S_STATE_ERROR;
 		return;
 	}
 
 	if (status < 0) {
-		LOG_ERR("RX DMA status bad: %d", status);
+		LOG_ERROR("RX DMA status bad: %d", status);
 		stream_data->state = I2S_STATE_ERROR;
 		return;
 	}
@@ -381,7 +381,7 @@ static void i2s_max32_rx_dma_callback(const struct device *dma_dev, void *arg, u
 	/* we have completely received the block, push to queue to let user handle and free it*/
 	err = k_msgq_put(stream_data->queue, &stream_data->cur_block, K_NO_WAIT);
 	if (err < 0) {
-		LOG_ERR("Failed to put item to RX queue: %d", err);
+		LOG_ERROR("Failed to put item to RX queue: %d", err);
 		free_mem_block(stream);
 		stream_data->state = I2S_STATE_ERROR;
 		return;
@@ -397,7 +397,7 @@ static void i2s_max32_rx_dma_callback(const struct device *dma_dev, void *arg, u
 
 	err = restart_stream(stream, I2S_DIR_RX);
 	if (err < 0) {
-		LOG_ERR("Failed to restart RX transfer: %d", err);
+		LOG_ERROR("Failed to restart RX transfer: %d", err);
 		stream_data->state = I2S_STATE_ERROR;
 	}
 }
@@ -410,34 +410,34 @@ static int i2s_max32_trigger_single(const struct device *dev, enum i2s_dir dir,
 	switch (cmd) {
 	case I2S_TRIGGER_START:
 		if (stream_data->state != I2S_STATE_READY) {
-			LOG_ERR("START - Invalid state: %d", (int)stream_data->state);
+			LOG_ERROR("START - Invalid state: %d", (int)stream_data->state);
 			return -EIO;
 		}
 		return start_stream(stream, dir);
 
 	case I2S_TRIGGER_STOP:
 		if (stream_data->state != I2S_STATE_RUNNING) {
-			LOG_ERR("STOP - Invalid state: %d", (int)stream_data->state);
+			LOG_ERROR("STOP - Invalid state: %d", (int)stream_data->state);
 			return -EIO;
 		}
 		trigger_stream_stop(stream, false);
 		return 0;
 	case I2S_TRIGGER_DRAIN:
 		if (stream_data->state != I2S_STATE_RUNNING) {
-			LOG_ERR("DRAIN - Invalid state: %d", (int)stream_data->state);
+			LOG_ERROR("DRAIN - Invalid state: %d", (int)stream_data->state);
 			return -EIO;
 		}
 		trigger_stream_stop(stream, true);
 		return 0;
 	case I2S_TRIGGER_DROP:
 		if (stream_data->state == I2S_STATE_NOT_READY) {
-			LOG_ERR("DROP - Invalid state: %d", (int)stream_data->state);
+			LOG_ERROR("DROP - Invalid state: %d", (int)stream_data->state);
 			return -EIO;
 		}
 		return terminate_stream(stream);
 	case I2S_TRIGGER_PREPARE:
 		if (stream_data->state != I2S_STATE_ERROR) {
-			LOG_ERR("PREPARE - Invalid state: %d", (int)stream_data->state);
+			LOG_ERROR("PREPARE - Invalid state: %d", (int)stream_data->state);
 			return -EIO;
 		}
 		clean_stream(stream);
@@ -480,7 +480,7 @@ static int i2s_max32_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 
 		return 0;
 	default:
-		LOG_ERR("Invalid I2S direction: %d", (int)dir);
+		LOG_ERROR("Invalid I2S direction: %d", (int)dir);
 		return -EINVAL;
 	}
 }
@@ -510,7 +510,7 @@ static int i2s_cfg_to_max32_cfg(const struct i2s_config *i2s_cfg, mxc_i2s_req_t 
 		max_cfg->sampleSize = MXC_I2S_SAMPLESIZE_THIRTYTWO;
 		break;
 	default:
-		LOG_ERR("Unsupported word size: %u", i2s_cfg->word_size);
+		LOG_ERROR("Unsupported word size: %u", i2s_cfg->word_size);
 		return -EINVAL;
 	}
 
@@ -520,7 +520,7 @@ static int i2s_cfg_to_max32_cfg(const struct i2s_config *i2s_cfg, mxc_i2s_req_t 
 	} else if (i2s_cfg->channels == 1) {
 		max_cfg->stereoMode = MXC_I2S_MONO_RIGHT_CH;
 	} else {
-		LOG_ERR("Unsupported number of channels: %u", i2s_cfg->channels);
+		LOG_ERROR("Unsupported number of channels: %u", i2s_cfg->channels);
 		return -EINVAL;
 	}
 
@@ -534,14 +534,14 @@ static int i2s_cfg_to_max32_cfg(const struct i2s_config *i2s_cfg, mxc_i2s_req_t 
 		max_cfg->justify = MXC_I2S_MSB_JUSTIFY;
 		break;
 	default:
-		LOG_ERR("Unsupported data format: 0x%02x", i2s_cfg->format);
+		LOG_ERROR("Unsupported data format: 0x%02x", i2s_cfg->format);
 		return -EINVAL;
 	}
 
 	/* Check unsupported format options */
 	if (i2s_cfg->format &
 	    (I2S_FMT_DATA_ORDER_LSB | I2S_FMT_BIT_CLK_INV | I2S_FMT_FRAME_CLK_INV)) {
-		LOG_ERR("Unsupported format options: 0x%02x", i2s_cfg->format);
+		LOG_ERROR("Unsupported format options: 0x%02x", i2s_cfg->format);
 		return -EINVAL;
 	}
 
@@ -554,7 +554,7 @@ static int i2s_cfg_to_max32_cfg(const struct i2s_config *i2s_cfg, mxc_i2s_req_t 
 
 	/* Check unsupported options */
 	if (i2s_cfg->options & (I2S_OPT_LOOPBACK | I2S_OPT_PINGPONG)) {
-		LOG_ERR("Unsupported options: 0x%02x", i2s_cfg->options);
+		LOG_ERROR("Unsupported options: 0x%02x", i2s_cfg->options);
 		return -EINVAL;
 	}
 
@@ -568,7 +568,7 @@ static int i2s_cfg_to_max32_cfg(const struct i2s_config *i2s_cfg, mxc_i2s_req_t 
 	max_cfg->clkdiv = Wrap_MXC_I2S_CalculateClockDiv(i2s_cfg->frame_clk_freq, max_cfg->wordSize,
 							 i2s_clk_freq);
 	if (max_cfg->clkdiv < 0) {
-		LOG_ERR("Invalid frame clock frequency: %u", i2s_cfg->frame_clk_freq);
+		LOG_ERROR("Invalid frame clock frequency: %u", i2s_cfg->frame_clk_freq);
 		return -EINVAL;
 	}
 
@@ -586,7 +586,7 @@ static int i2s_max32_configure_single(const struct device *dev, enum i2s_dir dir
 
 	if ((stream_data->state != I2S_STATE_NOT_READY) &&
 	    (stream_data->state != I2S_STATE_READY)) {
-		LOG_ERR("Invalid state: %d", (int)stream_data->state);
+		LOG_ERROR("Invalid state: %d", (int)stream_data->state);
 		return -EINVAL;
 	}
 
@@ -597,13 +597,13 @@ static int i2s_max32_configure_single(const struct device *dev, enum i2s_dir dir
 
 	ret = i2s_cfg_to_max32_cfg(i2s_cfg, &mxc_cfg, config->i2s_clk_freq);
 	if (ret < 0) {
-		LOG_ERR("Failed to convert I2S config to MAX32 config");
+		LOG_ERROR("Failed to convert I2S config to MAX32 config");
 		return ret;
 	}
 
 	ret = mxc_i2s_init(&mxc_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize I2S: %d", ret);
+		LOG_ERROR("Failed to initialize I2S: %d", ret);
 		return -EINVAL;
 	}
 
@@ -646,7 +646,7 @@ static int i2s_max32_configure(const struct device *dev, enum i2s_dir dir,
 		}
 		return 0;
 	default:
-		LOG_ERR("Invalid I2S direction: %d", (int)dir);
+		LOG_ERROR("Invalid I2S direction: %d", (int)dir);
 		return -EINVAL;
 	}
 }
@@ -660,17 +660,17 @@ static int i2s_max32_read(const struct device *dev, void **mem_block, size_t *si
 	struct i2s_mem_block block;
 
 	if (stream_data->state == I2S_STATE_NOT_READY) {
-		LOG_ERR("RX invalid state: %d", (int)stream_data->state);
+		LOG_ERROR("RX invalid state: %d", (int)stream_data->state);
 		return -EIO;
 	} else if (stream_data->state == I2S_STATE_ERROR &&
 		   k_msgq_num_used_get(stream_data->queue) == 0) {
-		LOG_ERR("RX queue empty");
+		LOG_ERROR("RX queue empty");
 		return -EIO;
 	}
 
 	err = k_msgq_get(stream_data->queue, &block, K_MSEC(stream_data->i2s_cfg.timeout));
 	if (err < 0) {
-		LOG_ERR("RX queue empty");
+		LOG_ERROR("RX queue empty");
 		return err;
 	}
 
@@ -689,18 +689,18 @@ static int i2s_max32_write(const struct device *dev, void *mem_block, size_t siz
 	struct i2s_mem_block block = {.block = mem_block, .size = size};
 
 	if (stream_data->state != I2S_STATE_READY && stream_data->state != I2S_STATE_RUNNING) {
-		LOG_ERR("TX Invalid state: %d", (int)stream_data->state);
+		LOG_ERROR("TX Invalid state: %d", (int)stream_data->state);
 		return -EIO;
 	}
 
 	if (size > stream_data->i2s_cfg.block_size) {
-		LOG_ERR("Max write size is: %u", (unsigned int)stream_data->i2s_cfg.block_size);
+		LOG_ERROR("Max write size is: %u", (unsigned int)stream_data->i2s_cfg.block_size);
 		return -EINVAL;
 	}
 
 	err = k_msgq_put(stream_data->queue, &block, K_MSEC(stream_data->i2s_cfg.timeout));
 	if (err < 0) {
-		LOG_ERR("TX queue full");
+		LOG_ERROR("TX queue full");
 		return err;
 	}
 

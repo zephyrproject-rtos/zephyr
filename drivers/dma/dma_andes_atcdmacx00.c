@@ -236,7 +236,7 @@ static int dma_atcdmacx00_config(const struct device *dev, uint32_t channel,
 	    (cfg->source_data_size != 1 && cfg->source_data_size != 2 &&
 		cfg->source_data_size != 4 && cfg->source_data_size != 8 &&
 		cfg->source_data_size != 16 && cfg->source_data_size != 32)) {
-		LOG_ERR("Invalid 'source_data_size' value");
+		LOG_ERROR("Invalid 'source_data_size' value");
 		ret = -EINVAL;
 		goto end;
 	}
@@ -565,7 +565,7 @@ static int dma_atcdmacx00_init(const struct device *dev)
 		data->table.dstaddr = 0x4c;
 		data->table.llpointer = 0x54;
 #else
-		LOG_ERR("ATCDMAC100 doesn't support 64bit dma.\n");
+		LOG_ERROR("ATCDMAC100 doesn't support 64bit dma.\n");
 #endif
 	}
 

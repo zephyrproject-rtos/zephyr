@@ -209,14 +209,14 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 
 	err = bt_mesh_net_encode(&tx, buf, BT_MESH_NONCE_PROXY);
 	if (err) {
-		LOG_ERR("Encoding Proxy cfg message failed (err %d)", err);
+		LOG_ERROR("Encoding Proxy cfg message failed (err %d)", err);
 		return;
 	}
 
 	err = bt_mesh_proxy_msg_send(client->cli->conn, BT_MESH_PROXY_CONFIG,
 				     buf, NULL, NULL);
 	if (err) {
-		LOG_ERR("Failed to send proxy cfg message (err %d)", err);
+		LOG_ERROR("Failed to send proxy cfg message (err %d)", err);
 	}
 }
 
@@ -267,7 +267,7 @@ static void proxy_cfg(struct bt_mesh_proxy_role *role)
 	err = bt_mesh_net_decode(&role->buf, BT_MESH_NET_IF_PROXY_CFG,
 				 &rx, &buf);
 	if (err) {
-		LOG_ERR("Failed to decode Proxy Configuration (err %d)", err);
+		LOG_ERROR("Failed to decode Proxy Configuration (err %d)", err);
 		return;
 	}
 
@@ -513,7 +513,7 @@ static int enc_id_adv(struct bt_mesh_subnet *sub, uint8_t type,
 	 */
 	err = randomize_bt_addr();
 	if (err) {
-		LOG_ERR("AdvA refresh failed: %d", err);
+		LOG_ERROR("AdvA refresh failed: %d", err);
 		return err;
 	}
 
@@ -841,7 +841,7 @@ static int gatt_proxy_advertise(void)
 
 	sub = adv_sub_get_next(sub_adv.sub, &request);
 	if (!sub) {
-		LOG_ERR("Could not find subnet to advertise");
+		LOG_ERROR("Could not find subnet to advertise");
 		return -ENOENT;
 	}
 end:
@@ -877,12 +877,12 @@ end:
 		err = priv_node_id_adv(sub, request.duration);
 		break;
 	default:
-		LOG_ERR("Unexpected proxy adv evt: %d", request.evt);
+		LOG_ERROR("Unexpected proxy adv evt: %d", request.evt);
 		return -ENODEV;
 	}
 
 	if (err) {
-		LOG_ERR("Advertising proxy failed (err: %d)", err);
+		LOG_ERROR("Advertising proxy failed (err: %d)", err);
 		return err;
 	}
 
@@ -973,7 +973,7 @@ int bt_mesh_proxy_gatt_enable(void)
 
 	err = bt_gatt_service_register(&proxy_svc);
 	if (err) {
-		LOG_ERR("Unable to register Mesh Proxy Service (err %d)", err);
+		LOG_ERROR("Unable to register Mesh Proxy Service (err %d)", err);
 		return err;
 	}
 

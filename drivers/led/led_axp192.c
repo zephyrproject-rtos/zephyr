@@ -93,9 +93,9 @@ static int led_axp192_blink(const struct device *dev, uint32_t led, uint32_t del
 		return i2c_reg_update_byte_dt(&config->i2c, config->addr, CHGLED_OUTPUT_MASK,
 					      CHGLED_BLINK_FAST);
 	} else {
-		LOG_ERR("The AXP192 blink setting can only %d/%d or %d/%d. (%d/%d)",
-			SLOW_BLINK_DELAY_ON, SLOW_BLINK_DELAY_OFF, FAST_BLINK_DELAY_ON,
-			FAST_BLINK_DELAY_OFF, delay_on, delay_off);
+		LOG_ERROR("The AXP192 blink setting can only %d/%d or %d/%d. (%d/%d)",
+			  SLOW_BLINK_DELAY_ON, SLOW_BLINK_DELAY_OFF, FAST_BLINK_DELAY_ON,
+			  FAST_BLINK_DELAY_OFF, delay_on, delay_off);
 	}
 
 	return -ENOTSUP;

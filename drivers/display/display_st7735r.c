@@ -287,7 +287,7 @@ static int st7735r_set_pixel_format(const struct device *dev,
 		return 0;
 	}
 
-	LOG_ERR("Pixel format change not implemented");
+	LOG_ERROR("Pixel format change not implemented");
 
 	return -ENOTSUP;
 }
@@ -299,7 +299,7 @@ static int st7735r_set_orientation(const struct device *dev,
 		return 0;
 	}
 
-	LOG_ERR("Changing display orientation not implemented");
+	LOG_ERROR("Changing display orientation not implemented");
 
 	return -ENOTSUP;
 }
@@ -432,25 +432,25 @@ static int st7735r_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->mipi_dev)) {
-		LOG_ERR("MIPI bus %s not ready", config->mipi_dev->name);
+		LOG_ERROR("MIPI bus %s not ready", config->mipi_dev->name);
 		return -ENODEV;
 	}
 
 	ret = st7735r_reset_display(dev);
 	if (ret < 0) {
-		LOG_ERR("Couldn't reset display");
+		LOG_ERROR("Couldn't reset display");
 		return ret;
 	}
 
 	ret = st7735r_exit_sleep(dev);
 	if (ret < 0) {
-		LOG_ERR("Couldn't exit sleep");
+		LOG_ERROR("Couldn't exit sleep");
 		return ret;
 	}
 
 	ret = st7735r_lcd_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Couldn't init LCD");
+		LOG_ERROR("Couldn't init LCD");
 		return ret;
 	}
 

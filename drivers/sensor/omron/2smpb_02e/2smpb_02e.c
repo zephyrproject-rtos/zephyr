@@ -86,7 +86,7 @@ static int o2smpb_02e_read_coefficients(const struct device *dev)
 	uint8_t buffer[25];
 
 	if (i2c_burst_read_dt(&config->i2c, O2SMPB_02_REG_COE_b00_1, buffer, sizeof(buffer)) < 0) {
-		LOG_ERR("Failed to read coefficients");
+		LOG_ERROR("Failed to read coefficients");
 		return -EIO;
 	}
 
@@ -133,21 +133,21 @@ static int o2smpb_02e_sample_fetch(const struct device *dev, enum sensor_channel
 	/* Force mode */
 	if (i2c_reg_write_byte_dt(&config->i2c, O2SMPB_02_REG_CTRL_MEAS,
 				  (uint8_t)(0x101 << 5 | 0x101 << 2 | 0x1)) < 0) {
-		LOG_ERR("Could not set sensor to force mode");
+		LOG_ERROR("Could not set sensor to force mode");
 		return -EIO;
 	}
 
 	k_sleep(K_MSEC(500));
 
 	if (i2c_burst_read_dt(&config->i2c, O2SMPB_02_REG_TEMP_TXD2, buffer, sizeof(buffer)) < 0) {
-		LOG_ERR("Could not read sensor data");
+		LOG_ERROR("Could not read sensor data");
 		return -EIO;
 	}
 
 	data->dt = (buffer[0] << 16 | buffer[1] << 8 | buffer[2]) - (0x1 << 23);
 
 	if (i2c_burst_read_dt(&config->i2c, O2SMPB_02_REG_PRESS_TXD2, buffer, sizeof(buffer)) < 0) {
-		LOG_ERR("Could not read sensor data");
+		LOG_ERROR("Could not read sensor data");
 		return -EIO;
 	}
 
@@ -204,12 +204,12 @@ static int o2smpb_02e_init(const struct device *dev)
 	i2c_reg_read_byte_dt(&config->i2c, O2SMPB_02_REG_CHIP_ID, &chip_id);
 
 	if (chip_id != 0x5C) {
-		LOG_ERR("Invalid chip ID");
+		LOG_ERROR("Invalid chip ID");
 		return -EIO;
 	}
 
 	if (o2smpb_02e_read_coefficients(dev) < 0) {
-		LOG_ERR("Failed to read calibration coefficients");
+		LOG_ERROR("Failed to read calibration coefficients");
 		return -EIO;
 	}
 

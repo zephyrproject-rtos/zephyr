@@ -146,21 +146,21 @@ static int configure_device(struct usbh_class_data *const c_data)
 	int ret;
 
 	if (ctrl_iface == NULL || stream_iface == NULL) {
-		LOG_ERR("No control or streaming interface found");
+		LOG_ERROR("No control or streaming interface found");
 		return -ENODEV;
 	}
 
 	/* Set control interface to default alternate setting (0) */
 	ret = usbh_device_interface_set(udev, ctrl_iface->bInterfaceNumber, 0, false);
 	if (ret != 0) {
-		LOG_ERR("Failed to set control interface alternate setting: %d", ret);
+		LOG_ERROR("Failed to set control interface alternate setting: %d", ret);
 		return ret;
 	}
 
 	/* Set streaming interface to idle state (alternate 0) */
 	ret = usbh_device_interface_set(udev, stream_iface->bInterfaceNumber, 0, false);
 	if (ret != 0) {
-		LOG_ERR("Failed to set streaming interface alternate setting: %d", ret);
+		LOG_ERROR("Failed to set streaming interface alternate setting: %d", ret);
 		return ret;
 	}
 
@@ -200,14 +200,14 @@ static const void *get_vs_desc_end(const struct usb_if_descriptor *const if_desc
 	uint16_t total_length;
 
 	if (!usbh_desc_is_valid_interface(if_desc)) {
-		LOG_ERR("Invalid interface descriptor");
+		LOG_ERROR("Invalid interface descriptor");
 		return NULL;
 	}
 
 	header_desc = (const void *)usbh_desc_get_next(if_desc);
 
 	if (!vs_header_is_valid(header_desc)) {
-		LOG_ERR("Invalid VS header descriptor");
+		LOG_ERROR("Invalid VS header descriptor");
 		return NULL;
 	}
 
@@ -221,14 +221,14 @@ static const void *get_desc_vc_end(const struct usb_if_descriptor *const if_desc
 	uint16_t total_length;
 
 	if (!usbh_desc_is_valid_interface(if_desc)) {
-		LOG_ERR("Invalid interface descriptor");
+		LOG_ERROR("Invalid interface descriptor");
 		return NULL;
 	}
 
 	header_desc = (const void *)usbh_desc_get_next(if_desc);
 
 	if (!vc_header_is_valid(header_desc)) {
-		LOG_ERR("Invalid VC header descriptor");
+		LOG_ERROR("Invalid VC header descriptor");
 		return NULL;
 	}
 
@@ -263,7 +263,7 @@ static int parse_vc_desc(struct uvc_host_data *const host_data,
 				(const void *)desc;
 
 			if (desc->bLength < sizeof(struct uvc_control_header_descriptor)) {
-				LOG_ERR("Invalid VC header descriptor length: %u", desc->bLength);
+				LOG_ERROR("Invalid VC header descriptor length: %u", desc->bLength);
 				return -EINVAL;
 			}
 
@@ -279,8 +279,8 @@ static int parse_vc_desc(struct uvc_host_data *const host_data,
 			const struct uvc_camera_terminal_descriptor *ct_desc = (const void *)desc;
 
 			if (desc->bLength < sizeof(struct uvc_input_terminal_descriptor)) {
-				LOG_ERR("Invalid input terminal descriptor length: %u",
-					desc->bLength);
+				LOG_ERROR("Invalid input terminal descriptor length: %u",
+					  desc->bLength);
 				return -EINVAL;
 			}
 
@@ -298,8 +298,8 @@ static int parse_vc_desc(struct uvc_host_data *const host_data,
 			const struct uvc_output_terminal_descriptor *ot_desc = (const void *)desc;
 
 			if (desc->bLength < sizeof(struct uvc_output_terminal_descriptor)) {
-				LOG_ERR("Invalid output terminal descriptor length: %u",
-					desc->bLength);
+				LOG_ERROR("Invalid output terminal descriptor length: %u",
+					  desc->bLength);
 				return -EINVAL;
 			}
 
@@ -312,8 +312,8 @@ static int parse_vc_desc(struct uvc_host_data *const host_data,
 			const struct uvc_selector_unit_descriptor *su_desc = (const void *)desc;
 
 			if (desc->bLength < 5) {
-				LOG_ERR("Invalid selector unit descriptor length: %u",
-					desc->bLength);
+				LOG_ERROR("Invalid selector unit descriptor length: %u",
+					  desc->bLength);
 				return -EINVAL;
 			}
 
@@ -326,8 +326,8 @@ static int parse_vc_desc(struct uvc_host_data *const host_data,
 			const struct uvc_processing_unit_descriptor *pu_desc = (const void *)desc;
 
 			if (desc->bLength < 8) {
-				LOG_ERR("Invalid processing unit descriptor length: %u",
-					desc->bLength);
+				LOG_ERROR("Invalid processing unit descriptor length: %u",
+					  desc->bLength);
 				return -EINVAL;
 			}
 
@@ -340,8 +340,8 @@ static int parse_vc_desc(struct uvc_host_data *const host_data,
 			const struct uvc_encoding_unit_descriptor *enc_desc = (const void *)desc;
 
 			if (desc->bLength < 8) {
-				LOG_ERR("Invalid encoding unit descriptor length: %u",
-					desc->bLength);
+				LOG_ERROR("Invalid encoding unit descriptor length: %u",
+					  desc->bLength);
 				return -EINVAL;
 			}
 
@@ -354,8 +354,8 @@ static int parse_vc_desc(struct uvc_host_data *const host_data,
 			const struct uvc_extension_unit_descriptor *eu_desc = (const void *)desc;
 
 			if (desc->bLength < 24) {
-				LOG_ERR("Invalid extension unit descriptor length: %u",
-					desc->bLength);
+				LOG_ERROR("Invalid extension unit descriptor length: %u",
+					  desc->bLength);
 				return -EINVAL;
 			}
 
@@ -408,8 +408,8 @@ static int parse_vs_desc(struct uvc_host_data *const host_data, const void *cons
 			const struct uvc_stream_header_descriptor *header_desc = (const void *)desc;
 
 			if (desc->bLength < sizeof(struct uvc_stream_header_descriptor)) {
-				LOG_ERR("Invalid VS input header descriptor length: %u",
-					desc->bLength);
+				LOG_ERROR("Invalid VS input header descriptor length: %u",
+					  desc->bLength);
 				return -EINVAL;
 			}
 
@@ -422,8 +422,8 @@ static int parse_vs_desc(struct uvc_host_data *const host_data, const void *cons
 			const struct uvc_format_uncomp_descriptor *format_desc = (const void *)desc;
 
 			if (desc->bLength < sizeof(struct uvc_format_uncomp_descriptor)) {
-				LOG_ERR("Invalid uncompressed format descriptor length: %u",
-					desc->bLength);
+				LOG_ERROR("Invalid uncompressed format descriptor length: %u",
+					  desc->bLength);
 				return -EINVAL;
 			}
 
@@ -445,8 +445,8 @@ static int parse_vs_desc(struct uvc_host_data *const host_data, const void *cons
 			const struct uvc_format_mjpeg_descriptor *format_desc = (const void *)desc;
 
 			if (desc->bLength < sizeof(struct uvc_format_mjpeg_descriptor)) {
-				LOG_ERR("Invalid MJPEG format descriptor length: %u",
-					desc->bLength);
+				LOG_ERROR("Invalid MJPEG format descriptor length: %u",
+					  desc->bLength);
 				return -EINVAL;
 			}
 
@@ -535,15 +535,15 @@ static int parse_descriptors(struct usbh_class_data *const c_data, uint8_t iface
 
 	iad_desc = (const void *)usbh_desc_get_iad(host_data->udev, iface);
 	if (iad_desc == NULL) {
-		LOG_ERR("Failed to find interface association for interface %u", iface);
+		LOG_ERROR("Failed to find interface association for interface %u", iface);
 		return -ENOSYS;
 	}
 
 	for (uint8_t i = 0; i < iad_desc->bInterfaceCount; i++) {
 		if_desc = (const void *)usbh_desc_get_iface(host_data->udev, iface + i);
 		if (if_desc == NULL) {
-			LOG_ERR("Not as many interfaces (%u) as announced (%u)", i,
-				iad_desc->bInterfaceCount);
+			LOG_ERROR("Not as many interfaces (%u) as announced (%u)", i,
+				  iad_desc->bInterfaceCount);
 			return -EBADMSG;
 		}
 
@@ -565,7 +565,7 @@ static int parse_descriptors(struct usbh_class_data *const c_data, uint8_t iface
 
 			ret = parse_vc_desc(host_data, if_desc, vc_end);
 			if (ret != 0) {
-				LOG_ERR("Failed to parse VC descriptor");
+				LOG_ERROR("Failed to parse VC descriptor");
 				return ret;
 			}
 		}
@@ -590,7 +590,7 @@ static int parse_descriptors(struct usbh_class_data *const c_data, uint8_t iface
 
 			ret = parse_vs_desc(host_data, if_desc, vs_end);
 			if (ret != 0) {
-				LOG_ERR("Failed to parse VS descriptor");
+				LOG_ERROR("Failed to parse VS descriptor");
 				return ret;
 			}
 
@@ -600,12 +600,12 @@ static int parse_descriptors(struct usbh_class_data *const c_data, uint8_t iface
 	}
 
 	if (host_data->current_stream_iface_info.iface == NULL) {
-		LOG_ERR("No VideoStreaming interface found");
+		LOG_ERROR("No VideoStreaming interface found");
 		return -EINVAL;
 	}
 
 	if (host_data->current_ctrl_iface == NULL) {
-		LOG_ERR("No VideoControl interface found");
+		LOG_ERROR("No VideoControl interface found");
 		return -EINVAL;
 	}
 
@@ -774,8 +774,8 @@ static int find_format(struct uvc_host_data *const host_data,
 		}
 	}
 
-	LOG_ERR("Format %s %ux%u not supported by device", VIDEO_FOURCC_TO_STR(fmt->pixelformat),
-		fmt->width, fmt->height);
+	LOG_ERROR("Format %s %ux%u not supported by device", VIDEO_FOURCC_TO_STR(fmt->pixelformat),
+		  fmt->width, fmt->height);
 	return -ENOTSUP;
 }
 
@@ -967,8 +967,8 @@ static int select_streaming_alternate(struct uvc_host_data *const host_data,
 	}
 
 	if (selected_endpoint == NULL) {
-		LOG_ERR("No EP satisfies bandwidth %u and payload size %u", required_bandwidth,
-			max_tpl);
+		LOG_ERROR("No EP satisfies bandwidth %u and payload size %u", required_bandwidth,
+			  max_tpl);
 		return -ENOTSUP;
 	}
 
@@ -994,18 +994,18 @@ static int vs_get(struct uvc_host_data *const host_data, const uint8_t request,
 	int ret;
 
 	if (data_len == 0 || data == NULL) {
-		LOG_ERR("Invalid parameters");
+		LOG_ERROR("Invalid parameters");
 		return -EINVAL;
 	}
 
 	if (stream_iface == NULL) {
-		LOG_ERR("Stream interface is NULL");
+		LOG_ERROR("Stream interface is NULL");
 		return -EINVAL;
 	}
 
 	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
+		LOG_ERROR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;
 	}
 
@@ -1021,7 +1021,7 @@ static int vs_get(struct uvc_host_data *const host_data, const uint8_t request,
 	ret = usbh_req_setup(host_data->udev, bmRequestType, request, wValue, wIndex, data_len,
 			     buf);
 	if (ret != 0) {
-		LOG_ERR("Failed to send VS GET request 0x%02x: %d", request, ret);
+		LOG_ERROR("Failed to send VS GET request 0x%02x: %d", request, ret);
 		goto cleanup;
 	}
 
@@ -1063,18 +1063,18 @@ static int vs_set(struct uvc_host_data *const host_data, const uint8_t request,
 	int ret;
 
 	if (data_len == 0) {
-		LOG_ERR("Invalid data length: %u", data_len);
+		LOG_ERROR("Invalid data length: %u", data_len);
 		return -EINVAL;
 	}
 
 	if (stream_iface == NULL) {
-		LOG_ERR("Stream interface is NULL");
+		LOG_ERROR("Stream interface is NULL");
 		return -EINVAL;
 	}
 
 	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
+		LOG_ERROR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;
 	}
 
@@ -1094,7 +1094,7 @@ static int vs_set(struct uvc_host_data *const host_data, const uint8_t request,
 	ret = usbh_req_setup(host_data->udev, bmRequestType, request, wValue, wIndex, data_len,
 			     buf);
 	if (ret != 0) {
-		LOG_ERR("Failed to send VS SET request 0x%02x: %d", request, ret);
+		LOG_ERROR("Failed to send VS SET request 0x%02x: %d", request, ret);
 		goto cleanup;
 	}
 
@@ -1129,7 +1129,7 @@ static int vs_request(struct uvc_host_data *const host_data, uint8_t request,
 		return vs_get(host_data, request, control_selector, data, data_len);
 
 	default:
-		LOG_ERR("Unsupported UVC request: 0x%02x", request);
+		LOG_ERROR("Unsupported UVC request: 0x%02x", request);
 		return -ENOTSUP;
 	}
 }
@@ -1149,8 +1149,8 @@ static int set_format(struct uvc_host_data *const host_data,
 	/* Find matching format and frame descriptors */
 	ret = find_format(host_data, fmt, &format, &frame, &frmival);
 	if (ret != 0) {
-		LOG_ERR("Unsupported format: %s %ux%u", VIDEO_FOURCC_TO_STR(fmt->pixelformat),
-			fmt->width, fmt->height);
+		LOG_ERROR("Unsupported format: %s %ux%u", VIDEO_FOURCC_TO_STR(fmt->pixelformat),
+			  fmt->width, fmt->height);
 		return ret;
 	}
 
@@ -1173,7 +1173,7 @@ static int set_format(struct uvc_host_data *const host_data,
 			UVC_SET_CUR, UVC_VS_PROBE_CONTROL);
 		return ret;
 	} else if (ret != 0) {
-		LOG_ERR("PROBE SET request failed: %d", ret);
+		LOG_ERROR("PROBE SET request failed: %d", ret);
 		return ret;
 	}
 
@@ -1186,7 +1186,7 @@ static int set_format(struct uvc_host_data *const host_data,
 			UVC_GET_CUR, UVC_VS_PROBE_CONTROL);
 		return ret;
 	} else if (ret != 0) {
-		LOG_ERR("PROBE GET request failed: %d", ret);
+		LOG_ERROR("PROBE GET request failed: %d", ret);
 		return ret;
 	}
 
@@ -1198,13 +1198,13 @@ static int set_format(struct uvc_host_data *const host_data,
 			UVC_SET_CUR, UVC_VS_COMMIT_CONTROL);
 		return ret;
 	} else if (ret != 0) {
-		LOG_ERR("COMMIT request failed: %d", ret);
+		LOG_ERROR("COMMIT request failed: %d", ret);
 		return ret;
 	}
 
 	ret = video_estimate_fmt_size(fmt);
 	if (ret != 0) {
-		LOG_ERR("Failed to estimate format size: %d", ret);
+		LOG_ERROR("Failed to estimate format size: %d", ret);
 		return ret;
 	}
 
@@ -1229,7 +1229,7 @@ static int set_format(struct uvc_host_data *const host_data,
 	/* Select streaming interface alternate setting */
 	ret = select_streaming_alternate(host_data, byte_per_sec);
 	if (ret != 0) {
-		LOG_ERR("Select stream alternate failed: %d", ret);
+		LOG_ERROR("Select stream alternate failed: %d", ret);
 		return ret;
 	}
 
@@ -1239,8 +1239,8 @@ static int set_format(struct uvc_host_data *const host_data,
 	ret = usbh_device_interface_set(host_data->udev, stream_iface->bInterfaceNumber,
 					stream_iface->bAlternateSetting, false);
 	if (ret != 0) {
-		LOG_ERR("Failed to set streaming interface %u alternate %u: %d",
-			stream_iface->bInterfaceNumber, stream_iface->bAlternateSetting, ret);
+		LOG_ERROR("Failed to set streaming interface %u alternate %u: %d",
+			  stream_iface->bInterfaceNumber, stream_iface->bAlternateSetting, ret);
 		return ret;
 	}
 
@@ -1302,7 +1302,7 @@ static int set_frame_rate(const struct device *dev, uint32_t fps)
 	ret = vs_request(host_data, UVC_SET_CUR, UVC_VS_PROBE_CONTROL,
 			 &host_data->probe, sizeof(host_data->probe));
 	if (ret != 0) {
-		LOG_ERR("PROBE SET request failed: %d", ret);
+		LOG_ERROR("PROBE SET request failed: %d", ret);
 		return ret;
 	}
 
@@ -1310,14 +1310,14 @@ static int set_frame_rate(const struct device *dev, uint32_t fps)
 	ret = vs_request(host_data, UVC_GET_CUR, UVC_VS_PROBE_CONTROL,
 			 &host_data->probe, sizeof(host_data->probe));
 	if (ret != 0) {
-		LOG_ERR("PROBE GET request failed: %d", ret);
+		LOG_ERROR("PROBE GET request failed: %d", ret);
 		return ret;
 	}
 
 	ret = vs_request(host_data, UVC_SET_CUR, UVC_VS_COMMIT_CONTROL,
 				  &host_data->probe, sizeof(host_data->probe));
 	if (ret != 0) {
-		LOG_ERR("COMMIT request failed: %d", ret);
+		LOG_ERROR("COMMIT request failed: %d", ret);
 		return ret;
 	}
 
@@ -1331,13 +1331,13 @@ static int set_frame_rate(const struct device *dev, uint32_t fps)
 	byte_per_sec = host_data->current_format.video_fmt.size *
 		       ((NSEC_PER_SEC / 100ULL) / host_data->current_format.frmival_100ns);
 	if (byte_per_sec == 0) {
-		LOG_ERR("Cannot calculate required bandwidth");
+		LOG_ERROR("Cannot calculate required bandwidth");
 		return -EINVAL;
 	}
 
 	ret = select_streaming_alternate(host_data, byte_per_sec);
 	if (ret != 0) {
-		LOG_ERR("Failed to select streaming alternate: %d", ret);
+		LOG_ERROR("Failed to select streaming alternate: %d", ret);
 		return ret;
 	}
 
@@ -1346,8 +1346,8 @@ static int set_frame_rate(const struct device *dev, uint32_t fps)
 	ret = usbh_device_interface_set(host_data->udev, stream_iface->bInterfaceNumber,
 					stream_iface->bAlternateSetting, false);
 	if (ret != 0) {
-		LOG_ERR("Failed to set streaming interface %u alternate %u: %d",
-			stream_iface->bInterfaceNumber, stream_iface->bAlternateSetting, ret);
+		LOG_ERROR("Failed to set streaming interface %u alternate %u: %d",
+			  stream_iface->bInterfaceNumber, stream_iface->bAlternateSetting, ret);
 		return ret;
 	}
 
@@ -1496,7 +1496,7 @@ static int get_device_caps(struct uvc_host_data *const host_data,
 		/* First call, create format caps */
 		ret = create_format_caps(host_data);
 		if (ret != 0) {
-			LOG_ERR("Failed to create format capabilities: %d", ret);
+			LOG_ERROR("Failed to create format capabilities: %d", ret);
 			ret = -ENOMEM;
 			goto unlock;
 		}
@@ -1523,13 +1523,13 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 	xfer = usbh_xfer_alloc(host_data->udev, stream_ep->bEndpointAddress,
 			       stream_iso_req_cb, host_data);
 	if (xfer == NULL) {
-		LOG_ERR("Failed to allocate transfer");
+		LOG_ERROR("Failed to allocate transfer");
 		return -ENOMEM;
 	}
 
 	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		usbh_xfer_free(host_data->udev, xfer);
 		return -ENOMEM;
 	}
@@ -1542,7 +1542,7 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 
 	ret = usbh_xfer_enqueue(host_data->udev, xfer);
 	if (ret != 0) {
-		LOG_ERR("Enqueue failed: ret=%d", ret);
+		LOG_ERROR("Enqueue failed: ret=%d", ret);
 		net_buf_unref(buf);
 		usbh_xfer_free(host_data->udev, xfer);
 		return ret;
@@ -1561,7 +1561,7 @@ static int continue_transfer(struct uvc_host_data *const host_data,
 
 	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOMEM;
 	}
 
@@ -1570,7 +1570,7 @@ static int continue_transfer(struct uvc_host_data *const host_data,
 
 	ret = usbh_xfer_enqueue(host_data->udev, xfer);
 	if (ret != 0) {
-		LOG_ERR("Enqueue failed: ret=%d", ret);
+		LOG_ERROR("Enqueue failed: ret=%d", ret);
 		net_buf_unref(buf);
 		return ret;
 	}
@@ -1745,7 +1745,7 @@ static int enum_frame_intervals(const struct uvc_frame_common_descriptor *frame_
 	}
 
 	if (frame_ptr->bLength < UVC_FRAME_DESC_MIN_SIZE_WITH_INTERVAL) {
-		LOG_ERR("Frame descriptor too short for interval data");
+		LOG_ERROR("Frame descriptor too short for interval data");
 		return -EINVAL;
 	}
 
@@ -1769,7 +1769,8 @@ static int enum_frame_intervals(const struct uvc_frame_common_descriptor *frame_
 			offsetof(struct uvc_frame_uncomp_discrete_descriptor, bFrameIntervalType) +
 			1;
 	} else {
-		LOG_ERR("Unsupported frame descriptor subtype: %u", frame_ptr->bDescriptorSubtype);
+		LOG_ERROR("Unsupported frame descriptor subtype: %u",
+			  frame_ptr->bDescriptorSubtype);
 		return -EINVAL;
 	}
 
@@ -1783,7 +1784,7 @@ static int enum_frame_intervals(const struct uvc_frame_common_descriptor *frame_
 		}
 
 		if (frame_ptr->bLength < UVC_FRAME_DESC_MIN_SIZE_STEPWISE) {
-			LOG_ERR("Frame descriptor too short for stepwise intervals");
+			LOG_ERROR("Frame descriptor too short for stepwise intervals");
 			return -EINVAL;
 		}
 
@@ -1809,8 +1810,8 @@ static int enum_frame_intervals(const struct uvc_frame_common_descriptor *frame_
 
 		if (frame_ptr->bLength <
 		    (UVC_FRAME_DESC_MIN_SIZE_WITH_INTERVAL + num_intervals * 4)) {
-			LOG_ERR("Frame descriptor too short for %u discrete intervals",
-				num_intervals);
+			LOG_ERROR("Frame descriptor too short for %u discrete intervals",
+				  num_intervals);
 			return -EINVAL;
 		}
 
@@ -1839,19 +1840,19 @@ static int vc_get(struct uvc_host_data *const host_data, const uint8_t request,
 	int ret;
 
 	if (data_len == 0 || data == NULL) {
-		LOG_ERR("Invalid parameters");
+		LOG_ERROR("Invalid parameters");
 		return -EINVAL;
 	}
 
 	ctrl_iface = host_data->current_ctrl_iface;
 	if (ctrl_iface == NULL) {
-		LOG_ERR("Control interface is NULL");
+		LOG_ERROR("Control interface is NULL");
 		return -EINVAL;
 	}
 
 	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
+		LOG_ERROR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;
 	}
 
@@ -1908,19 +1909,19 @@ static int vc_set(struct uvc_host_data *const host_data, const uint8_t request,
 	int ret;
 
 	if (data_len == 0) {
-		LOG_ERR("Invalid data length: %u", data_len);
+		LOG_ERROR("Invalid data length: %u", data_len);
 		return -EINVAL;
 	}
 
 	ctrl_iface = host_data->current_ctrl_iface;
 	if (ctrl_iface == NULL) {
-		LOG_ERR("Control interface is NULL");
+		LOG_ERROR("Control interface is NULL");
 		return -EINVAL;
 	}
 
 	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
+		LOG_ERROR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;
 	}
 
@@ -1945,7 +1946,7 @@ static int vc_set(struct uvc_host_data *const host_data, const uint8_t request,
 	ret = usbh_req_setup(host_data->udev, bmRequestType, request, wValue, wIndex, data_len,
 			     buf);
 	if (ret != 0) {
-		LOG_ERR("VC SET failed: %d", ret);
+		LOG_ERROR("VC SET failed: %d", ret);
 	}
 
 	if (buf != NULL) {
@@ -2137,7 +2138,7 @@ static int32_t extract_control_value(const uint8_t *data, uint8_t size, uint8_t 
 		return sys_le32_to_cpu(*(uint32_t *)data);
 
 	default:
-		LOG_ERR("Unsupported control data size: %u", size);
+		LOG_ERROR("Unsupported control data size: %u", size);
 		return 0;
 	}
 }
@@ -2220,7 +2221,7 @@ static int init_unit_controls(struct uvc_host_data *const host_data,
 
 	ret = uvc_get_control_map(unit_subtype, &map, &map_length);
 	if (ret != 0) {
-		LOG_ERR("Failed to get control map for unit subtype %u: %d", unit_subtype, ret);
+		LOG_ERROR("Failed to get control map for unit subtype %u: %d", unit_subtype, ret);
 		return ret;
 	}
 
@@ -2278,7 +2279,7 @@ static int camera_init_controls(const struct device *dev)
 				 desc->vc_processing->bUnitID, control_bitmap,
 				 &initialized_count);
 	if (ret != 0) {
-		LOG_ERR("Failed to initialize Processing Unit controls: %d", ret);
+		LOG_ERROR("Failed to initialize Processing Unit controls: %d", ret);
 	}
 
 	/* Initialize Camera Terminal controls */
@@ -2292,7 +2293,7 @@ static int camera_init_controls(const struct device *dev)
 					 desc->vc_camera->bTerminalID, control_bitmap,
 					 &initialized_count);
 		if (ret != 0) {
-			LOG_ERR("Failed to initialize Camera Terminal controls: %d", ret);
+			LOG_ERROR("Failed to initialize Camera Terminal controls: %d", ret);
 		}
 	} else {
 		LOG_DBG("No Camera Terminal found, skipping CT controls");
@@ -2308,7 +2309,7 @@ static int camera_init_controls(const struct device *dev)
 					 desc->vc_selector->bUnitID, control_bitmap,
 					 &initialized_count);
 		if (ret != 0) {
-			LOG_ERR("Failed to initialize Selector Unit controls: %d", ret);
+			LOG_ERROR("Failed to initialize Selector Unit controls: %d", ret);
 		}
 	}
 
@@ -2323,7 +2324,7 @@ static int camera_init_controls(const struct device *dev)
 					 desc->vc_extension->bUnitID, control_bitmap,
 					 &initialized_count);
 		if (ret != 0) {
-			LOG_ERR("Failed to initialize Extension Unit controls: %d", ret);
+			LOG_ERROR("Failed to initialize Extension Unit controls: %d", ret);
 		}
 	}
 
@@ -2365,12 +2366,12 @@ static int usbh_uvc_probe(struct usbh_class_data *const c_data, struct usb_devic
 	LOG_INF("UVC device connected");
 
 	if ((udev == NULL) || (udev->state != USB_STATE_CONFIGURED)) {
-		LOG_ERR("USB device not properly configured");
+		LOG_ERROR("USB device not properly configured");
 		return -ENODEV;
 	}
 
 	if (host_data == NULL) {
-		LOG_ERR("No UVC device instance available");
+		LOG_ERROR("No UVC device instance available");
 		return -ENODEV;
 	}
 
@@ -2387,19 +2388,19 @@ static int usbh_uvc_probe(struct usbh_class_data *const c_data, struct usb_devic
 
 	ret = parse_descriptors(c_data, target_iface);
 	if (ret != 0) {
-		LOG_ERR("Failed to parse UVC descriptors: %d", ret);
+		LOG_ERROR("Failed to parse UVC descriptors: %d", ret);
 		goto error_cleanup;
 	}
 
 	ret = configure_device(c_data);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure UVC device: %d", ret);
+		LOG_ERROR("Failed to configure UVC device: %d", ret);
 		goto error_cleanup;
 	}
 
 	ret = camera_init_controls(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to initialize USB UVC controls: %d", ret);
+		LOG_ERROR("Failed to initialize USB UVC controls: %d", ret);
 		goto error_cleanup;
 	}
 
@@ -2438,7 +2439,8 @@ static int usbh_uvc_removed(struct usbh_class_data *const c_data)
 				ret = usbh_xfer_dequeue(host_data->udev,
 							host_data->video_transfer[i]);
 				if (ret != 0) {
-					LOG_ERR("Failed to dequeue video transfer[%d]: %d", i, ret);
+					LOG_ERROR("Failed to dequeue video transfer[%d]: %d", i,
+						  ret);
 				}
 				host_data->video_transfer[i] = NULL;
 				LOG_DBG("Video transfer[%d] cancelled", i);
@@ -2495,13 +2497,13 @@ static int usbh_uvc_set_fmt(const struct device *dev, struct video_format *const
 
 	ret = set_format(host_data, fmt);
 	if (ret != 0) {
-		LOG_ERR("Failed to set UVC format: %d", ret);
+		LOG_ERROR("Failed to set UVC format: %d", ret);
 		return ret;
 	}
 
 	ret = video_estimate_fmt_size(fmt);
 	if (ret != 0) {
-		LOG_ERR("Failed to estimate format size: %d", ret);
+		LOG_ERROR("Failed to estimate format size: %d", ret);
 		return ret;
 	}
 
@@ -2548,7 +2550,7 @@ static int usbh_uvc_set_frmival(const struct device *dev, struct video_frmival *
 
 	ret = set_frame_rate(dev, fps);
 	if (ret != 0) {
-		LOG_ERR("Failed to set UVC frame rate: %d", ret);
+		LOG_ERROR("Failed to set UVC frame rate: %d", ret);
 	}
 
 	return ret;
@@ -2565,8 +2567,8 @@ static int usbh_uvc_get_frmival(const struct device *dev, struct video_frmival *
 	}
 
 	if (host_data->current_format.frmival_100ns == 0) {
-		LOG_ERR("Invalid current format frmival: %u",
-			host_data->current_format.frmival_100ns);
+		LOG_ERROR("Invalid current format frmival: %u",
+			  host_data->current_format.frmival_100ns);
 		return -EINVAL;
 	}
 
@@ -2711,7 +2713,7 @@ static uint8_t get_entity_id(struct uvc_host_data *const host_data, uint8_t unit
 		return desc->vc_extension ? desc->vc_extension->bUnitID : 0;
 
 	default:
-		LOG_ERR("Unknown unit subtype: %u", unit_subtype);
+		LOG_ERROR("Unknown unit subtype: %u", unit_subtype);
 		return 0;
 	}
 }
@@ -2821,19 +2823,19 @@ static int usbh_uvc_set_ctrl(const struct device *dev, uint32_t id)
 
 	ret = video_get_ctrl(dev, &control);
 	if (ret != 0) {
-		LOG_ERR("Failed to get control 0x%08x: %d", id, ret);
+		LOG_ERROR("Failed to get control 0x%08x: %d", id, ret);
 		return ret;
 	}
 
 	ret = find_control_mapping(host_data, id, &unit_subtype, &map);
 	if (ret != 0) {
-		LOG_ERR("Control 0x%08x not found in mapping", id);
+		LOG_ERROR("Control 0x%08x not found in mapping", id);
 		return -EINVAL;
 	}
 
 	entity_id = get_entity_id(host_data, unit_subtype);
 	if (entity_id == 0) {
-		LOG_ERR("Entity not found for subtype %u", unit_subtype);
+		LOG_ERROR("Entity not found for subtype %u", unit_subtype);
 		return -ENODEV;
 	}
 
@@ -2844,13 +2846,13 @@ static int usbh_uvc_set_ctrl(const struct device *dev, uint32_t id)
 
 	ret = encode_control_value(&control, map, data);
 	if (ret != 0) {
-		LOG_ERR("Failed to encode control value: %d", ret);
+		LOG_ERROR("Failed to encode control value: %d", ret);
 		return ret;
 	}
 
 	ret = vc_set(host_data, UVC_SET_CUR, map->selector, entity_id, data, map->size);
 	if (ret != 0) {
-		LOG_ERR("Failed to set control 0x%08x: %d", id, ret);
+		LOG_ERROR("Failed to set control 0x%08x: %d", id, ret);
 		return ret;
 	}
 
@@ -2874,7 +2876,7 @@ static int get_control_value(struct uvc_host_data *const host_data, uint32_t cid
 
 	entity_id = get_entity_id(host_data, unit_subtype);
 	if (entity_id == 0) {
-		LOG_ERR("Entity not found for control 0x%08x", cid);
+		LOG_ERROR("Entity not found for control 0x%08x", cid);
 		return -ENODEV;
 	}
 
@@ -2885,7 +2887,7 @@ static int get_control_value(struct uvc_host_data *const host_data, uint32_t cid
 
 	ret = vc_get(host_data, UVC_GET_CUR, map->selector, entity_id, data, map->size);
 	if (ret != 0) {
-		LOG_ERR("Failed to get control 0x%08x: %d", cid, ret);
+		LOG_ERROR("Failed to get control 0x%08x: %d", cid, ret);
 		return ret;
 	}
 
@@ -2911,7 +2913,7 @@ static int get_control_value(struct uvc_host_data *const host_data, uint32_t cid
 		break;
 
 	default:
-		LOG_ERR("Unsupported control size: %u", map->size);
+		LOG_ERROR("Unsupported control size: %u", map->size);
 		return -EINVAL;
 	}
 
@@ -2930,7 +2932,7 @@ static int usbh_uvc_get_volatile_ctrl(const struct device *dev, uint32_t id)
 	case VIDEO_CID_GAIN:
 		ret = get_control_value(host_data, VIDEO_CID_GAIN, &ctrls->gain.val);
 		if (ret != 0) {
-			LOG_ERR("Failed to get gain: %d", ret);
+			LOG_ERROR("Failed to get gain: %d", ret);
 			return ret;
 		}
 		break;
@@ -3022,7 +3024,7 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 				ret = usbh_xfer_dequeue(host_data->udev,
 							host_data->video_transfer[i]);
 				if (ret != 0) {
-					LOG_ERR("Failed to dequeue transfer[%d]: %d", i, ret);
+					LOG_ERROR("Failed to dequeue transfer[%d]: %d", i, ret);
 				}
 				host_data->video_transfer[i] = NULL;
 			}
@@ -3035,7 +3037,7 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 
 	ret = usbh_device_interface_set(host_data->udev, interface_num, alt, false);
 	if (ret != 0) {
-		LOG_ERR("Failed to set interface %d alt setting %d: %d", interface_num, alt, ret);
+		LOG_ERROR("Failed to set interface %d alt setting %d: %d", interface_num, alt, ret);
 		return ret;
 	}
 
@@ -3053,7 +3055,7 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 			while (host_data->multi_prime_cnt > 0) {
 				ret = initiate_transfer(host_data, vbuf);
 				if (ret != 0) {
-					LOG_ERR("Failed to initiate transfer: %d", ret);
+					LOG_ERROR("Failed to initiate transfer: %d", ret);
 					k_mutex_unlock(&host_data->lock);
 					goto err_stream;
 				}

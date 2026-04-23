@@ -105,7 +105,7 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("Oversampling is not supported");
+		LOG_ERROR("Oversampling is not supported");
 		return -ENOTSUP;
 	}
 
@@ -199,7 +199,7 @@ static void adc_gecko_isr(void *arg)
 			adc_context_on_sampling_done(&data->ctx, dev);
 		}
 	} else {
-		LOG_ERR("ADC conversion error, flags=%08x", err);
+		LOG_ERROR("ADC conversion error, flags=%08x", err);
 		adc_context_complete(&data->ctx, -EIO);
 	}
 	ADC_IntClear(adc_base, ADC_IF_SINGLE | err);
@@ -239,7 +239,7 @@ static int adc_gecko_channel_setup(const struct device *dev,
 	case ADC_GAIN_1:
 		break;
 	default:
-		LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
+		LOG_ERROR("unsupported channel gain '%d'", channel_cfg->gain);
 		return -ENOTSUP;
 	}
 
@@ -254,7 +254,7 @@ static int adc_gecko_channel_setup(const struct device *dev,
 		channel_config->reference = adcRef1V25;
 		break;
 	default:
-		LOG_ERR("unsupported channel reference type '%d'", channel_cfg->reference);
+		LOG_ERROR("unsupported channel reference type '%d'", channel_cfg->reference);
 		return -ENOTSUP;
 	}
 

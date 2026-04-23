@@ -122,7 +122,7 @@ static void ch9350l_kb(const struct device *dev, const uint8_t *values, uint8_t 
 		if (!found && lkbv[j] != 0) {
 			if (input_report(dev, INPUT_EV_KEY,
 				ch9350l_kb_map(dev, lkbv[j]), 0, true, K_FOREVER)) {
-				LOG_ERR("Input failed to be enqueued");
+				LOG_ERROR("Input failed to be enqueued");
 			}
 		}
 	}
@@ -137,7 +137,7 @@ static void ch9350l_kb(const struct device *dev, const uint8_t *values, uint8_t 
 		if (!found && values[i] != 0) {
 			if (input_report(dev, INPUT_EV_KEY,
 				ch9350l_kb_map(dev, values[i]), 1, true, K_FOREVER)) {
-				LOG_ERR("Input failed to be enqueued");
+				LOG_ERROR("Input failed to be enqueued");
 			}
 		}
 	}
@@ -176,12 +176,12 @@ static void ch9350l_mouse(const struct device *dev, const uint8_t *values, uint8
 		if (button & BIT(i) && !(data->last_mouse_btns & BIT(i))) {
 			if (input_report(dev, INPUT_EV_DEVICE,
 				ch9350l_mouse_map(dev, BIT(i)), 1, true, K_FOREVER)) {
-				LOG_ERR("Input failed to be enqueued");
+				LOG_ERROR("Input failed to be enqueued");
 			}
 		} else if (data->last_mouse_btns & BIT(i) && !(button & BIT(i))) {
 			if (input_report(dev, INPUT_EV_DEVICE,
 				ch9350l_mouse_map(dev, BIT(i)), 0, true, K_FOREVER)) {
-				LOG_ERR("Input failed to be enqueued");
+				LOG_ERROR("Input failed to be enqueued");
 			}
 		} else {
 			/* Dont care about other cases */
@@ -209,7 +209,7 @@ static void ch9350l_input_work_handler(struct k_work *item)
 			sum += fd_value[i];
 		}
 		if (sum != fd_sum) {
-			LOG_ERR("Frame checksum is invalid");
+			LOG_ERROR("Frame checksum is invalid");
 			continue;
 		}
 
@@ -224,7 +224,7 @@ static void ch9350l_input_work_handler(struct k_work *item)
 			continue;
 		case CH9350L_FRAME_TYPE_MM:
 		default:
-			LOG_ERR("Unknown or unsupported input type");
+			LOG_ERROR("Unknown or unsupported input type");
 			continue;
 		}
 	}
@@ -289,7 +289,7 @@ static void ch9350l_input_callback(const struct device *dev_uart, void *user_dat
 			break;
 		}
 		if (data->frame_buffer_size + read >= CH9350L_FRAME_SIZE_MAX) {
-			LOG_ERR("Maximum frame size exceeded");
+			LOG_ERROR("Maximum frame size exceeded");
 			data->frame_started = false;
 			data->frame_buffer_size = 0;
 			continue;
@@ -330,7 +330,7 @@ static void ch9350l_input_callback(const struct device *dev_uart, void *user_dat
 	}
 
 	if (read < 0) {
-		LOG_ERR("Error reading UART");
+		LOG_ERROR("Error reading UART");
 	}
 }
 
@@ -368,7 +368,7 @@ static int ch9350l_init(struct device const *dev)
 		}
 	}
 	if (check_p != ARRAY_SIZE(ch9350l_valid_start_of_status_frame)) {
-		LOG_ERR("CH9350L not detected");
+		LOG_ERROR("CH9350L not detected");
 		return -ENXIO;
 	}
 
@@ -382,7 +382,7 @@ static int ch9350l_init(struct device const *dev)
 
 	ret = uart_irq_callback_user_data_set(config->uart, ch9350l_input_callback, data);
 	if (ret < 0) {
-		LOG_ERR("Couldn't set UART callback");
+		LOG_ERROR("Couldn't set UART callback");
 		return ret;
 	}
 	uart_irq_rx_enable(config->uart);

@@ -43,14 +43,14 @@ int mfd_it8801_configure_pins(const struct i2c_dt_spec *i2c_dev, const struct de
 		alt_val = IT8801_GPIOAFS_FUN1;
 		break;
 	default:
-		LOG_ERR("This function is not supported.");
+		LOG_ERROR("This function is not supported.");
 		return -EINVAL;
 	}
 
 	/* Common settings for alternate function. */
 	ret = i2c_reg_update_byte_dt(i2c_dev, reg_gpiocr, GENMASK(7, 6), alt_val << 6);
 	if (ret != 0) {
-		LOG_ERR("Failed to update gpiocr (ret %d)", ret);
+		LOG_ERROR("Failed to update gpiocr (ret %d)", ret);
 		return ret;
 	}
 

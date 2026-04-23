@@ -195,13 +195,13 @@ static int sys_clock_driver_init(void)
 	data->fsp_cfg->period_counts = CYC_PER_TICK;
 	ret = config->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
 	if (ret != FSP_SUCCESS) {
-		LOG_ERR("timer initialize failed");
+		LOG_ERROR("timer initialize failed");
 		return -EIO;
 	}
 
 	ret = config->fsp_api->start(data->fsp_ctrl);
 	if (ret != FSP_SUCCESS) {
-		LOG_ERR("timer start failed");
+		LOG_ERROR("timer start failed");
 		return -EIO;
 	}
 

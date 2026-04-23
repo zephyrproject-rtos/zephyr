@@ -184,7 +184,7 @@ static int dwt_spi_read(const struct device *dev,
 	LOG_HEXDUMP_DBG(hdr_buf, (uint16_t)hdr_len, "rd: header");
 
 	if (spi_transceive(hi_cfg->bus.bus, ctx->spi_cfg, &tx, &rx)) {
-		LOG_ERR("SPI transfer failed");
+		LOG_ERROR("SPI transfer failed");
 		return -EIO;
 	}
 
@@ -212,7 +212,7 @@ static int dwt_spi_write(const struct device *dev,
 	LOG_HEXDUMP_DBG(data, (uint32_t)data_len, "wr: data");
 
 	if (spi_write(hi_cfg->bus.bus, ctx->spi_cfg, &buf_set)) {
-		LOG_ERR("SPI read failed");
+		LOG_ERROR("SPI read failed");
 		return -EIO;
 	}
 
@@ -412,7 +412,7 @@ static inline void dwt_irq_handle_rx(const struct device *dev, uint32_t sys_stat
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len,
 					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		LOG_ERR("No buf available");
+		LOG_ERROR("No buf available");
 		goto rx_out_enable_rx;
 	}
 
@@ -631,7 +631,7 @@ static int dwt_cca(const struct device *dev)
 			 UWB_PHY_TDSYM_PHR_6M8;
 
 	if (atomic_test_and_set_bit(&ctx->state, DWT_STATE_CCA)) {
-		LOG_ERR("Transceiver busy");
+		LOG_ERROR("Transceiver busy");
 		return -EBUSY;
 	}
 
@@ -778,7 +778,7 @@ static int dwt_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode,
 	uint8_t sys_ctrl = DWT_SYS_CTRL_TXSTRT;
 
 	if (atomic_test_and_set_bit(&ctx->state, DWT_STATE_TX)) {
-		LOG_ERR("Transceiver busy");
+		LOG_ERROR("Transceiver busy");
 		return -EBUSY;
 	}
 
@@ -806,7 +806,7 @@ static int dwt_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode,
 			dwt_reg_read_u32(dev, DWT_SYS_TIME_ID, 1));
 		break;
 	default:
-		LOG_ERR("TX mode %d not supported", tx_mode);
+		LOG_ERROR("TX mode %d not supported", tx_mode);
 		goto error;
 	}
 
@@ -817,7 +817,7 @@ static int dwt_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode,
 	 * more details about transmission configuration.
 	 */
 	if (dwt_register_write(dev, DWT_TX_BUFFER_ID, 0, len, frag->data)) {
-		LOG_ERR("Failed to write TX data");
+		LOG_ERROR("Failed to write TX data");
 		goto error;
 	}
 
@@ -976,7 +976,7 @@ static int dwt_hw_reset(const struct device *dev)
 	const struct dwt_hi_cfg *hi_cfg = dev->config;
 
 	if (gpio_pin_configure_dt(&hi_cfg->rst_gpio, GPIO_OUTPUT_ACTIVE)) {
-		LOG_ERR("Failed to configure GPIO pin %u", hi_cfg->rst_gpio.pin);
+		LOG_ERROR("Failed to configure GPIO pin %u", hi_cfg->rst_gpio.pin);
 		return -EINVAL;
 	}
 
@@ -985,7 +985,7 @@ static int dwt_hw_reset(const struct device *dev)
 	k_sleep(K_MSEC(5));
 
 	if (gpio_pin_configure_dt(&hi_cfg->rst_gpio, GPIO_INPUT)) {
-		LOG_ERR("Failed to configure GPIO pin %u", hi_cfg->rst_gpio.pin);
+		LOG_ERROR("Failed to configure GPIO pin %u", hi_cfg->rst_gpio.pin);
 		return -EINVAL;
 	}
 
@@ -1057,7 +1057,7 @@ static int dwt_start(const struct device *dev)
 		k_sleep(K_MSEC(5));
 
 		if (dwt_reg_read_u32(dev, DWT_DEV_ID_ID, 0) != DWT_DEVICE_ID) {
-			LOG_ERR("Failed to wake-up %p", dev);
+			LOG_ERROR("Failed to wake-up %p", dev);
 			k_sem_give(&ctx->dev_lock);
 			return -1;
 		}
@@ -1281,33 +1281,32 @@ static int dwt_configure_rf_phy(const struct device *dev)
 	uint32_t power;
 
 	if ((chan < 1) || (chan > 7) || (chan == 6)) {
-		LOG_ERR("Channel not supported %u", chan);
+		LOG_ERROR("Channel not supported %u", chan);
 		return -ENOTSUP;
 	}
 
 	if (rf_cfg->rx_shr_code >= ARRAY_SIZE(dwt_lde_repc_defs)) {
-		LOG_ERR("Preamble code not supported %u",
-			rf_cfg->rx_shr_code);
+		LOG_ERROR("Preamble code not supported %u", rf_cfg->rx_shr_code);
 		return -ENOTSUP;
 	}
 
 	if (prf_idx >= DWT_NUMOF_PRFS) {
-		LOG_ERR("PRF not supported %u", prf_idx);
+		LOG_ERROR("PRF not supported %u", prf_idx);
 		return -ENOTSUP;
 	}
 
 	if (rf_cfg->rx_pac_l >= DWT_NUMOF_PACS) {
-		LOG_ERR("RX PAC not supported %u", rf_cfg->rx_pac_l);
+		LOG_ERROR("RX PAC not supported %u", rf_cfg->rx_pac_l);
 		return -ENOTSUP;
 	}
 
 	if (rf_cfg->rx_ns_sfd > 1) {
-		LOG_ERR("Wrong NS SFD configuration");
+		LOG_ERROR("Wrong NS SFD configuration");
 		return -ENOTSUP;
 	}
 
 	if (rf_cfg->tx_shr_nsync >= DWT_NUM_OF_PLEN) {
-		LOG_ERR("Wrong SHR configuration");
+		LOG_ERROR("Wrong SHR configuration");
 		return -ENOTSUP;
 	}
 
@@ -1523,7 +1522,7 @@ static int dw1000_init(const struct device *dev)
 	ctx->spi_cfg_slow.frequency = DWT_SPI_SLOW_FREQ;
 
 	if (!spi_is_ready_dt(&hi_cfg->bus)) {
-		LOG_ERR("SPI device not ready");
+		LOG_ERROR("SPI device not ready");
 		return -ENODEV;
 	}
 
@@ -1531,12 +1530,12 @@ static int dw1000_init(const struct device *dev)
 
 	/* Initialize IRQ GPIO */
 	if (!gpio_is_ready_dt(&hi_cfg->irq_gpio)) {
-		LOG_ERR("IRQ GPIO device not ready");
+		LOG_ERROR("IRQ GPIO device not ready");
 		return -ENODEV;
 	}
 
 	if (gpio_pin_configure_dt(&hi_cfg->irq_gpio, GPIO_INPUT)) {
-		LOG_ERR("Unable to configure GPIO pin %u", hi_cfg->irq_gpio.pin);
+		LOG_ERROR("Unable to configure GPIO pin %u", hi_cfg->irq_gpio.pin);
 		return -EINVAL;
 	}
 
@@ -1544,18 +1543,18 @@ static int dw1000_init(const struct device *dev)
 			   BIT(hi_cfg->irq_gpio.pin));
 
 	if (gpio_add_callback(hi_cfg->irq_gpio.port, &(ctx->gpio_cb))) {
-		LOG_ERR("Failed to add IRQ callback");
+		LOG_ERROR("Failed to add IRQ callback");
 		return -EINVAL;
 	}
 
 	/* Initialize RESET GPIO */
 	if (!gpio_is_ready_dt(&hi_cfg->rst_gpio)) {
-		LOG_ERR("Reset GPIO device not ready");
+		LOG_ERROR("Reset GPIO device not ready");
 		return -ENODEV;
 	}
 
 	if (gpio_pin_configure_dt(&hi_cfg->rst_gpio, GPIO_INPUT)) {
-		LOG_ERR("Unable to configure GPIO pin %u", hi_cfg->rst_gpio.pin);
+		LOG_ERROR("Unable to configure GPIO pin %u", hi_cfg->rst_gpio.pin);
 		return -EINVAL;
 	}
 
@@ -1564,17 +1563,17 @@ static int dw1000_init(const struct device *dev)
 	dwt_hw_reset(dev);
 
 	if (dwt_reg_read_u32(dev, DWT_DEV_ID_ID, 0) != DWT_DEVICE_ID) {
-		LOG_ERR("Failed to read device ID %p", dev);
+		LOG_ERROR("Failed to read device ID %p", dev);
 		return -ENODEV;
 	}
 
 	if (dwt_initialise_dev(dev)) {
-		LOG_ERR("Failed to initialize DW1000");
+		LOG_ERROR("Failed to initialize DW1000");
 		return -EIO;
 	}
 
 	if (dwt_configure_rf_phy(dev)) {
-		LOG_ERR("Failed to configure RF PHY");
+		LOG_ERROR("Failed to configure RF PHY");
 		return -EIO;
 	}
 

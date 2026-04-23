@@ -289,7 +289,7 @@ static int qspi_npcx_fiu_dma_transfer(const struct device *dev, uint8_t *src, ui
 	 */
 	if (GET_FIELD(inst->BURST_CFG, NPCX_BURST_CFG_R_BURST) == NPCX_BURST_MODE_16_BYTE) {
 		if ((((uint32_t)src) & NPCX_DMA_ADDR_16B_ALIGN) != 0) {
-			LOG_ERR("Source address is not aligned to 16 Bytes");
+			LOG_ERROR("Source address is not aligned to 16 Bytes");
 			return -EINVAL;
 		}
 	}
@@ -304,27 +304,27 @@ static int qspi_npcx_fiu_dma_transfer(const struct device *dev, uint8_t *src, ui
 	dma_cfg.user_data = (void *)data;
 
 	if (dma_request_channel(dma->dev, (void *)&dma->channel) < 0) {
-		LOG_ERR("No available GDMA channel");
+		LOG_ERROR("No available GDMA channel");
 		return -EINVAL;
 	}
 
 	if (dma_get_status(dma->dev, dma->channel, &status)) {
-		LOG_ERR("Get GDMA channel failed");
+		LOG_ERROR("Get GDMA channel failed");
 		return -EINVAL;
 	}
 
 	if (status.busy) {
-		LOG_ERR("GDMA channel busy");
+		LOG_ERROR("GDMA channel busy");
 		return -EBUSY;
 	}
 
 	if (dma_config(dma->dev, dma->channel, &dma_cfg)) {
-		LOG_ERR("GDMA configuration failed");
+		LOG_ERROR("GDMA configuration failed");
 		return -EINVAL;
 	}
 
 	if (dma_start(dma->dev, dma->channel)) {
-		LOG_ERR("GDMA transaction failed");
+		LOG_ERROR("GDMA transaction failed");
 		return -EINVAL;
 	}
 
@@ -350,14 +350,14 @@ int qspi_npcx_fiu_dma_transceive(const struct device *dev, uint8_t *src, uint8_t
 	int ret;
 
 	if (dma->dev == NULL) {
-		LOG_ERR("GDMA transaction not supported!");
+		LOG_ERROR("GDMA transaction not supported!");
 		return -EINVAL;
 	}
 
 	ret = qspi_npcx_fiu_dma_transfer(dev, src, dest, size);
 
 	if (ret != 0) {
-		LOG_ERR("GDMA transaction failed");
+		LOG_ERROR("GDMA transaction failed");
 		return ret;
 	}
 
@@ -397,7 +397,7 @@ void qspi_npcx_fiu_apply_cfg(const struct device *dev,
 	struct npcx_qspi_fiu_data *data = dev->data;
 
 	if (cfg == NULL) {
-		LOG_ERR("Invalid QSPI configuration");
+		LOG_ERROR("Invalid QSPI configuration");
 		return;
 	}
 
@@ -445,7 +445,7 @@ void qspi_npcx_fiu_set_spi_size(const struct device *dev, const struct npcx_qspi
 		}
 		inst->SPI_DEV_SIZE = BIT(cfg->spi_dev_sz);
 	} else {
-		LOG_ERR("Invalid setting of low device size");
+		LOG_ERROR("Invalid setting of low device size");
 	}
 }
 #endif
@@ -465,7 +465,7 @@ int qspi_npcx_fiu_uma_block(const struct device *dev, bool lock_en)
 
 #if defined(CONFIG_ESPI_TAF)
 	if (espi_taf_npcx_block(espi_dev, lock_en) != 0) {
-		LOG_ERR("TAF block timeout, lock_en:%d", lock_en);
+		LOG_ERROR("TAF block timeout, lock_en:%d", lock_en);
 		return -ETIMEDOUT;
 	}
 #endif
@@ -481,7 +481,7 @@ static int qspi_npcx_fiu_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("%s device not ready", clk_dev->name);
+		LOG_ERROR("%s device not ready", clk_dev->name);
 		return -ENODEV;
 	}
 
@@ -489,7 +489,7 @@ static int qspi_npcx_fiu_init(const struct device *dev)
 	ret = clock_control_on(clk_dev,
 			       (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on FIU clock fail %d", ret);
+		LOG_ERROR("Turn on FIU clock fail %d", ret);
 		return ret;
 	}
 
@@ -500,7 +500,7 @@ static int qspi_npcx_fiu_init(const struct device *dev)
 	struct gdma_data *dma = &data->dma;
 
 	if (!device_is_ready(dma->dev)) {
-		LOG_ERR("GDMA device not ready");
+		LOG_ERROR("GDMA device not ready");
 		return -EINVAL;
 	}
 

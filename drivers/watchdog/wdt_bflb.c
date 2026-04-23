@@ -51,7 +51,7 @@ static int wdt_bflb_setup(const struct device *dev, uint8_t options)
 	uint32_t tmp;
 
 	if (!data->configured) {
-		LOG_ERR("No timeout installed");
+		LOG_ERROR("No timeout installed");
 		return -EINVAL;
 	}
 
@@ -130,12 +130,12 @@ static int wdt_bflb_install_timeout(const struct device *dev, const struct wdt_t
 	uint32_t ticks;
 
 	if (timeout->window.min != 0) {
-		LOG_ERR("Window watchdog not supported");
+		LOG_ERROR("Window watchdog not supported");
 		return -EINVAL;
 	}
 
 	if (timeout->window.max == 0) {
-		LOG_ERR("Timeout must be > 0");
+		LOG_ERROR("Timeout must be > 0");
 		return -EINVAL;
 	}
 
@@ -143,9 +143,9 @@ static int wdt_bflb_install_timeout(const struct device *dev, const struct wdt_t
 	ticks = (uint64_t)timeout->window.max * WDT_CLK_FREQ / 1000U / (WDT_CLK_DIV + 1U);
 
 	if (ticks > WDT_MAX_TICKS) {
-		LOG_ERR("Timeout too large (max %u ms)",
-			(uint32_t)((uint64_t)WDT_MAX_TICKS * 1000U * (WDT_CLK_DIV + 1U) /
-				   WDT_CLK_FREQ));
+		LOG_ERROR("Timeout too large (max %u ms)",
+			  (uint32_t)((uint64_t)WDT_MAX_TICKS * 1000U * (WDT_CLK_DIV + 1U) /
+				     WDT_CLK_FREQ));
 		return -EINVAL;
 	}
 

@@ -96,7 +96,7 @@ static int rt1715_tcpc_init(const struct device *dev)
 
 	if (!data->initialized) {
 		if (data->init_retries > CONFIG_USBC_TCPC_RT1715_INIT_RETRIES) {
-			LOG_ERR("TCPC was not initialized correctly");
+			LOG_ERROR("TCPC was not initialized correctly");
 			return -EIO;
 		}
 
@@ -198,7 +198,7 @@ static int rt1715_tcpc_vconn_discharge(const struct device *dev, bool enable)
 
 	if (cfg->vconn_disc_gpio.port == NULL) {
 		/* RT1715 does not have built-in VCONN discharge path */
-		LOG_ERR("VCONN discharge GPIO is not defined");
+		LOG_ERROR("VCONN discharge GPIO is not defined");
 		return -EIO;
 	}
 
@@ -292,16 +292,16 @@ static int rt1715_tcpc_rx_fifo_enqueue(const struct device *dev)
 
 	/* rxbcnt = 1 (frame type) + 2 (Message Header) + Rx data byte count */
 	if (rxbcnt < 3) {
-		LOG_ERR("Invalid RXBCNT: %d", rxbcnt);
+		LOG_ERROR("Invalid RXBCNT: %d", rxbcnt);
 		return -EIO;
 	}
 	rx_data_size = rxbcnt - 3;
 
 	/* Not support Unchunked Extended Message exceeding PD_CONVERT_PD_HEADER_COUNT_TO_BYTES */
 	if (rx_data_size > (PD_MAX_EXTENDED_MSG_LEGACY_LEN + 2)) {
-		LOG_ERR("Not support Unchunked Extended Message exceeding "
-			"PD_CONVERT_PD_HEADER_COUNT_TO_BYTES: %d",
-			rx_data_size);
+		LOG_ERROR("Not support Unchunked Extended Message exceeding "
+			  "PD_CONVERT_PD_HEADER_COUNT_TO_BYTES: %d",
+			  rx_data_size);
 		return -EIO;
 	}
 
@@ -318,7 +318,7 @@ static int rt1715_tcpc_rx_fifo_enqueue(const struct device *dev)
 	if (rx_data_size > 0) {
 		ret = i2c_burst_read_dt(&cfg->bus, TCPC_REG_RX_BUFFER + 4, msg->data, rx_data_size);
 		if (ret) {
-			LOG_ERR("Failed to read Rx data: %d", ret);
+			LOG_ERROR("Failed to read Rx data: %d", ret);
 		}
 	}
 
@@ -599,7 +599,7 @@ void rt1715_init_work_cb(struct k_work *work)
 		data->init_retries++;
 
 		if (data->init_retries > CONFIG_USBC_TCPC_RT1715_INIT_RETRIES) {
-			LOG_ERR("Chip didn't respond");
+			LOG_ERROR("Chip didn't respond");
 			return;
 		}
 
@@ -632,7 +632,7 @@ void rt1715_init_work_cb(struct k_work *work)
 	ret = gpio_add_callback(cfg->alert_gpio.port, &data->alert_cb);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to add alert callback: %d", ret);
+		LOG_ERROR("Failed to add alert callback: %d", ret);
 		return;
 	}
 
@@ -662,7 +662,7 @@ static int rt1715_dev_init(const struct device *dev)
 	/* Resets the chip */
 	ret = tcpci_write_reg8(&cfg->bus, RT1715_REG_SW_RST, RT1715_REG_SW_RST_EN);
 	if (ret != 0) {
-		LOG_ERR("Failed to reset chip: %d", ret);
+		LOG_ERROR("Failed to reset chip: %d", ret);
 		return ret;
 	}
 

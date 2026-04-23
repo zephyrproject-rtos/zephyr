@@ -72,7 +72,7 @@ static int sdio_send_ocr(struct sd_card *card, uint32_t ocr)
 	}
 	if (retries >= CONFIG_SD_OCR_RETRY_COUNT) {
 		/* OCR timed out */
-		LOG_ERR("Card never left busy state");
+		LOG_ERROR("Card never left busy state");
 		return -ETIMEDOUT;
 	}
 	LOG_DBG("SDIO responded to CMD5 after %d attempts", retries);
@@ -535,7 +535,7 @@ static int sdio_set_bus_speed(struct sd_card *card)
 		LOG_DBG("Setting bus clock to: %d", card->bus_io.clock);
 		ret = sdhc_set_io(card->sdhc, &card->bus_io);
 		if (ret) {
-			LOG_ERR("Failed to change host bus speed");
+			LOG_ERROR("Failed to change host bus speed");
 			return ret;
 		}
 	}
@@ -665,7 +665,7 @@ int sdio_card_init(struct sd_card *card)
 		/* SDR104, SDR50, and DDR50 mode need tuning */
 		ret = sdhc_execute_tuning(card->sdhc);
 		if (ret) {
-			LOG_ERR("SD tuning failed: %d", ret);
+			LOG_ERROR("SD tuning failed: %d", ret);
 		}
 	}
 	return ret;

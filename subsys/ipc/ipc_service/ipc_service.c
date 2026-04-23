@@ -19,14 +19,14 @@ int ipc_service_open_instance(const struct device *instance)
 	const struct ipc_service_backend *backend;
 
 	if (!instance) {
-		LOG_ERR("Invalid instance");
+		LOG_ERROR("Invalid instance");
 		return -EINVAL;
 	}
 
 	backend = (const struct ipc_service_backend *) instance->api;
 
 	if (!backend) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
@@ -43,14 +43,14 @@ int ipc_service_close_instance(const struct device *instance)
 	const struct ipc_service_backend *backend;
 
 	if (!instance) {
-		LOG_ERR("Invalid instance");
+		LOG_ERROR("Invalid instance");
 		return -EINVAL;
 	}
 
 	backend = (const struct ipc_service_backend *) instance->api;
 
 	if (!backend) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
@@ -69,14 +69,14 @@ int ipc_service_register_endpoint(const struct device *instance,
 	const struct ipc_service_backend *backend;
 
 	if (!instance || !ept || !cfg) {
-		LOG_ERR("Invalid instance, endpoint or configuration");
+		LOG_ERROR("Invalid instance, endpoint or configuration");
 		return -EINVAL;
 	}
 
 	backend = (const struct ipc_service_backend *) instance->api;
 
 	if (!backend || !backend->register_endpoint) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
@@ -93,19 +93,19 @@ int ipc_service_deregister_endpoint(struct ipc_ept *ept)
 	int err;
 
 	if (!ept) {
-		LOG_ERR("Invalid endpoint");
+		LOG_ERROR("Invalid endpoint");
 		return -EINVAL;
 	}
 
 	if (!ept->instance) {
-		LOG_ERR("Endpoint not registered\n");
+		LOG_ERROR("Endpoint not registered\n");
 		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
 
 	if (!backend || !backend->deregister_endpoint) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
@@ -125,19 +125,19 @@ int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len)
 	const struct ipc_service_backend *backend;
 
 	if (!ept) {
-		LOG_ERR("Invalid endpoint");
+		LOG_ERROR("Invalid endpoint");
 		return -EINVAL;
 	}
 
 	if (!ept->instance) {
-		LOG_ERR("Endpoint not registered\n");
+		LOG_ERROR("Endpoint not registered\n");
 		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
 
 	if (!backend || !backend->send) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
@@ -149,19 +149,19 @@ int ipc_service_send_critical(struct ipc_ept *ept, const void *data, size_t len)
 	const struct ipc_service_backend *backend;
 
 	if (!ept) {
-		LOG_ERR("Invalid endpoint");
+		LOG_ERROR("Invalid endpoint");
 		return -EINVAL;
 	}
 
 	if (!ept->instance) {
-		LOG_ERR("Endpoint not registered\n");
+		LOG_ERROR("Endpoint not registered\n");
 		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
 
 	if (!backend || !backend->send_critical) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
@@ -173,24 +173,24 @@ int ipc_service_get_tx_buffer_size(struct ipc_ept *ept)
 	const struct ipc_service_backend *backend;
 
 	if (!ept) {
-		LOG_ERR("Invalid endpoint");
+		LOG_ERROR("Invalid endpoint");
 		return -EINVAL;
 	}
 
 	if (!ept->instance) {
-		LOG_ERR("Endpoint not registered\n");
+		LOG_ERROR("Endpoint not registered\n");
 		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
 
 	if (!backend) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
 	if (!backend->get_tx_buffer_size) {
-		LOG_ERR("No-copy feature not available");
+		LOG_ERROR("No-copy feature not available");
 		return -EIO;
 	}
 
@@ -202,24 +202,24 @@ int ipc_service_get_tx_buffer(struct ipc_ept *ept, void **data, uint32_t *len, k
 	const struct ipc_service_backend *backend;
 
 	if (!ept || !data || !len) {
-		LOG_ERR("Invalid endpoint, data or len pointer");
+		LOG_ERROR("Invalid endpoint, data or len pointer");
 		return -EINVAL;
 	}
 
 	if (!ept->instance) {
-		LOG_ERR("Endpoint not registered\n");
+		LOG_ERROR("Endpoint not registered\n");
 		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
 
 	if (!backend) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
 	if (!backend->send_nocopy || !backend->get_tx_buffer) {
-		LOG_ERR("No-copy feature not available");
+		LOG_ERROR("No-copy feature not available");
 		return -EIO;
 	}
 
@@ -231,24 +231,24 @@ int ipc_service_drop_tx_buffer(struct ipc_ept *ept, const void *data)
 	const struct ipc_service_backend *backend;
 
 	if (!ept || !data) {
-		LOG_ERR("Invalid endpoint or data pointer");
+		LOG_ERROR("Invalid endpoint or data pointer");
 		return -EINVAL;
 	}
 
 	if (!ept->instance) {
-		LOG_ERR("Endpoint not registered\n");
+		LOG_ERROR("Endpoint not registered\n");
 		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
 
 	if (!backend) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
 	if (!backend->drop_tx_buffer) {
-		LOG_ERR("No-copy feature not available");
+		LOG_ERROR("No-copy feature not available");
 		return -EIO;
 	}
 
@@ -260,24 +260,24 @@ int ipc_service_send_nocopy(struct ipc_ept *ept, const void *data, size_t len)
 	const struct ipc_service_backend *backend;
 
 	if (!ept) {
-		LOG_ERR("Invalid endpoint");
+		LOG_ERROR("Invalid endpoint");
 		return -EINVAL;
 	}
 
 	if (!ept->instance) {
-		LOG_ERR("Endpoint not registered\n");
+		LOG_ERROR("Endpoint not registered\n");
 		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
 
 	if (!backend) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
 	if (!backend->get_tx_buffer || !backend->send_nocopy) {
-		LOG_ERR("No-copy feature not available");
+		LOG_ERROR("No-copy feature not available");
 		return -EIO;
 	}
 
@@ -289,25 +289,25 @@ int ipc_service_hold_rx_buffer(struct ipc_ept *ept, void *data)
 	const struct ipc_service_backend *backend;
 
 	if (!ept) {
-		LOG_ERR("Invalid endpoint");
+		LOG_ERROR("Invalid endpoint");
 		return -EINVAL;
 	}
 
 	if (!ept->instance) {
-		LOG_ERR("Endpoint not registered\n");
+		LOG_ERROR("Endpoint not registered\n");
 		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
 
 	if (!backend) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
 	/* We also need the release function */
 	if (!backend->release_rx_buffer || !backend->hold_rx_buffer) {
-		LOG_ERR("No-copy feature not available");
+		LOG_ERROR("No-copy feature not available");
 		return -EIO;
 	}
 
@@ -318,25 +318,25 @@ int ipc_service_release_rx_buffer(struct ipc_ept *ept, void *data)
 	const struct ipc_service_backend *backend;
 
 	if (!ept) {
-		LOG_ERR("Invalid endpoint");
+		LOG_ERROR("Invalid endpoint");
 		return -EINVAL;
 	}
 
 	if (!ept->instance) {
-		LOG_ERR("Endpoint not registered\n");
+		LOG_ERROR("Endpoint not registered\n");
 		return -ENOENT;
 	}
 
 	backend = ept->instance->api;
 
 	if (!backend) {
-		LOG_ERR("Invalid backend configuration");
+		LOG_ERROR("Invalid backend configuration");
 		return -EIO;
 	}
 
 	/* We also need the hold function */
 	if (!backend->hold_rx_buffer || !backend->release_rx_buffer) {
-		LOG_ERR("No-copy feature not available");
+		LOG_ERROR("No-copy feature not available");
 		return -EIO;
 	}
 

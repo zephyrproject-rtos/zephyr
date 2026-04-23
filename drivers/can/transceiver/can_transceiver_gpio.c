@@ -39,7 +39,7 @@ static int can_transceiver_gpio_set_state(const struct device *dev, bool enabled
 	if (config->enable_gpio.port != NULL) {
 		err = gpio_pin_set_dt(&config->enable_gpio, enabled ? 1 : 0);
 		if (err != 0) {
-			LOG_ERR("failed to set enable GPIO pin (err %d)", err);
+			LOG_ERROR("failed to set enable GPIO pin (err %d)", err);
 			return -EIO;
 		}
 	}
@@ -49,7 +49,7 @@ static int can_transceiver_gpio_set_state(const struct device *dev, bool enabled
 	if (config->standby_gpio.port != NULL) {
 		err = gpio_pin_set_dt(&config->standby_gpio, enabled ? 0 : 1);
 		if (err != 0) {
-			LOG_ERR("failed to set standby GPIO pin (err %d)", err);
+			LOG_ERROR("failed to set standby GPIO pin (err %d)", err);
 			return -EIO;
 		}
 	}
@@ -78,14 +78,14 @@ static int can_transceiver_gpio_init(const struct device *dev)
 #if ANY_INST_HAS_ENABLE_GPIOS
 	if (config->enable_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->enable_gpio)) {
-			LOG_ERR("enable pin GPIO device not ready");
+			LOG_ERROR("enable pin GPIO device not ready");
 			return -EINVAL;
 		}
 
 		/* CAN transceiver is disabled during initialization */
 		err = gpio_pin_configure_dt(&config->enable_gpio, GPIO_OUTPUT_INACTIVE);
 		if (err != 0) {
-			LOG_ERR("failed to configure enable GPIO pin (err %d)", err);
+			LOG_ERROR("failed to configure enable GPIO pin (err %d)", err);
 			return err;
 		}
 	}
@@ -94,14 +94,14 @@ static int can_transceiver_gpio_init(const struct device *dev)
 #if ANY_INST_HAS_STANDBY_GPIOS
 	if (config->standby_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->standby_gpio)) {
-			LOG_ERR("standby pin GPIO device not ready");
+			LOG_ERROR("standby pin GPIO device not ready");
 			return -EINVAL;
 		}
 
 		/* CAN transceiver is put in standby during initialization */
 		err = gpio_pin_configure_dt(&config->standby_gpio, GPIO_OUTPUT_ACTIVE);
 		if (err != 0) {
-			LOG_ERR("failed to configure standby GPIO pin (err %d)", err);
+			LOG_ERROR("failed to configure standby GPIO pin (err %d)", err);
 			return err;
 		}
 	}

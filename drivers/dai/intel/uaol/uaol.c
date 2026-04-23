@@ -109,8 +109,8 @@ static int dai_uaol_process_aux_config_data(struct dai_intel_uaol_data *dp,
 
 	if (config) {
 		if (config->link_idx != dp->link || config->stream_idx != dp->stream) {
-			LOG_ERR("Config mismatch: this dev link, stream: %d, %d; config: %d, %d",
-				dp->link, dp->stream, config->link_idx, config->stream_idx);
+			LOG_ERROR("Config mismatch: this dev link, stream: %d, %d; config: %d, %d",
+				  dp->link, dp->stream, config->link_idx, config->stream_idx);
 			return -EINVAL;
 		}
 	}
@@ -166,19 +166,19 @@ static int dai_uaol_process_dma_control_data(struct dai_intel_uaol_data *dp,
 		switch (tlv->type) {
 		case IPC4_UAOL_DMA_CONTROL_TLV_SET_EP_TABLE:
 			if (tlv->length != sizeof(struct ipc4_uaol_set_ep_table)) {
-				LOG_ERR("SET_EP_TABLE expected TLV length %d, received %d",
-					sizeof(struct ipc4_uaol_set_ep_table), tlv->length);
+				LOG_ERROR("SET_EP_TABLE expected TLV length %d, received %d",
+					  sizeof(struct ipc4_uaol_set_ep_table), tlv->length);
 				return -EINVAL;
 			}
 			ep_table = (struct ipc4_uaol_set_ep_table *)tlv->value;
 			hw_dev = uaol_get_hw_device(ep_table->link_idx);
 			if (!hw_dev) {
-				LOG_ERR("UAOL %d not found", ep_table->link_idx);
+				LOG_ERROR("UAOL %d not found", ep_table->link_idx);
 				return -EINVAL;
 			}
 			ret = pm_device_runtime_get(hw_dev);
 			if (ret) {
-				LOG_ERR("pm_device_runtime_get() failed, ret %d", ret);
+				LOG_ERROR("pm_device_runtime_get() failed, ret %d", ret);
 				return -EIO;
 			}
 			entry.usb_ep_address = (ep_table->entry.usb_ep_number << 1) |
@@ -187,21 +187,21 @@ static int dai_uaol_process_dma_control_data(struct dai_intel_uaol_data *dp,
 			entry.split_ep = ep_table->entry.split_ep;
 			ret = uaol_program_ep_table(hw_dev, ep_table->stream_idx, entry, true);
 			if (ret) {
-				LOG_ERR("uaol_program_ep_table() failed, stream %d, ret %d",
-					ep_table->stream_idx, ret);
+				LOG_ERROR("uaol_program_ep_table() failed, stream %d, ret %d",
+					  ep_table->stream_idx, ret);
 				return -EIO;
 			}
 			break;
 		case IPC4_UAOL_DMA_CONTROL_TLV_RESET_EP_TABLE:
 			if (tlv->length != sizeof(struct ipc4_uaol_set_ep_table)) {
-				LOG_ERR("RESET_EP_TABLE expected TLV length %d, received %d",
-					sizeof(struct ipc4_uaol_set_ep_table), tlv->length);
+				LOG_ERROR("RESET_EP_TABLE expected TLV length %d, received %d",
+					  sizeof(struct ipc4_uaol_set_ep_table), tlv->length);
 				return -EINVAL;
 			}
 			ep_table = (struct ipc4_uaol_set_ep_table *)tlv->value;
 			hw_dev = uaol_get_hw_device(ep_table->link_idx);
 			if (!hw_dev) {
-				LOG_ERR("UAOL %d not found", ep_table->link_idx);
+				LOG_ERROR("UAOL %d not found", ep_table->link_idx);
 				return -EINVAL;
 			}
 			entry.usb_ep_address = (ep_table->entry.usb_ep_number << 1) |
@@ -210,16 +210,16 @@ static int dai_uaol_process_dma_control_data(struct dai_intel_uaol_data *dp,
 			entry.split_ep = ep_table->entry.split_ep;
 			ret = uaol_program_ep_table(hw_dev, ep_table->stream_idx, entry, false);
 			if (ret) {
-				LOG_ERR("uaol_program_ep_table() failed, stream %d, ret %d",
-					ep_table->stream_idx, ret);
+				LOG_ERROR("uaol_program_ep_table() failed, stream %d, ret %d",
+					  ep_table->stream_idx, ret);
 				return -EIO;
 			}
 			pm_device_runtime_put(hw_dev);
 			break;
 		case IPC4_UAOL_DMA_CONTROL_TLV_SET_EP_INFO:
 			if (tlv->length != sizeof(struct ipc4_uaol_usb_ep_info)) {
-				LOG_ERR("SET_EP_INFO expected TLV length %d, received %d",
-					sizeof(struct ipc4_uaol_usb_ep_info), tlv->length);
+				LOG_ERROR("SET_EP_INFO expected TLV length %d, received %d",
+					  sizeof(struct ipc4_uaol_usb_ep_info), tlv->length);
 				return -EINVAL;
 			}
 			ep_info = (struct ipc4_uaol_usb_ep_info *)tlv->value;
@@ -267,7 +267,7 @@ static int dai_uaol_config_set(const struct device *dev, const struct dai_config
 
 	ret = dai_uaol_process_aux_config_data(dp, bespoke_cfg, size);
 	if (ret) {
-		LOG_ERR("dai_uaol_process_aux_config_data() failed, ret %d", ret);
+		LOG_ERROR("dai_uaol_process_aux_config_data() failed, ret %d", ret);
 		return ret;
 	}
 
@@ -337,12 +337,12 @@ static int dai_uaol_trigger(const struct device *dev, enum dai_dir dir, enum dai
 		    dp->dai_state == DAI_STATE_PRE_RUNNING) {
 			ret = uaol_config(dp->hw_dev, dp->stream, &dp->hw_cfg);
 			if (ret) {
-				LOG_ERR("uaol_config() failed, ret %d", ret);
+				LOG_ERROR("uaol_config() failed, ret %d", ret);
 				return ret;
 			}
 			ret = uaol_start(dp->hw_dev, dp->stream);
 			if (ret) {
-				LOG_ERR("uaol_start() failed, ret %d", ret);
+				LOG_ERROR("uaol_start() failed, ret %d", ret);
 				return ret;
 			}
 			dp->dai_state = DAI_STATE_RUNNING;
@@ -351,7 +351,7 @@ static int dai_uaol_trigger(const struct device *dev, enum dai_dir dir, enum dai
 	case DAI_TRIGGER_PAUSE:
 		ret = uaol_stop(dp->hw_dev, dp->stream);
 		if (ret) {
-			LOG_ERR("uaol_stop() failed, ret %d", ret);
+			LOG_ERROR("uaol_stop() failed, ret %d", ret);
 			return ret;
 		}
 		dp->dai_state = DAI_STATE_PAUSED;

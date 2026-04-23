@@ -88,7 +88,7 @@ static int xpt2046_read_and_cumulate(const struct spi_dt_spec *bus, const struct
 	int ret = spi_transceive_dt(bus, tx, rx);
 
 	if (ret < 0) {
-		LOG_ERR("spi_transceive() %d\n", ret);
+		LOG_ERROR("spi_transceive() %d\n", ret);
 		return ret;
 	}
 
@@ -184,7 +184,7 @@ static void xpt2046_work_handler(struct k_work *kw)
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Could not set gpio callback");
+		LOG_ERROR("Could not set gpio callback");
 		return;
 	}
 }
@@ -211,13 +211,13 @@ static int xpt2046_init(const struct device *dev)
 
 	r = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (r < 0) {
-		LOG_ERR("Could not configure interrupt GPIO pin");
+		LOG_ERROR("Could not configure interrupt GPIO pin");
 		return r;
 	}
 
 	r = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (r < 0) {
-		LOG_ERR("Could not configure interrupt GPIO interrupt.");
+		LOG_ERROR("Could not configure interrupt GPIO interrupt.");
 		return r;
 	}
 
@@ -225,7 +225,7 @@ static int xpt2046_init(const struct device *dev)
 
 	r = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (r < 0) {
-		LOG_ERR("Could not set gpio callback");
+		LOG_ERROR("Could not set gpio callback");
 		return r;
 	}
 

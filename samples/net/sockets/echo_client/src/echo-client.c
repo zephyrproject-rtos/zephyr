@@ -129,7 +129,7 @@ static void wait(void)
 
 		if (!once) {
 			once = true;
-			LOG_ERR("Error in poll:%d", errno);
+			LOG_ERROR("Error in poll:%d", errno);
 		}
 
 		return;
@@ -353,7 +353,7 @@ static void init_app(void)
 				    ca_certificate,
 				    sizeof(ca_certificate));
 	if (err < 0) {
-		LOG_ERR("Failed to register public certificate: %d", err);
+		LOG_ERROR("Failed to register public certificate: %d", err);
 	}
 
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
@@ -362,14 +362,14 @@ static void init_app(void)
 				psk,
 				sizeof(psk));
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK: %d", err);
+		LOG_ERROR("Failed to register PSK: %d", err);
 	}
 	err = tls_credential_add(PSK_TAG,
 				TLS_CREDENTIAL_PSK_ID,
 				psk_id,
 				sizeof(psk_id) - 1);
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK ID: %d", err);
+		LOG_ERROR("Failed to register PSK ID: %d", err);
 	}
 #endif /* defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED) */
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */

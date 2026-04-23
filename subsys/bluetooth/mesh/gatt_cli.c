@@ -182,7 +182,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t conn_err)
 	}
 
 	if (conn_err) {
-		LOG_ERR("Failed to connect GATT Services(%u)", conn_err);
+		LOG_ERROR("Failed to connect GATT Services(%u)", conn_err);
 
 		bt_conn_unref(server->conn);
 		server->conn = NULL;
@@ -205,7 +205,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t conn_err)
 	server->discover.type = BT_GATT_DISCOVER_PRIMARY;
 	err = bt_gatt_discover(conn, &server->discover);
 	if (err) {
-		LOG_ERR("Unable discover GATT Services (err %d)", err);
+		LOG_ERROR("Unable discover GATT Services (err %d)", err);
 	}
 }
 
@@ -253,7 +253,7 @@ int bt_mesh_gatt_cli_connect(const bt_addr_le_t *addr,
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
 				BT_LE_CONN_PARAM_DEFAULT, &conn);
 	if (err) {
-		LOG_ERR("Connection failed (err:%d)", err);
+		LOG_ERROR("Connection failed (err:%d)", err);
 
 		(void)bt_mesh_scan_enable();
 

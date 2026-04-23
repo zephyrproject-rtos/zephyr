@@ -85,7 +85,7 @@ static bool spi_b91_config_cs(const struct device *dev,
 
 	/* check for correct slave id */
 	if (config->slave >= CHIP_SELECT_COUNT) {
-		LOG_ERR("Slave %d not supported (max. %d)", config->slave, CHIP_SELECT_COUNT - 1);
+		LOG_ERROR("Slave %d not supported (max. %d)", config->slave, CHIP_SELECT_COUNT - 1);
 		return false;
 	}
 
@@ -96,7 +96,7 @@ static bool spi_b91_config_cs(const struct device *dev,
 
 		/*  if cs pin is not defined for the selected slave, return error */
 		if ((cs_pin == 0) && (cs_id == config->slave)) {
-			LOG_ERR("cs%d-pin is not defined in device tree", config->slave);
+			LOG_ERROR("cs%d-pin is not defined in device tree", config->slave);
 			return false;
 		}
 
@@ -242,50 +242,50 @@ static bool spi_b91_is_config_supported(const struct spi_config *config,
 					struct spi_b91_cfg *b91_config)
 {
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return false;
 	}
 
 	/* check for loop back */
 	if (config->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loop back mode not supported");
+		LOG_ERROR("Loop back mode not supported");
 		return false;
 	}
 
 	/* check for transfer LSB first */
 	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB first not supported");
+		LOG_ERROR("LSB first not supported");
 		return false;
 	}
 
 	/* check word size */
 	if (SPI_WORD_SIZE_GET(config->operation) != SPI_WORD_SIZE) {
-		LOG_ERR("Word size must be %d", SPI_WORD_SIZE);
+		LOG_ERROR("Word size must be %d", SPI_WORD_SIZE);
 		return false;
 	}
 
 	/* check for CS active high */
 	if (config->operation & SPI_CS_ACTIVE_HIGH) {
-		LOG_ERR("CS active high not supported for HW flow control");
+		LOG_ERROR("CS active high not supported for HW flow control");
 		return false;
 	}
 
 	/* check for lines configuration */
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
 		if ((config->operation & SPI_LINES_MASK) == SPI_LINES_OCTAL) {
-			LOG_ERR("SPI lines Octal is not supported");
+			LOG_ERROR("SPI lines Octal is not supported");
 			return false;
 		} else if (((config->operation & SPI_LINES_MASK) ==
 			    SPI_LINES_QUAD) &&
 			   (b91_config->peripheral_id == PSPI_MODULE)) {
-			LOG_ERR("SPI lines Quad is not supported by PSPI");
+			LOG_ERROR("SPI lines Quad is not supported by PSPI");
 			return false;
 		}
 	}
 
 	/* check for slave configuration */
 	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("SPI Slave is not implemented");
+		LOG_ERROR("SPI Slave is not implemented");
 		return -ENOTSUP;
 	}
 
@@ -351,7 +351,7 @@ static int spi_b91_config(const struct device *dev,
 	/* configure pins */
 	status = pinctrl_apply_state(b91_config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure SPI pins");
+		LOG_ERROR("Failed to configure SPI pins");
 		return status;
 	}
 

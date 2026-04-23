@@ -39,7 +39,7 @@ static int modulino_buttons_leds_set(const struct device *dev,
 
 	ret = i2c_write_dt(&cfg->bus, data->buf, sizeof(data->buf));
 	if (ret < 0) {
-		LOG_ERR("i2c write error: %d", ret);
+		LOG_ERROR("i2c write error: %d", ret);
 		return ret;
 	}
 
@@ -69,14 +69,14 @@ static int modulino_buttons_leds_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
 	/* Reset to all LEDs off */
 	ret = i2c_write_dt(&cfg->bus, data->buf, sizeof(data->buf));
 	if (ret < 0) {
-		LOG_ERR("i2c write error: %d", ret);
+		LOG_ERROR("i2c write error: %d", ret);
 		return ret;
 	}
 

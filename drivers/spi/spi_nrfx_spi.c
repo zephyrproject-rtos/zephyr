@@ -102,33 +102,33 @@ static int configure(const struct device *dev,
 	}
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported on %s", dev->name);
+		LOG_ERROR("Slave mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
 	if (spi_cfg->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback mode is not supported");
+		LOG_ERROR("Loopback mode is not supported");
 		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only single line mode is supported");
+		LOG_ERROR("Only single line mode is supported");
 		return -EINVAL;
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) != 8) {
-		LOG_ERR("Word sizes other than 8 bits are not supported");
+		LOG_ERROR("Word sizes other than 8 bits are not supported");
 		return -EINVAL;
 	}
 
 	if (spi_cfg->frequency < 125000) {
-		LOG_ERR("Frequencies lower than 125 kHz are not supported");
+		LOG_ERROR("Frequencies lower than 125 kHz are not supported");
 		return -EINVAL;
 	}
 
@@ -152,7 +152,7 @@ static int configure(const struct device *dev,
 	result = nrfx_spi_init(&dev_data->spi, &config,
 			       event_handler, dev_data);
 	if (result != 0) {
-		LOG_ERR("Failed to initialize nrfx driver: %d", result);
+		LOG_ERROR("Failed to initialize nrfx driver: %d", result);
 		return -EIO;
 	}
 
@@ -397,11 +397,11 @@ static int spi_nrfx_init(const struct device *dev)
 	if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
 		err = spi_nrfx_wake_init(dev_config->wake_gpiote, dev_config->wake_pin);
 		if (err == -ENODEV) {
-			LOG_ERR("Failed to allocate GPIOTE channel for WAKE");
+			LOG_ERROR("Failed to allocate GPIOTE channel for WAKE");
 			return err;
 		}
 		if (err == -EIO) {
-			LOG_ERR("Failed to configure WAKE pin");
+			LOG_ERROR("Failed to configure WAKE pin");
 			return err;
 		}
 	}

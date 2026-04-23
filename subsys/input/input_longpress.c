@@ -88,7 +88,7 @@ static int longpress_init(const struct device *dev)
 	const struct longpress_config *cfg = dev->config;
 
 	if (cfg->input_dev && !device_is_ready(cfg->input_dev)) {
-		LOG_ERR("input device not ready");
+		LOG_ERROR("input device not ready");
 		return -ENODEV;
 	}
 

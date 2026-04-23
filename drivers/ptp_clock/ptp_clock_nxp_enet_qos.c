@@ -174,7 +174,7 @@ static int ptp_clock_nxp_enet_qos_init(const struct device *dev)
 
 	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clk_rate);
 	if (ret) {
-		LOG_ERR("Failed to get PTP clock");
+		LOG_ERROR("Failed to get PTP clock");
 		return ret;
 	}
 

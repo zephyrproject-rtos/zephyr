@@ -306,7 +306,7 @@ static void msc_queue_write(struct msc_bot_ctx *ctx)
 
 		ret = usbd_ep_enqueue(ctx->class_node, buf);
 		if (ret) {
-			LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+			LOG_ERROR("Failed to enqueue net_buf for 0x%02x", ep);
 			net_buf_unref(buf);
 			msc_free_scsi_buf(ctx, scsi_buf);
 			/* 6.6.2 Internal Device Error */
@@ -346,7 +346,7 @@ static void msc_queue_cbw(struct usbd_class_data *const c_data)
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_ERROR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 		msc_free_scsi_buf(ctx, scsi_buf);
 		/* 6.6.2 Internal Device Error */
@@ -408,7 +408,7 @@ static void msc_queue_bulk_in_ep(struct msc_bot_ctx *ctx, uint8_t *data, int len
 	ctx->csw.dCSWDataResidue -= len;
 	ret = usbd_ep_enqueue(ctx->class_node, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_ERROR("Failed to enqueue net_buf for 0x%02x", ep);
 		msc_free_scsi_buf(ctx, data);
 		net_buf_unref(buf);
 		/* 6.6.2 Internal Device Error */
@@ -648,7 +648,7 @@ static void msc_send_csw(struct msc_bot_ctx *ctx)
 
 	if (ctx->num_in_queued) {
 		__ASSERT_NO_MSG(false);
-		LOG_ERR("IN already queued");
+		LOG_ERROR("IN already queued");
 		return;
 	}
 
@@ -668,7 +668,7 @@ static void msc_send_csw(struct msc_bot_ctx *ctx)
 
 	ret = usbd_ep_enqueue(ctx->class_node, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_ERROR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 		msc_free_scsi_buf(ctx, scsi_buf);
 		/* 6.6.2 Internal Device Error */
@@ -692,8 +692,7 @@ static void usbd_msc_handle_request(struct usbd_class_data *c_data,
 			LOG_WRN("request ep 0x%02x, len %u cancelled",
 				bi->ep, buf->len);
 		} else {
-			LOG_ERR("request ep 0x%02x, len %u failed",
-				bi->ep, buf->len);
+			LOG_ERROR("request ep 0x%02x, len %u failed", bi->ep, buf->len);
 		}
 
 		goto ep_request_error;
@@ -896,7 +895,7 @@ static int msc_bot_init(struct usbd_class_data *const c_data)
 
 	STRUCT_SECTION_FOREACH(usbd_msc_lun, lun) {
 		if (ctx->registered_luns >= CONFIG_USBD_MSC_LUNS_PER_INSTANCE) {
-			LOG_ERR("Cannot register LUN %s", lun->disk);
+			LOG_ERROR("Cannot register LUN %s", lun->disk);
 			return -ENOMEM;
 		}
 

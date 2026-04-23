@@ -25,7 +25,7 @@ static int actinius_board_set_sim_select(void)
 		GPIO_DT_SPEC_GET(SIM_SELECT_NODE, sim_gpios);
 
 	if (!gpio_is_ready_dt(&sim)) {
-		LOG_ERR("The SIM Select Pin port is not ready");
+		LOG_ERROR("The SIM Select Pin port is not ready");
 
 		return -ENODEV;
 	}
@@ -49,7 +49,7 @@ static int actinius_board_set_charger_enable(void)
 		GPIO_DT_SPEC_GET(CHARGER_ENABLE_NODE, gpios);
 
 	if (!gpio_is_ready_dt(&charger_en)) {
-		LOG_ERR("The Charger Enable Pin port is not ready");
+		LOG_ERROR("The Charger Enable Pin port is not ready");
 		return -ENODEV;
 	}
 
@@ -73,7 +73,7 @@ static int actinius_board_init(void)
 #if DT_HAS_COMPAT_STATUS_OKAY(actinius_sim_select)
 	result = actinius_board_set_sim_select();
 	if (result < 0) {
-		LOG_ERR("Failed to set the SIM Select Pin (error: %d)", result);
+		LOG_ERROR("Failed to set the SIM Select Pin (error: %d)", result);
 		/* do not return so that the rest of the init process is attempted */
 	}
 #endif
@@ -81,7 +81,7 @@ static int actinius_board_init(void)
 #if DT_HAS_COMPAT_STATUS_OKAY(actinius_charger_enable)
 	result = actinius_board_set_charger_enable();
 	if (result < 0) {
-		LOG_ERR("Failed to set the Charger Enable Pin (error: %d)", result);
+		LOG_ERROR("Failed to set the Charger Enable Pin (error: %d)", result);
 		/* do not return so that the rest of the init process is attempted */
 	}
 #endif

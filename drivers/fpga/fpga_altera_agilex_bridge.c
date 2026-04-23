@@ -33,20 +33,20 @@ struct fpga_bridge_dev_data {
 static int32_t svc_client_open(const struct device *dev)
 {
 	if (!dev) {
-		LOG_ERR("No such device found");
+		LOG_ERROR("No such device found");
 		return -ENODEV;
 	}
 
 	struct fpga_bridge_dev_data *const data = (struct fpga_bridge_dev_data *const)(dev->data);
 
 	if ((!data->mailbox_smc_dev) || (data->mailbox_client_token == 0)) {
-		LOG_ERR("Mailbox client is not registered");
+		LOG_ERROR("Mailbox client is not registered");
 		return -ENODEV;
 	}
 
 	if (sip_svc_open(data->mailbox_smc_dev, data->mailbox_client_token,
 			 K_MSEC(MAX_TIMEOUT_MSECS))) {
-		LOG_ERR("Mailbox client open fail");
+		LOG_ERROR("Mailbox client open fail");
 		return -ENODEV;
 	}
 
@@ -65,7 +65,7 @@ static int32_t svc_client_close(const struct device *dev)
 	struct sip_svc_request request;
 
 	if (!dev) {
-		LOG_ERR("No such device found");
+		LOG_ERROR("No such device found");
 		return -ENODEV;
 	}
 
@@ -96,7 +96,7 @@ static int32_t svc_client_close(const struct device *dev)
 	err = sip_svc_close(data->mailbox_smc_dev, data->mailbox_client_token, &request);
 	if (err) {
 		k_free(cmd_addr);
-		LOG_ERR("Mailbox client close fail (%d)", err);
+		LOG_ERROR("Mailbox client close fail (%d)", err);
 	}
 
 	return err;
@@ -155,7 +155,7 @@ static void smc_callback(uint32_t c_token, struct sip_svc_response *response)
 				private_data->mbox_response_data[mbox_idx] = resp_data[mbox_idx];
 			}
 		} else {
-			LOG_ERR("\t\tInvalid addr (%p) or len (%d)", resp_data, resp_len);
+			LOG_ERROR("\t\tInvalid addr (%p) or len (%d)", resp_data, resp_len);
 		}
 	}
 	/* Condition for non-mailbox command*/
@@ -194,21 +194,21 @@ static int32_t smc_send(const struct device *dev, uint32_t cmd_type, uint64_t fu
 	struct sip_svc_request request;
 
 	if (!dev) {
-		LOG_ERR("No such device found");
+		LOG_ERROR("No such device found");
 		return -ENODEV;
 	}
 
 	struct fpga_bridge_dev_data *const data = (struct fpga_bridge_dev_data *const)(dev->data);
 
 	if (!data->mailbox_smc_dev) {
-		LOG_ERR("Mailbox client is not registered");
+		LOG_ERROR("Mailbox client is not registered");
 		return -ENODEV;
 	}
 
 	if (cmd_type == SIP_SVC_PROTO_CMD_ASYNC) {
 		cmd_addr = (uint32_t *)k_malloc(FPGA_MB_CMD_ADDR_MEM_SIZE);
 		if (!cmd_addr) {
-			LOG_ERR("Failed to allocate command memory");
+			LOG_ERROR("Failed to allocate command memory");
 			return -ENOMEM;
 		}
 		cmd_addr[MBOX_CMD_HEADER_INDEX] =
@@ -252,7 +252,7 @@ static int32_t smc_send(const struct device *dev, uint32_t cmd_type, uint64_t fu
 				smc_callback);
 
 	if (trans_id == SIP_SVC_ID_INVALID) {
-		LOG_ERR("SiP SVC send request fail");
+		LOG_ERROR("SiP SVC send request fail");
 		return -EBUSY;
 	}
 
@@ -306,7 +306,7 @@ static int32_t fpga_config_ready_check(const struct device *dev)
 	ret = smc_send(dev, SIP_SVC_PROTO_CMD_ASYNC, SMC_FUNC_ID_MAILBOX_SEND_COMMAND, smc_cmd,
 				&priv_data);
 	if (ret) {
-		LOG_ERR("Failed to Send the Mailbox Command !!");
+		LOG_ERROR("Failed to Send the Mailbox Command !!");
 		return -ECANCELED;
 	}
 
@@ -334,7 +334,7 @@ static int32_t socfpga_bridges_reset(const struct device *dev, uint32_t enable)
 	struct sip_svc_private_data priv_data;
 
 	if (!dev) {
-		LOG_ERR("No such device found");
+		LOG_ERROR("No such device found");
 		return -ENODEV;
 	}
 
@@ -349,7 +349,7 @@ static int32_t socfpga_bridges_reset(const struct device *dev, uint32_t enable)
 	ret = smc_send(dev, SIP_SVC_PROTO_CMD_SYNC, SMC_FUNC_ID_SET_HPS_BRIDGES, smc_cmd,
 				&priv_data);
 	if (ret) {
-		LOG_ERR("Failed to send the smc Command !!");
+		LOG_ERROR("Failed to send the smc Command !!");
 		return ret;
 	}
 
@@ -369,21 +369,21 @@ static int altera_fpga_on(const struct device *dev)
 	int32_t ret = 0;
 
 	if (!dev) {
-		LOG_ERR("No such device found");
+		LOG_ERROR("No such device found");
 		return -ENODEV;
 	}
 
 	/* Opening SIP SVC session */
 	ret = svc_client_open(dev);
 	if (ret) {
-		LOG_ERR("Client open Failed!");
+		LOG_ERROR("Client open Failed!");
 		return ret;
 	}
 
 	/* Check FPGA status before bridge enable/disable */
 	ret = fpga_config_ready_check(dev);
 	if (ret) {
-		LOG_ERR("FPGA not ready. Bridge reset aborted!");
+		LOG_ERROR("FPGA not ready. Bridge reset aborted!");
 		svc_client_close(dev);
 		return -EIO;
 	}
@@ -391,12 +391,12 @@ static int altera_fpga_on(const struct device *dev)
 	/* Bridge reset */
 	ret = socfpga_bridges_reset(dev, 0x01);
 	if (ret) {
-		LOG_ERR("Bridge reset failed");
+		LOG_ERROR("Bridge reset failed");
 	}
 
 	/* Ignoring the return value to return bridge reset status */
 	if (svc_client_close(dev)) {
-		LOG_ERR("Unregistering & Closing failed");
+		LOG_ERROR("Unregistering & Closing failed");
 	}
 
 	return ret;
@@ -407,21 +407,21 @@ static int altera_fpga_off(const struct device *dev)
 	int32_t ret = 0;
 
 	if (!dev) {
-		LOG_ERR("No such device found");
+		LOG_ERROR("No such device found");
 		return -ENODEV;
 	}
 
 	/* Opening SIP SVC session */
 	ret = svc_client_open(dev);
 	if (ret) {
-		LOG_ERR("Client open Failed!");
+		LOG_ERROR("Client open Failed!");
 		return ret;
 	}
 
 	/* Check FPGA status before bridge enable/disable */
 	ret = fpga_config_ready_check(dev);
 	if (ret) {
-		LOG_ERR("FPGA not ready. Bridge reset aborted!");
+		LOG_ERROR("FPGA not ready. Bridge reset aborted!");
 		svc_client_close(dev);
 		return -EIO;
 	}
@@ -429,12 +429,12 @@ static int altera_fpga_off(const struct device *dev)
 	/* Bridge reset */
 	ret = socfpga_bridges_reset(dev, 0x00);
 	if (ret) {
-		LOG_ERR("Bridge reset failed");
+		LOG_ERROR("Bridge reset failed");
 	}
 
 	/* Ignoring the return value to return bridge reset status */
 	if (svc_client_close(dev)) {
-		LOG_ERR("Unregistering & Closing failed");
+		LOG_ERROR("Unregistering & Closing failed");
 	}
 
 	return ret;
@@ -443,7 +443,7 @@ static int altera_fpga_off(const struct device *dev)
 static int altera_fpga_init(const struct device *dev)
 {
 	if (!dev) {
-		LOG_ERR("No such device found");
+		LOG_ERROR("No such device found");
 		return -ENODEV;
 	}
 
@@ -451,14 +451,14 @@ static int altera_fpga_init(const struct device *dev)
 
 	data->mailbox_smc_dev = sip_svc_get_controller("smc");
 	if (!data->mailbox_smc_dev) {
-		LOG_ERR("Arm SiP service not found");
+		LOG_ERROR("Arm SiP service not found");
 		return -ENODEV;
 	}
 
 	data->mailbox_client_token = sip_svc_register(data->mailbox_smc_dev, NULL);
 	if (data->mailbox_client_token == SIP_SVC_ID_INVALID) {
 		data->mailbox_smc_dev = NULL;
-		LOG_ERR("Mailbox client register fail");
+		LOG_ERROR("Mailbox client register fail");
 		return -EINVAL;
 	}
 

@@ -52,7 +52,7 @@ static int check_init_status(void)
 	}
 
 	if (ACPI_FAILURE(acpi.status)) {
-		LOG_ERR("ACPI init was not success");
+		LOG_ERROR("ACPI init was not success");
 		return -EIO;
 	}
 
@@ -141,14 +141,14 @@ static ACPI_NAMESPACE_NODE *acpi_name_lookup(char *name)
 
 	status = AcpiNsInternalizeName(name, &path);
 	if (ACPI_FAILURE(status)) {
-		LOG_ERR("Invalid namestring: %s", name);
+		LOG_ERROR("Invalid namestring: %s", name);
 		return NULL;
 	}
 
 	status = AcpiNsLookup(NULL, path, ACPI_TYPE_ANY, ACPI_IMODE_EXECUTE,
 			      ACPI_NS_NO_UPSEARCH | ACPI_NS_DONT_OPEN_SCOPE, NULL, &node);
 	if (ACPI_FAILURE(status)) {
-		LOG_ERR("Could not locate name: %s, %d", name, status);
+		LOG_ERROR("Could not locate name: %s, %d", name, status);
 		node = NULL;
 	}
 
@@ -166,12 +166,12 @@ static ACPI_NAMESPACE_NODE *acpi_evaluate_method(char *bus_name, char *method)
 
 	handle = acpi_name_lookup(bus_name);
 	if (!handle) {
-		LOG_ERR("No ACPI node with given name: %s", bus_name);
+		LOG_ERROR("No ACPI node with given name: %s", bus_name);
 		goto exit;
 	}
 
 	if (handle->Type != ACPI_TYPE_DEVICE) {
-		LOG_ERR("No ACPI node foud with given name: %s", bus_name);
+		LOG_ERROR("No ACPI node foud with given name: %s", bus_name);
 		goto exit;
 	}
 
@@ -180,7 +180,7 @@ static ACPI_NAMESPACE_NODE *acpi_evaluate_method(char *bus_name, char *method)
 	(void)AcpiGetHandle(node, method, ACPI_CAST_PTR(ACPI_HANDLE, &prt_node));
 
 	if (!prt_node) {
-		LOG_ERR("No entry for the ACPI node with given name: %s", bus_name);
+		LOG_ERROR("No entry for the ACPI node with given name: %s", bus_name);
 		goto exit;
 	}
 	return node;
@@ -225,7 +225,7 @@ static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 lev
 	/* get device info such as HID, Class ID etc. */
 	status = AcpiGetObjectInfo(obj_handle, &dev_info);
 	if (ACPI_FAILURE(status)) {
-		LOG_ERR("AcpiGetObjectInfo failed: %s", AcpiFormatException(status));
+		LOG_ERROR("AcpiGetObjectInfo failed: %s", AcpiFormatException(status));
 		goto exit;
 	}
 
@@ -243,7 +243,7 @@ static ACPI_STATUS dev_resource_enum_callback(ACPI_HANDLE obj_handle, UINT32 lev
 
 	path_name = AcpiNsGetNormalizedPathname(node, TRUE);
 	if (!path_name) {
-		LOG_ERR("No memory for path_name");
+		LOG_ERROR("No memory for path_name");
 		goto exit;
 	} else {
 		LOG_DBG("Device path: %s", path_name);
@@ -288,7 +288,7 @@ static int acpi_early_init(void)
 
 	status = AcpiInitializeTables(NULL, 16, FALSE);
 	if (ACPI_FAILURE(status)) {
-		LOG_ERR("Error in acpi table init:%d", status);
+		LOG_ERROR("Error in acpi table init:%d", status);
 		return -EIO;
 	}
 
@@ -312,7 +312,7 @@ int acpi_current_resource_get(char *dev_name, ACPI_RESOURCE **res)
 
 	node = acpi_evaluate_method(dev_name, METHOD_NAME__CRS);
 	if (!node) {
-		LOG_ERR("Evaluation failed for given device: %s", dev_name);
+		LOG_ERROR("Evaluation failed for given device: %s", dev_name);
 		return -ENOTSUP;
 	}
 
@@ -321,7 +321,7 @@ int acpi_current_resource_get(char *dev_name, ACPI_RESOURCE **res)
 
 	status = AcpiGetCurrentResources(node, &rt_buffer);
 	if (ACPI_FAILURE(status)) {
-		LOG_ERR("AcpiGetCurrentResources failed: %s", AcpiFormatException(status));
+		LOG_ERROR("AcpiGetCurrentResources failed: %s", AcpiFormatException(status));
 		return -ENOTSUP;
 	}
 
@@ -345,7 +345,7 @@ int acpi_possible_resource_get(char *dev_name, ACPI_RESOURCE **res)
 
 	node = acpi_evaluate_method(dev_name, METHOD_NAME__PRS);
 	if (!node) {
-		LOG_ERR("Evaluation failed for given device: %s", dev_name);
+		LOG_ERROR("Evaluation failed for given device: %s", dev_name);
 		return -ENOTSUP;
 	}
 
@@ -401,13 +401,13 @@ int acpi_legacy_irq_init(const char *hid, const char *uid)
 	ACPI_STATUS status;
 
 	if (!child_dev) {
-		LOG_ERR("no such PCI bus device %s %s", hid, uid);
+		LOG_ERROR("no such PCI bus device %s %s", hid, uid);
 		return -ENODEV;
 	}
 
 	node = acpi_evaluate_method(child_dev->path, METHOD_NAME__PRT);
 	if (!node) {
-		LOG_ERR("Evaluation failed for given device: %s", child_dev->path);
+		LOG_ERROR("Evaluation failed for given device: %s", child_dev->path);
 		return -ENODEV;
 	}
 
@@ -416,7 +416,7 @@ int acpi_legacy_irq_init(const char *hid, const char *uid)
 
 	status = AcpiGetIrqRoutingTable(node, &rt_buffer);
 	if (ACPI_FAILURE(status)) {
-		LOG_ERR("unable to retrieve IRQ Routing Table: %s", child_dev->path);
+		LOG_ERROR("unable to retrieve IRQ Routing Table: %s", child_dev->path);
 		return -EIO;
 	}
 
@@ -612,7 +612,7 @@ int acpi_device_type_get(ACPI_RESOURCE *res)
 
 	do {
 		if (!res->Length) {
-			LOG_ERR("Error: zero length found!");
+			LOG_ERROR("Error: zero length found!");
 			break;
 		}
 		type = acpi_res_type(res);
@@ -675,14 +675,14 @@ void *acpi_table_get(char *signature, int inst)
 	if (!acpi.early_init) {
 		status = acpi_early_init();
 		if (status) {
-			LOG_ERR("ACPI early init failed");
+			LOG_ERROR("ACPI early init failed");
 			return NULL;
 		}
 	}
 
 	status = AcpiGetTable(signature, inst, &table);
 	if (ACPI_FAILURE(status)) {
-		LOG_ERR("ACPI get table failed: %d", status);
+		LOG_ERROR("ACPI get table failed: %d", status);
 		return NULL;
 	}
 
@@ -745,7 +745,7 @@ int acpi_dmar_entry_get(enum AcpiDmarType type, ACPI_SUBTABLE_HEADER **tables)
 	ACPI_DMAR_HEADER *subtable;
 
 	if (!dmar) {
-		LOG_ERR("error on get DMAR table");
+		LOG_ERROR("error on get DMAR table");
 		return -EIO;
 	}
 
@@ -870,7 +870,7 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, ACPI_DMAR_DEVICE_SCOPE *dev_scop
 	ret = acpi_dmar_entry_get(ACPI_DMAR_TYPE_HARDWARE_UNIT,
 				  (ACPI_SUBTABLE_HEADER **)&drdh);
 	if (ret) {
-		LOG_ERR("Error on retrieve DMAR table");
+		LOG_ERROR("Error on retrieve DMAR table");
 		return ret;
 	}
 
@@ -894,7 +894,7 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, ACPI_DMAR_DEVICE_SCOPE *dev_scop
 
 			while (num_path--) {
 				if (i >= max_inst) {
-					LOG_ERR("DHRD not enough buffer size");
+					LOG_ERROR("DHRD not enough buffer size");
 					return -ENOBUFS;
 				}
 				dmar_id[i].bits.bus = subtable->Bus;
@@ -915,7 +915,7 @@ int acpi_drhd_get(enum AcpiDmarScopeType scope, ACPI_DMAR_DEVICE_SCOPE *dev_scop
 
 	*num_inst = i;
 	if (!i) {
-		LOG_ERR("Error on retrieve DRHD Info");
+		LOG_ERROR("Error on retrieve DRHD Info");
 		return -ENODEV;
 	}
 
@@ -963,7 +963,7 @@ int acpi_invoke_method(char *path, ACPI_OBJECT_LIST *arg_list, ACPI_OBJECT *ret_
 
 	status = AcpiEvaluateObject(NULL, path, arg_list, &ret_buff);
 	if (ACPI_FAILURE(status)) {
-		LOG_ERR("error While executing %s method: %d", path, status);
+		LOG_ERROR("error While executing %s method: %d", path, status);
 		return -EIO;
 	}
 
@@ -981,7 +981,7 @@ static int acpi_init(void)
 
 	status = initialize_acpica();
 	if (ACPI_FAILURE(status)) {
-		LOG_ERR("Error in ACPI init:%d", status);
+		LOG_ERROR("Error in ACPI init:%d", status);
 		goto exit;
 	}
 
@@ -1008,7 +1008,7 @@ int acpi_poweroff(void)
 	if (!acpi.early_init) {
 		status = acpi_early_init();
 		if (status) {
-			LOG_ERR("ACPI early init failed");
+			LOG_ERROR("ACPI early init failed");
 			return -ENODEV;
 		}
 	}

@@ -104,7 +104,7 @@ for any incoming data.
 
    sock = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
    if (sock < 0) {
-	LOG_ERR("socket: %d", -errno);
+	LOG_ERROR("socket: %d", -errno);
 	return -errno;
    }
 
@@ -113,7 +113,7 @@ for any incoming data.
 
    /* Then bind the socket to local address */
    if (bind(sock, (struct sockaddr *)addr, sizeof(*addr)) < 0) {
-	LOG_ERR("bind: %d", -errno);
+	LOG_ERROR("bind: %d", -errno);
 	return -errno;
    }
 
@@ -125,7 +125,7 @@ for any incoming data.
    ret = net_socket_service_register(&service_udp, sockfd_udp,
 				     ARRAY_SIZE(sockfd_udp), NULL);
    if (ret < 0) {
-	LOG_ERR("Cannot register socket service handler (%d)", ret);
+	LOG_ERROR("Cannot register socket service handler (%d)", ret);
 	return ret;
    }
 
@@ -151,17 +151,17 @@ accepted socket to the listening socket by calling the
    /* TCP socket service is created similar way as the UDP one */
    sock = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
    if (sock < 0) {
-	LOG_ERR("socket: %d", -errno);
+	LOG_ERROR("socket: %d", -errno);
 	return -errno;
    }
 
    if (bind(sock, (struct sockaddr *)addr, sizeof(*addr)) < 0) {
-	LOG_ERR("bind: %d", -errno);
+	LOG_ERROR("bind: %d", -errno);
 	return -errno;
    }
 
    if (listen(sock, 5) < 0) {
-	LOG_ERR("listen: %d", -errno);
+	LOG_ERROR("listen: %d", -errno);
 	return -errno;
    }
 
@@ -169,7 +169,7 @@ accepted socket to the listening socket by calling the
 	client = accept(tcp_sock, (struct sockaddr *)&client_addr,
 			&client_addr_len);
 	if (client < 0) {
-		LOG_ERR("accept: %d", -errno);
+		LOG_ERROR("accept: %d", -errno);
 		continue;
 	}
 
@@ -184,7 +184,7 @@ accepted socket to the listening socket by calling the
 	ret = net_socket_service_register(&service_tcp, sockfd_tcp,
 					  ARRAY_SIZE(sockfd_tcp), NULL);
 	if (ret < 0) {
-		LOG_ERR("Cannot register socket service handler (%d)", ret);
+		LOG_ERROR("Cannot register socket service handler (%d)", ret);
 		break;
 	}
    }

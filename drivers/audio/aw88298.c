@@ -111,7 +111,7 @@ static int aw88298_update_reg(const struct device *dev, uint8_t reg, uint16_t ma
 
 	ret = i2c_write_read_dt(&cfg->bus, &reg, 1, &buf[1], 2);
 	if (ret < 0) {
-		LOG_ERR("write_read reg 0x%02x failed: %d", reg, ret);
+		LOG_ERROR("write_read reg 0x%02x failed: %d", reg, ret);
 		goto end;
 	}
 
@@ -121,7 +121,7 @@ static int aw88298_update_reg(const struct device *dev, uint8_t reg, uint16_t ma
 
 	ret = i2c_write_dt(&cfg->bus, buf, ARRAY_SIZE(buf));
 	if (ret < 0) {
-		LOG_ERR("write reg 0x%02x failed: %d", reg, ret);
+		LOG_ERROR("write reg 0x%02x failed: %d", reg, ret);
 	}
 
 end:
@@ -324,13 +324,13 @@ static int aw88298_configure(const struct device *dev, struct audio_codec_cfg *c
 
 	ret = aw88298_update_reg(dev, AW88298_REG_SYSCTRL, sysctrl_mask, sysctrl_value);
 	if (ret < 0) {
-		LOG_ERR("Failed to set SYSCTRL mask=%x val=%x", sysctrl_mask, sysctrl_value);
+		LOG_ERROR("Failed to set SYSCTRL mask=%x val=%x", sysctrl_mask, sysctrl_value);
 		return ret;
 	}
 
 	ret = aw88298_update_reg(dev, AW88298_REG_I2SCTRL, i2sctrl_mask, i2sctrl_value);
 	if (ret < 0) {
-		LOG_ERR("Failed to set I2SCTRL mask=%x val=%x", i2sctrl_mask, i2sctrl_value);
+		LOG_ERROR("Failed to set I2SCTRL mask=%x val=%x", i2sctrl_mask, i2sctrl_value);
 		return ret;
 	}
 
@@ -343,7 +343,7 @@ static void aw88298_start_output(const struct device *dev)
 
 	ret = aw88298_update_reg(dev, AW88298_REG_SYSCTRL, AW88298_REG_SYSCTRL_AMPPD, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to unset SYSCTRL(AMPPD)");
+		LOG_ERROR("Failed to unset SYSCTRL(AMPPD)");
 		return;
 	}
 }
@@ -354,7 +354,7 @@ static void aw88298_stop_output(const struct device *dev)
 
 	ret = aw88298_update_reg(dev, AW88298_REG_SYSCTRL, AW88298_REG_SYSCTRL_AMPPD, 0xFFFF);
 	if (ret < 0) {
-		LOG_ERR("Failed to set SYSCTRL(AMPPD)");
+		LOG_ERROR("Failed to set SYSCTRL(AMPPD)");
 		return;
 	}
 }
@@ -413,13 +413,13 @@ static int aw88298_apply_properties(const struct device *dev)
 
 	ret = aw88298_update_reg(dev, AW88298_REG_HAGCCFG4, AW88298_REG_HAGCCFG4_VOL, volume_field);
 	if (ret < 0) {
-		LOG_ERR("Failed to set HAGCCFG4(VOL) %x", volume_field);
+		LOG_ERROR("Failed to set HAGCCFG4(VOL) %x", volume_field);
 		return ret;
 	}
 
 	ret = aw88298_update_reg(dev, AW88298_REG_SYSCTRL2, AW88298_REG_SYSCTRL2_HMUTE, mute_field);
 	if (ret < 0) {
-		LOG_ERR("Failed to set SYSCTRL2(MUTE) %x", mute_field);
+		LOG_ERROR("Failed to set SYSCTRL2(MUTE) %x", mute_field);
 		return ret;
 	}
 
@@ -441,7 +441,7 @@ static int aw88298_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR("I2C controller not ready");
+		LOG_ERROR("I2C controller not ready");
 		return -ENODEV;
 	}
 
@@ -449,13 +449,13 @@ static int aw88298_init(const struct device *dev)
 
 	if (cfg->reset_gpio.port) {
 		if (!device_is_ready(cfg->reset_gpio.port)) {
-			LOG_ERR("GPIO device not ready");
+			LOG_ERROR("GPIO device not ready");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure reset GPIO (%d)", ret);
+			LOG_ERROR("Failed to configure reset GPIO (%d)", ret);
 			return ret;
 		}
 
@@ -463,13 +463,13 @@ static int aw88298_init(const struct device *dev)
 
 		ret = gpio_pin_set_dt(&cfg->reset_gpio, false);
 		if (ret < 0) {
-			LOG_ERR("Failed to deassert reset pin");
+			LOG_ERROR("Failed to deassert reset pin");
 			return ret;
 		}
 	} else {
 		ret = aw88298_update_reg(dev, AW88298_REG_ID, 0xFFFF, AW88298_ID_SOFTRESET);
 		if (ret < 0) {
-			LOG_ERR("Software-Reset failed.");
+			LOG_ERROR("Software-Reset failed.");
 			return ret;
 		}
 	}
@@ -477,13 +477,13 @@ static int aw88298_init(const struct device *dev)
 	ret = aw88298_update_reg(dev, AW88298_REG_SYSCTRL,
 				 AW88298_REG_SYSCTRL_AMPPD | AW88298_REG_SYSCTRL_PWDN, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to unset SYSCTRL(AMPPD|PWDN)");
+		LOG_ERROR("Failed to unset SYSCTRL(AMPPD|PWDN)");
 		return ret;
 	}
 
 	ret = aw88298_update_reg(dev, AW88298_REG_SYSCTRL2, AW88298_REG_SYSCTRL2_HMUTE, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to unset SYSCTRL2(HMUTE)");
+		LOG_ERROR("Failed to unset SYSCTRL2(HMUTE)");
 		return ret;
 	}
 

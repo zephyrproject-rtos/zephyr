@@ -77,7 +77,7 @@ static void notify_work_handler(struct k_work *work)
 		return;
 	}
 
-	LOG_ERR("Mute state notification err %d", err);
+	LOG_ERROR("Mute state notification err %d", err);
 }
 
 static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -112,7 +112,7 @@ static ssize_t write_mute(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 		err = k_work_reschedule(&micp_inst.notify_work, K_NO_WAIT);
 		if (err < 0) {
-			LOG_ERR("Failed to schedule mute state notification err %d", err);
+			LOG_ERROR("Failed to schedule mute state notification err %d", err);
 		}
 
 		if (micp_inst.cb != NULL && micp_inst.cb->mute != NULL) {
@@ -211,7 +211,7 @@ int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param)
 	err = bt_gatt_service_register(&mics_svc);
 
 	if (err != 0) {
-		LOG_ERR("MICS service register failed: %d", err);
+		LOG_ERROR("MICS service register failed: %d", err);
 	}
 
 	micp_inst.cb = param->cb;

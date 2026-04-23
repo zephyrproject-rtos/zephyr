@@ -209,7 +209,7 @@ static int usbfsotg_xfer_continue(const struct device *dev,
 
 	bd = usbfsotg_get_ebd(dev, cfg, false);
 	if (unlikely(usbfsotg_bd_is_busy(bd))) {
-		LOG_ERR("ep 0x%02x buf busy", cfg->addr);
+		LOG_ERROR("ep 0x%02x buf busy", cfg->addr);
 		__ASSERT_NO_MSG(false);
 		return -EBUSY;
 	}
@@ -281,7 +281,7 @@ static void usbfsotg_event_submit(const struct device *dev,
 	ret = k_mem_slab_alloc(&usbfsotg_ee_slab, (void **)&ev, K_NO_WAIT);
 	if (ret) {
 		udc_submit_event(dev, UDC_EVT_ERROR, ret);
-		LOG_ERR("Failed to allocate slab");
+		LOG_ERROR("Failed to allocate slab");
 		return;
 	}
 
@@ -398,7 +398,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 		buf = udc_buf_peek(ep_cfg);
 
 		if (buf == NULL) {
-			LOG_ERR("No buffer for ep 0x%02x", ep);
+			LOG_ERROR("No buffer for ep 0x%02x", ep);
 			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 			break;
 		}
@@ -418,7 +418,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 
 		buf = udc_buf_peek(ep_cfg);
 		if (buf == NULL) {
-			LOG_ERR("No buffer for ep 0x%02x", ep);
+			LOG_ERROR("No buffer for ep 0x%02x", ep);
 			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 			break;
 		}
@@ -798,14 +798,14 @@ static int usbfsotg_init(const struct device *dev)
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
 				   USB_EP_TYPE_CONTROL,
 				   USBFSOTG_EP0_SIZE, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
 				   USB_EP_TYPE_CONTROL,
 				   USBFSOTG_EP0_SIZE, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
@@ -824,12 +824,12 @@ static int usbfsotg_shutdown(const struct device *dev)
 	config->irq_disable_func(dev);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
@@ -889,7 +889,7 @@ static int usbfsotg_driver_preinit(const struct device *dev)
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -909,7 +909,7 @@ static int usbfsotg_driver_preinit(const struct device *dev)
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}

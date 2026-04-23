@@ -61,7 +61,7 @@ static void telnet_end_client_connection(void)
 	ret = net_socket_service_register(&telnet_server, sh_telnet->fds,
 					  ARRAY_SIZE(sh_telnet->fds), NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to register socket service, %d", ret);
+		LOG_ERROR("Failed to register socket service, %d", ret);
 	}
 }
 
@@ -76,7 +76,7 @@ static void telnet_command_send_reply(uint8_t *msg, uint16_t len)
 
 		ret = zsock_send(sh_telnet->fds[SOCK_ID_CLIENT].fd, msg, len, 0);
 		if (ret < 0) {
-			LOG_ERR("Failed to send command %d, shutting down", ret);
+			LOG_ERROR("Failed to send command %d, shutting down", ret);
 			telnet_end_client_connection();
 			break;
 		}
@@ -98,7 +98,7 @@ static int telnet_echo_set(const struct shell *sh, bool val)
 	int ret = shell_echo_set(sh_telnet->shell_context, val);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to set echo to: %d, err: %d", val, ret);
+		LOG_ERROR("Failed to set echo to: %d, err: %d", val, ret);
 	}
 	return ret;
 }
@@ -209,7 +209,7 @@ static int telnet_send(bool block)
 
 		if (ret < 0) {
 			ret = -errno;
-			LOG_ERR("Failed to send %d, shutting down", -ret);
+			LOG_ERROR("Failed to send %d, shutting down", -ret);
 			telnet_end_client_connection();
 			return ret;
 		}
@@ -403,7 +403,7 @@ static void telnet_restart_server(void)
 
 	ret = telnet_init(sh_telnet);
 	if (ret < 0) {
-		LOG_ERR("Telnet fatal error, failed to restart server (%d)", ret);
+		LOG_ERROR("Telnet fatal error, failed to restart server (%d)", ret);
 		(void)net_socket_service_unregister(&telnet_server);
 	}
 }
@@ -417,14 +417,14 @@ static void telnet_accept(struct zsock_pollfd *pollfd)
 	sock = zsock_accept(pollfd->fd, net_sad(&addr), &addrlen);
 	if (sock < 0) {
 		ret = -errno;
-		LOG_ERR("Telnet accept error (%d)", ret);
+		LOG_ERROR("Telnet accept error (%d)", ret);
 		return;
 	}
 
 	if (sh_telnet->fds[SOCK_ID_CLIENT].fd > 0) {
 		/* Too many connections. */
 		ret = 0;
-		LOG_ERR("Telnet client already connected.");
+		LOG_ERROR("Telnet client already connected.");
 		goto error;
 	}
 
@@ -437,7 +437,7 @@ static void telnet_accept(struct zsock_pollfd *pollfd)
 	ret = net_socket_service_register(&telnet_server, sh_telnet->fds,
 					  ARRAY_SIZE(sh_telnet->fds), NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to register socket service, (%d)", ret);
+		LOG_ERROR("Failed to register socket service, (%d)", ret);
 		sh_telnet->fds[SOCK_ID_CLIENT].fd = -1;
 		goto error;
 	}
@@ -482,7 +482,7 @@ static void telnet_server_cb(struct net_socket_service_event *evt)
 		if (ret == -ENETDOWN) {
 			LOG_INF("Network is down");
 		} else {
-			LOG_ERR("Telnet socket %d error (%d)", evt->event.fd, ret);
+			LOG_ERROR("Telnet socket %d error (%d)", evt->event.fd, ret);
 		}
 
 		if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
@@ -508,7 +508,7 @@ static void telnet_server_cb(struct net_socket_service_event *evt)
 		return;
 	}
 
-	LOG_ERR("Unexpected FD received for telnet, restarting service.");
+	LOG_ERROR("Unexpected FD received for telnet, restarting service.");
 
 error:
 	telnet_restart_server();
@@ -522,22 +522,22 @@ static int telnet_setup_server(struct zsock_pollfd *pollfd, net_sa_family_t fami
 	pollfd->fd = zsock_socket(family, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (pollfd->fd < 0) {
 		ret = -errno;
-		LOG_ERR("Failed to create telnet NET_AF_INET%s socket",
-			family == NET_AF_INET ? "" : "6");
+		LOG_ERROR("Failed to create telnet NET_AF_INET%s socket",
+			  family == NET_AF_INET ? "" : "6");
 		goto error;
 	}
 
 	if (zsock_bind(pollfd->fd, addr, addrlen) < 0) {
 		ret = -errno;
-		LOG_ERR("Cannot bind on family NET_AF_INET%s (%d)",
-			family == NET_AF_INET ? "" : "6", ret);
+		LOG_ERROR("Cannot bind on family NET_AF_INET%s (%d)",
+			  family == NET_AF_INET ? "" : "6", ret);
 		goto error;
 	}
 
 	if (zsock_listen(pollfd->fd, 1)) {
 		ret = -errno;
-		LOG_ERR("Cannot listen on family NET_AF_INET%s (%d)",
-			family == NET_AF_INET ? "" : "6", ret);
+		LOG_ERROR("Cannot listen on family NET_AF_INET%s (%d)",
+			  family == NET_AF_INET ? "" : "6", ret);
 		goto error;
 	}
 
@@ -549,8 +549,8 @@ static int telnet_setup_server(struct zsock_pollfd *pollfd, net_sa_family_t fami
 	return 0;
 
 error:
-	LOG_ERR("Unable to start telnet on NET_AF_INET%s (%d)",
-		family == NET_AF_INET ? "" : "6", ret);
+	LOG_ERROR("Unable to start telnet on NET_AF_INET%s (%d)", family == NET_AF_INET ? "" : "6",
+		  ret);
 
 	if (pollfd->fd >= 0) {
 		(void)zsock_close(pollfd->fd);
@@ -597,7 +597,7 @@ static int telnet_init(struct shell_telnet *ctx)
 	ret = net_socket_service_register(&telnet_server, ctx->fds,
 					  ARRAY_SIZE(ctx->fds), NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to register socket service, %d", ret);
+		LOG_ERROR("Failed to register socket service, %d", ret);
 		goto error;
 	}
 
@@ -715,9 +715,9 @@ static int telnet_write(const struct shell_transport *transport,
 			if (err != 0) {
 				*cnt = length;
 				if ((err == -ENOTCONN) || (err == -ENETDOWN)) {
-					LOG_ERR("Network disconnected, shutting down");
+					LOG_ERROR("Network disconnected, shutting down");
 				} else {
-					LOG_ERR("Error %d, shutting down", err);
+					LOG_ERROR("Error %d, shutting down", err);
 				}
 				return 0; /* Return 0 to not trigger ASSERT in shell_ops.c */
 			}

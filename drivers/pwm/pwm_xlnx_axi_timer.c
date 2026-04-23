@@ -98,7 +98,7 @@ static int xlnx_axi_timer_set_cycles(const struct device *dev, uint32_t channel,
 		LOG_DBG("setting normal pwm");
 
 		if (period_cycles < 2) {
-			LOG_ERR("period cycles too narrow");
+			LOG_ERROR("period cycles too narrow");
 			return -ENOTSUP;
 		}
 
@@ -106,8 +106,7 @@ static int xlnx_axi_timer_set_cycles(const struct device *dev, uint32_t channel,
 		tlr0 = period_cycles - 2;
 
 		if (tlr0 > config->cycles_max) {
-			LOG_ERR("tlr0 out of range (0x%08x > 0x%08x)", tlr0,
-				config->cycles_max);
+			LOG_ERROR("tlr0 out of range (0x%08x > 0x%08x)", tlr0, config->cycles_max);
 			return -ENOTSUP;
 		}
 
@@ -120,7 +119,7 @@ static int xlnx_axi_timer_set_cycles(const struct device *dev, uint32_t channel,
 			 */
 
 			if ((period_cycles - pulse_cycles) < 2) {
-				LOG_ERR("pulse cycles too narrow");
+				LOG_ERROR("pulse cycles too narrow");
 				return -ENOTSUP;
 			}
 
@@ -128,7 +127,7 @@ static int xlnx_axi_timer_set_cycles(const struct device *dev, uint32_t channel,
 			tlr1 = period_cycles - pulse_cycles - 2;
 		} else {
 			if (pulse_cycles < 2) {
-				LOG_ERR("pulse cycles too narrow");
+				LOG_ERROR("pulse cycles too narrow");
 				return -ENOTSUP;
 			}
 

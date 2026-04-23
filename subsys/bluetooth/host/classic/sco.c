@@ -151,7 +151,7 @@ void bt_sco_connected(struct bt_conn *sco)
 	struct bt_sco_chan *chan;
 
 	if (sco == NULL || sco->type != BT_CONN_TYPE_SCO) {
-		LOG_ERR("Invalid parameters: sco %p sco->type %u", sco, sco ? sco->type : 0);
+		LOG_ERROR("Invalid parameters: sco %p sco->type %u", sco, sco ? sco->type : 0);
 		return;
 	}
 
@@ -161,7 +161,7 @@ void bt_sco_connected(struct bt_conn *sco)
 
 	chan = SCO_CHAN(sco);
 	if (chan == NULL) {
-		LOG_ERR("Could not lookup chan from connected SCO");
+		LOG_ERROR("Could not lookup chan from connected SCO");
 		return;
 	}
 
@@ -177,7 +177,7 @@ void bt_sco_disconnected(struct bt_conn *sco)
 	struct bt_sco_chan *chan;
 
 	if (sco == NULL || sco->type != BT_CONN_TYPE_SCO) {
-		LOG_ERR("Invalid parameters: sco %p sco->type %u", sco, sco ? sco->type : 0);
+		LOG_ERROR("Invalid parameters: sco %p sco->type %u", sco, sco ? sco->type : 0);
 		return;
 	}
 	LOG_DBG("%p", sco);
@@ -188,7 +188,7 @@ void bt_sco_disconnected(struct bt_conn *sco)
 
 	chan = SCO_CHAN(sco);
 	if (chan == NULL) {
-		LOG_ERR("Could not lookup chan from connected SCO");
+		LOG_ERROR("Could not lookup chan from connected SCO");
 		return;
 	}
 
@@ -264,7 +264,7 @@ void bt_sco_chan_set_state_debug(struct bt_sco_chan *chan,
 		}
 		break;
 	default:
-		LOG_ERR("%s()%d: unknown (%u) state was set", func, line, state);
+		LOG_ERROR("%s()%d: unknown (%u) state was set", func, line, state);
 		return;
 	}
 
@@ -294,7 +294,7 @@ static int sco_accept(struct bt_conn *acl, struct bt_conn *sco)
 	int err;
 
 	if (!sco || sco->type != BT_CONN_TYPE_SCO) {
-		LOG_ERR("Invalid parameters: sco %p sco->type %u", sco, sco ? sco->type : 0);
+		LOG_ERROR("Invalid parameters: sco %p sco->type %u", sco, sco ? sco->type : 0);
 		return -EINVAL;
 	}
 
@@ -306,12 +306,12 @@ static int sco_accept(struct bt_conn *acl, struct bt_conn *sco)
 
 	err = sco_server->accept(&accept_info, &chan);
 	if (err < 0) {
-		LOG_ERR("Server failed to accept: %d", err);
+		LOG_ERROR("Server failed to accept: %d", err);
 		return err;
 	}
 
 	if (chan->ops == NULL) {
-		LOG_ERR("invalid parameter: chan %p chan->ops %p", chan, chan->ops);
+		LOG_ERROR("invalid parameter: chan %p chan->ops %p", chan, chan->ops);
 		return -EINVAL;
 	}
 
@@ -362,7 +362,7 @@ uint8_t bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 	uint8_t sec_err;
 
 	if (sco_server == NULL) {
-		LOG_ERR("No SCO server registered");
+		LOG_ERROR("No SCO server registered");
 		return BT_HCI_ERR_UNSPECIFIED;
 	}
 
@@ -382,7 +382,7 @@ uint8_t bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 	sco_conn->sco.link_type = evt->link_type;
 
 	if (accept_sco_conn(&evt->bdaddr, sco_conn)) {
-		LOG_ERR("Error accepting connection from %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Error accepting connection from %s", bt_addr_str(&evt->bdaddr));
 		bt_sco_cleanup(sco_conn);
 		return BT_HCI_ERR_UNSPECIFIED;
 	}

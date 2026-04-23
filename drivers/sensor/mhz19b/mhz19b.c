@@ -317,14 +317,14 @@ static int mhz19b_init(const struct device *dev)
 	/* Configure default detection range */
 	ret = mhz19b_attr_full_scale_cfg(dev, cfg->range);
 	if (ret != 0) {
-		LOG_ERR("Error setting default range %d", cfg->range);
+		LOG_ERROR("Error setting default range %d", cfg->range);
 		return ret;
 	}
 
 	/* Configure ABC logic */
 	ret = mhz19b_attr_abc_cfg(dev, cfg->abc_on);
 	if (ret != 0) {
-		LOG_ERR("Error setting default ABC %s", cfg->abc_on ? "on" : "off");
+		LOG_ERROR("Error setting default ABC %s", cfg->abc_on ? "on" : "off");
 	}
 
 	return ret;

@@ -101,8 +101,7 @@ static inline int uart_it8xxx2_pm_action(const struct device *dev,
 		ret = gpio_pin_interrupt_configure_dt(&config->gpio_wui,
 						      GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure UART%d WUI (ret %d)",
-				config->port, ret);
+			LOG_ERROR("Failed to configure UART%d WUI (ret %d)", config->port, ret);
 			return ret;
 		}
 
@@ -133,7 +132,7 @@ static int uart_it8xxx2_init(const struct device *dev)
 	/* Set the pin to UART alternate function. */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure UART pins");
+		LOG_ERROR("Failed to configure UART pins");
 		return status;
 	}
 
@@ -176,8 +175,7 @@ static int uart_it8xxx2_init(const struct device *dev)
 		}
 
 		if (ret < 0) {
-			LOG_ERR("Failed to add UART%d callback (err %d)",
-				config->port, ret);
+			LOG_ERROR("Failed to add UART%d callback (err %d)", config->port, ret);
 			return ret;
 		}
 	}

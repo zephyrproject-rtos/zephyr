@@ -144,7 +144,7 @@ int input_crsf_send_telemetry(const struct device *dev, uint8_t type, uint8_t *p
 	uint8_t crc;
 
 	if (payload_len > CRSF_MAX_PAYLOAD_LEN) {
-		LOG_ERR("CRSF payload too large");
+		LOG_ERROR("CRSF payload too large");
 		return -EINVAL;
 	}
 
@@ -417,7 +417,7 @@ static void crsf_uart_callback(const struct device *uart_dev, struct uart_event 
 
 	case UART_TX_ABORTED:
 		atomic_set(&data->tx_busy, 0);
-		LOG_ERR("CRSF TX Aborted");
+		LOG_ERROR("CRSF TX Aborted");
 		break;
 
 	case UART_RX_RDY:
@@ -476,14 +476,14 @@ static int input_crsf_init(const struct device *dev)
 
 	ret = uart_configure(config->uart_dev, &uart_cfg_crsf);
 	if (ret < 0) {
-		LOG_ERR("Unable to configure UART port: %d", ret);
+		LOG_ERROR("Unable to configure UART port: %d", ret);
 		return ret;
 	}
 
 	/* Set Async Callback */
 	ret = uart_callback_set(config->uart_dev, crsf_uart_callback, (void *)dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to set UART callback: %d", ret);
+		LOG_ERROR("Failed to set UART callback: %d", ret);
 		return ret;
 	}
 
@@ -493,7 +493,7 @@ static int input_crsf_init(const struct device *dev)
 	ret = uart_rx_enable(config->uart_dev, data->rx_buf_a, CRSF_RX_BUF_SIZE,
 			     CRSF_RX_TIMEOUT_US);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable UART RX: %d", ret);
+		LOG_ERROR("Failed to enable UART RX: %d", ret);
 		return ret;
 	}
 

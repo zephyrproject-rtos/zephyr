@@ -49,7 +49,7 @@ static int iis3dwb_odr_set(const struct device *dev, const struct sensor_value *
 
 	if (val->val1) {
 		if (val->val1 > 26) {
-			LOG_ERR("%s: odr %d Hz not supported", dev->name, val->val1);
+			LOG_ERROR("%s: odr %d Hz not supported", dev->name, val->val1);
 			return -EINVAL;
 		}
 
@@ -57,7 +57,7 @@ static int iis3dwb_odr_set(const struct device *dev, const struct sensor_value *
 	}
 
 	if (iis3dwb_set_odr_raw(dev, odr)) {
-		LOG_ERR("failed to set sampling rate");
+		LOG_ERROR("failed to set sampling rate");
 		return -EIO;
 	}
 
@@ -78,13 +78,13 @@ static int iis3dwb_set_fs(const struct device *dev, int32_t fs)
 	} else if (fs <= 16) {
 		range = IIS3DWB_DT_FS_16G;
 	} else {
-		LOG_ERR("fs [%d] not supported.", fs);
+		LOG_ERROR("fs [%d] not supported.", fs);
 		return -EINVAL;
 	}
 
 	ret = iis3dwb_set_range_raw(dev, range);
 	if (ret < 0) {
-		LOG_ERR("%s: range init error %d", dev->name, range);
+		LOG_ERROR("%s: range init error %d", dev->name, range);
 		return ret;
 	}
 
@@ -107,7 +107,7 @@ static int iis3dwb_attr_set(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return iis3dwb_odr_set(dev, val);
 	default:
-		LOG_ERR("operation not supported.");
+		LOG_ERROR("operation not supported.");
 		return -ENOTSUP;
 	}
 
@@ -147,7 +147,7 @@ static void iis3dwb_submit_one_shot(const struct device *dev, struct rtio_iodev_
 	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
@@ -159,7 +159,7 @@ static void iis3dwb_submit_one_shot(const struct device *dev, struct rtio_iodev_
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -271,12 +271,12 @@ static int iis3dwb_init_chip(const struct device *dev)
 	uint8_t chip_id, rst;
 
 	if (iis3dwb_device_id_get(ctx, &chip_id) < 0) {
-		LOG_ERR("Failed reading chip id");
+		LOG_ERROR("Failed reading chip id");
 		return -EIO;
 	}
 
 	if (chip_id != IIS3DWB_ID) {
-		LOG_ERR("Invalid chip id 0x%x", chip_id);
+		LOG_ERROR("Invalid chip id 0x%x", chip_id);
 		return -EIO;
 	}
 
@@ -299,13 +299,13 @@ static int iis3dwb_init(const struct device *dev)
 	int ret;
 
 	if (iis3dwb_init_chip(dev) < 0) {
-		LOG_ERR("Failed to initialize chip");
+		LOG_ERROR("Failed to initialize chip");
 		return -EIO;
 	}
 
 #ifdef CONFIG_IIS3DWB_TRIGGER
 	if (cfg->trig_enabled && iis3dwb_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt.");
+		LOG_ERROR("Failed to initialize interrupt.");
 		return -EIO;
 	}
 #endif
@@ -314,7 +314,7 @@ static int iis3dwb_init(const struct device *dev)
 	LOG_DBG("%s: range is %d", dev->name, cfg->range);
 	ret = iis3dwb_set_range_raw(dev, cfg->range);
 	if (ret < 0) {
-		LOG_ERR("%s: range init error %d", dev->name, cfg->range);
+		LOG_ERROR("%s: range init error %d", dev->name, cfg->range);
 		return ret;
 	}
 
@@ -322,7 +322,7 @@ static int iis3dwb_init(const struct device *dev)
 	LOG_DBG("%s: filter is %d", dev->name, cfg->filter);
 	ret = iis3dwb_xl_filt_path_on_out_set(ctx, cfg->filter);
 	if (ret < 0) {
-		LOG_ERR("%s: filter init error %d", dev->name, cfg->filter);
+		LOG_ERROR("%s: filter init error %d", dev->name, cfg->filter);
 		return ret;
 	}
 
@@ -330,7 +330,7 @@ static int iis3dwb_init(const struct device *dev)
 	LOG_DBG("%s: odr: %d", dev->name, cfg->odr);
 	ret = iis3dwb_set_odr_raw(dev, cfg->odr);
 	if (ret < 0) {
-		LOG_ERR("%s: odr init error", dev->name);
+		LOG_ERROR("%s: odr init error", dev->name);
 		return ret;
 	}
 

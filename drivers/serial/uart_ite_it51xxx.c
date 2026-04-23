@@ -111,7 +111,7 @@ static int uart_it51xxx_init(const struct device *dev)
 	/* Enable clock to specified peripheral */
 	ret = clock_control_on(config->clk_dev, (clock_control_subsys_t *)&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on clock fail %d", ret);
+		LOG_ERROR("Turn on clock fail %d", ret);
 		return ret;
 	}
 

@@ -74,13 +74,13 @@ static int codec_initialize(const struct device *dev)
 	const struct codec_driver_config *const dev_cfg = dev->config;
 
 	if (!device_is_ready(dev_cfg->bus.bus)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 
 #if TAS6422DAC_MUTE_GPIO_SUPPORT
 	if (!device_is_ready(dev_cfg->mute_gpio.port)) {
-		LOG_ERR("GPIO device not ready");
+		LOG_ERROR("GPIO device not ready");
 		return -ENODEV;
 	}
 #endif /* TAS6422DAC_MUTE_GPIO_SUPPORT */
@@ -93,7 +93,7 @@ static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg
 	int ret;
 
 	if (cfg->dai_type != AUDIO_DAI_TYPE_I2S) {
-		LOG_ERR("dai_type must be AUDIO_DAI_TYPE_I2S");
+		LOG_ERROR("dai_type must be AUDIO_DAI_TYPE_I2S");
 		return -EINVAL;
 	}
 
@@ -145,7 +145,7 @@ static void codec_mute_output(const struct device *dev, enum tas6422dac_channel_
 		break;
 	case TAS6422DAC_CHANNEL_UNKNOWN:
 	default:
-		LOG_ERR("Invalid codec channel %u", channel);
+		LOG_ERROR("Invalid codec channel %u", channel);
 		return;
 	}
 	codec_write_reg(dev, CH_STATE_CTRL_ADDR, val);
@@ -178,7 +178,7 @@ static void codec_unmute_output(const struct device *dev, enum tas6422dac_channe
 		break;
 	case TAS6422DAC_CHANNEL_UNKNOWN:
 	default:
-		LOG_ERR("Invalid codec channel %u", channel);
+		LOG_ERROR("Invalid codec channel %u", channel);
 		return;
 	}
 	codec_write_reg(dev, CH_STATE_CTRL_ADDR, val);
@@ -190,7 +190,7 @@ static int codec_set_property(const struct device *dev, audio_property_t propert
 	enum tas6422dac_channel_t codec_channel = audio_to_tas6422dac_channel[channel];
 
 	if (codec_channel == TAS6422DAC_CHANNEL_UNKNOWN) {
-		LOG_ERR("Invalid channel %u", channel);
+		LOG_ERROR("Invalid channel %u", channel);
 		return -EINVAL;
 	}
 
@@ -267,7 +267,7 @@ static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 		val |= SAP_CTRL_INPUT_SAMPLING_RATE(SAP_CTRL_INPUT_SAMPLING_RATE_96_KHZ);
 		break;
 	default:
-		LOG_ERR("Invalid sampling rate %zu", cfg->i2s.frame_clk_freq);
+		LOG_ERROR("Invalid sampling rate %zu", cfg->i2s.frame_clk_freq);
 		return -EINVAL;
 	}
 
@@ -301,7 +301,7 @@ static int codec_set_output_volume(const struct device *dev, enum tas6422dac_cha
 	uint8_t vol_val;
 
 	if ((vol > CODEC_OUTPUT_VOLUME_MAX) || (vol < CODEC_OUTPUT_VOLUME_MIN)) {
-		LOG_ERR("Invalid volume %d.%d dB", vol >> 1, ((uint32_t)vol & 1) ? 5 : 0);
+		LOG_ERROR("Invalid volume %d.%d dB", vol >> 1, ((uint32_t)vol & 1) ? 5 : 0);
 		return -EINVAL;
 	}
 
@@ -319,7 +319,7 @@ static int codec_set_output_volume(const struct device *dev, enum tas6422dac_cha
 		break;
 	case TAS6422DAC_CHANNEL_UNKNOWN:
 	default:
-		LOG_ERR("Invalid codec channel %u", channel);
+		LOG_ERROR("Invalid codec channel %u", channel);
 		return -EINVAL;
 	}
 

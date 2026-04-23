@@ -29,7 +29,7 @@ int max2221x_set_master_chop_freq(const struct device *dev, enum max2221x_master
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (freq >= MAX2221X_FREQ_INVALID) {
-		LOG_ERR("Invalid master chopping frequency");
+		LOG_ERROR("Invalid master chopping frequency");
 		return -EINVAL;
 	}
 
@@ -76,7 +76,7 @@ int max2221x_get_master_chop_freq(const struct device *dev)
 	case MAX2221X_FREQ_2500HZ:
 		return 2500;
 	default:
-		LOG_ERR("Unknown master chopping frequency");
+		LOG_ERROR("Unknown master chopping frequency");
 		return -EINVAL;
 	}
 }
@@ -91,7 +91,7 @@ int max2221x_get_channel_freq(const struct device *dev, uint8_t channel)
 
 	ret = max2221x_reg_read(config->parent, MAX2221X_REG_CFG_CTRL1(channel), &reg);
 	if (ret) {
-		LOG_ERR("Failed to read register for channel: %u", channel);
+		LOG_ERROR("Failed to read register for channel: %u", channel);
 		return ret;
 	}
 
@@ -107,7 +107,7 @@ int max2221x_get_channel_freq(const struct device *dev, uint8_t channel)
 	case MAX2221X_FREQ_M_8:
 		return master_chop_freq / 8;
 	default:
-		LOG_ERR("Unknown channel frequency");
+		LOG_ERROR("Unknown channel frequency");
 		return -EINVAL;
 	}
 }
@@ -125,12 +125,12 @@ int max2221x_set_channel_state(const struct device *dev, uint8_t channel, bool e
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (!dev) {
-		LOG_ERR("Device pointer is NULL");
+		LOG_ERROR("Device pointer is NULL");
 		return -EINVAL;
 	}
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -143,7 +143,7 @@ int max2221x_mask_fault_pin(const struct device *dev, enum max2221x_fault_pin_ma
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (mask >= MAX2221X_FAULT_PIN_INVALID) {
-		LOG_ERR("Invalid fault pin mask");
+		LOG_ERROR("Invalid fault pin mask");
 		return -EINVAL;
 	}
 
@@ -156,7 +156,7 @@ int max2221x_unmask_fault_pin(const struct device *dev, enum max2221x_fault_pin_
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (mask >= MAX2221X_FAULT_PIN_INVALID) {
-		LOG_ERR("Invalid fault pin mask");
+		LOG_ERROR("Invalid fault pin mask");
 		return -EINVAL;
 	}
 
@@ -169,7 +169,7 @@ int max2221x_set_vdr_mode(const struct device *dev, enum max2221x_vdr_mode mode)
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (mode >= MAX2221X_VDR_MODE_INVALID) {
-		LOG_ERR("Invalid VDR mode");
+		LOG_ERROR("Invalid VDR mode");
 		return -EINVAL;
 	}
 
@@ -303,7 +303,7 @@ int max2221x_set_vm_upper_threshold(const struct device *dev, enum max2221x_vm_t
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (threshold >= MAX2221X_VM_THRESHOLD_INVALID) {
-		LOG_ERR("Invalid upper threshold");
+		LOG_ERROR("Invalid upper threshold");
 		return -EINVAL;
 	}
 
@@ -356,7 +356,7 @@ int max2221x_get_vm_upper_threshold(const struct device *dev)
 	case MAX2221X_VM_THRESHOLD_32500MV:
 		return 32500;
 	default:
-		LOG_ERR("Unknown VM upper threshold");
+		LOG_ERROR("Unknown VM upper threshold");
 		return -EINVAL;
 	}
 }
@@ -366,7 +366,7 @@ int max2221x_set_vm_lower_threshold(const struct device *dev, enum max2221x_vm_t
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (threshold >= MAX2221X_VM_THRESHOLD_INVALID) {
-		LOG_ERR("Invalid lower threshold");
+		LOG_ERROR("Invalid lower threshold");
 		return -EINVAL;
 	}
 
@@ -419,7 +419,7 @@ int max2221x_get_vm_lower_threshold(const struct device *dev)
 	case MAX2221X_VM_THRESHOLD_32500MV:
 		return 32500;
 	default:
-		LOG_ERR("Unknown VM lower threshold");
+		LOG_ERROR("Unknown VM lower threshold");
 		return -EINVAL;
 	}
 }
@@ -429,7 +429,7 @@ int max2221x_read_dc_l2h(const struct device *dev, uint16_t *dc_l2h, uint8_t cha
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -441,7 +441,7 @@ int max2221x_write_dc_l2h(const struct device *dev, uint16_t dc_l2h, uint8_t cha
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -453,7 +453,7 @@ int max2221x_read_dc_h(const struct device *dev, uint16_t *dc_h, uint8_t channel
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -465,7 +465,7 @@ int max2221x_write_dc_h(const struct device *dev, uint16_t dc_h, uint8_t channel
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -477,7 +477,7 @@ int max2221x_read_dc_l(const struct device *dev, uint16_t *dc_l, uint8_t channel
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -489,7 +489,7 @@ int max2221x_write_dc_l(const struct device *dev, uint16_t dc_l, uint8_t channel
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -501,7 +501,7 @@ int max2221x_read_time_l2h(const struct device *dev, uint16_t *time_l2h, uint8_t
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -513,7 +513,7 @@ int max2221x_write_time_l2h(const struct device *dev, uint16_t time_l2h, uint8_t
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -527,19 +527,19 @@ int max2221x_set_ctrl_mode(const struct device *dev, enum max2221x_ctrl_mode mod
 	if (mode >= MAX2221X_CTRL_MODE_INVALID) {
 		switch (channel) {
 		case 0:
-			LOG_ERR("Ch 0: Invalid control mode");
+			LOG_ERROR("Ch 0: Invalid control mode");
 			break;
 		case 1:
-			LOG_ERR("Ch 1: Invalid control mode");
+			LOG_ERROR("Ch 1: Invalid control mode");
 			break;
 		case 2:
-			LOG_ERR("Ch 2: Invalid control mode");
+			LOG_ERROR("Ch 2: Invalid control mode");
 			break;
 		case 3:
-			LOG_ERR("Ch 3: Invalid control mode");
+			LOG_ERROR("Ch 3: Invalid control mode");
 			break;
 		default:
-			LOG_ERR("Invalid channel");
+			LOG_ERROR("Invalid channel");
 			break;
 		}
 
@@ -557,7 +557,7 @@ int max2221x_get_ctrl_mode(const struct device *dev, uint8_t channel)
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -575,7 +575,7 @@ int max2221x_set_ramps(const struct device *dev, uint8_t channel, uint8_t ramp_m
 	int ret = 0;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -611,7 +611,7 @@ int max2221x_set_ramp_slew_rate(const struct device *dev, uint8_t channel, uint8
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -626,7 +626,7 @@ int max2221x_get_ramp_slew_rate(const struct device *dev, uint8_t channel)
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -644,12 +644,12 @@ int max2221x_set_channel_chop_freq_div(const struct device *dev, uint8_t channel
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
 	if (freq_div >= MAX2221X_CH_FREQ_DIV_INVALID) {
-		LOG_ERR("Invalid chopping frequency divider");
+		LOG_ERROR("Invalid chopping frequency divider");
 		return -EINVAL;
 	}
 
@@ -664,7 +664,7 @@ int max2221x_get_channel_chop_freq_div(const struct device *dev, uint8_t channel
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -682,12 +682,12 @@ int max2221x_set_slew_rate(const struct device *dev, uint8_t channel,
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
 	if (slew_rate >= MAX2221X_SLEW_RATE_INVALID) {
-		LOG_ERR("Invalid slew rate");
+		LOG_ERROR("Invalid slew rate");
 		return -EINVAL;
 	}
 
@@ -702,7 +702,7 @@ int max2221x_get_slew_rate(const struct device *dev, uint8_t channel)
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -719,12 +719,12 @@ int max2221x_set_gain(const struct device *dev, uint8_t channel, enum max2221x_g
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
 	if (gain >= MAX2221X_GAIN_INVALID) {
-		LOG_ERR("Invalid gain");
+		LOG_ERROR("Invalid gain");
 		return -EINVAL;
 	}
 
@@ -739,7 +739,7 @@ int max2221x_get_gain(const struct device *dev, uint8_t channel)
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -756,12 +756,12 @@ int max2221x_set_snsf(const struct device *dev, uint8_t channel, enum max2221x_s
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
 	if (snsf >= MAX2221X_SNSF_INVALID) {
-		LOG_ERR("Invalid SNSF");
+		LOG_ERROR("Invalid SNSF");
 		return -EINVAL;
 	}
 
@@ -776,7 +776,7 @@ int max2221x_get_snsf(const struct device *dev, uint8_t channel)
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -793,7 +793,7 @@ int max2221x_read_pwm_dutycycle(const struct device *dev, uint8_t channel, uint1
 	const struct misc_max2221x_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -941,7 +941,7 @@ int max2221x_set_on_time(const struct device *dev, uint8_t channel, uint16_t on_
 	struct misc_max2221x_data *data = dev->data;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -955,7 +955,7 @@ int max2221x_get_on_time(const struct device *dev, uint8_t channel)
 	struct misc_max2221x_data *data = dev->data;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -967,7 +967,7 @@ int max2221x_set_off_time(const struct device *dev, uint8_t channel, uint16_t of
 	struct misc_max2221x_data *data = dev->data;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -981,7 +981,7 @@ int max2221x_get_off_time(const struct device *dev, uint8_t channel)
 	struct misc_max2221x_data *data = dev->data;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -993,7 +993,7 @@ int max2221x_set_stop_state(const struct device *dev, uint8_t channel, bool stop
 	struct misc_max2221x_data *data = dev->data;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -1007,7 +1007,7 @@ int max2221x_get_stop_state(const struct device *dev, uint8_t channel)
 	struct misc_max2221x_data *data = dev->data;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -1019,7 +1019,7 @@ int max2221x_set_repetitions(const struct device *dev, uint8_t channel, uint16_t
 	struct misc_max2221x_data *data = dev->data;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -1033,7 +1033,7 @@ int max2221x_get_repetitions(const struct device *dev, uint8_t channel)
 	struct misc_max2221x_data *data = dev->data;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -1046,7 +1046,7 @@ int max2221x_start_rapid_fire(const struct device *dev, uint8_t channel)
 	struct misc_max2221x_data *data = dev->data;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -1082,7 +1082,7 @@ int max2221x_start_rapid_fire(const struct device *dev, uint8_t channel)
 int max2221x_stop_rapid_fire(const struct device *dev, uint8_t channel)
 {
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -1096,7 +1096,7 @@ static int misc_max2221x_init(const struct device *dev)
 	LOG_DBG("Initialize MAX2221X Misc instance %s", dev->name);
 
 	if (!device_is_ready(config->parent)) {
-		LOG_ERR("Parent device '%s' not ready", config->parent->name);
+		LOG_ERROR("Parent device '%s' not ready", config->parent->name);
 		return -EINVAL;
 	}
 

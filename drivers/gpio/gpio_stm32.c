@@ -329,8 +329,8 @@ static int gpio_stm32_config(const struct device *dev,
 			 * Only input pins with PU/PD and output pins are retained in Standby.
 			 * Other pins are placed in High-Z state and can't be used for wake-up.
 			 */
-			LOG_ERR("STM32WBA: wake-up pin must be configured as "
-				"output, or input+pull-up/pull-down");
+			LOG_ERROR("STM32WBA: wake-up pin must be configured as "
+				  "output, or input+pull-up/pull-down");
 			return -EINVAL;
 		}
 
@@ -342,8 +342,8 @@ static int gpio_stm32_config(const struct device *dev,
 
 		err = stm32_pwr_wkup_pin_cfg_gpio(&gpio_dt_cfg);
 		if (err < 0) {
-			LOG_ERR("Could not configure GPIO %s pin %d as a wake-up source",
-					gpio_dt_cfg.port->name, gpio_dt_cfg.pin);
+			LOG_ERROR("Could not configure GPIO %s pin %d as a wake-up source",
+				  gpio_dt_cfg.port->name, gpio_dt_cfg.pin);
 			return err;
 		}
 #else

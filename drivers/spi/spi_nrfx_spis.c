@@ -81,33 +81,33 @@ static int configure(const struct device *dev,
 	}
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
-		LOG_ERR("Master mode is not supported on %s", dev->name);
+		LOG_ERROR("Master mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
 	if (spi_cfg->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback mode is not supported");
+		LOG_ERROR("Loopback mode is not supported");
 		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only single line mode is supported");
+		LOG_ERROR("Only single line mode is supported");
 		return -EINVAL;
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) != 8) {
-		LOG_ERR("Word sizes other than 8 bits are not supported");
+		LOG_ERROR("Word sizes other than 8 bits are not supported");
 		return -EINVAL;
 	}
 
 	if (spi_cs_is_gpio(spi_cfg)) {
-		LOG_ERR("CS control via GPIO is not supported");
+		LOG_ERROR("CS control via GPIO is not supported");
 		return -EINVAL;
 	}
 
@@ -130,16 +130,14 @@ static int prepare_for_transfer(const struct device *dev,
 	uint8_t *dmm_rx_buf;
 	int err;
 
-	if (tx_buf_len > dev_config->max_buf_len ||
-	    rx_buf_len > dev_config->max_buf_len) {
-		LOG_ERR("Invalid buffer sizes: Tx %d/Rx %d",
-			tx_buf_len, rx_buf_len);
+	if (tx_buf_len > dev_config->max_buf_len || rx_buf_len > dev_config->max_buf_len) {
+		LOG_ERROR("Invalid buffer sizes: Tx %d/Rx %d", tx_buf_len, rx_buf_len);
 		return -EINVAL;
 	}
 
 	err = dmm_buffer_out_prepare(dev_config->mem_reg, tx_buf, tx_buf_len, (void **)&dmm_tx_buf);
 	if (err != 0) {
-		LOG_ERR("DMM TX allocation failed err=%d", err);
+		LOG_ERROR("DMM TX allocation failed err=%d", err);
 		goto out_alloc_failed;
 	}
 
@@ -147,7 +145,7 @@ static int prepare_for_transfer(const struct device *dev,
 	dev_data->ctx.rx_buf = rx_buf;
 	err = dmm_buffer_in_prepare(dev_config->mem_reg, rx_buf, rx_buf_len, (void **)&dmm_rx_buf);
 	if (err != 0) {
-		LOG_ERR("DMM RX allocation failed err=%d", err);
+		LOG_ERROR("DMM RX allocation failed err=%d", err);
 		goto in_alloc_failed;
 	}
 
@@ -231,12 +229,11 @@ static int transceive(const struct device *dev,
 	error = configure(dev, spi_cfg);
 	if (error != 0) {
 		/* Invalid configuration. */
-	} else if ((tx_bufs && tx_bufs->count > 1) ||
-		   (rx_bufs && rx_bufs->count > 1)) {
-		LOG_ERR("Scattered buffers are not supported");
+	} else if ((tx_bufs && tx_bufs->count > 1) || (rx_bufs && rx_bufs->count > 1)) {
+		LOG_ERROR("Scattered buffers are not supported");
 		error = -ENOTSUP;
 	} else if (tx_buf && tx_buf->len && !nrfx_is_in_ram(tx_buf->buf)) {
-		LOG_ERR("Only buffers located in RAM are supported");
+		LOG_ERROR("Only buffers located in RAM are supported");
 		error = -ENOTSUP;
 	} else {
 		if (dev_config->wake_gpio.port) {
@@ -411,7 +408,7 @@ static int spi_nrfx_init(const struct device *dev)
 				event_handler, (void *)dev);
 
 	if (err != 0) {
-		LOG_ERR("Failed to initialize device: %s", dev->name);
+		LOG_ERROR("Failed to initialize device: %s", dev->name);
 		return err;
 	}
 

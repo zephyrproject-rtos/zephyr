@@ -96,7 +96,7 @@ void bt_mesh_od_priv_proxy_cli_timeout_set(int32_t timeout)
 static int on_demand_proxy_cli_init(const struct bt_mesh_model *mod)
 {
 	if (!bt_mesh_model_in_primary(mod)) {
-		LOG_ERR("On-Demand Private Proxy client not in primary element");
+		LOG_ERROR("On-Demand Private Proxy client not in primary element");
 		return -EINVAL;
 	}
 

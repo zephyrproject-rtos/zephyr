@@ -119,7 +119,7 @@ static struct osdp_event *pd_event_alloc(struct osdp_pd *pd)
 	struct osdp_event *event = NULL;
 
 	if (k_mem_slab_alloc(&pd->event.slab, (void **)&event, K_MSEC(100))) {
-		LOG_ERR("Memory allocation time-out");
+		LOG_ERROR("Memory allocation time-out");
 		return NULL;
 	}
 	return event;
@@ -160,7 +160,7 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 		} else if (event->cardread.format == OSDP_CARD_FMT_ASCII) {
 			reply_code = REPLY_FMT;
 		} else {
-			LOG_ERR("Event: cardread; Error: unknown format");
+			LOG_ERROR("Event: cardread; Error: unknown format");
 			break;
 		}
 		break;
@@ -168,7 +168,7 @@ static int pd_translate_event(struct osdp_pd *pd, struct osdp_event *event)
 		reply_code = REPLY_KEYPPAD;
 		break;
 	default:
-		LOG_ERR("Unknown event type %d", event->type);
+		LOG_ERROR("Unknown event type %d", event->type);
 		break;
 	}
 	if (reply_code == 0) {
@@ -250,8 +250,9 @@ static int pd_cmd_cap_ok(struct osdp_pd *pd, struct osdp_cmd *cmd)
 
 	pd->reply_id = REPLY_NAK;
 	pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
-	LOG_ERR("PD is not capable of handling CMD(%02x); "
-		"Reply with NAK_CMD_UNKNOWN", pd->cmd_id);
+	LOG_ERROR("PD is not capable of handling CMD(%02x); "
+		  "Reply with NAK_CMD_UNKNOWN",
+		  pd->cmd_id);
 	return 0;
 }
 
@@ -446,7 +447,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		     cmd.comset.baud_rate != 38400 &&
 		     cmd.comset.baud_rate != 115200 &&
 		     cmd.comset.baud_rate != 230400)) {
-			LOG_ERR("COMSET Failed! command discarded");
+			LOG_ERROR("COMSET Failed! command discarded");
 			cmd.comset.address = pd->address;
 			cmd.comset.baud_rate = pd->baud_rate;
 			break;
@@ -466,8 +467,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		}
 		/* only key_type == 1 (SCBK) and key_len == 16 is supported */
 		if (buf[pos] != 1 || buf[pos + 1] != 16) {
-			LOG_ERR("Keyset invalid len/type: %d/%d",
-				buf[pos], buf[pos + 1]);
+			LOG_ERROR("Keyset invalid len/type: %d/%d", buf[pos], buf[pos + 1]);
 			break;
 		}
 		ret = OSDP_PD_ERR_REPLY;
@@ -481,7 +481,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (!sc_is_active(pd)) {
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
-			LOG_ERR("Keyset with SC inactive");
+			LOG_ERROR("Keyset with SC inactive");
 			break;
 		}
 		cmd.id = OSDP_CMD_KEYSET;
@@ -489,8 +489,8 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.keyset.length = buf[pos++];
 		memcpy(cmd.keyset.data, buf + pos, 16);
 		if (!pd->command_callback) {
-			LOG_ERR("Keyset without a command callback! The SC new "
-				"SCBK will be lost when the PD reboots.");
+			LOG_ERROR("Keyset without a command callback! The SC new "
+				  "SCBK will be lost when the PD reboots.");
 		} else if (!do_command_callback(pd, &cmd)) {
 			break;
 		}
@@ -526,7 +526,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		if (sc_is_active(pd)) {
 			pd->reply_id = REPLY_NAK;
 			pd->ephemeral_data[0] = OSDP_PD_NAK_SC_COND;
-			LOG_ERR("Out of order CMD_SCRYPT; has CP gone rogue?");
+			LOG_ERROR("Out of order CMD_SCRYPT; has CP gone rogue?");
 			break;
 		}
 		memcpy(pd->sc.cp_cryptogram, buf + pos, CMD_SCRYPT_DATA_LEN);
@@ -535,15 +535,15 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 #endif /* CONFIG_OSDP_SC_ENABLED */
 	default:
-		LOG_ERR("Unknown CMD(%02x)", pd->cmd_id);
+		LOG_ERROR("Unknown CMD(%02x)", pd->cmd_id);
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_UNKNOWN;
 		return OSDP_PD_ERR_REPLY;
 	}
 
 	if (ret == OSDP_PD_ERR_GENERIC) {
-		LOG_ERR("Failed to decode command: CMD(%02x) Len:%d ret:%d",
-			pd->cmd_id, len, ret);
+		LOG_ERROR("Failed to decode command: CMD(%02x) Len:%d ret:%d", pd->cmd_id, len,
+			  ret);
 		pd->reply_id = REPLY_NAK;
 		pd->ephemeral_data[0] = OSDP_PD_NAK_CMD_LEN;
 		ret = OSDP_PD_ERR_REPLY;
@@ -559,7 +559,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 static inline bool check_buf_len(int need, int have)
 {
 	if (need > have) {
-		LOG_ERR("OOM at build reply: need:%d have:%d", need, have);
+		LOG_ERROR("OOM at build reply: need:%d have:%d", need, have);
 		return false;
 	}
 	return true;
@@ -624,7 +624,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 				continue;
 			}
 			if (max_len < REPLY_PDCAP_ENTITY_LEN) {
-				LOG_ERR("Out of buffer space!");
+				LOG_ERROR("Out of buffer space!");
 				break;
 			}
 			buf[len++] = i;
@@ -791,8 +791,7 @@ static int pd_build_reply(struct osdp_pd *pd, uint8_t *buf, int max_len)
 
 	if (ret != 0) {
 		/* catch all errors and report it as a RECORD error to CP */
-		LOG_ERR("Failed to build REPLY(%02x); Sending NAK instead!",
-			pd->reply_id);
+		LOG_ERROR("Failed to build REPLY(%02x); Sending NAK instead!", pd->reply_id);
 		if (!check_buf_len(REPLY_NAK_LEN, max_len)) {
 			return OSDP_PD_ERR_GENERIC;
 		}
@@ -834,7 +833,7 @@ static int pd_send_reply(struct osdp_pd *pd)
 
 	ret = pd->channel.send(pd->channel.data, pd->rx_buf, len);
 	if (ret != len) {
-		LOG_ERR("Channel send for %d bytes failed! ret: %d", len, ret);
+		LOG_ERROR("Channel send for %d bytes failed! ret: %d", len, ret);
 		return OSDP_PD_ERR_GENERIC;
 	}
 
@@ -978,7 +977,7 @@ void osdp_update(struct osdp *ctx)
 	}
 
 	if (ret != OSDP_PD_ERR_NONE && ret != OSDP_PD_ERR_REPLY) {
-		LOG_ERR("CMD receive error/timeout - err:%d", ret);
+		LOG_ERROR("CMD receive error/timeout - err:%d", ret);
 		pd_error_reset(pd);
 		return;
 	}

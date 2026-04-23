@@ -221,7 +221,7 @@ static int cdc_ecm_out_start(struct usbd_class_data *const c_data)
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_ERROR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 	}
 
@@ -237,7 +237,7 @@ static int cdc_ecm_acl_out_cb(struct usbd_class_data *const c_data,
 
 	if (err || buf->len == 0) {
 		if (err != -ECONNABORTED) {
-			LOG_ERR("Bulk OUT transfer error (%d) or zero length", err);
+			LOG_ERROR("Bulk OUT transfer error (%d) or zero length", err);
 		}
 
 		goto restart_out_transfer;
@@ -259,19 +259,19 @@ static int cdc_ecm_acl_out_cb(struct usbd_class_data *const c_data,
 	pkt = net_pkt_rx_alloc_with_buffer(data->iface, buf->len,
 					   NET_AF_UNSPEC, 0, K_FOREVER);
 	if (!pkt) {
-		LOG_ERR("No memory for net_pkt");
+		LOG_ERROR("No memory for net_pkt");
 		goto restart_out_transfer;
 	}
 
 	if (net_pkt_write(pkt, buf->data, buf->len)) {
-		LOG_ERR("Unable to write into pkt");
+		LOG_ERROR("Unable to write into pkt");
 		net_pkt_unref(pkt);
 		goto restart_out_transfer;
 	}
 
 	LOG_DBG("Received packet len %zu", net_pkt_get_len(pkt));
 	if (net_recv_data(data->iface, pkt) < 0) {
-		LOG_ERR("Packet %p dropped by network stack", pkt);
+		LOG_ERROR("Packet %p dropped by network stack", pkt);
 		net_pkt_unref(pkt);
 	}
 
@@ -352,7 +352,7 @@ static int cdc_ecm_send_notification(const struct device *dev,
 	net_buf_add_mem(buf, &notification, sizeof(struct cdc_ecm_notification));
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_ERROR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 		return ret;
 	}
@@ -382,12 +382,12 @@ static void usbd_cdc_ecm_update(struct usbd_class_data *const c_data,
 		if (atomic_test_bit(&data->state, CDC_ECM_IFACE_UP)) {
 			net_if_carrier_on(data->iface);
 			if (cdc_ecm_send_notification(dev, true)) {
-				LOG_ERR("Failed to send connected notification");
+				LOG_ERROR("Failed to send connected notification");
 			}
 		}
 
 		if (cdc_ecm_out_start(c_data)) {
-			LOG_ERR("Failed to start OUT transfer");
+			LOG_ERROR("Failed to start OUT transfer");
 		}
 	}
 }
@@ -457,7 +457,7 @@ static int usbd_cdc_ecm_init(struct usbd_class_data *const c_data)
 
 	if (desc->if0_ecm.iMACAddress == 0) {
 		if (usbd_add_descriptor(uds_ctx, data->mac_desc_data)) {
-			LOG_ERR("Failed to add iMACAddress string descriptor");
+			LOG_ERROR("Failed to add iMACAddress string descriptor");
 		} else {
 			desc->if0_ecm.iMACAddress = usbd_str_desc_get_idx(data->mac_desc_data);
 		}
@@ -512,12 +512,12 @@ static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
 	ep = cdc_ecm_get_bulk_in(c_data);
 	buf = cdc_ecm_buf_alloc(ep);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOMEM;
 	}
 
 	if (net_pkt_read(pkt, buf->data, len)) {
-		LOG_ERR("Failed copy net_pkt");
+		LOG_ERROR("Failed copy net_pkt");
 		net_buf_unref(buf);
 
 		return -ENOBUFS;
@@ -531,7 +531,7 @@ static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_ERROR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 		return ret;
 	}
@@ -579,7 +579,7 @@ static int cdc_ecm_iface_start(const struct device *dev)
 	if (atomic_test_bit(&data->state, CDC_ECM_DATA_IFACE_ENABLED)) {
 		net_if_carrier_on(data->iface);
 		if (cdc_ecm_send_notification(dev, true)) {
-			LOG_ERR("Failed to send connected notification");
+			LOG_ERROR("Failed to send connected notification");
 		}
 	}
 
@@ -596,7 +596,7 @@ static int cdc_ecm_iface_stop(const struct device *dev)
 
 	if (atomic_test_bit(&data->state, CDC_ECM_DATA_IFACE_ENABLED)) {
 		if (cdc_ecm_send_notification(dev, false)) {
-			LOG_ERR("Failed to send disconnected notification");
+			LOG_ERROR("Failed to send disconnected notification");
 		}
 	}
 

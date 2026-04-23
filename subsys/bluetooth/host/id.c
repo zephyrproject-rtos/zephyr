@@ -312,7 +312,7 @@ static void le_rpa_timeout_update(void)
 
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
-			LOG_ERR("Failed to create HCI RPA timeout command");
+			LOG_ERROR("Failed to create HCI RPA timeout command");
 			err = -ENOBUFS;
 			goto submit;
 		}
@@ -321,7 +321,7 @@ static void le_rpa_timeout_update(void)
 		cp->rpa_timeout = sys_cpu_to_le16(bt_dev.rpa_timeout);
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RPA_TIMEOUT, buf, NULL);
 		if (err) {
-			LOG_ERR("Failed to send HCI RPA timeout command");
+			LOG_ERROR("Failed to send HCI RPA timeout command");
 			goto submit;
 		}
 	}
@@ -560,7 +560,7 @@ static void adv_pause_rpa(struct bt_le_ext_adv *adv, void *data)
 
 		err = bt_le_adv_set_enable_ext(adv, false, NULL);
 		if (err) {
-			LOG_ERR("Failed to disable advertising (err %d)", err);
+			LOG_ERROR("Failed to disable advertising (err %d)", err);
 		}
 
 		atomic_set_bit(adv->flags, BT_ADV_RPA_UPDATE);
@@ -598,7 +598,7 @@ static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 
 		err = bt_le_adv_set_enable_ext(adv, true, NULL);
 		if (err) {
-			LOG_ERR("Failed to enable advertising (err %d)", err);
+			LOG_ERROR("Failed to enable advertising (err %d)", err);
 		}
 	}
 }
@@ -1088,7 +1088,7 @@ void bt_id_add(struct bt_keys *keys)
 		enable_controller_res = false;
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_RL, NULL, NULL);
 		if (err) {
-			LOG_ERR("Failed to clear resolution list");
+			LOG_ERROR("Failed to clear resolution list");
 			goto done;
 		}
 
@@ -1100,7 +1100,7 @@ void bt_id_add(struct bt_keys *keys)
 
 	err = hci_id_add(keys->id, &keys->addr, keys->irk.val);
 	if (err) {
-		LOG_ERR("Failed to add IRK to controller");
+		LOG_ERROR("Failed to add IRK to controller");
 		goto done;
 	}
 
@@ -1121,7 +1121,7 @@ void bt_id_add(struct bt_keys *keys)
 	 */
 	err = le_set_privacy_mode(&keys->addr, BT_HCI_LE_PRIVACY_MODE_DEVICE);
 	if (err) {
-		LOG_ERR("Failed to set privacy mode");
+		LOG_ERROR("Failed to set privacy mode");
 		goto done;
 	}
 
@@ -1226,7 +1226,7 @@ void bt_id_del(struct bt_keys *keys)
 
 	err = addr_res_enable(BT_HCI_ADDR_RES_DISABLE);
 	if (err) {
-		LOG_ERR("Disabling address resolution failed (err %d)", err);
+		LOG_ERROR("Disabling address resolution failed (err %d)", err);
 		goto done;
 	}
 
@@ -1245,7 +1245,7 @@ void bt_id_del(struct bt_keys *keys)
 
 	err = hci_id_del(&keys->addr);
 	if (err) {
-		LOG_ERR("Failed to remove IRK from controller");
+		LOG_ERROR("Failed to remove IRK from controller");
 		goto done;
 	}
 
@@ -1379,7 +1379,7 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk)
 			bt_dev.id_count++;
 			return BT_ID_DEFAULT;
 		} else if (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(&addr->a)) {
-			LOG_ERR("Only random static identity address supported");
+			LOG_ERROR("Only random static identity address supported");
 			return -EINVAL;
 		}
 	}
@@ -1419,7 +1419,7 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 	if (addr && !bt_addr_le_eq(addr, BT_ADDR_LE_ANY)) {
 		if (addr->type != BT_ADDR_LE_RANDOM ||
 		    !BT_ADDR_IS_STATIC(&addr->a)) {
-			LOG_ERR("Only static random identity address supported");
+			LOG_ERROR("Only static random identity address supported");
 			return -EINVAL;
 		}
 
@@ -1924,7 +1924,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 	/* Short-circuit to force NRPA usage */
 	if (options & BT_LE_ADV_OPT_USE_NRPA) {
 		if (options & BT_LE_ADV_OPT_USE_IDENTITY) {
-			LOG_ERR("Can't set both IDENTITY & NRPA");
+			LOG_ERROR("Can't set both IDENTITY & NRPA");
 
 			return -EINVAL;
 		}
@@ -2237,8 +2237,8 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_remote)
 {
 	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		LOG_ERR("Invalid connection: %p", conn);
-		LOG_ERR("Invalid connection type: %u for %p", conn->handle, conn);
+		LOG_ERROR("Invalid connection: %p", conn);
+		LOG_ERROR("Invalid connection type: %u for %p", conn->handle, conn);
 		return -EINVAL;
 	}
 
@@ -2269,7 +2269,7 @@ int bt_id_init(void)
 
 		err = bt_setup_public_id_addr();
 		if (err) {
-			LOG_ERR("Unable to set identity address");
+			LOG_ERROR("Unable to set identity address");
 			return err;
 		}
 	}
@@ -2279,7 +2279,7 @@ int bt_id_init(void)
 
 		err = bt_setup_random_id_addr();
 		if (err) {
-			LOG_ERR("Unable to set identity address");
+			LOG_ERROR("Unable to set identity address");
 			return err;
 		}
 
@@ -2290,7 +2290,7 @@ int bt_id_init(void)
 		 */
 		err = set_random_address(&bt_dev.id_addr[0].a);
 		if (err) {
-			LOG_ERR("Unable to set random address");
+			LOG_ERROR("Unable to set random address");
 			return err;
 		}
 	}

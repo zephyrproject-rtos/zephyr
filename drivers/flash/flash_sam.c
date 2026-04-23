@@ -109,7 +109,7 @@ static int sam_flash_section_wait_until_ready(const struct device *dev)
 	sam_flash_unmask_ready_interrupt(config);
 
 	if (k_sem_take(&data->ready_sem, K_MSEC(500)) < 0) {
-		LOG_ERR("Command did not execute in time");
+		LOG_ERROR("Command did not execute in time");
 		return -EFAULT;
 	}
 
@@ -117,17 +117,17 @@ static int sam_flash_section_wait_until_ready(const struct device *dev)
 	eefc_fsr = regs->EEFC_FSR;
 
 	if (eefc_fsr & EEFC_FSR_FCMDE) {
-		LOG_ERR("Invalid command requested");
+		LOG_ERROR("Invalid command requested");
 		return -EPERM;
 	}
 
 	if (eefc_fsr & EEFC_FSR_FLOCKE) {
-		LOG_ERR("Tried to modify locked region");
+		LOG_ERROR("Tried to modify locked region");
 		return -EPERM;
 	}
 
 	if (eefc_fsr & EEFC_FSR_FLERR) {
-		LOG_ERR("Programming failed");
+		LOG_ERROR("Programming failed");
 		return -EPERM;
 	}
 
@@ -375,8 +375,8 @@ static int sam_flash_erase_page(const struct device *dev, const struct flash_pag
 		return ret;
 	}
 
-	LOG_ERR("Failed to erase page at 0x%x of size 0x%x", (size_t)info->start_offset,
-		info->size);
+	LOG_ERROR("Failed to erase page at 0x%x of size 0x%x", (size_t)info->start_offset,
+		  info->size);
 
 	return ret;
 }

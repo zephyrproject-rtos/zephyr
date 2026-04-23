@@ -20,7 +20,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 		"rd %%tbr, %0" :
 		"=r" (tbr)
 		);
-	LOG_ERR("Spurious interrupt detected! IRQ: %d", (tbr >> 4) & 0xf);
+	LOG_ERROR("Spurious interrupt detected! IRQ: %d", (tbr >> 4) & 0xf);
 	z_sparc_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 

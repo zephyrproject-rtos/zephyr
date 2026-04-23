@@ -678,7 +678,7 @@ static uint8_t mcp_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -702,7 +702,7 @@ static uint8_t mcp_track_duration_read(const void *cmd, uint16_t cmd_len, void *
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -725,7 +725,7 @@ static uint8_t mcp_track_position_read(const void *cmd, uint16_t cmd_len, void *
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -749,7 +749,7 @@ static uint8_t mcp_track_position_set(const void *cmd, uint16_t cmd_len, void *r
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -772,7 +772,7 @@ static uint8_t mcp_playback_speed_read(const void *cmd, uint16_t cmd_len, void *
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -795,7 +795,7 @@ static uint8_t mcp_playback_speed_set(const void *cmd, uint16_t cmd_len, void *r
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -818,7 +818,7 @@ static uint8_t mcp_seeking_speed_read(const void *cmd, uint16_t cmd_len, void *r
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -841,7 +841,7 @@ static uint8_t mcp_read_icon_obj_id(const void *cmd, uint16_t cmd_len, void *rsp
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -864,7 +864,7 @@ static uint8_t mcp_read_next_track_obj_id(const void *cmd, uint16_t cmd_len, voi
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -888,7 +888,7 @@ static uint8_t mcp_set_next_track_obj_id(const void *cmd, uint16_t cmd_len, void
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -911,7 +911,7 @@ static uint8_t mcp_parent_group_obj_id_read(const void *cmd, uint16_t cmd_len, v
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -934,7 +934,7 @@ static uint8_t mcp_current_group_obj_id_read(const void *cmd, uint16_t cmd_len, 
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -958,7 +958,7 @@ static uint8_t mcp_set_current_group_obj_id(const void *cmd, uint16_t cmd_len, v
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -981,7 +981,7 @@ static uint8_t mcp_playing_order_read(const void *cmd, uint16_t cmd_len, void *r
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1004,7 +1004,7 @@ static uint8_t mcp_playing_order_set(const void *cmd, uint16_t cmd_len, void *rs
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1027,7 +1027,7 @@ static uint8_t mcp_playing_orders_supported_read(const void *cmd, uint16_t cmd_l
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1050,7 +1050,7 @@ static uint8_t mcp_media_state_read(const void *cmd, uint16_t cmd_len, void *rsp
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1073,7 +1073,7 @@ static uint8_t mcp_opcodes_supported_read(const void *cmd, uint16_t cmd_len, voi
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1096,7 +1096,7 @@ static uint8_t mcp_content_control_id_read(const void *cmd, uint16_t cmd_len, vo
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1119,7 +1119,7 @@ static uint8_t mcp_segments_obj_id_read(const void *cmd, uint16_t cmd_len, void 
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1142,7 +1142,7 @@ static uint8_t mcp_current_track_obj_id_read(const void *cmd, uint16_t cmd_len, 
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1166,7 +1166,7 @@ static uint8_t mcp_current_track_obj_id_set(const void *cmd, uint16_t cmd_len, v
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1189,7 +1189,7 @@ static uint8_t mcp_cmd_send(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1221,7 +1221,7 @@ static uint8_t mcp_cmd_search(const void *cmd, uint16_t cmd_len, void *rsp, uint
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 

@@ -43,7 +43,7 @@ static int flash_write_data(const struct device *dev,
 
 	ret = flash_erase(dev, device_addr, num_bytes_left);
 	if (ret) {
-		LOG_ERR("timing scan flash erase failed.\n");
+		LOG_ERROR("timing scan flash erase failed.\n");
 		return ret;
 	}
 
@@ -59,7 +59,7 @@ static int flash_write_data(const struct device *dev,
 		LOG_DBG("Write at %08x, size %08x\n", device_addr, test_bytes);
 		ret = flash_write(dev, device_addr, txdata_buff, test_bytes);
 		if (ret) {
-			LOG_ERR("timing scan flash write failed.\n");
+			LOG_ERROR("timing scan flash write failed.\n");
 			return ret;
 		}
 		device_addr += test_bytes;
@@ -86,7 +86,7 @@ static int flash_read_scan(const struct device *dev,
 		LOG_DBG("Read at %08x, size %08x\n", device_addr, test_bytes);
 		ret = flash_read(dev, device_addr, rxdata_buff, test_bytes);
 		if (ret) {
-			LOG_ERR("timing scan flash read failed.\n");
+			LOG_ERROR("timing scan flash read failed.\n");
 			return ret;
 		}
 		sys_cache_data_flush_and_invd_all();
@@ -234,43 +234,43 @@ static int check_param(struct mspi_ambiq_timing_scan *scan, uint32_t param_mask)
 	struct mspi_ambiq_timing_scan_range *range = &scan->range;
 
 	if (scan->min_window > range->rxdqs_end - range->rxdqs_start) {
-		LOG_ERR("invalid min_window or txdqs, rxdqs scan range.\n");
+		LOG_ERROR("invalid min_window or txdqs, rxdqs scan range.\n");
 		return 1;
 	}
 
 	if (!(param_mask & MSPI_AMBIQ_SET_RLC) &&
 	     (range->rlc_start != 0) && (range->rlc_end != 0)) {
-		LOG_ERR("invalid RLC range.\n");
+		LOG_ERROR("invalid RLC range.\n");
 		return 1;
 	}
 
 	if (!(param_mask & MSPI_AMBIQ_SET_TXNEG) &&
 	     (range->txneg_start != 0) && (range->txneg_end != 0)) {
-		LOG_ERR("invalid TXNEG range.\n");
+		LOG_ERROR("invalid TXNEG range.\n");
 		return 1;
 	}
 
 	if (!(param_mask & MSPI_AMBIQ_SET_RXNEG) &&
 	     (range->rxneg_start != 0) && (range->rxneg_end != 0)) {
-		LOG_ERR("invalid RXNEG range.\n");
+		LOG_ERROR("invalid RXNEG range.\n");
 		return 1;
 	}
 
 	if (!(param_mask & MSPI_AMBIQ_SET_RXCAP) &&
 	     (range->rxcap_start != 0) && (range->rxcap_end != 0)) {
-		LOG_ERR("invalid RXCAP range.\n");
+		LOG_ERROR("invalid RXCAP range.\n");
 		return 1;
 	}
 
 	if (!(param_mask & MSPI_AMBIQ_SET_TXDQSDLY) &&
 	     (range->txdqs_start != 0) && (range->txdqs_end != 0)) {
-		LOG_ERR("invalid TXDQSDLY range.\n");
+		LOG_ERROR("invalid TXDQSDLY range.\n");
 		return 1;
 	}
 
 	if (!(param_mask & MSPI_AMBIQ_SET_RXDQSDLY) &&
 	     (range->rxdqs_start != 0) && (range->rxdqs_end != 0)) {
-		LOG_ERR("invalid RXDQSDLY range.\n");
+		LOG_ERROR("invalid RXDQSDLY range.\n");
 		return 1;
 	}
 
@@ -299,7 +299,7 @@ static inline int timing_scan(const struct device           *dev,
 	if (scan->scan_type == MSPI_AMBIQ_TIMING_SCAN_FLASH) {
 		ret = flash_write_data(dev, address);
 		if (ret) {
-			LOG_ERR("Flash write failed, code:%d\n", ret);
+			LOG_ERROR("Flash write failed, code:%d\n", ret);
 			return ret;
 		}
 	}
@@ -326,12 +326,12 @@ static inline int timing_scan(const struct device           *dev,
 
 				ret = mspi_dev_config(bus, dev_id, MSPI_DEVICE_CONFIG_NONE, NULL);
 				if (ret) {
-					LOG_ERR("failed to acquire controller, code:%d\n", ret);
+					LOG_ERROR("failed to acquire controller, code:%d\n", ret);
 					return ret;
 				}
 				ret = mspi_timing_config(bus, dev_id, param_mask, param);
 				if (ret) {
-					LOG_ERR("failed to configure mspi timing!!\n");
+					LOG_ERROR("failed to configure mspi timing!!\n");
 					return ret;
 				}
 				/* run data check */
@@ -340,12 +340,12 @@ static inline int timing_scan(const struct device           *dev,
 
 				ret = mspi_dev_config(bus, dev_id, MSPI_DEVICE_CONFIG_NONE, NULL);
 				if (ret) {
-					LOG_ERR("failed to acquire controller, code:%d\n", ret);
+					LOG_ERROR("failed to acquire controller, code:%d\n", ret);
 					return ret;
 				}
 				ret = mspi_timing_config(bus, dev_id, param_mask, param);
 				if (ret) {
-					LOG_ERR("failed to configure mspi timing!!\n");
+					LOG_ERROR("failed to configure mspi timing!!\n");
 					return ret;
 				}
 
@@ -476,7 +476,7 @@ int mspi_ambiq_timing_scan(const struct device           *dev,
 					ret = timing_scan(dev, bus, dev_id, param_mask,
 							  scan, &param, &max_window);
 					if (ret) {
-						LOG_ERR("Timing scan failed, code:%d\n", ret);
+						LOG_ERROR("Timing scan failed, code:%d\n", ret);
 						return ret;
 					}
 

@@ -86,7 +86,7 @@ int sy1xx_gpio_driver_configure(const struct device *dev, gpio_pin_t pin, gpio_f
 		pcfg.cfg |= BIT(SY1XX_PAD_TRISTATE_OFFS);
 
 	} else {
-		LOG_ERR("%s: unsupported pinctrl mode for pin: %u", dev->name, pin);
+		LOG_ERROR("%s: unsupported pinctrl mode for pin: %u", dev->name, pin);
 		return -ENOTSUP;
 	}
 
@@ -94,7 +94,7 @@ int sy1xx_gpio_driver_configure(const struct device *dev, gpio_pin_t pin, gpio_f
 	int32_t ret = pinctrl_configure_pins(&pcfg, 1, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
-		LOG_ERR("%s: failed to apply pinctrl for pin: %u", dev->name, pin);
+		LOG_ERROR("%s: failed to apply pinctrl for pin: %u", dev->name, pin);
 		return -EINVAL;
 	}
 

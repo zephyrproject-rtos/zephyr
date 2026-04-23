@@ -584,7 +584,7 @@ static int pca9422_charger_get_prop(const struct device *dev, charger_prop_t pro
 	case CHARGER_PROP_STATUS:
 		ret = pca9422_charger_get_status(dev, &data->status);
 		if (ret < 0) {
-			LOG_ERR("Failed to read charger status %d", ret);
+			LOG_ERROR("Failed to read charger status %d", ret);
 		} else {
 			val->status = data->status;
 		}
@@ -646,7 +646,7 @@ static void pca9422_charger_isr(const struct device *dev)
 		LOG_DBG("%s: int_charger[0]=0x%x, [1]=0x%x, [2]=0x%x, [3]=0x%x\n", __func__,
 			int_val[2], int_val[3], int_val[4], int_val[5]);
 	} else {
-		LOG_ERR("%s: INT_DEVICE_0 ~ INT_CHARGER_3 read fail(%d)\n", __func__, ret);
+		LOG_ERROR("%s: INT_DEVICE_0 ~ INT_CHARGER_3 read fail(%d)\n", __func__, ret);
 	}
 	/* Read mask registers */
 	ret = mfd_pca9422_reg_burst_read(config->mfd, PCA9422_REG_INT_DEVICE_0_MASK, mask_val, 6);
@@ -657,8 +657,8 @@ static void pca9422_charger_isr(const struct device *dev)
 		LOG_DBG("%s: int_charger_mask[0]=0x%x, [1]=0x%x, [2]=0x%x, [3]=0x%x\n", __func__,
 			mask_val[2], mask_val[3], mask_val[4], mask_val[5]);
 	} else {
-		LOG_ERR("%s: INT_DEVICE_0_MASK ~ INT_CHARGER_3_MASK read fail(%d)\n", __func__,
-			ret);
+		LOG_ERROR("%s: INT_DEVICE_0_MASK ~ INT_CHARGER_3_MASK read fail(%d)\n", __func__,
+			  ret);
 	}
 	/* Set event */
 	if ((int_val[0] & PCA9422_BIT_VIN_OK) && (~mask_val[0] & PCA9422_BIT_VIN_OK)) {

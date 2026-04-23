@@ -125,7 +125,7 @@ static void sensor_submit_fallback_sync(struct rtio_iodev_sqe *iodev_sqe)
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -277,8 +277,8 @@ static void sensor_submit_fallback(const struct device *dev, struct rtio_iodev_s
 	struct rtio_work_req *req = rtio_work_req_alloc();
 
 	if (req == NULL) {
-		LOG_ERR("RTIO work item allocation failed. Consider to increase "
-			"CONFIG_RTIO_WORKQ_POOL_ITEMS.");
+		LOG_ERROR("RTIO work item allocation failed. Consider to increase "
+			  "CONFIG_RTIO_WORKQ_POOL_ITEMS.");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}

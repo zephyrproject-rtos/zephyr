@@ -860,7 +860,7 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 	} else if (output_format == VIDEO_PIX_FMT_YUYV) {
 		output_format = GC2145_REG_OUTPUT_FMT_YCBYCR;
 	} else {
-		LOG_ERR("Image format not supported");
+		LOG_ERROR("Image format not supported");
 		return -ENOTSUP;
 	}
 
@@ -1013,9 +1013,9 @@ static int gc2145_set_crop(const struct device *dev, struct video_selection *sel
 	/* Verify the passed in rectangle is valid */
 	if (((sel->rect.left + sel->rect.width) > drv_data->format_width) ||
 	    ((sel->rect.top + sel->rect.height) > drv_data->format_height)) {
-		LOG_ERR("Crop rectangle is invalid(%u %u) %ux%u > %ux%u",
-			sel->rect.left, sel->rect.top, sel->rect.width, sel->rect.height,
-			drv_data->format_width, drv_data->format_height);
+		LOG_ERROR("Crop rectangle is invalid(%u %u) %ux%u > %ux%u", sel->rect.left,
+			  sel->rect.top, sel->rect.width, sel->rect.height, drv_data->format_width,
+			  drv_data->format_height);
 		return -EINVAL;
 	}
 
@@ -1092,7 +1092,7 @@ static int gc2145_config_csi(const struct device *dev, uint32_t pixelformat,
 		csi_dt = VIDEO_MIPI_CSI2_DT_YUV422_8;
 		break;
 	default:
-		LOG_ERR("Unsupported pixelformat for CSI");
+		LOG_ERROR("Unsupported pixelformat for CSI");
 		return -EINVAL;
 	}
 
@@ -1102,7 +1102,7 @@ static int gc2145_config_csi(const struct device *dev, uint32_t pixelformat,
 	} else if (width == RESOLUTION_UXGA_W && height == RESOLUTION_UXGA_H) {
 		ctrls->linkfreq.val = GC2145_1600_1200_LINK_FREQ_ID;
 	} else {
-		LOG_ERR("Unsupported resolution 320x240 for CSI");
+		LOG_ERROR("Unsupported resolution 320x240 for CSI");
 		return -EINVAL;
 	}
 
@@ -1152,14 +1152,14 @@ static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
 	/* Check if camera is capable of handling given format */
 	ret = video_format_caps_index(fmts, fmt, &idx);
 	if (ret < 0) {
-		LOG_ERR("Image format not supported");
+		LOG_ERROR("Image format not supported");
 		return ret;
 	}
 
 	/* Set output format */
 	ret = gc2145_set_output_format(dev, fmt->pixelformat);
 	if (ret < 0) {
-		LOG_ERR("Failed to set the output format");
+		LOG_ERROR("Failed to set the output format");
 		return ret;
 	}
 
@@ -1167,14 +1167,14 @@ static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
 	ret = gc2145_set_resolution(dev, fmt->width, fmt->height);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to set the resolution");
+		LOG_ERROR("Failed to set the resolution");
 		return ret;
 	}
 
 	if (cfg->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
 		ret = gc2145_config_csi(dev, fmt->pixelformat, fmt->width, fmt->height);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure MIPI-CSI");
+			LOG_ERROR("Failed to configure MIPI-CSI");
 			return ret;
 		}
 	}
@@ -1351,14 +1351,15 @@ static int gc2145_init(const struct device *dev)
 	(void) cfg;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
 	if (cfg->pwdn_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
-			LOG_ERR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
+			LOG_ERROR("%s: device %s is not ready", dev->name,
+				  cfg->pwdn_gpio.port->name);
 			return -ENODEV;
 		}
 		ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_INACTIVE);
@@ -1371,8 +1372,8 @@ static int gc2145_init(const struct device *dev)
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (cfg->reset_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->reset_gpio.port->name);
+			LOG_ERROR("%s: device %s is not ready", dev->name,
+				  cfg->reset_gpio.port->name);
 			return -ENODEV;
 		}
 		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
@@ -1403,7 +1404,7 @@ static int gc2145_init(const struct device *dev)
 
 	ret = gc2145_set_fmt(dev, &fmt);
 	if (ret) {
-		LOG_ERR("Unable to configure default format");
+		LOG_ERROR("Unable to configure default format");
 		return ret;
 	}
 

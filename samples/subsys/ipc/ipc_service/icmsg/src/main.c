@@ -75,7 +75,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 
 static void ep_error(const char *message, void *priv)
 {
-	LOG_ERR("ICMsg error: %s", message);
+	LOG_ERROR("ICMsg error: %s", message);
 }
 
 static int send_for_time(struct ipc_ept *ep, const int64_t sending_time_ms)
@@ -96,7 +96,7 @@ static int send_for_time(struct ipc_ept *ep, const int64_t sending_time_ms)
 			ret = 0;
 			continue;
 		} else if (ret < 0) {
-			LOG_ERR("Failed to send (%c) failed with ret %d", msg.data[0], ret);
+			LOG_ERROR("Failed to send (%c) failed with ret %d", msg.data[0], ret);
 			break;
 		}
 #if !defined(CONFIG_MULTITHREADING)
@@ -156,13 +156,13 @@ int main(void)
 
 	ret = ipc_service_open_instance(ipc0_instance);
 	if ((ret < 0) && (ret != -EALREADY)) {
-		LOG_ERR("ipc_service_open_instance() failure");
+		LOG_ERROR("ipc_service_open_instance() failure");
 		return ret;
 	}
 
 	ret = ipc_service_register_endpoint(ipc0_instance, &ep, &ep_cfg);
 	if (ret < 0) {
-		LOG_ERR("ipc_service_register_endpoint() failure");
+		LOG_ERROR("ipc_service_register_endpoint() failure");
 		return ret;
 	}
 
@@ -175,7 +175,7 @@ int main(void)
 
 	ret = send_for_time(&ep, SENDING_TIME_MS);
 	if (ret < 0) {
-		LOG_ERR("send_for_time() failure");
+		LOG_ERROR("send_for_time() failure");
 		return ret;
 	}
 
@@ -196,7 +196,7 @@ int main(void)
 
 	ret = ipc_service_deregister_endpoint(&ep);
 	if (ret != 0) {
-		LOG_ERR("ipc_service_register_endpoint() failure");
+		LOG_ERROR("ipc_service_register_endpoint() failure");
 		return ret;
 	}
 
@@ -207,7 +207,7 @@ int main(void)
 	/* Reset bound sem. */
 	ret = k_sem_init(&bound_sem, 0, 1);
 	if (ret != 0) {
-		LOG_ERR("k_sem_init() failure");
+		LOG_ERROR("k_sem_init() failure");
 		return ret;
 	}
 
@@ -224,7 +224,7 @@ int main(void)
 
 	ret = send_for_time(&ep, SENDING_TIME_MS);
 	if (ret < 0) {
-		LOG_ERR("send_for_time() failure");
+		LOG_ERROR("send_for_time() failure");
 		return ret;
 	}
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */

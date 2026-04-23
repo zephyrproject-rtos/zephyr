@@ -226,7 +226,7 @@ static int pat9136_decoder_decode(const uint8_t *buffer,
 		channel_request = pat9136_encode_channel(chan_spec.chan_type);
 		if (((edata->header.channels & channel_request) != channel_request) ||
 		    !is_data_valid(edata)) {
-			LOG_ERR("No data available");
+			LOG_ERROR("No data available");
 			return -ENODATA;
 		}
 
@@ -257,7 +257,7 @@ static int pat9136_decoder_decode(const uint8_t *buffer,
 		channel_request = pat9136_encode_channel(chan_spec.chan_type);
 		if (((edata->header.channels & channel_request) != channel_request) ||
 		    !is_data_valid(edata)) {
-			LOG_ERR("No data available");
+			LOG_ERROR("No data available");
 			return -ENODATA;
 		}
 

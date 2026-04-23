@@ -41,7 +41,7 @@ int main(void)
 	}
 
 	if (edac_notify_callback_set(dev, notification_callback)) {
-		LOG_ERR("Cannot set notification callback");
+		LOG_ERROR("Cannot set notification callback");
 		return 0;
 	}
 

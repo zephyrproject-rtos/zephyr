@@ -141,7 +141,7 @@ static int sdmmc_send_ocr(struct sd_card *card, int ocr)
 	}
 	if (retries >= CONFIG_SD_OCR_RETRY_COUNT) {
 		/* OCR timed out */
-		LOG_ERR("Card never left busy state");
+		LOG_ERROR("Card never left busy state");
 		return -ETIMEDOUT;
 	}
 	LOG_DBG("SDMMC responded to ACMD41 after %d attempts", retries);
@@ -521,7 +521,7 @@ static int sdmmc_set_bus_speed(struct sd_card *card)
 		LOG_DBG("Setting bus clock to: %d", card->bus_io.clock);
 		ret = sdhc_set_io(card->sdhc, &card->bus_io);
 		if (ret) {
-			LOG_ERR("Failed to change host bus speed");
+			LOG_ERROR("Failed to change host bus speed");
 			return ret;
 		}
 	}
@@ -538,7 +538,7 @@ static int sdmmc_init_uhs(struct sd_card *card)
 	/* Raise bus width to 4 bits */
 	ret = sdmmc_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
 	if (ret) {
-		LOG_ERR("Failed to change card bus width to 4 bits");
+		LOG_ERROR("Failed to change card bus width to 4 bits");
 		return ret;
 	}
 
@@ -566,7 +566,7 @@ static int sdmmc_init_uhs(struct sd_card *card)
 		/* SDR104, SDR50, and DDR50 mode need tuning */
 		ret = sdhc_execute_tuning(card->sdhc);
 		if (ret) {
-			LOG_ERR("SD tuning failed: %d", ret);
+			LOG_ERROR("SD tuning failed: %d", ret);
 		}
 	}
 	return ret;
@@ -588,14 +588,14 @@ static int sdmmc_init_hs(struct sd_card *card)
 	/* Apply selected bus speed */
 	ret = sdmmc_set_bus_speed(card);
 	if (ret) {
-		LOG_ERR("Failed to switch card to HS mode");
+		LOG_ERROR("Failed to switch card to HS mode");
 		return ret;
 	}
 	if (card->host_props.bus_4_bit_support && (card->flags & SD_4BITS_WIDTH)) {
 		/* Raise bus width to 4 bits */
 		ret = sdmmc_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
 		if (ret) {
-			LOG_ERR("Failed to change card bus width to 4 bits");
+			LOG_ERROR("Failed to change card bus width to 4 bits");
 			return ret;
 		}
 	}
@@ -653,7 +653,7 @@ int sdmmc_card_init(struct sd_card *card)
 	/* Send SD OCR to card to initialize it */
 	ret = sdmmc_send_ocr(card, ocr_arg);
 	if (ret) {
-		LOG_ERR("Failed to query card OCR");
+		LOG_ERROR("Failed to query card OCR");
 		return ret;
 	}
 	if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE) && card->host_props.is_spi) {
@@ -735,7 +735,7 @@ int sdmmc_card_init(struct sd_card *card)
 	}
 	ret = sdhc_set_io(card->sdhc, &card->bus_io);
 	if (ret) {
-		LOG_ERR("Failed to raise bus frequency to 25MHz");
+		LOG_ERROR("Failed to raise bus frequency to 25MHz");
 		return ret;
 	}
 	/* Read SD SCR (SD configuration register),
@@ -749,7 +749,7 @@ int sdmmc_card_init(struct sd_card *card)
 	if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE) && !card->host_props.is_spi) {
 		ret = sdmmc_read_switch(card);
 		if (ret) {
-			LOG_ERR("Failed to read card functions");
+			LOG_ERROR("Failed to read card functions");
 			return ret;
 		}
 	}
@@ -757,14 +757,14 @@ int sdmmc_card_init(struct sd_card *card)
 	    sdmmc_host_uhs(&card->host_props) && !(card->host_props.is_spi)) {
 		ret = sdmmc_init_uhs(card);
 		if (ret) {
-			LOG_ERR("UHS card init failed");
+			LOG_ERROR("UHS card init failed");
 		}
 	} else {
 		if ((card->flags & SD_HIGH_CAPACITY_FLAG) == 0) {
 			/* Standard capacity SDSC card. set block length to 512 */
 			ret = sdmmc_set_blocklen(card, SDMMC_DEFAULT_BLOCK_SIZE);
 			if (ret) {
-				LOG_ERR("Could not set SD blocklen to 512");
+				LOG_ERROR("Could not set SD blocklen to 512");
 				return ret;
 			}
 			card->block_size = 512;
@@ -772,7 +772,7 @@ int sdmmc_card_init(struct sd_card *card)
 		/* Card is not UHS. Try to use high speed mode */
 		ret = sdmmc_init_hs(card);
 		if (ret) {
-			LOG_ERR("HS card init failed");
+			LOG_ERROR("HS card init failed");
 		}
 	}
 	return ret;

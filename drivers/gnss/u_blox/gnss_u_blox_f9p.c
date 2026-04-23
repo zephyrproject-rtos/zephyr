@@ -103,14 +103,14 @@ static int u_blox_f9p_init(const struct device *dev)
 				   UBX_FRAME_SZ(version_get.payload_size),
 				   (void *)&ver, sizeof(ver));
 	if (err != 0) {
-		LOG_ERR("Failed to get Modem Version info: %d", err);
+		LOG_ERROR("Failed to get Modem Version info: %d", err);
 		return err;
 	}
 	LOG_INF("SW Version: %s, HW Version: %s", ver.sw_ver, ver.hw_ver);
 
 	err = gnss_set_fix_rate(dev, cfg->fix_rate_ms);
 	if (err != 0) {
-		LOG_ERR("Failed to set fix-rate: %d", err);
+		LOG_ERROR("Failed to set fix-rate: %d", err);
 		return err;
 	}
 
@@ -120,7 +120,7 @@ static int u_blox_f9p_init(const struct device *dev)
 				       UBX_FRAME_SZ(u_blox_f9p_init_seq[i]->payload_size),
 				       true);
 		if (err < 0) {
-			LOG_ERR("Failed to send init sequence - idx: %d, result: %d", i, err);
+			LOG_ERROR("Failed to send init sequence - idx: %d, result: %d", i, err);
 			return err;
 		}
 	}

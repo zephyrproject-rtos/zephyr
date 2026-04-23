@@ -40,13 +40,13 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		}
 
 		if (sli_si91x_config_clocks_to_mhz_rc() != 0) {
-			LOG_ERR("Failed to configure clocks for sleep mode");
+			LOG_ERROR("Failed to configure clocks for sleep mode");
 			goto out;
 		}
 
 		if (!(M4_ULP_SLP_STATUS_REG & ULP_MODE_SWITCHED_NPSS)) {
 			if (!sl_si91x_is_device_initialized()) {
-				LOG_ERR("Device is not initialized");
+				LOG_ERROR("Device is not initialized");
 				goto out;
 			}
 			sli_si91x_xtal_turn_off_request_from_m4_to_TA();

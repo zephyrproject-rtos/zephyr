@@ -27,7 +27,7 @@ int prometheus_collector_register_metric(struct prometheus_collector *collector,
 					 struct prometheus_metric *metric)
 {
 	if (!collector || !metric) {
-		LOG_ERR("Invalid arguments");
+		LOG_ERROR("Invalid arguments");
 		return -EINVAL;
 	}
 
@@ -137,7 +137,7 @@ const void *prometheus_collector_get_metric(struct prometheus_collector *collect
 	k_mutex_unlock(&collector->lock);
 
 	if (!is_found) {
-		LOG_ERR("Metric %s not found", name);
+		LOG_ERROR("Metric %s not found", name);
 		goto out;
 	}
 
@@ -151,7 +151,7 @@ const void *prometheus_collector_get_metric(struct prometheus_collector *collect
 	case PROMETHEUS_SUMMARY:
 		return CONTAINER_OF(metric, struct prometheus_summary, base);
 	default:
-		LOG_ERR("Invalid metric type");
+		LOG_ERROR("Invalid metric type");
 		break;
 	}
 
@@ -165,7 +165,7 @@ int prometheus_collector_walk_metrics(struct prometheus_collector_walk_context *
 	int ret = 0;
 
 	if (ctx->collector == NULL) {
-		LOG_ERR("Invalid arguments");
+		LOG_ERROR("Invalid arguments");
 		return -EINVAL;
 	}
 

@@ -59,7 +59,20 @@ extern "C" {
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
  */
-#define LOG_ERR(...) Z_LOG(LOG_LEVEL_ERR, __VA_ARGS__)
+#define LOG_ERROR(...) Z_LOG(LOG_LEVEL_ERR, __VA_ARGS__)
+
+/**
+ * @brief Writes an ERROR level message to the log.
+ *
+ * @details It's meant to report severe errors, such as those from which it's
+ * not possible to recover.
+ *
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ *
+ * @note This macro will soon be deprecated. Please use @ref LOG_ERROR instead.
+ */
+#define LOG_ERR(...) LOG_ERROR(__VA_ARGS__)
 
 /**
  * @brief Writes a WARNING level message to the log.
@@ -854,7 +867,7 @@ extern struct k_mem_partition k_log_partition;
 #undef LOG_HEXDUMP_INF
 #undef LOG_HEXDUMP_DBG
 
-#define LOG_ERR(...) (void)0
+#define LOG_ERROR(...) (void)0
 #define LOG_WRN(...) (void)0
 #define LOG_DBG(...) (void)0
 #define LOG_INF(...) (void)0

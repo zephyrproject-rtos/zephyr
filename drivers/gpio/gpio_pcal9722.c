@@ -399,7 +399,7 @@ static int gpio_pcal9722_init(const struct device *dev)
 	int rc = 0;
 
 	if (!device_is_ready(cfg->spi.bus)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERROR("SPI bus not ready");
 		goto out;
 	}
 
@@ -412,7 +412,7 @@ static int gpio_pcal9722_init(const struct device *dev)
 
 #if PCAL9722_ENABLE_IRQ_SUPPORT
 	if (!gpio_is_ready_dt(&cfg->gpio_int)) {
-		LOG_ERR("Interrupt GPIO not ready");
+		LOG_ERROR("Interrupt GPIO not ready");
 		rc = -EINVAL;
 		goto out;
 	}
@@ -441,7 +441,7 @@ static int gpio_pcal9722_init(const struct device *dev)
 
 out:
 	if (rc) {
-		LOG_ERR("%s failed to initialize: %d", dev->name, rc);
+		LOG_ERROR("%s failed to initialize: %d", dev->name, rc);
 	}
 
 	return rc;

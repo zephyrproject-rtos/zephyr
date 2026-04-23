@@ -217,7 +217,7 @@ static int rx_rspi_configure(const struct device *dev, const struct spi_config *
 			data->command_word.cpha = RSPI_SPCMD_CPHA_SAMPLE_ODD;
 		} else {
 			/* In slave mode cpha must be 1 */
-			LOG_ERR("Invalid clock phase");
+			LOG_ERROR("Invalid clock phase");
 			return -EINVAL;
 		}
 	}
@@ -246,7 +246,7 @@ static int rx_rspi_configure(const struct device *dev, const struct spi_config *
 			data->command_word.ssl_assert = RSPI_SPCMD_ASSERT_SSL3;
 			break;
 		default:
-			LOG_ERR("Invalid SSL");
+			LOG_ERROR("Invalid SSL");
 			return -EINVAL;
 		}
 	}
@@ -289,7 +289,7 @@ static int rx_rspi_configure(const struct device *dev, const struct spi_config *
 	ret = dtc_renesas_rx_configuration(data->dtc, data->rx_dtc_activation_irq,
 					   &data->rx_dtc_info);
 	if (ret != 0) {
-		LOG_ERR("DTC SPI rx config error");
+		LOG_ERROR("DTC SPI rx config error");
 		dtc_renesas_rx_stop_transfer(data->dtc, data->rx_dtc_activation_irq);
 		return ret;
 	}
@@ -300,7 +300,7 @@ static int rx_rspi_configure(const struct device *dev, const struct spi_config *
 	ret = dtc_renesas_rx_configuration(data->dtc, data->tx_dtc_activation_irq,
 					   &data->tx_dtc_info);
 	if (ret != 0) {
-		LOG_ERR("DTC SPI tx config error");
+		LOG_ERROR("DTC SPI tx config error");
 		dtc_renesas_rx_stop_transfer(data->dtc, data->tx_dtc_activation_irq);
 		return ret;
 	}
@@ -310,7 +310,7 @@ static int rx_rspi_configure(const struct device *dev, const struct spi_config *
 	err = R_RSPI_Open(data->channel_id, &data->channel_setting, data->command_word, spi_cb,
 			  &data->rspi);
 	if (err != RSPI_SUCCESS) {
-		LOG_ERR("R_RSPI_Open error: %d", err);
+		LOG_ERROR("R_RSPI_Open error: %d", err);
 		return -EINVAL;
 	}
 	/* Manually set these bits, because the Open function not */
@@ -501,7 +501,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	data->tcb.do_tx = true;
 	data->tcb.bytes_per_transfer = rspi_get_data_type(data->command_word);
 	if (data->tcb.bytes_per_transfer == 0) {
-		LOG_ERR("Invalid bit length");
+		LOG_ERROR("Invalid bit length");
 		ret = -EINVAL;
 		goto end;
 	}
@@ -535,13 +535,13 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	ret = dtc_renesas_rx_configuration(data->dtc, data->rx_dtc_activation_irq, p_info);
 	if (ret != 0) {
-		LOG_ERR("DTC SPI rx re-config error");
+		LOG_ERROR("DTC SPI rx re-config error");
 		dtc_renesas_rx_stop_transfer(data->dtc, data->rx_dtc_activation_irq);
 		goto end;
 	}
 	ret = dtc_renesas_rx_start_transfer(data->dtc, data->rx_dtc_activation_irq);
 	if (ret != 0) {
-		LOG_ERR("DTC SPI rx start failed");
+		LOG_ERROR("DTC SPI rx start failed");
 		dtc_renesas_rx_stop_transfer(data->dtc, data->rx_dtc_activation_irq);
 		goto end;
 	}
@@ -561,13 +561,13 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	ret = dtc_renesas_rx_configuration(data->dtc, data->tx_dtc_activation_irq, p_info);
 	if (ret != 0) {
-		LOG_ERR("DTC SPI tx re-config error");
+		LOG_ERROR("DTC SPI tx re-config error");
 		dtc_renesas_rx_stop_transfer(data->dtc, data->tx_dtc_activation_irq);
 		goto end;
 	}
 	ret = dtc_renesas_rx_start_transfer(data->dtc, data->tx_dtc_activation_irq);
 	if (ret != 0) {
-		LOG_ERR("DTC SPI tx start failed");
+		LOG_ERROR("DTC SPI tx start failed");
 		dtc_renesas_rx_stop_transfer(data->dtc, data->tx_dtc_activation_irq);
 		goto end;
 	}

@@ -29,7 +29,7 @@ static int pcie_ptm_root_setup(const struct device *dev, uint32_t base)
 
 	cap.raw = pcie_conf_read(config->pcie->bdf, base + PTM_CAP_REG_OFFSET);
 	if ((cap.root == 0) || ((cap.root == 1) && (cap.responder == 0))) {
-		LOG_ERR("PTM root not supported on 0x%x", config->pcie->bdf);
+		LOG_ERROR("PTM root not supported on 0x%x", config->pcie->bdf);
 		return -ENOTSUP;
 	}
 
@@ -50,7 +50,7 @@ static int pcie_ptm_root_init(const struct device *dev)
 
 	reg = pcie_get_ext_cap(config->pcie->bdf, PCIE_EXT_CAP_ID_PTM);
 	if (reg == 0) {
-		LOG_ERR("PTM capability not exposed on 0x%x", config->pcie->bdf);
+		LOG_ERROR("PTM capability not exposed on 0x%x", config->pcie->bdf);
 		return -ENODEV;
 	}
 
@@ -77,13 +77,13 @@ bool pcie_ptm_enable(pcie_bdf_t bdf)
 
 	base = pcie_get_ext_cap(bdf, PCIE_EXT_CAP_ID_PTM);
 	if (base == 0) {
-		LOG_ERR("PTM capability not exposed on 0x%x", bdf);
+		LOG_ERROR("PTM capability not exposed on 0x%x", bdf);
 		return false;
 	}
 
 	cap.raw = pcie_conf_read(bdf, base + PTM_CAP_REG_OFFSET);
 	if (cap.requester == 0) {
-		LOG_ERR("PTM requester not supported on 0x%x", bdf);
+		LOG_ERROR("PTM requester not supported on 0x%x", bdf);
 		return false;
 	}
 

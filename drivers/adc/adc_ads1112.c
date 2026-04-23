@@ -253,7 +253,7 @@ static int ads1112_validate_buffer_size(const struct adc_sequence *sequence)
 	}
 
 	if (sequence->buffer_size < needed) {
-		LOG_ERR("Insufficient buffer %i < %i", sequence->buffer_size, needed);
+		LOG_ERROR("Insufficient buffer %i < %i", sequence->buffer_size, needed);
 		return -ENOMEM;
 	}
 
@@ -263,12 +263,12 @@ static int ads1112_validate_buffer_size(const struct adc_sequence *sequence)
 static int ads1112_validate_sequence(const struct device *dev, const struct adc_sequence *sequence)
 {
 	if (sequence->channels != BIT(0)) {
-		LOG_ERR("Invalid Channel 0x%x", sequence->channels);
+		LOG_ERROR("Invalid Channel 0x%x", sequence->channels);
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("Oversampling not supported");
+		LOG_ERROR("Oversampling not supported");
 		return -EINVAL;
 	}
 
@@ -370,7 +370,7 @@ static int ads1112_init(const struct device *dev)
 
 	rc = ads1112_write_reg(dev, ADS1112_DEFAULT_CONFIG);
 	if (rc) {
-		LOG_ERR("Could not set default config 0x%x", ADS1112_DEFAULT_CONFIG);
+		LOG_ERROR("Could not set default config 0x%x", ADS1112_DEFAULT_CONFIG);
 		return rc;
 	}
 

@@ -214,14 +214,14 @@ static void b91_handle_ack(void)
 	ack_pkt = net_pkt_rx_alloc_with_buffer(data.iface, B91_ACK_FRAME_LEN,
 					       NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
-		LOG_ERR("No free packet available.");
+		LOG_ERROR("No free packet available.");
 		return;
 	}
 
 	/* update packet data */
 	if (net_pkt_write(ack_pkt, data.rx_buffer + B91_PAYLOAD_OFFSET,
 			  B91_ACK_FRAME_LEN) < 0) {
-		LOG_ERR("Failed to write to a packet.");
+		LOG_ERROR("Failed to write to a packet.");
 		goto out;
 	}
 
@@ -280,7 +280,7 @@ static void b91_rf_rx_isr(void)
 
 		/* check length */
 		if ((length < B91_PAYLOAD_MIN) || (length > B91_PAYLOAD_MAX)) {
-			LOG_ERR("Invalid length\n");
+			LOG_ERROR("Invalid length\n");
 			goto exit;
 		}
 
@@ -311,13 +311,13 @@ static void b91_rf_rx_isr(void)
 		pkt = net_pkt_rx_alloc_with_buffer(data.iface, length,
 						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
-			LOG_ERR("No pkt available");
+			LOG_ERROR("No pkt available");
 			goto exit;
 		}
 
 		/* update packet data */
 		if (net_pkt_write(pkt, payload, length)) {
-			LOG_ERR("Failed to write to a packet.");
+			LOG_ERROR("Failed to write to a packet.");
 			net_pkt_unref(pkt);
 			goto exit;
 		}
@@ -328,7 +328,7 @@ static void b91_rf_rx_isr(void)
 		/* transfer data to NET stack */
 		status = net_recv_data(data.iface, pkt);
 		if (status < 0) {
-			LOG_ERR("RCV Packet dropped by NET stack: %d", status);
+			LOG_ERROR("RCV Packet dropped by NET stack: %d", status);
 			net_pkt_unref(pkt);
 		}
 	}

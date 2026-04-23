@@ -78,7 +78,7 @@ static int nxp_hscmp_set_trigger(const struct device *dev,
 		data->interrupt_mask = HSCMP_IER_CFR_IE_MASK | HSCMP_IER_CFF_IE_MASK;
 		break;
 	default:
-		LOG_ERR("Invalid trigger type.");
+		LOG_ERROR("Invalid trigger type.");
 		return -EINVAL;
 	}
 
@@ -185,48 +185,48 @@ static int nxp_hscmp_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock device is not ready");
+		LOG_ERROR("Clock device is not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret != 0) {
-		LOG_ERR("Device clock turn on failed (%d)", ret);
+		LOG_ERROR("Device clock turn on failed (%d)", ret);
 		return ret;
 	}
 
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("Reset device is not ready");
+		LOG_ERROR("Reset device is not ready");
 		return -ENODEV;
 	}
 
 	ret = reset_line_assert(config->reset.dev, config->reset.id);
 	if (ret != 0) {
-		LOG_ERR("Failed to assert reset line (%d)", ret);
+		LOG_ERROR("Failed to assert reset line (%d)", ret);
 		return ret;
 	}
 
 	ret = reset_line_deassert(config->reset.dev, config->reset.id);
 	if (ret != 0) {
-		LOG_ERR("Failed to deassert reset line (%d)", ret);
+		LOG_ERROR("Failed to deassert reset line (%d)", ret);
 		return ret;
 	}
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure pins (%d)", ret);
+		LOG_ERROR("Failed to configure pins (%d)", ret);
 		return ret;
 	}
 
 	if (regulator != NULL) {
 		ret = regulator_enable(regulator);
 		if (ret) {
-			LOG_ERR("Failed to enable regulator (%d)", ret);
+			LOG_ERROR("Failed to enable regulator (%d)", ret);
 			return ret;
 		}
 		ret = regulator_set_voltage(regulator, vref_uv, vref_uv);
 			if (ret < 0) {
-				LOG_ERR("Failed to set regulator voltage (%d)", ret);
+				LOG_ERROR("Failed to set regulator voltage (%d)", ret);
 				return ret;
 			}
 	}

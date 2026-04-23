@@ -31,7 +31,7 @@ static int wdg_smartbond_setup(const struct device *dev, uint8_t options)
 	ARG_UNUSED(dev);
 
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		LOG_ERR("Watchdog pause in sleep is not supported");
+		LOG_ERROR("Watchdog pause in sleep is not supported");
 		return -ENOTSUP;
 	}
 	return 0;
@@ -79,7 +79,7 @@ static int wdg_smartbond_install_timeout(const struct device *dev,
 
 	if (reload_val < 1 || reload_val >= 0x2000 || config->window.min != 0) {
 		/* Out of range supported by watchdog */
-		LOG_ERR("Watchdog timeout out of range");
+		LOG_ERROR("Watchdog timeout out of range");
 		return -EINVAL;
 	}
 #if CONFIG_WDT_SMARTBOND_NMI

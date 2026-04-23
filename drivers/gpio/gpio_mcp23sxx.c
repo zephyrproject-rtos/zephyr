@@ -55,7 +55,7 @@ static int mcp23sxx_read_port_regs(const struct device *dev, uint8_t reg, uint16
 
 	ret = spi_transceive_dt(&config->bus.spi, &tx, &rx);
 	if (ret < 0) {
-		LOG_ERR("spi_transceive FAIL %d\n", ret);
+		LOG_ERROR("spi_transceive FAIL %d\n", ret);
 		return ret;
 	}
 
@@ -94,7 +94,7 @@ static int mcp23sxx_write_port_regs(const struct device *dev, uint8_t reg, uint1
 
 	ret = spi_write_dt(&config->bus.spi, &tx);
 	if (ret < 0) {
-		LOG_ERR("spi_write FAIL %d\n", ret);
+		LOG_ERROR("spi_write FAIL %d\n", ret);
 		return ret;
 	}
 
@@ -106,7 +106,7 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 	const struct mcp23xxx_config *config = dev->config;
 
 	if (!spi_is_ready_dt(&config->bus.spi)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.spi.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->bus.spi.bus->name);
 		return -ENODEV;
 	}
 

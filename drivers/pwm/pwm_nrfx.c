@@ -118,7 +118,7 @@ static bool pwm_period_check_and_set(const struct device *dev,
 	 * the output for that channel.
 	 */
 	if ((data->pwm_needed & ~BIT(channel)) != 0) {
-		LOG_ERR("Incompatible period.");
+		LOG_ERROR("Incompatible period.");
 		return false;
 	}
 
@@ -143,7 +143,7 @@ static bool pwm_period_check_and_set(const struct device *dev,
 		++prescaler;
 	} while (prescaler <= PWM_PRESCALER_PRESCALER_Msk);
 
-	LOG_ERR("Prescaler for period_cycles %u not found.", period_cycles);
+	LOG_ERROR("Prescaler for period_cycles %u not found.", period_cycles);
 	return false;
 }
 
@@ -183,7 +183,7 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 	bool needs_pwm = false;
 
 	if (channel >= NRF_PWM_CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel: %u.", channel);
+		LOG_ERROR("Invalid channel: %u.", channel);
 		return -EINVAL;
 	}
 
@@ -263,7 +263,7 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 		int ret = stop_pwm(dev);
 
 		if (ret < 0) {
-			LOG_ERR("PWM stop failed: %d", ret);
+			LOG_ERROR("PWM stop failed: %d", ret);
 			return ret;
 		}
 
@@ -347,7 +347,7 @@ static int pwm_suspend(const struct device *dev)
 	int ret = stop_pwm(dev);
 
 	if (ret < 0) {
-		LOG_ERR("PWM stop failed: %d", ret);
+		LOG_ERROR("PWM stop failed: %d", ret);
 		return ret;
 	}
 
@@ -393,7 +393,7 @@ static int pwm_nrfx_init(const struct device *dev)
 
 	err = nrfx_pwm_init(&data->pwm, &config->initial_config, pwm_handler, dev->data);
 	if (err < 0) {
-		LOG_ERR("Failed to initialize device: %s", dev->name);
+		LOG_ERROR("Failed to initialize device: %s", dev->name);
 		return err;
 	}
 

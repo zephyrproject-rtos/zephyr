@@ -287,7 +287,7 @@ static int nxp_s32_qspi_read_status_register(const struct device *dev,
 		lut_idx = QSPI_LUT_IDX(QSPI_SEQ_RDSR2);
 		break;
 	default:
-		LOG_ERR("Reading SR%u is not supported", reg_num);
+		LOG_ERROR("Reading SR%u is not supported", reg_num);
 		return -EINVAL;
 	}
 
@@ -295,7 +295,7 @@ static int nxp_s32_qspi_read_status_register(const struct device *dev,
 
 	status = Qspi_Ip_RunReadCommand(data->instance, lut_idx, 0U, val, NULL, sizeof(*val));
 	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Failed to read SR%u (%d)", reg_num, status);
+		LOG_ERROR("Failed to read SR%u (%d)", reg_num, status);
 		ret = -EIO;
 	}
 
@@ -315,7 +315,7 @@ static int nxp_s32_qspi_write_enable(const struct device *dev)
 
 	status = Qspi_Ip_RunCommand(data->instance, memory_cfg->statusConfig.writeEnableSRLut, 0U);
 	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Failed to enable SR write (%d)", status);
+		LOG_ERROR("Failed to enable SR write (%d)", status);
 		ret = -EIO;
 	}
 
@@ -380,7 +380,7 @@ static int nxp_s32_qspi_write_status_register(const struct device *dev,
 		/* Wait for the write command to complete */
 		ret = nxp_s32_qspi_wait_until_ready(dev);
 	} else {
-		LOG_ERR("Failed to write to SR%u (%d)", reg_num, status);
+		LOG_ERROR("Failed to write to SR%u (%d)", reg_num, status);
 		ret = -EIO;
 	}
 
@@ -453,7 +453,7 @@ static int nxp_s32_qspi_set_quad_mode(const struct device *dev, bool enabled)
 
 	qe_state = ((sr_val & qe_mask) != 0U);
 	if (qe_state != enabled) {
-		LOG_ERR("Failed to %s Quad mode", enabled ? "enable" : "disable");
+		LOG_ERROR("Failed to %s Quad mode", enabled ? "enable" : "disable");
 		return -EIO;
 	}
 
@@ -473,7 +473,7 @@ static int nxp_s32_qspi_sfdp_read(const struct device *dev, off_t offset, void *
 	status = Qspi_Ip_RunReadCommand(data->instance, data->read_sfdp_lut_idx,
 					(uint32_t)offset, (uint8_t *)buf, NULL, (uint32_t)len);
 	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Failed to read SFDP at 0x%lx (%d)", offset, status);
+		LOG_ERROR("Failed to read SFDP at 0x%lx (%d)", offset, status);
 		ret = -EIO;
 	}
 
@@ -499,7 +499,7 @@ static int nxp_s32_qspi_sfdp_config(const struct device *dev)
 
 	status = Qspi_Ip_ReadSfdp(memory_cfg, &data->memory_conn_cfg);
 	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Fail to read SFDP (%d)", status);
+		LOG_ERROR("Fail to read SFDP (%d)", status);
 		return -EIO;
 	}
 
@@ -569,7 +569,7 @@ static int nxp_s32_qspi_init(const struct device *dev)
 			(const Qspi_Ip_MemoryConfigType *)memory_cfg,
 			(const Qspi_Ip_MemoryConnectionType *)&data->memory_conn_cfg);
 	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Fail to init memory device %d (%d)", data->instance, status);
+		LOG_ERROR("Fail to init memory device %d (%d)", data->instance, status);
 		return -EIO;
 	}
 
@@ -580,7 +580,7 @@ static int nxp_s32_qspi_init(const struct device *dev)
 	/* Verify connectivity by reading the device ID */
 	ret = nxp_s32_qspi_read_id(dev, jedec_id);
 	if (ret != 0) {
-		LOG_ERR("JEDEC ID read failed (%d)", ret);
+		LOG_ERROR("JEDEC ID read failed (%d)", ret);
 		return -ENODEV;
 	}
 
@@ -589,11 +589,11 @@ static int nxp_s32_qspi_init(const struct device *dev)
 	 * to verify we are talking to the correct device.
 	 */
 	if (memcmp(jedec_id, memory_cfg->readIdSettings.readIdExpected, sizeof(jedec_id)) != 0) {
-		LOG_ERR("Device id %02x %02x %02x does not match config %02x %02x %02x",
-			jedec_id[0], jedec_id[1], jedec_id[2],
-			memory_cfg->readIdSettings.readIdExpected[0],
-			memory_cfg->readIdSettings.readIdExpected[1],
-			memory_cfg->readIdSettings.readIdExpected[2]);
+		LOG_ERROR("Device id %02x %02x %02x does not match config %02x %02x %02x",
+			  jedec_id[0], jedec_id[1], jedec_id[2],
+			  memory_cfg->readIdSettings.readIdExpected[0],
+			  memory_cfg->readIdSettings.readIdExpected[1],
+			  memory_cfg->readIdSettings.readIdExpected[2]);
 		return -EINVAL;
 	}
 

@@ -133,7 +133,7 @@ static uint32_t mcux_lpit_get_frequency(const struct device *dev)
 	uint32_t clock_rate;
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_rate)) {
-		LOG_ERR("Failed to get clock rate");
+		LOG_ERROR("Failed to get clock rate");
 		return 0;
 	}
 
@@ -174,7 +174,7 @@ static int mcux_lpit_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock control device not ready");
+		LOG_ERROR("Clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -183,7 +183,7 @@ static int mcux_lpit_init(const struct device *dev)
 		/* Check if error is due to lack of support */
 		if (ret != -ENOSYS) {
 			/* Real error occurred */
-			LOG_ERR("Failed to configure clock: %d", ret);
+			LOG_ERROR("Failed to configure clock: %d", ret);
 			return ret;
 		}
 	}
@@ -191,7 +191,7 @@ static int mcux_lpit_init(const struct device *dev)
 #if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable clock: %d", ret);
+		LOG_ERROR("Failed to enable clock: %d", ret);
 		return ret;
 	}
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */

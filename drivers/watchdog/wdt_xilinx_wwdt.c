@@ -126,14 +126,14 @@ static int wdt_xilinx_wwdt_install_timeout(const struct device *dev,
 
 	closed_window_ms_count = cfg->window.min * ms_count;
 	if (closed_window_ms_count > XWWDT_MAX_COUNT_WINDOW) {
-		LOG_ERR("The closed window timeout is invalid.");
+		LOG_ERROR("The closed window timeout is invalid.");
 		ret = -EINVAL;
 		goto out;
 	}
 
 	open_window_ms_count = timeout_ms_count - closed_window_ms_count;
 	if (open_window_ms_count > XWWDT_MAX_COUNT_WINDOW) {
-		LOG_ERR("The open window timeout is invalid.");
+		LOG_ERROR("The open window timeout is invalid.");
 		ret = -EINVAL;
 		goto out;
 	}
@@ -174,7 +174,7 @@ static int wdt_xilinx_wwdt_feed(const struct device *dev, int channel_id)
 	is_sec_window = (control_status_reg & (uint32_t)XWWDT_ESR_WSW_MASK) >> XWWDT_ESR_WSW_SHIFT;
 
 	if (is_sec_window != 1) {
-		LOG_ERR("Feed in Closed window is not supported.");
+		LOG_ERROR("Feed in Closed window is not supported.");
 		ret = -ENOTSUP;
 		goto out;
 	}
@@ -209,7 +209,7 @@ static int wdt_xilinx_wwdt_disable(const struct device *dev)
 				   XWWDT_ESR_WSW_SHIFT;
 
 	if (is_sec_window != 1)	{
-		LOG_ERR("Disabling WWDT in closed window is not allowed.");
+		LOG_ERROR("Disabling WWDT in closed window is not allowed.");
 		ret = -EPERM;
 		goto out;
 	}

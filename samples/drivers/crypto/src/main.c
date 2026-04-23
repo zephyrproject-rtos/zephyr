@@ -105,14 +105,14 @@ int validate_hw_compatibility(const struct device *dev)
 	}
 
 	if ((flags & CAP_SYNC_OPS) == 0U) {
-		LOG_ERR("The app assumes sync semantics. "
-		  "Please rewrite the app accordingly before proceeding");
+		LOG_ERROR("The app assumes sync semantics. "
+			  "Please rewrite the app accordingly before proceeding");
 		return -1;
 	}
 
 	if ((flags & CAP_SEPARATE_IO_BUFS) == 0U) {
-		LOG_ERR("The app assumes distinct IO buffers. "
-		"Please rewrite the app accordingly before proceeding");
+		LOG_ERROR("The app assumes distinct IO buffers. "
+			  "Please rewrite the app accordingly before proceeding");
 		return -1;
 	}
 
@@ -163,17 +163,16 @@ void ecb_mode(const struct device *dev)
 	}
 
 	if (cipher_block_op(&ini, &encrypt)) {
-		LOG_ERR("ECB mode ENCRYPT - Failed");
+		LOG_ERROR("ECB mode ENCRYPT - Failed");
 		goto out;
 	}
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
 	if (memcmp(encrypt.out_buf, ecb_ciphertext, sizeof(ecb_ciphertext))) {
-		LOG_ERR("ECB mode ENCRYPT - Mismatch between expected and "
-			    "returned cipher text");
-		print_buffer_comparison(ecb_ciphertext, encrypt.out_buf,
-					sizeof(ecb_ciphertext));
+		LOG_ERROR("ECB mode ENCRYPT - Mismatch between expected and "
+			  "returned cipher text");
+		print_buffer_comparison(ecb_ciphertext, encrypt.out_buf, sizeof(ecb_ciphertext));
 		goto out;
 	}
 
@@ -187,17 +186,16 @@ void ecb_mode(const struct device *dev)
 	}
 
 	if (cipher_block_op(&ini, &decrypt)) {
-		LOG_ERR("ECB mode DECRYPT - Failed");
+		LOG_ERROR("ECB mode DECRYPT - Failed");
 		goto out;
 	}
 
 	LOG_INF("Output length (decryption): %d", decrypt.out_len);
 
 	if (memcmp(decrypt.out_buf, ecb_plaintext, sizeof(ecb_plaintext))) {
-		LOG_ERR("ECB mode DECRYPT - Mismatch between plaintext and "
-			    "decrypted cipher text");
-		print_buffer_comparison(ecb_plaintext, decrypt.out_buf,
-					sizeof(ecb_plaintext));
+		LOG_ERROR("ECB mode DECRYPT - Mismatch between plaintext and "
+			  "decrypted cipher text");
+		print_buffer_comparison(ecb_plaintext, decrypt.out_buf, sizeof(ecb_plaintext));
 		goto out;
 	}
 
@@ -250,17 +248,16 @@ void cbc_mode(const struct device *dev)
 	}
 
 	if (cipher_cbc_op(&ini, &encrypt, iv)) {
-		LOG_ERR("CBC mode ENCRYPT - Failed");
+		LOG_ERROR("CBC mode ENCRYPT - Failed");
 		goto out;
 	}
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
 	if (memcmp(encrypt.out_buf, cbc_ciphertext, sizeof(cbc_ciphertext))) {
-		LOG_ERR("CBC mode ENCRYPT - Mismatch between expected and "
-			    "returned cipher text");
-		print_buffer_comparison(cbc_ciphertext, encrypt.out_buf,
-					sizeof(cbc_ciphertext));
+		LOG_ERROR("CBC mode ENCRYPT - Mismatch between expected and "
+			  "returned cipher text");
+		print_buffer_comparison(cbc_ciphertext, encrypt.out_buf, sizeof(cbc_ciphertext));
 		goto out;
 	}
 
@@ -274,17 +271,16 @@ void cbc_mode(const struct device *dev)
 	}
 
 	if (cipher_cbc_op(&ini, &decrypt, encrypted)) {
-		LOG_ERR("CBC mode DECRYPT - Failed");
+		LOG_ERROR("CBC mode DECRYPT - Failed");
 		goto out;
 	}
 
 	LOG_INF("Output length (decryption): %d", decrypt.out_len);
 
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
-		LOG_ERR("CBC mode DECRYPT - Mismatch between plaintext and "
-			    "decrypted cipher text");
-		print_buffer_comparison(plaintext, decrypt.out_buf,
-					sizeof(plaintext));
+		LOG_ERROR("CBC mode DECRYPT - Mismatch between plaintext and "
+			  "decrypted cipher text");
+		print_buffer_comparison(plaintext, decrypt.out_buf, sizeof(plaintext));
 		goto out;
 	}
 
@@ -339,17 +335,16 @@ void ctr_mode(const struct device *dev)
 	}
 
 	if (cipher_ctr_op(&ini, &encrypt, iv)) {
-		LOG_ERR("CTR mode ENCRYPT - Failed");
+		LOG_ERROR("CTR mode ENCRYPT - Failed");
 		goto out;
 	}
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
 	if (memcmp(encrypt.out_buf, ctr_ciphertext, sizeof(ctr_ciphertext))) {
-		LOG_ERR("CTR mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(ctr_ciphertext, encrypt.out_buf,
-					sizeof(ctr_ciphertext));
+		LOG_ERROR("CTR mode ENCRYPT - Mismatch between expected "
+			  "and returned cipher text");
+		print_buffer_comparison(ctr_ciphertext, encrypt.out_buf, sizeof(ctr_ciphertext));
 		goto out;
 	}
 
@@ -363,17 +358,16 @@ void ctr_mode(const struct device *dev)
 	}
 
 	if (cipher_ctr_op(&ini, &decrypt, iv)) {
-		LOG_ERR("CTR mode DECRYPT - Failed");
+		LOG_ERROR("CTR mode DECRYPT - Failed");
 		goto out;
 	}
 
 	LOG_INF("Output length (decryption): %d", decrypt.out_len);
 
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
-		LOG_ERR("CTR mode DECRYPT - Mismatch between plaintext "
-			    "and decrypted cipher text");
-		print_buffer_comparison(plaintext,
-					decrypt.out_buf, sizeof(plaintext));
+		LOG_ERROR("CTR mode DECRYPT - Mismatch between plaintext "
+			  "and decrypted cipher text");
+		print_buffer_comparison(plaintext, decrypt.out_buf, sizeof(plaintext));
 		goto out;
 	}
 
@@ -442,17 +436,16 @@ void ccm_mode(const struct device *dev)
 
 	ccm_op.pkt = &encrypt;
 	if (cipher_ccm_op(&ini, &ccm_op, ccm_nonce)) {
-		LOG_ERR("CCM mode ENCRYPT - Failed");
+		LOG_ERROR("CCM mode ENCRYPT - Failed");
 		goto out;
 	}
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
 	if (memcmp(encrypt.out_buf, ccm_expected, sizeof(ccm_expected))) {
-		LOG_ERR("CCM mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(ccm_expected,
-					encrypt.out_buf, sizeof(ccm_expected));
+		LOG_ERROR("CCM mode ENCRYPT - Mismatch between expected "
+			  "and returned cipher text");
+		print_buffer_comparison(ccm_expected, encrypt.out_buf, sizeof(ccm_expected));
 		goto out;
 	}
 
@@ -467,17 +460,16 @@ void ccm_mode(const struct device *dev)
 
 	ccm_op.pkt = &decrypt;
 	if (cipher_ccm_op(&ini, &ccm_op, ccm_nonce)) {
-		LOG_ERR("CCM mode DECRYPT - Failed");
+		LOG_ERROR("CCM mode DECRYPT - Failed");
 		goto out;
 	}
 
 	LOG_INF("Output length (decryption): %d", decrypt.out_len);
 
 	if (memcmp(decrypt.out_buf, ccm_data, sizeof(ccm_data))) {
-		LOG_ERR("CCM mode DECRYPT - Mismatch between plaintext "
-			"and decrypted cipher text");
-		print_buffer_comparison(ccm_data,
-					decrypt.out_buf, sizeof(ccm_data));
+		LOG_ERROR("CCM mode DECRYPT - Mismatch between plaintext "
+			  "and decrypted cipher text");
+		print_buffer_comparison(ccm_data, decrypt.out_buf, sizeof(ccm_data));
 		goto out;
 	}
 
@@ -548,17 +540,16 @@ void gcm_mode(const struct device *dev)
 
 	gcm_op.pkt = &encrypt;
 	if (cipher_gcm_op(&ini, &gcm_op, gcm_nonce)) {
-		LOG_ERR("GCM mode ENCRYPT - Failed");
+		LOG_ERROR("GCM mode ENCRYPT - Failed");
 		goto out;
 	}
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
 	if (memcmp(encrypt.out_buf, gcm_expected, sizeof(gcm_expected))) {
-		LOG_ERR("GCM mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(gcm_expected,
-					encrypt.out_buf, sizeof(gcm_expected));
+		LOG_ERROR("GCM mode ENCRYPT - Mismatch between expected "
+			  "and returned cipher text");
+		print_buffer_comparison(gcm_expected, encrypt.out_buf, sizeof(gcm_expected));
 		goto out;
 	}
 
@@ -573,17 +564,16 @@ void gcm_mode(const struct device *dev)
 
 	gcm_op.pkt = &decrypt;
 	if (cipher_gcm_op(&ini, &gcm_op, gcm_nonce)) {
-		LOG_ERR("GCM mode DECRYPT - Failed");
+		LOG_ERROR("GCM mode DECRYPT - Failed");
 		goto out;
 	}
 
 	LOG_INF("Output length (decryption): %d", decrypt.out_len);
 
 	if (memcmp(decrypt.out_buf, gcm_data, sizeof(gcm_data))) {
-		LOG_ERR("GCM mode DECRYPT - Mismatch between plaintext "
-			"and decrypted cipher text");
-		print_buffer_comparison(gcm_data,
-					decrypt.out_buf, sizeof(gcm_data));
+		LOG_ERROR("GCM mode DECRYPT - Mismatch between plaintext "
+			  "and decrypted cipher text");
+		print_buffer_comparison(gcm_data, decrypt.out_buf, sizeof(gcm_data));
 		goto out;
 	}
 
@@ -603,14 +593,14 @@ int main(void)
 	const struct device *dev = device_get_binding(CRYPTO_DRV_NAME);
 
 	if (!dev) {
-		LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
+		LOG_ERROR("%s pseudo device not found", CRYPTO_DRV_NAME);
 		return 0;
 	}
 #else
 	const struct device *const dev = DEVICE_DT_GET_ONE(CRYPTO_DEV_COMPAT);
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("Crypto device is not ready\n");
+		LOG_ERROR("Crypto device is not ready\n");
 		return 0;
 	}
 #endif
@@ -625,7 +615,7 @@ int main(void)
 	int i;
 
 	if (validate_hw_compatibility(dev)) {
-		LOG_ERR("Incompatible h/w");
+		LOG_ERROR("Incompatible h/w");
 		return 0;
 	}
 

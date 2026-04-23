@@ -94,14 +94,14 @@ static void lan865x_iface_init(struct net_if *iface)
 	/* Increase the maximum accepted frame size to 1536 bytes. */
 	ret = oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR, LAN865x_MAC_NCFGR_MAXFS);
 	if (ret < 0) {
-		LOG_ERR("LAN865x VLAN MAXFS config failed: %d", ret);
+		LOG_ERROR("LAN865x VLAN MAXFS config failed: %d", ret);
 		return;
 	}
 #endif
 
 	ret = lan865x_enable_sync(dev);
 	if (ret) {
-		LOG_ERR("LAN865x sync enable failed: %d\n", ret);
+		LOG_ERROR("LAN865x sync enable failed: %d\n", ret);
 		return;
 	}
 
@@ -173,7 +173,7 @@ static int lan865x_wait_for_reset(const struct device *dev)
 	}
 
 	if (i == LAN865X_RESET_TIMEOUT) {
-		LOG_ERR("LAN865x reset timeout reached!");
+		LOG_ERROR("LAN865x reset timeout reached!");
 		return -ENODEV;
 	}
 
@@ -306,7 +306,7 @@ static void lan865x_read_chunks(const struct device *dev)
 
 	pkt = net_pkt_rx_alloc(K_MSEC(CONFIG_ETH_LAN865X_TIMEOUT));
 	if (!pkt) {
-		LOG_ERR("OA RX: Could not allocate packet!");
+		LOG_ERROR("OA RX: Could not allocate packet!");
 		return;
 	}
 
@@ -322,7 +322,7 @@ static void lan865x_read_chunks(const struct device *dev)
 	/* Feed buffer frame to IP stack */
 	ret = net_recv_data(ctx->iface, pkt);
 	if (ret < 0) {
-		LOG_ERR("OA RX: Could not process packet (%d)!", ret);
+		LOG_ERROR("OA RX: Could not process packet (%d)!", ret);
 		net_pkt_unref(pkt);
 	}
 	k_sem_give(&ctx->tx_rx_sem);
@@ -382,19 +382,19 @@ static int lan865x_init(const struct device *dev)
 		 "SPI frequency exceeds supported maximum\n");
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("SPI bus %s not ready", cfg->spi.bus->name);
+		LOG_ERROR("SPI bus %s not ready", cfg->spi.bus->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->interrupt)) {
-		LOG_ERR("Interrupt GPIO device %s is not ready", cfg->interrupt.port->name);
+		LOG_ERROR("Interrupt GPIO device %s is not ready", cfg->interrupt.port->name);
 		return -ENODEV;
 	}
 
 	/* Check SPI communication after reset */
 	ret = lan865x_check_spi(dev);
 	if (ret < 0) {
-		LOG_ERR("SPI communication not working, %d", ret);
+		LOG_ERROR("SPI communication not working, %d", ret);
 		return ret;
 	}
 
@@ -403,7 +403,7 @@ static int lan865x_init(const struct device *dev)
 	 */
 	ret = gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure interrupt GPIO, %d", ret);
+		LOG_ERROR("Failed to configure interrupt GPIO, %d", ret);
 		return ret;
 	}
 
@@ -412,7 +412,7 @@ static int lan865x_init(const struct device *dev)
 
 	ret = gpio_add_callback(cfg->interrupt.port, &ctx->gpio_int_callback);
 	if (ret < 0) {
-		LOG_ERR("Failed to add INT callback, %d", ret);
+		LOG_ERROR("Failed to add INT callback, %d", ret);
 		return ret;
 	}
 
@@ -427,13 +427,13 @@ static int lan865x_init(const struct device *dev)
 
 	/* Perform HW reset - 'rst-gpios' required property set in DT */
 	if (!gpio_is_ready_dt(&cfg->reset)) {
-		LOG_ERR("Reset GPIO device %s is not ready", cfg->reset.port->name);
+		LOG_ERROR("Reset GPIO device %s is not ready", cfg->reset.port->name);
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_INACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure reset GPIO, %d", ret);
+		LOG_ERROR("Failed to configure reset GPIO, %d", ret);
 		return ret;
 	}
 
@@ -441,7 +441,7 @@ static int lan865x_init(const struct device *dev)
 	if (ret == -ENODATA) {
 		LOG_DBG("No MAC address configured for %s", dev->name);
 	} else if (ret < 0) {
-		LOG_ERR("Failed to load MAC address (%d)", ret);
+		LOG_ERROR("Failed to load MAC address (%d)", ret);
 		return ret;
 	}
 
@@ -464,7 +464,7 @@ static int lan865x_port_send(const struct device *dev, struct net_pkt *pkt)
 
 	k_sem_give(&ctx->tx_rx_sem);
 	if (ret < 0) {
-		LOG_ERR("TX transmission error, %d", ret);
+		LOG_ERROR("TX transmission error, %d", ret);
 		eth_stats_update_errors_tx(net_pkt_iface(pkt));
 		return ret;
 	}

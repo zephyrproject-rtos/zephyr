@@ -107,7 +107,7 @@ void bt_mesh_sseq_pending_store(void)
 	}
 
 	if (err) {
-		LOG_ERR("Failed to %s SSeq %s value", (sseq_out == 0 ? "delete" : "store"), path);
+		LOG_ERROR("Failed to %s SSeq %s value", (sseq_out == 0 ? "delete" : "store"), path);
 	} else {
 		LOG_DBG("%s %s value", (sseq_out == 0 ? "Deleted" : "Stored"), path);
 	}
@@ -126,7 +126,7 @@ static int sseq_set(const char *name, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &sseq_out, sizeof(sseq_out));
 	if (err) {
-		LOG_ERR("Failed to set \'sseq\'");
+		LOG_ERROR("Failed to set \'sseq\'");
 		return err;
 	}
 
@@ -149,7 +149,7 @@ static bool sol_pdu_decrypt(struct bt_mesh_subnet *sub, void *data)
 
 	for (i = 0; i < ARRAY_SIZE(sub->keys); i++) {
 		if (!sub->keys[i].valid) {
-			LOG_ERR("invalid keys %d", i);
+			LOG_ERROR("invalid keys %d", i);
 			continue;
 		}
 
@@ -275,18 +275,18 @@ int bt_mesh_proxy_solicit(uint16_t net_idx)
 
 	sub = bt_mesh_subnet_get(net_idx);
 	if (!sub) {
-		LOG_ERR("No subnet with net_idx %d", net_idx);
+		LOG_ERROR("No subnet with net_idx %d", net_idx);
 		return -EINVAL;
 	}
 
 	if (sub->sol_tx == true) {
-		LOG_ERR("Solicitation already scheduled for this subnet");
+		LOG_ERROR("Solicitation already scheduled for this subnet");
 		return -EALREADY;
 	}
 
 	/* SSeq reached its maximum value */
 	if (sseq_out > 0xFFFFFF) {
-		LOG_ERR("SSeq out of range");
+		LOG_ERROR("SSeq out of range");
 		return -EOVERFLOW;
 	}
 
@@ -316,14 +316,14 @@ static int sol_pdu_create(struct bt_mesh_subnet *sub, struct net_buf_simple *pdu
 				  pdu, 0, BT_MESH_NONCE_SOLICITATION);
 
 	if (err) {
-		LOG_ERR("Encryption failed, err=%d", err);
+		LOG_ERROR("Encryption failed, err=%d", err);
 		return err;
 	}
 
 	err = bt_mesh_net_obfuscate(pdu->data, 0,
 				    &sub->keys[SUBNET_KEY_TX_IDX(sub)].msg.privacy);
 	if (err) {
-		LOG_ERR("Obfuscation failed, err=%d", err);
+		LOG_ERROR("Obfuscation failed, err=%d", err);
 		return err;
 	}
 
@@ -344,7 +344,7 @@ static int srpl_set(const char *name, size_t len_rd,
 	uint32_t sseq;
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -365,7 +365,7 @@ static int srpl_set(const char *name, size_t len_rd,
 	if (!entry) {
 		entry = srpl_find_by_addr(BT_MESH_ADDR_UNASSIGNED);
 		if (!entry) {
-			LOG_ERR("Unable to allocate SRPL entry for 0x%04x", ssrc);
+			LOG_ERROR("Unable to allocate SRPL entry for 0x%04x", ssrc);
 			return -ENOMEM;
 		}
 	}
@@ -376,7 +376,7 @@ static int srpl_set(const char *name, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &sseq, sizeof(sseq));
 	if (err) {
-		LOG_ERR("Failed to set \'sseq\'");
+		LOG_ERROR("Failed to set \'sseq\'");
 		return err;
 	}
 
@@ -425,7 +425,7 @@ static void srpl_store(struct srpl_entry *entry)
 
 	err = settings_save_one(path, &entry->sseq, sizeof(entry->sseq));
 	if (err) {
-		LOG_ERR("Failed to store RPL %s value", path);
+		LOG_ERROR("Failed to store RPL %s value", path);
 	} else {
 		LOG_DBG("Stored RPL %s value", path);
 	}
@@ -512,7 +512,7 @@ int bt_mesh_sol_send(void)
 
 	/* SSeq reached its maximum value */
 	if (sseq_out > 0xFFFFFF) {
-		LOG_ERR("SSeq out of range");
+		LOG_ERROR("SSeq out of range");
 		sub->sol_tx = false;
 		return -EOVERFLOW;
 	}
@@ -523,7 +523,7 @@ int bt_mesh_sol_send(void)
 
 	err = sol_pdu_create(sub, &pdu);
 	if (err) {
-		LOG_ERR("Failed to create Solicitation PDU, err=%d", err);
+		LOG_ERROR("Failed to create Solicitation PDU, err=%d", err);
 		return err;
 	}
 
@@ -539,7 +539,7 @@ int bt_mesh_sol_send(void)
 	err = bt_mesh_adv_bt_data_send(CONFIG_BT_MESH_SOL_ADV_XMIT,
 				       adv_int, ad, 3);
 	if (err) {
-		LOG_ERR("Failed to advertise Solicitation PDU, err=%d", err);
+		LOG_ERROR("Failed to advertise Solicitation PDU, err=%d", err);
 
 		sub->sol_tx = false;
 

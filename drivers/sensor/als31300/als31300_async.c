@@ -156,7 +156,7 @@ static void als31300_submit_one_shot(const struct device *dev, struct rtio_iodev
 
 	err = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (err < 0 || buf_len < min_buf_len || !buf) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -165,7 +165,7 @@ static void als31300_submit_one_shot(const struct device *dev, struct rtio_iodev
 
 	err = als31300_encode(dev, cfg, 0, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to encode sensor data");
+		LOG_ERROR("Failed to encode sensor data");
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -175,7 +175,7 @@ static void als31300_submit_one_shot(const struct device *dev, struct rtio_iodev
 	err = als31300_prep_i2c_read_async(conf, ALS31300_REG_DATA_28, edata->payload,
 					   sizeof(edata->payload), &read_sqe);
 	if (err < 0) {
-		LOG_ERR("Failed to prepare async read operation");
+		LOG_ERROR("Failed to prepare async read operation");
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -184,7 +184,7 @@ static void als31300_submit_one_shot(const struct device *dev, struct rtio_iodev
 	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(conf->bus.ctx);
 
 	if (!complete_sqe) {
-		LOG_ERR("Failed to acquire completion SQE");
+		LOG_ERROR("Failed to acquire completion SQE");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		rtio_sqe_drop_all(conf->bus.ctx);
 		return;

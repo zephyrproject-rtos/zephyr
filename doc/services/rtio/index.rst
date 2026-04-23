@@ -173,7 +173,7 @@ by calling :c:func:`rtio_sqe_rx_buf` like so:
   int rc = rtio_sqe_rx_buff(iodev_sqe, MIN_BUF_LEN, DESIRED_BUF_LEN, &buf, &buf_len);
 
   if (rc != 0) {
-    LOG_ERR("Failed to get buffer of at least %u bytes", MIN_BUF_LEN);
+    LOG_ERROR("Failed to get buffer of at least %u bytes", MIN_BUF_LEN);
     return;
   }
 
@@ -187,7 +187,7 @@ Finally, the consumer will be able to access the allocated buffer via
   int rc = rtio_cqe_get_mempool_buffer(&rtio_context, &cqe, &buf, &buf_len);
 
   if (rc != 0) {
-    LOG_ERR("Failed to get mempool buffer");
+    LOG_ERROR("Failed to get mempool buffer");
     return rc;
   }
 

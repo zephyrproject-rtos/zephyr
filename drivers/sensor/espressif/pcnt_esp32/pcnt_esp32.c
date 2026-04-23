@@ -136,13 +136,13 @@ int pcnt_esp32_init(const struct device *dev)
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret < 0) {
-		LOG_ERR("Could not initialize clock (%d)", ret);
+		LOG_ERROR("Could not initialize clock (%d)", ret);
 		return ret;
 	}
 
 	ret = pcnt_esp32_configure_pinctrl(dev);
 	if (ret < 0) {
-		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
+		LOG_ERROR("PWM pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
@@ -347,7 +347,7 @@ static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_
 			(intr_handler_t)pcnt_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
-		LOG_ERR("pcnt isr registration failed (%d)", ret);
+		LOG_ERROR("pcnt isr registration failed (%d)", ret);
 		return ret;
 	}
 

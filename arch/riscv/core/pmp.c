@@ -287,7 +287,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	__ASSERT((size & (CONFIG_PMP_GRANULARITY - 1)) == 0, "misaligned size");
 
 	if (index >= index_limit) {
-		LOG_ERR("out of PMP slots");
+		LOG_ERROR("out of PMP slots");
 		ok = false;
 	} else if (PMP_TOR_SUPPORTED &&
 		   ((index == 0 && start == 0) ||
@@ -308,7 +308,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 		pmp_n_cfg[index] = perm | PMP_NAPOT;
 		index += 1;
 	} else if (PMP_TOR_SUPPORTED && index + 1 >= index_limit) {
-		LOG_ERR("out of PMP slots");
+		LOG_ERROR("out of PMP slots");
 		ok = false;
 	} else if (PMP_TOR_SUPPORTED) {
 		pmp_addr[index] = PMP_ADDR(start);
@@ -318,7 +318,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 		pmp_n_cfg[index] = perm | PMP_TOR;
 		index += 1;
 	} else {
-		LOG_ERR("inappropriate PMP range (start=%#lx size=%#zx)", start, size);
+		LOG_ERROR("inappropriate PMP range (start=%#lx size=%#zx)", start, size);
 		ok = false;
 	}
 
@@ -571,8 +571,8 @@ static unsigned long mem_attr_pmp_addr[CONFIG_PMP_SLOTS];
 int z_riscv_pmp_change_permissions(size_t region_idx, uint8_t perm)
 {
 	if (perm & ~PMP_PERM_MASK) {
-		LOG_ERR("Invalid PMP permission 0x%x. Only R, W, X (0x%x) are allowed.", perm,
-			PMP_PERM_MASK);
+		LOG_ERROR("Invalid PMP permission 0x%x. Only R, W, X (0x%x) are allowed.", perm,
+			  PMP_PERM_MASK);
 		return -EINVAL;
 	}
 
@@ -582,8 +582,8 @@ int z_riscv_pmp_change_permissions(size_t region_idx, uint8_t perm)
 	num_regions = mem_attr_get_regions(&region);
 
 	if (region_idx >= num_regions) {
-		LOG_ERR("region_idx %zu is out of bounds (num_regions: %zu)", region_idx,
-			num_regions);
+		LOG_ERROR("region_idx %zu is out of bounds (num_regions: %zu)", region_idx,
+			  num_regions);
 		return -EINVAL;
 	}
 
@@ -621,7 +621,7 @@ int z_riscv_pmp_change_permissions(size_t region_idx, uint8_t perm)
 	}
 
 	if (entry_index == -1) {
-		LOG_ERR("PMP entry for address 0x%lx not found", region_start_address);
+		LOG_ERROR("PMP entry for address 0x%lx not found", region_start_address);
 		arch_irq_unlock(key);
 		return -ENOENT;
 	}
@@ -997,7 +997,7 @@ static void resync_pmp_domain(struct k_thread *thread,
 
 		if (part->size < 4) {
 			/* * 4 bytes is the minimum we can map */
-			LOG_ERR("non-empty partition too small");
+			LOG_ERROR("non-empty partition too small");
 			__ASSERT(false, "");
 			continue;
 		}

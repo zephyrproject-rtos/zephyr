@@ -247,12 +247,12 @@ static int rtc_ds3231_modify_settings(const struct device *dev, struct rtc_ds323
 	int err = rtc_ds3231_modify_ctrl(dev, &ctrl, ctrl_mask);
 
 	if (err != 0) {
-		LOG_ERR("Couldn't set control register.");
+		LOG_ERROR("Couldn't set control register.");
 		return -EIO;
 	}
 	err = rtc_ds3231_modify_ctrl_sts(dev, &ctrl_sts, ctrl_sts_mask);
 	if (err != 0) {
-		LOG_ERR("Couldn't set status register.");
+		LOG_ERROR("Couldn't set status register.");
 		return -EIO;
 	}
 	return 0;
@@ -378,11 +378,11 @@ static int rtc_ds3231_rtc_time_to_alarm_buf(const struct rtc_time *tm, int id, c
 					    uint8_t *buf)
 {
 	if ((mask & RTC_ALARM_TIME_MASK_WEEKDAY) && (mask & RTC_ALARM_TIME_MASK_MONTHDAY)) {
-		LOG_ERR("rtc_time_to_alarm_buf: Mask is invalid (%d)!\n", mask);
+		LOG_ERROR("rtc_time_to_alarm_buf: Mask is invalid (%d)!\n", mask);
 		return -EINVAL;
 	}
 	if (id < 0 || id >= ALARM_COUNT) {
-		LOG_ERR("rtc_time_to_alarm_buf: Alarm ID is out of range (%d)!\n", id);
+		LOG_ERROR("rtc_time_to_alarm_buf: Alarm ID is out of range (%d)!\n", id);
 		return -EINVAL;
 	}
 
@@ -690,7 +690,7 @@ static void rtc_ds3231_isw_isr(const struct device *port, struct gpio_callback *
 static int rtc_ds3231_init_isw(const struct rtc_ds3231_conf *config, struct rtc_ds3231_data *data)
 {
 	if (!gpio_is_ready_dt(&config->isw_gpios)) {
-		LOG_ERR("ISW GPIO pin is not ready.");
+		LOG_ERROR("ISW GPIO pin is not ready.");
 		return -ENODEV;
 	}
 
@@ -699,19 +699,19 @@ static int rtc_ds3231_init_isw(const struct rtc_ds3231_conf *config, struct rtc_
 	int err = gpio_pin_configure_dt(&(config->isw_gpios), GPIO_INPUT);
 
 	if (err != 0) {
-		LOG_ERR("Couldn't configure ISW GPIO pin.");
+		LOG_ERROR("Couldn't configure ISW GPIO pin.");
 		return err;
 	}
 	err = gpio_pin_interrupt_configure_dt(&(config->isw_gpios), GPIO_INT_EDGE_TO_ACTIVE);
 	if (err != 0) {
-		LOG_ERR("Couldn't configure ISW interrupt.");
+		LOG_ERROR("Couldn't configure ISW interrupt.");
 		return err;
 	}
 
 	gpio_init_callback(&data->isw_cb_data, rtc_ds3231_isw_isr, BIT((config->isw_gpios).pin));
 	err = gpio_add_callback((config->isw_gpios).port, &data->isw_cb_data);
 	if (err != 0) {
-		LOG_ERR("Couldn't add ISW interrupt callback.");
+		LOG_ERROR("Couldn't add ISW interrupt callback.");
 		return err;
 	}
 
@@ -814,7 +814,7 @@ static int rtc_ds3231_init(const struct device *dev)
 #ifdef CONFIG_RTC_ALARM
 	err = rtc_ds3231_init_alarms(data);
 	if (err != 0) {
-		LOG_ERR("Failed to init alarms.");
+		LOG_ERROR("Failed to init alarms.");
 		return err;
 	}
 #endif
@@ -822,14 +822,14 @@ static int rtc_ds3231_init(const struct device *dev)
 #ifdef CONFIG_RTC_UPDATE
 	err = rtc_ds3231_init_update(data);
 	if (err != 0) {
-		LOG_ERR("Failed to init update callback.");
+		LOG_ERROR("Failed to init update callback.");
 		return err;
 	}
 #endif
 
 	err = rtc_ds3231_init_settings(dev, config);
 	if (err != 0) {
-		LOG_ERR("Failed to init settings.");
+		LOG_ERROR("Failed to init settings.");
 		return err;
 	}
 
@@ -837,7 +837,7 @@ static int rtc_ds3231_init(const struct device *dev)
 	data->dev = dev;
 	err = rtc_ds3231_init_isw(config, data);
 	if (err != 0) {
-		LOG_ERR("Initing ISW interrupt failed!");
+		LOG_ERROR("Initing ISW interrupt failed!");
 		return err;
 	}
 #endif /* defined(CONFIG_RTC_UPDATE) || defined(CONFIG_RTC_ALARM) */

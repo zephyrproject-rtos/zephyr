@@ -97,7 +97,7 @@ static int inject_set_param1(const struct device *dev, uint64_t channel)
 	const struct edac_nxp_config *config = dev->config;
 
 	if (!check_eim_channel(config->eim_channels, config->eim_channel_num, (uint32_t)channel)) {
-		LOG_ERR("Invalid EIM channel %llx", channel);
+		LOG_ERROR("Invalid EIM channel %llx", channel);
 		return -EINVAL;
 	}
 
@@ -161,7 +161,7 @@ static int inject_error_trigger(const struct device *dev)
 		inject_data = EDAC_NXP_DOUBLE_BIT_ERROR_MASK;
 		break;
 	default:
-		LOG_ERR("No error type found.");
+		LOG_ERROR("No error type found.");
 		return -EINVAL;
 	}
 
@@ -236,21 +236,21 @@ static void edac_nxp_isr(const struct device *dev)
 	};
 
 	if (kERM_SingleBitCorrectionIntFlag == (status & kERM_SingleBitCorrectionIntFlag)) {
-		LOG_ERR("ERM channel %d correctable ECC error detected, address/offset 0x%x, "
-			"syndrome "
-			"0x%02x, correctable ECC count %d",
-			data->erm_channel, cb_data.err_addr, cb_data.err_syndrome,
-			cb_data.corr_err_count);
+		LOG_ERROR("ERM channel %d correctable ECC error detected, address/offset 0x%x, "
+			  "syndrome "
+			  "0x%02x, correctable ECC count %d",
+			  data->erm_channel, cb_data.err_addr, cb_data.err_syndrome,
+			  cb_data.corr_err_count);
 		ERM_ClearInterruptStatus(config->erm_base, data->erm_channel,
 					 kERM_SingleBitCorrectionIntFlag);
 	} else if (kERM_NonCorrectableErrorIntFlag == (status & kERM_NonCorrectableErrorIntFlag)) {
-		LOG_ERR("ERM channel %d uncorrectable ECC error detected, address/offset 0x%x",
-			data->erm_channel, cb_data.err_addr);
+		LOG_ERROR("ERM channel %d uncorrectable ECC error detected, address/offset 0x%x",
+			  data->erm_channel, cb_data.err_addr);
 		ERM_ClearInterruptStatus(config->erm_base, data->erm_channel,
 					 kERM_NonCorrectableErrorIntFlag);
 	} else {
-		LOG_ERR("ERM unknown ECC error status detected, it may caused by unaligned ERM "
-			"channel");
+		LOG_ERROR("ERM unknown ECC error status detected, it may caused by unaligned ERM "
+			  "channel");
 		ERM_ClearInterruptStatus(config->erm_base, data->erm_channel, kERM_AllIntsFlag);
 	}
 	if (data->cb) {
@@ -292,7 +292,7 @@ static int edac_nxp_init(const struct device *dev)
 	ERM_Init(config->erm_base);
 	if (!check_erm_channel(config->erm_channels, config->erm_channel_num,
 			       CONFIG_EDAC_NXP_ERM_DEFAULT_CHANNEL)) {
-		LOG_ERR("Invalid ERM channel %d", CONFIG_EDAC_NXP_ERM_DEFAULT_CHANNEL);
+		LOG_ERROR("Invalid ERM channel %d", CONFIG_EDAC_NXP_ERM_DEFAULT_CHANNEL);
 		return -EINVAL;
 	}
 	data->erm_channel = CONFIG_EDAC_NXP_ERM_DEFAULT_CHANNEL;

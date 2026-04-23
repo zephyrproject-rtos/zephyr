@@ -71,7 +71,7 @@ static int gpio_sc18is606_port_set_raw(const struct device *port, uint8_t mask, 
 	ret = nxp_sc18is606_transfer(cfg->bridge, buf, sizeof(buf), NULL, 0, NULL);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to write to GPIO (%d)", ret);
+		LOG_ERROR("Failed to write to GPIO (%d)", ret);
 		return ret;
 	}
 
@@ -130,7 +130,7 @@ static int gpio_sc18is606_pin_configure(const struct device *port, gpio_pin_t pi
 
 	ret = nxp_sc18is606_transfer(cfg->bridge, enable_buf, sizeof(enable_buf), NULL, 0, NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable GPIO (%d)", ret);
+		LOG_ERROR("Failed to enable GPIO (%d)", ret);
 	}
 
 	data->conf &= ~(SC18IS606_GPIO_CONF_MASK << (pin * 2));
@@ -139,7 +139,7 @@ static int gpio_sc18is606_pin_configure(const struct device *port, gpio_pin_t pi
 
 	ret = nxp_sc18is606_transfer(cfg->bridge, buf, sizeof(buf), NULL, 0, NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure GPIO (%d)", ret);
+		LOG_ERROR("Failed to configure GPIO (%d)", ret);
 	}
 
 	if (ret == 0 && flags & GPIO_OUTPUT) {
@@ -169,7 +169,7 @@ static int gpio_sc18is606_port_get_raw(const struct device *port, gpio_port_valu
 
 	ret = nxp_sc18is606_transfer(cfg->bridge, buf, sizeof(buf), &data, 1, NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to read GPIO state (%d)", ret);
+		LOG_ERROR("Failed to read GPIO state (%d)", ret);
 		return ret;
 	}
 
@@ -203,7 +203,7 @@ static int gpio_sc18is606_init(const struct device *dev)
 	const struct gpio_sc18is606_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->bridge)) {
-		LOG_ERR("Parent device not ready");
+		LOG_ERROR("Parent device not ready");
 		return -ENODEV;
 	}
 

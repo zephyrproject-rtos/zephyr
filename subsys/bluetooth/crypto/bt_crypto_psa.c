@@ -31,14 +31,14 @@ int bt_crypto_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len, uint8_
 
 	status = psa_import_key(&key_attr, key, 16, &key_id);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to import AES key %d", status);
+		LOG_ERROR("Failed to import AES key %d", status);
 		return -EIO;
 	}
 
 	status = psa_mac_compute(key_id, PSA_ALG_CMAC, in, len, out, 16, &out_size);
 	destroy_status = psa_destroy_key(key_id);
 	if ((status != PSA_SUCCESS) || (destroy_status != PSA_SUCCESS)) {
-		LOG_ERR("Failed to compute MAC %d", status);
+		LOG_ERROR("Failed to compute MAC %d", status);
 		return -EIO;
 	}
 

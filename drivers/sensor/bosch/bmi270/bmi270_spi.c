@@ -75,7 +75,7 @@ static int bmi270_reg_write_spi(const union bmi270_bus *bus, uint8_t start,
 
 	ret = spi_write_dt(&bus->spi, &tx);
 	if (ret < 0) {
-		LOG_ERR("spi_write_dt failed %i", ret);
+		LOG_ERROR("spi_write_dt failed %i", ret);
 		return ret;
 	}
 

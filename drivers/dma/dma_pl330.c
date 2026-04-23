@@ -351,20 +351,20 @@ static int dma_pl330_xfer(const struct device *dev, uint64_t dst,
 #endif
 	ret = dma_pl330_setup_ch(dev, ch_handle, channel);
 	if (ret) {
-		LOG_ERR("Failed to setup channel for DMA PL330");
+		LOG_ERROR("Failed to setup channel for DMA PL330");
 		goto err;
 	}
 
 	ret = dma_pl330_start_dma_ch(dev, dev_cfg->reg_base, channel,
 				     ch_handle->nonsec_mode);
 	if (ret) {
-		LOG_ERR("Failed to start DMA PL330");
+		LOG_ERROR("Failed to start DMA PL330");
 		goto err;
 	}
 
 	ret = dma_pl330_wait(dev_cfg->reg_base, channel);
 	if (ret) {
-		LOG_ERR("Failed waiting to finish DMA PL330");
+		LOG_ERROR("Failed waiting to finish DMA PL330");
 		goto err;
 	}
 

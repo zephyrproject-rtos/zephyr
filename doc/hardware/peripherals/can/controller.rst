@@ -140,7 +140,7 @@ a mailbox. When a transmitting mailbox is assigned, sending cannot be canceled.
 
   ret = can_send(can_dev, &frame, K_MSEC(100), NULL, NULL);
   if (ret != 0) {
-          LOG_ERR("Sending failed [%d]", ret);
+          LOG_ERROR("Sending failed [%d]", ret);
   }
 
 
@@ -157,7 +157,7 @@ occurred. It does not block until the message is sent like the example above.
           char *sender = (char *)user_data;
 
           if (error != 0) {
-                  LOG_ERR("Sending failed [%d]\nSender: %s\n", error, sender);
+                  LOG_ERROR("Sending failed [%d]\nSender: %s\n", error, sender);
           }
   }
 
@@ -212,7 +212,7 @@ The filter for this example is configured to match the identifier 0x123 exactly.
 
   filter_id = can_add_rx_filter(can_dev, rx_callback_function, callback_arg, &my_filter);
   if (filter_id < 0) {
-    LOG_ERR("Unable to add rx filter [%d]", filter_id);
+    LOG_ERROR("Unable to add rx filter [%d]", filter_id);
   }
 
 Here an example for :c:func:`can_add_rx_filter_msgq` is shown. With this
@@ -237,7 +237,7 @@ The filter for this example is configured to match the extended identifier
 
   filter_id = can_add_rx_filter_msgq(can_dev, &my_can_msgq, &my_filter);
   if (filter_id < 0) {
-    LOG_ERR("Unable to add rx msgq [%d]", filter_id);
+    LOG_ERROR("Unable to add rx msgq [%d]", filter_id);
     return;
   }
 
@@ -273,23 +273,23 @@ The following example sets the bitrate to 250k baud with the sampling point at
   }
 
   if (ret < 0) {
-    LOG_ERR("Failed to calc a valid timing");
+    LOG_ERROR("Failed to calc a valid timing");
     return;
   }
 
   ret = can_stop(can_dev);
   if (ret != 0) {
-    LOG_ERR("Failed to stop CAN controller");
+    LOG_ERROR("Failed to stop CAN controller");
   }
 
   ret = can_set_timing(can_dev, &timing);
   if (ret != 0) {
-    LOG_ERR("Failed to set timing");
+    LOG_ERROR("Failed to set timing");
   }
 
   ret = can_start(can_dev);
   if (ret != 0) {
-    LOG_ERR("Failed to start CAN controller");
+    LOG_ERROR("Failed to start CAN controller");
   }
 
 A similar API exists for calculating and setting the timing for the data phase for CAN FD capable

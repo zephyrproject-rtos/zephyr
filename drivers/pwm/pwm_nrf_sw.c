@@ -136,7 +136,7 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 	int ret;
 
 	if (channel >= config->map_size) {
-		LOG_ERR("Invalid channel: %u.", channel);
+		LOG_ERROR("Invalid channel: %u.", channel);
 		return -EINVAL;
 	}
 
@@ -146,21 +146,19 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 	ret = pwm_period_check(data, config->map_size, channel, period_cycles,
 			       pulse_cycles);
 	if (ret) {
-		LOG_ERR("Incompatible period");
+		LOG_ERROR("Incompatible period");
 		return ret;
 	}
 
 	if (USE_RTC) {
 		/* pulse_cycles - 1 is written to 24-bit CC */
 		if (period_cycles > BIT_MASK(24) + 1) {
-			LOG_ERR("Too long period (%u)!", period_cycles);
+			LOG_ERROR("Too long period (%u)!", period_cycles);
 			return -EINVAL;
 		}
 	} else {
-		if (GENERATOR_BITS < 32 &&
-		    period_cycles > BIT_MASK(GENERATOR_BITS)) {
-			LOG_ERR("Too long period (%u), adjust PWM prescaler!",
-				period_cycles);
+		if (GENERATOR_BITS < 32 && period_cycles > BIT_MASK(GENERATOR_BITS)) {
+			LOG_ERROR("Too long period (%u), adjust PWM prescaler!", period_cycles);
 			return -EINVAL;
 		}
 	}
@@ -362,7 +360,7 @@ static int pwm_nrf_sw_init(const struct device *dev)
 				/* Do not free allocated resource. It is a fatal condition,
 				 * system requires reconfiguration.
 				 */
-				LOG_ERR("Failed to allocate PPI channel");
+				LOG_ERROR("Failed to allocate PPI channel");
 				return rv;
 			}
 			/* Enable connection but at the end disable channel on the source domain. */
@@ -378,7 +376,7 @@ static int pwm_nrf_sw_init(const struct device *dev)
 			/* Do not free allocated resource. It is a fatal condition,
 			 * system requires reconfiguration.
 			 */
-			LOG_ERR("Failed to allocate GPIOTE channel");
+			LOG_ERROR("Failed to allocate GPIOTE channel");
 			return rv;
 		}
 

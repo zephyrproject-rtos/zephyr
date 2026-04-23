@@ -436,7 +436,7 @@ static int nxp_sar_adc_channel_setup(const struct device *dev,
 	uint8_t max_hw_channel = (uint8_t)(max_groups * 32U - 1U);
 
 	if (channel_cfg->channel_id >= 32U) {
-		LOG_ERR("channel %u out of range", channel_cfg->channel_id);
+		LOG_ERROR("channel %u out of range", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -444,12 +444,13 @@ static int nxp_sar_adc_channel_setup(const struct device *dev,
 	    (channel_cfg->reference != ADC_REF_VDD_1) ||
 	    (channel_cfg->gain != ADC_GAIN_1) ||
 	    (channel_cfg->differential)) {
-		LOG_ERR("channel %u configuration not supported", channel_cfg->channel_id);
+		LOG_ERROR("channel %u configuration not supported", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (hw_ch > max_hw_channel) {
-		LOG_ERR("channel %u maps to invalid hw channel %u", channel_cfg->channel_id, hw_ch);
+		LOG_ERROR("channel %u maps to invalid hw channel %u", channel_cfg->channel_id,
+			  hw_ch);
 		return -EINVAL;
 	}
 

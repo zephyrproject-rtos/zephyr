@@ -121,7 +121,7 @@ static int sx126x_validate_config(const struct lora_modem_config *config)
 	uint8_t bw_reg;
 
 	if (bandwidth_to_reg(config->bandwidth, &bw_reg) < 0) {
-		LOG_ERR("Unsupported bandwidth: %d kHz", config->bandwidth);
+		LOG_ERROR("Unsupported bandwidth: %d kHz", config->bandwidth);
 		return -EINVAL;
 	}
 
@@ -443,7 +443,7 @@ static int sx126x_add_reg_to_retention(const struct device *dev, uint16_t addr)
 	}
 
 	if (n >= SX126X_MAX_RETENTION_REGS) {
-		LOG_ERR("Retention list full");
+		LOG_ERROR("Retention list full");
 		return -ENOSPC;
 	}
 
@@ -461,14 +461,14 @@ static int sx126x_chip_init(const struct device *dev)
 	/* Hardware reset */
 	ret = sx126x_hal_reset(dev);
 	if (ret < 0) {
-		LOG_ERR("Reset failed: %d", ret);
+		LOG_ERROR("Reset failed: %d", ret);
 		return ret;
 	}
 
 	/* Set standby mode */
 	ret = sx126x_set_standby(dev, SX126X_STANDBY_RC);
 	if (ret < 0) {
-		LOG_ERR("Set standby failed: %d", ret);
+		LOG_ERROR("Set standby failed: %d", ret);
 		return ret;
 	}
 
@@ -477,14 +477,14 @@ static int sx126x_chip_init(const struct device *dev)
 		ret = sx126x_set_dio3_as_tcxo_ctrl(dev, config->dio3_tcxo_voltage,
 						   config->tcxo_startup_delay_ms);
 		if (ret < 0) {
-			LOG_ERR("Set TCXO failed: %d", ret);
+			LOG_ERROR("Set TCXO failed: %d", ret);
 			return ret;
 		}
 
 		/* Run full calibration after TCXO setup */
 		ret = sx126x_calibrate(dev, SX126X_CALIBRATE_ALL);
 		if (ret < 0) {
-			LOG_ERR("Calibration failed: %d", ret);
+			LOG_ERROR("Calibration failed: %d", ret);
 			return ret;
 		}
 	}
@@ -493,7 +493,7 @@ static int sx126x_chip_init(const struct device *dev)
 	if (config->dio2_tx_enable) {
 		ret = sx126x_set_dio2_as_rf_switch(dev, true);
 		if (ret < 0) {
-			LOG_ERR("Set DIO2 RF switch failed: %d", ret);
+			LOG_ERROR("Set DIO2 RF switch failed: %d", ret);
 			return ret;
 		}
 	}
@@ -502,21 +502,21 @@ static int sx126x_chip_init(const struct device *dev)
 	ret = sx126x_set_regulator_mode(dev, config->regulator_ldo ?
 					SX126X_REGULATOR_LDO : SX126X_REGULATOR_DCDC);
 	if (ret < 0) {
-		LOG_ERR("Set regulator failed: %d", ret);
+		LOG_ERROR("Set regulator failed: %d", ret);
 		return ret;
 	}
 
 	/* Set buffer base addresses */
 	ret = sx126x_set_buffer_base_address(dev, 0x00, 0x00);
 	if (ret < 0) {
-		LOG_ERR("Set buffer base failed: %d", ret);
+		LOG_ERROR("Set buffer base failed: %d", ret);
 		return ret;
 	}
 
 	/* Set packet type to LoRa */
 	ret = sx126x_set_packet_type(dev, SX126X_PACKET_TYPE_LORA);
 	if (ret < 0) {
-		LOG_ERR("Set packet type failed: %d", ret);
+		LOG_ERROR("Set packet type failed: %d", ret);
 		return ret;
 	}
 
@@ -525,14 +525,14 @@ static int sx126x_chip_init(const struct device *dev)
 			    SX126X_IRQ_RX_TX_TIMEOUT | SX126X_IRQ_CRC_ERR;
 	ret = sx126x_set_dio_irq_params(dev, irq_mask, irq_mask, 0, 0);
 	if (ret < 0) {
-		LOG_ERR("Set IRQ params failed: %d", ret);
+		LOG_ERROR("Set IRQ params failed: %d", ret);
 		return ret;
 	}
 
 	/* Clear any pending IRQs */
 	ret = sx126x_clear_irq_status(dev, SX126X_IRQ_ALL);
 	if (ret < 0) {
-		LOG_ERR("Clear IRQ failed: %d", ret);
+		LOG_ERROR("Clear IRQ failed: %d", ret);
 		return ret;
 	}
 
@@ -542,13 +542,13 @@ static int sx126x_chip_init(const struct device *dev)
 	 */
 	ret = sx126x_add_reg_to_retention(dev, SX126X_REG_RX_GAIN);
 	if (ret < 0) {
-		LOG_ERR("Add RX_GAIN to retention failed: %d", ret);
+		LOG_ERROR("Add RX_GAIN to retention failed: %d", ret);
 		return ret;
 	}
 
 	ret = sx126x_add_reg_to_retention(dev, SX126X_REG_TX_MODULATION);
 	if (ret < 0) {
-		LOG_ERR("Add TX_MODULATION to retention failed: %d", ret);
+		LOG_ERROR("Add TX_MODULATION to retention failed: %d", ret);
 		return ret;
 	}
 
@@ -721,7 +721,7 @@ static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_sta
 	/* Get received packet info */
 	ret = sx126x_get_rx_buffer_status(dev, &payload_len, &offset);
 	if (ret < 0) {
-		LOG_ERR("Failed to get RX buffer status");
+		LOG_ERROR("Failed to get RX buffer status");
 		result.status = ret;
 		goto out;
 	}
@@ -737,7 +737,7 @@ static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_sta
 	result.len = MIN(payload_len, sizeof(data->rx_buf));
 	ret = sx126x_hal_read_buffer(dev, offset, data->rx_buf, result.len);
 	if (ret < 0) {
-		LOG_ERR("Failed to read RX buffer");
+		LOG_ERROR("Failed to read RX buffer");
 		result.status = ret;
 		goto out;
 	}
@@ -806,7 +806,7 @@ static void sx126x_irq_work_handler(struct k_work *work)
 
 	ret = sx126x_get_irq_status(dev, &irq_status);
 	if (ret < 0) {
-		LOG_ERR("Failed to get IRQ status");
+		LOG_ERROR("Failed to get IRQ status");
 		return;
 	}
 
@@ -939,17 +939,17 @@ static int sx126x_lora_send_async(const struct device *dev,
 	int ret;
 
 	if (!data->config_valid) {
-		LOG_ERR("Not configured");
+		LOG_ERROR("Not configured");
 		return -EINVAL;
 	}
 
 	if (data_len > SX126X_MAX_PAYLOAD_LEN) {
-		LOG_ERR("Payload too long: %u", data_len);
+		LOG_ERROR("Payload too long: %u", data_len);
 		return -EINVAL;
 	}
 
 	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_TX)) {
-		LOG_ERR("Busy");
+		LOG_ERROR("Busy");
 		return -EBUSY;
 	}
 
@@ -1023,7 +1023,7 @@ static int sx126x_lora_send(const struct device *dev,
 	/* Wait for TX completion */
 	ret = k_msgq_get(&data->tx_msgq, &result, K_SECONDS(15));
 	if (ret < 0) {
-		LOG_ERR("TX timeout");
+		LOG_ERROR("TX timeout");
 		/* Chip is still transmitting, abort first */
 		sx126x_set_standby(dev, SX126X_STANDBY_RC);
 		sx126x_set_sleep(dev);
@@ -1043,12 +1043,12 @@ static int sx126x_lora_recv(const struct device *dev, uint8_t *data_buf,
 	int ret;
 
 	if (!data->config_valid) {
-		LOG_ERR("Not configured");
+		LOG_ERROR("Not configured");
 		return -EINVAL;
 	}
 
 	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_RX)) {
-		LOG_ERR("Busy");
+		LOG_ERROR("Busy");
 		return -EBUSY;
 	}
 
@@ -1142,13 +1142,13 @@ static int sx126x_lora_recv_async(const struct device *dev,
 	}
 
 	if (!data->config_valid) {
-		LOG_ERR("Not configured");
+		LOG_ERROR("Not configured");
 		k_mutex_unlock(&data->lock);
 		return -EINVAL;
 	}
 
 	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_RX)) {
-		LOG_ERR("Busy");
+		LOG_ERROR("Busy");
 		k_mutex_unlock(&data->lock);
 		return -EBUSY;
 	}
@@ -1264,14 +1264,14 @@ static int sx126x_lora_recv_duty_cycle_async(const struct device *dev,
 	}
 
 	if (!data->config_valid) {
-		LOG_ERR("Not configured");
+		LOG_ERROR("Not configured");
 		k_mutex_unlock(&data->lock);
 		return -EINVAL;
 	}
 
 	if (!atomic_cas(&data->state, SX126X_REST_STATE,
 			SX126X_STATE_RX_DUTY_CYCLE)) {
-		LOG_ERR("Busy");
+		LOG_ERROR("Busy");
 		k_mutex_unlock(&data->lock);
 		return -EBUSY;
 	}
@@ -1471,21 +1471,21 @@ static int sx126x_init(const struct device *dev)
 	/* Initialize HAL */
 	ret = sx126x_hal_init(dev);
 	if (ret < 0) {
-		LOG_ERR("HAL init failed: %d", ret);
+		LOG_ERROR("HAL init failed: %d", ret);
 		return ret;
 	}
 
 	/* Setup DIO1 interrupt callback */
 	ret = sx126x_hal_set_dio1_callback(dev, sx126x_dio1_callback);
 	if (ret < 0) {
-		LOG_ERR("DIO1 callback setup failed: %d", ret);
+		LOG_ERROR("DIO1 callback setup failed: %d", ret);
 		return ret;
 	}
 
 	/* Initialize chip */
 	ret = sx126x_chip_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Chip init failed: %d", ret);
+		LOG_ERROR("Chip init failed: %d", ret);
 		return ret;
 	}
 
@@ -1498,7 +1498,7 @@ static int sx126x_init(const struct device *dev)
 	if (IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP)) {
 		ret = sx126x_set_sleep(dev);
 		if (ret < 0) {
-			LOG_ERR("Initial sleep failed: %d", ret);
+			LOG_ERROR("Initial sleep failed: %d", ret);
 			return ret;
 		}
 	}

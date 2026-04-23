@@ -201,7 +201,7 @@ static void imsic_mext_isr(const void *arg)
 
 	/* Bounds check */
 	if (irq >= cfg->nr_irqs) {
-		LOG_ERR("IRQ %u out of range (>= %u)", irq, cfg->nr_irqs);
+		LOG_ERROR("IRQ %u out of range (>= %u)", irq, cfg->nr_irqs);
 		z_irq_spurious(NULL);
 	}
 
@@ -246,8 +246,8 @@ void z_riscv_imsic_secondary_init(void)
 
 	/* Sanity check: verify EIDELIVERY enable bit is set */
 	if (!(eidelivery_readback & EIDELIVERY_ENABLE)) {
-		LOG_ERR("CPU %u IMSIC EIDELIVERY enable bit not set! Got 0x%08lx", arch_proc_id(),
-			eidelivery_readback);
+		LOG_ERROR("CPU %u IMSIC EIDELIVERY enable bit not set! Got 0x%08lx", arch_proc_id(),
+			  eidelivery_readback);
 	}
 }
 #endif /* CONFIG_SMP */

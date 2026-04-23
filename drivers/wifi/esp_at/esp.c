@@ -251,7 +251,7 @@ MODEM_CMD_DEFINE(on_cmd_cipstamac)
 	mac = str_unquote(argv[0]);
 	err = net_bytes_from_str(dev->mac_addr, sizeof(dev->mac_addr), mac);
 	if (err) {
-		LOG_ERR("Failed to parse MAC address");
+		LOG_ERROR("Failed to parse MAC address");
 	}
 
 	return 0;
@@ -326,7 +326,7 @@ static int esp_pull_long(char **str, char *str_end, long *value)
 
 	*value = strtol(str_begin, &endptr, 10);
 	if (endptr == str_begin) {
-		LOG_ERR("endptr == str_begin");
+		LOG_ERROR("endptr == str_begin");
 		return -EBADMSG;
 	}
 
@@ -396,7 +396,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
 
 		res.mac_length = WIFI_MAC_ADDR_LEN;
 		if (net_bytes_from_str(res.mac, sizeof(res.mac), mac) < 0) {
-			LOG_ERR("Invalid MAC address");
+			LOG_ERROR("Invalid MAC address");
 			res.mac_length = 0;
 		}
 	}
@@ -537,7 +537,7 @@ static void esp_dns_work(struct k_work *work)
 						      interfaces,
 						      DNS_SOURCE_MANUAL);
 	if (err) {
-		LOG_ERR("Could not set DNS servers: %d", err);
+		LOG_ERROR("Could not set DNS servers: %d", err);
 	}
 
 	LOG_DBG("DNS resolver reconfigured");
@@ -568,8 +568,7 @@ MODEM_CMD_DEFINE(on_cmd_cipdns)
 
 		err = net_addr_pton(NET_AF_INET, servers[i], &addrs[i].sin_addr);
 		if (err) {
-			LOG_ERR("Invalid DNS address: %s",
-				servers[i]);
+			LOG_ERROR("Invalid DNS address: %s", servers[i]);
 			addrs[i].sin_addr.s_addr = 0;
 			break;
 		}
@@ -740,7 +739,7 @@ MODEM_CMD_DEFINE(on_cmd_connect)
 	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
 	sock = esp_socket_ref_from_link_id(dev, link_id);
 	if (!sock) {
-		LOG_ERR("No socket for link %d", link_id);
+		LOG_ERROR("No socket for link %d", link_id);
 		return 0;
 	}
 
@@ -763,7 +762,7 @@ MODEM_CMD_DEFINE(on_cmd_closed)
 	dev = CONTAINER_OF(data, struct esp_data, cmd_handler_data);
 	sock = esp_socket_ref_from_link_id(dev, link_id);
 	if (!sock) {
-		LOG_ERR("No socket for link %d", link_id);
+		LOG_ERROR("No socket for link %d", link_id);
 		return 0;
 	}
 
@@ -817,7 +816,7 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 
 	ipd_buf[match_len] = 0;
 	if (ipd_buf[len] != ',' || ipd_buf[len + 2] != ',') {
-		LOG_ERR("Invalid IPD: %s", ipd_buf);
+		LOG_ERROR("Invalid IPD: %s", ipd_buf);
 		return -EBADMSG;
 	}
 
@@ -827,7 +826,7 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 	err = esp_pull_long(&str, str_end, &link_id);
 	if (err) {
 		if (err == -EAGAIN && match_len >= MAX_IPD_LEN) {
-			LOG_ERR("Failed to pull %s", "link_id");
+			LOG_ERROR("Failed to pull %s", "link_id");
 			return -EBADMSG;
 		}
 
@@ -837,7 +836,7 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 	err = esp_pull_long(&str, str_end, data_len);
 	if (err) {
 		if (err == -EAGAIN && match_len >= MAX_IPD_LEN) {
-			LOG_ERR("Failed to pull %s", "data_len");
+			LOG_ERROR("Failed to pull %s", "data_len");
 			return -EBADMSG;
 		}
 
@@ -847,7 +846,7 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 	*sock = esp_socket_ref_from_link_id(dev, link_id);
 
 	if (!*sock) {
-		LOG_ERR("No socket for link %ld", link_id);
+		LOG_ERROR("No socket for link %ld", link_id);
 		*data_offset = (str - ipd_buf);
 		return -ENOTCONN;
 	}
@@ -868,7 +867,7 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 		}
 		if (err) {
 			if (err == -EAGAIN && match_len >= MAX_IPD_LEN) {
-				LOG_ERR("Failed to pull remote_ip");
+				LOG_ERROR("Failed to pull remote_ip");
 				err = -EBADMSG;
 			}
 			goto socket_unref;
@@ -877,7 +876,7 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 		err = esp_pull_long(&str, str_end, &port);
 		if (err) {
 			if (err == -EAGAIN && match_len >= MAX_IPD_LEN) {
-				LOG_ERR("Failed to pull port");
+				LOG_ERROR("Failed to pull port");
 				err = -EBADMSG;
 			}
 			goto socket_unref;
@@ -885,7 +884,7 @@ static int cmd_ipd_parse_hdr(struct esp_data *dev,
 
 		err = net_addr_pton(NET_AF_INET, remote_ip, &recv_addr->sin_addr);
 		if (err) {
-			LOG_ERR("Invalid IP address");
+			LOG_ERROR("Invalid IP address");
 			err = -EBADMSG;
 			goto socket_unref;
 		}
@@ -976,7 +975,7 @@ MODEM_CMD_DEFINE(on_cmd_ready)
 	if (net_if_is_carrier_ok(dev->net_iface)) {
 		net_if_dormant_on(dev->net_iface);
 		net_if_carrier_off(dev->net_iface);
-		LOG_ERR("Unexpected reset");
+		LOG_ERROR("Unexpected reset");
 	}
 
 	if (esp_flags_are_set(dev, EDF_STA_CONNECTING)) {
@@ -1124,7 +1123,7 @@ static void esp_mgmt_scan_work(struct k_work *work)
 	LOG_DBG("ESP Wi-Fi scan: cmd = %s", ESP_CMD_CWLAP);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to scan: ret %d", ret);
+		LOG_ERROR("Failed to scan: ret %d", ret);
 	}
 
 out:
@@ -1343,7 +1342,7 @@ static int esp_mgmt_ap_enable(const struct device *dev,
 
 	ret = esp_mode_flags_set(data, EDF_AP_ENABLED);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable AP mode, ret %d", ret);
+		LOG_ERROR("Failed to enable AP mode, ret %d", ret);
 		return ret;
 	}
 
@@ -1440,7 +1439,7 @@ static void esp_init_work(struct k_work *work)
 					   &dev->sem_response,
 					   ESP_INIT_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Init failed %d", ret);
+		LOG_ERROR("Init failed %d", ret);
 		return;
 	}
 
@@ -1456,7 +1455,7 @@ static void esp_init_work(struct k_work *work)
 
 	ret = uart_configure(DEVICE_DT_GET(DT_INST_BUS(0)), &uart_config);
 	if (ret < 0) {
-		LOG_ERR("Baudrate change failed %d", ret);
+		LOG_ERROR("Baudrate change failed %d", ret);
 		return;
 	}
 
@@ -1470,7 +1469,7 @@ static void esp_init_work(struct k_work *work)
 				&dev->sem_response,
 				ESP_INIT_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Init failed %d", ret);
+		LOG_ERROR("Init failed %d", ret);
 		return;
 	}
 #endif
@@ -1536,7 +1535,7 @@ static int esp_reset(const struct device *dev)
 	}
 
 	if (ret < 0) {
-		LOG_ERR("Failed to reset device: %d", ret);
+		LOG_ERROR("Failed to reset device: %d", ret);
 		return -EAGAIN;
 	}
 #endif
@@ -1544,7 +1543,7 @@ static int esp_reset(const struct device *dev)
 
 	ret = k_sem_take(&data->sem_if_up, ESP_INIT_TIMEOUT);
 	if (ret == -EAGAIN) {
-		LOG_ERR("Timeout waiting for interface");
+		LOG_ERROR("Timeout waiting for interface");
 	}
 
 	return ret;
@@ -1656,7 +1655,7 @@ static int esp_init(const struct device *dev)
 	data->mctx.driver_data = data;
 	ret = modem_context_register(&data->mctx);
 	if (ret < 0) {
-		LOG_ERR("Error registering modem context: %d", ret);
+		LOG_ERROR("Error registering modem context: %d", ret);
 		goto error;
 	}
 
@@ -1669,14 +1668,14 @@ static int esp_init(const struct device *dev)
 #if DT_INST_NODE_HAS_PROP(0, power_gpios)
 	ret = gpio_pin_configure_dt(&config->power, GPIO_OUTPUT_INACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure %s pin", "power");
+		LOG_ERROR("Failed to configure %s pin", "power");
 		goto error;
 	}
 #endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure %s pin", "reset");
+		LOG_ERROR("Failed to configure %s pin", "reset");
 		goto error;
 	}
 #endif

@@ -97,7 +97,7 @@ static int tco_setup(const struct device *dev, uint8_t options)
 	err = set_no_reboot(dev, data->no_reboot);
 	if (err) {
 		k_spin_unlock(&data->lock, key);
-		LOG_ERR("Failed to update no_reboot bit (err %d)", err);
+		LOG_ERROR("Failed to update no_reboot bit (err %d)", err);
 		return err;
 	}
 
@@ -185,10 +185,10 @@ static int tco_install_timeout(const struct device *dev,
 		data->no_reboot = true;
 		break;
 	case WDT_FLAG_RESET_CPU_CORE:
-		LOG_ERR("CPU-only reset not supported");
+		LOG_ERROR("CPU-only reset not supported");
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Unknown watchdog configuration flags");
+		LOG_ERROR("Unknown watchdog configuration flags");
 		return -EINVAL;
 	}
 
@@ -206,7 +206,7 @@ static int tco_install_timeout(const struct device *dev,
 	k_spin_unlock(&data->lock, key);
 
 	if ((val & TMR_TCOTMR) != ticks) {
-		LOG_ERR("val %u", val);
+		LOG_ERROR("val %u", val);
 		return -EIO;
 	}
 

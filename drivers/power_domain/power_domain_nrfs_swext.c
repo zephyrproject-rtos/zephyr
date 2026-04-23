@@ -39,7 +39,7 @@ static void nrfs_swext_driver_evt_handler(nrfs_swext_evt_t const *p_evt, void *c
 
 	if (p_evt->type == NRFS_SWEXT_EVT_OVERCURRENT) {
 		/* Overcurrent is an unrecoverable condition which requires hardware fix */
-		LOG_ERR("overcurrent");
+		LOG_ERROR("overcurrent");
 		k_panic();
 	};
 
@@ -61,7 +61,7 @@ static int nrfs_swext_driver_power_down(const struct device *dev)
 	 */
 	err = nrfs_swext_power_down(pd_clamp, NULL);
 	if (err != NRFS_SUCCESS) {
-		LOG_ERR("failed to request power down");
+		LOG_ERROR("failed to request power down");
 		return -ENODEV;
 	}
 
@@ -78,7 +78,7 @@ static int nrfs_swext_driver_power_up(const struct device *dev)
 	load_current = nrfs_swext_load_current_to_raw(dev_config->current_limit_ua);
 	err = nrfs_swext_power_up(load_current, dev_data);
 	if (err != NRFS_SUCCESS) {
-		LOG_ERR("failed to request power up");
+		LOG_ERROR("failed to request power up");
 		return -ENODEV;
 	}
 
@@ -88,7 +88,7 @@ static int nrfs_swext_driver_power_up(const struct device *dev)
 		return 0;
 	}
 
-	LOG_ERR("power up request rejected");
+	LOG_ERROR("power up request rejected");
 	return -EIO;
 }
 
@@ -163,13 +163,13 @@ static int nrfs_swext_driver_init(const struct device *dev)
 	LOG_DBG("waiting for nrfs backend connected");
 	err = nrfs_backend_wait_for_connection(K_FOREVER);
 	if (err != NRFS_SUCCESS) {
-		LOG_ERR("nrfs backend not connected");
+		LOG_ERROR("nrfs backend not connected");
 		return -ENODEV;
 	}
 
 	err = nrfs_swext_init(nrfs_swext_driver_evt_handler);
 	if (err != NRFS_SUCCESS) {
-		LOG_ERR("failed to init swext service");
+		LOG_ERROR("failed to init swext service");
 		return -ENODEV;
 	}
 

@@ -32,7 +32,7 @@ static void producer_thread(void)
 
 		/* Wait for an consumer's ACK */
 		if (zbus_sub_wait(&producer_sub, &chan, K_FOREVER)) {
-			LOG_ERR("Ack not received!");
+			LOG_ERROR("Ack not received!");
 		}
 	}
 }

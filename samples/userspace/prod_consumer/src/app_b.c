@@ -85,16 +85,14 @@ void app_b_entry(void *p1, void *p2, void *p3)
 	ret = k_mem_domain_add_partition(&k_mem_domain_default,
 					 &app_b_partition);
 	if (ret != 0) {
-		LOG_ERR("Failed to add app_b_partition to mem domain (%d)",
-			ret);
+		LOG_ERROR("Failed to add app_b_partition to mem domain (%d)", ret);
 		k_oops();
 	}
 
 	ret = k_mem_domain_add_partition(&k_mem_domain_default,
 					 &shared_partition);
 	if (ret != 0) {
-		LOG_ERR("Failed to add shared_partition to mem domain (%d)",
-			ret);
+		LOG_ERROR("Failed to add shared_partition to mem domain (%d)", ret);
 		k_oops();
 	}
 

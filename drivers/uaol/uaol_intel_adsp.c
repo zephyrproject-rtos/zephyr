@@ -194,7 +194,7 @@ static int uaol_intel_adsp_set_power(const struct device *dev, bool power)
 	uint32_t timeout = UAOL_POWER_CHANGE_TIMEOUT_USEC;
 
 	if (!uaol_intel_adsp_power_steady(dev)) {
-		LOG_ERR("Power steady state expected");
+		LOG_ERROR("Power steady state expected");
 		return -EBUSY;
 	}
 
@@ -203,7 +203,7 @@ static int uaol_intel_adsp_set_power(const struct device *dev, bool power)
 	sys_write32(ctl.full, UAOLCTL_ADDR(dp));
 
 	if (!WAIT_FOR(uaol_intel_adsp_power_steady(dev), timeout, k_busy_wait(1))) {
-		LOG_ERR("Power state transition timeout");
+		LOG_ERROR("Power state transition timeout");
 		return -ETIMEDOUT;
 	}
 
@@ -286,7 +286,7 @@ static int uaol_intel_adsp_send_xhci_msg(const struct device *dev, uint32_t *msg
 
 		/* wait for command to be sent */
 		if (!WAIT_FOR(uaol_intel_adsp_ic_ready(dev), timeout, k_busy_wait(1))) {
-			LOG_ERR("xHCI message send timeout");
+			LOG_ERROR("xHCI message send timeout");
 			return -ETIMEDOUT;
 		}
 
@@ -296,8 +296,8 @@ static int uaol_intel_adsp_send_xhci_msg(const struct device *dev, uint32_t *msg
 	} while (ic.part.icmp == 1 && words_left);
 
 	if (ic.part.icmp == 1 || words_left) {
-		LOG_ERR("xHCI message send ended unexpectedly: HW expects %d, words left %d",
-			ic.part.icmp, words_left);
+		LOG_ERROR("xHCI message send ended unexpectedly: HW expects %d, words left %d",
+			  ic.part.icmp, words_left);
 		return -EIO;
 	}
 
@@ -329,7 +329,7 @@ static int uaol_intel_adsp_receive_xhci_msg(const struct device *dev,
 	do {
 		/* wait for response message chunk to be available */
 		if (!WAIT_FOR(uaol_intel_adsp_ir_ready(dev), timeout, k_busy_wait(1))) {
-			LOG_ERR("xHCI message read timeout");
+			LOG_ERROR("xHCI message read timeout");
 			return -ETIMEDOUT;
 		}
 
@@ -349,8 +349,8 @@ static int uaol_intel_adsp_receive_xhci_msg(const struct device *dev,
 	} while (ir.part.irmp == 1 && words_left);
 
 	if (ir.part.irmp == 1 || words_left) {
-		LOG_ERR("xHCI message read ended unexpectedly: HW pending %d, words expected %d",
-			ir.part.irmp, words_left);
+		LOG_ERROR("xHCI message read ended unexpectedly: HW pending %d, words expected %d",
+			  ir.part.irmp, words_left);
 		return -EIO;
 	}
 
@@ -441,14 +441,14 @@ static int uaol_intel_adsp_set_stream_state(const struct device *dev, int stream
 
 	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, stream));
 	if (pcms_ctl.part.sen != uaol_intel_adsp_get_sbusy(dev, stream)) {
-		LOG_ERR("Unexpected stream state; SEN %d", pcms_ctl.part.sen);
+		LOG_ERROR("Unexpected stream state; SEN %d", pcms_ctl.part.sen);
 		return -EBUSY;
 	}
 	pcms_ctl.part.sen = start;
 	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
 
 	if (!WAIT_FOR(uaol_intel_adsp_get_sbusy(dev, stream) == start, timeout, k_busy_wait(1))) {
-		LOG_ERR("Stream start/stop timeout; start %d", start);
+		LOG_ERROR("Stream start/stop timeout; start %d", start);
 		return -ETIMEDOUT;
 	}
 
@@ -488,7 +488,7 @@ static int uaol_intel_adsp_adjust_frame_counter(const struct device *dev, uint32
 	uint32_t timeout = UAOL_FRAME_ADJUST_TIMEOUT_USEC;
 
 	if (!uaol_intel_adsp_frame_adjust_idle(dev)) {
-		LOG_ERR("Unexpected frame counter adjustment pending");
+		LOG_ERROR("Unexpected frame counter adjustment pending");
 		return -EBUSY;
 	}
 
@@ -501,7 +501,7 @@ static int uaol_intel_adsp_adjust_frame_counter(const struct device *dev, uint32
 	sys_write32(fa.full, UAOLxFA_ADDR(dp));
 
 	if (!WAIT_FOR(uaol_intel_adsp_frame_adjust_idle(dev), timeout, k_busy_wait(1))) {
-		LOG_ERR("Frame counter adjustment timeout");
+		LOG_ERROR("Frame counter adjustment timeout");
 		return -ETIMEDOUT;
 	}
 
@@ -535,13 +535,13 @@ static int uaol_intel_adsp_get_xhci_timestamp(const struct device *dev, uint64_t
 	cmd.payload.wLength = sizeof(resp.payload);
 	ret = uaol_intel_adsp_send_xhci_msg(dev, (uint32_t *)&cmd, sizeof(cmd));
 	if (ret) {
-		LOG_ERR("GET_HH_TIMESTAMP send failed, ret %d", ret);
+		LOG_ERROR("GET_HH_TIMESTAMP send failed, ret %d", ret);
 		return ret;
 	}
 
 	ret = uaol_intel_adsp_receive_xhci_msg(dev, (uint32_t *)&resp, sizeof(resp));
 	if (ret) {
-		LOG_ERR("GET_HH_TIMESTAMP response reception failed, ret %d", ret);
+		LOG_ERROR("GET_HH_TIMESTAMP response reception failed, ret %d", ret);
 		return ret;
 	}
 
@@ -570,7 +570,7 @@ static int uaol_intel_adsp_get_link_timestamp(const struct device *dev, uint64_t
 	int ret;
 
 	if (dp->link != 0) {
-		LOG_ERR("First link (link 0) is expected");
+		LOG_ERROR("First link (link 0) is expected");
 		return -EINVAL;
 	}
 
@@ -585,7 +585,7 @@ static int uaol_intel_adsp_get_link_timestamp(const struct device *dev, uint64_t
 
 	ret = intel_adsp_get_timestamp(tsctrl, &adsp_timestamp);
 	if (ret) {
-		LOG_ERR("intel_adsp_get_timestamp() failed, ret %d", ret);
+		LOG_ERROR("intel_adsp_get_timestamp() failed, ret %d", ret);
 		return ret;
 	}
 
@@ -612,13 +612,13 @@ static int uaol_intel_adsp_align_frame(const struct device *dev)
 
 	ret = uaol_intel_adsp_get_xhci_timestamp(dev, &timestamp_usb);
 	if (ret) {
-		LOG_ERR("Get xHCI timestamp failed, ret %d", ret);
+		LOG_ERROR("Get xHCI timestamp failed, ret %d", ret);
 		return ret;
 	}
 
 	ret = uaol_intel_adsp_get_link_timestamp(dev, &timestamp_uaol);
 	if (ret) {
-		LOG_ERR("Get link timestamp failed, ret %d", ret);
+		LOG_ERROR("Get link timestamp failed, ret %d", ret);
 		return ret;
 	}
 
@@ -629,7 +629,7 @@ static int uaol_intel_adsp_align_frame(const struct device *dev)
 
 	ret = uaol_intel_adsp_adjust_frame_counter(dev, adj_direction, uframe_adj, clk_adj);
 	if (ret) {
-		LOG_ERR("Frame counter adjustment failed, ret %d", ret);
+		LOG_ERROR("Frame counter adjustment failed, ret %d", ret);
 		return ret;
 	}
 
@@ -646,7 +646,7 @@ static int uaol_intel_adsp_config(const struct device *dev, int stream, struct u
 
 	if (!dp->is_powered_up) {
 		ret = -EIO;
-		LOG_ERR("Device not powered on");
+		LOG_ERROR("Device not powered on");
 		goto out;
 	}
 
@@ -659,7 +659,7 @@ static int uaol_intel_adsp_config(const struct device *dev, int stream, struct u
 
 		ret = uaol_intel_adsp_align_frame(dev);
 		if (ret) {
-			LOG_ERR("uaol_intel_adsp_align_frame() failed, ret %d", ret);
+			LOG_ERROR("uaol_intel_adsp_align_frame() failed, ret %d", ret);
 			goto out;
 		}
 
@@ -693,13 +693,13 @@ static int uaol_intel_adsp_start(const struct device *dev, int stream)
 
 	if (!dp->is_powered_up) {
 		ret = -EIO;
-		LOG_ERR("Device not powered on");
+		LOG_ERROR("Device not powered on");
 		goto out;
 	}
 
 	ret = uaol_intel_adsp_set_stream_state(dev, stream, true);
 	if (ret) {
-		LOG_ERR("uaol_intel_adsp_set_stream_state() failed, ret %d", ret);
+		LOG_ERROR("uaol_intel_adsp_set_stream_state() failed, ret %d", ret);
 		goto out;
 	}
 
@@ -719,7 +719,7 @@ static int uaol_intel_adsp_stop(const struct device *dev, int stream)
 
 	if (!dp->is_powered_up) {
 		ret = -EIO;
-		LOG_ERR("Device not powered on");
+		LOG_ERROR("Device not powered on");
 		goto out;
 	}
 
@@ -756,7 +756,7 @@ static int uaol_intel_adsp_program_ep_table(const struct device *dev, int stream
 
 	if (!dp->is_powered_up) {
 		ret = -EIO;
-		LOG_ERR("Device not powered on");
+		LOG_ERROR("Device not powered on");
 		goto out;
 	}
 
@@ -773,7 +773,7 @@ static int uaol_intel_adsp_program_ep_table(const struct device *dev, int stream
 	ret = uaol_intel_adsp_send_xhci_msg(dev, (uint32_t *)&cmd, sizeof(cmd));
 	if (ret) {
 		ret = -EIO;
-		LOG_ERR("Sending xHCI SET_EP_TABLE_ENTRY command failed, ret %d", ret);
+		LOG_ERROR("Sending xHCI SET_EP_TABLE_ENTRY command failed, ret %d", ret);
 		goto out;
 	}
 
@@ -788,7 +788,7 @@ static int uaol_intel_adsp_program_ep_table(const struct device *dev, int stream
 	ret = uaol_intel_adsp_send_xhci_msg(dev, (uint32_t *)&data, sizeof(data));
 	if (ret) {
 		ret = -EIO;
-		LOG_ERR("Sending xHCI SET_EP_TABLE_ENTRY data failed, ret %d", ret);
+		LOG_ERROR("Sending xHCI SET_EP_TABLE_ENTRY data failed, ret %d", ret);
 		goto out;
 	}
 
@@ -796,7 +796,7 @@ static int uaol_intel_adsp_program_ep_table(const struct device *dev, int stream
 	ret = uaol_intel_adsp_receive_xhci_msg(dev, (uint32_t *)&resp, sizeof(resp));
 	if (ret) {
 		ret = -EIO;
-		LOG_ERR("Reading response for xHCI SET_EP_TABLE_ENTRY failed, ret %d", ret);
+		LOG_ERROR("Reading response for xHCI SET_EP_TABLE_ENTRY failed, ret %d", ret);
 		goto out;
 	}
 
@@ -814,7 +814,7 @@ static int uaol_intel_adsp_get_capabilities(const struct device *dev,
 
 	ret = pm_device_runtime_get(dev);
 	if (ret) {
-		LOG_ERR("pm_device_runtime_get() failed, ret %d", ret);
+		LOG_ERROR("pm_device_runtime_get() failed, ret %d", ret);
 		return -EIO;
 	}
 
@@ -826,7 +826,7 @@ static int uaol_intel_adsp_get_capabilities(const struct device *dev,
 
 	ret = pm_device_runtime_put(dev);
 	if (ret) {
-		LOG_ERR("pm_device_runtime_put() failed, ret %d", ret);
+		LOG_ERROR("pm_device_runtime_put() failed, ret %d", ret);
 		return -EIO;
 	}
 

@@ -60,7 +60,7 @@ static struct net_buf *hci_ipc_cmd_recv(uint8_t *data, size_t remaining)
 	struct net_buf *buf;
 
 	if (remaining < sizeof(*hdr)) {
-		LOG_ERR("Not enough data for command header");
+		LOG_ERROR("Not enough data for command header");
 		return NULL;
 	}
 
@@ -69,18 +69,18 @@ static struct net_buf *hci_ipc_cmd_recv(uint8_t *data, size_t remaining)
 		data += sizeof(*hdr);
 		remaining -= sizeof(*hdr);
 	} else {
-		LOG_ERR("No available command buffers!");
+		LOG_ERROR("No available command buffers!");
 		return NULL;
 	}
 
 	if (remaining != hdr->param_len) {
-		LOG_ERR("Command payload length is not correct");
+		LOG_ERROR("Command payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
 	}
 
 	if (remaining > net_buf_tailroom(buf)) {
-		LOG_ERR("Not enough space in buffer");
+		LOG_ERROR("Not enough space in buffer");
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -97,7 +97,7 @@ static struct net_buf *hci_ipc_acl_recv(uint8_t *data, size_t remaining)
 	struct net_buf *buf;
 
 	if (remaining < sizeof(*hdr)) {
-		LOG_ERR("Not enough data for ACL header");
+		LOG_ERROR("Not enough data for ACL header");
 		return NULL;
 	}
 
@@ -106,18 +106,18 @@ static struct net_buf *hci_ipc_acl_recv(uint8_t *data, size_t remaining)
 		data += sizeof(*hdr);
 		remaining -= sizeof(*hdr);
 	} else {
-		LOG_ERR("No available ACL buffers!");
+		LOG_ERROR("No available ACL buffers!");
 		return NULL;
 	}
 
 	if (remaining != sys_le16_to_cpu(hdr->len)) {
-		LOG_ERR("ACL payload length is not correct");
+		LOG_ERROR("ACL payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
 	}
 
 	if (remaining > net_buf_tailroom(buf)) {
-		LOG_ERR("Not enough space in buffer");
+		LOG_ERROR("Not enough space in buffer");
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -134,7 +134,7 @@ static struct net_buf *hci_ipc_iso_recv(uint8_t *data, size_t remaining)
 	struct net_buf *buf;
 
 	if (remaining < sizeof(*hdr)) {
-		LOG_ERR("Not enough data for ISO header");
+		LOG_ERROR("Not enough data for ISO header");
 		return NULL;
 	}
 
@@ -143,18 +143,18 @@ static struct net_buf *hci_ipc_iso_recv(uint8_t *data, size_t remaining)
 		data += sizeof(*hdr);
 		remaining -= sizeof(*hdr);
 	} else {
-		LOG_ERR("No available ISO buffers!");
+		LOG_ERROR("No available ISO buffers!");
 		return NULL;
 	}
 
 	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr->len))) {
-		LOG_ERR("ISO payload length is not correct");
+		LOG_ERROR("ISO payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
 	}
 
 	if (remaining > net_buf_tailroom(buf)) {
-		LOG_ERR("Not enough space in buffer");
+		LOG_ERROR("Not enough space in buffer");
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -190,7 +190,7 @@ static void hci_ipc_rx(uint8_t *data, size_t len)
 		break;
 
 	default:
-		LOG_ERR("Unknown HCI type %u", pkt_indicator);
+		LOG_ERROR("Unknown HCI type %u", pkt_indicator);
 		return;
 	}
 
@@ -212,7 +212,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 		/* Pass buffer to the stack */
 		err = bt_send(buf);
 		if (err) {
-			LOG_ERR("Unable to send (err %d)", err);
+			LOG_ERROR("Unable to send (err %d)", err);
 			net_buf_unref(buf);
 		}
 
@@ -252,7 +252,7 @@ static void hci_ipc_send(struct net_buf *buf, bool is_fatal_err)
 			 * call to k_yield is against it.
 			 */
 			if (is_fatal_err) {
-				LOG_ERR("ipc_service_send error: %d", ret);
+				LOG_ERROR("ipc_service_send error: %d", ret);
 			} else {
 				/* In the POSIX ARCH, code takes zero simulated time to execute,
 				 * so busy wait loops become infinite loops, unless we
@@ -290,16 +290,17 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 			/* Send the event over ipc */
 			hci_ipc_send(buf, HCI_FATAL_ERR_MSG);
 		} else {
-			LOG_ERR("Can't create Fatal Error HCI event: %s at %d", __FILE__, __LINE__);
+			LOG_ERROR("Can't create Fatal Error HCI event: %s at %d", __FILE__,
+				  __LINE__);
 		}
 	} else {
-		LOG_ERR("IPC endpoint is not ready yet: %s at %d", __FILE__, __LINE__);
+		LOG_ERROR("IPC endpoint is not ready yet: %s at %d", __FILE__, __LINE__);
 	}
 
-	LOG_ERR("Halting system");
+	LOG_ERROR("Halting system");
 
 #else /* !CONFIG_BT_HCI_VS_FATAL_ERROR */
-	LOG_ERR("Controller assert in: %s at %d", file, line);
+	LOG_ERROR("Controller assert in: %s at %d", file, line);
 
 #endif /* !CONFIG_BT_HCI_VS_FATAL_ERROR */
 
@@ -331,11 +332,11 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 		if (buf != NULL) {
 			hci_ipc_send(buf, HCI_FATAL_ERR_MSG);
 		} else {
-			LOG_ERR("Can't create Fatal Error HCI event.\n");
+			LOG_ERROR("Can't create Fatal Error HCI event.\n");
 		}
 	}
 
-	LOG_ERR("Halting system");
+	LOG_ERROR("Halting system");
 
 	/* Flush the logs before locking the CPU */
 	LOG_PANIC();
@@ -395,12 +396,12 @@ int main(void)
 	/* Initialize IPC service instance and register endpoint. */
 	err = ipc_service_open_instance(hci_ipc_instance);
 	if (err < 0 && err != -EALREADY) {
-		LOG_ERR("IPC service instance initialization failed: %d\n", err);
+		LOG_ERROR("IPC service instance initialization failed: %d\n", err);
 	}
 
 	err = ipc_service_register_endpoint(hci_ipc_instance, &hci_ept, &hci_ept_cfg);
 	if (err) {
-		LOG_ERR("Registering endpoint failed with %d", err);
+		LOG_ERROR("Registering endpoint failed with %d", err);
 	}
 
 	k_sem_take(&ipc_bound_sem, K_FOREVER);

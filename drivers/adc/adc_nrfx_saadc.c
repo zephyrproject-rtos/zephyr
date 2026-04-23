@@ -86,7 +86,7 @@ static int acq_time_set(nrf_saadc_channel_config_t *ch_cfg, uint16_t acquisition
 		ch_cfg->acq_time = NRF_SAADC_ACQTIME_40US;
 		break;
 	default:
-		LOG_ERR("Selected ADC acquisition time is not valid");
+		LOG_ERROR("Selected ADC acquisition time is not valid");
 		return -EINVAL;
 	}
 #else
@@ -104,7 +104,7 @@ static int acq_time_set(nrf_saadc_channel_config_t *ch_cfg, uint16_t acquisition
 
 	tacq = (nrf_saadc_acqtime_t)(acq_time / MINIMUM_ACQ_TIME_IN_NS) - 1;
 	if ((tacq > NRF_SAADC_ACQTIME_MAX) || (acq_time < MINIMUM_ACQ_TIME_IN_NS)) {
-		LOG_ERR("Selected ADC acquisition time is not valid");
+		LOG_ERROR("Selected ADC acquisition time is not valid");
 		return -EINVAL;
 	} else {
 		ch_cfg->acq_time = tacq;
@@ -175,7 +175,7 @@ static int gain_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_gain gain)
 #else
 	if (gain != ADC_GAIN_1) {
 #endif /* NRF_SAADC_HAS_CH_GAIN */
-		LOG_ERR("Selected ADC gain is not valid");
+		LOG_ERROR("Selected ADC gain is not valid");
 		return -EINVAL;
 	}
 
@@ -201,7 +201,7 @@ static int reference_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_reference 
 		break;
 #endif
 	default:
-		LOG_ERR("Selected ADC reference is not valid");
+		LOG_ERROR("Selected ADC reference is not valid");
 		return -EINVAL;
 	}
 
@@ -233,7 +233,7 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 	};
 
 	if (channel_cfg->channel_id >= SAADC_CH_NUM) {
-		LOG_ERR("Invalid channel ID: %d", channel_cfg->channel_id);
+		LOG_ERROR("Invalid channel ID: %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -275,7 +275,7 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 	err = nrfx_saadc_channel_config(&cfg);
 
 	if (err != 0) {
-		LOG_ERR("Cannot configure channel %d: %d", channel_cfg->channel_id, err);
+		LOG_ERROR("Cannot configure channel %d: %d", channel_cfg->channel_id, err);
 		return err;
 	}
 
@@ -290,7 +290,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		int ret = nrfx_saadc_mode_trigger();
 
 		if (ret != 0) {
-			LOG_ERR("Cannot start sampling: %d", ret);
+			LOG_ERROR("Cannot start sampling: %d", ret);
 			adc_context_complete(ctx, -EIO);
 		}
 	}
@@ -310,14 +310,14 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 			m_data.mem_reg, m_data.user_buffer,
 			NRFX_SAADC_SAMPLES_TO_BYTES(m_data.active_channel_cnt), &samples_buffer);
 		if (error != 0) {
-			LOG_ERR("DMM buffer allocation failed err=%d", error);
+			LOG_ERROR("DMM buffer allocation failed err=%d", error);
 			adc_context_complete(ctx, -EIO);
 			return;
 		}
 
 		error = nrfx_saadc_buffer_set(samples_buffer, m_data.active_channel_cnt);
 		if (error != 0) {
-			LOG_ERR("Failed to set buffer: %d", error);
+			LOG_ERROR("Failed to set buffer: %d", error);
 			adc_context_complete(ctx, -EIO);
 		}
 	}
@@ -331,7 +331,7 @@ static inline void adc_context_enable_timer(struct adc_context *ctx)
 		int ret = nrfx_saadc_mode_trigger();
 
 		if (ret != 0) {
-			LOG_ERR("Cannot start sampling: %d", ret);
+			LOG_ERROR("Cannot start sampling: %d", ret);
 			adc_context_complete(&m_data.ctx, -EIO);
 		}
 	}
@@ -367,7 +367,7 @@ static int get_resolution(const struct adc_sequence *sequence, nrf_saadc_resolut
 		*resolution = NRF_SAADC_RESOLUTION_14BIT;
 		break;
 	default:
-		LOG_ERR("ADC resolution value %d is not valid", sequence->resolution);
+		LOG_ERROR("ADC resolution value %d is not valid", sequence->resolution);
 		return -EINVAL;
 	}
 
@@ -378,8 +378,7 @@ static int get_oversampling(const struct adc_sequence *sequence, uint8_t active_
 			    nrf_saadc_oversample_t *oversampling)
 {
 	if ((active_channel_cnt > 1) && (sequence->oversampling > 0)) {
-		LOG_ERR(
-			"Oversampling is supported for single channel only");
+		LOG_ERROR("Oversampling is supported for single channel only");
 		return -EINVAL;
 	}
 
@@ -412,7 +411,7 @@ static int get_oversampling(const struct adc_sequence *sequence, uint8_t active_
 		*oversampling = NRF_SAADC_OVERSAMPLE_256X;
 		break;
 	default:
-		LOG_ERR("Oversampling value %d is not valid", sequence->oversampling);
+		LOG_ERROR("Oversampling value %d is not valid", sequence->oversampling);
 		return -EINVAL;
 	}
 
@@ -430,8 +429,8 @@ static int check_buffer_size(const struct adc_sequence *sequence, uint8_t active
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-			sequence->buffer_size, needed_buffer_size);
+		LOG_ERROR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			  needed_buffer_size);
 		return -ENOMEM;
 	}
 
@@ -512,9 +511,8 @@ static int start_read(const struct device *dev,
 	/* Signal an error if channel selection is invalid (no channels or
 	 * a non-existing one is selected).
 	 */
-	if (!selected_channels ||
-	    (selected_channels & ~BIT_MASK(SAADC_CH_NUM))) {
-		LOG_ERR("Invalid selection of channels");
+	if (!selected_channels || (selected_channels & ~BIT_MASK(SAADC_CH_NUM))) {
+		LOG_ERROR("Invalid selection of channels");
 		return -EINVAL;
 	}
 
@@ -522,7 +520,7 @@ static int start_read(const struct device *dev,
 		if (selected_channels & BIT(channel_id)) {
 			/* Signal an error if a selected channel has not been configured yet. */
 			if (0 == (nrfx_saadc_channels_configured_get() & BIT(channel_id))) {
-				LOG_ERR("Channel %u not configured", channel_id);
+				LOG_ERROR("Channel %u not configured", channel_id);
 				return -EINVAL;
 			}
 			++active_channel_cnt;
@@ -530,7 +528,7 @@ static int start_read(const struct device *dev,
 	} while (++channel_id < SAADC_CH_NUM);
 
 	if (active_channel_cnt == 0) {
-		LOG_ERR("No channel configured");
+		LOG_ERROR("No channel configured");
 		return -EINVAL;
 	}
 
@@ -586,7 +584,7 @@ static int start_read(const struct device *dev,
 			 : NRFX_SAADC_SAMPLES_TO_BYTES(active_channel_cnt)),
 		&samples_buffer);
 	if (error != 0) {
-		LOG_ERR("DMM buffer allocation failed err=%d", error);
+		LOG_ERROR("DMM buffer allocation failed err=%d", error);
 		return error;
 	}
 
@@ -598,7 +596,7 @@ static int start_read(const struct device *dev,
 				      ? (1 + sequence->options->extra_samplings)
 				      : active_channel_cnt));
 	if (error != 0) {
-		LOG_ERR("Failed to set buffer: %d", error);
+		LOG_ERROR("Failed to set buffer: %d", error);
 		return error;
 	}
 
@@ -623,7 +621,7 @@ static int adc_nrfx_read(const struct device *dev,
 	adc_context_release(&m_data.ctx, error);
 
 	if (pm_device_runtime_put(dev)) {
-		LOG_ERR("PM put failed");
+		LOG_ERROR("PM put failed");
 	}
 
 	return error;
@@ -666,7 +664,7 @@ static void event_handler(const nrfx_saadc_evt_t *event)
 	} else if (event->type == NRFX_SAADC_EVT_CALIBRATEDONE) {
 		err = nrfx_saadc_mode_trigger();
 		if (err != 0) {
-			LOG_ERR("Cannot start sampling: %d", err);
+			LOG_ERROR("Cannot start sampling: %d", err);
 			adc_context_complete(&m_data.ctx, -EIO);
 		}
 	} else if (event->type == NRFX_SAADC_EVT_FINISHED) {
@@ -690,7 +688,7 @@ static int init_saadc(const struct device *dev)
 	/* The priority value passed here is ignored (see nrfx_glue.h). */
 	err = nrfx_saadc_init(0);
 	if (err != 0) {
-		LOG_ERR("Failed to initialize device: %s", dev->name);
+		LOG_ERROR("Failed to initialize device: %s", dev->name);
 		return -EIO;
 	}
 

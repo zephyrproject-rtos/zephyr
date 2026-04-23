@@ -252,7 +252,7 @@ static int xec_bbled_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("XEC BBLED pinctrl setup failed (%d)", ret);
+		LOG_ERROR("XEC BBLED pinctrl setup failed (%d)", ret);
 	}
 
 	return ret;

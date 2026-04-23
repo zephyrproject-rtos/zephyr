@@ -128,17 +128,17 @@ static int wwdt_numaker_install_timeout(const struct device *dev,
 	LOG_DBG("");
 	/* Validate watchdog already running */
 	if (config->wwdt_base->CTL & WWDT_CTL_WWDTEN_Msk) {
-		LOG_ERR("watchdog is busy");
+		LOG_ERROR("watchdog is busy");
 		return -EBUSY;
 	}
 
 	if (cfg->window.max == 0U) {
-		LOG_ERR("window.max should be non-zero");
+		LOG_ERROR("window.max should be non-zero");
 		return -EINVAL;
 	}
 
 	if (m_wwdt_numaker_calc_window(dev, &cfg->window, &timeout, &prescaler, &counter) != 0) {
-		LOG_ERR("window.max is out of range");
+		LOG_ERROR("window.max is out of range");
 		return -EINVAL;
 	}
 
@@ -179,17 +179,17 @@ static int wwdt_numaker_setup(const struct device *dev, uint8_t options)
 
 	/* Validate watchdog already running */
 	if (wwdt_base->CTL & WWDT_CTL_WWDTEN_Msk) {
-		LOG_ERR("watchdog is busy");
+		LOG_ERROR("watchdog is busy");
 		return -EBUSY;
 	}
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeout installed");
+		LOG_ERROR("No valid timeout installed");
 		return -EINVAL;
 	}
 
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		LOG_ERR("WDT_OPT_PAUSE_IN_SLEEP is not supported");
+		LOG_ERROR("WDT_OPT_PAUSE_IN_SLEEP is not supported");
 		return -ENOTSUP;
 	}
 

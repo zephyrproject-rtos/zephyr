@@ -73,7 +73,8 @@ static void ipc_forwarder_listener_cb(const struct zbus_channel *chan)
 
 	ret = zbus_chan_pub(&response_channel, &response, K_MSEC(100));
 	if (ret < 0) {
-		LOG_ERR("Failed to publish response on channel %s: %d", response_channel.name, ret);
+		LOG_ERROR("Failed to publish response on channel %s: %d", response_channel.name,
+			  ret);
 	} else {
 		LOG_INF("Response published on channel %s", response_channel.name);
 	}

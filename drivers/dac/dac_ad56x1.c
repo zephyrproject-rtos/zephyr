@@ -44,17 +44,17 @@ static int ad56x1_channel_setup(const struct device *dev, const struct dac_chann
 	const struct ad56x1_config *config = dev->config;
 
 	if (channel_cfg->channel_id != 0) {
-		LOG_ERR("invalid channel %i", channel_cfg->channel_id);
+		LOG_ERROR("invalid channel %i", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->resolution != config->resolution) {
-		LOG_ERR("invalid resolution %i", channel_cfg->resolution);
+		LOG_ERROR("invalid resolution %i", channel_cfg->resolution);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -69,12 +69,12 @@ static int ad56x1_write_value(const struct device *dev, uint8_t channel, uint32_
 	int result;
 
 	if (value > BIT(config->resolution) - 1) {
-		LOG_ERR("invalid value %i", value);
+		LOG_ERROR("invalid value %i", value);
 		return -EINVAL;
 	}
 
 	if (channel != 0) {
-		LOG_ERR("invalid channel %i", channel);
+		LOG_ERROR("invalid channel %i", channel);
 		return -EINVAL;
 	}
 
@@ -95,7 +95,7 @@ static int ad56x1_write_value(const struct device *dev, uint8_t channel, uint32_
 	result = spi_write_dt(&config->bus, &tx);
 
 	if (result != 0) {
-		LOG_ERR("spi_transceive failed with error %i", result);
+		LOG_ERROR("spi_transceive failed with error %i", result);
 		return result;
 	}
 
@@ -107,7 +107,7 @@ static int ad56x1_init(const struct device *dev)
 	const struct ad56x1_config *config = dev->config;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 

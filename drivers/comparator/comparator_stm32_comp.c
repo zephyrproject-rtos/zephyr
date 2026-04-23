@@ -120,7 +120,7 @@ static int stm32_comp_set_trigger(const struct device *dev, enum comparator_trig
 		exti_trigger = STM32_EXTI_TRIG_BOTH;
 		break;
 	default:
-		LOG_ERR("%s: Unsupported trigger mode %d", dev->name, trigger);
+		LOG_ERROR("%s: Unsupported trigger mode %d", dev->name, trigger);
 		return -ENOTSUP;
 	}
 
@@ -130,7 +130,7 @@ static int stm32_comp_set_trigger(const struct device *dev, enum comparator_trig
 	ret = stm32_exti_enable(cfg->exti_line_number, exti_trigger,
 				STM32_EXTI_MODE_IT);
 	if (ret != 0) {
-		LOG_ERR("%s: EXTI init failed (%d)", dev->name, ret);
+		LOG_ERROR("%s: EXTI init failed (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -182,7 +182,7 @@ static int stm32_comp_pm_callback(const struct device *dev, enum pm_device_actio
 	COMP_TypeDef *comp = cfg->comp;
 
 	if (LL_COMP_IsLocked(comp)) {
-		LOG_ERR("%s is locked", dev->name);
+		LOG_ERROR("%s is locked", dev->name);
 		return -EACCES;
 	}
 
@@ -226,7 +226,7 @@ static int stm32_comp_init(const struct device *dev)
 	/* Enable COMP bus clock */
 	ret = clock_control_on(clk, &cfg->pclken[0]);
 	if (ret != 0) {
-		LOG_ERR("%s clock op failed (%d)", dev->name, ret);
+		LOG_ERROR("%s clock op failed (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -237,7 +237,7 @@ static int stm32_comp_init(const struct device *dev)
 	 */
 	ret = clock_control_configure(clk, &cfg->pclken[1], NULL);
 	if (ret != 0) {
-		LOG_ERR("%s clock configure failed (%d)", dev->name, ret);
+		LOG_ERROR("%s clock configure failed (%d)", dev->name, ret);
 		return ret;
 	}
 #endif /* !CONFIG_SOC_SERIES_STM32G4X */
@@ -250,13 +250,13 @@ static int stm32_comp_init(const struct device *dev)
 		 * provided in Device Tree, and pinctrl_apply_state returns -ENOENT,
 		 * but this should not be treated as an error.
 		 */
-		LOG_ERR("%s pinctrl setup failed (%d)", dev->name, ret);
+		LOG_ERROR("%s pinctrl setup failed (%d)", dev->name, ret);
 		return ret;
 	}
 
 	if (LL_COMP_IsLocked(comp)) {
 		/* COMP instance shall not be locked */
-		LOG_ERR("%s COMP instance is locked", dev->name);
+		LOG_ERROR("%s COMP instance is locked", dev->name);
 		return -EACCES;
 	}
 

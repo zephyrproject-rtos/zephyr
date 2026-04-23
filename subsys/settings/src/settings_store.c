@@ -366,8 +366,8 @@ int settings_save_subtree_or_single_without_modification(const char *name,
 	if (rc >= 0) {
 		rc = 0;
 	} else if (rc < 0) {
-		LOG_ERR("Saving single setting '%s' of length %d failed: %d", name, value_size,
-			rc);
+		LOG_ERROR("Saving single setting '%s' of length %d failed: %d", name, value_size,
+			  rc);
 	}
 
 exit:

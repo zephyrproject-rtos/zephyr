@@ -59,7 +59,7 @@ static int imx_pwm_set_cycles(const struct device *dev, uint32_t channel,
 
 
 	if (period_cycles == 0U) {
-		LOG_ERR("Channel can not be set to inactive level");
+		LOG_ERROR("Channel can not be set to inactive level");
 		return -ENOTSUP;
 	}
 

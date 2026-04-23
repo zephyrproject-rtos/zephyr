@@ -365,8 +365,8 @@ static void trdc_setup_domain_mrc(TRDC_Type *trdc, uint32_t domain, uint32_t mrc
 			mrcRegionConfig->mrcIdx = mrc;
 			TRDC_MrcSetRegionDescriptorConfig(trdc, mrcRegionConfig);
 		} else {
-			LOG_ERR("TRDC MRC region address invalid: trdc=%p mrc=%u", trdc,
-				(unsigned int)mrc);
+			LOG_ERROR("TRDC MRC region address invalid: trdc=%p mrc=%u", trdc,
+				  (unsigned int)mrc);
 		}
 	}
 }

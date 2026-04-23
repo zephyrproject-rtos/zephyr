@@ -261,7 +261,7 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 	uint32_t negative_ll_channel;
 
 	if (channel < 1u || channel > TIMER_MAX_CH) {
-		LOG_ERR("Invalid channel (%d)", channel);
+		LOG_ERROR("Invalid channel (%d)", channel);
 		return -EINVAL;
 	}
 
@@ -269,17 +269,16 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 	 * Non 32-bit timers count from 0 up to the value in the ARR register
 	 * (16-bit). Thus period_cycles cannot be greater than UINT16_MAX + 1.
 	 */
-	if (!IS_TIM_32B_COUNTER_INSTANCE(timer) &&
-	    (period_cycles > UINT16_MAX + 1)) {
-		LOG_ERR("Cannot set PWM output, period cycles %u exceeds 16-bit timer limit.",
-			period_cycles);
+	if (!IS_TIM_32B_COUNTER_INSTANCE(timer) && (period_cycles > UINT16_MAX + 1)) {
+		LOG_ERROR("Cannot set PWM output, period cycles %u exceeds 16-bit timer limit.",
+			  period_cycles);
 		return -ENOTSUP;
 	}
 
 #ifdef CONFIG_PWM_CAPTURE
 	if (LL_TIM_IsEnabledIT_CC1(timer) || LL_TIM_IsEnabledIT_CC2(timer) ||
 	    LL_TIM_IsEnabledIT_CC3(timer) || LL_TIM_IsEnabledIT_CC4(timer)) {
-		LOG_ERR("Cannot set PWM output, capture in progress");
+		LOG_ERROR("Cannot set PWM output, capture in progress");
 		return -EBUSY;
 	}
 #endif /* CONFIG_PWM_CAPTURE */
@@ -298,7 +297,7 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 	if ((flags & STM32_PWM_COMPLEMENTARY_MASK) == STM32_PWM_COMPLEMENTARY) {
 		if (!negative_ll_channel) {
 			/* setting a flag on a channel that has not this capability */
-			LOG_ERR("Channel %d has NO complementary output", channel);
+			LOG_ERROR("Channel %d has NO complementary output", channel);
 			return -EINVAL;
 		}
 		current_ll_channel = negative_ll_channel;
@@ -405,30 +404,30 @@ static int pwm_stm32_configure_capture(const struct device *dev,
 
 	if (!cfg->four_channel_capture_support) {
 		if ((channel != 1u) && (channel != 2u)) {
-			LOG_ERR("PWM capture only supported on first two channels");
+			LOG_ERROR("PWM capture only supported on first two channels");
 			return -ENOTSUP;
 		}
 	} else {
 		if ((channel < 1u) || (channel > 4u)) {
-			LOG_ERR("PWM capture only exists on channels 1, 2, 3 and 4.");
+			LOG_ERROR("PWM capture only exists on channels 1, 2, 3 and 4.");
 			return -ENOTSUP;
 		}
 	}
 
 	if (LL_TIM_IsEnabledIT_CC1(timer) || LL_TIM_IsEnabledIT_CC2(timer) ||
 	    LL_TIM_IsEnabledIT_CC3(timer) || LL_TIM_IsEnabledIT_CC4(timer)) {
-		LOG_ERR("PWM capture already in progress");
+		LOG_ERROR("PWM capture already in progress");
 		return -EBUSY;
 	}
 
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
-		LOG_ERR("No PWM capture type specified");
+		LOG_ERROR("No PWM capture type specified");
 		return -EINVAL;
 	}
 
 	if (!cfg->four_channel_capture_support && !IS_TIM_SLAVE_INSTANCE(timer)) {
 		/* slave mode is only used when not in four channel mode */
-		LOG_ERR("Timer does not support slave mode for PWM capture");
+		LOG_ERROR("Timer does not support slave mode for PWM capture");
 		return -ENOTSUP;
 	}
 
@@ -472,24 +471,24 @@ static int pwm_stm32_enable_capture(const struct device *dev, uint32_t channel)
 
 	if (!cfg->four_channel_capture_support) {
 		if ((channel != 1u) && (channel != 2u)) {
-			LOG_ERR("PWM capture only supported on first two channels");
+			LOG_ERROR("PWM capture only supported on first two channels");
 			return -ENOTSUP;
 		}
 	} else {
 		if ((channel < 1u) || (channel > 4u)) {
-			LOG_ERR("PWM capture only exists on channels 1, 2, 3 and 4.");
+			LOG_ERROR("PWM capture only exists on channels 1, 2, 3 and 4.");
 			return -ENOTSUP;
 		}
 	}
 
 	if (LL_TIM_IsEnabledIT_CC1(timer) || LL_TIM_IsEnabledIT_CC2(timer) ||
 	    LL_TIM_IsEnabledIT_CC3(timer) || LL_TIM_IsEnabledIT_CC4(timer)) {
-		LOG_ERR("PWM capture already active");
+		LOG_ERROR("PWM capture already active");
 		return -EBUSY;
 	}
 
 	if (!data->capture.callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
@@ -519,12 +518,12 @@ static int pwm_stm32_disable_capture(const struct device *dev, uint32_t channel)
 
 	if (!cfg->four_channel_capture_support) {
 		if ((channel != 1u) && (channel != 2u)) {
-			LOG_ERR("PWM capture only supported on first two channels");
+			LOG_ERROR("PWM capture only supported on first two channels");
 			return -ENOTSUP;
 		}
 	} else {
 		if ((channel < 1u) || (channel > 4u)) {
-			LOG_ERR("PWM capture only exists on channels 1, 2, 3 and 4.");
+			LOG_ERROR("PWM capture only exists on channels 1, 2, 3 and 4.");
 			return -ENOTSUP;
 		}
 	}
@@ -679,7 +678,7 @@ static int pwm_stm32_init(const struct device *dev)
 	/* Enable clock and store its speed */
 	r = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (r < 0) {
-		LOG_ERR("Could not initialize clock (%d)", r);
+		LOG_ERROR("Could not initialize clock (%d)", r);
 		return r;
 	}
 
@@ -687,17 +686,17 @@ static int pwm_stm32_init(const struct device *dev)
 		/* Enable Timer clock source */
 		r = clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL);
 		if (r != 0) {
-			LOG_ERR("Could not configure clock (%d)", r);
+			LOG_ERROR("Could not configure clock (%d)", r);
 			return r;
 		}
 
 		r = clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1], &tim_clk);
 		if (r < 0) {
-			LOG_ERR("Timer clock rate get error (%d)", r);
+			LOG_ERROR("Timer clock rate get error (%d)", r);
 			return r;
 		}
 	} else {
-		LOG_ERR("Timer clock source is not specified");
+		LOG_ERROR("Timer clock source is not specified");
 		return -EINVAL;
 	}
 
@@ -709,7 +708,7 @@ static int pwm_stm32_init(const struct device *dev)
 	/* configure pinmux */
 	r = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (r < 0) {
-		LOG_ERR("PWM pinctrl setup failed (%d)", r);
+		LOG_ERROR("PWM pinctrl setup failed (%d)", r);
 		return r;
 	}
 
@@ -735,7 +734,7 @@ static int pwm_stm32_init(const struct device *dev)
 		ll_tim_set_trigger_output(timer, cfg->mastermode);
 	} else {
 		if (cfg->mastermode != 0) {
-			LOG_ERR("%s: Timer does not support mastermode", dev->name);
+			LOG_ERROR("%s: Timer does not support mastermode", dev->name);
 			return -ENOTSUP;
 		}
 	}
@@ -752,14 +751,12 @@ static int pwm_stm32_init(const struct device *dev)
 		/* enable outputs and counter */
 		LL_TIM_EnableAllOutputs(timer);
 	} else if (cfg->deadtime != 0) {
-		LOG_ERR("Setting deadtime %d on a non-break timer %s",
-			cfg->deadtime, dev->name);
+		LOG_ERROR("Setting deadtime %d on a non-break timer %s", cfg->deadtime, dev->name);
 		return -ENOTSUP;
 	}
 #else
 	if (cfg->deadtime != 0) {
-		LOG_ERR("Setting deadtime %d on a non-break timer %s",
-			cfg->deadtime, dev->name);
+		LOG_ERROR("Setting deadtime %d on a non-break timer %s", cfg->deadtime, dev->name);
 		return -ENOTSUP;
 	}
 #endif /* IS_TIM_BREAK_INSTANCE */

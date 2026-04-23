@@ -150,13 +150,13 @@ static int coap_server_process(int sock_fd)
 			return 0;
 		}
 
-		LOG_ERR("Failed to process client request (%d)", -errno);
+		LOG_ERROR("Failed to process client request (%d)", -errno);
 		return -errno;
 	}
 
 	ret = coap_packet_parse(&request, buf, MIN(received, sizeof(buf)), options, opt_num);
 	if (ret < 0) {
-		LOG_ERR("Failed To parse coap message (%d)", ret);
+		LOG_ERROR("Failed To parse coap message (%d)", ret);
 		return ret;
 	}
 
@@ -191,21 +191,21 @@ static int coap_server_process(int sock_fd)
 		ret = coap_packet_init(&response, buf, sizeof(buf), COAP_VERSION_1, type, tkl,
 				       token, COAP_RESPONSE_CODE_REQUEST_TOO_LARGE, id);
 		if (ret < 0) {
-			LOG_ERR("Failed to init response (%d)", ret);
+			LOG_ERROR("Failed to init response (%d)", ret);
 			goto unlock;
 		}
 
 		ret = coap_append_option_int(&response, COAP_OPTION_SIZE1,
 					     CONFIG_COAP_SERVER_MESSAGE_SIZE);
 		if (ret < 0) {
-			LOG_ERR("Failed to add SIZE1 option (%d)", ret);
+			LOG_ERROR("Failed to add SIZE1 option (%d)", ret);
 			goto unlock;
 		}
 
 		ret = coap_service_send(service, &response, net_sad(&client_addr), client_addr_len,
 					NULL);
 		if (ret < 0) {
-			LOG_ERR("Failed to reply \"Request Entity Too Large\" (%d)", ret);
+			LOG_ERROR("Failed to reply \"Request Entity Too Large\" (%d)", ret);
 			goto unlock;
 		}
 
@@ -251,7 +251,8 @@ static int coap_server_process(int sock_fd)
 						   &request, &response,
 						   well_known_buf, sizeof(well_known_buf));
 		if (ret < 0) {
-			LOG_ERR("Failed to build well known core for %s (%d)", service->name, ret);
+			LOG_ERROR("Failed to build well known core for %s (%d)", service->name,
+				  ret);
 			goto unlock;
 		}
 
@@ -283,7 +284,7 @@ static int coap_server_process(int sock_fd)
 
 			ret = coap_ack_init(&ack, &request, ack_buf, sizeof(ack_buf), (uint8_t)ret);
 			if (ret < 0) {
-				LOG_ERR("Failed to init ACK (%d)", ret);
+				LOG_ERROR("Failed to init ACK (%d)", ret);
 				goto unlock;
 			}
 
@@ -328,8 +329,8 @@ static void coap_server_retransmit(void)
 			ret = zsock_sendto(service->data->sock_fd, pending->data, pending->len, 0,
 					   &pending->addr, ADDRLEN(&pending->addr));
 			if (ret < 0) {
-				LOG_ERR("Failed to send pending retransmission for %s (%d)",
-					service->name, ret);
+				LOG_ERROR("Failed to send pending retransmission for %s (%d)",
+					  service->name, ret);
 			}
 			__ASSERT_NO_MSG(ret == pending->len);
 		} else {
@@ -377,7 +378,7 @@ static int coap_server_poll_timeout(void)
 static void coap_server_update_services(void)
 {
 	if (zvfs_eventfd_write(control_sock, 1)) {
-		LOG_ERR("Failed to notify server thread (%d)", errno);
+		LOG_ERROR("Failed to notify server thread (%d)", errno);
 	}
 }
 
@@ -649,7 +650,7 @@ send:
 
 	ret = zsock_sendto(service->data->sock_fd, cpkt->data, cpkt->offset, 0, addr, addr_len);
 	if (ret < 0) {
-		LOG_ERR("Failed to send CoAP message (%d)", ret);
+		LOG_ERROR("Failed to send CoAP message (%d)", ret);
 		return ret;
 	}
 	__ASSERT_NO_MSG(ret == cpkt->offset);
@@ -805,7 +806,7 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 
 	control_sock = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (control_sock < 0) {
-		LOG_ERR("Failed to create event fd (%d)", -errno);
+		LOG_ERROR("Failed to create event fd (%d)", -errno);
 		return;
 	}
 
@@ -813,7 +814,7 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 		if (svc->flags & COAP_SERVICE_AUTOSTART) {
 			ret = coap_service_start(svc);
 			if (ret < 0) {
-				LOG_ERR("Failed to autostart service %s (%d)", svc->name, ret);
+				LOG_ERROR("Failed to autostart service %s (%d)", svc->name, ret);
 			}
 		}
 	}
@@ -825,9 +826,9 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 				continue;
 			}
 			if (sock_nfds >= MAX_POLL_FD) {
-				LOG_ERR("Maximum active CoAP services reached (%d), "
-					"increase CONFIG_ZVFS_POLL_MAX to support more.",
-					MAX_POLL_FD);
+				LOG_ERROR("Maximum active CoAP services reached (%d), "
+					  "increase CONFIG_ZVFS_POLL_MAX to support more.",
+					  MAX_POLL_FD);
 				break;
 			}
 
@@ -849,7 +850,7 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 
 		ret = zsock_poll(sock_fds, sock_nfds, coap_server_poll_timeout());
 		if (ret < 0) {
-			LOG_ERR("Poll error (%d)", -errno);
+			LOG_ERROR("Poll error (%d)", -errno);
 			k_msleep(10);
 		}
 
@@ -870,13 +871,13 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 			}
 
 			if (sock_fds[i].revents & ZSOCK_POLLERR) {
-				LOG_ERR("Poll error on %d", sock_fds[i].fd);
+				LOG_ERROR("Poll error on %d", sock_fds[i].fd);
 			}
 			if (sock_fds[i].revents & ZSOCK_POLLHUP) {
 				LOG_DBG("Poll hup on %d", sock_fds[i].fd);
 			}
 			if (sock_fds[i].revents & ZSOCK_POLLNVAL) {
-				LOG_ERR("Poll invalid on %d", sock_fds[i].fd);
+				LOG_ERROR("Poll invalid on %d", sock_fds[i].fd);
 			}
 		}
 

@@ -100,7 +100,7 @@ int sam_xdmac_channel_configure(const struct device *dev, uint32_t channel,
 	Xdmac * const xdmac = dev_cfg->regs;
 
 	if (channel >= channel_num) {
-		LOG_ERR("Channel %d out of range", channel);
+		LOG_ERROR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
@@ -146,7 +146,7 @@ int sam_xdmac_transfer_configure(const struct device *dev, uint32_t channel,
 	Xdmac * const xdmac = dev_cfg->regs;
 
 	if (channel >= channel_num) {
-		LOG_ERR("Channel %d out of range", channel);
+		LOG_ERROR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
@@ -206,13 +206,13 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 	int ret;
 
 	if (channel >= channel_num) {
-		LOG_ERR("Channel %d out of range", channel);
+		LOG_ERROR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
 	if (dev_data->dma_channels[channel].state != DMA_STATE_INIT &&
 	    dev_data->dma_channels[channel].state != DMA_STATE_CONFIGURED) {
-		LOG_ERR("Config Channel %d at invalidate state", channel);
+		LOG_ERROR("Config Channel %d at invalidate state", channel);
 		return -EINVAL;
 	}
 
@@ -221,13 +221,13 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 
 	if (cfg->source_data_size != 1U && cfg->source_data_size != 2U &&
 	    cfg->source_data_size != 4U) {
-		LOG_ERR("Invalid 'source_data_size' value");
+		LOG_ERROR("Invalid 'source_data_size' value");
 		return -EINVAL;
 	}
 
 	if (cfg->block_count != 1U) {
-		LOG_ERR("Only single block transfer is currently supported."
-			    " Please submit a patch.");
+		LOG_ERROR("Only single block transfer is currently supported."
+			  " Please submit a patch.");
 		return -EINVAL;
 	}
 
@@ -280,8 +280,7 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 			| xdmac_inc_cfg;
 		break;
 	default:
-		LOG_ERR("'channel_direction' value %d is not supported",
-			    cfg->channel_direction);
+		LOG_ERROR("'channel_direction' value %d is not supported", cfg->channel_direction);
 		return -EINVAL;
 	}
 
@@ -340,13 +339,13 @@ int sam_xdmac_transfer_start(const struct device *dev, uint32_t channel)
 	Xdmac * const xdmac = config->regs;
 
 	if (channel >= channel_num) {
-		LOG_ERR("Channel %d out of range", channel);
+		LOG_ERROR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
 	if (dev_data->dma_channels[channel].state != DMA_STATE_CONFIGURED &&
 	    dev_data->dma_channels[channel].state != DMA_STATE_RUNNING) {
-		LOG_ERR("Start Channel %d at invalidate state", channel);
+		LOG_ERROR("Start Channel %d at invalidate state", channel);
 		return -EINVAL;
 	}
 
@@ -375,12 +374,12 @@ int sam_xdmac_transfer_stop(const struct device *dev, uint32_t channel)
 	Xdmac * const xdmac = config->regs;
 
 	if (channel >= channel_num) {
-		LOG_ERR("Channel %d out of range", channel);
+		LOG_ERROR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
 	if (dev_data->dma_channels[channel].state == DMA_STATE_INIT) {
-		LOG_ERR("Channel %d not configured", channel);
+		LOG_ERROR("Channel %d not configured", channel);
 		return -EINVAL;
 	}
 
@@ -412,7 +411,7 @@ static int sam_xdmac_initialize(const struct device *dev)
 
 	dev_data->dma_ctx.dma_channels = FIELD_GET(XDMAC_GTYPE_NB_CH_Msk, xdmac->XDMAC_GTYPE) + 1;
 	if (dev_data->dma_ctx.dma_channels > DMA_CHANNELS_MAX + 1) {
-		LOG_ERR("Maximum supported channels is %d", DMA_CHANNELS_MAX + 1);
+		LOG_ERROR("Maximum supported channels is %d", DMA_CHANNELS_MAX + 1);
 		return -EINVAL;
 	}
 
@@ -445,7 +444,7 @@ static int xdmac_suspend(const struct device *dev, uint32_t channel)
 	Xdmac * const xdmac = config->regs;
 
 	if (channel >= channel_num) {
-		LOG_ERR("Channel %d out of range", channel);
+		LOG_ERROR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
@@ -455,7 +454,7 @@ static int xdmac_suspend(const struct device *dev, uint32_t channel)
 	case DMA_STATE_SUSPENDED:
 		return 0;
 	default:
-		LOG_ERR("Suspend Channel %d at invalidate state", channel);
+		LOG_ERROR("Suspend Channel %d at invalidate state", channel);
 		return -EINVAL;
 	}
 
@@ -491,7 +490,7 @@ static int xdmac_resume(const struct device *dev, uint32_t channel)
 	Xdmac * const xdmac = config->regs;
 
 	if (channel >= channel_num) {
-		LOG_ERR("Channel %d out of range", channel);
+		LOG_ERROR("Channel %d out of range", channel);
 		return -EINVAL;
 	}
 
@@ -501,7 +500,7 @@ static int xdmac_resume(const struct device *dev, uint32_t channel)
 	case DMA_STATE_RUNNING:
 		return 0;
 	default:
-		LOG_ERR("Resume Channel %d at invalidate state", channel);
+		LOG_ERROR("Resume Channel %d at invalidate state", channel);
 		return -EINVAL;
 	}
 

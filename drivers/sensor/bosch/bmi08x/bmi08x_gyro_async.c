@@ -44,7 +44,7 @@ static void bmi08x_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 
 	err = rtio_sqe_rx_buf(iodev_sqe, buf_len_req, buf_len_req, (uint8_t **)&edata, &buf_len);
 	CHECKIF(err < 0 || buf_len < buf_len_req || !edata) {
-		LOG_ERR("Failed to get a read-buffer of size %u bytes", buf_len_req);
+		LOG_ERROR("Failed to get a read-buffer of size %u bytes", buf_len_req);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -58,7 +58,7 @@ static void bmi08x_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 					      (uint8_t *)edata->frame.payload,
 					      sizeof(edata->frame.payload), &out_sqe, false);
 	if (err < 0) {
-		LOG_ERR("Failed to prepare async read operation");
+		LOG_ERROR("Failed to prepare async read operation");
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -66,7 +66,7 @@ static void bmi08x_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 
 	complete_sqe = rtio_sqe_acquire(config->rtio_bus.ctx);
 	if (!complete_sqe) {
-		LOG_ERR("Failed to prepare async read operation");
+		LOG_ERROR("Failed to prepare async read operation");
 		rtio_sqe_drop_all(config->rtio_bus.ctx);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
@@ -85,7 +85,7 @@ void bmi08x_gyro_async_submit(const struct device *dev, struct rtio_iodev_sqe *i
 	} else if (IS_ENABLED(CONFIG_BMI08X_GYRO_STREAM)) {
 		bmi08x_gyro_stream_submit(dev, iodev_sqe);
 	} else {
-		LOG_ERR("Streaming not enabled");
+		LOG_ERROR("Streaming not enabled");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }

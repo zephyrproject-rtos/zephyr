@@ -143,11 +143,11 @@ static int send_evt(uint8_t *response, uint8_t len)
 	buf = bt_buf_get_rx(BT_BUF_EVT, K_NO_WAIT);
 
 	if (!buf) {
-		LOG_ERR("EVT no buffer");
+		LOG_ERROR("EVT no buffer");
 		return -ENOMEM;
 	}
 	if (len > net_buf_tailroom(buf)) {
-		LOG_ERR("EVT too long: %d", len);
+		LOG_ERROR("EVT too long: %d", len);
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
@@ -186,7 +186,7 @@ static uint32_t get_len(const uint8_t *hdr_buf, uint8_t type)
 	case BT_HCI_H4_ACL:
 		return sys_le16_to_cpu(((const struct bt_hci_acl_hdr *)hdr_buf)->len);
 	default:
-		LOG_ERR("Invalid type: %u", type);
+		LOG_ERROR("Invalid type: %u", type);
 		return 0;
 	}
 }
@@ -206,7 +206,7 @@ static int hdr_len(uint8_t type)
 	case BT_HCI_H4_ACL:
 		return sizeof(struct bt_hci_acl_hdr);
 	default:
-		LOG_ERR("Invalid type: %u", type);
+		LOG_ERROR("Invalid type: %u", type);
 		return 0;
 	}
 }
@@ -228,7 +228,7 @@ static struct net_buf *alloc_tx_buf(uint8_t type)
 		alloc_type = BT_BUF_ACL_OUT;
 		break;
 	default:
-		LOG_ERR("Invalid type: %u", type);
+		LOG_ERROR("Invalid type: %u", type);
 		return NULL;
 	}
 
@@ -278,7 +278,7 @@ static void rx_isr(void)
 
 				buf = alloc_tx_buf(type);
 				if (!buf) {
-					LOG_ERR("No available command buffers!");
+					LOG_ERROR("No available command buffers!");
 					state = ST_IDLE;
 					return;
 				}
@@ -288,7 +288,7 @@ static void rx_isr(void)
 				if (type == H4_ST_EXT_CMD) {
 					/* Convert to regular HCI_CMD */
 					if (remaining > 255) {
-						LOG_ERR("len > 255");
+						LOG_ERROR("len > 255");
 						net_buf_unref(buf);
 						state = ST_DISCARD;
 					} else {
@@ -297,7 +297,7 @@ static void rx_isr(void)
 				}
 				net_buf_add_mem(buf, hdr_buf, header_length);
 				if (remaining > net_buf_tailroom(buf)) {
-					LOG_ERR("Not enough space in buffer");
+					LOG_ERROR("Not enough space in buffer");
 					net_buf_unref(buf);
 					state = ST_DISCARD;
 				} else {
@@ -397,7 +397,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 			err = bt_send(buf);
 		}
 		if (err) {
-			LOG_ERR("Unable to send (err %d)", err);
+			LOG_ERROR("Unable to send (err %d)", err);
 			net_buf_unref(buf);
 		}
 
@@ -420,7 +420,7 @@ static int hci_uart_init(void)
 {
 	LOG_DBG("");
 	if (!device_is_ready(hci_uart_dev)) {
-		LOG_ERR("HCI UART %s is not ready", hci_uart_dev->name);
+		LOG_ERROR("HCI UART %s is not ready", hci_uart_dev->name);
 		return -EINVAL;
 	}
 	uart_irq_rx_disable(hci_uart_dev);
@@ -453,7 +453,7 @@ int main(void)
 		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		err = h4_send(buf);
 		if (err) {
-			LOG_ERR("Failed to send");
+			LOG_ERROR("Failed to send");
 		}
 	}
 	return 0;

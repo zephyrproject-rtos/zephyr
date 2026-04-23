@@ -261,7 +261,7 @@ static int qc_ar8031_cfg_link(const struct device *dev, enum phy_link_speed spee
 	int ret;
 
 	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
-		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		LOG_ERROR("Disabling auto-negotiation is not supported by this driver");
 		return -ENOTSUP;
 	}
 
@@ -338,7 +338,7 @@ static int qc_ar8031_init(const struct device *dev)
 		}
 	} while (reg_value != AR8031_PHY_ID1 && counter-- > 0);
 	if (counter == 0U) {
-		LOG_ERR("PHY (%d) can't read ID", cfg->addr);
+		LOG_ERROR("PHY (%d) can't read ID", cfg->addr);
 		return -EIO;
 	}
 

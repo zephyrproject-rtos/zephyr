@@ -350,12 +350,12 @@ static int thread_analyzer_init(void)
 				      (void *) (uintptr_t) i, NULL, NULL,
 				      AUTO_THREAD_PRIO, 0, K_FOREVER);
 		if (!tid) {
-			LOG_ERR("k_thread_create() failed for core %u", i);
+			LOG_ERROR("k_thread_create() failed for core %u", i);
 			continue;
 		}
 		ret = k_thread_cpu_pin(tid, i);
 		if (ret < 0) {
-			LOG_ERR("Pinning thread to code core %u", i);
+			LOG_ERROR("Pinning thread to code core %u", i);
 			k_thread_abort(tid);
 			continue;
 		}

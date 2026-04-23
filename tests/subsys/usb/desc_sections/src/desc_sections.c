@@ -146,7 +146,7 @@ static bool find_cfg_data_ep(const struct usb_ep_descriptor * const ep_descr,
 				ep_descr->bEndpointAddress);
 
 			if (ep_count != i) {
-				LOG_ERR("EPs are assigned in wrong order");
+				LOG_ERROR("EPs are assigned in wrong order");
 				return false;
 			}
 

@@ -41,7 +41,7 @@ static int icm42x70_reg_read_spi(const union icm42x70_bus *bus, uint8_t start, u
 
 	ret = spi_transceive_dt(&bus->spi, &tx, &rx);
 	if (ret) {
-		LOG_ERR("spi_transceive FAIL %d\n", ret);
+		LOG_ERROR("spi_transceive FAIL %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -57,7 +57,7 @@ static int icm42x70_reg_write_spi(const union icm42x70_bus *bus, uint8_t reg, ui
 	int ret = spi_write_dt(&bus->spi, &tx);
 
 	if (ret) {
-		LOG_ERR("spi_write FAIL %d\n", ret);
+		LOG_ERROR("spi_write FAIL %d\n", ret);
 		return ret;
 	}
 	return 0;

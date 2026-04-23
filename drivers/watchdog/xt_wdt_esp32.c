@@ -75,7 +75,7 @@ static int esp32_xt_wdt_install_timeout(const struct device *dev,
 
 	if (cfg->window.min != 0U || cfg->window.max == 0U ||
 	    cfg->window.max >= ESP32_XT_WDT_MAX_TIMEOUT) {
-		LOG_ERR("Invalid timeout configuration");
+		LOG_ERROR("Invalid timeout configuration");
 		return -EINVAL;
 	}
 
@@ -127,7 +127,7 @@ static int esp32_xt_wdt_init(const struct device *dev)
 	err = esp_intr_alloc(cfg->irq_source, flags, (intr_handler_t)esp32_xt_wdt_isr, (void *)dev,
 			     NULL);
 	if (err) {
-		LOG_ERR("Failed to register ISR\n");
+		LOG_ERROR("Failed to register ISR\n");
 		return -EFAULT;
 	}
 

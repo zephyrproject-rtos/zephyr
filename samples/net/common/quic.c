@@ -40,7 +40,7 @@ int setup_quic(const struct net_sockaddr *remote_addr,
 
 	quic_sock = quic_connection_open(remote_addr, local_addr);
 	if (quic_sock < 0) {
-		LOG_ERR("Failed to open QUIC connection socket (%d)", quic_sock);
+		LOG_ERROR("Failed to open QUIC connection socket (%d)", quic_sock);
 		return quic_sock;
 	}
 
@@ -57,7 +57,7 @@ int setup_quic(const struct net_sockaddr *remote_addr,
 	ret = zsock_setsockopt(quic_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
 			       sec_tag_list, sec_tag_list_size);
 	if (ret < 0) {
-		LOG_ERR("Failed to set TLS certs (%d)", -errno);
+		LOG_ERROR("Failed to set TLS certs (%d)", -errno);
 		ret = -errno;
 		close_quic(quic_sock);
 		goto out;
@@ -66,7 +66,7 @@ int setup_quic(const struct net_sockaddr *remote_addr,
 	ret = zsock_setsockopt(quic_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
 			       alpn_list, alpn_list_size);
 	if (ret < 0) {
-		LOG_ERR("Failed to set ALPN (%d)", -errno);
+		LOG_ERROR("Failed to set ALPN (%d)", -errno);
 		ret = -errno;
 		close_quic(quic_sock);
 		goto out;
@@ -84,7 +84,7 @@ void close_quic(int quic_sock)
 
 	ret = quic_connection_close(quic_sock);
 	if (ret < 0) {
-		LOG_ERR("Failed to close QUIC socket %d (%d)", quic_sock, ret);
+		LOG_ERROR("Failed to close QUIC socket %d (%d)", quic_sock, ret);
 		return;
 	}
 

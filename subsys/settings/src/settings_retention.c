@@ -150,16 +150,16 @@ static int settings_retention_load(struct settings_store *cs, const struct setti
 			LOG_DBG("Finished loading retentions settings, size: 0x%x", pos);
 			break;
 		} else if (lengths.length_name > SETTINGS_MAX_NAME_LEN) {
-			LOG_ERR("Invalid name length: %d, max supported: %d",
-				lengths.length_name, SETTINGS_MAX_NAME_LEN);
+			LOG_ERROR("Invalid name length: %d, max supported: %d", lengths.length_name,
+				  SETTINGS_MAX_NAME_LEN);
 			return -EIO;
 		} else if (lengths.length_value > SETTINGS_MAX_VAL_LEN) {
-			LOG_ERR("Invalid value length: %d, max supported: %d",
-				lengths.length_name, SETTINGS_MAX_VAL_LEN);
+			LOG_ERROR("Invalid value length: %d, max supported: %d",
+				  lengths.length_name, SETTINGS_MAX_VAL_LEN);
 			return -EIO;
 		} else if ((lengths.length_name + lengths.length_value + pos) > max_pos) {
-			LOG_ERR("Data length goes beyond retention area: 0x%x, max size: 0x%x",
-				(lengths.length_name + lengths.length_value + pos), max_pos);
+			LOG_ERROR("Data length goes beyond retention area: 0x%x, max size: 0x%x",
+				  (lengths.length_name + lengths.length_value + pos), max_pos);
 			return -EIO;
 		}
 

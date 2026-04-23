@@ -34,7 +34,7 @@ VL53L0X_Error VL53L0X_WriteMulti(VL53L0X_DEV Dev, uint8_t index, uint8_t *pdata,
 
 	if (status_int < 0) {
 		Status = VL53L0X_ERROR_CONTROL_INTERFACE;
-		LOG_ERR("Failed to write");
+		LOG_ERROR("Failed to write");
 	}
 
 	return Status;
@@ -49,7 +49,7 @@ VL53L0X_Error VL53L0X_ReadMulti(VL53L0X_DEV Dev, uint8_t index, uint8_t *pdata,
 	status_int = i2c_burst_read(Dev->i2c, Dev->I2cDevAddr, index, pdata,
 				    count);
 	if (status_int < 0) {
-		LOG_ERR("Failed to read");
+		LOG_ERROR("Failed to read");
 		return -EIO;
 	}
 
@@ -66,7 +66,7 @@ VL53L0X_Error VL53L0X_WrByte(VL53L0X_DEV Dev, uint8_t index, uint8_t data)
 
 	if (status_int < 0) {
 		Status = VL53L0X_ERROR_CONTROL_INTERFACE;
-		LOG_ERR("i2c_reg_write_byte failed (%d)", Status);
+		LOG_ERROR("i2c_reg_write_byte failed (%d)", Status);
 	}
 
 	return Status;
@@ -85,7 +85,7 @@ VL53L0X_Error VL53L0X_WrWord(VL53L0X_DEV Dev, uint8_t index, uint16_t data)
 	status_int = i2c_write(Dev->i2c, I2CBuffer, 3, Dev->I2cDevAddr);
 	if (status_int < 0) {
 		Status = VL53L0X_ERROR_CONTROL_INTERFACE;
-		LOG_ERR("i2c_write failed (%d)", Status);
+		LOG_ERROR("i2c_write failed (%d)", Status);
 	}
 
 	return Status;
@@ -106,7 +106,7 @@ VL53L0X_Error VL53L0X_WrDWord(VL53L0X_DEV Dev, uint8_t index, uint32_t data)
 	status_int = i2c_write(Dev->i2c, I2CBuffer, 5, Dev->I2cDevAddr);
 	if (status_int < 0) {
 		Status = VL53L0X_ERROR_CONTROL_INTERFACE;
-		LOG_ERR("i2c_write failed (%d)", Status);
+		LOG_ERROR("i2c_write failed (%d)", Status);
 	}
 
 	return Status;
@@ -125,7 +125,7 @@ VL53L0X_Error VL53L0X_UpdateByte(VL53L0X_DEV Dev, uint8_t index,
 	status_int = VL53L0X_RdByte(Dev, index, &data);
 	if (status_int < 0) {
 		Status = VL53L0X_ERROR_CONTROL_INTERFACE;
-		LOG_ERR("VL53L0X_RdByte failed (%d)", Status);
+		LOG_ERROR("VL53L0X_RdByte failed (%d)", Status);
 	}
 
 	if (Status == VL53L0X_ERROR_NONE) {
@@ -148,7 +148,7 @@ VL53L0X_Error VL53L0X_RdByte(VL53L0X_DEV Dev, uint8_t index, uint8_t *data)
 	status_int = i2c_reg_read_byte(Dev->i2c, Dev->I2cDevAddr, index, data);
 	if (status_int < 0) {
 		Status = VL53L0X_ERROR_CONTROL_INTERFACE;
-		LOG_ERR("i2c_reg_read_byte failed (%d)", Status);
+		LOG_ERROR("i2c_reg_read_byte failed (%d)", Status);
 	}
 
 	return Status;
@@ -162,7 +162,7 @@ VL53L0X_Error VL53L0X_RdWord(VL53L0X_DEV Dev, uint8_t index, uint16_t *data)
 
 	status_int = i2c_burst_read(Dev->i2c, Dev->I2cDevAddr, index, buf, 2);
 	if (status_int < 0) {
-		LOG_ERR("i2c_burst_read failed");
+		LOG_ERROR("i2c_burst_read failed");
 		return -EIO;
 	}
 	*data = ((uint16_t)buf[0]<<8) + (uint16_t)buf[1];
@@ -178,7 +178,7 @@ VL53L0X_Error  VL53L0X_RdDWord(VL53L0X_DEV Dev, uint8_t index, uint32_t *data)
 
 	status_int = i2c_burst_read(Dev->i2c, Dev->I2cDevAddr, index, buf, 4);
 	if (status_int < 0) {
-		LOG_ERR("i2c_burst_read failed");
+		LOG_ERROR("i2c_burst_read failed");
 		return -EIO;
 	}
 	*data = ((uint32_t)buf[0]<<24) + ((uint32_t)buf[1]<<16) +

@@ -238,7 +238,7 @@ static void test_dns_add_callback6(void)
 
 	ret = dns_resolve_init(dnsCtx, dns_servers_str, NULL);
 	if (ret < 0) {
-		LOG_ERR("dns_resolve_init fail (%d)", ret);
+		LOG_ERROR("dns_resolve_init fail (%d)", ret);
 		return;
 	}
 
@@ -301,7 +301,7 @@ ZTEST(dns_addremove, test_dns_add_remove_two_callback6)
 
 	ret = dns_resolve_init(dnsCtx, dns_servers_str, NULL);
 	if (ret < 0) {
-		LOG_ERR("dns_resolve_init fail (%d)", ret);
+		LOG_ERROR("dns_resolve_init fail (%d)", ret);
 		return;
 	}
 
@@ -318,7 +318,7 @@ ZTEST(dns_addremove, test_dns_add_remove_two_callback6)
 
 	ret = dns_resolve_init(dnsCtx, dns_servers_str, NULL);
 	if (ret < 0) {
-		LOG_ERR("dns_resolve_init fail (%d)", ret);
+		LOG_ERROR("dns_resolve_init fail (%d)", ret);
 		return;
 	}
 
@@ -412,7 +412,7 @@ static void test_dns_add_callback(void)
 
 	ret = dns_resolve_init(dnsCtx, dns_servers_str, NULL);
 	if (ret < 0) {
-		LOG_ERR("dns_resolve_init fail (%d)", ret);
+		LOG_ERROR("dns_resolve_init fail (%d)", ret);
 		return;
 	}
 
@@ -454,7 +454,7 @@ ZTEST(dns_addremove, test_dns_reconfigure_callback)
 
 	ret = dns_resolve_init(dnsCtx, dns_servers_str, NULL);
 	if (ret < 0) {
-		LOG_ERR("dns_resolve_init fail (%d)", ret);
+		LOG_ERROR("dns_resolve_init fail (%d)", ret);
 		return;
 	}
 
@@ -527,7 +527,7 @@ ZTEST(dns_addremove, test_dns_add_remove_two_callback)
 
 	ret = dns_resolve_init(dnsCtx, dns_servers_str, NULL);
 	if (ret < 0) {
-		LOG_ERR("dns_resolve_init fail (%d)", ret);
+		LOG_ERROR("dns_resolve_init fail (%d)", ret);
 		return;
 	}
 
@@ -544,7 +544,7 @@ ZTEST(dns_addremove, test_dns_add_remove_two_callback)
 
 	ret = dns_resolve_init(dnsCtx, dns_servers_str, NULL);
 	if (ret < 0) {
-		LOG_ERR("dns_resolve_init fail (%d)", ret);
+		LOG_ERROR("dns_resolve_init fail (%d)", ret);
 		return;
 	}
 

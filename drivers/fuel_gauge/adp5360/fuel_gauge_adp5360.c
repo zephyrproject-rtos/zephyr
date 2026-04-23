@@ -120,8 +120,8 @@ static int fuel_gauge_adp5360_enable(const struct device *dev, bool enable)
 	ret = mfd_adp5360_reg_update(mfd_dev, FUEL_GAUGE_ADP5360_REG_FUEL_GAUGE_MODE,
 				     FUEL_GAUGE_ADP5360_FUEL_GAUGE_ENABLE_MASK, enable ? 1 : 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to %s fuel gauge in ADP5360 MFD: %d", enable ? "enable" : "disable",
-			ret);
+		LOG_ERROR("Failed to %s fuel gauge in ADP5360 MFD: %d",
+			  enable ? "enable" : "disable", ret);
 		return ret;
 	}
 	return 0;
@@ -139,7 +139,7 @@ static int fuel_gauge_adp5360_get_cycle_count(const struct device *dev,
 	ret = mfd_adp5360_reg_burst_read(mfd_dev, FUEL_GAUGE_ADP5360_REG_BAT_SOC_ACM_H,
 					 (uint8_t *)&buf, 2);
 	if (ret < 0) {
-		LOG_ERR("Failed to read cycle count from ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to read cycle count from ADP5360 MFD: %d", ret);
 		return ret;
 	}
 
@@ -160,7 +160,7 @@ static int fuel_gauge_adp5360_get_vbat(const struct device *dev, union fuel_gaug
 	ret = mfd_adp5360_reg_burst_read(mfd_dev, FUEL_GAUGE_ADP5360_REG_VBAT_READ_H,
 					 (uint8_t *)&buf, 2);
 	if (ret < 0) {
-		LOG_ERR("Failed to read voltage from ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to read voltage from ADP5360 MFD: %d", ret);
 		return ret;
 	}
 	/* Register Voltage readout is in millivolts,
@@ -182,7 +182,7 @@ static int fuel_gauge_adp5360_get_status(const struct device *dev, union fuel_ga
 
 	ret = mfd_adp5360_reg_read(mfd_dev, FUEL_GAUGE_ADP5360_REG_PGOOD_STATUS, &buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to read status from ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to read status from ADP5360 MFD: %d", ret);
 		return ret;
 	}
 	val->fg_status = buf;
@@ -200,7 +200,7 @@ static int fuel_gauge_adp5360_get_capacity(const struct device *dev, union fuel_
 	/* Read the capacity value from the corresponding register in the ADP5360 MFD */
 	ret = mfd_adp5360_reg_read(mfd_dev, FUEL_GAUGE_ADP5360_REG_BAT_CAP, &buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to read capacity from ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to read capacity from ADP5360 MFD: %d", ret);
 		return ret;
 	}
 	val->design_cap = FUEL_GAUGE_ADP5360_BAT_CAP_CODE_TO_MAH(buf);
@@ -218,7 +218,7 @@ static int fuel_gauge_adp5360_get_bat_soc(const struct device *dev, union fuel_g
 	/* Read the state of charge value from the corresponding register in the ADP5360 MFD */
 	ret = mfd_adp5360_reg_read(mfd_dev, FUEL_GAUGE_ADP5360_REG_BAT_SOC, &buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to read state of charge from ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to read state of charge from ADP5360 MFD: %d", ret);
 		return ret;
 	}
 	/* Clamp the state of charge value to 100% */
@@ -246,7 +246,7 @@ static int fuel_gauge_adp5360_get_soc_alarm(const struct device *dev,
 	 */
 	ret = mfd_adp5360_reg_read(mfd_dev, FUEL_GAUGE_ADP5360_REG_FUEL_GAUGE_MODE, &buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to read state of charge alarm from ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to read state of charge alarm from ADP5360 MFD: %d", ret);
 		return ret;
 	}
 
@@ -266,8 +266,8 @@ static int fuel_gauge_adp5360_get_soc_alarm(const struct device *dev,
 		val->state_of_charge_alarm = FUEL_GAUGE_ADP5360_SOC_ALARM_31PCT;
 		break;
 	default:
-		LOG_ERR("Invalid state of charge alarm setting read from ADP5360 MFD: %d",
-			soc_low_th_setting);
+		LOG_ERROR("Invalid state of charge alarm setting read from ADP5360 MFD: %d",
+			  soc_low_th_setting);
 		return -EIO;
 	}
 	return 0;
@@ -283,7 +283,7 @@ static int fuel_gauge_adp5360_get_thr_uv(const struct device *dev, union fuel_ga
 	ret = mfd_adp5360_reg_burst_read(mfd_dev, FUEL_GAUGE_ADP5360_REG_V_THERM, (uint8_t *)&buf,
 					 2);
 	if (ret < 0) {
-		LOG_ERR("Failed to read Thermistor Voltage from ADP5360: %d", ret);
+		LOG_ERROR("Failed to read Thermistor Voltage from ADP5360: %d", ret);
 		return ret;
 	}
 
@@ -340,15 +340,15 @@ static int fuel_gauge_adp5360_set_soc_alarm(const struct device *dev, union fuel
 		buf = 3;
 		break;
 	default:
-		LOG_ERR("Invalid state of charge alarm value: %d", val.state_of_charge_alarm);
-		LOG_ERR("Valid values are: 6, 11, 21, 31");
+		LOG_ERROR("Invalid state of charge alarm value: %d", val.state_of_charge_alarm);
+		LOG_ERROR("Valid values are: 6, 11, 21, 31");
 		return -EINVAL;
 	}
 	/* Write the state of charge alarm value to the corresponding register in the ADP5360 MFD */
 	ret = mfd_adp5360_reg_update(mfd_dev, FUEL_GAUGE_ADP5360_REG_FUEL_GAUGE_MODE,
 				     FUEL_GAUGE_ADP5360_SOC_LOW_THRESHOLD_MASK, buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to write state of charge alarm to ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to write state of charge alarm to ADP5360 MFD: %d", ret);
 		return ret;
 	}
 
@@ -367,7 +367,7 @@ static int fuel_gauge_adp5360_set_bat_cap(const struct device *dev, union fuel_g
 	buf = FUEL_GAUGE_ADP5360_BAT_CAP_MAH_TO_CODE(val.design_cap);
 	ret = mfd_adp5360_reg_write(mfd_dev, FUEL_GAUGE_ADP5360_REG_BAT_CAP, buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to write battery capacity to ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to write battery capacity to ADP5360 MFD: %d", ret);
 		return ret;
 	}
 	return 0;
@@ -386,7 +386,7 @@ static int fuel_gauge_adp5360_set_bat_cap_probe(const struct device *dev)
 	buf = FUEL_GAUGE_ADP5360_BAT_CAP_MAH_TO_CODE(clamp_bat_cap);
 	ret = mfd_adp5360_reg_write(mfd_dev, FUEL_GAUGE_ADP5360_REG_BAT_CAP, buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to write battery capacity to ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to write battery capacity to ADP5360 MFD: %d", ret);
 		return ret;
 	}
 	return 0;
@@ -406,14 +406,14 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 	ret = linear_range_group_get_win_index(v_soc_range, ARRAY_SIZE(v_soc_range), temp_val,
 					       temp_val, &temp_idx);
 	if (ret) {
-		LOG_ERR("Failed to retrieve SOC Value for 0 percent!");
+		LOG_ERROR("Failed to retrieve SOC Value for 0 percent!");
 		return ret;
 	}
 
 	if (IN_RANGE(temp_idx, 0, UINT8_MAX)) {
 		buf[0] = temp_idx;
 	} else {
-		LOG_ERR("Value is out of range!");
+		LOG_ERROR("Value is out of range!");
 		return -EINVAL;
 	}
 
@@ -422,14 +422,14 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 	ret = linear_range_group_get_win_index(v_soc_range, ARRAY_SIZE(v_soc_range), temp_val,
 					       temp_val, &temp_idx);
 	if (ret) {
-		LOG_ERR("Failed to retrieve SOC Value for 5 percent!");
+		LOG_ERROR("Failed to retrieve SOC Value for 5 percent!");
 		return ret;
 	}
 
 	if (IN_RANGE(temp_idx, 0, UINT8_MAX)) {
 		buf[1] = temp_idx;
 	} else {
-		LOG_ERR("Value is out of range!");
+		LOG_ERROR("Value is out of range!");
 		return -EINVAL;
 	}
 
@@ -438,14 +438,14 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 	ret = linear_range_group_get_win_index(v_soc_range, ARRAY_SIZE(v_soc_range), temp_val,
 					       temp_val, &temp_idx);
 	if (ret) {
-		LOG_ERR("Failed to retrieve SOC Value for 11 percent!");
+		LOG_ERROR("Failed to retrieve SOC Value for 11 percent!");
 		return ret;
 	}
 
 	if (IN_RANGE(temp_idx, 0, UINT8_MAX)) {
 		buf[2] = temp_idx;
 	} else {
-		LOG_ERR("Value is out of range!");
+		LOG_ERROR("Value is out of range!");
 		return -EINVAL;
 	}
 
@@ -454,14 +454,14 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 	ret = linear_range_group_get_win_index(v_soc_range, ARRAY_SIZE(v_soc_range), temp_val,
 					       temp_val, &temp_idx);
 	if (ret) {
-		LOG_ERR("Failed to retrieve SOC Value for 19 percent!");
+		LOG_ERROR("Failed to retrieve SOC Value for 19 percent!");
 		return ret;
 	}
 
 	if (IN_RANGE(temp_idx, 0, UINT8_MAX)) {
 		buf[3] = temp_idx;
 	} else {
-		LOG_ERR("Value is out of range!");
+		LOG_ERROR("Value is out of range!");
 		return -EINVAL;
 	}
 
@@ -470,14 +470,14 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 	ret = linear_range_group_get_win_index(v_soc_range, ARRAY_SIZE(v_soc_range), temp_val,
 					       temp_val, &temp_idx);
 	if (ret) {
-		LOG_ERR("Failed to retrieve SOC Value for 28 percent!");
+		LOG_ERROR("Failed to retrieve SOC Value for 28 percent!");
 		return ret;
 	}
 
 	if (IN_RANGE(temp_idx, 0, UINT8_MAX)) {
 		buf[4] = temp_idx;
 	} else {
-		LOG_ERR("Value is out of range!");
+		LOG_ERROR("Value is out of range!");
 		return -EINVAL;
 	}
 
@@ -486,14 +486,14 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 	ret = linear_range_group_get_win_index(v_soc_range, ARRAY_SIZE(v_soc_range), temp_val,
 					       temp_val, &temp_idx);
 	if (ret) {
-		LOG_ERR("Failed to retrieve SOC Value for 41 percent!");
+		LOG_ERROR("Failed to retrieve SOC Value for 41 percent!");
 		return ret;
 	}
 
 	if (IN_RANGE(temp_idx, 0, UINT8_MAX)) {
 		buf[5] = temp_idx;
 	} else {
-		LOG_ERR("Value is out of range!");
+		LOG_ERROR("Value is out of range!");
 		return -EINVAL;
 	}
 
@@ -502,14 +502,14 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 	ret = linear_range_group_get_win_index(v_soc_range, ARRAY_SIZE(v_soc_range), temp_val,
 					       temp_val, &temp_idx);
 	if (ret) {
-		LOG_ERR("Failed to retrieve SOC Value for 55 percent!");
+		LOG_ERROR("Failed to retrieve SOC Value for 55 percent!");
 		return ret;
 	}
 
 	if (IN_RANGE(temp_idx, 0, UINT8_MAX)) {
 		buf[6] = temp_idx;
 	} else {
-		LOG_ERR("Value is out of range!");
+		LOG_ERROR("Value is out of range!");
 		return -EINVAL;
 	}
 
@@ -518,14 +518,14 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 	ret = linear_range_group_get_win_index(v_soc_range, ARRAY_SIZE(v_soc_range), temp_val,
 					       temp_val, &temp_idx);
 	if (ret) {
-		LOG_ERR("Failed to retrieve SOC Value for 69 percent!");
+		LOG_ERROR("Failed to retrieve SOC Value for 69 percent!");
 		return ret;
 	}
 
 	if (IN_RANGE(temp_idx, 0, UINT8_MAX)) {
 		buf[7] = temp_idx;
 	} else {
-		LOG_ERR("Value is out of range!");
+		LOG_ERROR("Value is out of range!");
 		return -EINVAL;
 	}
 
@@ -534,14 +534,14 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 	ret = linear_range_group_get_win_index(v_soc_range, ARRAY_SIZE(v_soc_range), temp_val,
 					       temp_val, &temp_idx);
 	if (ret) {
-		LOG_ERR("Failed to retrieve SOC Value for 84 percent!");
+		LOG_ERROR("Failed to retrieve SOC Value for 84 percent!");
 		return ret;
 	}
 
 	if (IN_RANGE(temp_idx, 0, UINT8_MAX)) {
 		buf[8] = temp_idx;
 	} else {
-		LOG_ERR("Value is out of range!");
+		LOG_ERROR("Value is out of range!");
 		return -EINVAL;
 	}
 
@@ -550,14 +550,14 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 	ret = linear_range_group_get_win_index(v_soc_range, ARRAY_SIZE(v_soc_range), temp_val,
 					       temp_val, &temp_idx);
 	if (ret) {
-		LOG_ERR("Failed to retrieve SOC Value for 100 percent!");
+		LOG_ERROR("Failed to retrieve SOC Value for 100 percent!");
 		return ret;
 	}
 
 	if (IN_RANGE(temp_idx, 0, UINT8_MAX)) {
 		buf[9] = temp_idx;
 	} else {
-		LOG_ERR("Value is out of range!");
+		LOG_ERROR("Value is out of range!");
 		return -EINVAL;
 	}
 
@@ -565,7 +565,7 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 	ret = mfd_adp5360_reg_burst_write(mfd_dev, FUEL_GAUGE_ADP5360_REG_V_SOC_0, buf,
 					  ARRAY_SIZE(buf)-1);
 	if (ret < 0) {
-		LOG_ERR("Failed to write v_soc values to ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to write v_soc values to ADP5360 MFD: %d", ret);
 		return ret;
 	}
 	return 0;
@@ -588,7 +588,7 @@ static int fuel_gauge_adp5360_set_bat_cap_acm_ctl_probe(const struct device *dev
 	 */
 	ret = mfd_adp5360_reg_write(mfd_dev, FUEL_GAUGE_ADP5360_REG_BAT_SOC_ACM_CTL, buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to write battery capacity ACM control to ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to write battery capacity ACM control to ADP5360 MFD: %d", ret);
 		return ret;
 	}
 	return 0;
@@ -611,7 +611,7 @@ static int fuel_gauge_adp5360_set_fuel_gauge_mode_probe(const struct device *dev
 	      FIELD_PREP(FUEL_GAUGE_ADP5360_FUEL_GAUGE_ENABLE_MASK, config->fuel_gauge_enable);
 	ret = mfd_adp5360_reg_write(mfd_dev, FUEL_GAUGE_ADP5360_REG_FUEL_GAUGE_MODE, buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to write fuel gauge mode to ADP5360 MFD: %d", ret);
+		LOG_ERROR("Failed to write fuel gauge mode to ADP5360 MFD: %d", ret);
 		return ret;
 	}
 	return 0;
@@ -636,22 +636,22 @@ static int fuel_gauge_adp5360_probe(const struct device *dev)
 
 	ret = fuel_gauge_adp5360_set_v_soc_probe(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to set v_soc values during probe: %d", ret);
+		LOG_ERROR("Failed to set v_soc values during probe: %d", ret);
 		return ret;
 	}
 	ret = fuel_gauge_adp5360_set_bat_cap_probe(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to set battery capacity during probe: %d", ret);
+		LOG_ERROR("Failed to set battery capacity during probe: %d", ret);
 		return ret;
 	}
 	ret = fuel_gauge_adp5360_set_bat_cap_acm_ctl_probe(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to set battery capacity ACM control during probe: %d", ret);
+		LOG_ERROR("Failed to set battery capacity ACM control during probe: %d", ret);
 		return ret;
 	}
 	ret = fuel_gauge_adp5360_set_fuel_gauge_mode_probe(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to set fuel gauge mode during probe: %d", ret);
+		LOG_ERROR("Failed to set fuel gauge mode during probe: %d", ret);
 		return ret;
 	}
 	return 0;
@@ -663,19 +663,19 @@ static int fuel_gauge_adp5360_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->mfd_adp5360)) {
-		LOG_ERR("ADP5360 MFD device / Fuel Gauge is not ready");
+		LOG_ERROR("ADP5360 MFD device / Fuel Gauge is not ready");
 		return -ENODEV;
 	}
 
 	ret = fuel_gauge_adp5360_probe(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to probe fuel gauge during initialization: %d", ret);
+		LOG_ERROR("Failed to probe fuel gauge during initialization: %d", ret);
 		return ret;
 	}
 
 	ret = fuel_gauge_adp5360_enable(dev, true);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable fuel gauge during initialization: %d", ret);
+		LOG_ERROR("Failed to enable fuel gauge during initialization: %d", ret);
 		return ret;
 	}
 

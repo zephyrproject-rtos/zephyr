@@ -103,13 +103,13 @@ static int ap_memory_write_reg(OSPI_HandleTypeDef *hospi, uint32_t address, uint
 
 	/* Configure the command */
 	if (HAL_OSPI_Command(hospi, &cmd, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("OSPI write command failed");
+		LOG_ERROR("OSPI write command failed");
 		return -EIO;
 	}
 
 	/* Transmission of the data */
 	if (HAL_OSPI_Transmit(hospi, value, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("OSPI transmit failed");
+		LOG_ERROR("OSPI transmit failed");
 		return -EIO;
 	}
 
@@ -141,13 +141,13 @@ static int ap_memory_read_reg(OSPI_HandleTypeDef *hospi, uint32_t address, uint8
 
 	/* Configure the command */
 	if (HAL_OSPI_Command(hospi, &cmd, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("OSPI read command failed");
+		LOG_ERROR("OSPI read command failed");
 		return -EIO;
 	}
 
 	/* Reception of the data */
 	if (HAL_OSPI_Receive(hospi, value, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("OSPI receive failed");
+		LOG_ERROR("OSPI receive failed");
 		return -EIO;
 	}
 
@@ -282,13 +282,13 @@ static int memc_stm32_ospi_psram_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("OSPI pinctrl setup failed (%d)", ret);
+		LOG_ERROR("OSPI pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			     (clock_control_subsys_t)&dev_cfg->pclken) != 0) {
-		LOG_ERR("Could not enable OSPI clock");
+		LOG_ERROR("Could not enable OSPI clock");
 		return -EIO;
 	}
 
@@ -296,13 +296,13 @@ static int memc_stm32_ospi_psram_init(const struct device *dev)
 #if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_ker)
 	if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				    (clock_control_subsys_t)&dev_cfg->pclken_ker, NULL) != 0) {
-		LOG_ERR("Could not select OSPI domain clock");
+		LOG_ERROR("Could not select OSPI domain clock");
 		return -EIO;
 	}
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				   (clock_control_subsys_t)&dev_cfg->pclken_ker,
 				   &ahb_clock_freq) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken_ker)");
+		LOG_ERROR("Failed call clock_control_get_rate(pclken_ker)");
 		return -EIO;
 	}
 #else
@@ -314,7 +314,7 @@ static int memc_stm32_ospi_psram_init(const struct device *dev)
 #if DT_CLOCKS_HAS_NAME(STM32_OSPI_NODE, ospi_mgr)
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			     (clock_control_subsys_t)&dev_cfg->pclken_mgr) != 0) {
-		LOG_ERR("Could not enable OSPI Manager clock");
+		LOG_ERROR("Could not enable OSPI Manager clock");
 		return -EIO;
 	}
 #endif
@@ -333,7 +333,7 @@ static int memc_stm32_ospi_psram_init(const struct device *dev)
 	}
 
 	if (prescaler > STM32_OSPI_CLOCK_PRESCALER_MAX) {
-		LOG_ERR("OSPI could not find valid prescaler value");
+		LOG_ERROR("OSPI could not find valid prescaler value");
 		return -EINVAL;
 	}
 
@@ -344,22 +344,22 @@ static int memc_stm32_ospi_psram_init(const struct device *dev)
 
 	/* OSPI Init */
 	if (HAL_OSPI_Init(hospi) != HAL_OK) {
-		LOG_ERR("HAL_OSPI_Init(): <FAILED>");
+		LOG_ERROR("HAL_OSPI_Init(): <FAILED>");
 		return -EIO;
 	}
 
 	if (HAL_OSPIM_Config(hospi, ospim_cfg, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("HAL_OSPIM_Config(): <FAILED>");
+		LOG_ERROR("HAL_OSPIM_Config(): <FAILED>");
 		return -EIO;
 	}
 
 	if (HAL_OSPI_DLYB_SetConfig(hospi, dlyb_cfg) != HAL_OK) {
-		LOG_ERR("HAL_OSPI_DLYB_SetConfig(): <FAILED>");
+		LOG_ERROR("HAL_OSPI_DLYB_SetConfig(): <FAILED>");
 		return -EIO;
 	}
 
 	if (HAL_OSPI_DLYB_GetClockPeriod(hospi, &ll_dlyb_cfg) != HAL_OK) {
-		LOG_ERR("HAL_OSPI_DLYB_GetClockPeriod(): <FAILED>");
+		LOG_ERROR("HAL_OSPI_DLYB_GetClockPeriod(): <FAILED>");
 		return -EIO;
 	}
 
@@ -374,16 +374,16 @@ static int memc_stm32_ospi_psram_init(const struct device *dev)
 
 	if ((ll_dlyb_cfg.PhaseSel != ll_dlyb_cfg_test.PhaseSel) ||
 	    (ll_dlyb_cfg.Units != ll_dlyb_cfg_test.Units)) {
-		LOG_ERR("PhaseSel: <FAILED>");
+		LOG_ERROR("PhaseSel: <FAILED>");
 		return -EIO;
 	}
 
 	if (ap_memory_configure(hospi) != 0) {
-		LOG_ERR("ap_memory_configure(): <FAILED>");
+		LOG_ERROR("ap_memory_configure(): <FAILED>");
 		return -EIO;
 	}
 	if (config_memory_mapped(dev) != 0) {
-		LOG_ERR("config_memory_mapped(): <FAILED>");
+		LOG_ERROR("config_memory_mapped(): <FAILED>");
 		return -EIO;
 	}
 

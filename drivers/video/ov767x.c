@@ -515,14 +515,14 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 				break;
 			}
 			if (ret < 0) {
-				LOG_ERR("Resolution not set!");
+				LOG_ERROR("Resolution not set!");
 				return ret;
 			}
 		}
 		i++;
 	}
 	if (ret < 0) {
-		LOG_ERR("Resolution not supported!");
+		LOG_ERROR("Resolution not supported!");
 		return ret;
 	}
 
@@ -561,14 +561,14 @@ static int ov7675_set_fmt(const struct device *dev, struct video_format *fmt)
 				break;
 			}
 			if (ret < 0) {
-				LOG_ERR("Resolution not set!");
+				LOG_ERROR("Resolution not set!");
 				return ret;
 			}
 		}
 		i++;
 	}
 	if (ret < 0) {
-		LOG_ERR("Resolution not supported!");
+		LOG_ERROR("Resolution not supported!");
 		return ret;
 	}
 
@@ -584,7 +584,7 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 	int ret __maybe_unused;
 
 	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
-		LOG_ERR("Only RGB565 and YUYV supported!");
+		LOG_ERROR("Only RGB565 and YUYV supported!");
 		return -ENOTSUP;
 	}
 
@@ -603,11 +603,11 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 		ret = video_write_cci_multiregs8(&config->bus, ov767x_yuv422_regs,
 						 ARRAY_SIZE(ov767x_yuv422_regs));
 	} else {
-		LOG_ERR("Image format not supported");
+		LOG_ERROR("Image format not supported");
 		ret = -ENOTSUP;
 	}
 	if (ret < 0) {
-		LOG_ERR("Format not set!");
+		LOG_ERROR("Format not set!");
 		return ret;
 	}
 
@@ -680,7 +680,7 @@ static int ov767x_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(&config->pwdn, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not clear power down pin: %d", ret);
+			LOG_ERROR("Could not clear power down pin: %d", ret);
 			return ret;
 		}
 	}
@@ -695,7 +695,7 @@ static int ov767x_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT);
 		if (ret < 0) {
-			LOG_ERR("Could not set reset pin: %d", ret);
+			LOG_ERROR("Could not set reset pin: %d", ret);
 			return ret;
 		}
 		/* Reset is active low, has 1ms settling time*/
@@ -717,24 +717,24 @@ static int ov767x_init(const struct device *dev)
 
 	ret = i2c_write_dt(&config->bus, &cmd, sizeof(cmd));
 	if (ret < 0) {
-		LOG_ERR("Could not request product ID: %d", ret);
+		LOG_ERROR("Could not request product ID: %d", ret);
 		return ret;
 	}
 	ret = i2c_read_dt(&config->bus, &pid, sizeof(pid));
 	if (ret < 0) {
-		LOG_ERR("Could not read product ID: %d", ret);
+		LOG_ERROR("Could not read product ID: %d", ret);
 		return ret;
 	}
 
 	if (pid != OV767X_PROD_ID) {
-		LOG_ERR("Incorrect product ID: 0x%02X", pid);
+		LOG_ERROR("Incorrect product ID: 0x%02X", pid);
 		return -ENODEV;
 	}
 
 	/* Reset camera registers */
 	ret = video_write_cci_reg(&config->bus, OV767X_REG8(OV767X_COM7), 0x80);
 	if (ret < 0) {
-		LOG_ERR("Could not reset camera: %d", ret);
+		LOG_ERROR("Could not reset camera: %d", ret);
 		return ret;
 	}
 	/* Delay after reset */

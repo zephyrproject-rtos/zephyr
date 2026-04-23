@@ -115,14 +115,14 @@ static int slip_process_byte(unsigned char c)
 							NET_AF_UNSPEC, 0,
 							K_NO_WAIT);
 		if (!pkt_curr) {
-			LOG_ERR("No more buffers");
+			LOG_ERROR("No more buffers");
 			return 0;
 		}
 	}
 
 	buf = net_buf_frag_last(pkt_curr->buffer);
 	if (!net_buf_tailroom(buf)) {
-		LOG_ERR("No more buf space: buf %p len %u", buf, buf->len);
+		LOG_ERROR("No more buf space: buf %p len %u", buf, buf->len);
 
 		net_pkt_unref(pkt_curr);
 		pkt_curr = NULL;
@@ -218,7 +218,7 @@ static void process_request(struct net_buf *buf)
 		get_ieee_addr();
 		break;
 	default:
-		LOG_ERR("Not handled request %c", cmd);
+		LOG_ERROR("Not handled request %c", cmd);
 		break;
 	}
 }
@@ -262,7 +262,7 @@ static void process_data(struct net_pkt *pkt)
 	ret = radio_api->tx(ieee802154_dev, IEEE802154_TX_MODE_DIRECT,
 			    pkt, buf);
 	if (ret) {
-		LOG_ERR("Error transmit data");
+		LOG_ERROR("Error transmit data");
 	}
 
 	/* TODO: Return correct status codes */
@@ -294,7 +294,7 @@ static void process_config(struct net_pkt *pkt)
 		set_channel(net_buf_pull_u8(buf));
 		break;
 	default:
-		LOG_ERR("Unhandled cmd %u", cmd);
+		LOG_ERROR("Unhandled cmd %u", cmd);
 	}
 }
 
@@ -328,7 +328,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			process_config(pkt);
 			break;
 		default:
-			LOG_ERR("Unknown message specifier %c", specifier);
+			LOG_ERROR("Unknown message specifier %c", specifier);
 			break;
 		}
 
@@ -464,7 +464,7 @@ static bool init_ieee802154(void)
 	LOG_INF("Initialize ieee802.15.4");
 
 	if (!device_is_ready(ieee802154_dev)) {
-		LOG_ERR("IEEE 802.15.4 device not ready");
+		LOG_ERROR("IEEE 802.15.4 device not ready");
 		return false;
 	}
 
@@ -539,7 +539,7 @@ int main(void)
 	LOG_INF("Starting wpan_serial application");
 
 	if (!device_is_ready(uart_dev)) {
-		LOG_ERR("CDC ACM device not ready");
+		LOG_ERROR("CDC ACM device not ready");
 		return 0;
 	}
 
@@ -577,7 +577,7 @@ int main(void)
 
 	/* Initialize ieee802154 device */
 	if (!init_ieee802154()) {
-		LOG_ERR("Unable to initialize ieee802154");
+		LOG_ERROR("Unable to initialize ieee802154");
 		return 0;
 	}
 

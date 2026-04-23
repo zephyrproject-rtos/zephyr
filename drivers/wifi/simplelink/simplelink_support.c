@@ -121,7 +121,7 @@ static int32_t configure_simplelink(void)
 	}
 
 	if (mode != ROLE_STA) {
-		LOG_ERR("Failed to configure NWP to default state");
+		LOG_ERROR("Failed to configure NWP to default state");
 		return -1;
 	}
 
@@ -141,9 +141,8 @@ static int32_t configure_simplelink(void)
 	ASSERT_ON_ERROR(retval, WLAN_ERROR);
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
-	if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr4)
-			< 0) {
-		LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_ADDR");
+	if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr4) < 0) {
+		LOG_ERROR("Invalid CONFIG_NET_CONFIG_MY_IPV4_ADDR");
 		return -1;
 	}
 	ipV4.Ip = (_u32)SL_IPV4_VAL(addr4.s4_addr[0],
@@ -153,9 +152,8 @@ static int32_t configure_simplelink(void)
 
 #if defined(CONFIG_NET_CONFIG_MY_IPV4_GW)
 	if (strcmp(CONFIG_NET_CONFIG_MY_IPV4_GW, "") != 0) {
-		if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_GW,
-				  &addr4) < 0) {
-			LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_GW");
+		if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_GW, &addr4) < 0) {
+			LOG_ERROR("Invalid CONFIG_NET_CONFIG_MY_IPV4_GW");
 			return -1;
 		}
 		ipV4.IpGateway = (_u32)SL_IPV4_VAL(addr4.s4_addr[0],
@@ -167,9 +165,8 @@ static int32_t configure_simplelink(void)
 
 #if defined(CONFIG_NET_CONFIG_MY_IPV4_NETMASK)
 	if (strcmp(CONFIG_NET_CONFIG_MY_IPV4_NETMASK, "") != 0) {
-		if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_NETMASK,
-				  &addr4) < 0) {
-			LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_NETMASK");
+		if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_NETMASK, &addr4) < 0) {
+			LOG_ERROR("Invalid CONFIG_NET_CONFIG_MY_IPV4_NETMASK");
 			return -1;
 		}
 		ipV4.IpMask = (_u32)SL_IPV4_VAL(addr4.s4_addr[0],
@@ -252,7 +249,7 @@ static int32_t configure_simplelink(void)
 	ASSERT_ON_ERROR(mode, DEVICE_ERROR);
 
 	if (mode != ROLE_STA) {
-		LOG_ERR("Failed to configure device to it's default state");
+		LOG_ERROR("Failed to configure device to it's default state");
 		retval = -1;
 	} else {
 		nwp.role = ROLE_STA;
@@ -324,15 +321,13 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 				event_data->Bssid[5]);
 			sl_conn.error = 0;
 		} else {
-			LOG_ERR("[WLAN ERROR] "
-				"Device disconnected from the AP: %s",
-				event_data->SsidName);
-			LOG_ERR("BSSID: %x:%x:%x:%x:%x:%x on error: %d",
-				event_data->Bssid[0],
-				event_data->Bssid[1], event_data->Bssid[2],
-				event_data->Bssid[3], event_data->Bssid[4],
-				event_data->Bssid[5],
-				event_data->ReasonCode);
+			LOG_ERROR("[WLAN ERROR] "
+				  "Device disconnected from the AP: %s",
+				  event_data->SsidName);
+			LOG_ERROR("BSSID: %x:%x:%x:%x:%x:%x on error: %d", event_data->Bssid[0],
+				  event_data->Bssid[1], event_data->Bssid[2], event_data->Bssid[3],
+				  event_data->Bssid[4], event_data->Bssid[5],
+				  event_data->ReasonCode);
 			sl_conn.error = event_data->ReasonCode;
 		}
 
@@ -364,8 +359,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 		(void)memset(&(sl_conn.bssid), 0x0, sizeof(sl_conn.bssid));
 		break;
 	default:
-		LOG_ERR("[WLAN EVENT] Unexpected event [0x%lx]",
-			wlan_event->Id);
+		LOG_ERROR("[WLAN EVENT] Unexpected event [0x%lx]", wlan_event->Id);
 		break;
 	}
 }
@@ -458,8 +452,7 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *netapp_event)
 		break;
 
 	default:
-		LOG_ERR("[NETAPP EVENT] Unexpected event [0x%lx]",
-			netapp_event->Id);
+		LOG_ERROR("[NETAPP EVENT] Unexpected event [0x%lx]", netapp_event->Id);
 		break;
 	}
 
@@ -513,37 +506,37 @@ void SimpleLinkFatalErrorEventHandler(SlDeviceFatal_t *fatal_err_event)
 
 	switch (fatal_err_event->Id) {
 	case SL_DEVICE_EVENT_FATAL_DEVICE_ABORT:
-		LOG_ERR("[ERROR] - FATAL ERROR: "
-			"Abort NWP event detected: "
-			"AbortType=%ld, AbortData=0x%lx",
-			fatal_err_event->Data.DeviceAssert.Code,
-			fatal_err_event->Data.DeviceAssert.Value);
+		LOG_ERROR("[ERROR] - FATAL ERROR: "
+			  "Abort NWP event detected: "
+			  "AbortType=%ld, AbortData=0x%lx",
+			  fatal_err_event->Data.DeviceAssert.Code,
+			  fatal_err_event->Data.DeviceAssert.Value);
 		break;
 
 	case SL_DEVICE_EVENT_FATAL_DRIVER_ABORT:
-		LOG_ERR("[ERROR] - FATAL ERROR: Driver Abort detected.");
+		LOG_ERROR("[ERROR] - FATAL ERROR: Driver Abort detected.");
 		break;
 
 	case SL_DEVICE_EVENT_FATAL_NO_CMD_ACK:
-		LOG_ERR("[ERROR] - FATAL ERROR: No Cmd Ack detected "
-			"[cmd opcode = 0x%lx]",
-			fatal_err_event->Data.NoCmdAck.Code);
+		LOG_ERROR("[ERROR] - FATAL ERROR: No Cmd Ack detected "
+			  "[cmd opcode = 0x%lx]",
+			  fatal_err_event->Data.NoCmdAck.Code);
 		break;
 
 	case SL_DEVICE_EVENT_FATAL_SYNC_LOSS:
-		LOG_ERR("[ERROR] - FATAL ERROR: Sync loss detected");
+		LOG_ERROR("[ERROR] - FATAL ERROR: Sync loss detected");
 		break;
 
 	case SL_DEVICE_EVENT_FATAL_CMD_TIMEOUT:
-		LOG_ERR("[ERROR] - FATAL ERROR: "
-			"Async event timeout detected "
-			"[event opcode =0x%lx]",
-			fatal_err_event->Data.CmdTimeout.Code);
+		LOG_ERROR("[ERROR] - FATAL ERROR: "
+			  "Async event timeout detected "
+			  "[event opcode =0x%lx]",
+			  fatal_err_event->Data.CmdTimeout.Code);
 		break;
 
 	default:
-		LOG_ERR("[ERROR] - FATAL ERROR: "
-			"Unspecified error detected");
+		LOG_ERROR("[ERROR] - FATAL ERROR: "
+			  "Unspecified error detected");
 		break;
 	}
 }

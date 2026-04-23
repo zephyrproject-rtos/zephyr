@@ -101,7 +101,7 @@ static void usb_transfer_work(struct k_work *item)
 
 		ret = usb_write(ep, trans->buffer, trans->bsize, &bytes);
 		if (ret) {
-			LOG_ERR("Transfer error %d, ep 0x%02x", ret, ep);
+			LOG_ERROR("Transfer error %d, ep 0x%02x", ret, ep);
 			/* transfer error */
 			trans->status = -EINVAL;
 			goto done;
@@ -114,7 +114,7 @@ static void usb_transfer_work(struct k_work *item)
 		ret = usb_dc_ep_read_wait(ep, trans->buffer, trans->bsize,
 					  &bytes);
 		if (ret) {
-			LOG_ERR("Transfer error %d, ep 0x%02x", ret, ep);
+			LOG_ERROR("Transfer error %d, ep 0x%02x", ret, ep);
 			/* transfer error */
 			trans->status = -EINVAL;
 			goto done;
@@ -183,7 +183,7 @@ void usb_transfer_ep_callback(uint8_t ep, enum usb_dc_ep_cb_status_code status)
 				usb_dc_ep_read_wait(ep, &data, 1, &bytes);
 			} while (bytes);
 
-			LOG_ERR("RX data lost, no transfer");
+			LOG_ERROR("RX data lost, no transfer");
 		}
 		return;
 	}
@@ -221,14 +221,14 @@ int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
 	}
 
 	if (!trans) {
-		LOG_ERR("No transfer slot available");
+		LOG_ERROR("No transfer slot available");
 		ret = -ENOMEM;
 		goto done;
 	}
 
 	if (trans->status == -EBUSY) {
 		/* A transfer is already ongoing and not completed */
-		LOG_ERR("A transfer is already ongoing, ep 0x%02x", ep);
+		LOG_ERROR("A transfer is already ongoing, ep 0x%02x", ep);
 		k_sem_give(&trans->sem);
 		ret = -EBUSY;
 		goto done;

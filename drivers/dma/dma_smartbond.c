@@ -263,13 +263,13 @@ static bool dma_channel_dst_addr_check_and_adjust(uint32_t channel, uint32_t *ds
 	if ((IS_AES_KEYS_BUF_RANGE(phy_address) &&
 		(is_aes_keys_protected || is_qspic_keys_protected) &&
 		(channel != DMA_SECURE_CHANNEL))) {
-		LOG_ERR("Keys are protected. Only secure channel #7 can be employed.");
+		LOG_ERROR("Keys are protected. Only secure channel #7 can be employed.");
 		return false;
 	}
 
 	if (IS_QSPIF_ADDRESS(phy_address) || IS_QSPIF_CACHED_ADDRESS(phy_address) ||
 				IS_OTP_ADDRESS(phy_address) || IS_OTP_P_ADDRESS(phy_address)) {
-		LOG_ERR("Invalid destination location.");
+		LOG_ERROR("Invalid destination location.");
 		return false;
 	}
 
@@ -311,7 +311,7 @@ static bool dma_channel_src_addr_check_and_adjust(uint32_t channel, uint32_t *sr
 	if (((IS_ADDRESS_USER_DATA_KEYS_SEGMENT(phy_address) && is_aes_keys_protected) ||
 	     (IS_ADDRESS_QSPI_FW_KEYS_SEGMENT(phy_address) && is_qspic_keys_protected)) &&
 							(channel != DMA_SECURE_CHANNEL)) {
-		LOG_ERR("Keys are protected. Only secure channel #7 can be employed.");
+		LOG_ERROR("Keys are protected. Only secure channel #7 can be employed.");
 		return false;
 	}
 
@@ -490,7 +490,7 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	uint32_t src_dst_address;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Invalid DMA channel index");
+		LOG_ERROR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 	regs = DMA_CHN2REG(channel);
@@ -498,12 +498,12 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	dma_ctrl_reg = regs->DMA_CTRL_REG;
 
 	if (DMA_CTRL_REG_GET_FIELD(DMA_ON, dma_ctrl_reg)) {
-		LOG_ERR("Requested channel is enabled. It should first be disabled");
+		LOG_ERROR("Requested channel is enabled. It should first be disabled");
 		return -EIO;
 	}
 
 	if (cfg == NULL || cfg->head_block == NULL) {
-		LOG_ERR("Missing configuration structure");
+		LOG_ERROR("Missing configuration structure");
 		return -EINVAL;
 	}
 
@@ -538,7 +538,7 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 
 	if (((cfg->source_burst_length != cfg->dest_burst_length) ||
 		!dma_channel_update_burst_mode(cfg->source_burst_length, &dma_ctrl_reg))) {
-		LOG_ERR("Invalid burst mode or source and destination mode mismatch");
+		LOG_ERROR("Invalid burst mode or source and destination mode mismatch");
 		return -EINVAL;
 	}
 
@@ -546,7 +546,7 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 
 	if (cfg->source_data_size != cfg->dest_data_size ||
 		!dma_channel_update_bus_width(cfg->source_data_size, &dma_ctrl_reg)) {
-		LOG_ERR("Invalid bus width or source and destination bus width mismatch");
+		LOG_ERROR("Invalid bus width or source and destination bus width mismatch");
 		return -EINVAL;
 	}
 
@@ -560,23 +560,23 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 
 	if (!dma_channel_update_src_addr_adj(cfg->head_block->source_addr_adj,
 								&dma_ctrl_reg)) {
-		LOG_ERR("Invalid source address adjustment");
+		LOG_ERROR("Invalid source address adjustment");
 		return -EINVAL;
 	}
 
 	if (!dma_channel_update_dst_addr_adj(cfg->head_block->dest_addr_adj, &dma_ctrl_reg)) {
-		LOG_ERR("Invalid destination address adjustment");
+		LOG_ERROR("Invalid destination address adjustment");
 		return -EINVAL;
 	}
 
 	if (!dma_channel_update_dreq_mode(cfg->channel_direction, &dma_ctrl_reg)) {
-		LOG_ERR("Invalid channel direction");
+		LOG_ERROR("Invalid channel direction");
 		return -EINVAL;
 	}
 
 	/* Cyclic is valid only when DREQ_MODE is set */
 	if (cfg->cyclic && DMA_CTRL_REG_GET_FIELD(DREQ_MODE, dma_ctrl_reg) != DREQ_MODE_HW) {
-		LOG_ERR("Circular mode is only supported for non memory-memory transfers");
+		LOG_ERROR("Circular mode is only supported for non memory-memory transfers");
 		return -EINVAL;
 	}
 
@@ -605,7 +605,7 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	}
 
 	if (src_dst_address % cfg->source_data_size) {
-		LOG_ERR("Source address is not bus width aligned");
+		LOG_ERROR("Source address is not bus width aligned");
 		return -EINVAL;
 	}
 
@@ -617,14 +617,14 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 	}
 
 	if (src_dst_address % cfg->dest_data_size) {
-		LOG_ERR("Destination address is not bus width aligned");
+		LOG_ERROR("Destination address is not bus width aligned");
 		return -EINVAL;
 	}
 
 	regs->DMA_B_START = src_dst_address;
 
 	if (cfg->head_block->block_size % (cfg->source_data_size * cfg->source_burst_length)) {
-		LOG_ERR("Requested data size is not multiple of bus width");
+		LOG_ERROR("Requested data size is not multiple of bus width");
 		return -EINVAL;
 	}
 
@@ -635,7 +635,7 @@ static int dma_smartbond_config(const struct device *dev, uint32_t channel, stru
 
 	if ((cfg->source_handshake != cfg->dest_handshake) ||
 		(cfg->source_handshake != 0)/*HW*/) {
-		LOG_ERR("Source/destination handshakes mismatch or invalid");
+		LOG_ERROR("Source/destination handshakes mismatch or invalid");
 		return -EINVAL;
 	}
 
@@ -655,28 +655,28 @@ static int dma_smartbond_reload(const struct device *dev, uint32_t channel, uint
 	struct channel_regs *regs;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Invalid DMA channel index");
+		LOG_ERROR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 	regs = DMA_CHN2REG(channel);
 
 	if (!data->channel_data[channel].is_dma_configured) {
-		LOG_ERR("Requested DMA channel should first be configured");
+		LOG_ERROR("Requested DMA channel should first be configured");
 		return -EINVAL;
 	}
 
 	if (size == 0) {
-		LOG_ERR("Min. transfer size is one");
+		LOG_ERROR("Min. transfer size is one");
 		return -EINVAL;
 	}
 
 	if (DMA_CTRL_REG_GET_FIELD(DMA_ON, regs->DMA_CTRL_REG)) {
-		LOG_ERR("Channel is busy, settings cannot be changed mid-transfer");
+		LOG_ERROR("Channel is busy, settings cannot be changed mid-transfer");
 		return -EBUSY;
 	}
 
 	if (src % data->channel_data[channel].bus_width) {
-		LOG_ERR("Source address is not bus width aligned");
+		LOG_ERROR("Source address is not bus width aligned");
 		return -EINVAL;
 	}
 
@@ -687,7 +687,7 @@ static int dma_smartbond_reload(const struct device *dev, uint32_t channel, uint
 	regs->DMA_A_START = src;
 
 	if (dst % data->channel_data[channel].bus_width) {
-		LOG_ERR("Destination address is not bus width aligned");
+		LOG_ERROR("Destination address is not bus width aligned");
 		return -EINVAL;
 	}
 
@@ -699,7 +699,7 @@ static int dma_smartbond_reload(const struct device *dev, uint32_t channel, uint
 
 	if (size % (data->channel_data[channel].burst_len *
 							data->channel_data[channel].bus_width)) {
-		LOG_ERR("Requested data size is not multiple of bus width");
+		LOG_ERROR("Requested data size is not multiple of bus width");
 		return -EINVAL;
 	}
 
@@ -717,13 +717,13 @@ static int dma_smartbond_start(const struct device *dev, uint32_t channel)
 	struct dma_smartbond_data *data = dev->data;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Invalid DMA channel index");
+		LOG_ERROR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 	regs = DMA_CHN2REG(channel);
 
 	if (!data->channel_data[channel].is_dma_configured) {
-		LOG_ERR("Requested DMA channel should first be configured");
+		LOG_ERROR("Requested DMA channel should first be configured");
 		return -EINVAL;
 	}
 
@@ -742,7 +742,7 @@ static int dma_smartbond_stop(const struct device *dev, uint32_t channel)
 	struct channel_regs *regs;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Invalid DMA channel index");
+		LOG_ERROR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 	regs = DMA_CHN2REG(channel);
@@ -760,7 +760,7 @@ static int dma_smartbond_stop(const struct device *dev, uint32_t channel)
 static int dma_smartbond_suspend(const struct device *dev, uint32_t channel)
 {
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Invalid DMA channel index");
+		LOG_ERROR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 
@@ -783,7 +783,7 @@ static int dma_smartbond_suspend(const struct device *dev, uint32_t channel)
 static int dma_smartbond_resume(const struct device *dev, uint32_t channel)
 {
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Invalid DMA channel index");
+		LOG_ERROR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 
@@ -805,16 +805,16 @@ static int dma_smartbond_get_status(const struct device *dev, uint32_t channel,
 	uint32_t dma_ctrl_reg, dma_idx_reg, dma_len_reg;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Invalid DMA channel index");
+		LOG_ERROR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 
 	if (stat == NULL) {
-		LOG_ERR("User should provide a valid pointer to store the status info requested");
+		LOG_ERROR("User should provide a valid pointer to store the status info requested");
 	}
 
 	if (!data->channel_data[channel].is_dma_configured) {
-		LOG_ERR("Requested DMA channel should first be configured");
+		LOG_ERROR("Requested DMA channel should first be configured");
 		return -EINVAL;
 	}
 
@@ -859,7 +859,7 @@ static int dma_smartbond_get_status(const struct device *dev, uint32_t channel,
 static int dma_smartbond_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
 {
 	if (value == NULL) {
-		LOG_ERR("User should provide a valid pointer to attribute value");
+		LOG_ERROR("User should provide a valid pointer to attribute value");
 		return -EINVAL;
 	}
 
@@ -891,7 +891,7 @@ static bool dma_smartbond_chan_filter(const struct device *dev, int channel, voi
 	uint32_t requested_channel;
 
 	if (channel >= DMA_CHANNELS_COUNT) {
-		LOG_ERR("Invalid DMA channel index");
+		LOG_ERROR("Invalid DMA channel index");
 		return -EINVAL;
 	}
 
@@ -1007,7 +1007,7 @@ static int dma_smartbond_pm_action(const struct device *dev,
 static int dma_smartbond_init(const struct device *dev)
 {
 #ifdef CONFIG_DMA_64BIT
-	LOG_ERR("64-bit addressing mode is not supported\n");
+	LOG_ERROR("64-bit addressing mode is not supported\n");
 	return -ENOSYS;
 #endif
 

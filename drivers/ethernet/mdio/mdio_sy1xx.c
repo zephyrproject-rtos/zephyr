@@ -77,13 +77,13 @@ static int sy1xx_mdio_initialize(const struct device *dev)
 	/* PAD config */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("failed to configure pins");
+		LOG_ERROR("failed to configure pins");
 		return ret;
 	}
 
 	ret = sy1xx_mdio_wait_for_ready(dev);
 	if (ret < 0) {
-		LOG_ERR("not ready");
+		LOG_ERROR("not ready");
 		return ret;
 	}
 

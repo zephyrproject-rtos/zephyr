@@ -96,18 +96,18 @@ static int dacx0501_channel_setup(const struct device *dev,
 
 	/* DACx0501 series only has a single output channel. */
 	if (channel_cfg->channel_id != 0) {
-		LOG_ERR("Unsupported channel %d", channel_cfg->channel_id);
+		LOG_ERROR("Unsupported channel %d", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->resolution != data->resolution) {
-		LOG_ERR("Unsupported resolution %d. Actual: %d", channel_cfg->resolution,
-			data->resolution);
+		LOG_ERROR("Unsupported resolution %d. Actual: %d", channel_cfg->resolution,
+			  data->resolution);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -119,12 +119,12 @@ static int dacx0501_write_value(const struct device *dev, uint8_t channel, uint3
 	struct dacx0501_data *data = dev->data;
 
 	if (channel != 0) {
-		LOG_ERR("dacx0501: Unsupported channel %d", channel);
+		LOG_ERROR("dacx0501: Unsupported channel %d", channel);
 		return -ENOTSUP;
 	}
 
 	if (value >= (1 << data->resolution)) {
-		LOG_ERR("dacx0501: Value %d out of range", value);
+		LOG_ERROR("dacx0501: Value %d out of range", value);
 		return -EINVAL;
 	}
 
@@ -141,13 +141,13 @@ static int dacx0501_init(const struct device *dev)
 	int status;
 
 	if (!i2c_is_ready_dt(&config->i2c_spec)) {
-		LOG_ERR("I2C bus %s not ready", config->i2c_spec.bus->name);
+		LOG_ERROR("I2C bus %s not ready", config->i2c_spec.bus->name);
 		return -ENODEV;
 	}
 
 	status = dacx0501_reg_read(dev, DACX0501_REG_DEVICE_ID, &device_id);
 	if (status != 0) {
-		LOG_ERR("read DEVICE_ID register failed");
+		LOG_ERROR("read DEVICE_ID register failed");
 		return status;
 	}
 
@@ -158,7 +158,7 @@ static int dacx0501_init(const struct device *dev)
 				    FIELD_PREP(DACX0501_MASK_CONFIG_REF_PWDWN,
 					       config->voltage_reference == REF_EXTERNAL));
 	if (status != 0) {
-		LOG_ERR("write CONFIG register failed");
+		LOG_ERROR("write CONFIG register failed");
 		return status;
 	}
 
@@ -167,7 +167,7 @@ static int dacx0501_init(const struct device *dev)
 		FIELD_PREP(DACX0501_MASK_GAIN_REFDIV_EN, config->output_gain == VM_DIV2) |
 			FIELD_PREP(DACX0501_MASK_GAIN_BUFF_GAIN, config->output_gain == VM_MUL2));
 	if (status != 0) {
-		LOG_ERR("GAIN Register update failed");
+		LOG_ERROR("GAIN Register update failed");
 		return status;
 	}
 

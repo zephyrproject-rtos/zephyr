@@ -420,7 +420,7 @@ static struct bt_avrcp *avrcp_get_connection(struct bt_conn *conn)
 	size_t index;
 
 	if (!conn) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return NULL;
 	}
 
@@ -435,7 +435,7 @@ static inline struct bt_avrcp_ct *get_avrcp_ct(struct bt_avrcp *avrcp)
 	size_t index;
 
 	if (avrcp == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return NULL;
 	}
 
@@ -450,7 +450,7 @@ static inline struct bt_avrcp_tg *get_avrcp_tg(struct bt_avrcp *avrcp)
 	size_t index;
 
 	if (avrcp == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return NULL;
 	}
 
@@ -481,7 +481,7 @@ static int bt_avrcp_rsp_to_status(uint8_t rsp, struct net_buf *buf, uint8_t *sta
 		break;
 	case BT_AVRCP_RSP_REJECTED:
 		if (buf->len < sizeof(*status)) {
-			LOG_ERR("AVRCP rejected response missing error code");
+			LOG_ERROR("AVRCP rejected response missing error code");
 			*status = BT_AVRCP_STATUS_INTERNAL_ERROR;
 			return -EINVAL;
 		}
@@ -629,7 +629,7 @@ static int avrcp_send(struct bt_avrcp *avrcp, struct net_buf *buf, bt_avctp_cr_t
 		avrcp_hdr->opcode);
 	err = bt_avctp_send(&(avrcp->session), buf, cr, tid);
 	if (err < 0) {
-		LOG_ERR("AVCTP send fail, err = %d", err);
+		LOG_ERROR("AVCTP send fail, err = %d", err);
 		return err;
 	}
 
@@ -652,7 +652,7 @@ static int avrcp_browsing_send(struct bt_avrcp *avrcp, struct net_buf *buf, bt_a
 		hdr->pdu_id);
 	err = bt_avctp_send(&(avrcp->browsing_session), buf, cr, tid);
 	if (err < 0) {
-		LOG_ERR("AVCTP browsing send fail, err = %d", err);
+		LOG_ERROR("AVCTP browsing send fail, err = %d", err);
 		return err;
 	}
 
@@ -672,7 +672,7 @@ static int bt_avrcp_send_unit_info_err_rsp(struct bt_avrcp *avrcp, uint8_t tid)
 
 	err = avrcp_send(avrcp, buf, BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -716,7 +716,7 @@ static int bt_avrcp_send_subunit_info(struct bt_avrcp *avrcp, uint8_t tid, uint8
 
 	err = avrcp_send(avrcp, buf, BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -741,7 +741,7 @@ static int init_fragmentation_context(struct bt_avrcp_ct *ct, uint8_t tid, uint8
 	/* Allocate reassembly buffer */
 	ct->reassembly_buf = net_buf_alloc(&avrcp_vd_rx_pool, K_NO_WAIT);
 	if (ct->reassembly_buf == NULL) {
-		LOG_ERR("Failed to allocate reassembly buffer");
+		LOG_ERROR("Failed to allocate reassembly buffer");
 		return -ENOBUFS;
 	}
 
@@ -774,7 +774,7 @@ static int add_fragment_data(struct bt_avrcp_ct *ct, const uint8_t *data, uint16
 	}
 
 	if (net_buf_tailroom(ct->reassembly_buf) < data_len) {
-		LOG_ERR("Insufficient space in reassembly buffer");
+		LOG_ERROR("Insufficient space in reassembly buffer");
 		return -ENOMEM;
 	}
 
@@ -1019,7 +1019,7 @@ static void bt_avrcp_tg_vendor_tx_work(struct k_work *work)
 		/* Single packet response */
 		err = send_single_vendor_rsp(tg, tx->tid, tx->rsp, tx->pdu_id, buf);
 		if (err < 0) {
-			LOG_ERR("Failed to send single len: %u", buf->len);
+			LOG_ERROR("Failed to send single len: %u", buf->len);
 			goto done;
 		}
 		avrcp_tg_tx_remove(tg, buf);
@@ -1038,12 +1038,12 @@ static void bt_avrcp_tg_vendor_tx_work(struct k_work *work)
 
 		rsp_buf = bt_avrcp_create_vendor_pdu(NULL);
 		if (rsp_buf == NULL) {
-			LOG_ERR("Failed to allocate response buffer");
+			LOG_ERROR("Failed to allocate response buffer");
 			goto done;
 		}
 		if (tx->rsp == BT_AVRCP_RSP_REJECTED) {
 			if (net_buf_tailroom(rsp_buf) < sizeof(uint8_t)) {
-				LOG_ERR("Insufficient space in response buffer");
+				LOG_ERROR("Insufficient space in response buffer");
 				goto done;
 			}
 			net_buf_add_u8(rsp_buf, error_code);
@@ -1051,7 +1051,7 @@ static void bt_avrcp_tg_vendor_tx_work(struct k_work *work)
 
 		err = send_single_vendor_rsp(tg, tx->tid, tx->rsp, tx->pdu_id, rsp_buf);
 		if (err < 0) {
-			LOG_ERR("Failed to send rsp_buf");
+			LOG_ERROR("Failed to send rsp_buf");
 			net_buf_unref(rsp_buf);
 		}
 		goto done;
@@ -1077,7 +1077,7 @@ static void bt_avrcp_tg_vendor_tx_work(struct k_work *work)
 			k_work_reschedule(&tg->vd_rsp_tx_work, K_MSEC(AVRCP_TX_RETRY_DELAY_MS));
 			return;
 		}
-		LOG_ERR("Failed to send fragment offset %u len: %u", tx->sent_len, chunk_size);
+		LOG_ERROR("Failed to send fragment offset %u len: %u", tx->sent_len, chunk_size);
 		goto done;
 	}
 
@@ -1166,7 +1166,7 @@ static int process_register_notification_rsp(struct bt_avrcp *avrcp, uint8_t tid
 
 	if (rsp_code == BT_AVRCP_RSP_REJECTED) {
 		if (buf->len < sizeof(status)) {
-			LOG_ERR("Invalid notification status response length");
+			LOG_ERROR("Invalid notification status response length");
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 
@@ -1181,13 +1181,13 @@ static int process_register_notification_rsp(struct bt_avrcp *avrcp, uint8_t tid
 
 	/* The first byte is the event_id */
 	if (buf->len < sizeof(event_id)) {
-		LOG_ERR("Invalid notification response length");
+		LOG_ERROR("Invalid notification response length");
 		return BT_AVRCP_STATUS_INVALID_PARAMETER;
 	}
 
 	event_id = net_buf_pull_u8(buf);
 	if (event_id >= ARRAY_SIZE(ct->ct_notify)) {
-		LOG_ERR("Invalid event_id");
+		LOG_ERROR("Invalid event_id");
 		return BT_AVRCP_STATUS_INVALID_PARAMETER;
 	}
 
@@ -1197,19 +1197,19 @@ static int process_register_notification_rsp(struct bt_avrcp *avrcp, uint8_t tid
 	switch (event_id) {
 	case BT_AVRCP_EVT_PLAYBACK_STATUS_CHANGED:
 		if (buf->len < sizeof(event_data->play_status)) {
-			LOG_ERR("Invalid PLAYBACK_STATUS_CHANGED response length");
+			LOG_ERROR("Invalid PLAYBACK_STATUS_CHANGED response length");
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 
 		if (event_data->play_status > BT_AVRCP_PLAYBACK_STATUS_REV_SEEK &&
-			event_data->play_status != BT_AVRCP_PLAYBACK_STATUS_ERROR) {
-			LOG_ERR("Invalid playback status: %d", event_data->play_status);
+		    event_data->play_status != BT_AVRCP_PLAYBACK_STATUS_ERROR) {
+			LOG_ERROR("Invalid playback status: %d", event_data->play_status);
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 		break;
 	case BT_AVRCP_EVT_TRACK_CHANGED:
 		if (buf->len < sizeof(event_data->identifier)) {
-			LOG_ERR("Invalid TRACK_CHANGED response length");
+			LOG_ERROR("Invalid TRACK_CHANGED response length");
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 		uint64_t identifier = sys_get_be64((const uint8_t *)event_data->identifier);
@@ -1218,24 +1218,24 @@ static int process_register_notification_rsp(struct bt_avrcp *avrcp, uint8_t tid
 		break;
 	case BT_AVRCP_EVT_PLAYBACK_POS_CHANGED:
 		if (buf->len < sizeof(event_data->playback_pos)) {
-			LOG_ERR("Invalid PLAYBACK_POS_CHANGED response length");
+			LOG_ERROR("Invalid PLAYBACK_POS_CHANGED response length");
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 		event_data->playback_pos = sys_be32_to_cpu(event_data->playback_pos);
 		break;
 	case BT_AVRCP_EVT_BATT_STATUS_CHANGED:
 		if (buf->len < sizeof(event_data->battery_status)) {
-			LOG_ERR("Invalid BATT_STATUS_CHANGED response length");
+			LOG_ERROR("Invalid BATT_STATUS_CHANGED response length");
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 		break;
 	case BT_AVRCP_EVT_SYSTEM_STATUS_CHANGED:
 		if (buf->len < sizeof(event_data->system_status)) {
-			LOG_ERR("Invalid SYSTEM_STATUS_CHANGED response length");
+			LOG_ERROR("Invalid SYSTEM_STATUS_CHANGED response length");
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 		if (event_data->system_status > BT_AVRCP_SYSTEM_STATUS_UNPLUGGED) {
-			LOG_ERR("Invalid system status: %d", event_data->system_status);
+			LOG_ERROR("Invalid system status: %d", event_data->system_status);
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 		break;
@@ -1244,13 +1244,13 @@ static int process_register_notification_rsp(struct bt_avrcp *avrcp, uint8_t tid
 			       event_data->setting_changed.num_of_attr *
 			       sizeof(struct bt_avrcp_app_setting_attr_val);
 		if (buf->len < expected_len) {
-			LOG_ERR("Invalid PLAYER_APP_SETTING_CHANGED attribute length");
+			LOG_ERROR("Invalid PLAYER_APP_SETTING_CHANGED attribute length");
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 		break;
 	case BT_AVRCP_EVT_ADDRESSED_PLAYER_CHANGED:
 		if (buf->len < sizeof(event_data->addressed_player_changed)) {
-			LOG_ERR("Invalid ADDRESSED_PLAYER_CHANGED response length");
+			LOG_ERROR("Invalid ADDRESSED_PLAYER_CHANGED response length");
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 		event_data->addressed_player_changed.player_id =
@@ -1260,19 +1260,19 @@ static int process_register_notification_rsp(struct bt_avrcp *avrcp, uint8_t tid
 		break;
 	case BT_AVRCP_EVT_UIDS_CHANGED:
 		if (buf->len < sizeof(event_data->uid_counter)) {
-			LOG_ERR("Invalid UIDS_CHANGED response length");
+			LOG_ERROR("Invalid UIDS_CHANGED response length");
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 		event_data->uid_counter = sys_be16_to_cpu(event_data->uid_counter);
 		break;
 	case BT_AVRCP_EVT_VOLUME_CHANGED:
 		if (buf->len < sizeof(event_data->absolute_volume)) {
-			LOG_ERR("Invalid VOLUME_CHANGED response length");
+			LOG_ERROR("Invalid VOLUME_CHANGED response length");
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 
 		if (event_data->absolute_volume > BT_AVRCP_MAX_ABSOLUTE_VOLUME) {
-			LOG_ERR("Invalid absolute volume: %d", event_data->absolute_volume);
+			LOG_ERROR("Invalid absolute volume: %d", event_data->absolute_volume);
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 		break;
@@ -1357,7 +1357,7 @@ static int process_set_absolute_volume_rsp(struct bt_avrcp *avrcp, uint8_t tid,
 	}
 
 	if (buf->len < sizeof(absolute_volume)) {
-		LOG_ERR("Invalid absolute volume response length");
+		LOG_ERROR("Invalid absolute volume response length");
 		return BT_AVRCP_STATUS_INVALID_PARAMETER;
 	}
 	absolute_volume = net_buf_pull_u8(buf);
@@ -1733,7 +1733,7 @@ static int bt_avrcp_tg_send_vendor_err_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 	if (err < 0) {
 		net_buf_unref(buf);
 		if (bt_avrcp_disconnect(tg->avrcp->acl_conn)) {
-			LOG_ERR("Failed to disconnect AVRCP connection");
+			LOG_ERROR("Failed to disconnect AVRCP connection");
 		}
 	}
 	return err;
@@ -1753,7 +1753,7 @@ static int handle_vendor_pdu(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf
 		}
 
 		if (handlers != rsp_vendor_handlers && ctype != handler->cmd_type) {
-			LOG_ERR("Invalid ctype 0x%02x for pdu_id 0x%02x", ctype, pdu_id);
+			LOG_ERROR("Invalid ctype 0x%02x for pdu_id 0x%02x", ctype, pdu_id);
 			return BT_AVRCP_STATUS_INVALID_COMMAND;
 		}
 
@@ -1771,8 +1771,8 @@ static int handle_vendor_pdu(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf
 		}
 
 		if (buf->len < min_len) {
-			LOG_ERR("Too small (%u < %zu) for pdu_id 0x%02x (rsp=0x%02x)",
-				buf->len, min_len, pdu_id, ctype);
+			LOG_ERROR("Too small (%u < %zu) for pdu_id 0x%02x (rsp=0x%02x)", buf->len,
+				  min_len, pdu_id, ctype);
 			return BT_AVRCP_STATUS_PARAMETER_CONTENT_ERROR;
 		}
 
@@ -1786,7 +1786,7 @@ static void process_common_vendor_rsp(struct bt_avrcp *avrcp, uint8_t pdu_id, ui
 				      uint8_t rsp_code, struct net_buf *buf)
 {
 	if (buf == NULL) {
-		LOG_ERR("Invalid parameters");
+		LOG_ERROR("Invalid parameters");
 		return;
 	}
 
@@ -1806,7 +1806,7 @@ static void avrcp_vendor_dependent_rsp_handler(struct bt_avrcp *avrcp, uint8_t t
 	int err;
 
 	if (buf->len < (sizeof(*avrcp_hdr) + sizeof(*pdu))) {
-		LOG_ERR("Invalid vendor frame length: %d", buf->len);
+		LOG_ERROR("Invalid vendor frame length: %d", buf->len);
 		return;
 	}
 
@@ -1816,19 +1816,19 @@ static void avrcp_vendor_dependent_rsp_handler(struct bt_avrcp *avrcp, uint8_t t
 	rsp = BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr);
 	if ((subunit_type != BT_AVRCP_SUBUNIT_TYPE_PANEL) ||
 	    (subunit_id != BT_AVRCP_SUBUNIT_ID_ZERO)) {
-		LOG_ERR("Invalid vendor dependent command");
+		LOG_ERROR("Invalid vendor dependent command");
 		return;
 	}
 
 	pdu = net_buf_pull_mem(buf, sizeof(*pdu));
 	if (sys_get_be24(pdu->company_id) != BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG) {
-		LOG_ERR("Invalid company id: 0x%06x", sys_get_be24(pdu->company_id));
+		LOG_ERROR("Invalid company id: 0x%06x", sys_get_be24(pdu->company_id));
 		return;
 	}
 
 	len = sys_be16_to_cpu(pdu->param_len);
 	if (buf->len != len) {
-		LOG_ERR("Invalid length: %d, buf length = %d", len, buf->len);
+		LOG_ERROR("Invalid length: %d, buf length = %d", len, buf->len);
 		return;
 	}
 
@@ -1836,7 +1836,7 @@ static void avrcp_vendor_dependent_rsp_handler(struct bt_avrcp *avrcp, uint8_t t
 	case BT_AVRCP_PKT_TYPE_SINGLE:
 		/* Single packet should not have incomplete fragment  */
 		if (NULL != get_avrcp_ct(avrcp)->reassembly_buf) {
-			LOG_ERR("Single packet should not have incomplete fragment");
+			LOG_ERROR("Single packet should not have incomplete fragment");
 			goto failure;
 		}
 		process_common_vendor_rsp(avrcp, pdu->pdu_id, tid, rsp, buf);
@@ -1845,13 +1845,13 @@ static void avrcp_vendor_dependent_rsp_handler(struct bt_avrcp *avrcp, uint8_t t
 	case BT_AVRCP_PKT_TYPE_START:
 		err = init_fragmentation_context(get_avrcp_ct(avrcp), tid, pdu->pdu_id, rsp);
 		if (err < 0) {
-			LOG_ERR("init fragmentation context: %d", err);
+			LOG_ERROR("init fragmentation context: %d", err);
 			goto failure;
 		}
 		/* Add first fragment data */
 		err = add_fragment_data(get_avrcp_ct(avrcp), buf->data, buf->len);
 		if (err < 0) {
-			LOG_ERR("Failed to add first fragment: %d", err);
+			LOG_ERROR("Failed to add first fragment: %d", err);
 			goto failure;
 		}
 
@@ -1865,14 +1865,14 @@ static void avrcp_vendor_dependent_rsp_handler(struct bt_avrcp *avrcp, uint8_t t
 		    (get_fragmentation_context(get_avrcp_ct(avrcp))->tid != tid) ||
 		    (get_fragmentation_context(get_avrcp_ct(avrcp))->pdu_id != pdu->pdu_id) ||
 		    (get_fragmentation_context(get_avrcp_ct(avrcp))->rsp != rsp)) {
-			LOG_ERR("Unexpected continue packet");
+			LOG_ERROR("Unexpected continue packet");
 			goto failure;
 		}
 
 		/* Add fragment data */
 		err = add_fragment_data(get_avrcp_ct(avrcp), buf->data, buf->len);
 		if (err < 0) {
-			LOG_ERR("Failed to add continue fragment: %d", err);
+			LOG_ERROR("Failed to add continue fragment: %d", err);
 			goto failure;
 		}
 
@@ -1886,13 +1886,13 @@ static void avrcp_vendor_dependent_rsp_handler(struct bt_avrcp *avrcp, uint8_t t
 		    (get_fragmentation_context(get_avrcp_ct(avrcp))->tid != tid) ||
 		    (get_fragmentation_context(get_avrcp_ct(avrcp))->pdu_id != pdu->pdu_id) ||
 		    (get_fragmentation_context(get_avrcp_ct(avrcp))->rsp != rsp)) {
-			LOG_ERR("Unexpected END packet");
+			LOG_ERROR("Unexpected END packet");
 			goto failure;
 		}
 
 		err = add_fragment_data(get_avrcp_ct(avrcp), buf->data, buf->len);
 		if (err < 0) {
-			LOG_ERR("Failed to add end fragment: %d", err);
+			LOG_ERROR("Failed to add end fragment: %d", err);
 			goto failure;
 		}
 
@@ -1913,12 +1913,12 @@ static void avrcp_vendor_dependent_rsp_handler(struct bt_avrcp *avrcp, uint8_t t
 	return;
 
 failure:
-	LOG_ERR("Failed to handle vendor dependent response");
+	LOG_ERROR("Failed to handle vendor dependent response");
 	cleanup_fragmentation_context(get_avrcp_ct(avrcp));
 	if (bt_avrcp_ct_send_abort_continuing_rsp(get_avrcp_ct(avrcp), tid, pdu->pdu_id) < 0) {
-		LOG_ERR("Failed to send abort continuing response");
+		LOG_ERROR("Failed to send abort continuing response");
 		if (bt_avrcp_disconnect(avrcp->acl_conn)) {
-			LOG_ERR("Failed to disconnect AVRCP connection");
+			LOG_ERROR("Failed to disconnect AVRCP connection");
 		}
 	}
 }
@@ -1932,7 +1932,7 @@ static void avrcp_unit_info_rsp_handler(struct bt_avrcp *avrcp, uint8_t tid, str
 
 	if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->unit_info_rsp != NULL)) {
 		if (buf->len != BT_AVRCP_UNIT_INFO_RSP_SIZE) {
-			LOG_ERR("Invalid unit info length: %d", buf->len);
+			LOG_ERROR("Invalid unit info length: %d", buf->len);
 			return;
 		}
 		net_buf_pull_u8(buf); /* Always 0x07 */
@@ -1953,7 +1953,7 @@ static void avrcp_subunit_info_rsp_handler(struct bt_avrcp *avrcp, uint8_t tid,
 
 	if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->subunit_info_rsp != NULL)) {
 		if (buf->len < BT_AVRCP_SUBUNIT_INFO_RSP_SIZE) {
-			LOG_ERR("Invalid subunit info length: %d", buf->len);
+			LOG_ERROR("Invalid subunit info length: %d", buf->len);
 			return;
 		}
 		net_buf_pull_u8(buf); /* Always 0x07 */
@@ -1961,7 +1961,7 @@ static void avrcp_subunit_info_rsp_handler(struct bt_avrcp *avrcp, uint8_t tid,
 		rsp.subunit_type = FIELD_GET(GENMASK(7, 3), tmp);
 		rsp.max_subunit_id = FIELD_GET(GENMASK(2, 0), tmp);
 		if (buf->len < (rsp.max_subunit_id << 1)) {
-			LOG_ERR("Invalid subunit info response");
+			LOG_ERROR("Invalid subunit info response");
 			return;
 		}
 		rsp.extended_subunit_type = buf->data;
@@ -1980,7 +1980,7 @@ static void avrcp_pass_through_rsp_handler(struct bt_avrcp *avrcp, uint8_t tid, 
 
 	if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->passthrough_rsp != NULL)) {
 		if (buf->len < sizeof(*rsp)) {
-			LOG_ERR("Invalid passthrough length: %d", buf->len);
+			LOG_ERROR("Invalid passthrough length: %d", buf->len);
 			return;
 		}
 
@@ -2016,7 +2016,7 @@ static void avrcp_unit_info_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid, str
 
 	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
 	if (buf->len != BT_AVRCP_UNIT_INFO_CMD_SIZE) {
-		LOG_ERR("Invalid unit info length");
+		LOG_ERROR("Invalid unit info length");
 		goto err_rsp;
 	}
 
@@ -2026,7 +2026,7 @@ static void avrcp_unit_info_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid, str
 	if ((subunit_type != BT_AVRCP_SUBUNIT_TYPE_UNIT) || (ctype != BT_AVRCP_CTYPE_STATUS) ||
 	    (subunit_id != BT_AVRCP_SUBUNIT_ID_IGNORE) ||
 	    (avrcp_hdr->opcode != BT_AVRCP_OPC_UNIT_INFO)) {
-		LOG_ERR("Invalid unit info command");
+		LOG_ERROR("Invalid unit info command");
 		goto err_rsp;
 	}
 
@@ -2036,9 +2036,9 @@ static void avrcp_unit_info_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid, str
 err_rsp:
 	err = bt_avrcp_send_unit_info_err_rsp(avrcp, tid);
 	if (err) {
-		LOG_ERR("Failed to send unit info error response");
+		LOG_ERROR("Failed to send unit info error response");
 		if (bt_avrcp_disconnect(avrcp->acl_conn)) {
-			LOG_ERR("Failed to disconnect AVRCP connection");
+			LOG_ERROR("Failed to disconnect AVRCP connection");
 		}
 	}
 }
@@ -2055,9 +2055,8 @@ static int process_get_caps_cmd(struct bt_avrcp *avrcp, uint8_t tid, uint8_t cty
 	cap_id = net_buf_pull_u8(buf);
 
 	/* Validate capability ID */
-	if ((cap_id != BT_AVRCP_CAP_COMPANY_ID) &&
-	    (cap_id != BT_AVRCP_CAP_EVENTS_SUPPORTED)) {
-		LOG_ERR("Invalid capability ID: 0x%02x", cap_id);
+	if ((cap_id != BT_AVRCP_CAP_COMPANY_ID) && (cap_id != BT_AVRCP_CAP_EVENTS_SUPPORTED)) {
+		LOG_ERROR("Invalid capability ID: 0x%02x", cap_id);
 		return BT_AVRCP_STATUS_INVALID_PARAMETER;
 	}
 
@@ -2076,7 +2075,7 @@ static int avrcp_register_notification_cmd_handler(struct bt_avrcp *avrcp, uint8
 
 	cmd = net_buf_pull_mem(buf, sizeof(*cmd));
 	if (cmd->event_id >= ARRAY_SIZE(get_avrcp_tg(avrcp)->tg_notify)) {
-		LOG_ERR("Invalid event_id");
+		LOG_ERROR("Invalid event_id");
 		return BT_AVRCP_STATUS_INVALID_PARAMETER;
 	}
 
@@ -2126,7 +2125,7 @@ static int process_list_player_app_setting_vals_cmd(struct bt_avrcp *avrcp, uint
 
 	attr_id = net_buf_pull_u8(buf);
 	if (attr_id > BT_AVRCP_PLAYER_ATTR_SCAN) {
-		LOG_ERR("Invalid attr_id: %d", attr_id);
+		LOG_ERROR("Invalid attr_id: %d", attr_id);
 		return BT_AVRCP_STATUS_INVALID_PARAMETER;
 	}
 
@@ -2200,7 +2199,7 @@ static int process_inform_batt_status_of_ct_cmd(struct bt_avrcp *avrcp, uint8_t 
 
 	battery_status = net_buf_pull_u8(buf);
 	if (battery_status > BT_AVRCP_BATTERY_STATUS_FULL) {
-		LOG_ERR("Invalid battery_status: %d", battery_status);
+		LOG_ERROR("Invalid battery_status: %d", battery_status);
 		return BT_AVRCP_STATUS_INVALID_PARAMETER;
 	}
 
@@ -2354,7 +2353,7 @@ static void avrcp_vendor_dependent_cmd_handler(struct bt_avrcp *avrcp, uint8_t t
 	int err;
 
 	if (buf->len < (sizeof(*avrcp_hdr) + sizeof(*pdu))) {
-		LOG_ERR("Invalid vendor frame length: %d", buf->len);
+		LOG_ERROR("Invalid vendor frame length: %d", buf->len);
 		error_code = BT_AVRCP_STATUS_INVALID_PARAMETER;
 		goto err_rsp;
 	}
@@ -2365,7 +2364,7 @@ static void avrcp_vendor_dependent_cmd_handler(struct bt_avrcp *avrcp, uint8_t t
 	ctype_or_rsp = BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr);
 	if ((subunit_type != BT_AVRCP_SUBUNIT_TYPE_PANEL) ||
 	    (subunit_id != BT_AVRCP_SUBUNIT_ID_ZERO)) {
-		LOG_ERR("Invalid vendor dependent command");
+		LOG_ERROR("Invalid vendor dependent command");
 		error_code = BT_AVRCP_STATUS_INVALID_PARAMETER;
 		goto err_rsp;
 	}
@@ -2373,13 +2372,13 @@ static void avrcp_vendor_dependent_cmd_handler(struct bt_avrcp *avrcp, uint8_t t
 	pdu = net_buf_pull_mem(buf, sizeof(*pdu));
 	pdu_id = pdu->pdu_id;
 	if (sys_get_be24(pdu->company_id) != BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG) {
-		LOG_ERR("Invalid company id: 0x%06x", sys_get_be24(pdu->company_id));
+		LOG_ERROR("Invalid company id: 0x%06x", sys_get_be24(pdu->company_id));
 		error_code = BT_AVRCP_STATUS_INVALID_PARAMETER;
 		goto err_rsp;
 	}
 
 	if (BT_AVRCP_AVC_PDU_GET_PACKET_TYPE(pdu) != BT_AVRCP_PKT_TYPE_SINGLE) {
-		LOG_ERR("Invalid packet type");
+		LOG_ERROR("Invalid packet type");
 		error_code = BT_AVRCP_STATUS_INVALID_PARAMETER;
 		goto err_rsp;
 	}
@@ -2387,7 +2386,7 @@ static void avrcp_vendor_dependent_cmd_handler(struct bt_avrcp *avrcp, uint8_t t
 	len = sys_be16_to_cpu(pdu->param_len);
 
 	if (buf->len != len) {
-		LOG_ERR("Invalid length: %d, buf length = %d", len, buf->len);
+		LOG_ERROR("Invalid length: %d, buf length = %d", len, buf->len);
 		error_code = BT_AVRCP_STATUS_INVALID_PARAMETER;
 		goto err_rsp;
 	}
@@ -2403,7 +2402,7 @@ static void avrcp_vendor_dependent_cmd_handler(struct bt_avrcp *avrcp, uint8_t t
 err_rsp:
 	err = bt_avrcp_tg_send_vendor_err_rsp(get_avrcp_tg(avrcp), tid, pdu_id, error_code);
 	if (err < 0) {
-		LOG_ERR("Failed to send vendor dependent error response %d", err);
+		LOG_ERROR("Failed to send vendor dependent error response %d", err);
 	}
 }
 
@@ -2428,7 +2427,7 @@ static void avrcp_subunit_info_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 
 	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
 	if (buf->len != BT_AVRCP_SUBUNIT_INFO_CMD_SIZE) {
-		LOG_ERR("Invalid subunit info length");
+		LOG_ERROR("Invalid subunit info length");
 		goto err_rsp;
 	}
 
@@ -2444,7 +2443,7 @@ static void avrcp_subunit_info_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 	    (subunit_id != BT_AVRCP_SUBUNIT_ID_IGNORE) || (page != AVRCP_SUBUNIT_PAGE) ||
 	    (avrcp_hdr->opcode != BT_AVRCP_OPC_SUBUNIT_INFO) ||
 	    (extension_code != AVRCP_SUBUNIT_EXTENSION_CODE)) {
-		LOG_ERR("Invalid subunit info command");
+		LOG_ERROR("Invalid subunit info command");
 		goto err_rsp;
 	}
 
@@ -2454,9 +2453,9 @@ static void avrcp_subunit_info_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 err_rsp:
 	err = bt_avrcp_send_subunit_info(avrcp, tid, BT_AVRCP_RSP_REJECTED);
 	if (err < 0) {
-		LOG_ERR("Failed to send subunit info error response");
+		LOG_ERROR("Failed to send subunit info error response");
 		if (bt_avrcp_disconnect(avrcp->acl_conn)) {
-			LOG_ERR("Failed to disconnect AVRCP connection");
+			LOG_ERROR("Failed to disconnect AVRCP connection");
 		}
 	}
 }
@@ -2473,7 +2472,7 @@ static void avrcp_pass_through_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 	}
 
 	if (buf->len < (sizeof(*avrcp_hdr) + sizeof(struct bt_avrcp_passthrough_cmd))) {
-		LOG_ERR("Invalid passthrough command length: %d", buf->len);
+		LOG_ERROR("Invalid passthrough command length: %d", buf->len);
 		goto err_rsp;
 	}
 	avrcp_hdr = net_buf_pull_mem(buf, sizeof(*avrcp_hdr));
@@ -2481,7 +2480,7 @@ static void avrcp_pass_through_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 	if (BT_AVRCP_HDR_GET_SUBUNIT_TYPE(avrcp_hdr) != BT_AVRCP_SUBUNIT_TYPE_PANEL ||
 	    BT_AVRCP_HDR_GET_SUBUNIT_ID(avrcp_hdr) != BT_AVRCP_SUBUNIT_ID_ZERO ||
 	    BT_AVRCP_HDR_GET_CTYPE_OR_RSP(avrcp_hdr) != BT_AVRCP_CTYPE_CONTROL) {
-		LOG_ERR("Invalid passthrough command ");
+		LOG_ERROR("Invalid passthrough command ");
 		goto err_rsp;
 	}
 
@@ -2491,17 +2490,17 @@ static void avrcp_pass_through_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
 err_rsp:
 	rsp_buf = bt_avrcp_create_pdu(NULL);
 	if (rsp_buf == NULL) {
-		LOG_ERR("Failed to allocate response buffer");
+		LOG_ERROR("Failed to allocate response buffer");
 		return;
 	}
 
 	err = bt_avrcp_tg_send_passthrough_rsp(get_avrcp_tg(avrcp), tid, BT_AVRCP_RSP_REJECTED,
 					       rsp_buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send passthrough error response");
+		LOG_ERROR("Failed to send passthrough error response");
 		net_buf_unref(rsp_buf);
 		if (bt_avrcp_disconnect(avrcp->acl_conn)) {
-			LOG_ERR("Failed to disconnect AVRCP connection");
+			LOG_ERROR("Failed to disconnect AVRCP connection");
 		}
 	}
 }
@@ -2523,7 +2522,7 @@ static int avrcp_recv(struct bt_avctp *session, struct net_buf *buf, bt_avctp_cr
 	bt_avrcp_subunit_type_t subunit_type;
 
 	if (buf->len < sizeof(*avrcp_hdr)) {
-		LOG_ERR("invalid AVRCP header received");
+		LOG_ERROR("invalid AVRCP header received");
 		return -EINVAL;
 	}
 
@@ -2841,7 +2840,7 @@ static int handle_pdu(struct bt_avrcp *avrcp, uint8_t tid, struct net_buf *buf,
 		}
 
 		if (buf->len < handler->min_len) {
-			LOG_ERR("Too small (%u bytes) pdu_id 0x%02x", buf->len, pdu_id);
+			LOG_ERROR("Too small (%u bytes) pdu_id 0x%02x", buf->len, pdu_id);
 			return BT_AVRCP_STATUS_INVALID_PARAMETER;
 		}
 
@@ -2860,15 +2859,16 @@ static int browsing_avrcp_recv(struct bt_avctp *session, struct net_buf *buf, bt
 	int err;
 
 	if (buf->len < sizeof(struct bt_avrcp_brow_pdu)) {
-		LOG_ERR("Invalid AVRCP browsing header received: buffer too short (%u)", buf->len);
+		LOG_ERROR("Invalid AVRCP browsing header received: buffer too short (%u)",
+			  buf->len);
 		return -EMSGSIZE;
 	}
 
 	brow = net_buf_pull_mem(buf, sizeof(struct bt_avrcp_brow_pdu));
 
 	if (buf->len != sys_be16_to_cpu(brow->param_len)) {
-		LOG_ERR("Invalid AVRCP browsing PDU length: expected %u, got %u",
-			sys_be16_to_cpu(brow->param_len), buf->len);
+		LOG_ERROR("Invalid AVRCP browsing PDU length: expected %u, got %u",
+			  sys_be16_to_cpu(brow->param_len), buf->len);
 		return -EMSGSIZE;
 	}
 
@@ -2887,7 +2887,7 @@ static int browsing_avrcp_recv(struct bt_avctp *session, struct net_buf *buf, bt
 		err = bt_avrcp_tg_browsing_general_reject(get_avrcp_tg(avrcp), tid,
 							  status);
 		if (err < 0) {
-			LOG_ERR("Failed to send browsing general reject: %d", err);
+			LOG_ERROR("Failed to send browsing general reject: %d", err);
 		}
 		return err;
 	}
@@ -2901,7 +2901,7 @@ static struct net_buf *browsing_avrcp_l2cap_alloc_buf(struct bt_avctp *session)
 
 	buf = net_buf_alloc(&avctp_browsing_rx_pool, K_FOREVER);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 	}
 
 	return buf;
@@ -2920,17 +2920,17 @@ static int avrcp_browsing_accept(struct bt_conn *conn, struct bt_avctp **session
 
 	avrcp = avrcp_get_connection(conn);
 	if (avrcp == NULL) {
-		LOG_ERR("Cannot allocate memory");
+		LOG_ERROR("Cannot allocate memory");
 		return -ENOTCONN;
 	}
 
 	if (avrcp->acl_conn == NULL) {
-		LOG_ERR("The control channel not established");
+		LOG_ERROR("The control channel not established");
 		return -ENOTCONN;
 	}
 
 	if (avrcp->browsing_session.br_chan.chan.conn != NULL) {
-		LOG_ERR("Browsing session already connected");
+		LOG_ERROR("Browsing session already connected");
 		return -EALREADY;
 	}
 
@@ -2978,7 +2978,7 @@ void bt_avrcp_init(void)
 #if defined(CONFIG_BT_AVRCP_TG_COVER_ART)
 	err = bt_avrcp_tg_cover_art_init(&bt_avrcp_tg_cover_art_psm);
 	if (err < 0) {
-		LOG_ERR("AVRCP Cover Art initialization failed (err %d)", err);
+		LOG_ERROR("AVRCP Cover Art initialization failed (err %d)", err);
 		return;
 	}
 #endif /* CONFIG_BT_AVRCP_TG_COVER_ART */
@@ -2995,7 +2995,7 @@ int bt_avrcp_connect(struct bt_conn *conn)
 
 	avrcp = avrcp_get_connection(conn);
 	if (avrcp == NULL) {
-		LOG_ERR("Cannot allocate memory");
+		LOG_ERROR("Cannot allocate memory");
 		return -ENOTCONN;
 	}
 
@@ -3025,7 +3025,7 @@ int bt_avrcp_disconnect(struct bt_conn *conn)
 
 	avrcp = avrcp_get_connection(conn);
 	if (avrcp == NULL) {
-		LOG_ERR("Get avrcp connection failure");
+		LOG_ERROR("Get avrcp connection failure");
 		return -ENOTCONN;
 	}
 
@@ -3034,7 +3034,7 @@ int bt_avrcp_disconnect(struct bt_conn *conn)
 		/* If browsing session is still active, disconnect it first */
 		err = bt_avrcp_browsing_disconnect(conn);
 		if (err < 0) {
-			LOG_ERR("Browsing session disconnect failed: %d", err);
+			LOG_ERROR("Browsing session disconnect failed: %d", err);
 			return err;
 		}
 	}
@@ -3068,12 +3068,12 @@ int bt_avrcp_browsing_connect(struct bt_conn *conn)
 
 	avrcp = avrcp_get_connection(conn);
 	if (avrcp == NULL) {
-		LOG_ERR("Cannot allocate memory");
+		LOG_ERROR("Cannot allocate memory");
 		return -ENOTCONN;
 	}
 
 	if (avrcp->acl_conn == NULL) {
-		LOG_ERR("The control channel not established");
+		LOG_ERROR("The control channel not established");
 		return -ENOTCONN;
 	}
 
@@ -3085,7 +3085,7 @@ int bt_avrcp_browsing_connect(struct bt_conn *conn)
 	init_avctp_browsing_channel(&(avrcp->browsing_session));
 	err = bt_avctp_connect(conn, BT_L2CAP_PSM_AVRCP_BROWSING, &(avrcp->browsing_session));
 	if (err < 0) {
-		LOG_ERR("AVCTP browsing connect failed");
+		LOG_ERROR("AVCTP browsing connect failed");
 		return err;
 	}
 
@@ -3101,13 +3101,13 @@ int bt_avrcp_browsing_disconnect(struct bt_conn *conn)
 
 	avrcp = avrcp_get_connection(conn);
 	if (avrcp == NULL) {
-		LOG_ERR("Get avrcp connection failure");
+		LOG_ERROR("Get avrcp connection failure");
 		return -ENOTCONN;
 	}
 
 	err = bt_avctp_disconnect(&(avrcp->browsing_session));
 	if (err < 0) {
-		LOG_ERR("AVCTP browsing disconnect failed");
+		LOG_ERROR("AVCTP browsing disconnect failed");
 		return err;
 	}
 
@@ -3139,7 +3139,7 @@ int bt_avrcp_ct_get_unit_info(struct bt_avrcp_ct *ct, uint8_t tid)
 
 	err = avrcp_send(ct->avrcp, buf, BT_AVCTP_CMD, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -3171,7 +3171,7 @@ int bt_avrcp_ct_get_subunit_info(struct bt_avrcp_ct *ct, uint8_t tid)
 
 	err = avrcp_send(ct->avrcp, buf, BT_AVCTP_CMD, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -3204,7 +3204,7 @@ int bt_avrcp_ct_passthrough(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t opid, u
 
 	err = avrcp_send(ct->avrcp, buf, BT_AVCTP_CMD, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -3251,7 +3251,7 @@ int bt_avrcp_ct_register_notification(struct bt_avrcp_ct *ct, uint8_t tid, uint8
 
 	err = avrcp_send(ct->avrcp, buf, BT_AVCTP_CMD, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 		return err;
 	}
@@ -3282,8 +3282,8 @@ static int bt_avrcp_ct_vendor_dependent(struct bt_avrcp_ct *ct, uint8_t tid, uin
 
 	min_len = get_cmd_min_len_by_pdu(pdu_id);
 	if (buf->len < min_len) {
-		LOG_ERR("CMD Buffer too small for PDU 0x%02X (len=%u, min=%u)",
-			pdu_id, buf->len, min_len);
+		LOG_ERROR("CMD Buffer too small for PDU 0x%02X (len=%u, min=%u)", pdu_id, buf->len,
+			  min_len);
 		return -EINVAL;
 	}
 
@@ -3310,7 +3310,7 @@ static int bt_avrcp_ct_vendor_dependent(struct bt_avrcp_ct *ct, uint8_t tid, uin
 
 	err = avrcp_send(ct->avrcp, buf, BT_AVCTP_CMD, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send vendor PDU (err: %d)", err);
+		LOG_ERROR("Failed to send vendor PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -3347,7 +3347,7 @@ int bt_avrcp_ct_get_caps(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t cap_id)
 
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_GET_CAPS, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -3379,7 +3379,7 @@ int bt_avrcp_ct_list_player_app_setting_attrs(struct bt_avrcp_ct *ct, uint8_t ti
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_LIST_PLAYER_APP_SETTING_ATTRS,
 					   buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -3419,7 +3419,7 @@ int bt_avrcp_ct_list_player_app_setting_vals(struct bt_avrcp_ct *ct, uint8_t tid
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_LIST_PLAYER_APP_SETTING_VALS,
 					   buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -3446,7 +3446,7 @@ int bt_avrcp_ct_get_curr_player_app_setting_val(struct bt_avrcp_ct *ct, uint8_t 
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_GET_CURR_PLAYER_APP_SETTING_VAL,
 					   buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -3472,7 +3472,7 @@ int bt_avrcp_ct_set_player_app_setting_val(struct bt_avrcp_ct *ct, uint8_t tid, 
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_SET_PLAYER_APP_SETTING_VAL,
 					   buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -3498,7 +3498,7 @@ int bt_avrcp_ct_get_player_app_setting_attr_text(struct bt_avrcp_ct *ct, uint8_t
 	err = bt_avrcp_ct_vendor_dependent(ct, tid,
 					   BT_AVRCP_PDU_ID_GET_PLAYER_APP_SETTING_ATTR_TEXT, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -3524,7 +3524,7 @@ int bt_avrcp_ct_get_player_app_setting_val_text(struct bt_avrcp_ct *ct, uint8_t 
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_GET_PLAYER_APP_SETTING_VAL_TEXT,
 					   buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -3550,7 +3550,7 @@ int bt_avrcp_ct_inform_displayable_char_set(struct bt_avrcp_ct *ct, uint8_t tid,
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_INFORM_DISPLAYABLE_CHAR_SET,
 					   buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -3575,7 +3575,7 @@ int bt_avrcp_ct_inform_batt_status_of_ct(struct bt_avrcp_ct *ct, uint8_t tid,
 	}
 
 	if (battery_status > BT_AVRCP_BATTERY_STATUS_FULL) {
-		LOG_ERR("Invalid battery status: %d", battery_status);
+		LOG_ERROR("Invalid battery status: %d", battery_status);
 		return -EINVAL;
 	}
 
@@ -3595,7 +3595,7 @@ int bt_avrcp_ct_inform_batt_status_of_ct(struct bt_avrcp_ct *ct, uint8_t tid,
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_INFORM_BATT_STATUS_OF_CT,
 					   buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -3619,7 +3619,7 @@ int bt_avrcp_ct_set_absolute_volume(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t
 	}
 
 	if (absolute_volume > BT_AVRCP_MAX_ABSOLUTE_VOLUME) {
-		LOG_ERR("Invalid absolute volume: %d", absolute_volume);
+		LOG_ERROR("Invalid absolute volume: %d", absolute_volume);
 		return -EINVAL;
 	}
 
@@ -3637,7 +3637,7 @@ int bt_avrcp_ct_set_absolute_volume(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t
 
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_SET_ABSOLUTE_VOLUME, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -3663,7 +3663,7 @@ int bt_avrcp_ct_get_element_attrs(struct bt_avrcp_ct *ct, uint8_t tid,
 
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_GET_ELEMENT_ATTRS, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -3693,7 +3693,7 @@ int bt_avrcp_ct_get_play_status(struct bt_avrcp_ct *ct, uint8_t tid)
 
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_GET_PLAY_STATUS, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -3732,7 +3732,7 @@ int bt_avrcp_ct_set_addressed_player(struct bt_avrcp_ct *ct, uint8_t tid, uint16
 
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_SET_ADDRESSED_PLAYER, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -3757,7 +3757,7 @@ int bt_avrcp_ct_play_item(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *b
 
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_PLAY_ITEM, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -3781,7 +3781,7 @@ int bt_avrcp_ct_add_to_now_playing(struct bt_avrcp_ct *ct, uint8_t tid, struct n
 
 	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_ADD_TO_NOW_PLAYING, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -3796,7 +3796,7 @@ static int avctp_server_register(void)
 	avctp_server.accept = avrcp_accept;
 	err = bt_avctp_server_register(&avctp_server);
 	if (err < 0 && err != -EEXIST) {
-		LOG_ERR("AVCTP server registration failed (err %d)", err);
+		LOG_ERROR("AVCTP server registration failed (err %d)", err);
 		goto failed;
 	}
 
@@ -3806,7 +3806,7 @@ static int avctp_server_register(void)
 	avctp_browsing_server.l2cap.sec_level = BT_SECURITY_L2;
 	err = bt_avctp_server_register(&avctp_browsing_server);
 	if (err < 0 && err != -EEXIST) {
-		LOG_ERR("AVCTP browsing server registration failed (err %d)", err);
+		LOG_ERROR("AVCTP browsing server registration failed (err %d)", err);
 		goto failed;
 	}
 #endif /* CONFIG_BT_AVRCP_BROWSING */
@@ -3836,7 +3836,7 @@ int bt_avrcp_ct_register_cb(const struct bt_avrcp_ct_cb *cb)
 	/* Register SDP record when CT callback is registered */
 	err = bt_sdp_register_service(&avrcp_ct_rec);
 	if (err < 0 && err != -EEXIST) {
-		LOG_ERR("AVRCP CT SDP registration failed (err %d)", err);
+		LOG_ERROR("AVRCP CT SDP registration failed (err %d)", err);
 		goto failed;
 	}
 	LOG_DBG("AVRCP CT SDP record registered");
@@ -3873,7 +3873,7 @@ int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb)
 	/* Register SDP record when TG callback is registered */
 	err = bt_sdp_register_service(&avrcp_tg_rec);
 	if (err < 0 && err != -EEXIST) {
-		LOG_ERR("AVRCP TG SDP registration failed (err %d)", err);
+		LOG_ERROR("AVRCP TG SDP registration failed (err %d)", err);
 		goto failed;
 	}
 	LOG_DBG("AVRCP TG SDP record registered");
@@ -3921,7 +3921,7 @@ int bt_avrcp_tg_send_unit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 
 	err = avrcp_send(tg->avrcp, buf, BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -3947,12 +3947,12 @@ static int bt_avrcp_browsing_send(struct bt_avrcp *avrcp, struct net_buf *buf, u
 	uint16_t param_len;
 
 	if ((avrcp == NULL) || (buf == NULL)) {
-		LOG_ERR("Invalid AVRCP context or buffer");
+		LOG_ERROR("Invalid AVRCP context or buffer");
 		return -EINVAL;
 	}
 
 	if (avrcp->browsing_session.br_chan.chan.conn == NULL) {
-		LOG_ERR("Browsing session not connected");
+		LOG_ERROR("Browsing session not connected");
 		return -ENOTCONN;
 	}
 
@@ -3963,8 +3963,8 @@ static int bt_avrcp_browsing_send(struct bt_avrcp *avrcp, struct net_buf *buf, u
 		for (size_t i = 0; i < ARRAY_SIZE(cmd_brow_handlers); i++) {
 			if (cmd_brow_handlers[i].pdu_id == pdu_id) {
 				if (param_len < cmd_brow_handlers[i].min_len) {
-					LOG_ERR("Too small (%u < %u) for cmd pdu_id 0x%02x",
-						param_len, cmd_brow_handlers[i].min_len, pdu_id);
+					LOG_ERROR("Too small (%u < %u) for cmd pdu_id 0x%02x",
+						  param_len, cmd_brow_handlers[i].min_len, pdu_id);
 					return -EINVAL;
 				}
 				break;
@@ -3974,8 +3974,8 @@ static int bt_avrcp_browsing_send(struct bt_avrcp *avrcp, struct net_buf *buf, u
 		for (size_t i = 0; i < ARRAY_SIZE(rsp_brow_handlers); i++) {
 			if (rsp_brow_handlers[i].pdu_id == pdu_id) {
 				if (param_len < rsp_brow_handlers[i].min_len) {
-					LOG_ERR("Too small (%u < %u) for rsp pdu_id 0x%02x",
-						param_len, rsp_brow_handlers[i].min_len, pdu_id);
+					LOG_ERROR("Too small (%u < %u) for rsp pdu_id 0x%02x",
+						  param_len, rsp_brow_handlers[i].min_len, pdu_id);
 					return -EINVAL;
 				}
 				break;
@@ -3984,7 +3984,7 @@ static int bt_avrcp_browsing_send(struct bt_avrcp *avrcp, struct net_buf *buf, u
 	}
 
 	if (net_buf_headroom(buf) < sizeof(struct bt_avrcp_brow_pdu)) {
-		LOG_ERR("Not enough headroom for browsing PDU header");
+		LOG_ERROR("Not enough headroom for browsing PDU header");
 		return -ENOMEM;
 	}
 
@@ -4027,13 +4027,13 @@ int bt_avrcp_ct_set_browsed_player(struct bt_avrcp_ct *ct, uint8_t tid, uint16_t
 
 	err = avrcp_ct_precheck(ct, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		LOG_ERROR("AVRCP CT precheck failed: %d", err);
 		net_buf_unref(buf);
 		return err;
 	}
 
 	if (net_buf_tailroom(buf) < sizeof(player_id)) {
-		LOG_ERR("Not enough tailroom for SET_BROWSED_PLAYER cmd");
+		LOG_ERROR("Not enough tailroom for SET_BROWSED_PLAYER cmd");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
@@ -4042,7 +4042,7 @@ int bt_avrcp_ct_set_browsed_player(struct bt_avrcp_ct *ct, uint8_t tid, uint16_t
 	err =  bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_SET_BROWSED_PLAYER,
 				      BT_AVCTP_CMD, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP browsing PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP browsing PDU (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -4054,7 +4054,7 @@ int bt_avrcp_ct_get_folder_items(struct bt_avrcp_ct *ct, uint8_t tid, struct net
 
 	err = avrcp_ct_precheck(ct, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		LOG_ERROR("AVRCP CT precheck failed: %d", err);
 		return err;
 	}
 
@@ -4066,7 +4066,7 @@ int bt_avrcp_ct_get_folder_items(struct bt_avrcp_ct *ct, uint8_t tid, struct net
 	err = bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_GET_FOLDER_ITEMS,
 				     BT_AVCTP_CMD, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send GET_FOLDER_ITEMS cmd (err: %d)", err);
+		LOG_ERROR("Failed to send GET_FOLDER_ITEMS cmd (err: %d)", err);
 	}
 	return err;
 }
@@ -4077,7 +4077,7 @@ int bt_avrcp_ct_change_path(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf 
 
 	err = avrcp_ct_precheck(ct, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		LOG_ERROR("AVRCP CT precheck failed: %d", err);
 		return err;
 	}
 
@@ -4089,7 +4089,7 @@ int bt_avrcp_ct_change_path(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf 
 	err = bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_CHANGE_PATH,
 				     BT_AVCTP_CMD, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send CHANGE_PATH cmd (err: %d)", err);
+		LOG_ERROR("Failed to send CHANGE_PATH cmd (err: %d)", err);
 	}
 	return err;
 }
@@ -4100,7 +4100,7 @@ int bt_avrcp_ct_get_item_attrs(struct bt_avrcp_ct *ct, uint8_t tid, struct net_b
 
 	err = avrcp_ct_precheck(ct, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		LOG_ERROR("AVRCP CT precheck failed: %d", err);
 		return err;
 	}
 
@@ -4112,7 +4112,7 @@ int bt_avrcp_ct_get_item_attrs(struct bt_avrcp_ct *ct, uint8_t tid, struct net_b
 	err = bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_GET_ITEM_ATTRS,
 				     BT_AVCTP_CMD, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send GET_ITEM_ATTRIBUTES cmd (err: %d)", err);
+		LOG_ERROR("Failed to send GET_ITEM_ATTRIBUTES cmd (err: %d)", err);
 	}
 	return err;
 }
@@ -4138,13 +4138,13 @@ int bt_avrcp_ct_get_total_number_of_items(struct bt_avrcp_ct *ct, uint8_t tid, u
 
 	err = avrcp_ct_precheck(ct, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		LOG_ERROR("AVRCP CT precheck failed: %d", err);
 		net_buf_unref(buf);
 		return err;
 	}
 
 	if (net_buf_tailroom(buf) < sizeof(scope)) {
-		LOG_ERR("Not enough tailroom for scope");
+		LOG_ERROR("Not enough tailroom for scope");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
@@ -4153,7 +4153,7 @@ int bt_avrcp_ct_get_total_number_of_items(struct bt_avrcp_ct *ct, uint8_t tid, u
 	err = bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_GET_TOTAL_NUMBER_OF_ITEMS,
 				     BT_AVCTP_CMD, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send GET_TOTAL_NUMBER_OF_ITEMS cmd (err: %d)", err);
+		LOG_ERROR("Failed to send GET_TOTAL_NUMBER_OF_ITEMS cmd (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -4165,7 +4165,7 @@ int bt_avrcp_ct_search(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf)
 
 	err = avrcp_ct_precheck(ct, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP CT precheck failed: %d", err);
+		LOG_ERROR("AVRCP CT precheck failed: %d", err);
 		return err;
 	}
 
@@ -4177,7 +4177,7 @@ int bt_avrcp_ct_search(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf)
 	err = bt_avrcp_browsing_send(ct->avrcp, buf, BT_AVRCP_PDU_ID_SEARCH,
 				     BT_AVCTP_CMD, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send SEARCH cmd (err: %d)", err);
+		LOG_ERROR("Failed to send SEARCH cmd (err: %d)", err);
 	}
 	return err;
 }
@@ -4201,14 +4201,14 @@ int bt_avrcp_tg_set_browsed_player(struct bt_avrcp_tg *tg, uint8_t tid, struct n
 
 	err = avrcp_tg_precheck(tg, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		LOG_ERROR("AVRCP TG precheck failed: %d", err);
 		return err;
 	}
 
 	err =  bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_SET_BROWSED_PLAYER,
 				      BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP browsing PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP browsing PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -4219,14 +4219,14 @@ int bt_avrcp_tg_get_folder_items(struct bt_avrcp_tg *tg, uint8_t tid, struct net
 
 	err = avrcp_tg_precheck(tg, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		LOG_ERROR("AVRCP TG precheck failed: %d", err);
 		return err;
 	}
 
 	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_GET_FOLDER_ITEMS,
 				     BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send GET_FOLDER_ITEMS rsp (err: %d)", err);
+		LOG_ERROR("Failed to send GET_FOLDER_ITEMS rsp (err: %d)", err);
 	}
 	return err;
 }
@@ -4243,14 +4243,15 @@ int bt_avrcp_tg_change_path(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status,
 
 	err = avrcp_tg_precheck(tg, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		LOG_ERROR("AVRCP TG precheck failed: %d", err);
 		net_buf_unref(buf);
 		return err;
 	}
 
-	if (net_buf_tailroom(buf) < sizeof(status) +
-	   ((status == BT_AVRCP_STATUS_OPERATION_COMPLETED) ? sizeof(num_items) : 0U)) {
-		LOG_ERR("Not enough tailroom for CHANGE_PATH rsp");
+	if (net_buf_tailroom(buf) <
+	    sizeof(status) +
+		    ((status == BT_AVRCP_STATUS_OPERATION_COMPLETED) ? sizeof(num_items) : 0U)) {
+		LOG_ERROR("Not enough tailroom for CHANGE_PATH rsp");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
@@ -4263,7 +4264,7 @@ int bt_avrcp_tg_change_path(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status,
 	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_CHANGE_PATH,
 				     BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send CHANGE_PATH rsp (err: %d)", err);
+		LOG_ERROR("Failed to send CHANGE_PATH rsp (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -4275,14 +4276,14 @@ int bt_avrcp_tg_get_item_attrs(struct bt_avrcp_tg *tg, uint8_t tid, struct net_b
 
 	err = avrcp_tg_precheck(tg, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		LOG_ERROR("AVRCP TG precheck failed: %d", err);
 		return err;
 	}
 
 	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_GET_ITEM_ATTRS,
 				     BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send GET_ITEM_ATTRIBUTES rsp (err: %d)", err);
+		LOG_ERROR("Failed to send GET_ITEM_ATTRIBUTES rsp (err: %d)", err);
 	}
 	return err;
 }
@@ -4294,14 +4295,14 @@ int bt_avrcp_tg_get_total_number_of_items(struct bt_avrcp_tg *tg, uint8_t tid,
 
 	err = avrcp_tg_precheck(tg, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		LOG_ERROR("AVRCP TG precheck failed: %d", err);
 		return err;
 	}
 
 	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_GET_TOTAL_NUMBER_OF_ITEMS,
 				     BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send GET_TOTAL_NUMBER_OF_ITEMS rsp (err: %d)", err);
+		LOG_ERROR("Failed to send GET_TOTAL_NUMBER_OF_ITEMS rsp (err: %d)", err);
 	}
 	return err;
 }
@@ -4312,14 +4313,14 @@ int bt_avrcp_tg_search(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf)
 
 	err = avrcp_tg_precheck(tg, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		LOG_ERROR("AVRCP TG precheck failed: %d", err);
 		return err;
 	}
 
 	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_SEARCH,
 				     BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send SEARCH rsp (err: %d)", err);
+		LOG_ERROR("Failed to send SEARCH rsp (err: %d)", err);
 	}
 	return err;
 }
@@ -4330,7 +4331,7 @@ int bt_avrcp_tg_browsing_general_reject(struct bt_avrcp_tg *tg, uint8_t tid, uin
 	int err;
 
 	if (AVRCP_STATUS_IS_REJECTED(status) != true) {
-		LOG_ERR("Invalid status");
+		LOG_ERROR("Invalid status");
 		return -EINVAL;
 	}
 
@@ -4341,13 +4342,13 @@ int bt_avrcp_tg_browsing_general_reject(struct bt_avrcp_tg *tg, uint8_t tid, uin
 
 	err = avrcp_tg_precheck(tg, buf);
 	if (err < 0) {
-		LOG_ERR("AVRCP TG precheck failed: %d", err);
+		LOG_ERROR("AVRCP TG precheck failed: %d", err);
 		net_buf_unref(buf);
 		return err;
 	}
 
 	if (net_buf_tailroom(buf) < sizeof(status)) {
-		LOG_ERR("Not enough tailroom for GENERAL_REJECT rsp");
+		LOG_ERROR("Not enough tailroom for GENERAL_REJECT rsp");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
@@ -4356,7 +4357,7 @@ int bt_avrcp_tg_browsing_general_reject(struct bt_avrcp_tg *tg, uint8_t tid, uin
 	err = bt_avrcp_browsing_send(tg->avrcp, buf, BT_AVRCP_PDU_ID_GENERAL_REJECT,
 				     BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send GENERAL_REJECT rsp (err: %d)", err);
+		LOG_ERROR("Failed to send GENERAL_REJECT rsp (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -4409,7 +4410,7 @@ static int build_notification_rsp_data(uint8_t event_id, struct bt_avrcp_event_d
 	}
 
 	if (net_buf_tailroom(buf) < param_len) {
-		LOG_ERR("Not enough space in net_buf");
+		LOG_ERROR("Not enough space in net_buf");
 		return -ENOMEM;
 	}
 
@@ -4418,7 +4419,7 @@ static int build_notification_rsp_data(uint8_t event_id, struct bt_avrcp_event_d
 	case BT_AVRCP_EVT_PLAYBACK_STATUS_CHANGED:
 		if (data->play_status > BT_AVRCP_PLAYBACK_STATUS_REV_SEEK &&
 		    data->play_status != BT_AVRCP_PLAYBACK_STATUS_ERROR) {
-			LOG_ERR("Invalid playback status: %d", data->play_status);
+			LOG_ERROR("Invalid playback status: %d", data->play_status);
 			return -EINVAL;
 		}
 		net_buf_add_u8(buf, data->play_status);
@@ -4434,14 +4435,14 @@ static int build_notification_rsp_data(uint8_t event_id, struct bt_avrcp_event_d
 		break;
 	case BT_AVRCP_EVT_BATT_STATUS_CHANGED:
 		if (data->battery_status > BT_AVRCP_BATTERY_STATUS_FULL) {
-			LOG_ERR("Invalid battery status: %d", data->battery_status);
+			LOG_ERROR("Invalid battery status: %d", data->battery_status);
 			return -EINVAL;
 		}
 		net_buf_add_u8(buf, data->battery_status);
 		break;
 	case BT_AVRCP_EVT_SYSTEM_STATUS_CHANGED:
 		if (data->system_status > BT_AVRCP_SYSTEM_STATUS_UNPLUGGED) {
-			LOG_ERR("Invalid system status: %d", data->system_status);
+			LOG_ERROR("Invalid system status: %d", data->system_status);
 			return -EINVAL;
 		}
 		net_buf_add_u8(buf, data->system_status);
@@ -4460,7 +4461,7 @@ static int build_notification_rsp_data(uint8_t event_id, struct bt_avrcp_event_d
 		break;
 	case BT_AVRCP_EVT_VOLUME_CHANGED:
 		if (data->absolute_volume > BT_AVRCP_MAX_ABSOLUTE_VOLUME) {
-			LOG_ERR("Invalid absolute volume: %d", data->absolute_volume);
+			LOG_ERROR("Invalid absolute volume: %d", data->absolute_volume);
 			return -EINVAL;
 		}
 		net_buf_add_u8(buf, data->absolute_volume);
@@ -4493,12 +4494,12 @@ int bt_avrcp_tg_notification(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status
 	}
 
 	if (event_id >= ARRAY_SIZE(tg->tg_notify)) {
-		LOG_ERR("Invalid event_id");
+		LOG_ERROR("Invalid event_id");
 		return -EINVAL;
 	}
 
 	if (tg->tg_notify[event_id].registered == false) {
-		LOG_ERR("Notification response failed: event not registered");
+		LOG_ERROR("Notification response failed: event not registered");
 		return -ENOENT;
 	}
 
@@ -4512,13 +4513,13 @@ int bt_avrcp_tg_notification(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status
 		break;
 	case BT_AVRCP_STATUS_NOT_IMPLEMENTED:
 		if (tg->tg_notify[event_id].interim_sent == true) {
-			LOG_ERR("Not support INTERIM has been responded");
+			LOG_ERROR("Not support INTERIM has been responded");
 			return -EINVAL;
 		}
 		rsp_code = BT_AVRCP_RSP_NOT_IMPLEMENTED;
 		break;
 	case BT_AVRCP_STATUS_IN_TRANSITION:
-		LOG_ERR("Not support IN_TRANSITION");
+		LOG_ERROR("Not support IN_TRANSITION");
 		return -EINVAL;
 
 	default:
@@ -4528,13 +4529,13 @@ int bt_avrcp_tg_notification(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status
 
 	buf = bt_avrcp_create_vendor_pdu(NULL);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOBUFS;
 	}
 
 	if (rsp_code == BT_AVRCP_RSP_REJECTED) {
 		if (net_buf_tailroom(buf) < sizeof(status)) {
-			LOG_ERR("Not enough space in net_buf");
+			LOG_ERROR("Not enough space in net_buf");
 			net_buf_unref(buf);
 			return -ENOMEM;
 		}
@@ -4550,7 +4551,7 @@ int bt_avrcp_tg_notification(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status
 	err =  bt_avrcp_tg_send_vendor_rsp(tg, tid, BT_AVRCP_PDU_ID_REGISTER_NOTIFICATION,
 					   rsp_code, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send notification response (err: %d)", err);
+		LOG_ERROR("Failed to send notification response (err: %d)", err);
 		net_buf_unref(buf);
 		return err;
 	}
@@ -4580,7 +4581,7 @@ int bt_avrcp_tg_send_passthrough_rsp(struct bt_avrcp_tg *tg, uint8_t tid, bt_avr
 	}
 
 	if (net_buf_headroom(buf) < sizeof(struct bt_avrcp_header)) {
-		LOG_ERR("Not enough headroom in buffer for bt_avrcp_header");
+		LOG_ERROR("Not enough headroom in buffer for bt_avrcp_header");
 		return -ENOMEM;
 	}
 	avrcp_hdr = net_buf_push(buf, sizeof(struct bt_avrcp_header));
@@ -4590,7 +4591,7 @@ int bt_avrcp_tg_send_passthrough_rsp(struct bt_avrcp_tg *tg, uint8_t tid, bt_avr
 
 	err = avrcp_send(tg->avrcp, buf, BT_AVCTP_RESPONSE, tid);
 	if (err < 0) {
-		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		LOG_ERROR("Failed to send AVRCP PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -4618,7 +4619,7 @@ static int bt_avrcp_tg_send_vendor_dependent_rsp(struct bt_avrcp_tg *tg, uint8_t
 	if (status != BT_AVRCP_STATUS_SUCCESS) {
 		status_buf = bt_avrcp_create_vendor_pdu(NULL);
 		if (status_buf == NULL) {
-			LOG_ERR("Failed to allocate status buffer");
+			LOG_ERROR("Failed to allocate status buffer");
 			return -ENOBUFS;
 		}
 	} else {
@@ -4628,7 +4629,7 @@ static int bt_avrcp_tg_send_vendor_dependent_rsp(struct bt_avrcp_tg *tg, uint8_t
 	/* Set the REJECTED response with the status payload */
 	if (rsp_code == BT_AVRCP_RSP_REJECTED) {
 		if (net_buf_tailroom(status_buf) < sizeof(status)) {
-			LOG_ERR("Not enough space in status net_buf");
+			LOG_ERROR("Not enough space in status net_buf");
 			net_buf_unref(status_buf);
 			return -ENOMEM;
 		}
@@ -4638,7 +4639,7 @@ static int bt_avrcp_tg_send_vendor_dependent_rsp(struct bt_avrcp_tg *tg, uint8_t
 	if (status != BT_AVRCP_STATUS_SUCCESS) {
 		err = bt_avrcp_tg_send_vendor_rsp(tg, tid, pdu_id, rsp_code, status_buf);
 		if (err < 0) {
-			LOG_ERR("Failed to send vendor status PDU (err: %d)", err);
+			LOG_ERROR("Failed to send vendor status PDU (err: %d)", err);
 			net_buf_unref(status_buf);
 			return err;
 		}
@@ -4652,14 +4653,14 @@ static int bt_avrcp_tg_send_vendor_dependent_rsp(struct bt_avrcp_tg *tg, uint8_t
 	uint8_t min_len = get_rsp_min_len_by_pdu(pdu_id);
 
 	if (buf->len < min_len) {
-		LOG_ERR("Buffer too small for PDU 0x%02X (len=%u, min=%u)",
-			pdu_id, buf->len, min_len);
+		LOG_ERROR("Buffer too small for PDU 0x%02X (len=%u, min=%u)", pdu_id, buf->len,
+			  min_len);
 		return -EINVAL;
 	}
 
 	err = bt_avrcp_tg_send_vendor_rsp(tg, tid, pdu_id, rsp_code, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send vendor PDU (err: %d)", err);
+		LOG_ERROR("Failed to send vendor PDU (err: %d)", err);
 	}
 	return err;
 }
@@ -4671,7 +4672,7 @@ int bt_avrcp_tg_get_caps(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status, st
 	err = bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid, BT_AVRCP_PDU_ID_GET_CAPS, status,
 						    buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send Get Capabilities response (err: %d)", err);
+		LOG_ERROR("Failed to send Get Capabilities response (err: %d)", err);
 	}
 	return err;
 }
@@ -4708,7 +4709,7 @@ int bt_avrcp_tg_set_player_app_setting_val(struct bt_avrcp_tg *tg, uint8_t tid, 
 
 	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOBUFS;
 	}
 
@@ -4716,7 +4717,7 @@ int bt_avrcp_tg_set_player_app_setting_val(struct bt_avrcp_tg *tg, uint8_t tid, 
 						    BT_AVRCP_PDU_ID_SET_PLAYER_APP_SETTING_VAL,
 						    status, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send vendor dependent (err: %d)", err);
+		LOG_ERROR("Failed to send vendor dependent (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -4745,7 +4746,7 @@ int bt_avrcp_tg_inform_displayable_char_set(struct bt_avrcp_tg *tg, uint8_t tid,
 
 	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOBUFS;
 	}
 
@@ -4753,7 +4754,7 @@ int bt_avrcp_tg_inform_displayable_char_set(struct bt_avrcp_tg *tg, uint8_t tid,
 						    BT_AVRCP_PDU_ID_INFORM_DISPLAYABLE_CHAR_SET,
 						    status, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send vendor dependent (err: %d)", err);
+		LOG_ERROR("Failed to send vendor dependent (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -4766,7 +4767,7 @@ int bt_avrcp_tg_inform_batt_status_of_ct(struct bt_avrcp_tg *tg, uint8_t tid, ui
 
 	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOBUFS;
 	}
 
@@ -4774,7 +4775,7 @@ int bt_avrcp_tg_inform_batt_status_of_ct(struct bt_avrcp_tg *tg, uint8_t tid, ui
 						    BT_AVRCP_PDU_ID_INFORM_BATT_STATUS_OF_CT,
 						    status, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send vendor dependent (err: %d)", err);
+		LOG_ERROR("Failed to send vendor dependent (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -4792,12 +4793,12 @@ int bt_avrcp_tg_absolute_volume(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t sta
 
 	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOBUFS;
 	}
 
 	if (net_buf_tailroom(buf) < sizeof(absolute_volume)) {
-		LOG_ERR("Not enough space in net_buf");
+		LOG_ERROR("Not enough space in net_buf");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
@@ -4806,7 +4807,7 @@ int bt_avrcp_tg_absolute_volume(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t sta
 	err = bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid, BT_AVRCP_PDU_ID_SET_ABSOLUTE_VOLUME,
 						    status, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to absolute volume (err: %d)", err);
+		LOG_ERROR("Failed to absolute volume (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -4835,13 +4836,13 @@ int bt_avrcp_tg_set_addressed_player(struct bt_avrcp_tg *tg, uint8_t tid, uint8_
 
 	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOBUFS;
 	}
 
 	if (status <= BT_AVRCP_STATUS_ADDRESSED_PLAYER_CHANGED) {
 		if (net_buf_tailroom(buf) < sizeof(status)) {
-			LOG_ERR("Not enough space in net_buf");
+			LOG_ERROR("Not enough space in net_buf");
 			net_buf_unref(buf);
 			return -ENOMEM;
 		}
@@ -4851,7 +4852,7 @@ int bt_avrcp_tg_set_addressed_player(struct bt_avrcp_tg *tg, uint8_t tid, uint8_
 	err = bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid, BT_AVRCP_PDU_ID_SET_ADDRESSED_PLAYER,
 						    status, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send vendor dependent (err: %d)", err);
+		LOG_ERROR("Failed to send vendor dependent (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -4864,13 +4865,13 @@ int bt_avrcp_tg_play_item(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status)
 
 	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOBUFS;
 	}
 
 	if (status <= BT_AVRCP_STATUS_ADDRESSED_PLAYER_CHANGED) {
 		if (net_buf_tailroom(buf) < sizeof(status)) {
-			LOG_ERR("Not enough space in net_buf");
+			LOG_ERROR("Not enough space in net_buf");
 			net_buf_unref(buf);
 			return -ENOMEM;
 		}
@@ -4880,7 +4881,7 @@ int bt_avrcp_tg_play_item(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status)
 	err = bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid, BT_AVRCP_PDU_ID_PLAY_ITEM,
 						    status, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send vendor dependent (err: %d)", err);
+		LOG_ERROR("Failed to send vendor dependent (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -4893,13 +4894,13 @@ int bt_avrcp_tg_add_to_now_playing(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t 
 
 	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOBUFS;
 	}
 
 	if (status <= BT_AVRCP_STATUS_ADDRESSED_PLAYER_CHANGED) {
 		if (net_buf_tailroom(buf) < sizeof(status)) {
-			LOG_ERR("Not enough space in net_buf");
+			LOG_ERROR("Not enough space in net_buf");
 			net_buf_unref(buf);
 			return -ENOMEM;
 		}
@@ -4909,7 +4910,7 @@ int bt_avrcp_tg_add_to_now_playing(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t 
 	err = bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid, BT_AVRCP_PDU_ID_ADD_TO_NOW_PLAYING,
 						    status, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send vendor dependent (err: %d)", err);
+		LOG_ERROR("Failed to send vendor dependent (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -4922,7 +4923,7 @@ struct bt_avrcp_tg *bt_avrcp_get_tg(struct bt_conn *conn, uint16_t psm)
 	ARG_UNUSED(psm);
 
 	if (conn == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return NULL;
 	}
 
@@ -4935,12 +4936,12 @@ struct bt_avrcp_tg *bt_avrcp_get_tg(struct bt_conn *conn, uint16_t psm)
 struct bt_conn *bt_avrcp_ct_get_acl_conn(struct bt_avrcp_ct *ct)
 {
 	if (ct == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return NULL;
 	}
 
 	if (ct->avrcp->acl_conn == NULL) {
-		LOG_ERR("No connection");
+		LOG_ERROR("No connection");
 		return NULL;
 	}
 

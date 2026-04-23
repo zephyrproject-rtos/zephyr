@@ -106,7 +106,7 @@ static int mcux_lpc_ctimer_set_alarm(const struct device *dev, uint8_t chan_id,
 	}
 
 	if (data->channels[chan_id].alarm_callback != NULL) {
-		LOG_ERR("channel already in use");
+		LOG_ERROR("channel already in use");
 		return -EBUSY;
 	}
 
@@ -154,8 +154,7 @@ static int mcux_lpc_ctimer_set_top_value(const struct device *dev,
 #ifndef CONFIG_COUNTER_MCUX_CTIMER_RESERVE_CHANNEL_FOR_SETTOP
 	/* Only allow max value when we do not reserve a ctimer channel for setting top value */
 	if (cfg->ticks != config->info.max_top_value) {
-		LOG_ERR("Wrap can only be set to 0x%x",
-			config->info.max_top_value);
+		LOG_ERROR("Wrap can only be set to 0x%x", config->info.max_top_value);
 		return -ENOTSUP;
 	}
 #endif
@@ -203,9 +202,8 @@ static uint32_t mcux_lpc_ctimer_get_freq(const struct device *dev)
 
 	uint32_t clk_freq = 0;
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-					&clk_freq)) {
-		LOG_ERR("unable to get clock frequency");
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clk_freq)) {
+		LOG_ERROR("unable to get clock frequency");
 		return 0;
 	}
 
@@ -256,7 +254,7 @@ static int mcux_lpc_ctimer_init_common(const struct device *dev)
 	ctimer_config_t ctimer_config;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 

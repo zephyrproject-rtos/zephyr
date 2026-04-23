@@ -397,7 +397,7 @@ static int zms_flash_erase_sector(struct zms_fs *fs, uint64_t addr)
 	}
 
 	if (zms_flash_cmp_const(fs, addr, fs->flash_parameters->erase_value, fs->sector_size)) {
-		LOG_ERR("Failure while erasing the sector at offset 0x%lx", (long)offset);
+		LOG_ERROR("Failure while erasing the sector at offset 0x%lx", (long)offset);
 		rc = -ENXIO;
 	}
 
@@ -1151,12 +1151,12 @@ int zms_clear(struct zms_fs *fs)
 	int rc;
 
 	if (!fs) {
-		LOG_ERR("Invalid fs");
+		LOG_ERROR("Invalid fs");
 		return -EINVAL;
 	}
 
 	if (!fs->ready) {
-		LOG_ERR("zms not initialized");
+		LOG_ERROR("zms not initialized");
 		return -EACCES;
 	}
 
@@ -1226,7 +1226,7 @@ static int zms_init(struct zms_fs *fs)
 				zms_magic_exist = true;
 				/* Let's check that we support this ZMS version */
 				if (ZMS_GET_VERSION(empty_ate.metadata) != ZMS_DEFAULT_VERSION) {
-					LOG_ERR("ZMS Version is not supported");
+					LOG_ERROR("ZMS Version is not supported");
 					rc = -EPROTONOSUPPORT;
 					goto end;
 				}
@@ -1283,7 +1283,7 @@ static int zms_init(struct zms_fs *fs)
 				zms_magic_exist = true;
 				/* Let's check the version */
 				if (ZMS_GET_VERSION(empty_ate.metadata) != ZMS_DEFAULT_VERSION) {
-					LOG_ERR("ZMS Version is not supported");
+					LOG_ERROR("ZMS Version is not supported");
 					rc = -EPROTONOSUPPORT;
 					goto end;
 				}
@@ -1476,7 +1476,7 @@ static int zms_mount_internal(struct zms_fs *fs, bool wipe_on_failure)
 	size_t write_block_size;
 
 	if (!fs) {
-		LOG_ERR("Invalid fs");
+		LOG_ERROR("Invalid fs");
 		return -EINVAL;
 	}
 
@@ -1484,7 +1484,7 @@ static int zms_mount_internal(struct zms_fs *fs, bool wipe_on_failure)
 
 	fs->flash_parameters = flash_get_parameters(fs->flash_device);
 	if (fs->flash_parameters == NULL) {
-		LOG_ERR("Could not obtain flash parameters");
+		LOG_ERROR("Could not obtain flash parameters");
 		return -EINVAL;
 	}
 
@@ -1493,7 +1493,7 @@ static int zms_mount_internal(struct zms_fs *fs, bool wipe_on_failure)
 
 	/* check that the write block size is supported */
 	if (write_block_size > ZMS_BLOCK_SIZE || write_block_size == 0) {
-		LOG_ERR("Unsupported write block size");
+		LOG_ERROR("Unsupported write block size");
 		return -EINVAL;
 	}
 
@@ -1503,11 +1503,11 @@ static int zms_mount_internal(struct zms_fs *fs, bool wipe_on_failure)
 	if (flash_params_get_erase_cap(fs->flash_parameters) & FLASH_ERASE_C_EXPLICIT) {
 		rc = flash_get_page_info_by_offs(fs->flash_device, fs->offset, &info);
 		if (rc) {
-			LOG_ERR("Unable to get page info");
+			LOG_ERROR("Unable to get page info");
 			return -EINVAL;
 		}
 		if (!fs->sector_size || fs->sector_size % info.size) {
-			LOG_ERR("Invalid sector size");
+			LOG_ERROR("Invalid sector size");
 			return -EINVAL;
 		}
 	}
@@ -1516,14 +1516,14 @@ static int zms_mount_internal(struct zms_fs *fs, bool wipe_on_failure)
 	 * 1 close ATE, 1 empty ATE, 1 GC done ATE, 1 Delete ATE, 1 ID/Value ATE
 	 */
 	if (fs->sector_size < ZMS_MIN_ATE_NUM * fs->ate_size) {
-		LOG_ERR("Invalid sector size, should be at least %zu",
-			ZMS_MIN_ATE_NUM * fs->ate_size);
+		LOG_ERROR("Invalid sector size, should be at least %zu",
+			  ZMS_MIN_ATE_NUM * fs->ate_size);
 		return -EINVAL;
 	}
 
 	/* check the number of sectors, it should be at least 2 */
 	if (fs->sector_count < 2) {
-		LOG_ERR("Configuration error - sector count below minimum requirement (2)");
+		LOG_ERROR("Configuration error - sector count below minimum requirement (2)");
 		return -EINVAL;
 	}
 
@@ -1568,12 +1568,12 @@ ssize_t zms_write(struct zms_fs *fs, zms_id_t id, const void *data, size_t len)
 	uint32_t required_space = 0U; /* no space, appropriate for delete ate */
 
 	if (!fs) {
-		LOG_ERR("Invalid fs");
+		LOG_ERROR("Invalid fs");
 		return -EINVAL;
 	}
 
 	if (!fs->ready) {
-		LOG_ERR("zms not initialized");
+		LOG_ERROR("zms not initialized");
 		return -EACCES;
 	}
 
@@ -1696,12 +1696,12 @@ no_cached_entry:
 		}
 		rc = zms_sector_close(fs);
 		if (rc) {
-			LOG_ERR("Failed to close the sector, returned = %d", rc);
+			LOG_ERROR("Failed to close the sector, returned = %d", rc);
 			goto end;
 		}
 		rc = zms_gc(fs);
 		if (rc) {
-			LOG_ERR("Garbage collection failed, returned = %d", rc);
+			LOG_ERROR("Garbage collection failed, returned = %d", rc);
 			goto end;
 		}
 		gc_count++;
@@ -1730,12 +1730,12 @@ ssize_t zms_read_hist(struct zms_fs *fs, zms_id_t id, void *data, size_t len, ui
 	uint32_t computed_data_crc;
 #endif
 	if (!fs) {
-		LOG_ERR("Invalid fs");
+		LOG_ERROR("Invalid fs");
 		return -EINVAL;
 	}
 
 	if (!fs->ready) {
-		LOG_ERR("zms not initialized");
+		LOG_ERROR("zms not initialized");
 		return -EACCES;
 	}
 
@@ -1803,9 +1803,9 @@ ssize_t zms_read_hist(struct zms_fs *fs, zms_id_t id, void *data, size_t len, ui
 		if (len >= wlk_ate.len) {
 			computed_data_crc = crc32_ieee(data, wlk_ate.len);
 			if (computed_data_crc != wlk_ate.data_crc) {
-				LOG_ERR("Invalid data CRC: ATE_CRC=0x%08X, "
-					"computed_data_crc=0x%08X",
-					wlk_ate.data_crc, computed_data_crc);
+				LOG_ERROR("Invalid data CRC: ATE_CRC=0x%08X, "
+					  "computed_data_crc=0x%08X",
+					  wlk_ate.data_crc, computed_data_crc);
 				return -EIO;
 			}
 		}
@@ -1895,12 +1895,12 @@ ssize_t zms_calc_free_space(struct zms_fs *fs)
 	ssize_t free_space = 0;
 
 	if (!fs) {
-		LOG_ERR("Invalid fs");
+		LOG_ERROR("Invalid fs");
 		return -EINVAL;
 	}
 
 	if (!fs->ready) {
-		LOG_ERR("zms not initialized");
+		LOG_ERROR("zms not initialized");
 		return -EACCES;
 	}
 
@@ -1985,12 +1985,12 @@ ssize_t zms_calc_free_space(struct zms_fs *fs)
 ssize_t zms_active_sector_free_space(struct zms_fs *fs)
 {
 	if (!fs) {
-		LOG_ERR("Invalid fs");
+		LOG_ERROR("Invalid fs");
 		return -EINVAL;
 	}
 
 	if (!fs->ready) {
-		LOG_ERR("ZMS not initialized");
+		LOG_ERROR("ZMS not initialized");
 		return -EACCES;
 	}
 
@@ -2002,12 +2002,12 @@ int zms_sector_use_next(struct zms_fs *fs)
 	int ret;
 
 	if (!fs) {
-		LOG_ERR("Invalid fs");
+		LOG_ERROR("Invalid fs");
 		return -EINVAL;
 	}
 
 	if (!fs->ready) {
-		LOG_ERR("ZMS not initialized");
+		LOG_ERROR("ZMS not initialized");
 		return -EACCES;
 	}
 

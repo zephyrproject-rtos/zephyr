@@ -40,14 +40,14 @@ static void netc_eth_phylink_callback(const struct device *pdev, struct phy_link
 		result = EP_Up(&data->handle, PHY_TO_NETC_SPEED(state->speed),
 			       PHY_TO_NETC_DUPLEX_MODE(state->speed));
 		if (result != kStatus_Success) {
-			LOG_ERR("Failed to set MAC up");
+			LOG_ERROR("Failed to set MAC up");
 		}
 		net_eth_carrier_on(data->iface);
 	} else {
 		LOG_INF("ENETC%d Link down", getSiInstance(cfg->si_idx));
 		result = EP_Down(&data->handle);
 		if (result != kStatus_Success) {
-			LOG_ERR("Failed to set MAC down");
+			LOG_ERROR("Failed to set MAC down");
 		}
 		net_eth_carrier_off(data->iface);
 	}
@@ -65,7 +65,7 @@ static void netc_eth_iface_init(struct net_if *iface)
 	/* Set MAC address */
 	result = EP_SetPrimaryMacAddr(&data->handle, (uint8_t *)data->mac_addr);
 	if (result != kStatus_Success) {
-		LOG_ERR("Failed to set MAC address");
+		LOG_ERROR("Failed to set MAC address");
 	}
 
 	net_if_set_link_addr(iface, data->mac_addr, sizeof(data->mac_addr), NET_LINK_ETHERNET);
@@ -86,7 +86,7 @@ static void netc_eth_iface_init(struct net_if *iface)
 	 * immediately after setting it.
 	 */
 	if (!device_is_ready(cfg->phy_dev)) {
-		LOG_ERR("PHY device (%p) is not ready, cannot init iface", cfg->phy_dev);
+		LOG_ERROR("PHY device (%p) is not ready, cannot init iface", cfg->phy_dev);
 		return;
 	}
 	/* Do not start the interface until PHY link is up */

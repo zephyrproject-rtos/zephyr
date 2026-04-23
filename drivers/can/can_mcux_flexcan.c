@@ -267,7 +267,7 @@ static int mcux_flexcan_start(const struct device *dev)
 	if (config->common.phy != NULL) {
 		err = can_transceiver_enable(config->common.phy, data->common.mode);
 		if (err != 0) {
-			LOG_ERR("failed to enable CAN transceiver (err %d)", err);
+			LOG_ERROR("failed to enable CAN transceiver (err %d)", err);
 			return err;
 		}
 	}
@@ -288,8 +288,8 @@ static int mcux_flexcan_start(const struct device *dev)
 			if (atomic_test_bit(data->rx_allocs, alloc)) {
 				status = mcux_flexcan_mb_start(dev, alloc);
 				if (status != kStatus_Success) {
-					LOG_ERR("Failed to re-add rx filter id %d (err = %d)",
-						alloc, status);
+					LOG_ERROR("Failed to re-add rx filter id %d (err = %d)",
+						  alloc, status);
 					k_mutex_unlock(&data->rx_mutex);
 					return -EIO;
 				}
@@ -390,7 +390,7 @@ static int mcux_flexcan_stop(const struct device *dev)
 	if (config->common.phy != NULL) {
 		err = can_transceiver_disable(config->common.phy);
 		if (err != 0) {
-			LOG_ERR("failed to disable CAN transceiver (err %d)", err);
+			LOG_ERROR("failed to disable CAN transceiver (err %d)", err);
 			return err;
 		}
 	}
@@ -422,12 +422,12 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 	}
 
 	if ((mode & ~(supported)) != 0) {
-		LOG_ERR("unsupported mode: 0x%08x", mode);
+		LOG_ERROR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
 
 	if ((mode & CAN_MODE_FD) != 0 && (mode & CAN_MODE_3_SAMPLES) != 0) {
-		LOG_ERR("triple sampling is not supported in CAN FD mode");
+		LOG_ERROR("triple sampling is not supported in CAN FD mode");
 		return -ENOTSUP;
 	}
 
@@ -705,9 +705,9 @@ static int mcux_flexcan_send(const struct device *dev,
 
 	if (UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD),
 		     ((data->common.mode & CAN_MODE_FD) != 0U))) {
-		if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR |
-				      CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0) {
-			LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		if ((frame->flags &
+		     ~(CAN_FRAME_IDE | CAN_FRAME_RTR | CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0) {
+			LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 			return -ENOTSUP;
 		}
 
@@ -716,13 +716,13 @@ static int mcux_flexcan_send(const struct device *dev,
 		}
 	} else {
 		if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
-			LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+			LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 			return -ENOTSUP;
 		}
 	}
 
 	if (frame->dlc > max_dlc) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, max_dlc);
+		LOG_ERROR("DLC of %d exceeds maximum (%d)", frame->dlc, max_dlc);
 		return -EINVAL;
 	}
 
@@ -804,7 +804,7 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 	int i;
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
-		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		LOG_ERROR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
@@ -842,8 +842,7 @@ static int mcux_flexcan_add_rx_filter(const struct device *dev,
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 		status = mcux_flexcan_mb_start(dev, alloc);
 		if (status != kStatus_Success) {
-			LOG_ERR("Failed to start rx for filter id %d (err = %d)",
-				alloc, status);
+			LOG_ERROR("Failed to start rx for filter id %d (err = %d)", alloc, status);
 			alloc = -ENOSPC;
 		}
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
@@ -916,7 +915,7 @@ static void mcux_flexcan_remove_rx_filter(const struct device *dev, int filter_i
 	struct mcux_flexcan_data *data = dev->data;
 
 	if (filter_id < 0 || filter_id >= config->rx_mb) {
-		LOG_ERR("filter ID %d out of bounds", filter_id);
+		LOG_ERROR("filter ID %d out of bounds", filter_id);
 		return;
 	}
 
@@ -1082,8 +1081,9 @@ static inline void mcux_flexcan_transfer_rx_idle(const struct device *dev,
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 
 		if (status != kStatus_Success) {
-			LOG_ERR("Failed to restart rx for filter id %d "
-				"(err = %d)", alloc, status);
+			LOG_ERROR("Failed to restart rx for filter id %d "
+				  "(err = %d)",
+				  alloc, status);
 		}
 	}
 }
@@ -1163,13 +1163,13 @@ static int mcux_flexcan_init(const struct device *dev)
 
 	if (config->common.phy != NULL) {
 		if (!device_is_ready(config->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
+			LOG_ERROR("CAN transceiver not ready");
 			return -ENODEV;
 		}
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock device not ready");
+		LOG_ERROR("clock device not ready");
 		return -ENODEV;
 	}
 
@@ -1178,7 +1178,7 @@ static int mcux_flexcan_init(const struct device *dev)
 		/* Check if error is due to lack of support */
 		if (err != -ENOSYS) {
 			/* Real error occurred */
-			LOG_ERR("Failed to configure clock: %d", err);
+			LOG_ERROR("Failed to configure clock: %d", err);
 			return err;
 		}
 	}
@@ -1186,7 +1186,7 @@ static int mcux_flexcan_init(const struct device *dev)
 #if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
 	err = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (err) {
-		LOG_ERR("Failed to enable clock: %d", err);
+		LOG_ERROR("Failed to enable clock: %d", err);
 		return err;
 	}
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
@@ -1203,7 +1203,7 @@ static int mcux_flexcan_init(const struct device *dev)
 	err = can_calc_timing(dev, &data->timing, config->common.bitrate,
 			      config->common.sample_point);
 	if (err == -EINVAL) {
-		LOG_ERR("Can't find timing for given param");
+		LOG_ERROR("Can't find timing for given param");
 		return -EIO;
 	}
 	LOG_DBG("Presc: %d, Seg1S1: %d, Seg2: %d",
@@ -1214,7 +1214,7 @@ static int mcux_flexcan_init(const struct device *dev)
 	/* Validate initial timing parameters */
 	err = can_set_timing(dev, &data->timing);
 	if (err != 0) {
-		LOG_ERR("failed to set timing (err %d)", err);
+		LOG_ERROR("failed to set timing (err %d)", err);
 		return -ENODEV;
 	}
 
@@ -1224,7 +1224,7 @@ static int mcux_flexcan_init(const struct device *dev)
 					   config->common.bitrate_data,
 					   config->common.sample_point_data);
 		if (err == -EINVAL) {
-			LOG_ERR("Can't find timing for given param");
+			LOG_ERROR("Can't find timing for given param");
 			return -EIO;
 		}
 		LOG_DBG("Presc: %d, Seg1S1: %d, Seg2: %d",
@@ -1235,7 +1235,7 @@ static int mcux_flexcan_init(const struct device *dev)
 		/* Validate initial data phase timing parameters */
 		err = can_set_timing_data(dev, &data->timing_data);
 		if (err != 0) {
-			LOG_ERR("failed to set data phase timing (err %d)", err);
+			LOG_ERROR("failed to set data phase timing (err %d)", err);
 			return -ENODEV;
 		}
 	}

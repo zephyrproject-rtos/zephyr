@@ -281,7 +281,7 @@ static int it82xx2_usb_fifo_ctrl(const uint8_t ep, const bool clear)
 	int ret = 0;
 
 	if (ep_idx == 0) {
-		LOG_ERR("Invalid endpoint 0x%x", ep);
+		LOG_ERROR("Invalid endpoint 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -308,7 +308,7 @@ static int it82xx2_usb_fifo_ctrl(const uint8_t ep, const bool clear)
 			ep_fifo_ctrl[fifon_ctrl + 1] |= BIT(ep_idx - 8);
 		}
 	} else {
-		LOG_ERR("Failed to set fifo control register for ep 0x%x", ep);
+		LOG_ERROR("Failed to set fifo control register for ep 0x%x", ep);
 		ret = -EINVAL;
 	}
 
@@ -414,7 +414,7 @@ static int it82xx2_usb_extend_ep_ctrl(uint8_t ep, enum it82xx2_ep_ctrl ctrl, boo
 		} else if (((ep_idx - 4) / 3 == 3)) {
 			epn_ext_ctrl1->fields.epn9_direction_bit = enable;
 		} else {
-			LOG_ERR("Invalid endpoint 0x%x for control type 0x%x", ep, ctrl);
+			LOG_ERROR("Invalid endpoint 0x%x for control type 0x%x", ep, ctrl);
 			return -EINVAL;
 		}
 		break;
@@ -428,7 +428,7 @@ static int it82xx2_usb_extend_ep_ctrl(uint8_t ep, enum it82xx2_ep_ctrl ctrl, boo
 		} else if (((ep_idx - 4) / 3 == 3)) {
 			epn_ext_ctrl1->fields.epn9_enable_bit = enable;
 		} else {
-			LOG_ERR("Invalid endpoint 0x%x for control type 0x%x", ep, ctrl);
+			LOG_ERROR("Invalid endpoint 0x%x for control type 0x%x", ep, ctrl);
 			return -EINVAL;
 		}
 		break;
@@ -440,7 +440,7 @@ static int it82xx2_usb_extend_ep_ctrl(uint8_t ep, enum it82xx2_ep_ctrl ctrl, boo
 		ep_regs[ep_fifo].ep_ctrl.fields.ready_bit = enable;
 		break;
 	default:
-		LOG_ERR("Unknown control type 0x%x", ctrl);
+		LOG_ERROR("Unknown control type 0x%x", ctrl);
 		return -EINVAL;
 	}
 
@@ -512,7 +512,7 @@ static int it82xx2_usb_ep_ctrl(uint8_t ep, enum it82xx2_ep_ctrl ctrl, bool enabl
 		ep_ctrl_value ^= ENDPOINT_OUTDATA_SEQ_BIT;
 		break;
 	default:
-		LOG_ERR("Unknown control type 0x%x", ctrl);
+		LOG_ERROR("Unknown control type 0x%x", ctrl);
 		return -EINVAL;
 	}
 
@@ -769,7 +769,7 @@ static uint16_t get_fifo_ctrl(const uint8_t fifo_idx)
 	uint8_t fifon_ctrl = (fifo_idx - 1) * 2;
 
 	if (fifo_idx == 0) {
-		LOG_ERR("Invalid fifo_idx 0x%x", fifo_idx);
+		LOG_ERROR("Invalid fifo_idx 0x%x", fifo_idx);
 		return 0;
 	}
 
@@ -1069,7 +1069,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 	bool in = USB_EP_DIR_IS_IN(cfg->ep_addr);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx > EP0) {
-		LOG_ERR("Invalid Endpoint Configuration");
+		LOG_ERROR("Invalid Endpoint Configuration");
 		return -EINVAL;
 	}
 
@@ -1164,13 +1164,12 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!udata0.attached || ep_idx >= MAX_NUM_ENDPOINTS) {
-		LOG_ERR("(%d)Not attached / Invalid endpoint: EP 0x%x",
-			__LINE__, ep);
+		LOG_ERROR("(%d)Not attached / Invalid endpoint: EP 0x%x", __LINE__, ep);
 		return -EINVAL;
 	}
 
 	if (cb == NULL) {
-		LOG_ERR("(%d): NO callback function", __LINE__);
+		LOG_ERROR("(%d): NO callback function", __LINE__);
 		return -EINVAL;
 	}
 
@@ -1191,7 +1190,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	int ret = 0;
 
 	if (!udata0.attached || ep_idx >= MAX_NUM_ENDPOINTS) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep_idx);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep_idx);
 		return -EINVAL;
 	}
 
@@ -1216,7 +1215,7 @@ int usb_dc_ep_disable(uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!udata0.attached || ep_idx >= MAX_NUM_ENDPOINTS) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep_idx);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep_idx);
 		return -EINVAL;
 	}
 
@@ -1426,11 +1425,11 @@ int usb_dc_ep_read(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 			return 0;
 		} else if (udata0.now_token == SETUP_TOKEN) {
 			if (rx_fifo_len == 0) {
-				LOG_ERR("Setup length 0, reset to 8");
+				LOG_ERROR("Setup length 0, reset to 8");
 				rx_fifo_len = 8;
 			}
 			if (rx_fifo_len != 8) {
-				LOG_ERR("Setup length: %d", rx_fifo_len);
+				LOG_ERROR("Setup length: %d", rx_fifo_len);
 				ff_regs[0].ep_rx_fifo_ctrl = FIFO_FORCE_EMPTY;
 				return -EIO;
 			}
@@ -1493,12 +1492,12 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 	uint16_t rx_fifo_len;
 
 	if (ep_idx >= MAX_NUM_ENDPOINTS) {
-		LOG_ERR("(%d): Wrong Endpoint Index/Address", __LINE__);
+		LOG_ERROR("(%d): Wrong Endpoint Index/Address", __LINE__);
 		return -EINVAL;
 	}
 
 	if (USB_EP_DIR_IS_IN(ep)) {
-		LOG_ERR("Wrong Endpoint Direction");
+		LOG_ERROR("Wrong Endpoint Direction");
 		return -EINVAL;
 	}
 
@@ -1529,12 +1528,12 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	uint8_t ep_fifo = (ep_idx > 0) ? (ep_fifo_res[ep_idx % FIFO_NUM]) : 0;
 
 	if (ep_idx >= MAX_NUM_ENDPOINTS) {
-		LOG_ERR("(%d): Wrong Endpoint Index/Address", __LINE__);
+		LOG_ERROR("(%d): Wrong Endpoint Index/Address", __LINE__);
 		return -EINVAL;
 	}
 
 	if (USB_EP_DIR_IS_IN(ep)) {
-		LOG_ERR("Wrong Endpoint Direction");
+		LOG_ERROR("Wrong Endpoint Direction");
 		return -EINVAL;
 	}
 
@@ -1550,7 +1549,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx >= MAX_NUM_ENDPOINTS) {
-		LOG_ERR("(%d): Wrong Endpoint Index/Address", __LINE__);
+		LOG_ERROR("(%d): Wrong Endpoint Index/Address", __LINE__);
 		return -EINVAL;
 	}
 	/* Not configured, return length 0 */
@@ -1584,7 +1583,7 @@ int usb_dc_wakeup_request(void)
 
 		ret = k_sem_take(&udata0.suspended_sem, K_MSEC(500));
 		if (ret < 0) {
-			LOG_ERR("failed to wake up host");
+			LOG_ERROR("failed to wake up host");
 		}
 	}
 	return 0;
@@ -1597,7 +1596,7 @@ static int it82xx2_usb_dc_init(const struct device *dev)
 	int status = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (status < 0) {
-		LOG_ERR("Failed to configure USB pins");
+		LOG_ERROR("Failed to configure USB pins");
 		return status;
 	}
 

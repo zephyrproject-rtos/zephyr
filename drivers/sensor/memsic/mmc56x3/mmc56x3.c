@@ -388,12 +388,12 @@ static int mmc56x3_attr_set(const struct device *dev, enum sensor_channel chan,
 			   SENSOR_ATTR_AUTOMATIC_SELF_RESET) {
 			new_config.auto_sr = val->val1 ? true : false;
 		} else {
-			LOG_ERR("Unsupported attribute");
+			LOG_ERROR("Unsupported attribute");
 			ret = -ENOTSUP;
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		ret = -EINVAL;
 		break;
 	}
@@ -431,12 +431,12 @@ static int mmc56x3_attr_get(const struct device *dev, enum sensor_channel chan,
 			   SENSOR_ATTR_AUTOMATIC_SELF_RESET) {
 			val->val1 = config->auto_sr;
 		} else {
-			LOG_ERR("Unsupported attribute");
+			LOG_ERROR("Unsupported attribute");
 			ret = -ENOTSUP;
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		ret = -EINVAL;
 		break;
 	}

@@ -501,22 +501,22 @@ static int crypto_smartbond_cipher_ecb_handler(struct cipher_ctx *ctx, struct ci
 	struct crypto_smartbond_data *data = ctx->device->data;
 
 	if ((AES_HASH->CRYPTO_STATUS_REG & AES_HASH_CRYPTO_STATUS_REG_CRYPTO_INACTIVE_Msk) == 0) {
-		LOG_ERR("Crypto engine is already employed");
+		LOG_ERROR("Crypto engine is already employed");
 		return -EINVAL;
 	}
 
 	if (pkt->out_buf_max < pkt->in_len) {
-		LOG_ERR("OUT buffer cannot be less that IN buffer");
+		LOG_ERROR("OUT buffer cannot be less that IN buffer");
 		return -EINVAL;
 	}
 
 	if (pkt->in_buf == NULL || pkt->out_buf == NULL) {
-		LOG_ERR("Missing IN or OUT buffer declaration");
+		LOG_ERROR("Missing IN or OUT buffer declaration");
 		return -EIO;
 	}
 
 	if (pkt->in_len > 16) {
-		LOG_ERR("For security reasons, do not operate on more than 16 bytes");
+		LOG_ERROR("For security reasons, do not operate on more than 16 bytes");
 		return -EINVAL;
 	}
 
@@ -524,14 +524,14 @@ static int crypto_smartbond_cipher_ecb_handler(struct cipher_ctx *ctx, struct ci
 
 	ret = crypto_smartbond_check_in_restrictions(pkt->in_len);
 	if (ret < 0) {
-		LOG_ERR("Unsupported IN buffer size");
+		LOG_ERROR("Unsupported IN buffer size");
 		k_sem_give(&data->device_sem);
 		return ret;
 	}
 
 	ret = crypto_smartbond_set_in_out_buf(pkt->in_buf, pkt->out_buf, pkt->in_len);
 	if (ret < 0) {
-		LOG_ERR("Unsupported IN or OUT buffer location");
+		LOG_ERROR("Unsupported IN or OUT buffer location");
 		k_sem_give(&data->device_sem);
 		return ret;
 	}
@@ -566,18 +566,18 @@ crypto_smartbond_cipher_cbc_handler(struct cipher_ctx *ctx, struct cipher_pkt *p
 			!!(AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ENCDEC_Msk);
 
 	if ((AES_HASH->CRYPTO_STATUS_REG & AES_HASH_CRYPTO_STATUS_REG_CRYPTO_INACTIVE_Msk) == 0) {
-		LOG_ERR("Crypto engine is already employed");
+		LOG_ERROR("Crypto engine is already employed");
 		return -EINVAL;
 	}
 
 	if ((is_op_encryption && pkt->out_buf_max < (pkt->in_len + 16)) ||
 							pkt->out_buf_max < (pkt->in_len - 16)) {
-		LOG_ERR("Invalid OUT buffer size");
+		LOG_ERROR("Invalid OUT buffer size");
 		return -EINVAL;
 	}
 
 	if (pkt->in_buf == NULL || pkt->out_buf == NULL) {
-		LOG_ERR("Missing IN or OUT buffer declaration");
+		LOG_ERROR("Missing IN or OUT buffer declaration");
 		return -EIO;
 	}
 
@@ -593,14 +593,14 @@ crypto_smartbond_cipher_cbc_handler(struct cipher_ctx *ctx, struct cipher_pkt *p
 
 	ret = crypto_smartbond_check_in_restrictions(pkt->in_len);
 	if (ret < 0) {
-		LOG_ERR("Unsupported IN buffer size");
+		LOG_ERROR("Unsupported IN buffer size");
 		k_sem_give(&data->device_sem);
 		return ret;
 	}
 
 	ret = crypto_smartbond_cipher_set_mreg(iv, 4);
 	if (ret < 0) {
-		LOG_ERR("Missing Initialization Vector (IV)");
+		LOG_ERROR("Missing Initialization Vector (IV)");
 		k_sem_give(&data->device_sem);
 		return ret;
 	}
@@ -614,7 +614,7 @@ crypto_smartbond_cipher_cbc_handler(struct cipher_ctx *ctx, struct cipher_pkt *p
 	}
 
 	if (ret < 0) {
-		LOG_ERR("Unsupported IN or OUT buffer location");
+		LOG_ERROR("Unsupported IN or OUT buffer location");
 		k_sem_give(&data->device_sem);
 		return ret;
 	}
@@ -652,17 +652,17 @@ static int crypto_smartbond_cipher_ctr_handler(struct cipher_ctx *ctx,
 	struct crypto_smartbond_data *data = ctx->device->data;
 
 	if ((AES_HASH->CRYPTO_STATUS_REG & AES_HASH_CRYPTO_STATUS_REG_CRYPTO_INACTIVE_Msk) == 0) {
-		LOG_ERR("Crypto engine is already employed");
+		LOG_ERROR("Crypto engine is already employed");
 		return -EINVAL;
 	}
 
 	if (pkt->out_buf_max < pkt->in_len) {
-		LOG_ERR("OUT buffer cannot be less that IN buffer");
+		LOG_ERROR("OUT buffer cannot be less that IN buffer");
 		return -EINVAL;
 	}
 
 	if (pkt->in_buf == NULL || pkt->out_buf == NULL) {
-		LOG_ERR("Missing IN or OUT buffer declaration");
+		LOG_ERROR("Missing IN or OUT buffer declaration");
 		return -EIO;
 	}
 
@@ -670,21 +670,21 @@ static int crypto_smartbond_cipher_ctr_handler(struct cipher_ctx *ctx,
 
 	ret = crypto_smartbond_check_in_restrictions(pkt->in_len);
 	if (ret < 0) {
-		LOG_ERR("Unsupported IN buffer size");
+		LOG_ERROR("Unsupported IN buffer size");
 		k_sem_give(&data->device_sem);
 		return ret;
 	}
 
 	ret = crypto_smartbond_cipher_set_mreg(ic, iv_len >> 2);
 	if (ret < 0) {
-		LOG_ERR("Missing Initialization Counter (IC)");
+		LOG_ERROR("Missing Initialization Counter (IC)");
 		k_sem_give(&data->device_sem);
 		return ret;
 	}
 
 	ret = crypto_smartbond_set_in_out_buf(pkt->in_buf, pkt->out_buf, pkt->in_len);
 	if (ret < 0) {
-		LOG_ERR("Unsupported IN or OUT buffer location");
+		LOG_ERROR("Unsupported IN or OUT buffer location");
 		k_sem_give(&data->device_sem);
 		return ret;
 	}
@@ -722,7 +722,7 @@ static int crypto_smartbond_hash_handler(struct hash_ctx *ctx, struct hash_pkt *
 		!(AES_HASH->CRYPTO_STATUS_REG & AES_HASH_CRYPTO_STATUS_REG_CRYPTO_INACTIVE_Msk);
 
 	if (pkt->in_buf == NULL || (pkt->out_buf == NULL)) {
-		LOG_ERR("Missing IN or OUT buffer declaration");
+		LOG_ERROR("Missing IN or OUT buffer declaration");
 		return -EIO;
 	}
 
@@ -738,7 +738,7 @@ static int crypto_smartbond_hash_handler(struct hash_ctx *ctx, struct hash_pkt *
 	/* CRYPTO_MORE_IN should be updated prior to checking for IN restrictions! */
 	ret = crypto_smartbond_check_in_restrictions(pkt->in_len);
 	if (ret < 0) {
-		LOG_ERR("Unsupported IN buffer size");
+		LOG_ERROR("Unsupported IN buffer size");
 		k_sem_give(&data->device_sem);
 		return ret;
 	}
@@ -746,7 +746,7 @@ static int crypto_smartbond_hash_handler(struct hash_ctx *ctx, struct hash_pkt *
 	if (!is_multipart_started) {
 		ret = crypto_smartbond_hash_set_out_len();
 		if (ret < 0) {
-			LOG_ERR("Invalid OUT buffer size");
+			LOG_ERROR("Invalid OUT buffer size");
 			k_sem_give(&data->device_sem);
 			return ret;
 		}
@@ -760,7 +760,7 @@ static int crypto_smartbond_hash_handler(struct hash_ctx *ctx, struct hash_pkt *
 	}
 
 	if (ret < 0) {
-		LOG_ERR("Unsupported IN or OUT buffer location");
+		LOG_ERROR("Unsupported IN or OUT buffer location");
 		k_sem_give(&data->device_sem);
 		return ret;
 	}
@@ -788,31 +788,31 @@ crypto_smartbond_cipher_begin_session(const struct device *dev, struct cipher_ct
 	int ret;
 
 	if (ctx->flags & ~(CRYPTO_HW_CAPS)) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -EINVAL;
 	}
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		LOG_ERR("Unsupported cipher algo");
+		LOG_ERROR("Unsupported cipher algo");
 		return -EINVAL;
 	}
 
 	if (!crypto_smartbond_lock_session(dev)) {
-		LOG_ERR("No free session for now");
+		LOG_ERROR("No free session for now");
 		return -ENOSPC;
 	}
 
 	/* First check if the requested cryptographic algo is supported */
 	ret = crypto_smartbond_cipher_set_mode(mode);
 	if (ret < 0) {
-		LOG_ERR("Unsupported cipher mode");
+		LOG_ERROR("Unsupported cipher mode");
 		crypto_smartbond_unlock_session(dev);
 		return ret;
 	}
 
 	ret = crypto_smartbond_cipher_key_load((uint8_t *)ctx->key.bit_stream, ctx->keylen);
 	if (ret < 0) {
-		LOG_ERR("Invalid key length or key cannot be accessed");
+		LOG_ERROR("Invalid key length or key cannot be accessed");
 		crypto_smartbond_unlock_session(dev);
 		return ret;
 	}
@@ -872,12 +872,12 @@ crypto_smartbond_hash_begin_session(const struct device *dev,
 	int ret;
 
 	if (ctx->flags & ~(CRYPTO_HW_CAPS)) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -EINVAL;
 	}
 
 	if (!crypto_smartbond_lock_session(dev)) {
-		LOG_ERR("No free session for now");
+		LOG_ERROR("No free session for now");
 		return -ENOSPC;
 	}
 
@@ -889,7 +889,7 @@ crypto_smartbond_hash_begin_session(const struct device *dev,
 
 	ret = crypto_smartbond_hash_set_algo(algo);
 	if (ret < 0) {
-		LOG_ERR("Unsupported HASH algo");
+		LOG_ERROR("Unsupported HASH algo");
 		crypto_smartbond_unlock_session(dev);
 		return ret;
 	}

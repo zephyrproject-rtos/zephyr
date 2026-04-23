@@ -383,7 +383,7 @@ static int regulator_cp9314_enable(const struct device *dev)
 		ret = i2c_reg_update_byte_dt(&config->i2c, CP9314_REG_CTRL1, CP9314_CP_EN,
 					     CP9314_CP_EN);
 		if (ret < 0) {
-			LOG_ERR("Unable to set CP_EN");
+			LOG_ERROR("Unable to set CP_EN");
 			return ret;
 		}
 	}
@@ -532,18 +532,18 @@ static int regulator_cp9314_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
 	ret = i2c_reg_read_byte_dt(&config->i2c, CP9314_REG_DEVICE_ID, &value);
 	if (ret < 0) {
-		LOG_ERR("No device found:%d\n", ret);
+		LOG_ERROR("No device found:%d\n", ret);
 		return ret;
 	}
 
 	if (value != CP9314_DEV_ID) {
-		LOG_ERR("Invalid device ID found:0x%x!\n", value);
+		LOG_ERROR("Invalid device ID found:0x%x!\n", value);
 		return -ENOTSUP;
 	}
 
@@ -606,7 +606,7 @@ static int regulator_cp9314_init(const struct device *dev)
 	case CP9314_CHIP_REV_B1:
 		break;
 	default:
-		LOG_ERR("Invalid CP9314 REV:0x%x\n", value);
+		LOG_ERROR("Invalid CP9314 REV:0x%x\n", value);
 		return -ENOTSUP;
 	}
 

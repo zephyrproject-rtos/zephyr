@@ -101,13 +101,13 @@ static int eth_ivshmem_send(const struct device *dev, struct net_pkt *pkt)
 	int res = eth_ivshmem_queue_tx_get_buff(&dev_data->ivshmem_queue, &data, len);
 
 	if (res != 0) {
-		LOG_ERR("Failed to allocate tx buffer");
+		LOG_ERROR("Failed to allocate tx buffer");
 		eth_stats_update_errors_tx(dev_data->iface);
 		return res;
 	}
 
 	if (net_pkt_read(pkt, data, len)) {
-		LOG_ERR("Failed to read tx packet");
+		LOG_ERROR("Failed to read tx packet");
 		eth_stats_update_errors_tx(dev_data->iface);
 		return -EIO;
 	}
@@ -132,7 +132,7 @@ static struct net_pkt *eth_ivshmem_rx(const struct device *dev)
 
 	if (res != 0) {
 		if (res != -EWOULDBLOCK) {
-			LOG_ERR("Queue RX failed");
+			LOG_ERROR("Queue RX failed");
 			eth_stats_update_errors_rx(dev_data->iface);
 		}
 		return NULL;
@@ -141,13 +141,13 @@ static struct net_pkt *eth_ivshmem_rx(const struct device *dev)
 	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(
 		dev_data->iface, rx_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == NULL) {
-		LOG_ERR("Failed to allocate rx buffer");
+		LOG_ERROR("Failed to allocate rx buffer");
 		eth_stats_update_errors_rx(dev_data->iface);
 		goto dequeue;
 	}
 
 	if (net_pkt_write(pkt, rx_data, rx_len) != 0) {
-		LOG_ERR("Failed to write rx packet");
+		LOG_ERROR("Failed to write rx packet");
 		eth_stats_update_errors_rx(dev_data->iface);
 		net_pkt_unref(pkt);
 	}
@@ -272,14 +272,14 @@ int eth_ivshmem_initialize(const struct device *dev)
 	k_poll_signal_init(&dev_data->poll_signal);
 
 	if (!device_is_ready(cfg_data->ivshmem)) {
-		LOG_ERR("ivshmem device not ready");
+		LOG_ERROR("ivshmem device not ready");
 		return -ENODEV;
 	}
 
 	uint16_t protocol = ivshmem_get_protocol(cfg_data->ivshmem);
 
 	if (protocol != IVSHMEM_V2_PROTO_NET) {
-		LOG_ERR("Invalid ivshmem protocol %hu", protocol);
+		LOG_ERROR("Invalid ivshmem protocol %hu", protocol);
 		return -EINVAL;
 	}
 
@@ -288,11 +288,11 @@ int eth_ivshmem_initialize(const struct device *dev)
 
 	LOG_INF("ivshmem: id %u, max_peers %u", id, max_peers);
 	if (id > 1) {
-		LOG_ERR("Invalid ivshmem ID %u", id);
+		LOG_ERROR("Invalid ivshmem ID %u", id);
 		return -EINVAL;
 	}
 	if (max_peers != 2) {
-		LOG_ERR("Invalid ivshmem max peers %u", max_peers);
+		LOG_ERROR("Invalid ivshmem max peers %u", max_peers);
 		return -EINVAL;
 	}
 	dev_data->peer_id = (id == 0) ? 1 : 0;
@@ -307,7 +307,7 @@ int eth_ivshmem_initialize(const struct device *dev)
 		&dev_data->ivshmem_queue, output_sections[id],
 		output_sections[dev_data->peer_id], output_section_size);
 	if (res != 0) {
-		LOG_ERR("Failed to init ivshmem queue");
+		LOG_ERROR("Failed to init ivshmem queue");
 		return res;
 	}
 	LOG_INF("shmem queue: desc len 0x%hX, header size 0x%X, data size 0x%X",
@@ -321,7 +321,7 @@ int eth_ivshmem_initialize(const struct device *dev)
 	ivshmem_register_handler(cfg_data->ivshmem, &dev_data->poll_signal, 0);
 	dev_data->tx_rx_vector = 0;
 	if (n_vectors == 0) {
-		LOG_ERR("Error no ivshmem ISR vectors");
+		LOG_ERROR("Error no ivshmem ISR vectors");
 		return -EINVAL;
 	} else if (n_vectors > 1) {
 		ivshmem_register_handler(cfg_data->ivshmem, &dev_data->poll_signal, 1);

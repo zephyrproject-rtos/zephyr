@@ -55,7 +55,7 @@ static int leds_group_multicolor_init(const struct device *dev)
 		const struct led_dt_spec *led = &config->led[i];
 
 		if (!led_is_ready_dt(led)) {
-			LOG_ERR("%s: LED device %s is not ready", dev->name, led->dev->name);
+			LOG_ERROR("%s: LED device %s is not ready", dev->name, led->dev->name);
 			return -ENODEV;
 		}
 	}

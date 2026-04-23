@@ -69,7 +69,7 @@ static int request_temp(const struct device *dev)
 
 	ret = espi_send_oob(dev, &req_pckt);
 	if (ret) {
-		LOG_ERR("OOB Tx failed %d", ret);
+		LOG_ERROR("OOB Tx failed %d", ret);
 		return ret;
 	}
 
@@ -96,7 +96,7 @@ static int retrieve_packet(const struct device *dev, uint8_t *sender)
 
 	ret = espi_receive_oob(dev, &resp_pckt);
 	if (ret) {
-		LOG_ERR("OOB Rx failed %d", ret);
+		LOG_ERROR("OOB Rx failed %d", ret);
 		return ret;
 	}
 
@@ -119,13 +119,13 @@ int get_pch_temp_sync(const struct device *dev)
 	for (int i = 0; i < MIN_GET_TEMP_CYCLES; i++) {
 		ret = request_temp(dev);
 		if (ret) {
-			LOG_ERR("OOB req failed %d", ret);
+			LOG_ERROR("OOB req failed %d", ret);
 			return ret;
 		}
 
 		ret = retrieve_packet(dev, NULL);
 		if (ret) {
-			LOG_ERR("OOB retrieve failed %d", ret);
+			LOG_ERROR("OOB retrieve failed %d", ret);
 			return ret;
 		}
 	}
@@ -191,7 +191,7 @@ void espihub_thread(void *p1, void *p2, void *p3)
 					temp = buf[OOB_RESPONSE_DATA_INDEX];
 					LOG_INF("Temp %d", temp);
 				} else {
-					LOG_ERR("Incorrect size response");
+					LOG_ERROR("Incorrect size response");
 				}
 
 				break;
@@ -199,7 +199,7 @@ void espihub_thread(void *p1, void *p2, void *p3)
 				LOG_INF("Other host sender %x", sender);
 			}
 		} else {
-			LOG_ERR("Failure to retrieve temp %d", ret);
+			LOG_ERROR("Failure to retrieve temp %d", ret);
 		}
 
 		/* Decrease cycles in both cases failure/success */

@@ -59,7 +59,7 @@ static int ds1302_set_time(const struct device *dev, const struct rtc_time *time
 	const struct ds1302_config *config = dev->config;
 
 	if ((timeptr == NULL) || !rtc_utils_validate_rtc_time(timeptr, DS1302_RTC_TIME_MASK)) {
-		LOG_ERR("Invalid timer pointer or time values\r\n");
+		LOG_ERROR("Invalid timer pointer or time values\r\n");
 		return -EINVAL;
 	}
 
@@ -112,7 +112,7 @@ static int ds1302_get_time(const struct device *dev, struct rtc_time *timeptr)
 	const struct ds1302_config *config = dev->config;
 
 	if (timeptr == NULL) {
-		LOG_ERR("Invalid timer pointer\r\n");
+		LOG_ERROR("Invalid timer pointer\r\n");
 		return -EINVAL;
 	}
 
@@ -191,7 +191,7 @@ static int ds1302_init(const struct device *dev)
 	};
 	k_sem_take(&data->sem, K_FOREVER);
 	if (!spi_is_ready_dt(&spi)) {
-		LOG_ERR("SPI bus not ready\r\n");
+		LOG_ERROR("SPI bus not ready\r\n");
 		err = -ENODEV;
 		goto unlock;
 	}

@@ -245,7 +245,7 @@ for :c:struct:`hid_ops` is to provide ``int_in_ready`` callback.
 		static uint8_t report[2] = {REPORT_ID, 0};
 
 		if (hid_int_ep_write(hdev, report, sizeof(report), NULL)) {
-			LOG_ERR("Failed to submit report");
+			LOG_ERROR("Failed to submit report");
 		} else {
 			report[1]++;
 		}

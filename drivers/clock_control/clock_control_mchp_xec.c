@@ -690,7 +690,7 @@ static int soc_clk32_init(const struct device *dev,
 
 	rc = pll_wait_lock(pcr, CLK32K_PLL_LOCK_WAIT);
 	if (rc) {
-		LOG_ERR("XEC clock control: MEC172x lock timeout for internal 32K OSC");
+		LOG_ERROR("XEC clock control: MEC172x lock timeout for internal 32K OSC");
 		return rc;
 	}
 
@@ -704,7 +704,7 @@ static int soc_clk32_init(const struct device *dev,
 			if (rc) {
 				/* disable crystal */
 				vbr->CLK32_SRC &= ~(MCHP_VBATR_CS_XTAL_EN);
-				LOG_ERR("XEC clock control: MEC172x XTAL check failed: %d", rc);
+				LOG_ERROR("XEC clock control: MEC172x XTAL check failed: %d", rc);
 				return rc;
 			}
 		}
@@ -1038,7 +1038,7 @@ static int xec_clock_control_init(const struct device *dev)
 	rc = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if ((pll_clk_src == PLL_CLK32K_SRC_PIN) || periph_clk_src_using_pin(periph_clk_src)) {
 		if (rc) {
-			LOG_ERR("XEC clock control: PINCTRL apply error %d", rc);
+			LOG_ERROR("XEC clock control: PINCTRL apply error %d", rc);
 			pll_clk_src = PLL_CLK32K_SRC_SO;
 			periph_clk_src = PERIPH_CLK32K_SRC_SO_SO;
 			clk_flags = 0U;
@@ -1048,12 +1048,12 @@ static int xec_clock_control_init(const struct device *dev)
 	/* sleep used as debug */
 	rc = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_SLEEP);
 	if ((rc != 0) && (rc != -ENOENT)) {
-		LOG_ERR("XEC clock control: PINCTRL debug apply error %d", rc);
+		LOG_ERROR("XEC clock control: PINCTRL debug apply error %d", rc);
 	}
 
 	rc = soc_clk32_init(dev, pll_clk_src, periph_clk_src, clk_flags);
 	if (rc) {
-		LOG_ERR("XEC clock control: init error %d", rc);
+		LOG_ERROR("XEC clock control: init error %d", rc);
 	}
 
 	xec_clock_control_core_clock_divider_set(devcfg->core_clk_div);

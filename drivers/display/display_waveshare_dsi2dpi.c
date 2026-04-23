@@ -90,7 +90,7 @@ static int waveshare_dsi2dpi_init(const struct device *dev)
 	struct mipi_dsi_device mdev = {0};
 
 	if (!config->bus_ready(dev)) {
-		LOG_ERR("Bus device %s not ready!", config->bus_name(dev));
+		LOG_ERROR("Bus device %s not ready!", config->bus_name(dev));
 		return -EINVAL;
 	}
 
@@ -109,7 +109,7 @@ static int waveshare_dsi2dpi_init(const struct device *dev)
 
 	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
 	if (ret < 0) {
-		LOG_ERR("Could not attach to MIPI-DSI host");
+		LOG_ERROR("Could not attach to MIPI-DSI host");
 		return ret;
 	}
 

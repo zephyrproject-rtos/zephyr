@@ -92,7 +92,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	status = FLEXIO_SPI_MasterTransferNonBlocking(config->flexio_spi, &data->handle,
 						 &transfer);
 	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start");
+		LOG_ERROR("Transfer could not start");
 	}
 }
 
@@ -251,12 +251,12 @@ static int spi_mcux_flexio_configure(const struct device *dev,
 	}
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Mode Slave not supported");
+		LOG_ERROR("Mode Slave not supported");
 		return -ENOTSUP;
 	}
 
@@ -264,7 +264,7 @@ static int spi_mcux_flexio_configure(const struct device *dev,
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if ((word_size != 8) && (word_size != 16) && (word_size != 32)) {
-		LOG_ERR("Word size %d must be 8, 16 or 32", word_size);
+		LOG_ERROR("Word size %d must be 8, 16 or 32", word_size);
 		return -EINVAL;
 	}
 	master_config.dataMode = word_size;

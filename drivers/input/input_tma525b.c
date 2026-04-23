@@ -113,7 +113,7 @@ static int tma525b_process(const struct device *dev)
 	ret = i2c_burst_read_dt(&config->bus, TMA525B_TOUCH_DATA_SUBADDR, data->touch_buf,
 				TMA525B_TOUCH_DATA_LEN_BYTES);
 	if (ret < 0) {
-		LOG_ERR("Failed to read data length: %d", ret);
+		LOG_ERROR("Failed to read data length: %d", ret);
 		return ret;
 	}
 
@@ -129,7 +129,7 @@ static int tma525b_process(const struct device *dev)
 	ret = i2c_burst_read_dt(&config->bus, TMA525B_TOUCH_DATA_SUBADDR, data->touch_buf,
 				touch_data->length);
 	if (ret < 0) {
-		LOG_ERR("Failed to read touch data: %d", ret);
+		LOG_ERROR("Failed to read touch data: %d", ret);
 		return ret;
 	}
 
@@ -240,7 +240,7 @@ static int tma525b_chip_init(const struct device *dev)
 	if (config->pwr_gpio.port != NULL) {
 		ret = gpio_pin_set_dt(&config->pwr_gpio, 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to enable power: %d", ret);
+			LOG_ERROR("Failed to enable power: %d", ret);
 			return ret;
 		}
 		k_sleep(K_MSEC(10));
@@ -272,7 +272,7 @@ static int tma525b_chip_init(const struct device *dev)
 	}
 
 	if (retry == 0U) {
-		LOG_ERR("TMA525B failed to enter application mode");
+		LOG_ERROR("TMA525B failed to enter application mode");
 		return -ENODEV;
 	}
 
@@ -288,19 +288,19 @@ static int tma525b_init(const struct device *dev)
 	data->dev = dev;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("I2C controller not ready");
+		LOG_ERROR("I2C controller not ready");
 		return -ENODEV;
 	}
 
 	/* Configure power GPIO if available */
 	if (config->pwr_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->pwr_gpio)) {
-			LOG_ERR("Power GPIO controller not ready");
+			LOG_ERROR("Power GPIO controller not ready");
 			return -ENODEV;
 		}
 		ret = gpio_pin_configure_dt(&config->pwr_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure power GPIO: %d", ret);
+			LOG_ERROR("Failed to configure power GPIO: %d", ret);
 			return ret;
 		}
 	}
@@ -308,12 +308,12 @@ static int tma525b_init(const struct device *dev)
 	/* Configure reset GPIO if available */
 	if (config->rst_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->rst_gpio)) {
-			LOG_ERR("Reset GPIO controller not ready");
+			LOG_ERROR("Reset GPIO controller not ready");
 			return -ENODEV;
 		}
 		ret = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure reset GPIO: %d", ret);
+			LOG_ERROR("Failed to configure reset GPIO: %d", ret);
 			return ret;
 		}
 	}
@@ -324,24 +324,24 @@ static int tma525b_init(const struct device *dev)
 	/* Initialize the chip */
 	ret = tma525b_chip_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize TMA525B chip: %d", ret);
+		LOG_ERROR("Failed to initialize TMA525B chip: %d", ret);
 		return ret;
 	}
 
 #ifdef CONFIG_INPUT_TMA525B_INTERRUPT
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("Interrupt GPIO controller not ready");
+		LOG_ERROR("Interrupt GPIO controller not ready");
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure interrupt GPIO: %d", ret);
+		LOG_ERROR("Failed to configure interrupt GPIO: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure interrupt: %d", ret);
+		LOG_ERROR("Failed to configure interrupt: %d", ret);
 		return ret;
 	}
 
@@ -349,7 +349,7 @@ static int tma525b_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Failed to add GPIO callback: %d", ret);
+		LOG_ERROR("Failed to add GPIO callback: %d", ret);
 		return ret;
 	}
 	LOG_DBG("TMA525B using interrupt mode");
@@ -362,7 +362,7 @@ static int tma525b_init(const struct device *dev)
 
 	ret = pm_device_runtime_enable(dev);
 	if (ret < 0 && ret != -ENOTSUP) {
-		LOG_ERR("Failed to enable runtime power management: %d", ret);
+		LOG_ERROR("Failed to enable runtime power management: %d", ret);
 		return ret;
 	}
 

@@ -166,10 +166,10 @@ static bool detect_leading_burst(int64_t *const edges_ticks)
 
 	/* Manage the corner case of an overflow */
 	if ((lead_ticks_on < 0) || (lead_ticks_off < 0)) {
-		LOG_ERR("Ticks overflow: %lld - %lld - %lld",
-			edges_ticks[NEC_LEAD_PULSE_EDGE_OFFSET],
-			edges_ticks[NEC_LEAD_PULSE_EDGE_OFFSET + 1],
-			edges_ticks[NEC_LEAD_PULSE_EDGE_OFFSET + 2]);
+		LOG_ERROR("Ticks overflow: %lld - %lld - %lld",
+			  edges_ticks[NEC_LEAD_PULSE_EDGE_OFFSET],
+			  edges_ticks[NEC_LEAD_PULSE_EDGE_OFFSET + 1],
+			  edges_ticks[NEC_LEAD_PULSE_EDGE_OFFSET + 2]);
 		return false;
 	}
 
@@ -192,11 +192,11 @@ static bool read_redundant_byte(int64_t *const edges_ticks, uint8_t *const byte,
 		if (temp_byte == (uint8_t)(~reverse_byte)) {
 			*byte = temp_byte;
 		} else {
-			LOG_ERR("Error while decoding byte");
+			LOG_ERROR("Error while decoding byte");
 			return false;
 		}
 	} else {
-		LOG_ERR("Error while reading bytes");
+		LOG_ERROR("Error while reading bytes");
 		return false;
 	}
 
@@ -221,9 +221,9 @@ static bool detect_last_burst(int64_t *const edges_ticks)
 
 	/* Manage the corner case of an overflow */
 	if (burst_length < 0) {
-		LOG_ERR("Ticks overflow: %lld - %lld",
-			edges_ticks[NEC_SINGLE_COMMAND_EDGES_COUNT - 1],
-			edges_ticks[NEC_SINGLE_COMMAND_EDGES_COUNT - 2]);
+		LOG_ERROR("Ticks overflow: %lld - %lld",
+			  edges_ticks[NEC_SINGLE_COMMAND_EDGES_COUNT - 1],
+			  edges_ticks[NEC_SINGLE_COMMAND_EDGES_COUNT - 2]);
 		return false;
 	}
 
@@ -274,7 +274,7 @@ static void vs1838b_decode_work_handler(struct k_work *item)
 			LOG_DBG("Address: [0x%X] | Command: [0x%X]", address_byte, command_byte);
 			if (input_report(data->dev, INPUT_EV_DEVICE, INPUT_MSC_SCAN,
 					 (address_byte << 8) | command_byte, true, K_FOREVER) < 0) {
-				LOG_ERR("Message failed to be enqueued");
+				LOG_ERROR("Message failed to be enqueued");
 			}
 		}
 	}
@@ -343,7 +343,7 @@ static int vs1838b_init(struct device const *dev)
 	data->dev = dev;
 
 	if (!gpio_is_ready_dt(data_input)) {
-		LOG_ERR("GPIO input pin is not ready");
+		LOG_ERROR("GPIO input pin is not ready");
 		return -ENODEV;
 	}
 

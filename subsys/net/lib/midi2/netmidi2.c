@@ -155,7 +155,7 @@ static bool netmidi2_auth_session(const struct netmidi2_session *sess,
 		user = netmidi2_find_user(sess->ep, buf->data,
 					  payload_len - NETMIDI2_DIGEST_SIZE);
 		if (user == NULL) {
-			LOG_ERR("No matching user found");
+			LOG_ERROR("No matching user found");
 			goto end;
 		}
 
@@ -264,7 +264,7 @@ static inline struct netmidi2_session *netmidi2_alloc_session(struct netmidi2_ep
 	}
 
 	if (session == NULL) {
-		LOG_ERR("No available client session");
+		LOG_ERROR("No available client session");
 	}
 
 	return session;
@@ -550,7 +550,7 @@ static int netmidi2_dispatch_cmdpkt(struct netmidi2_ep *ep,
 	struct netmidi2_session *session;
 
 	if (rx->len < 4) {
-		LOG_ERR("Incomplete UDP MIDI command packet header");
+		LOG_ERROR("Incomplete UDP MIDI command packet header");
 		return -1;
 	}
 
@@ -563,7 +563,7 @@ static int netmidi2_dispatch_cmdpkt(struct netmidi2_ep *ep,
 	if (payload_len > rx->len) {
 		netmidi2_quick_nak(ep, peer_addr, peer_addr_len,
 				   NAK_COMMAND_MALFORMED, cmd_header);
-		LOG_ERR("Incomplete UDP MIDI command packet payload");
+		LOG_ERROR("Incomplete UDP MIDI command packet payload");
 		return -1;
 	}
 
@@ -573,7 +573,7 @@ static int netmidi2_dispatch_cmdpkt(struct netmidi2_ep *ep,
 		if (payload_len_words != 1) {
 			netmidi2_quick_nak(ep, peer_addr, peer_addr_len,
 					   NAK_COMMAND_MALFORMED, cmd_header);
-			LOG_ERR("Invalid payload length for PING packet");
+			LOG_ERROR("Invalid payload length for PING packet");
 			return -1;
 		}
 		/* Simple reply with 1 word from the PING request */
@@ -734,7 +734,7 @@ static void netmidi2_service_handler(struct net_socket_service_event *pev)
 	ret = zsock_recvfrom(pfd->fd, rxbuf->data, rxbuf->size, 0,
 			     &peer_addr, &peer_addr_len);
 	if (ret < 0) {
-		LOG_ERR("Rx error: %d (%d)", ret, errno);
+		LOG_ERROR("Rx error: %d (%d)", ret, errno);
 		goto end;
 	}
 	rxbuf->len = ret;
@@ -777,7 +777,7 @@ int netmidi2_host_ep_start(struct netmidi2_ep *ep)
 	ep->addr.sa_family = af;
 	sock = zsock_socket(af, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
-		LOG_ERR("Unable to create socket: %d", errno);
+		LOG_ERROR("Unable to create socket: %d", errno);
 		return -ENOMEM;
 	}
 
@@ -795,7 +795,7 @@ int netmidi2_host_ep_start(struct netmidi2_ep *ep)
 	ret = zsock_bind(sock, &ep->addr, addr_len);
 	if (ret < 0) {
 		zsock_close(sock);
-		LOG_ERR("Failed to bind UDP socket: %d", errno);
+		LOG_ERROR("Failed to bind UDP socket: %d", errno);
 		return -EIO;
 	}
 
@@ -808,7 +808,7 @@ int netmidi2_host_ep_start(struct netmidi2_ep *ep)
 	ret = net_socket_service_register(&netmidi2_service, &ep->pollsock, 1, ep);
 	if (ret < 0) {
 		zsock_close(sock);
-		LOG_ERR("Failed to register service: %d", ret);
+		LOG_ERROR("Failed to register service: %d", ret);
 		return -EIO;
 	}
 

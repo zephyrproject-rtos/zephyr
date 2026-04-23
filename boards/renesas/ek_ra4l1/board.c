@@ -20,13 +20,13 @@ static int i3c_init(void)
 	};
 
 	if (!gpio_is_ready_dt(&i3c_pullup_gpios[0]) || !gpio_is_ready_dt(&i3c_pullup_gpios[1])) {
-		LOG_ERR("I3C pull-up control is not ready");
+		LOG_ERROR("I3C pull-up control is not ready");
 		return -ENODEV;
 	}
 
 	if (gpio_pin_configure_dt(&i3c_pullup_gpios[0], GPIO_INPUT) ||
 	    gpio_pin_configure_dt(&i3c_pullup_gpios[1], GPIO_INPUT)) {
-		LOG_ERR("Failed to configure pull-up control");
+		LOG_ERROR("Failed to configure pull-up control");
 		return -EIO;
 	}
 

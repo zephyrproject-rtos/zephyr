@@ -205,7 +205,7 @@ static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pix
 				pixel_val = pixels[i].b;
 				break;
 			default:
-				LOG_ERR("Invalid color mapping");
+				LOG_ERROR("Invalid color mapping");
 				k_mutex_unlock(&data->lock);
 				return -EINVAL;
 			}
@@ -248,7 +248,7 @@ static int ws2812_uart_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->uart_dev)) {
-		LOG_ERR("%s: UART device %s not ready", dev->name, cfg->uart_dev->name);
+		LOG_ERROR("%s: UART device %s not ready", dev->name, cfg->uart_dev->name);
 		return -ENODEV;
 	}
 
@@ -260,7 +260,7 @@ static int ws2812_uart_init(const struct device *dev)
 		case LED_COLOR_ID_BLUE:
 			break;
 		default:
-			LOG_ERR("%s: invalid channel to color mapping.", dev->name);
+			LOG_ERROR("%s: invalid channel to color mapping.", dev->name);
 			return -EINVAL;
 		}
 	}
@@ -270,7 +270,7 @@ static int ws2812_uart_init(const struct device *dev)
 
 	ret = uart_callback_set(cfg->uart_dev, ws2812_uart_callback, &data->tx_done_sem);
 	if (ret) {
-		LOG_ERR("Failed to set UART callback: %d", ret);
+		LOG_ERROR("Failed to set UART callback: %d", ret);
 		return ret;
 	}
 

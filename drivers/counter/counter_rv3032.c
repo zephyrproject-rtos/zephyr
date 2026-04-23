@@ -101,19 +101,19 @@ int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	data->alarm_cfg0.ticks = alarm_cfg->ticks;
 
 	if (alarm_cfg->ticks > 4096) {
-		LOG_ERR("alarm_cfg->ticks %d) Max value (4096)", alarm_cfg->ticks);
+		LOG_ERROR("alarm_cfg->ticks %d) Max value (4096)", alarm_cfg->ticks);
 		return -ENOTSUP;
 	}
 
 	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL2, RV3032_CONTROL2_TIE, 0);
 	if (err) {
-		LOG_ERR("TIMER register read failed : %d", err);
+		LOG_ERROR("TIMER register read failed : %d", err);
 		goto err_return;
 	}
 
 	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL1, RV3032_CONTROL1_TE, 0);
 	if (err) {
-		LOG_ERR("TIMER register read failed : %d", err);
+		LOG_ERROR("TIMER register read failed : %d", err);
 		goto err_return;
 	}
 
@@ -123,7 +123,7 @@ int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	err = mfd_rv3032_write_regs(config->mfd, RV3032_REG_TIMER_VALUE_0, time_val,
 				    sizeof(time_val));
 	if (err) {
-		LOG_ERR("TIMER register write failed : %d", err);
+		LOG_ERROR("TIMER register write failed : %d", err);
 	}
 
 	if (data->freq == 4096) {
@@ -144,14 +144,14 @@ int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL1, RV3032_CONTROL1_TD,
 				     freq_val);
 	if (err) {
-		LOG_ERR("TIMER register read failed : %d", err);
+		LOG_ERROR("TIMER register read failed : %d", err);
 		goto err_return;
 	}
 
 	/* Clear Timer Flag from status if there was something leftover */
 	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_STATUS, RV3032_STATUS_TF, 0);
 	if (err) {
-		LOG_ERR("TIMER register read failed : %d", err);
+		LOG_ERROR("TIMER register read failed : %d", err);
 		goto err_return;
 	}
 
@@ -159,7 +159,7 @@ int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL2, RV3032_CONTROL2_TIE,
 				     RV3032_CONTROL2_TIE);
 	if (err) {
-		LOG_ERR("TIMER register read failed : %d", err);
+		LOG_ERROR("TIMER register read failed : %d", err);
 		goto err_return;
 	}
 
@@ -167,7 +167,7 @@ int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL1, RV3032_CONTROL1_TE,
 				     RV3032_CONTROL1_TE);
 	if (err) {
-		LOG_ERR("TIMER register read failed : %d", err);
+		LOG_ERROR("TIMER register read failed : %d", err);
 		goto err_return;
 	}
 
@@ -184,14 +184,14 @@ int rv3032_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	int err;
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id, only 0 is supported");
+		LOG_ERROR("Invalid channel id, only 0 is supported");
 		return -ENOTSUP;
 	}
 
 	/* disable counter interrupt */
 	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL1, RV3032_CONTROL1_TE, 0);
 	if (err) {
-		LOG_ERR("Status register read failed after EEPROM refresh: %d", err);
+		LOG_ERROR("Status register read failed after EEPROM refresh: %d", err);
 	}
 
 	return err;
@@ -205,7 +205,7 @@ uint32_t rv3032_counter_get_pending_int(const struct device *dev)
 
 	err = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_STATUS, &status);
 	if (err) {
-		LOG_ERR("TIMER register read failed : %d", err);
+		LOG_ERROR("TIMER register read failed : %d", err);
 		return err;
 	}
 
@@ -214,7 +214,7 @@ uint32_t rv3032_counter_get_pending_int(const struct device *dev)
 		err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_STATUS, RV3032_STATUS_TF,
 					     RV3032_STATUS_TF);
 		if (err) {
-			LOG_ERR("TIMER register read failed : %d", err);
+			LOG_ERROR("TIMER register read failed : %d", err);
 			return err;
 		}
 
@@ -235,7 +235,7 @@ int rv3032_counter_set_top_value(const struct device *dev, const struct counter_
 
 	err = mfd_rv3032_write_regs(config->mfd, RV3032_REG_TIMER_VALUE_0, timer, 2);
 	if (err) {
-		LOG_ERR("TIMER register read failed : %d", err);
+		LOG_ERROR("TIMER register read failed : %d", err);
 	}
 
 	return 0;
@@ -250,7 +250,7 @@ uint32_t rv3032_counter_get_top_value(const struct device *dev)
 
 	err = mfd_rv3032_read_regs(config->mfd, RV3032_REG_TIMER_VALUE_0, timer, 2);
 	if (err) {
-		LOG_ERR("TIMER register read failed : %d", err);
+		LOG_ERROR("TIMER register read failed : %d", err);
 		return err;
 	}
 

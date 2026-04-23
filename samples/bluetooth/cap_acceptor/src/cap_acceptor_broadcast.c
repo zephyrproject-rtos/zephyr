@@ -89,7 +89,7 @@ static int check_start_scan(void)
 
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err != 0) {
-		LOG_ERR("Unable to start scan for CAP initiators: %d", err);
+		LOG_ERROR("Unable to start scan for CAP initiators: %d", err);
 
 		return err;
 	}
@@ -147,7 +147,7 @@ static int create_broadcast_sink(void)
 	err = bt_bap_broadcast_sink_create(broadcast_sink.pa_sync, broadcast_sink.broadcast_id,
 					   &broadcast_sink.bap_broadcast_sink);
 	if (err != 0) {
-		LOG_ERR("Failed to create broadcast sink: %d\n", err);
+		LOG_ERROR("Failed to create broadcast sink: %d\n", err);
 
 		return err;
 	}
@@ -201,7 +201,7 @@ static void check_sync_broadcast(void)
 		err = bt_bap_base_get_bis_indexes(
 			(struct bt_bap_base *)broadcast_sink.received_base, &base_bis);
 		if (err != 0) {
-			LOG_ERR("Failed to get BIS indexes from BASE: %d", err);
+			LOG_ERROR("Failed to get BIS indexes from BASE: %d", err);
 
 			return;
 		}
@@ -224,7 +224,7 @@ static void check_sync_broadcast(void)
 	err = bt_bap_broadcast_sink_sync(broadcast_sink.bap_broadcast_sink, sync_bitfield,
 					 &sync_stream, broadcast_sink.sink_broadcast_code);
 	if (err != 0) {
-		LOG_ERR("Failed to sync the broadcast sink: %d", err);
+		LOG_ERROR("Failed to sync the broadcast sink: %d", err);
 	} else {
 		atomic_set_bit(flags, FLAG_BROADCAST_SYNCING);
 	}
@@ -274,7 +274,7 @@ static void sink_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_t reason)
 
 	err = bt_bap_broadcast_sink_delete(sink);
 	if (err != 0) {
-		LOG_ERR("Failed to delete Broadcast Sink: %d", err);
+		LOG_ERROR("Failed to delete Broadcast Sink: %d", err);
 	} else {
 		broadcast_sink.bap_broadcast_sink = NULL;
 	}
@@ -289,7 +289,7 @@ static void pa_timer_handler(struct k_work *work)
 
 		err = bt_le_per_adv_sync_delete(broadcast_sink.pa_sync);
 		if (err != 0) {
-			LOG_ERR("Failed to delete PA sync: %d", err);
+			LOG_ERROR("Failed to delete PA sync: %d", err);
 		}
 	}
 
@@ -345,14 +345,14 @@ static int pa_sync_with_past(struct bt_conn *conn,
 
 	err = bt_le_per_adv_sync_transfer_subscribe(conn, &param);
 	if (err != 0) {
-		LOG_ERR("Could not do PAST subscribe: %d", err);
+		LOG_ERROR("Could not do PAST subscribe: %d", err);
 
 		return err;
 	}
 
 	err = bt_bap_scan_delegator_set_pa_state(recv_state->src_id, BT_BAP_PA_STATE_INFO_REQ);
 	if (err != 0) {
-		LOG_ERR("Failed to set PA state to BT_BAP_PA_STATE_INFO_REQ: %d", err);
+		LOG_ERROR("Failed to set PA state to BT_BAP_PA_STATE_INFO_REQ: %d", err);
 
 		return err;
 	}
@@ -375,7 +375,7 @@ static int pa_sync_without_past(const bt_addr_le_t *addr, uint8_t adv_sid, uint1
 
 	err = bt_le_per_adv_sync_create(&param, &broadcast_sink.pa_sync);
 	if (err != 0) {
-		LOG_ERR("Failed to create PA sync: %d", err);
+		LOG_ERROR("Failed to create PA sync: %d", err);
 
 		return err;
 	}
@@ -439,7 +439,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 	err = bt_le_per_adv_sync_delete(broadcast_sink.pa_sync);
 	if (err != 0) {
-		LOG_ERR("Failed to delete PA sync: %d", err);
+		LOG_ERROR("Failed to delete PA sync: %d", err);
 
 		return err;
 	}
@@ -512,7 +512,7 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 		 */
 		err = bt_bap_broadcast_sink_stop(broadcast_sink.bap_broadcast_sink);
 		if (err != 0) {
-			LOG_ERR("Failed to stop Broadcast Sink: %d", err);
+			LOG_ERROR("Failed to stop Broadcast Sink: %d", err);
 
 			return err;
 		}
@@ -554,7 +554,7 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 
 			err = bt_le_scan_stop();
 			if (err != 0) {
-				LOG_ERR("Unable to stop scanning: %d", err);
+				LOG_ERROR("Unable to stop scanning: %d", err);
 			} else {
 				atomic_clear_bit(flags, FLAG_SCANNING);
 			}
@@ -562,7 +562,7 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 
 		err = create_broadcast_sink();
 		if (err != 0) {
-			LOG_ERR("Failed to create broadcast sink: %d", err);
+			LOG_ERROR("Failed to create broadcast sink: %d", err);
 		} else {
 			check_sync_broadcast();
 		}
@@ -591,7 +591,7 @@ static void bap_pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 		err = bt_bap_scan_delegator_set_pa_state(broadcast_sink.req_recv_state->src_id,
 							 BT_BAP_PA_STATE_NOT_SYNCED);
 		if (err != 0) {
-			LOG_ERR("Failed to set PA state to BT_BAP_PA_STATE_NOT_SYNCED: %d", err);
+			LOG_ERROR("Failed to set PA state to BT_BAP_PA_STATE_NOT_SYNCED: %d", err);
 		}
 
 		if (IS_ENABLED(CONFIG_SAMPLE_SCAN_SELF)) {
@@ -636,7 +636,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	err = bt_le_per_adv_sync_create(&param, &broadcast_sink.pa_sync);
 	if (err != 0) {
-		LOG_ERR("Failed to create PA sync: %d", err);
+		LOG_ERROR("Failed to create PA sync: %d", err);
 	} else {
 		LOG_INF("Syncing without PAST from scan");
 
@@ -757,14 +757,14 @@ int init_cap_acceptor_broadcast(void)
 
 		err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
 		if (err != 0) {
-			LOG_ERR("Scan delegator register failed (err %d)", err);
+			LOG_ERROR("Scan delegator register failed (err %d)", err);
 
 			return err;
 		}
 
 		err = bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 		if (err != 0) {
-			LOG_ERR("Failed to register BAP broadcast sink callbacks: %d", err);
+			LOG_ERROR("Failed to register BAP broadcast sink callbacks: %d", err);
 
 			return -ENOEXEC;
 		}
@@ -782,7 +782,7 @@ int init_cap_acceptor_broadcast(void)
 	if (IS_ENABLED(CONFIG_SAMPLE_SCAN_SELF)) {
 		err = check_start_scan();
 		if (err != 0) {
-			LOG_ERR("Unable to start scan for CAP initiators: %d", err);
+			LOG_ERROR("Unable to start scan for CAP initiators: %d", err);
 
 			return err;
 		}

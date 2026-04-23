@@ -189,7 +189,7 @@ static int pca9533_led_set_brightness(const struct device *dev, uint32_t led, ui
 	int ret;
 
 	if (led >= PCA9533_CHANNELS) {
-		LOG_ERR("Invalid LED index: %u", led);
+		LOG_ERROR("Invalid LED index: %u", led);
 		return -EINVAL;
 	}
 
@@ -256,7 +256,7 @@ static int pca9533_led_set_brightness(const struct device *dev, uint32_t led, ui
 						    duty);
 		}
 		if (ret) {
-			LOG_ERR("Failed to program engine %u: %d", ch, ret);
+			LOG_ERROR("Failed to program engine %u: %d", ch, ret);
 			return ret;
 		}
 		data->psc_val[ch] = PCA9533_DEFAULT_PSC;
@@ -280,14 +280,14 @@ static int pca9533_led_blink(const struct device *dev, uint32_t led, uint32_t de
 	uint32_t period, duty32;
 
 	if (led >= PCA9533_CHANNELS) {
-		LOG_ERR("Invalid LED index: %u", led);
+		LOG_ERROR("Invalid LED index: %u", led);
 		return -EINVAL;
 	}
 
 	period = delay_on + delay_off;
 	if (period < BLINK_MIN_MS || period > BLINK_MAX_MS) {
-		LOG_ERR("Invalid blink period: %u ms (min: %u, max: %u)", period, BLINK_MIN_MS,
-			BLINK_MAX_MS);
+		LOG_ERROR("Invalid blink period: %u ms (min: %u, max: %u)", period, BLINK_MIN_MS,
+			  BLINK_MAX_MS);
 		return -ENOTSUP;
 	}
 
@@ -342,7 +342,7 @@ static int pca9533_led_blink(const struct device *dev, uint32_t led, uint32_t de
 						    duty);
 		}
 		if (ret) {
-			LOG_ERR("Failed to program engine %u: %d", ch, ret);
+			LOG_ERROR("Failed to program engine %u: %d", ch, ret);
 			return ret;
 		}
 		data->psc_val[ch] = psc;
@@ -390,7 +390,7 @@ static int pca9533_led_init(const struct device *dev)
 	const struct pca9533_config *config = dev->config;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("%s is not ready", config->i2c.bus->name);
+		LOG_ERROR("%s is not ready", config->i2c.bus->name);
 		return -ENODEV;
 	}
 

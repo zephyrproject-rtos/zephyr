@@ -271,12 +271,12 @@ static int cs43l22_init(const struct device *dev)
 
 	ret = i2c_burst_read_dt(&cfg->i2c, REG_ID, &regval, 1);
 	if (ret) {
-		LOG_ERR("Unable to read device ID");
+		LOG_ERROR("Unable to read device ID");
 		return -ENODEV;
 	}
 
 	if ((regval >> 3) != 0x1C) {
-		LOG_ERR("Wrong Chip ID");
+		LOG_ERROR("Wrong Chip ID");
 		return -ENODEV;
 	}
 

@@ -116,7 +116,7 @@ static int ls0xx_cmd(const struct device *dev, uint8_t *buf, uint8_t len)
 #endif /* DT_INST_PROP(0, serial_vcom_inversion) */
 	err = spi_write_dt(&config->bus, &buf_set);
 	if (err < 0) {
-		LOG_ERR("ls0xx command write failed %d", err);
+		LOG_ERROR("ls0xx command write failed %d", err);
 		return err;
 	}
 	return 0;
@@ -145,7 +145,7 @@ static void ls0xx_vcom_toggle(void *a, void *b, void *c)
 			/* Send empty command to toggle VCOM */
 			ls0xx_cmd(dev, empty_cmd, sizeof(empty_cmd));
 		} else {
-			LOG_ERR("memory display semaphore not available - cmd");
+			LOG_ERROR("memory display semaphore not available - cmd");
 		}
 		/* Sleep before giving semaphore based on errors in testing */
 		k_sleep(K_TICKS(LS0XX_BUS_RETURN_DELAY_TICKS));
@@ -169,7 +169,7 @@ static int ls0xx_clear(const struct device *dev)
 	if (k_sem_take(&ls0xx_bus_sem, K_MSEC(LS0XX_MAX_BUS_WAIT_MSEC)) == 0) {
 		err = ls0xx_cmd(dev, clear_cmd, sizeof(clear_cmd));
 	} else {
-		LOG_ERR("memory display semaphore not available - data");
+		LOG_ERROR("memory display semaphore not available - data");
 		err = -EBUSY;
 	}
 	k_sleep(K_TICKS(LS0XX_BUS_RETURN_DELAY_TICKS));
@@ -226,7 +226,7 @@ static int ls0xx_update_display(const struct device *dev,
 		 */
 		err |= ls0xx_cmd(dev, write_cmd, sizeof(write_cmd));
 	} else {
-		LOG_ERR("memory display semaphore not available - refresh data");
+		LOG_ERROR("memory display semaphore not available - refresh data");
 		err = -EBUSY;
 	}
 	k_sleep(K_TICKS(LS0XX_BUS_RETURN_DELAY_TICKS));
@@ -250,22 +250,22 @@ static int ls0xx_write(const struct device *dev, const uint16_t x,
 	}
 
 	if (desc->width != LS0XX_PANEL_WIDTH) {
-		LOG_ERR("Width not a multiple of %d", LS0XX_PANEL_WIDTH);
+		LOG_ERROR("Width not a multiple of %d", LS0XX_PANEL_WIDTH);
 		return -EINVAL;
 	}
 
 	if (desc->pitch != desc->width) {
-		LOG_ERR("Unsupported mode");
+		LOG_ERROR("Unsupported mode");
 		return -ENOTSUP;
 	}
 
 	if ((y + desc->height) > LS0XX_PANEL_HEIGHT) {
-		LOG_ERR("Buffer out of bounds (height)");
+		LOG_ERROR("Buffer out of bounds (height)");
 		return -EINVAL;
 	}
 
 	if (x != 0) {
-		LOG_ERR("X-coordinate has to be 0");
+		LOG_ERROR("X-coordinate has to be 0");
 		return -EINVAL;
 	}
 
@@ -291,7 +291,7 @@ static int ls0xx_set_pixel_format(const struct device *dev,
 		return 0;
 	}
 
-	LOG_ERR("not supported");
+	LOG_ERROR("not supported");
 	return -ENOTSUP;
 }
 
@@ -301,13 +301,13 @@ static int ls0xx_init(const struct device *dev)
 	struct ls0xx_data *data = dev->data;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, disp_en_gpios)
 	if (!gpio_is_ready_dt(&config->disp_en_gpio)) {
-		LOG_ERR("DISP port device not ready");
+		LOG_ERROR("DISP port device not ready");
 		return -ENODEV;
 	}
 	LOG_INF("Configuring DISP pin to OUTPUT_HIGH");
@@ -316,7 +316,7 @@ static int ls0xx_init(const struct device *dev)
 
 #if DT_INST_NODE_HAS_PROP(0, extcomin_gpios)
 	if (!gpio_is_ready_dt(&config->extcomin_gpio)) {
-		LOG_ERR("EXTCOMIN port device not ready");
+		LOG_ERROR("EXTCOMIN port device not ready");
 		return -ENODEV;
 	}
 	LOG_INF("Configuring EXTCOMIN pin");

@@ -151,7 +151,7 @@ static int w1_max32_init(const struct device *dev)
 	mxc_owm_cfg_t mxc_owm_cfg;
 
 	if (!device_is_ready(cfg->clock)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -159,7 +159,7 @@ static int w1_max32_init(const struct device *dev)
 
 	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
 	if (ret != 0) {
-		LOG_ERR("cannot enable OWM clock");
+		LOG_ERROR("cannot enable OWM clock");
 		return ret;
 	}
 

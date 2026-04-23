@@ -129,7 +129,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
 		memset(&conn_info, 0x00, sizeof(struct active_conn_info));
-		LOG_ERR("Connection failed (err 0x%02x)", err);
+		LOG_ERROR("Connection failed (err 0x%02x)", err);
 		return;
 	}
 
@@ -184,8 +184,8 @@ static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
 	if (err) {
-		LOG_ERR("Security for %p failed: %s level %u err %d", conn, bt_conn_dst_str(conn),
-			level, err);
+		LOG_ERROR("Security for %p failed: %s level %u err %d", conn, bt_conn_dst_str(conn),
+			  level, err);
 		return;
 	}
 
@@ -282,7 +282,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 		subscribe_params.value = BT_GATT_CCC_NOTIFY;
 		subscribe_params.ccc_handle = attr->handle;
 
-		LOG_ERR("subscribe");
+		LOG_ERROR("subscribe");
 		err = bt_gatt_subscribe(conn, &subscribe_params);
 		if (err == -ENOMEM) {
 			goto nomem;
@@ -304,7 +304,7 @@ nomem:
 	/* if we're out of buffers or metadata contexts, restart discovery
 	 * later.
 	 */
-	LOG_ERR("out of memory, retry sub later");
+	LOG_ERROR("out of memory, retry sub later");
 	atomic_clear_bit(conn_info.flags, CONN_INFO_DISCOVERING);
 
 	return BT_GATT_ITER_STOP;
@@ -353,7 +353,7 @@ void disconnect(void)
 				     BT_HCI_ERR_REMOTE_POWER_OFF);
 
 	if (err) {
-		LOG_ERR("Terminating conn failed (err %d)", err);
+		LOG_ERROR("Terminating conn failed (err %d)", err);
 	}
 
 	/* wait for disconnection callback */
@@ -370,7 +370,7 @@ void test_peripheral_main(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		LOG_ERR("Bluetooth init failed (err %d)", err);
+		LOG_ERROR("Bluetooth init failed (err %d)", err);
 		return;
 	}
 	LOG_DBG("Bluetooth initialized");
@@ -396,7 +396,7 @@ void test_peripheral_main(void)
 
 	err = bt_le_adv_start(&adv_param, sd, 1, sd, 1);
 	if (err) {
-		LOG_ERR("Advertising failed to start (err %d)", err);
+		LOG_ERROR("Advertising failed to start (err %d)", err);
 		__ASSERT_NO_MSG(err);
 	}
 	LOG_INF("Started advertising");

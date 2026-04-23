@@ -195,55 +195,50 @@ static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
  * TODO: try to make this portable, or at least port to more devices.
  */
 
-#define WS2812_GPIO_DEVICE(idx)					\
-									\
-	static int ws2812_gpio_##idx##_init(const struct device *dev)	\
-	{								\
-		const struct ws2812_gpio_cfg *cfg = dev->config;	\
-		uint8_t i;						\
-									\
-		if (!gpio_is_ready_dt(&cfg->gpio)) {			\
-			LOG_ERR("GPIO device not ready");		\
-			return -ENODEV;					\
-		}							\
-									\
-		for (i = 0; i < cfg->num_colors; i++) {			\
-			switch (cfg->color_mapping[i]) {		\
-			case LED_COLOR_ID_WHITE:			\
-			case LED_COLOR_ID_RED:				\
-			case LED_COLOR_ID_GREEN:			\
-			case LED_COLOR_ID_BLUE:				\
-				break;					\
-			default:					\
-				LOG_ERR("%s: invalid channel to color mapping." \
-					" Check the color-mapping DT property",	\
-					dev->name);			\
-				return -EINVAL;				\
-			}						\
-		}							\
-									\
-		return gpio_pin_configure_dt(&cfg->gpio, GPIO_OUTPUT);	\
-	}								\
-									\
-	BUILD_ASSERT(WS2812_NUM_COLORS(idx) <= sizeof(struct led_rgb),  \
-		"Too many channels in color-mapping; "			\
-		"currently not supported by the ws2812_gpio driver");	\
-									\
-	WS2812_COLOR_MAPPING(idx);					\
-									\
-	static const struct ws2812_gpio_cfg ws2812_gpio_##idx##_cfg = { \
-		.gpio = GPIO_DT_SPEC_INST_GET(idx, gpios),		\
-		.num_colors = WS2812_NUM_COLORS(idx),			\
-		.color_mapping = ws2812_gpio_##idx##_color_mapping,	\
-		.length = DT_INST_PROP(idx, chain_length),		\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(idx,					\
-			    ws2812_gpio_##idx##_init,			\
-			    NULL,					\
-			    NULL,					\
-			    &ws2812_gpio_##idx##_cfg, POST_KERNEL,	\
-			    CONFIG_LED_STRIP_INIT_PRIORITY,		\
-			    &ws2812_gpio_api);
+#define WS2812_GPIO_DEVICE(idx)                                                                    \
+                                                                                                   \
+	static int ws2812_gpio_##idx##_init(const struct device *dev)                              \
+	{                                                                                          \
+		const struct ws2812_gpio_cfg *cfg = dev->config;                                   \
+		uint8_t i;                                                                         \
+                                                                                                   \
+		if (!gpio_is_ready_dt(&cfg->gpio)) {                                               \
+			LOG_ERROR("GPIO device not ready");                                        \
+			return -ENODEV;                                                            \
+		}                                                                                  \
+                                                                                                   \
+		for (i = 0; i < cfg->num_colors; i++) {                                            \
+			switch (cfg->color_mapping[i]) {                                           \
+			case LED_COLOR_ID_WHITE:                                                   \
+			case LED_COLOR_ID_RED:                                                     \
+			case LED_COLOR_ID_GREEN:                                                   \
+			case LED_COLOR_ID_BLUE:                                                    \
+				break;                                                             \
+			default:                                                                   \
+				LOG_ERROR("%s: invalid channel to color mapping."                  \
+					  " Check the color-mapping DT property",                  \
+					  dev->name);                                              \
+				return -EINVAL;                                                    \
+			}                                                                          \
+		}                                                                                  \
+                                                                                                   \
+		return gpio_pin_configure_dt(&cfg->gpio, GPIO_OUTPUT);                             \
+	}                                                                                          \
+                                                                                                   \
+	BUILD_ASSERT(WS2812_NUM_COLORS(idx) <= sizeof(struct led_rgb),                             \
+		     "Too many channels in color-mapping; "                                        \
+		     "currently not supported by the ws2812_gpio driver");                         \
+                                                                                                   \
+	WS2812_COLOR_MAPPING(idx);                                                                 \
+                                                                                                   \
+	static const struct ws2812_gpio_cfg ws2812_gpio_##idx##_cfg = {                            \
+		.gpio = GPIO_DT_SPEC_INST_GET(idx, gpios),                                         \
+		.num_colors = WS2812_NUM_COLORS(idx),                                              \
+		.color_mapping = ws2812_gpio_##idx##_color_mapping,                                \
+		.length = DT_INST_PROP(idx, chain_length),                                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, ws2812_gpio_##idx##_init, NULL, NULL, &ws2812_gpio_##idx##_cfg, \
+			      POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY, &ws2812_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WS2812_GPIO_DEVICE)

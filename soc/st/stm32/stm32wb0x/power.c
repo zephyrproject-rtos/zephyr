@@ -155,7 +155,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		 * Something is wrong if a different
 		 * power state has been requested.
 		 */
-		LOG_ERR("Unsupported power state %u", state);
+		LOG_ERROR("Unsupported power state %u", state);
 	}
 
 	prepare_for_deepstop_entry();

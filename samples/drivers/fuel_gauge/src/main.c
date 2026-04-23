@@ -101,14 +101,14 @@ int main(void)
 	int ret = 0;
 
 	if (dev == NULL) {
-		LOG_ERR("no device found.");
+		LOG_ERROR("no device found.");
 		return 0;
 	}
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("Error: Device \"%s\" is not ready; check the driver initialization logs "
-			"for errors.",
-			dev->name);
+		LOG_ERROR("Error: Device \"%s\" is not ready; check the driver initialization logs "
+			  "for errors.",
+			  dev->name);
 		return 0;
 	}
 
@@ -170,8 +170,8 @@ int main(void)
 					LOG_INF("Property \"%s\" is not supported",
 						fuel_gauge_prop_to_str(test_props[i]));
 				} else if (ret < 0) {
-					LOG_ERR("Error: cannot get property \"%s\": %d",
-						fuel_gauge_prop_to_str(test_props[i]), ret);
+					LOG_ERROR("Error: cannot get property \"%s\": %d",
+						  fuel_gauge_prop_to_str(test_props[i]), ret);
 				} else {
 					LOG_INF("Property \"%s\" is supported",
 						fuel_gauge_prop_to_str(test_props[i]));
@@ -187,8 +187,8 @@ int main(void)
 					LOG_INF("Property \"%s\" is not supported",
 						fuel_gauge_prop_to_str(test_props[i]));
 				} else if (ret < 0) {
-					LOG_ERR("Error: cannot get property \"%s\": %d",
-						fuel_gauge_prop_to_str(test_props[i]), ret);
+					LOG_ERROR("Error: cannot get property \"%s\": %d",
+						  fuel_gauge_prop_to_str(test_props[i]), ret);
 				} else {
 					LOG_INF("Property \"%s\" is supported",
 						fuel_gauge_prop_to_str(test_props[i]));
@@ -204,8 +204,8 @@ int main(void)
 					LOG_INF("Property \"%s\" is not supported",
 						fuel_gauge_prop_to_str(test_props[i]));
 				} else if (ret < 0) {
-					LOG_ERR("Error: cannot get property \"%s\": %d",
-						fuel_gauge_prop_to_str(test_props[i]), ret);
+					LOG_ERROR("Error: cannot get property \"%s\": %d",
+						  fuel_gauge_prop_to_str(test_props[i]), ret);
 				} else {
 					LOG_INF("Property \"%s\" is supported",
 						fuel_gauge_prop_to_str(test_props[i]));
@@ -221,8 +221,8 @@ int main(void)
 					LOG_INF("Property \"%s\" is not supported",
 						fuel_gauge_prop_to_str(test_props[i]));
 				} else if (ret < 0) {
-					LOG_ERR("Error: cannot get property \"%s\": %d",
-						fuel_gauge_prop_to_str(test_props[i]), ret);
+					LOG_ERROR("Error: cannot get property \"%s\": %d",
+						  fuel_gauge_prop_to_str(test_props[i]), ret);
 				} else {
 					LOG_INF("Property \"%s\" is supported",
 						fuel_gauge_prop_to_str(test_props[i]));
@@ -373,7 +373,7 @@ int main(void)
 		ret = fuel_gauge_get_props(dev, poll_props, poll_vals, ARRAY_SIZE(poll_props));
 
 		if (ret < 0) {
-			LOG_ERR("Error: cannot get properties");
+			LOG_ERROR("Error: cannot get properties");
 		} else {
 			LOG_INF("Fuel gauge data: Charge: %d%%, Voltage: %dmV",
 				poll_vals[0].relative_state_of_charge, poll_vals[1].voltage / 1000);

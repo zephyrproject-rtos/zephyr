@@ -325,7 +325,7 @@ static int flash_get_interrupt_status_error(const struct device *dev)
 				    NVMCTRL_INTFLAG_LOCKE_Msk | NVMCTRL_INTFLAG_NVME_Msk;
 
 	if ((status & error_mask) != 0) {
-		LOG_ERR("flash operation failed with status 0x%x", status);
+		LOG_ERROR("flash operation failed with status 0x%x", status);
 		ret = -EIO;
 	}
 
@@ -349,7 +349,7 @@ static inline void flash_status_ready_wait(const struct device *dev)
 	if (!WAIT_FOR(((NVM_REGS->NVMCTRL_STATUS & NVMCTRL_STATUS_READY_Msk) ==
 		       NVMCTRL_STATUS_READY_Msk),
 		      TIMEOUT_VALUE_US, k_busy_wait(DELAY_US))) {
-		LOG_ERR("NVMCTRL_STATUS_READY wait timed out");
+		LOG_ERROR("NVMCTRL_STATUS_READY wait timed out");
 	}
 }
 
@@ -598,7 +598,7 @@ static int flash_handle_unaligned_start(const struct device *dev, off_t *offset,
 
 	ret = flash_doubleword_write(dev, doubleword_buf, aligned_addr);
 	if (ret != FLASH_MCHP_SUCCESS) {
-		LOG_ERR("double word write failed at 0x%lx", (long)aligned_addr);
+		LOG_ERROR("double word write failed at 0x%lx", (long)aligned_addr);
 		return ret;
 	}
 
@@ -643,7 +643,7 @@ static int flash_handle_unaligned_end(const struct device *dev, off_t offset, co
 
 	ret = flash_doubleword_write(dev, doubleword_buf, aligned_addr);
 	if (ret != FLASH_MCHP_SUCCESS) {
-		LOG_ERR("double word write failed at 0x%lx", (long)aligned_addr);
+		LOG_ERROR("double word write failed at 0x%lx", (long)aligned_addr);
 	}
 
 	return ret;
@@ -686,7 +686,7 @@ static int flash_write_aligned_blocks(const struct device *dev, off_t *offset,
 		    (flash_aligned(*offset, FLASH_MCHP_PAGE_SIZE) == FLASH_MCHP_SUCCESS)) {
 			ret = flash_page_write(dev, *buffer, *offset);
 			if (ret != FLASH_MCHP_SUCCESS) {
-				LOG_ERR("page write failed at 0x%lx", (long)*offset);
+				LOG_ERROR("page write failed at 0x%lx", (long)*offset);
 				break;
 			}
 			*offset += FLASH_MCHP_PAGE_SIZE;
@@ -699,7 +699,7 @@ static int flash_write_aligned_blocks(const struct device *dev, off_t *offset,
 		    (flash_aligned(*offset, FLASH_MCHP_QUAD_WORD_SIZE) == FLASH_MCHP_SUCCESS)) {
 			ret = flash_quadword_write(dev, *buffer, *offset);
 			if (ret != FLASH_MCHP_SUCCESS) {
-				LOG_ERR("quad word write failed at 0x%lx", (long)*offset);
+				LOG_ERROR("quad word write failed at 0x%lx", (long)*offset);
 				break;
 			}
 			*offset += FLASH_MCHP_QUAD_WORD_SIZE;
@@ -712,7 +712,7 @@ static int flash_write_aligned_blocks(const struct device *dev, off_t *offset,
 		    (flash_aligned(*offset, FLASH_MCHP_DOUBLE_WORD_SIZE) == FLASH_MCHP_SUCCESS)) {
 			ret = flash_doubleword_write(dev, *buffer, *offset);
 			if (ret != FLASH_MCHP_SUCCESS) {
-				LOG_ERR("double word write failed at 0x%lx", (long)*offset);
+				LOG_ERROR("double word write failed at 0x%lx", (long)*offset);
 				break;
 			}
 			*offset += FLASH_MCHP_DOUBLE_WORD_SIZE;
@@ -778,7 +778,7 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 	ret = flash_handle_unaligned_start(dev, &offset, &buffer, &len);
 	if (ret != FLASH_MCHP_SUCCESS) {
 		k_mutex_unlock(&mchp_flash_data->flash_data_lock);
-		LOG_ERR("flash unaligned write at start failed: %d", ret);
+		LOG_ERROR("flash unaligned write at start failed: %d", ret);
 		return ret;
 	}
 #endif
@@ -786,7 +786,7 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 	ret = flash_write_aligned_blocks(dev, &offset, &buffer, &len);
 	if (ret != FLASH_MCHP_SUCCESS) {
 		k_mutex_unlock(&mchp_flash_data->flash_data_lock);
-		LOG_ERR("flash aligned write failed: %d", ret);
+		LOG_ERROR("flash aligned write failed: %d", ret);
 		return ret;
 	}
 
@@ -853,7 +853,7 @@ static int flash_mchp_erase(const struct device *dev, off_t offset, size_t size)
 		/* Erase the block */
 		ret = flash_erase_block(dev, offset);
 		if (ret != FLASH_MCHP_SUCCESS) {
-			LOG_ERR("erase operation failed at 0x%lx", (long)offset);
+			LOG_ERROR("erase operation failed at 0x%lx", (long)offset);
 			ret = -EIO;
 			break;
 		}
@@ -1099,7 +1099,7 @@ static int flash_ex_op_user_row_erase(const struct device *dev, const uintptr_t 
 	/* Erase the user page */
 	ret = flash_user_row_erase(dev, SOC_NV_USERROW_BASE_ADDR);
 	if (ret != FLASH_MCHP_SUCCESS) {
-		LOG_ERR("User page erase failed");
+		LOG_ERROR("User page erase failed");
 		ret = -EIO;
 	}
 

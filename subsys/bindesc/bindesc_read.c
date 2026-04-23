@@ -72,7 +72,7 @@ static inline int get_entry(struct bindesc_handle *handle, const uint8_t *addres
 		flash_retval = flash_read(handle->flash_device, (size_t)address,
 					  handle->buffer, BINDESC_ENTRY_HEADER_SIZE);
 		if (flash_retval) {
-			LOG_ERR("Flash read error: %d", flash_retval);
+			LOG_ERROR("Flash read error: %d", flash_retval);
 			return -EIO;
 		}
 
@@ -87,7 +87,7 @@ static inline int get_entry(struct bindesc_handle *handle, const uint8_t *addres
 					handle->buffer + BINDESC_ENTRY_HEADER_SIZE,
 					((const struct bindesc_entry *)handle->buffer)->len);
 			if (flash_retval) {
-				LOG_ERR("Flash read error: %d", flash_retval);
+				LOG_ERROR("Flash read error: %d", flash_retval);
 				return -EIO;
 			}
 		}
@@ -107,7 +107,7 @@ int bindesc_open_memory_mapped_flash(struct bindesc_handle *handle, size_t offse
 	uint8_t *address = (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset;
 
 	if (*(uint64_t *)address != BINDESC_MAGIC) {
-		LOG_ERR("Magic not found in given address");
+		LOG_ERROR("Magic not found in given address");
 		return -ENOENT;
 	}
 
@@ -122,12 +122,12 @@ int bindesc_open_memory_mapped_flash(struct bindesc_handle *handle, size_t offse
 int bindesc_open_ram(struct bindesc_handle *handle, const uint8_t *address, size_t max_size)
 {
 	if (!IS_ALIGNED(address, BINDESC_ALIGNMENT)) {
-		LOG_ERR("Given address is not aligned");
+		LOG_ERROR("Given address is not aligned");
 		return -EINVAL;
 	}
 
 	if (*(uint64_t *)address != BINDESC_MAGIC) {
-		LOG_ERR("Magic not found in given address");
+		LOG_ERROR("Magic not found in given address");
 		return -ENOENT;
 	}
 
@@ -146,12 +146,12 @@ int bindesc_open_flash(struct bindesc_handle *handle, size_t offset,
 
 	retval = flash_read(flash_device, offset, handle->buffer, sizeof(BINDESC_MAGIC));
 	if (retval) {
-		LOG_ERR("Flash read error: %d", retval);
+		LOG_ERROR("Flash read error: %d", retval);
 		return -EIO;
 	}
 
 	if (*(uint64_t *)handle->buffer != BINDESC_MAGIC) {
-		LOG_ERR("Magic not found in given address");
+		LOG_ERROR("Magic not found in given address");
 		return -ENOENT;
 	}
 

@@ -139,7 +139,7 @@ int i3c_rtio_transfer(struct i3c_rtio *ctx, struct i3c_msg *msgs, uint8_t num_ms
 
 	sqe = i3c_rtio_copy(r, iodev, msgs, num_msgs);
 	if (sqe == NULL) {
-		LOG_ERR("Not enough submission queue entries");
+		LOG_ERROR("Not enough submission queue entries");
 		res = -ENOMEM;
 		goto out;
 	}
@@ -170,7 +170,7 @@ int i3c_rtio_configure(struct i3c_rtio *ctx, enum i3c_config_type type, void *co
 
 	sqe = rtio_sqe_acquire(r);
 	if (sqe == NULL) {
-		LOG_ERR("Not enough submission queue entries");
+		LOG_ERROR("Not enough submission queue entries");
 		res = -ENOMEM;
 		goto out;
 	}
@@ -208,7 +208,7 @@ int i3c_rtio_ccc(struct i3c_rtio *ctx, struct i3c_ccc_payload *payload)
 
 	sqe = rtio_sqe_acquire(r);
 	if (sqe == NULL) {
-		LOG_ERR("Not enough submission queue entries");
+		LOG_ERROR("Not enough submission queue entries");
 		res = -ENOMEM;
 		goto out;
 	}
@@ -245,7 +245,7 @@ int i3c_rtio_recover(struct i3c_rtio *ctx)
 
 	sqe = rtio_sqe_acquire(r);
 	if (sqe == NULL) {
-		LOG_ERR("Not enough submission queue entries");
+		LOG_ERROR("Not enough submission queue entries");
 		res = -ENOMEM;
 		goto out;
 	}

@@ -716,7 +716,7 @@ static int mtch9010_sample_fetch(const struct device *dev, enum sensor_channel c
 
 		data->last_out_state = gpio_pin_get_dt(&config->out_gpio);
 		if (data->last_out_state < 0) {
-			LOG_ERR("GPIO Error %d", data->last_out_state);
+			LOG_ERROR("GPIO Error %d", data->last_out_state);
 			return -EIO;
 		}
 

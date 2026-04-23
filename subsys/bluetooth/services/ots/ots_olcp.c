@@ -252,12 +252,12 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 	}
 
 	if (offset != 0) {
-		LOG_ERR("Invalid offset of OLCP Write Request");
+		LOG_ERROR("Invalid offset of OLCP Write Request");
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	if (k_work_is_pending(&ots->olcp_ind.work)) {
-		LOG_ERR("OLCP Write received before indication sent");
+		LOG_ERROR("OLCP Write received before indication sent");
 		return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
 	}
 
@@ -292,14 +292,15 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 		LOG_WRN("OLCP unsupported procedure type: 0x%02X", olcp_proc.type);
 		break;
 	case -EBADMSG:
-		LOG_ERR("Invalid length of OLCP Write Request for 0x%02X "
-			"Op Code", olcp_proc.type);
+		LOG_ERROR("Invalid length of OLCP Write Request for 0x%02X "
+			  "Op Code",
+			  olcp_proc.type);
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	case -ENODATA:
-		LOG_ERR("Invalid size of OLCP Write Request");
+		LOG_ERROR("Invalid size of OLCP Write Request");
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	default:
-		LOG_ERR("Invalid return code from olcp_command_decode: %d", decode_status);
+		LOG_ERROR("Invalid return code from olcp_command_decode: %d", decode_status);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 

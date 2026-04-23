@@ -106,7 +106,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	status = LPSPI_MasterTransferNonBlocking(base, &data->handle,
 						 &transfer);
 	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start");
+		LOG_ERROR("Transfer could not start");
 	}
 }
 
@@ -147,23 +147,20 @@ static int spi_mcux_configure(const struct device *dev,
 	}
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	LPSPI_MasterGetDefaultConfig(&master_config);
 
 	if (spi_cfg->slave > CHIP_SELECT_COUNT) {
-		LOG_ERR("Slave %d is greater than %d",
-			    spi_cfg->slave,
-			    CHIP_SELECT_COUNT);
+		LOG_ERROR("Slave %d is greater than %d", spi_cfg->slave, CHIP_SELECT_COUNT);
 		return -EINVAL;
 	}
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size > MAX_DATA_WIDTH) {
-		LOG_ERR("Word size %d is greater than %d",
-			    word_size, MAX_DATA_WIDTH);
+		LOG_ERROR("Word size %d is greater than %d", word_size, MAX_DATA_WIDTH);
 		return -EINVAL;
 	}
 
@@ -187,7 +184,7 @@ static int spi_mcux_configure(const struct device *dev,
 	master_config.baudRate = spi_cfg->frequency;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 

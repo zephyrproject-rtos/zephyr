@@ -140,7 +140,7 @@ static void dma_xmc4xxx_isr(const struct device *dev)
 			DLR->LNEN &= ~BIT(dma_channel->dlr_line);
 			DLR->LNEN |= BIT(dma_channel->dlr_line);
 
-			LOG_ERR("Overruns detected on channel %d", i);
+			LOG_ERROR("Overruns detected on channel %d", i);
 			if (dma_channel->cb != NULL) {
 				dma_channel->cb(dev, dma_channel->user_data, i, -EIO);
 			}
@@ -189,8 +189,8 @@ static uint32_t dma_xmc4xxx_reg_ctll(struct dma_block_config *block, struct dma_
 		} else if (block->type##_en && type.enabled) {                                     \
 			if (block->type##_interval != type.interval ||                             \
 			    block->type##_count != type.count) {                                   \
-				LOG_ERR(STRINGIFY(type) " parameters must be consistent "          \
-							"across enabled blocks");                  \
+				LOG_ERROR(STRINGIFY(type) " parameters must be consistent "        \
+							  "across enabled blocks");                \
 				return -EINVAL;                                                    \
 			}                                                                          \
 		}                                                                                  \
@@ -207,36 +207,37 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 	struct dma_xmc4xxx_scatter_gather dest_scatter = { 0 };
 
 	if (channel >= dev_data->ctx.dma_channels) {
-		LOG_ERR("Invalid channel number");
+		LOG_ERROR("Invalid channel number");
 		return -EINVAL;
 	}
 
 	if (config->channel_priority > MAX_PRIORITY) {
-		LOG_ERR("Invalid priority");
+		LOG_ERROR("Invalid priority");
 		return -EINVAL;
 	}
 
 	if (config->source_chaining_en || config->dest_chaining_en) {
-		LOG_ERR("Channel chaining is not supported");
+		LOG_ERROR("Channel chaining is not supported");
 		return -EINVAL;
 	}
 
 	if (config->channel_direction != MEMORY_TO_MEMORY &&
 	    config->channel_direction != MEMORY_TO_PERIPHERAL &&
 	    config->channel_direction != PERIPHERAL_TO_MEMORY) {
-		LOG_ERR("Unsupported channel direction");
+		LOG_ERROR("Unsupported channel direction");
 		return -EINVAL;
 	}
 
 	if (config->block_count > CONFIG_DMA_XMC4XXX_NUM_DESCRIPTORS) {
-		LOG_ERR("Block count exceeds descriptor array size");
+		LOG_ERROR("Block count exceeds descriptor array size");
 		return -EINVAL;
 	}
 
 	if (block->source_gather_en || block->dest_scatter_en || config->block_count != 1 ||
 	    config->cyclic) {
 		if ((uint32_t)dma != (uint32_t)XMC_DMA0 || channel >= 2) {
-			LOG_ERR("Multi-block, cyclic and gather/scatter only supported on DMA0 on "
+			LOG_ERROR(
+				"Multi-block, cyclic and gather/scatter only supported on DMA0 on "
 				"ch0 and ch1");
 			return -EINVAL;
 		}
@@ -244,35 +245,36 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 
 	if (config->dest_data_size != 1 && config->dest_data_size != 2 &&
 	    config->dest_data_size != 4) {
-		LOG_ERR("Invalid dest size, Only 1,2,4 bytes supported");
+		LOG_ERROR("Invalid dest size, Only 1,2,4 bytes supported");
 		return -EINVAL;
 	}
 
 	if (config->source_data_size != 1 && config->source_data_size != 2 &&
 	    config->source_data_size != 4) {
-		LOG_ERR("Invalid source size, Only 1,2,4 bytes supported");
+		LOG_ERROR("Invalid source size, Only 1,2,4 bytes supported");
 		return -EINVAL;
 	}
 
 	if (config->source_burst_length != 1 && config->source_burst_length != 4 &&
 	    config->source_burst_length != 8) {
-		LOG_ERR("Invalid src burst length (data size units). Only 1,4,8 units supported");
+		LOG_ERROR("Invalid src burst length (data size units). Only 1,4,8 units supported");
 		return -EINVAL;
 	}
 
 	if (config->dest_burst_length != 1 && config->dest_burst_length != 4 &&
 	    config->dest_burst_length != 8) {
-		LOG_ERR("Invalid dest burst length (data size units). Only 1,4,8 units supported");
+		LOG_ERROR(
+			"Invalid dest burst length (data size units). Only 1,4,8 units supported");
 		return -EINVAL;
 	}
 
 	if (block->block_size / config->source_data_size > DMA_MAX_BLOCK_LEN) {
-		LOG_ERR("Block transactions must be <= 4095");
+		LOG_ERROR("Block transactions must be <= 4095");
 		return -EINVAL;
 	}
 
 	if (XMC_DMA_CH_IsEnabled(dma, channel)) {
-		LOG_ERR("Channel is still active");
+		LOG_ERROR("Channel is still active");
 		return -EINVAL;
 	}
 
@@ -351,14 +353,16 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 
 		dlr_line = dlr_line_reg;
 		if ((uint32_t)dma == (uint32_t)XMC_DMA0 && dlr_line > 7) {
-			LOG_ERR("Unsupported request line %d for DMA0."
-					"Should be in range [0,7]", dlr_line);
+			LOG_ERROR("Unsupported request line %d for DMA0."
+				  "Should be in range [0,7]",
+				  dlr_line);
 			return -EINVAL;
 		}
 
 		if ((uint32_t)dma == (uint32_t)XMC_DMA1 && (dlr_line < 8 || dlr_line > 11)) {
-			LOG_ERR("Unsupported request line %d for DMA1."
-					"Should be in range [8,11]", dlr_line);
+			LOG_ERROR("Unsupported request line %d for DMA1."
+				  "Should be in range [8,11]",
+				  dlr_line);
 			return -EINVAL;
 		}
 
@@ -499,19 +503,19 @@ static int dma_xmc4xxx_reload(const struct device *dev, uint32_t channel, uint32
 	struct dma_xmc4xxx_channel *dma_channel;
 
 	if (channel >= dev_data->ctx.dma_channels) {
-		LOG_ERR("Invalid channel number");
+		LOG_ERROR("Invalid channel number");
 		return -EINVAL;
 	}
 
 	if (XMC_DMA_CH_IsEnabled(dma, channel)) {
-		LOG_ERR("Channel is still active");
+		LOG_ERROR("Channel is still active");
 		return -EINVAL;
 	}
 
 	dma_channel = &dev_data->channels[channel];
 	block_ts = size / dma_channel->source_data_size;
 	if (block_ts > DMA_MAX_BLOCK_LEN) {
-		LOG_ERR("Block transactions must be <= 4095");
+		LOG_ERROR("Block transactions must be <= 4095");
 		return -EINVAL;
 	}
 	dma_channel->transfer_size = size;
@@ -535,7 +539,7 @@ static int dma_xmc4xxx_get_status(const struct device *dev, uint32_t channel,
 	uint32_t transferred_bytes;
 
 	if (channel >= dev_data->ctx.dma_channels) {
-		LOG_ERR("Invalid channel number");
+		LOG_ERROR("Invalid channel number");
 		return -EINVAL;
 	}
 	dma_channel = &dev_data->channels[channel];
@@ -593,7 +597,7 @@ static int dma_xmc4xxx_suspend(const struct device *dev, uint32_t channel)
 	XMC_DMA_t *dma = dev_cfg->dma;
 
 	if (channel >= dev_data->ctx.dma_channels) {
-		LOG_ERR("Invalid channel number");
+		LOG_ERROR("Invalid channel number");
 		return -EINVAL;
 	}
 
@@ -608,7 +612,7 @@ static int dma_xmc4xxx_resume(const struct device *dev, uint32_t channel)
 	XMC_DMA_t *dma = dev_cfg->dma;
 
 	if (channel >= dev_data->ctx.dma_channels) {
-		LOG_ERR("Invalid channel number");
+		LOG_ERROR("Invalid channel number");
 		return -EINVAL;
 	}
 

@@ -68,7 +68,7 @@ int stm32_tsc_group_register_callback(const struct device *dev, uint8_t group_id
 	const struct stm32_tsc_config *config = dev->config;
 
 	if (group_idx >= config->group_cnt) {
-		LOG_ERR("%s: group index %d is out of range", dev->name, group_idx);
+		LOG_ERROR("%s: group index %d is out of range", dev->name, group_idx);
 		return -EINVAL;
 	}
 
@@ -120,7 +120,7 @@ static int stm32_tsc_handle_incoming_data(const struct device *dev)
 	if (sys_test_bit((mem_addr_t)&config->tsc->ISR, TSC_ISR_MCEF_Pos)) {
 		/* clear max count error flag */
 		sys_set_bit((mem_addr_t)&config->tsc->ICR, TSC_ICR_MCEIC_Pos);
-		LOG_ERR("%s: max count error", dev->name);
+		LOG_ERROR("%s: max count error", dev->name);
 		LOG_HEXDUMP_DBG(config->tsc, sizeof(TSC_TypeDef), "TSC Registers");
 		return -EIO;
 	}
@@ -143,7 +143,8 @@ static int stm32_tsc_handle_incoming_data(const struct device *dev)
 				int ret = get_group_index(dev, group->group, &group_idx);
 
 				if (ret < 0) {
-					LOG_ERR("%s: group %d not found", dev->name, group->group);
+					LOG_ERROR("%s: group %d not found", dev->name,
+						  group->group);
 					return ret;
 				}
 
@@ -184,19 +185,19 @@ static int stm32_tsc_init(const struct device *dev)
 	/* reset TSC values to default */
 	ret = reset_line_toggle_dt(&config->reset);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset %s (%d)", dev->name, ret);
+		LOG_ERROR("Failed to reset %s (%d)", dev->name, ret);
 		return ret;
 	}
 
 	ret = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable clock for %s (%d)", dev->name, ret);
+		LOG_ERROR("Failed to enable clock for %s (%d)", dev->name, ret);
 		return ret;
 	}
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure %s pins (%d)", dev->name, ret);
+		LOG_ERROR("Failed to configure %s pins (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -243,8 +244,8 @@ static int stm32_tsc_init(const struct device *dev)
 		const struct stm32_tsc_group_config *group = &config->group_config[i];
 
 		if (group->channel_ios & group->sampling_io) {
-			LOG_ERR("%s: group %d has the same channel and sampling I/O", dev->name,
-				group->group);
+			LOG_ERROR("%s: group %d has the same channel and sampling I/O", dev->name,
+				  group->group);
 			return -EINVAL;
 		}
 
@@ -253,9 +254,9 @@ static int stm32_tsc_init(const struct device *dev)
 		 */
 		if (group->use_as_shield && group->channel_ios != 1 && group->channel_ios != 2 &&
 		    group->channel_ios != 4 && group->channel_ios != 8) {
-			LOG_ERR("%s: group %d is used as shield, but has invalid channel I/Os. "
-				"Can only have one",
-				dev->name, group->group);
+			LOG_ERROR("%s: group %d is used as shield, but has invalid channel I/Os. "
+				  "Can only have one",
+				  dev->name, group->group);
 			return -EINVAL;
 		}
 
@@ -408,7 +409,7 @@ static int input_tsc_keys_init(const struct device *dev)
 	int ret = get_group_index(config->tsc_dev, config->group, &group_index);
 
 	if (ret) {
-		LOG_ERR("%s: group %d not found", config->tsc_dev->name, config->group);
+		LOG_ERROR("%s: group %d not found", config->tsc_dev->name, config->group);
 		return ret;
 	}
 
@@ -416,8 +417,8 @@ static int input_tsc_keys_init(const struct device *dev)
 						input_tsc_callback_handler, (void *)dev);
 
 	if (ret) {
-		LOG_ERR("%s: failed to register callback for group %d", config->tsc_dev->name,
-			config->group);
+		LOG_ERROR("%s: failed to register callback for group %d", config->tsc_dev->name,
+			  config->group);
 		return ret;
 	}
 

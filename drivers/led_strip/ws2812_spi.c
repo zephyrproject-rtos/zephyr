@@ -200,7 +200,7 @@ static int ws2812_spi_init(const struct device *dev)
 	uint8_t i;
 
 	if (!spi_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("SPI device %s not ready", cfg->bus.bus->name);
+		LOG_ERROR("SPI device %s not ready", cfg->bus.bus->name);
 		return -ENODEV;
 	}
 
@@ -212,9 +212,9 @@ static int ws2812_spi_init(const struct device *dev)
 		case LED_COLOR_ID_BLUE:
 			break;
 		default:
-			LOG_ERR("%s: invalid channel to color mapping."
-				"Check the color-mapping DT property",
-				dev->name);
+			LOG_ERROR("%s: invalid channel to color mapping."
+				  "Check the color-mapping DT property",
+				  dev->name);
 			return -EINVAL;
 		}
 	}

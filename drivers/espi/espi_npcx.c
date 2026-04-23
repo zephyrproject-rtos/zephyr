@@ -266,7 +266,7 @@ static void espi_bus_err_isr(const struct device *dev)
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	uint32_t err = inst->ESPIERR;
 
-	LOG_ERR("eSPI Bus Error %08X", err);
+	LOG_ERROR("eSPI Bus Error %08X", err);
 	/* Clear error status bits */
 	inst->ESPIERR = err;
 }
@@ -687,8 +687,7 @@ static void espi_vw_generic_isr(const struct device *dev, struct npcx_wui *wui)
 	}
 
 	if (idx == ARRAY_SIZE(vw_in_tbl)) {
-		LOG_ERR("Unknown VW event! %d %d %d", wui->table,
-				wui->group, wui->bit);
+		LOG_ERROR("Unknown VW event! %d %d %d", wui->table, wui->group, wui->bit);
 		return;
 	}
 
@@ -842,7 +841,7 @@ static int espi_npcx_send_vwire(const struct device *dev,
 	char *reg_name;
 
 	if (signal >= ESPI_VWIRE_SIGNAL_COUNT) {
-		LOG_ERR("Invalid VW: %d", signal);
+		LOG_ERROR("Invalid VW: %d", signal);
 		return -EINVAL;
 	}
 
@@ -864,7 +863,7 @@ static int espi_npcx_send_vwire(const struct device *dev,
 	}
 
 	if (sig_idx == vw_tbl_size) {
-		LOG_ERR("%s signal %d is invalid", __func__, signal);
+		LOG_ERROR("%s signal %d is invalid", __func__, signal);
 		return -EIO;
 	}
 
@@ -891,7 +890,7 @@ static int espi_npcx_send_vwire(const struct device *dev,
 		if (IS_ENABLED(CONFIG_ESPI_NPCX_VWIRE_ENABLE_SEND_CHECK)) {
 			if (!WAIT_FOR(!IS_BIT_SET(inst->VWGPSM[reg_idx], NPCX_VWEVSM_DIRTY),
 				      CONFIG_ESPI_NPCX_WIRE_SEND_TIMEOUT_US, NULL)) {
-				LOG_ERR("%s signal %d timeout", __func__, signal);
+				LOG_ERROR("%s signal %d timeout", __func__, signal);
 				return -ETIMEDOUT;
 			}
 		}
@@ -902,7 +901,7 @@ static int espi_npcx_send_vwire(const struct device *dev,
 		if (IS_ENABLED(CONFIG_ESPI_NPCX_VWIRE_ENABLE_SEND_CHECK)) {
 			if (!WAIT_FOR(!IS_BIT_SET(inst->VWEVSM[reg_idx], NPCX_VWEVSM_DIRTY),
 				      CONFIG_ESPI_NPCX_WIRE_SEND_TIMEOUT_US, NULL)) {
-				LOG_ERR("%s signal %d timeout", __func__, signal);
+				LOG_ERROR("%s signal %d timeout", __func__, signal);
 				return -ETIMEDOUT;
 			}
 		}
@@ -957,7 +956,7 @@ static int espi_npcx_receive_vwire(const struct device *dev,
 		}
 	}
 
-	LOG_ERR("%s Out of index %d", __func__, signal);
+	LOG_ERROR("%s Out of index %d", __func__, signal);
 	return -EIO;
 }
 
@@ -999,13 +998,13 @@ static int espi_npcx_send_oob(const struct device *dev,
 
 	/* Check out of OOB transmitted buffer size */
 	if (sz_oob_tx > NPCX_ESPI_OOB_MAX_PAYLOAD) {
-		LOG_ERR("Out of OOB transmitted buffer: %d", sz_oob_tx);
+		LOG_ERROR("Out of OOB transmitted buffer: %d", sz_oob_tx);
 		return -EINVAL;
 	}
 
 	/* Check OOB Transmit Queue is empty? */
 	if (IS_BIT_SET(inst->OOBCTL, NPCX_OOBCTL_OOB_AVAIL)) {
-		LOG_ERR("OOB channel is busy");
+		LOG_ERROR("OOB channel is busy");
 		return -EBUSY;
 	}
 
@@ -1068,7 +1067,7 @@ static int espi_npcx_receive_oob(const struct device *dev,
 
 	/* Check eSPI bus status first */
 	if (IS_BIT_SET(inst->ESPISTS, NPCX_ESPISTS_BERR)) {
-		LOG_ERR("%s: eSPI Bus Error: 0x%08X", __func__, inst->ESPIERR);
+		LOG_ERROR("%s: eSPI Bus Error: 0x%08X", __func__, inst->ESPIERR);
 		return -EIO;
 	}
 
@@ -1079,7 +1078,7 @@ static int espi_npcx_receive_oob(const struct device *dev,
 	/* Wait until get oob package or timeout */
 	ret = k_sem_take(&data->oob_rx_lock, K_MSEC(ESPI_OOB_MAX_TIMEOUT));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s: Timeout", __func__);
+		LOG_ERROR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
 #endif
@@ -1099,7 +1098,7 @@ static int espi_npcx_receive_oob(const struct device *dev,
 
 	/* Check OOB received buffer size */
 	if (sz_oob_rx > NPCX_ESPI_OOB_MAX_PAYLOAD) {
-		LOG_ERR("Out of OOB received buffer: %d", sz_oob_rx);
+		LOG_ERROR("Out of OOB received buffer: %d", sz_oob_rx);
 		return -EINVAL;
 	}
 
@@ -1242,13 +1241,13 @@ static int espi_npcx_flash_read(const struct device *dev,
 
 	/* Check out of FLASH received buffer size */
 	if (pckt->len > NPCX_ESPI_FLASH_MAX_RX_PAYLOAD) {
-		LOG_ERR("Out of FLASH transmitted buffer: %d", pckt->len);
+		LOG_ERROR("Out of FLASH transmitted buffer: %d", pckt->len);
 		return -EINVAL;
 	}
 
 	/* Check Flash Transmit Queue is empty? */
 	if (IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL)) {
-		LOG_ERR("flash channel is busy");
+		LOG_ERROR("flash channel is busy");
 		return -EBUSY;
 	}
 
@@ -1265,7 +1264,7 @@ static int espi_npcx_flash_read(const struct device *dev,
 	/* Wait until get flash package or timeout */
 	ret = k_sem_take(&data->flash_rx_lock, K_MSEC(ESPI_FLASH_MAX_TIMEOUT));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s: Timeout", __func__);
+		LOG_ERROR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -1284,13 +1283,13 @@ static int espi_npcx_flash_write(const struct device *dev,
 
 	/* Check out of FLASH transmitted buffer size */
 	if (pckt->len > NPCX_ESPI_FLASH_MAX_TX_PAYLOAD) {
-		LOG_ERR("Out of FLASH transmitted buffer: %d", pckt->len);
+		LOG_ERROR("Out of FLASH transmitted buffer: %d", pckt->len);
 		return -EINVAL;
 	}
 
 	/* Check Flash Transmit Queue is empty? */
 	if (IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL)) {
-		LOG_ERR("flash channel is busy");
+		LOG_ERROR("flash channel is busy");
 		return -EBUSY;
 	}
 
@@ -1325,7 +1324,7 @@ static int espi_npcx_flash_write(const struct device *dev,
 	/* Wait until get flash package or timeout */
 	ret = k_sem_take(&data->flash_rx_lock, K_MSEC(ESPI_FLASH_MAX_TIMEOUT));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s: Timeout", __func__);
+		LOG_ERROR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -1342,7 +1341,7 @@ static int espi_npcx_flash_erase(const struct device *dev,
 
 	/* Check Flash Transmit Queue is empty? */
 	if (IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL)) {
-		LOG_ERR("flash channel is busy");
+		LOG_ERROR("flash channel is busy");
 		return -EBUSY;
 	}
 
@@ -1359,7 +1358,7 @@ static int espi_npcx_flash_erase(const struct device *dev,
 	/* Wait until get flash package or timeout */
 	ret = k_sem_take(&data->flash_rx_lock, K_MSEC(ESPI_FLASH_MAX_TIMEOUT));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s: Timeout", __func__);
+		LOG_ERROR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -1451,13 +1450,13 @@ static int espi_npcx_init(const struct device *dev)
 	int i, ret;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, rst_gpios)
 	if (!gpio_is_ready_dt(&config->reset_pin)) {
-		LOG_ERR("eSPI reset pin not ready");
+		LOG_ERROR("eSPI reset pin not ready");
 		return -ENODEV;
 	}
 #endif
@@ -1466,7 +1465,7 @@ static int espi_npcx_init(const struct device *dev)
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
 							&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on eSPI clock fail %d", ret);
+		LOG_ERROR("Turn on eSPI clock fail %d", ret);
 		return ret;
 	}
 
@@ -1528,7 +1527,7 @@ static int espi_npcx_init(const struct device *dev)
 
 		if (dir == ESPI_CONTROLLER_TO_TARGET) {
 			if (num >= NPCX_VWEVMS_MAX) {
-				LOG_ERR("Error Setting for VW extend MS group (%x)", num);
+				LOG_ERROR("Error Setting for VW extend MS group (%x)", num);
 				return -EINVAL;
 			}
 			SET_FIELD(inst->VWEVMS[num], NPCX_VWEVMS_INDEX, index);
@@ -1536,14 +1535,14 @@ static int espi_npcx_init(const struct device *dev)
 			inst->VWEVMS[num] |= BIT(NPCX_VWEVMS_INDEX_EN);
 		} else if (dir == ESPI_TARGET_TO_CONTROLLER) {
 			if (num >= NPCX_VWEVSM_MAX) {
-				LOG_ERR("Error Setting for VW extend SM group (%x)", num);
+				LOG_ERROR("Error Setting for VW extend SM group (%x)", num);
 				return -EINVAL;
 			}
 			SET_FIELD(inst->VWEVSM[num], NPCX_VWEVSM_INDEX, index);
 			SET_FIELD(inst->VWEVSM[num], NPCX_VWEVSM_VALID, 0x0);
 			inst->VWEVSM[num] |= BIT(NPCX_VWEVSM_INDEX_EN);
 		} else {
-			LOG_ERR("Error Setting for VW extend direction (%x)", dir);
+			LOG_ERROR("Error Setting for VW extend direction (%x)", dir);
 			return -EINVAL;
 		}
 	}
@@ -1552,7 +1551,7 @@ static int espi_npcx_init(const struct device *dev)
 	/* Configure pin-mux for eSPI bus device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("eSPI pinctrl setup failed (%d)", ret);
+		LOG_ERROR("eSPI pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

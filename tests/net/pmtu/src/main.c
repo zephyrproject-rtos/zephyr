@@ -527,13 +527,13 @@ static int create_icmpv6_ptb(struct net_if *iface,
 
 	ret = net_ipv6_create(ptb_pkt, src6, dest6);
 	if (ret < 0) {
-		LOG_ERR("Cannot create IPv6 pkt (%d)", ret);
+		LOG_ERROR("Cannot create IPv6 pkt (%d)", ret);
 		return ret;
 	}
 
 	ret = net_icmpv6_create(ptb_pkt, NET_ICMPV6_PACKET_TOO_BIG, 0);
 	if (ret < 0) {
-		LOG_ERR("Cannot create ICMPv6 pkt (%d)", ret);
+		LOG_ERROR("Cannot create ICMPv6 pkt (%d)", ret);
 		return ret;
 	}
 
@@ -541,7 +541,7 @@ static int create_icmpv6_ptb(struct net_if *iface,
 
 	ret = net_pkt_write(ptb_pkt, &ptb_hdr, sizeof(ptb_hdr));
 	if (ret < 0) {
-		LOG_ERR("Cannot write payload (%d)", ret);
+		LOG_ERROR("Cannot write payload (%d)", ret);
 		return ret;
 	}
 
@@ -653,13 +653,13 @@ static int create_icmpv4_dest_unreach(struct net_if *iface,
 
 	ret = net_ipv4_create(du_pkt, src4, dest4);
 	if (ret < 0) {
-		LOG_ERR("Cannot create IPv4 pkt (%d)", ret);
+		LOG_ERROR("Cannot create IPv4 pkt (%d)", ret);
 		return ret;
 	}
 
 	ret = net_icmpv4_create(du_pkt, NET_ICMPV4_DST_UNREACH, 0);
 	if (ret < 0) {
-		LOG_ERR("Cannot create ICMPv4 pkt (%d)", ret);
+		LOG_ERROR("Cannot create ICMPv4 pkt (%d)", ret);
 		return ret;
 	}
 
@@ -667,7 +667,7 @@ static int create_icmpv4_dest_unreach(struct net_if *iface,
 
 	ret = net_pkt_write(du_pkt, &du_hdr, sizeof(du_hdr));
 	if (ret < 0) {
-		LOG_ERR("Cannot write payload (%d)", ret);
+		LOG_ERROR("Cannot write payload (%d)", ret);
 		return ret;
 	}
 

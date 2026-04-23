@@ -48,7 +48,7 @@ static void ili2132a_process(const struct device *dev)
 
 	ret = i2c_read_dt(&dev_cfg->i2c, buf, sizeof(buf));
 	if (ret < 0) {
-		LOG_ERR("Failed to read data: %d", ret);
+		LOG_ERROR("Failed to read data: %d", ret);
 		return;
 	}
 
@@ -95,13 +95,13 @@ static int ili2132a_init(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&dev_cfg->irq, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt gpio");
+		LOG_ERROR("Could not configure interrupt gpio");
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&dev_cfg->rst, GPIO_OUTPUT_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Could not configure reset gpio");
+		LOG_ERROR("Could not configure reset gpio");
 		return ret;
 	}
 
@@ -113,13 +113,13 @@ static int ili2132a_init(const struct device *dev)
 	gpio_init_callback(&data->gpio_cb, gpio_isr, BIT(dev_cfg->irq.pin));
 	ret = gpio_add_callback(dev_cfg->irq.port, &data->gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Could not set gpio callback");
+		LOG_ERROR("Could not set gpio callback");
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&dev_cfg->irq, GPIO_INT_EDGE_FALLING);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt");
+		LOG_ERROR("Could not configure interrupt");
 		return ret;
 	}
 

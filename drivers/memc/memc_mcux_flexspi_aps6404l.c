@@ -172,7 +172,7 @@ static int memc_flexspi_aps6404l_init(const struct device *dev)
 	uint8_t vendor_id;
 
 	if (!device_is_ready(data->controller)) {
-		LOG_ERR("Controller device not ready");
+		LOG_ERROR("Controller device not ready");
 		return -ENODEV;
 	}
 
@@ -180,24 +180,24 @@ static int memc_flexspi_aps6404l_init(const struct device *dev)
 	    (const uint32_t *) memc_flexspi_aps6404l_lut,
 	    sizeof(memc_flexspi_aps6404l_lut) / MEMC_FLEXSPI_CMD_SIZE,
 	    config->port)) {
-		LOG_ERR("Could not set device configuration");
+		LOG_ERROR("Could not set device configuration");
 		return -EINVAL;
 	}
 
 	memc_flexspi_reset(data->controller);
 
 	if (memc_flexspi_aps6404l_reset_enable(dev)) {
-		LOG_ERR("Could not enable reset pSRAM");
+		LOG_ERROR("Could not enable reset pSRAM");
 		return -EIO;
 	}
 
 	if (memc_flexspi_aps6404l_reset(dev)) {
-		LOG_ERR("Could not reset pSRAM");
+		LOG_ERROR("Could not reset pSRAM");
 		return -EIO;
 	}
 
 	if (memc_flexspi_aps6404l_get_vendor_id(dev, &vendor_id)) {
-		LOG_ERR("Could not read vendor id");
+		LOG_ERROR("Could not read vendor id");
 		return -EIO;
 	}
 	LOG_DBG("Vendor id: 0x%0x", vendor_id);

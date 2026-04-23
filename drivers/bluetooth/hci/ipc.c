@@ -87,7 +87,7 @@ static struct net_buf *bt_ipc_evt_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data (%u) for event header (%zu)", remaining, sizeof(hdr));
+		LOG_ERROR("Not enough data (%u) for event header (%zu)", remaining, sizeof(hdr));
 		return NULL;
 	}
 
@@ -98,7 +98,7 @@ static struct net_buf *bt_ipc_evt_recv(const uint8_t *data, size_t remaining)
 	remaining -= sizeof(hdr);
 
 	if (remaining != hdr.len) {
-		LOG_ERR("Event payload length is not correct (%u != %u)", remaining, hdr.len);
+		LOG_ERROR("Event payload length is not correct (%u != %u)", remaining, hdr.len);
 		return NULL;
 	}
 	LOG_DBG("len %u", hdr.len);
@@ -118,7 +118,7 @@ static struct net_buf *bt_ipc_evt_recv(const uint8_t *data, size_t remaining)
 
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < remaining) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
+		LOG_ERROR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -135,7 +135,7 @@ static struct net_buf *bt_ipc_acl_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data (%u) for ACL header (%zu)", remaining, sizeof(hdr));
+		LOG_ERROR("Not enough data (%u) for ACL header (%zu)", remaining, sizeof(hdr));
 		return NULL;
 	}
 
@@ -147,20 +147,20 @@ static struct net_buf *bt_ipc_acl_recv(const uint8_t *data, size_t remaining)
 
 		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
-		LOG_ERR("No available ACL buffers!");
+		LOG_ERROR("No available ACL buffers!");
 		return NULL;
 	}
 
 	if (remaining != sys_le16_to_cpu(hdr.len)) {
-		LOG_ERR("ACL payload length is not correct (%u != %u)", remaining,
-			sys_le16_to_cpu(hdr.len));
+		LOG_ERROR("ACL payload length is not correct (%u != %u)", remaining,
+			  sys_le16_to_cpu(hdr.len));
 		net_buf_unref(buf);
 		return NULL;
 	}
 
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < remaining) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
+		LOG_ERROR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -179,7 +179,7 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data (%u) for ISO header (%zu)", remaining, sizeof(hdr));
+		LOG_ERROR("Not enough data (%u) for ISO header (%zu)", remaining, sizeof(hdr));
 		return NULL;
 	}
 
@@ -194,7 +194,7 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 		fail_cnt = 0U;
 	} else {
 		if ((fail_cnt % 100U) == 0U) {
-			LOG_ERR("No available ISO buffers (%zu)!", fail_cnt);
+			LOG_ERROR("No available ISO buffers (%zu)!", fail_cnt);
 		}
 
 		fail_cnt++;
@@ -203,15 +203,15 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 	}
 
 	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
-		LOG_ERR("ISO payload length is not correct (%u != %lu)", remaining,
-			bt_iso_hdr_len(sys_le16_to_cpu(hdr.len)));
+		LOG_ERROR("ISO payload length is not correct (%u != %lu)", remaining,
+			  bt_iso_hdr_len(sys_le16_to_cpu(hdr.len)));
 		net_buf_unref(buf);
 		return NULL;
 	}
 
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < remaining) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
+		LOG_ERROR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -248,7 +248,7 @@ static void bt_ipc_rx(const struct device *dev, const uint8_t *data, size_t len)
 		break;
 
 	default:
-		LOG_ERR("Unknown HCI type %u", pkt_indicator);
+		LOG_ERROR("Unknown HCI type %u", pkt_indicator);
 		return;
 	}
 
@@ -281,7 +281,7 @@ static int bt_ipc_send(const struct device *dev, struct net_buf *buf)
 	}
 
 	if (err < 0) {
-		LOG_ERR("Failed to send (err %d)", err);
+		LOG_ERROR("Failed to send (err %d)", err);
 		return err;
 	}
 
@@ -324,7 +324,7 @@ static int bt_ipc_open(const struct device *dev, bt_hci_recv_t recv)
 
 	err = bt_hci_transport_setup(NULL);
 	if (err) {
-		LOG_ERR("HCI transport setup failed with: %d\n", err);
+		LOG_ERROR("HCI transport setup failed with: %d\n", err);
 		return err;
 	}
 
@@ -332,19 +332,19 @@ static int bt_ipc_open(const struct device *dev, bt_hci_recv_t recv)
 
 	err = ipc_service_open_instance(ipc->ipc);
 	if (err && (err != -EALREADY)) {
-		LOG_ERR("IPC service instance initialization failed: %d\n", err);
+		LOG_ERROR("IPC service instance initialization failed: %d\n", err);
 		return err;
 	}
 
 	err = ipc_service_register_endpoint(ipc->ipc, &ipc->hci_ept, &ipc->hci_ept_cfg);
 	if (err) {
-		LOG_ERR("Registering endpoint failed with %d", err);
+		LOG_ERROR("Registering endpoint failed with %d", err);
 		return err;
 	}
 
 	err = k_sem_take(&ipc->bound_sem, IPC_BOUND_TIMEOUT_IN_MS);
 	if (err) {
-		LOG_ERR("Endpoint binding failed with %d", err);
+		LOG_ERROR("Endpoint binding failed with %d", err);
 		return err;
 	}
 
@@ -360,19 +360,19 @@ static int bt_ipc_close(const struct device *dev)
 
 	err = ipc_service_deregister_endpoint(&ipc->hci_ept);
 	if (err) {
-		LOG_ERR("Deregistering HCI endpoint failed with: %d", err);
+		LOG_ERROR("Deregistering HCI endpoint failed with: %d", err);
 		return err;
 	}
 
 	err = ipc_service_close_instance(ipc->ipc);
 	if (err) {
-		LOG_ERR("Closing IPC service failed with: %d", err);
+		LOG_ERROR("Closing IPC service failed with: %d", err);
 		return err;
 	}
 
 	err = bt_hci_transport_teardown(NULL);
 	if (err) {
-		LOG_ERR("HCI transport teardown failed with: %d", err);
+		LOG_ERROR("HCI transport teardown failed with: %d", err);
 		return err;
 	}
 

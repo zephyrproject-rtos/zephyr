@@ -121,7 +121,7 @@ static void button_callback(const struct device *gpiob, struct gpio_callback *cb
 			err = bt_gatt_notify(NULL, &stsensor_svc.attrs[4],
 					     &but_val, sizeof(but_val));
 			if (err) {
-				LOG_ERR("Notify error: %d", err);
+				LOG_ERROR("Notify error: %d", err);
 			} else {
 				LOG_INF("Send notify ok");
 				but_val = (but_val == 0) ? 0x100 : 0;
@@ -137,14 +137,14 @@ static void button_callback(const struct device *gpiob, struct gpio_callback *cb
 static void bt_ready(int err)
 {
 	if (err) {
-		LOG_ERR("Bluetooth init failed (err %d)", err);
+		LOG_ERROR("Bluetooth init failed (err %d)", err);
 		return;
 	}
 	LOG_INF("Bluetooth initialized");
 	/* Start advertising */
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
-		LOG_ERR("Advertising failed to start (err %d)", err);
+		LOG_ERROR("Advertising failed to start (err %d)", err);
 		return;
 	}
 
@@ -154,7 +154,7 @@ static void bt_ready(int err)
 static void connected(struct bt_conn *connected, uint8_t err)
 {
 	if (err) {
-		LOG_ERR("Connection failed (err %u)", err);
+		LOG_ERROR("Connection failed (err %u)", err);
 	} else {
 		LOG_INF("Connected");
 		if (!ble_conn) {
@@ -195,7 +195,7 @@ int main(void)
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
 	if (err) {
-		LOG_ERR("Bluetooth init failed (err %d)", err);
+		LOG_ERROR("Bluetooth init failed (err %d)", err);
 	}
 	return 0;
 }

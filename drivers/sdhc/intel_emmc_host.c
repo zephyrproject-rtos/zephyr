@@ -109,7 +109,7 @@ static int emmc_set_voltage(const struct device *dev, enum sd_voltage signal_vol
 			regs->power_ctrl = EMMC_HOST_VOL_3_3_V_SELECT;
 			LOG_DBG("3.3V Selected for MMC Card");
 		} else {
-			LOG_ERR("3.3V not supported by MMC Host");
+			LOG_ERROR("3.3V not supported by MMC Host");
 			ret = -ENOTSUP;
 		}
 		break;
@@ -123,7 +123,7 @@ static int emmc_set_voltage(const struct device *dev, enum sd_voltage signal_vol
 			regs->power_ctrl = EMMC_HOST_VOL_3_0_V_SELECT;
 			LOG_DBG("3.0V Selected for MMC Card");
 		} else {
-			LOG_ERR("3.0V not supported by MMC Host");
+			LOG_ERROR("3.0V not supported by MMC Host");
 			ret = -ENOTSUP;
 		}
 		break;
@@ -137,7 +137,7 @@ static int emmc_set_voltage(const struct device *dev, enum sd_voltage signal_vol
 			regs->power_ctrl = EMMC_HOST_VOL_1_8_V_SELECT;
 			LOG_DBG("1.8V Selected for MMC Card");
 		} else {
-			LOG_ERR("1.8V not supported by MMC Host");
+			LOG_ERROR("1.8V not supported by MMC Host");
 			ret = -ENOTSUP;
 		}
 		break;
@@ -176,11 +176,11 @@ static bool emmc_disable_clock(const struct device *dev)
 	volatile struct emmc_reg *regs = (struct emmc_reg *)DEVICE_MMIO_GET(dev);
 
 	if (regs->present_state & EMMC_HOST_PSTATE_CMD_INHIBIT) {
-		LOG_ERR("present_state:%x", regs->present_state);
+		LOG_ERROR("present_state:%x", regs->present_state);
 		return false;
 	}
 	if (regs->present_state & EMMC_HOST_PSTATE_DAT_INHIBIT) {
-		LOG_ERR("present_state:%x", regs->present_state);
+		LOG_ERROR("present_state:%x", regs->present_state);
 		return false;
 	}
 
@@ -312,7 +312,7 @@ static int set_timing(const struct device *dev, enum sdhc_timing_mode timing)
 
 	if (!ret) {
 		if (!emmc_disable_clock(dev)) {
-			LOG_ERR("Disable clk failed");
+			LOG_ERROR("Disable clk failed");
 			return -EIO;
 		}
 		regs->host_ctrl2 |= EMMC_HOST_CTRL2_1P8V_SIG_EN << EMMC_HOST_CTRL2_1P8V_SIG_LOC;
@@ -344,10 +344,10 @@ static int wait_for_cmd_complete(struct emmc_data *emmc, uint32_t time_out)
 	if (events & EMMC_HOST_CMD_COMPLETE) {
 		ret = 0;
 	} else if (events & ERR_INTR_STATUS_EVENT(EMMC_HOST_ERR_STATUS)) {
-		LOG_ERR("wait for cmd complete error: %x", events);
+		LOG_ERROR("wait for cmd complete error: %x", events);
 		ret = -EIO;
 	} else {
-		LOG_ERR("wait for cmd complete timeout");
+		LOG_ERROR("wait for cmd complete timeout");
 		ret = -EAGAIN;
 	}
 
@@ -372,14 +372,14 @@ static int poll_cmd_complete(const struct device *dev, uint32_t time_out)
 	}
 
 	if (regs->err_int_stat) {
-		LOG_ERR("err_int_stat:%x", regs->err_int_stat);
+		LOG_ERROR("err_int_stat:%x", regs->err_int_stat);
 		regs->err_int_stat &= regs->err_int_stat;
 		ret = -EIO;
 	}
 
 	if (IS_ENABLED(CONFIG_INTEL_EMMC_HOST_ADMA)) {
 		if (regs->adma_err_stat) {
-			LOG_ERR("adma error: %x", regs->adma_err_stat);
+			LOG_ERROR("adma error: %x", regs->adma_err_stat);
 			ret = -EIO;
 		}
 	}
@@ -560,10 +560,10 @@ static int wait_xfr_intr_complete(const struct device *dev, uint32_t time_out)
 	if (events & EMMC_HOST_XFER_COMPLETE) {
 		ret = 0;
 	} else if (events & ERR_INTR_STATUS_EVENT(0xFFFF)) {
-		LOG_ERR("wait for xfer complete error: %x", events);
+		LOG_ERROR("wait for xfer complete error: %x", events);
 		ret = -EIO;
 	} else {
-		LOG_ERR("wait for xfer complete timeout");
+		LOG_ERROR("wait for xfer complete timeout");
 		ret = -EAGAIN;
 	}
 
@@ -676,17 +676,17 @@ static int emmc_host_send_cmd(const struct device *dev, const struct emmc_cmd_co
 
 	/* Check if CMD line is available */
 	if (regs->present_state & EMMC_HOST_PSTATE_CMD_INHIBIT) {
-		LOG_ERR("CMD line is not available");
+		LOG_ERROR("CMD line is not available");
 		return -EBUSY;
 	}
 
 	if (config->data_present && (regs->present_state & EMMC_HOST_PSTATE_DAT_INHIBIT)) {
-		LOG_ERR("Data line is not available");
+		LOG_ERROR("Data line is not available");
 		return -EBUSY;
 	}
 
 	if (resp_type == EMMC_HOST_INVAL_HOST_RESP_LEN) {
-		LOG_ERR("Invalid eMMC resp type:%d", resp_type);
+		LOG_ERROR("Invalid eMMC resp type:%d", resp_type);
 		return -EINVAL;
 	}
 
@@ -709,7 +709,7 @@ static int emmc_host_send_cmd(const struct device *dev, const struct emmc_cmd_co
 		ret = poll_cmd_complete(dev, sdhc_cmd->timeout_ms);
 	}
 	if (ret) {
-		LOG_ERR("Error on send cmd: %d, status:%d", config->cmd_idx, ret);
+		LOG_ERROR("Error on send cmd: %d, status:%d", config->cmd_idx, ret);
 		return ret;
 	}
 
@@ -745,7 +745,7 @@ static int emmc_reset(const struct device *dev)
 	LOG_DBG("");
 
 	if (!(regs->present_state & EMMC_HOST_PSTATE_CARD_INSERTED)) {
-		LOG_ERR("No EMMC card found");
+		LOG_ERROR("No EMMC card found");
 		return -ENODEV;
 	}
 
@@ -788,8 +788,8 @@ static int read_data_port(const struct device *dev, struct sdhc_data *sdhc)
 					      wait_time);
 			k_event_clear(&emmc->irq_event, EMMC_HOST_BUF_RD_READY);
 			if (!(events & EMMC_HOST_BUF_RD_READY)) {
-				LOG_ERR("time out on EMMC_HOST_BUF_RD_READY:%d",
-					(sdhc->blocks - block_cnt));
+				LOG_ERROR("time out on EMMC_HOST_BUF_RD_READY:%d",
+					  (sdhc->blocks - block_cnt));
 				return -EIO;
 			}
 		} else {
@@ -855,7 +855,7 @@ static int write_data_port(const struct device *dev, struct sdhc_data *sdhc)
 			k_event_clear(&emmc->irq_event, EMMC_HOST_BUF_WR_READY);
 
 			if (!(events & EMMC_HOST_BUF_WR_READY)) {
-				LOG_ERR("time out on EMMC_HOST_BUF_WR_READY");
+				LOG_ERROR("time out on EMMC_HOST_BUF_WR_READY");
 				return -EIO;
 			}
 		} else {
@@ -898,7 +898,7 @@ static int emmc_send_cmd_data(const struct device *dev, uint32_t cmd_idx,
 
 	ret = emmc_init_xfr(dev, data, read);
 	if (ret) {
-		LOG_ERR("Error on init xfr");
+		LOG_ERROR("Error on init xfr");
 		return ret;
 	}
 
@@ -929,7 +929,7 @@ static int emmc_xfr(const struct device *dev, struct sdhc_command *cmd, struct s
 
 	ret = emmc_init_xfr(dev, data, read);
 	if (ret) {
-		LOG_ERR("error emmc init xfr");
+		LOG_ERROR("error emmc init xfr");
 		return ret;
 	}
 	emmc_cmd.sdhc_cmd = cmd;
@@ -1016,8 +1016,8 @@ static int emmc_set_io(const struct device *dev, struct sdhc_io *ios)
 		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V");
 
 	if (ios->clock && (ios->clock > emmc->props.f_max || ios->clock < emmc->props.f_min)) {
-		LOG_ERR("Invalid argument for clock freq: %d Support max:%d and Min:%d", ios->clock,
-			emmc->props.f_max, emmc->props.f_min);
+		LOG_ERROR("Invalid argument for clock freq: %d Support max:%d and Min:%d",
+			  ios->clock, emmc->props.f_max, emmc->props.f_min);
 		return -EINVAL;
 	}
 
@@ -1057,7 +1057,7 @@ static int emmc_set_io(const struct device *dev, struct sdhc_io *ios)
 		LOG_DBG("signal_voltage: %d", ios->signal_voltage);
 		ret = emmc_set_voltage(dev, ios->signal_voltage);
 		if (ret) {
-			LOG_ERR("Set signal voltage failed:%d", ret);
+			LOG_ERROR("Set signal voltage failed:%d", ret);
 			return ret;
 		}
 		host_io->signal_voltage = ios->signal_voltage;
@@ -1069,7 +1069,7 @@ static int emmc_set_io(const struct device *dev, struct sdhc_io *ios)
 
 		ret = emmc_set_power(dev, ios->power_mode);
 		if (ret) {
-			LOG_ERR("Set Bus power failed:%d", ret);
+			LOG_ERROR("Set Bus power failed:%d", ret);
 			return ret;
 		}
 		host_io->power_mode = ios->power_mode;
@@ -1081,7 +1081,7 @@ static int emmc_set_io(const struct device *dev, struct sdhc_io *ios)
 
 		ret = set_timing(dev, ios->timing);
 		if (ret) {
-			LOG_ERR("Set timing failed:%d", ret);
+			LOG_ERROR("Set timing failed:%d", ret);
 			return ret;
 		}
 		host_io->timing = ios->timing;
@@ -1100,7 +1100,7 @@ static int emmc_get_card_present(const struct device *dev)
 	emmc->card_present = (bool)((regs->present_state >> 16u) & 1u);
 
 	if (!emmc->card_present) {
-		LOG_ERR("No MMC device detected");
+		LOG_ERROR("No MMC device detected");
 	}
 
 	return ((int)emmc->card_present);
@@ -1121,7 +1121,7 @@ static int emmc_execute_tuning(const struct device *dev)
 		if (regs->host_ctrl2 & EMMC_HOST_TUNING_SUCCESS) {
 			LOG_DBG("Tuning Completed success");
 		} else {
-			LOG_ERR("Tuning failed");
+			LOG_ERROR("Tuning failed");
 			return -EIO;
 		}
 	}
@@ -1208,7 +1208,7 @@ static void emmc_isr(const struct device *dev)
 	}
 
 	if (regs->err_int_stat) {
-		LOG_ERR("err int:%x", regs->err_int_stat);
+		LOG_ERROR("err int:%x", regs->err_int_stat);
 		k_event_post(&emmc->irq_event, ERR_INTR_STATUS_EVENT(regs->err_int_stat));
 		if (regs->err_int_stat & EMMC_HOST_DMA_TXFR_ERR) {
 			regs->err_int_stat |= EMMC_HOST_DMA_TXFR_ERR;
@@ -1223,7 +1223,7 @@ static void emmc_isr(const struct device *dev)
 	}
 
 	if (regs->adma_err_stat) {
-		LOG_ERR("adma err:%x", regs->adma_err_stat);
+		LOG_ERROR("adma err:%x", regs->adma_err_stat);
 	}
 }
 
@@ -1240,12 +1240,12 @@ static int emmc_init(const struct device *dev)
 		struct pcie_bar mbar;
 
 		if (config->pcie->bdf == PCIE_BDF_NONE) {
-			LOG_ERR("Cannot probe eMMC PCI device: %x", config->pcie->id);
+			LOG_ERROR("Cannot probe eMMC PCI device: %x", config->pcie->id);
 			return -ENODEV;
 		}
 
 		if (!pcie_probe_mbar(config->pcie->bdf, 0, &mbar)) {
-			LOG_ERR("eMMC MBAR not found");
+			LOG_ERROR("eMMC MBAR not found");
 			return -EINVAL;
 		}
 

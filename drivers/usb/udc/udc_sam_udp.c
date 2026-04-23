@@ -423,7 +423,7 @@ static int udc_sam_udp_enable_usb_clock(const struct device *dev)
 #else
 	/* SAM4E: PLLA is already configured for system clock, just verify */
 	if (!soc_pmc_is_locked_pllack()) {
-		LOG_ERR("PLLA not locked - required for USB clock");
+		LOG_ERROR("PLLA not locked - required for USB clock");
 		return -EIO;
 	}
 #endif
@@ -435,7 +435,7 @@ static int udc_sam_udp_enable_usb_clock(const struct device *dev)
 	ret = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t)config->clock_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable peripheral clock: %d", ret);
+		LOG_ERROR("Failed to enable peripheral clock: %d", ret);
 		return ret;
 	}
 
@@ -446,7 +446,7 @@ static int udc_sam_udp_enable_usb_clock(const struct device *dev)
 	PMC->PMC_SCER = PMC_SCER_UDP;
 
 	if (!(PMC->PMC_SCSR & PMC_SCSR_UDP)) {
-		LOG_ERR("Failed to enable UDPCK");
+		LOG_ERROR("Failed to enable UDPCK");
 		return -EIO;
 	}
 
@@ -862,7 +862,7 @@ static int udc_sam_udp_enable(const struct device *dev)
 	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
 				     USB_EP_TYPE_CONTROL, EP0_MPS, 0);
 	if (ret) {
-		LOG_ERR("Failed to enable control OUT endpoint");
+		LOG_ERROR("Failed to enable control OUT endpoint");
 
 		return ret;
 	}
@@ -870,7 +870,7 @@ static int udc_sam_udp_enable(const struct device *dev)
 	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
 				     USB_EP_TYPE_CONTROL, EP0_MPS, 0);
 	if (ret) {
-		LOG_ERR("Failed to enable control IN endpoint");
+		LOG_ERROR("Failed to enable control IN endpoint");
 
 		return ret;
 	}
@@ -934,7 +934,7 @@ static int udc_sam_udp_init(const struct device *dev)
 	/* Enable USB clock early - needed before any UDP register access */
 	ret = udc_sam_udp_enable_usb_clock(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable USB clock: %d", ret);
+		LOG_ERROR("Failed to enable USB clock: %d", ret);
 
 		return ret;
 	}
@@ -943,7 +943,7 @@ static int udc_sam_udp_init(const struct device *dev)
 	if (config->pcfg != NULL) {
 		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret != 0) {
-			LOG_ERR("Failed to configure pins: %d", ret);
+			LOG_ERROR("Failed to configure pins: %d", ret);
 
 			return ret;
 		}
@@ -976,10 +976,10 @@ static int udc_sam_udp_shutdown(const struct device *dev)
 
 	/* Disable control endpoints */
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control OUT endpoint");
+		LOG_ERROR("Failed to disable control OUT endpoint");
 	}
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control IN endpoint");
+		LOG_ERROR("Failed to disable control IN endpoint");
 	}
 
 	udc_sam_udp_disable(dev);
@@ -1627,7 +1627,7 @@ static int udc_sam_udp_driver_preinit(const struct device *dev)
 	config->ep_cfg_out[0].addr = USB_CONTROL_EP_OUT;
 	err = udc_register_ep(dev, &config->ep_cfg_out[0]);
 	if (err) {
-		LOG_ERR("Failed to register EP0 OUT");
+		LOG_ERROR("Failed to register EP0 OUT");
 
 		return err;
 	}
@@ -1638,7 +1638,7 @@ static int udc_sam_udp_driver_preinit(const struct device *dev)
 	config->ep_cfg_in[0].addr = USB_CONTROL_EP_IN;
 	err = udc_register_ep(dev, &config->ep_cfg_in[0]);
 	if (err) {
-		LOG_ERR("Failed to register EP0 IN");
+		LOG_ERROR("Failed to register EP0 IN");
 
 		return err;
 	}
@@ -1657,8 +1657,7 @@ static int udc_sam_udp_driver_preinit(const struct device *dev)
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | hw_ep;
 		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
 		if (err) {
-			LOG_ERR("Failed to register IN ep 0x%02x",
-				config->ep_cfg_in[i].addr);
+			LOG_ERROR("Failed to register IN ep 0x%02x", config->ep_cfg_in[i].addr);
 
 			return err;
 		}
@@ -1678,8 +1677,7 @@ static int udc_sam_udp_driver_preinit(const struct device *dev)
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | hw_ep;
 		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
 		if (err) {
-			LOG_ERR("Failed to register OUT ep 0x%02x",
-				config->ep_cfg_out[i].addr);
+			LOG_ERROR("Failed to register OUT ep 0x%02x", config->ep_cfg_out[i].addr);
 
 			return err;
 		}

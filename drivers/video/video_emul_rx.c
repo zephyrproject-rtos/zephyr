@@ -137,7 +137,7 @@ static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
 	struct video_format *fmt = &data->fmt;
 
 	if (vbuf->size < fmt->pitch * fmt->height) {
-		LOG_ERR("Buffer too small for a full frame");
+		LOG_ERROR("Buffer too small for a full frame");
 		return -ENOMEM;
 	}
 
@@ -213,7 +213,7 @@ int emul_rx_init(const struct device *dev)
 	data->dev = dev;
 
 	if (!device_is_ready(cfg->source_dev)) {
-		LOG_ERR("Source device %s is not ready", cfg->source_dev->name);
+		LOG_ERROR("Source device %s is not ready", cfg->source_dev->name);
 		return -ENODEV;
 	}
 

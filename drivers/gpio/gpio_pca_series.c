@@ -225,7 +225,7 @@ static inline uint8_t gpio_pca_series_reg_get_addr(const struct device *dev,
 
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 	if (reg_type >= PCA_REG_TYPE_COUNT) {
-		LOG_ERR("reg_type %d out of range", reg_type);
+		LOG_ERROR("reg_type %d out of range", reg_type);
 		return 0;
 	}
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
@@ -246,7 +246,7 @@ static inline uint32_t gpio_pca_series_reg_size_per_port(const struct device *de
 {
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 	if (reg_type >= PCA_REG_TYPE_COUNT) {
-		LOG_ERR("reg_type %d out of range", reg_type);
+		LOG_ERROR("reg_type %d out of range", reg_type);
 		return 0;
 	}
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
@@ -278,7 +278,7 @@ static inline uint32_t gpio_pca_series_reg_size_per_port(const struct device *de
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
 		return 2;
 	default:
-		LOG_ERR("unsupported reg type %d", reg_type);
+		LOG_ERROR("unsupported reg type %d", reg_type);
 		return 0; /** should never happen */
 	}
 }
@@ -338,14 +338,14 @@ static inline int gpio_pca_series_reg_read(const struct device *dev,
 	}
 
 	if (addr == PCA_REG_INVALID) {
-		LOG_ERR("trying to read unsupported reg, reg type %d", reg_type);
+		LOG_ERROR("trying to read unsupported reg, reg type %d", reg_type);
 		return -EFAULT;
 	}
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
 
 	ret = i2c_write_read_dt(&cfg->i2c, (uint8_t *)&addr, 1, (uint8_t *)buf, size);
 	if (ret) {
-		LOG_ERR("i2c read error [%d]", ret);
+		LOG_ERROR("i2c read error [%d]", ret);
 	}
 	return ret;
 }
@@ -378,7 +378,7 @@ static inline int gpio_pca_series_reg_write(const struct device *dev,
 	}
 
 	if (addr == PCA_REG_INVALID) {
-		LOG_ERR("trying to write unsupported reg type %d", reg_type);
+		LOG_ERROR("trying to write unsupported reg type %d", reg_type);
 		return -EFAULT;
 	}
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
@@ -393,7 +393,7 @@ static inline int gpio_pca_series_reg_write(const struct device *dev,
 	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 	ret = i2c_transfer_dt(&cfg->i2c, msg, 2);
 	if (ret) {
-		LOG_ERR("i2c write error [%d]", ret);
+		LOG_ERROR("i2c write error [%d]", ret);
 		return ret;
 	}
 
@@ -480,7 +480,7 @@ static inline int gpio_pca_series_reg_cache_reset(const struct device *dev)
 				ret = gpio_pca_series_reg_read(dev, PCA_REG_TYPE_1B_INPUT_PORT,
 					((uint8_t *)data->cache) + cache_offset);
 				if (ret) {
-					LOG_ERR("cache initial input read failed %d", ret);
+					LOG_ERROR("cache initial input read failed %d", ret);
 				}
 				break;
 			case PCA_REG_TYPE_1B_INTERRUPT_RISE:
@@ -488,11 +488,11 @@ static inline int gpio_pca_series_reg_cache_reset(const struct device *dev)
 				ret = gpio_pca_series_reg_cache_update(dev, reg_type,
 					reset_value_0);
 				if (ret) {
-					LOG_ERR("init initial interrupt config failed %d", ret);
+					LOG_ERROR("init initial interrupt config failed %d", ret);
 				}
 				break;
 			default:
-				LOG_ERR("trying to cache reg that is not present");
+				LOG_ERROR("trying to cache reg that is not present");
 				break;
 			}
 			if (ret) {
@@ -505,7 +505,7 @@ static inline int gpio_pca_series_reg_cache_reset(const struct device *dev)
 		ret = gpio_pca_series_reg_read(dev, reg_type,
 			((uint8_t *)data->cache) + cache_offset);
 		if (ret) {
-			LOG_ERR("reg type %d cache init fail %d", reg_type, ret);
+			LOG_ERROR("reg type %d cache init fail %d", reg_type, ret);
 			break;
 		}
 	}
@@ -538,7 +538,7 @@ static inline int gpio_pca_series_reg_cache_read(const struct device *dev,
 	}
 
 	if (offset == PCA_REG_INVALID) {
-		LOG_ERR("can not get noncacheable reg %d");
+		LOG_ERROR("can not get noncacheable reg %d");
 		return -EFAULT;
 	}
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
@@ -577,7 +577,7 @@ static inline int gpio_pca_series_reg_cache_update(const struct device *dev,
 	}
 
 	if (offset == PCA_REG_INVALID) {
-		LOG_ERR("can not update non-cacheable reg type %d", reg_type);
+		LOG_ERROR("can not update non-cacheable reg type %d", reg_type);
 		return -EACCES;
 	}
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
@@ -627,7 +627,7 @@ static inline int gpio_pca_series_reg_cache_mini_reset(const struct device *dev)
 	ret = gpio_pca_series_reg_read(dev, PCA_REG_TYPE_1B_OUTPUT_PORT,
 		(uint8_t *)&cache->output);
 	if (ret) {
-		LOG_ERR("minimum cache failed to read initial output: %d", ret);
+		LOG_ERROR("minimum cache failed to read initial output: %d", ret);
 		goto out;
 	}
 
@@ -644,7 +644,7 @@ static inline int gpio_pca_series_reg_cache_mini_reset(const struct device *dev)
 
 	ret = gpio_pca_series_reg_read(dev, input_reg, (uint8_t *)&cache->input_old);
 	if (ret) {
-		LOG_ERR("minimum cache failed to read initial input: %d", ret);
+		LOG_ERROR("minimum cache failed to read initial input: %d", ret);
 	}
 
 	cache->input_old = sys_le32_to_cpu(cache->input_old);
@@ -781,7 +781,7 @@ static inline int gpio_pca_series_reset(const struct device *dev)
 
 	ret = gpio_pca_series_reset_write_reg(dev);
 	if (ret) {
-		LOG_ERR("soft reset failed (%d)", ret);
+		LOG_ERROR("soft reset failed (%d)", ret);
 		return ret;
 	}
 
@@ -842,8 +842,8 @@ void gpio_pca_series_debug_dump(const struct device *dev)
 			*reg_val_p = 0;
 			ret = gpio_pca_series_reg_read(dev, reg_type, reg_val);
 			if (ret) {
-				LOG_ERR("read reg error from reg type %d, invalidate this reg",
-					reg_type);
+				LOG_ERROR("read reg error from reg type %d, invalidate this reg",
+					  reg_type);
 				reg = PCA_REG_INVALID;
 			}
 		}
@@ -852,9 +852,9 @@ void gpio_pca_series_debug_dump(const struct device *dev)
 			*cache_val_p = 0;
 			ret = gpio_pca_series_reg_cache_read(dev, reg_type, cache_val);
 			if (ret) {
-				LOG_ERR("read reg cache error from reg type %d, invalidate this "
-					"reg cache",
-					reg_type);
+				LOG_ERROR("read reg cache error from reg type %d, invalidate this "
+					  "reg cache",
+					  reg_type);
 				reg = PCA_REG_INVALID;
 			}
 		}
@@ -869,7 +869,7 @@ void gpio_pca_series_debug_dump(const struct device *dev)
 				, cache, *cache_val_p
 			);
 			if (memcmp(reg_val, cache_val, reg_size)) {
-				LOG_ERR("reg %d cache mismatch", reg_type);
+				LOG_ERROR("reg %d cache mismatch", reg_type);
 			}
 		} else if (reg == PCA_REG_INVALID && cache != PCA_REG_INVALID) {
 			/**
@@ -924,8 +924,8 @@ void gpio_pca_series_cache_test(const struct device *dev)
 		}
 
 		if (cache_offset != expected_offset) {
-			LOG_ERR("reg %d cache offset 0x%2.2x error, expected 0x%2.2x",
-				reg_type, cache_offset, expected_offset);
+			LOG_ERROR("reg %d cache offset 0x%2.2x error, expected 0x%2.2x", reg_type,
+				  cache_offset, expected_offset);
 			break;
 		}
 
@@ -1228,7 +1228,7 @@ static int gpio_pca_series_port_read_standard(
 	ret = gpio_pca_series_reg_read(dev,
 		PCA_REG_TYPE_1B_INPUT_PORT, (uint8_t *)&input_data);
 	if (ret) {
-		LOG_ERR("port read error %d", ret);
+		LOG_ERROR("port read error %d", ret);
 	} else {
 		*value = (gpio_port_value_t)sys_le32_to_cpu(input_data);
 	}
@@ -1267,7 +1267,7 @@ static int gpio_pca_series_port_read_extended(
 	const uint8_t check_flags = (PCA_HAS_LATCH | PCA_HAS_INT_MASK | PCA_HAS_INT_EXTEND);
 
 	if ((cfg->part_cfg->flags & check_flags) != check_flags) {
-		LOG_ERR("unsupported device trying to read gpio with extended api");
+		LOG_ERROR("unsupported device trying to read gpio with extended api");
 		return -ENOTSUP;
 	}
 #else
@@ -1286,7 +1286,7 @@ static int gpio_pca_series_port_read_extended(
 	ret = gpio_pca_series_reg_read(dev, PCA_REG_TYPE_1B_INPUT_STATUS,
 					   (uint8_t *)&input_data);
 	if (ret) {
-		LOG_ERR("port read error %d", ret);
+		LOG_ERROR("port read error %d", ret);
 	} else {
 		*value = sys_le32_to_cpu(input_data);
 	}
@@ -1495,7 +1495,7 @@ out:
 	k_sem_give(&data->lock);
 
 	if (ret) {
-		LOG_ERR("int config(s) error %d", ret);
+		LOG_ERROR("int config(s) error %d", ret);
 	}
 	return ret;
 }
@@ -1541,7 +1541,7 @@ static int gpio_pca_series_pin_interrupt_configure_extended(
 	const uint8_t check_flags = (PCA_HAS_LATCH | PCA_HAS_INT_MASK | PCA_HAS_INT_EXTEND);
 
 	if ((cfg->part_cfg->flags & check_flags) != check_flags) {
-		LOG_ERR("unsupported device trying to configure interrupt with extended api");
+		LOG_ERROR("unsupported device trying to configure interrupt with extended api");
 		return -ENOTSUP;
 	}
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
@@ -1567,7 +1567,7 @@ static int gpio_pca_series_pin_interrupt_configure_extended(
 	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_2B_INTERRUPT_EDGE,
 						 (uint8_t *)&int_edge);
 	if (ret) {
-		LOG_ERR("get current interrupt edge config fail [%d]", ret);
+		LOG_ERROR("get current interrupt edge config fail [%d]", ret);
 		goto out;
 	}
 	int_edge = sys_le64_to_cpu(int_edge);
@@ -1729,7 +1729,7 @@ static void gpio_pca_series_interrupt_handler_extended(const struct device *dev)
 	const uint8_t check_flags = (PCA_HAS_LATCH | PCA_HAS_INT_MASK | PCA_HAS_INT_EXTEND);
 
 	if ((cfg->part_cfg->flags & check_flags) != check_flags) {
-		LOG_ERR("unsupported device trying to read gpio with extended api");
+		LOG_ERROR("unsupported device trying to read gpio with extended api");
 		return;
 	}
 #else
@@ -1849,19 +1849,19 @@ static int gpio_pca_series_init(const struct device *dev)
 
 	/** With deferred initialization, context checking is also required here */
 	if (k_is_in_isr()) {
-		LOG_ERR("Cannot initialize from ISR context");
+		LOG_ERROR("Cannot initialize from ISR context");
 		return -EWOULDBLOCK;
 	}
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("i2c bus device not found");
+		LOG_ERROR("i2c bus device not found");
 		goto out_bus;
 	}
 
 	/** device reset */
 	ret = gpio_pca_series_reset(dev);
 	if (ret) {
-		LOG_ERR("device reset error %d", ret);
+		LOG_ERROR("device reset error %d", ret);
 		goto out_bus;
 	} else {
 		LOG_DBG("device reset done");
@@ -1873,7 +1873,7 @@ static int gpio_pca_series_init(const struct device *dev)
 	/** Device needs to be reset again after test */
 	ret = gpio_pca_series_reset(dev);
 	if (ret) {
-		LOG_ERR("device reset error %d", ret);
+		LOG_ERROR("device reset error %d", ret);
 		goto out_bus;
 	} else {
 		LOG_DBG("device reset done");
@@ -1888,7 +1888,7 @@ static int gpio_pca_series_init(const struct device *dev)
 	ret = gpio_pca_series_reg_cache_mini_reset(dev);
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 	if (ret) {
-		LOG_ERR("cache init error %d", ret);
+		LOG_ERROR("cache init error %d", ret);
 		goto out;
 	}
 	LOG_DBG("cache init done");
@@ -1910,7 +1910,7 @@ static int gpio_pca_series_init(const struct device *dev)
 	/** Interrupt pin connected, enable interrupt */
 	if (cfg->gpio_int.port != NULL) {
 		if (!device_is_ready(cfg->gpio_int.port)) {
-			LOG_ERR("Cannot get pointer to gpio interrupt device");
+			LOG_ERROR("Cannot get pointer to gpio interrupt device");
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1943,7 +1943,7 @@ out:
 
 out_bus:
 	if (ret) {
-		LOG_ERR("%s init failed: %d", dev->name, ret);
+		LOG_ERROR("%s init failed: %d", dev->name, ret);
 	} else {
 		LOG_INF("%s init ok", dev->name);
 	}

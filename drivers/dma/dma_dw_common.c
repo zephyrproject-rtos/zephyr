@@ -38,7 +38,7 @@ void dw_dma_isr(const struct device *dev)
 
 	status_intr = dw_read(dev_cfg->base, DW_INTR_STATUS);
 	if (!status_intr) {
-		LOG_ERR("%s: status_intr = %d", dev->name, status_intr);
+		LOG_ERROR("%s: status_intr = %d", dev->name, status_intr);
 	}
 
 	/* get the source of our IRQ. */
@@ -48,7 +48,7 @@ void dw_dma_isr(const struct device *dev)
 	/* TODO: handle errors, just clear them atm */
 	status_err = dw_read(dev_cfg->base, DW_STATUS_ERR);
 	if (status_err) {
-		LOG_ERR("%s: status_err = %d\n", dev->name, status_err);
+		LOG_ERROR("%s: status_err = %d\n", dev->name, status_err);
 		dw_write(dev_cfg->base, DW_CLEAR_ERR, status_err);
 	}
 
@@ -136,7 +136,7 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 	int ret = 0;
 
 	if (channel >= DW_CHAN_COUNT) {
-		LOG_ERR("%s: invalid dma channel %d", dev->name, channel);
+		LOG_ERROR("%s: invalid dma channel %d", dev->name, channel);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -144,8 +144,8 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 	struct dw_dma_chan_data *chan_data = &dev_data->chan[channel];
 
 	if (chan_data->state != DW_DMA_IDLE && chan_data->state != DW_DMA_PREPARED) {
-		LOG_ERR("%s: channel %d must be inactive to reconfigure, currently %d", dev->name,
-			channel, chan_data->state);
+		LOG_ERROR("%s: channel %d must be inactive to reconfigure, currently %d", dev->name,
+			  channel, chan_data->state);
 		ret = -EBUSY;
 		goto out;
 	}
@@ -160,16 +160,16 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 	if (cfg->source_data_size != 1 && cfg->source_data_size != 2 &&
 	    cfg->source_data_size != 4 && cfg->source_data_size != 8 &&
 	    cfg->source_data_size != 16) {
-		LOG_ERR("%s: channel %d 'invalid source_data_size' value %d", dev->name, channel,
-			cfg->source_data_size);
+		LOG_ERROR("%s: channel %d 'invalid source_data_size' value %d", dev->name, channel,
+			  cfg->source_data_size);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	if (cfg->block_count > CONFIG_DMA_DW_LLI_POOL_SIZE) {
-		LOG_ERR("%s: channel %d scatter gather list larger than"
-			" descriptors in pool, consider increasing CONFIG_DMA_DW_LLI_POOL_SIZE",
-			dev->name, channel);
+		LOG_ERROR("%s: channel %d scatter gather list larger than"
+			  " descriptors in pool, consider increasing CONFIG_DMA_DW_LLI_POOL_SIZE",
+			  dev->name, channel);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -226,8 +226,8 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			lli_desc->ctrl_lo |= DW_CTLL_SRC_WIDTH(2);
 			break;
 		default:
-			LOG_ERR("%s: channel %d invalid src width %d", dev->name, channel,
-				cfg->source_data_size);
+			LOG_ERROR("%s: channel %d invalid src width %d", dev->name, channel,
+				  cfg->source_data_size);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -258,8 +258,8 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			lli_desc->ctrl_lo |= DW_CTLL_DST_WIDTH(2);
 			break;
 		default:
-			LOG_ERR("%s: channel %d invalid dest width %d", dev->name, channel,
-				cfg->dest_data_size);
+			LOG_ERROR("%s: channel %d invalid dest width %d", dev->name, channel,
+				  cfg->dest_data_size);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -334,8 +334,8 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 #endif
 			break;
 		default:
-			LOG_ERR("%s: channel %d invalid direction %d", dev->name, channel,
-				cfg->channel_direction);
+			LOG_ERROR("%s: channel %d invalid direction %d", dev->name, channel,
+				  cfg->channel_direction);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -350,8 +350,8 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 			chan_data->cfg_lo);
 
 		if (block_cfg->block_size > DW_CTLH_BLOCK_TS_MASK) {
-			LOG_ERR("%s: channel %d block size too big %d", dev->name, channel,
-				block_cfg->block_size);
+			LOG_ERROR("%s: channel %d block size too big %d", dev->name, channel,
+				  block_cfg->block_size);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -463,15 +463,15 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 
 	/* validate channel state */
 	if (chan_data->state != DW_DMA_PREPARED) {
-		LOG_ERR("%s: channel %d not ready ena 0x%x status 0x%x", dev->name, channel,
-			dw_read(dev_cfg->base, DW_DMA_CHAN_EN), chan_data->state);
+		LOG_ERROR("%s: channel %d not ready ena 0x%x status 0x%x", dev->name, channel,
+			  dw_read(dev_cfg->base, DW_DMA_CHAN_EN), chan_data->state);
 		ret = -EBUSY;
 		goto out;
 	}
 
 	/* is valid stream */
 	if (!chan_data->lli) {
-		LOG_ERR("%s: channel %d invalid stream", dev->name, channel);
+		LOG_ERROR("%s: channel %d invalid stream", dev->name, channel);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -615,7 +615,7 @@ int dw_dma_stop(const struct device *dev, uint32_t channel)
 	bool is_disabled = WAIT_FOR(!(dw_read(dev_cfg->base, DW_DMA_CHAN_EN) & DW_CHAN(channel)),
 				    DW_DMA_TIMEOUT, k_busy_wait(DW_DMA_TIMEOUT/10));
 	if (!is_disabled) {
-		LOG_ERR("%s: channel %d disable timeout", dev->name, channel);
+		LOG_ERROR("%s: channel %d disable timeout", dev->name, channel);
 		return -ETIMEDOUT;
 	}
 
@@ -715,7 +715,7 @@ int dw_dma_setup(const struct device *dev)
 	}
 
 	if (!i) {
-		LOG_ERR("%s: setup failed", dev->name);
+		LOG_ERROR("%s: setup failed", dev->name);
 		ret = -EIO;
 		goto out;
 	}
@@ -852,7 +852,7 @@ int dw_dma_get_status(const struct device *dev, uint32_t channel,
 	}
 #if CONFIG_DMA_DW_HW_LLI
 	if (!(dw_read(dev_cfg->base, DW_DMA_CHAN_EN) & DW_CHAN(channel))) {
-		LOG_ERR("%s: xrun detected", dev->name);
+		LOG_ERROR("%s: xrun detected", dev->name);
 		return -EPIPE;
 	}
 #endif

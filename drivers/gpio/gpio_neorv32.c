@@ -187,7 +187,7 @@ static int neorv32_gpio_pin_interrupt_configure(const struct device *dev, gpio_p
 		} else if (mode == GPIO_INT_MODE_EDGE) {
 			type |= mask;
 		} else {
-			LOG_ERR("unsupported interrupt mode 0x%02x", mode);
+			LOG_ERROR("unsupported interrupt mode 0x%02x", mode);
 			err = -ENOTSUP;
 			goto unlock;
 		}
@@ -197,7 +197,7 @@ static int neorv32_gpio_pin_interrupt_configure(const struct device *dev, gpio_p
 		} else if (trig == GPIO_INT_TRIG_HIGH) {
 			polarity |= mask;
 		} else {
-			LOG_ERR("unsupported interrupt trig 0x%02x", trig);
+			LOG_ERROR("unsupported interrupt trig 0x%02x", trig);
 			err = -ENOTSUP;
 			goto unlock;
 		}
@@ -247,18 +247,18 @@ static int neorv32_gpio_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(config->syscon)) {
-		LOG_ERR("syscon device not ready");
+		LOG_ERROR("syscon device not ready");
 		return -EINVAL;
 	}
 
 	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_SOC, &features);
 	if (err < 0) {
-		LOG_ERR("failed to determine implemented features (err %d)", err);
+		LOG_ERROR("failed to determine implemented features (err %d)", err);
 		return -EIO;
 	}
 
 	if ((features & NEORV32_SYSINFO_SOC_IO_GPIO) == 0) {
-		LOG_ERR("neorv32 gpio not supported");
+		LOG_ERROR("neorv32 gpio not supported");
 		return -ENODEV;
 	}
 

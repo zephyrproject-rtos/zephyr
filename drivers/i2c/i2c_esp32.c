@@ -124,7 +124,7 @@ static uint32_t i2c_get_src_clk_freq(i2c_clock_source_t clk_src)
 		break;
 #endif
 	default:
-		LOG_ERR("clock source %d is not supported", clk_src);
+		LOG_ERROR("clock source %d is not supported", clk_src);
 		break;
 	}
 
@@ -152,7 +152,7 @@ static int i2c_esp32_config_pin(const struct device *dev)
 	int ret = 0;
 
 	if (config->index >= SOC_I2C_NUM) {
-		LOG_ERR("Invalid I2C peripheral number");
+		LOG_ERROR("Invalid I2C peripheral number");
 		return -EINVAL;
 	}
 
@@ -318,7 +318,7 @@ static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 	uint32_t bitrate;
 
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Only I2C Master mode supported.");
+		LOG_ERROR("Only I2C Master mode supported.");
 		return -ENOTSUP;
 	}
 
@@ -333,7 +333,7 @@ static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 		bitrate = MHZ(1);
 		break;
 	default:
-		LOG_ERR("Error configuring I2C speed.");
+		LOG_ERROR("Error configuring I2C speed.");
 		return -ENOTSUP;
 	}
 
@@ -353,7 +353,7 @@ static int i2c_esp32_get_config(const struct device *dev, uint32_t *config)
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
 	if (data->dev_config == 0) {
-		LOG_ERR("I2C controller not configured");
+		LOG_ERROR("I2C controller not configured");
 		return -EIO;
 	}
 
@@ -735,24 +735,24 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 
 #ifndef I2C_LL_SUPPORT_HW_CLR_BUS
 	if (!gpio_is_ready_dt(&config->scl.gpio)) {
-		LOG_ERR("SCL GPIO device is not ready");
+		LOG_ERROR("SCL GPIO device is not ready");
 		return -EINVAL;
 	}
 
 	if (!gpio_is_ready_dt(&config->sda.gpio)) {
-		LOG_ERR("SDA GPIO device is not ready");
+		LOG_ERROR("SDA GPIO device is not ready");
 		return -EINVAL;
 	}
 #endif
 	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to configure I2C pins");
+		LOG_ERROR("Failed to configure I2C pins");
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -766,7 +766,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 			NULL);
 
 	if (ret != 0) {
-		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		LOG_ERROR("could not allocate interrupt (err %d)", ret);
 		return ret;
 	}
 

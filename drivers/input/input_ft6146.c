@@ -102,7 +102,7 @@ static void ft6146_process_touch(const struct device *dev, uint8_t status)
 	ret = i2c_burst_read_dt(&config->i2c, FT6146_REG_DEVICE_MODE, point_data,
 				sizeof(point_data));
 	if (ret < 0) {
-		LOG_ERR("Failed to read touch data: %d", ret);
+		LOG_ERROR("Failed to read touch data: %d", ret);
 		return;
 	}
 
@@ -159,7 +159,7 @@ static int ft6146_reset(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure reset GPIO: %d", ret);
+		LOG_ERROR("Failed to configure reset GPIO: %d", ret);
 		return ret;
 	}
 
@@ -168,7 +168,7 @@ static int ft6146_reset(const struct device *dev)
 	/* De-assert reset */
 	ret = gpio_pin_set_dt(&config->reset_gpio, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to de-assert reset: %d", ret);
+		LOG_ERROR("Failed to de-assert reset: %d", ret);
 		return ret;
 	}
 
@@ -207,20 +207,20 @@ static int ft6146_init(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure interrupt GPIO: %d", ret);
+		LOG_ERROR("Failed to configure interrupt GPIO: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure interrupt: %d", ret);
+		LOG_ERROR("Failed to configure interrupt: %d", ret);
 		return ret;
 	}
 
 	gpio_init_callback(&data->int_cb, ft6146_isr_handler, BIT(config->int_gpio.pin));
 	ret = gpio_add_callback(config->int_gpio.port, &data->int_cb);
 	if (ret < 0) {
-		LOG_ERR("Failed to add callback: %d", ret);
+		LOG_ERROR("Failed to add callback: %d", ret);
 		return ret;
 	}
 #else

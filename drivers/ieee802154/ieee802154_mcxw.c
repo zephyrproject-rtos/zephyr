@@ -142,7 +142,7 @@ static const struct flash_area *open_hw_params_partition(void)
 	int ret = flash_area_open(HW_PARAMS_PARTITION_ID, &fa);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to open the HW parameters flash partition: %d", ret);
+		LOG_ERROR("Failed to open the HW parameters flash partition: %d", ret);
 		return NULL;
 	}
 
@@ -154,7 +154,7 @@ static int read_mac_from_flash(const struct flash_area *fa, uint8_t *mac_addr)
 	int ret = flash_area_read(fa, MAC_ADDRESS_OFFSET, mac_addr, MAC_ADDRESS_LEN);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to read MAC from the HW parameters flash: %d", ret);
+		LOG_ERROR("Failed to read MAC from the HW parameters flash: %d", ret);
 		return ret;
 	}
 
@@ -197,13 +197,13 @@ static int save_mac_to_flash(const struct flash_area *fa, const uint8_t *mac_add
 	int ret = flash_area_erase(fa, MAC_ADDRESS_OFFSET, fa->fa_size);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to erase HW parameters flash area: %d", ret);
+		LOG_ERROR("Failed to erase HW parameters flash area: %d", ret);
 		return ret;
 	}
 
 	ret = flash_area_write(fa, MAC_ADDRESS_OFFSET, mac_addr, MAC_ADDRESS_LEN);
 	if (ret != 0) {
-		LOG_ERR("Failed to write MAC address to HW parameters flash: %d", ret);
+		LOG_ERROR("Failed to write MAC address to HW parameters flash: %d", ret);
 		return ret;
 	}
 
@@ -474,13 +474,13 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 	len = mcxw_radio->rx_ack_frame.length;
 	pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		LOG_ERR("No free packet available.");
+		LOG_ERROR("No free packet available.");
 		err = -ENOMEM;
 		goto exit;
 	}
 
 	if (net_pkt_write(pkt, mcxw_radio->rx_ack_frame.psdu, len) < 0) {
-		LOG_ERR("Failed to write to a packet.");
+		LOG_ERROR("Failed to write to a packet.");
 		err = -ENOMEM;
 		goto free_ack;
 	}
@@ -493,7 +493,7 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 	net_pkt_cursor_init(pkt);
 
 	if (ieee802154_handle_ack(mcxw_radio->iface, pkt) != NET_OK) {
-		LOG_ERR("ACK packet not handled - releasing.");
+		LOG_ERROR("ACK packet not handled - releasing.");
 	}
 
 free_ack:
@@ -531,7 +531,7 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	__ASSERT(mcxw_radio->state != RADIO_STATE_DISABLED, "%s: radio disabled", __func__);
 
 	if (payload_len > IEEE802154_MTU) {
-		LOG_ERR("Payload too large: %d", payload_len);
+		LOG_ERROR("Payload too large: %d", payload_len);
 		return -EMSGSIZE;
 	}
 
@@ -691,19 +691,19 @@ void mcxw_rx_thread(void *arg1, void *arg2, void *arg3)
 		LOG_DBG("Waiting for frame");
 
 		if (k_msgq_get(&mcxw_radio->rx_msgq, &rx_frame, K_FOREVER) < 0) {
-			LOG_ERR("Failed to get RX data from message queue");
+			LOG_ERROR("Failed to get RX data from message queue");
 			continue;
 		}
 
 		pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, rx_frame.length,
 						   NET_AF_UNSPEC, 0, K_FOREVER);
 		if (!pkt) {
-			LOG_ERR("No free packet available.");
+			LOG_ERROR("No free packet available.");
 			goto drop;
 		}
 
 		if (net_pkt_write(pkt, rx_frame.psdu, rx_frame.length)) {
-			LOG_ERR("Failed to write to a packet.");
+			LOG_ERROR("Failed to write to a packet.");
 			goto drop;
 		}
 
@@ -724,7 +724,7 @@ void mcxw_rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 #endif
 		if (net_recv_data(mcxw_radio->iface, pkt) < 0) {
-			LOG_ERR("Packet dropped by NET stack");
+			LOG_ERROR("Packet dropped by NET stack");
 			goto drop;
 		}
 
@@ -1286,7 +1286,7 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 
 		/* add the rx message in queue */
 		if (k_msgq_put(&mcxw_ctx.rx_msgq, &rx_frame, K_NO_WAIT) < 0) {
-			LOG_ERR("Failed to push RX data to message queue");
+			LOG_ERROR("Failed to push RX data to message queue");
 		} else {
 			/* message will be freed by the rx thread, k_msgq_put does a shallow copy */
 			free_msg = false;

@@ -181,13 +181,13 @@ int adc_npcx_v2t_set_channels(const struct device *dev, uint32_t channel_mask)
 
 	/* Check selected channel mask within range */
 	if (channel_mask & ~BIT_MASK(config->channel_count)) {
-		LOG_ERR("Invalid v2t channel_mask: %#x", channel_mask);
+		LOG_ERROR("Invalid v2t channel_mask: %#x", channel_mask);
 		return -EINVAL;
 	}
 
 	/* Check V2T is disabled */
 	if (IS_BIT_SET(inst->V2T_CTRL, NPCX_V2T_CTRL_TEMP_EN)) {
-		LOG_ERR("Set v2t channel fail, v2t is enabled");
+		LOG_ERROR("Set v2t channel fail, v2t is enabled");
 		return -EINVAL;
 	}
 
@@ -223,7 +223,7 @@ static void adc_npcx_v2t_ch_apply(const struct device *dev, uint16_t enabled_ch)
 
 	/* Check V2T is not enabled before configuration */
 	if (IS_BIT_SET(inst->V2T_CTRL, NPCX_V2T_CTRL_TEMP_EN)) {
-		LOG_ERR("V2T is enabled, apply fail, ch:%#x", enabled_ch);
+		LOG_ERROR("V2T is enabled, apply fail, ch:%#x", enabled_ch);
 		return;
 	}
 
@@ -485,19 +485,19 @@ static int adc_npcx_start_read(const struct device *dev,
 
 	if (!sequence->channels ||
 	    (sequence->channels & ~BIT_MASK(config->channel_count))) {
-		LOG_ERR("Invalid ADC channels");
+		LOG_ERROR("Invalid ADC channels");
 		return -EINVAL;
 	}
 
 	/* Fixed 10 bit resolution of npcx ADC */
 	if (sequence->resolution != 10) {
-		LOG_ERR("Unfixed 10 bit ADC resolution");
+		LOG_ERROR("Unfixed 10 bit ADC resolution");
 		return -ENOTSUP;
 	}
 
 	error = adc_npcx_validate_buffer_size(dev, sequence);
 	if (error) {
-		LOG_ERR("ADC buffer size too small");
+		LOG_ERROR("ADC buffer size too small");
 		return error;
 	}
 
@@ -508,7 +508,7 @@ static int adc_npcx_start_read(const struct device *dev,
 	/* Check selected channel is the same mode (all ADC or all V2T) */
 	channel_type = sequence->channels & data->v2t_channels_msk;
 	if ((channel_type != 0) && (channel_type != sequence->channels)) {
-		LOG_ERR("ADC channel type unmatch");
+		LOG_ERROR("ADC channel type unmatch");
 		return -EINVAL;
 	}
 
@@ -550,27 +550,27 @@ static int adc_npcx_channel_setup(const struct device *dev,
 	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_id >= config->channel_count) {
-		LOG_ERR("Invalid channel %d", channel_id);
+		LOG_ERROR("Invalid channel %d", channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Unsupported channel acquisition time");
+		LOG_ERROR("Unsupported channel acquisition time");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Unsupported channel gain %d", channel_cfg->gain);
+		LOG_ERROR("Unsupported channel gain %d", channel_cfg->gain);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Unsupported channel reference");
+		LOG_ERROR("Unsupported channel reference");
 		return -ENOTSUP;
 	}
 
@@ -731,7 +731,7 @@ static int adc_npcx_threshold_ctrl_setup(const struct device *dev,
 	if (t_data->active_thresholds & BIT(th_sel)) {
 		/* Unable to setup threshold parameters while active */
 		adc_context_release(&data->ctx, 0);
-		LOG_ERR("Threshold selected (%d) is active!", th_sel);
+		LOG_ERROR("Threshold selected (%d) is active!", th_sel);
 		return -EBUSY;
 	}
 
@@ -739,7 +739,7 @@ static int adc_npcx_threshold_ctrl_setup(const struct device *dev,
 	    t_ctrl->thrval >= api->ref_internal ||
 	    t_ctrl->thrval == 0 || t_ctrl->work == 0) {
 		adc_context_release(&data->ctx, 0);
-		LOG_ERR("Threshold selected (%d) is not configured!", th_sel);
+		LOG_ERROR("Threshold selected (%d) is not configured!", th_sel);
 		return -EINVAL;
 	}
 
@@ -772,7 +772,7 @@ static int adc_npcx_threshold_enable_irq(const struct device *dev,
 	uint16_t thrcts;
 
 	if (th_sel >= config->threshold_count) {
-		LOG_ERR("Invalid ADC threshold selection! (%d)", th_sel);
+		LOG_ERROR("Invalid ADC threshold selection! (%d)", th_sel);
 		return -EINVAL;
 	}
 
@@ -781,7 +781,7 @@ static int adc_npcx_threshold_enable_irq(const struct device *dev,
 	    t_ctrl->thrval >= api->ref_internal ||
 	    t_ctrl->thrval == 0 || t_ctrl->work == 0) {
 		adc_context_release(&data->ctx, 0);
-		LOG_ERR("Threshold selected (%d) is not configured!", th_sel);
+		LOG_ERROR("Threshold selected (%d) is not configured!", th_sel);
 		return -EINVAL;
 	}
 
@@ -822,14 +822,14 @@ int adc_npcx_threshold_disable_irq(const struct device *dev,
 	}
 
 	if (th_sel >= config->threshold_count) {
-		LOG_ERR("Invalid ADC threshold selection! (%d)", th_sel);
+		LOG_ERROR("Invalid ADC threshold selection! (%d)", th_sel);
 		return -EINVAL;
 	}
 
 	adc_context_lock(&data->ctx, false, NULL);
 	if (!(t_data->active_thresholds & BIT(th_sel))) {
 		adc_context_release(&data->ctx, 0);
-		LOG_ERR("Threshold selection (%d) is not enabled", th_sel);
+		LOG_ERROR("Threshold selection (%d) is not enabled", th_sel);
 		return -ENODEV;
 	}
 	/* avoid clearing other threshold status */
@@ -927,7 +927,7 @@ static int adc_npcx_init(const struct device *dev)
 	int prescaler = 0, ret;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -938,14 +938,14 @@ static int adc_npcx_init(const struct device *dev)
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
 							&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on ADC clock fail %d", ret);
+		LOG_ERROR("Turn on ADC clock fail %d", ret);
 		return ret;
 	}
 
 	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
 			&config->clk_cfg, &data->input_clk);
 	if (ret < 0) {
-		LOG_ERR("Get ADC clock rate error %d", ret);
+		LOG_ERROR("Get ADC clock rate error %d", ret);
 		return ret;
 	}
 
@@ -975,7 +975,7 @@ static int adc_npcx_init(const struct device *dev)
 	/* Configure pin-mux for ADC device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("ADC pinctrl setup failed (%d)", ret);
+		LOG_ERROR("ADC pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

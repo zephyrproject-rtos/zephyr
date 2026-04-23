@@ -354,7 +354,7 @@ static int stm32_dcmipp_conf_parallel(const struct device *dev,
 	dcmipp->hdcmipp.State = HAL_DCMIPP_STATE_INIT;
 	hal_ret = HAL_DCMIPP_PARALLEL_SetConfig(&dcmipp->hdcmipp, &parallel_cfg);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to configure DCMIPP Parallel interface");
+		LOG_ERROR("Failed to configure DCMIPP Parallel interface");
 		return -EIO;
 	}
 
@@ -413,7 +413,7 @@ static int stm32_dcmipp_conf_csi(const struct device *dev, uint32_t dcmipp_csi_b
 					      video_bits_per_pixel(dcmipp->source_fmt.pixelformat),
 					      config->csi.nb_lanes);
 	if (phy_bitrate < 0) {
-		LOG_ERR("Failed to retrieve source link-frequency");
+		LOG_ERROR("Failed to retrieve source link-frequency");
 		return -EIO;
 	}
 
@@ -425,14 +425,14 @@ static int stm32_dcmipp_conf_csi(const struct device *dev, uint32_t dcmipp_csi_b
 		}
 	}
 	if (i == ARRAY_SIZE(stm32_dcmipp_bitrate)) {
-		LOG_ERR("Couldn't find proper CSI PHY settings for bitrate %lld", phy_bitrate);
+		LOG_ERROR("Couldn't find proper CSI PHY settings for bitrate %lld", phy_bitrate);
 		return -EINVAL;
 	}
 	csiconf.PHYBitrate = stm32_dcmipp_bitrate[i].PHYBitrate;
 
 	hal_ret = HAL_DCMIPP_CSI_SetConfig(&dcmipp->hdcmipp, &csiconf);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to configure DCMIPP CSI");
+		LOG_ERROR("Failed to configure DCMIPP CSI");
 		return -EIO;
 	}
 
@@ -441,7 +441,7 @@ static int stm32_dcmipp_conf_csi(const struct device *dev, uint32_t dcmipp_csi_b
 	hal_ret = HAL_DCMIPP_CSI_SetVCConfig(&dcmipp->hdcmipp, DCMIPP_VIRTUAL_CHANNEL0,
 					     dcmipp_csi_bpp);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to set CSI configuration");
+		LOG_ERROR("Failed to set CSI configuration");
 		return -EIO;
 	}
 
@@ -555,29 +555,30 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 	/* Sanitize format given */
 	mapping = stm32_dcmipp_get_mapping(fmt->pixelformat, pipe->id);
 	if (mapping == NULL) {
-		LOG_ERR("Pixelformat %s/0x%x is not supported",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->pixelformat);
+		LOG_ERROR("Pixelformat %s/0x%x is not supported",
+			  VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->pixelformat);
 		return -EINVAL;
 	}
 
 	/* In case of DUMP pipe, verify that requested format matched with input format */
 	if (pipe->id == DCMIPP_PIPE0 &&
 	    mapping->dump.input_pixelformat != dcmipp->source_fmt.pixelformat) {
-		LOG_ERR("Dump pipe output format (%s) incompatible with source format (%s)",
-			 VIDEO_FOURCC_TO_STR(fmt->pixelformat),
-			 VIDEO_FOURCC_TO_STR(dcmipp->source_fmt.pixelformat));
+		LOG_ERROR("Dump pipe output format (%s) incompatible with source format (%s)",
+			  VIDEO_FOURCC_TO_STR(fmt->pixelformat),
+			  VIDEO_FOURCC_TO_STR(dcmipp->source_fmt.pixelformat));
 		return -EINVAL;
 	}
 
 	if (!IN_RANGE(fmt->width, STM32_DCMIPP_WIDTH_MIN, STM32_DCMIPP_WIDTH_MAX) ||
 	    !IN_RANGE(fmt->height, STM32_DCMIPP_HEIGHT_MIN, STM32_DCMIPP_HEIGHT_MAX)) {
-		LOG_ERR("Format width/height (%d x %d) does not match caps",
-			fmt->width, fmt->height);
+		LOG_ERROR("Format width/height (%d x %d) does not match caps", fmt->width,
+			  fmt->height);
 		return -EINVAL;
 	}
 
 	if (fmt->width != pipe->compose.width || fmt->height != pipe->compose.height) {
-		LOG_ERR("Format width/height (%d x %d) do not match compose width/height (%d x %d)",
+		LOG_ERROR(
+			"Format width/height (%d x %d) do not match compose width/height (%d x %d)",
 			fmt->width, fmt->height, pipe->compose.width, pipe->compose.height);
 		return -EINVAL;
 	}
@@ -604,7 +605,7 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 		    !IN_RANGE(fmt->height,
 			      post_isp_decimate_height / STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,
 			      post_isp_decimate_height)) {
-			LOG_ERR("Requested resolution cannot be achieved");
+			LOG_ERROR("Requested resolution cannot be achieved");
 			ret = -EINVAL;
 			goto out;
 		}
@@ -665,7 +666,7 @@ static int stm32_dcmipp_set_crop(struct stm32_dcmipp_pipe_data *pipe)
 	if (pipe->crop.width == frame_width && pipe->crop.height == frame_height) {
 		hal_ret = HAL_DCMIPP_PIPE_DisableCrop(&dcmipp->hdcmipp, pipe->id);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to disable pipe crop");
+			LOG_ERROR("Failed to disable pipe crop");
 			return -EIO;
 		}
 
@@ -694,13 +695,13 @@ static int stm32_dcmipp_set_crop(struct stm32_dcmipp_pipe_data *pipe)
 
 	hal_ret = HAL_DCMIPP_PIPE_SetCropConfig(&dcmipp->hdcmipp, pipe->id, &crop_cfg);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to configure pipe crop");
+		LOG_ERROR("Failed to configure pipe crop");
 		return -EIO;
 	}
 
 	hal_ret = HAL_DCMIPP_PIPE_EnableCrop(&dcmipp->hdcmipp, pipe->id);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to enable pipe crop");
+		LOG_ERROR("Failed to enable pipe crop");
 		return -EIO;
 	}
 
@@ -726,13 +727,13 @@ static int stm32_dcmipp_set_downscale(struct stm32_dcmipp_pipe_data *pipe)
 	if (compose->width == pipe->crop.width && compose->height == pipe->crop.height) {
 		hal_ret = HAL_DCMIPP_PIPE_DisableDecimation(&dcmipp->hdcmipp, pipe->id);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to disable the pipe decimation");
+			LOG_ERROR("Failed to disable the pipe decimation");
 			return -EIO;
 		}
 
 		hal_ret = HAL_DCMIPP_PIPE_DisableDownsize(&dcmipp->hdcmipp, pipe->id);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to disable the pipe downsize");
+			LOG_ERROR("Failed to disable the pipe downsize");
 			return -EIO;
 		}
 
@@ -752,7 +753,7 @@ static int stm32_dcmipp_set_downscale(struct stm32_dcmipp_pipe_data *pipe)
 	if (hdec == 1 && vdec == 1) {
 		hal_ret = HAL_DCMIPP_PIPE_DisableDecimation(&dcmipp->hdcmipp, pipe->id);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to disable the pipe decimation");
+			LOG_ERROR("Failed to disable the pipe decimation");
 			return -EIO;
 		}
 	} else {
@@ -762,12 +763,12 @@ static int stm32_dcmipp_set_downscale(struct stm32_dcmipp_pipe_data *pipe)
 
 		hal_ret = HAL_DCMIPP_PIPE_SetDecimationConfig(&dcmipp->hdcmipp, pipe->id, &dec_cfg);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to disable the pipe decimation");
+			LOG_ERROR("Failed to disable the pipe decimation");
 			return -EIO;
 		}
 		hal_ret = HAL_DCMIPP_PIPE_EnableDecimation(&dcmipp->hdcmipp, pipe->id);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to enable the pipe decimation");
+			LOG_ERROR("Failed to enable the pipe decimation");
 			return -EIO;
 		}
 	}
@@ -798,13 +799,13 @@ static int stm32_dcmipp_set_downscale(struct stm32_dcmipp_pipe_data *pipe)
 
 	hal_ret = HAL_DCMIPP_PIPE_SetDownsizeConfig(&dcmipp->hdcmipp, pipe->id, &downsize_cfg);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to configure the pipe downsize");
+		LOG_ERROR("Failed to configure the pipe downsize");
 		return -EIO;
 	}
 
 	hal_ret = HAL_DCMIPP_PIPE_EnableDownsize(&dcmipp->hdcmipp, pipe->id);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to enable the pipe downsize");
+		LOG_ERROR("Failed to enable the pipe downsize");
 		return -EIO;
 	}
 
@@ -850,7 +851,7 @@ static int stm32_dcmipp_set_yuv_conversion(struct stm32_dcmipp_pipe_data *pipe,
 	} else {
 		hal_ret = HAL_DCMIPP_PIPE_DisableYUVConversion(&dcmipp->hdcmipp, pipe->id);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to disable YUV conversion");
+			LOG_ERROR("Failed to disable YUV conversion");
 			return -EIO;
 		}
 
@@ -859,13 +860,13 @@ static int stm32_dcmipp_set_yuv_conversion(struct stm32_dcmipp_pipe_data *pipe,
 
 	hal_ret = HAL_DCMIPP_PIPE_SetYUVConversionConfig(&dcmipp->hdcmipp, pipe->id, cfg);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to setup YUV conversion");
+		LOG_ERROR("Failed to setup YUV conversion");
 		return -EIO;
 	}
 
 	hal_ret = HAL_DCMIPP_PIPE_EnableYUVConversion(&dcmipp->hdcmipp, pipe->id);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to disable YUV conversion");
+		LOG_ERROR("Failed to disable YUV conversion");
 		return -EIO;
 	}
 
@@ -907,7 +908,7 @@ static int stm32_dcmipp_start_pipeline(const struct device *dev,
 		}
 #endif
 		else {
-			LOG_ERR("Invalid bus_type");
+			LOG_ERROR("Invalid bus_type");
 			hal_ret = HAL_ERROR;
 		}
 	} else if (VIDEO_FMT_IS_SEMI_PLANAR(fmt->pixelformat)) {
@@ -931,7 +932,7 @@ static int stm32_dcmipp_start_pipeline(const struct device *dev,
 		}
 #endif
 		else {
-			LOG_ERR("Invalid bus_type");
+			LOG_ERROR("Invalid bus_type");
 			hal_ret = HAL_ERROR;
 		}
 	} else {
@@ -950,7 +951,7 @@ static int stm32_dcmipp_start_pipeline(const struct device *dev,
 		}
 #endif
 		else {
-			LOG_ERR("Invalid bus_type");
+			LOG_ERROR("Invalid bus_type");
 			hal_ret = HAL_ERROR;
 		}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
@@ -987,7 +988,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 
 	input_fmt = stm32_dcmipp_get_input_info(dcmipp->source_fmt.pixelformat);
 	if (input_fmt == NULL) {
-		LOG_ERR("Unsupported input format");
+		LOG_ERROR("Unsupported input format");
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1008,12 +1009,12 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		}
 #endif
 		else {
-			LOG_ERR("Invalid bus_type");
+			LOG_ERROR("Invalid bus_type");
 			ret = -EINVAL;
 			goto out;
 		}
 		if (ret < 0) {
-			LOG_ERR("Failed to configure input stage");
+			LOG_ERROR("Failed to configure input stage");
 			goto out;
 		}
 	}
@@ -1021,7 +1022,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	pipe->active = NULL;
 	pipe->next = k_fifo_get(&pipe->fifo_in, K_NO_WAIT);
 	if (pipe->next == NULL) {
-		LOG_ERR("No buffer available to start streaming");
+		LOG_ERROR("No buffer available to start streaming");
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -1034,7 +1035,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 						pipe->id == DCMIPP_PIPE2 ? DCMIPP_PIPE1 : pipe->id,
 						&csi_pipe_cfg);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to configure pipe #%d input", pipe->id);
+		LOG_ERROR("Failed to configure pipe #%d input", pipe->id);
 		ret = -EIO;
 		goto out;
 	}
@@ -1043,7 +1044,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	/* Configure Pipe */
 	mapping = stm32_dcmipp_get_mapping(fmt->pixelformat, pipe->id);
 	if (mapping == NULL) {
-		LOG_ERR("Failed to find pipe format mapping");
+		LOG_ERROR("Failed to find pipe format mapping");
 		ret = -EIO;
 		goto out;
 	}
@@ -1057,7 +1058,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 #endif
 	hal_ret = HAL_DCMIPP_PIPE_SetConfig(&dcmipp->hdcmipp, pipe->id, &pipe_cfg);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to configure pipe #%d", pipe->id);
+		LOG_ERROR("Failed to configure pipe #%d", pipe->id);
 		ret = -EIO;
 		goto out;
 	}
@@ -1074,7 +1075,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		hal_ret = HAL_DCMIPP_PIPE_EnableLimitEvent(&dcmipp->hdcmipp, DCMIPP_PIPE0,
 							   (fmt->pitch * fmt->height) / 4);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to set limiter");
+			LOG_ERROR("Failed to set limiter");
 			ret = -EIO;
 			goto out;
 		}
@@ -1085,14 +1086,14 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		if (mapping->pixels.swap_uv) {
 			hal_ret = HAL_DCMIPP_PIPE_EnableRedBlueSwap(&dcmipp->hdcmipp, pipe->id);
 			if (hal_ret != HAL_OK) {
-				LOG_ERR("Failed to enable Red-Blue swap");
+				LOG_ERROR("Failed to enable Red-Blue swap");
 				ret = -EIO;
 				goto out;
 			}
 		} else {
 			hal_ret = HAL_DCMIPP_PIPE_DisableRedBlueSwap(&dcmipp->hdcmipp, pipe->id);
 			if (hal_ret != HAL_OK) {
-				LOG_ERR("Failed to disable Red-Blue swap");
+				LOG_ERROR("Failed to disable Red-Blue swap");
 				ret = -EIO;
 				goto out;
 			}
@@ -1103,7 +1104,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 			hal_ret = HAL_DCMIPP_PIPE_EnableISPRawBayer2RGB(&dcmipp->hdcmipp,
 									DCMIPP_PIPE1);
 			if (hal_ret != HAL_OK) {
-				LOG_ERR("Failed to enable demosaicing");
+				LOG_ERROR("Failed to enable demosaicing");
 				ret = -EIO;
 				goto out;
 			}
@@ -1112,7 +1113,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 			hal_ret = HAL_DCMIPP_PIPE_DisableISPRawBayer2RGB(&dcmipp->hdcmipp,
 									 DCMIPP_PIPE1);
 			if (hal_ret != HAL_OK) {
-				LOG_ERR("Failed to disable demosaicing");
+				LOG_ERROR("Failed to disable demosaicing");
 				ret = -EIO;
 				goto out;
 			}
@@ -1154,7 +1155,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	/* Enable the DCMIPP Pipeline */
 	ret = stm32_dcmipp_start_pipeline(dev, pipe);
 	if (ret < 0) {
-		LOG_ERR("Failed to start the pipeline");
+		LOG_ERROR("Failed to start the pipeline");
 		goto out;
 	}
 
@@ -1162,7 +1163,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	if (dcmipp->enabled_pipe == 0) {
 		ret = video_stream_start(config->source_dev, VIDEO_BUF_TYPE_OUTPUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to start the source");
+			LOG_ERROR("Failed to start the source");
 			if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
 				if (HAL_DCMIPP_PIPE_Stop(&dcmipp->hdcmipp, pipe->id) != HAL_OK) {
 					ret = -EIO;
@@ -1179,7 +1180,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 			}
 #endif
 			else {
-				LOG_ERR("Invalid bus_type");
+				LOG_ERROR("Invalid bus_type");
 			}
 			ret = -EIO;
 			goto out;
@@ -1243,12 +1244,12 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	}
 #endif
 	else {
-		LOG_ERR("Invalid bus_type");
+		LOG_ERROR("Invalid bus_type");
 		ret = -EIO;
 		goto out;
 	}
 	if (ret < 0) {
-		LOG_ERR("Failed to stop the pipeline");
+		LOG_ERROR("Failed to stop the pipeline");
 		goto out;
 	}
 
@@ -1256,7 +1257,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	if (dcmipp->enabled_pipe == 1) {
 		ret = video_stream_stop(config->source_dev, VIDEO_BUF_TYPE_OUTPUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to stop the source");
+			LOG_ERROR("Failed to stop the source");
 			ret = -EIO;
 			goto out;
 		}
@@ -1524,7 +1525,7 @@ static int stm32_dcmipp_set_selection(const struct device *dev, struct video_sel
 			int h_pixel_align = stm32_dcmipp_pipe0_pixel_align(pipe->fmt.pixelformat);
 
 			if (h_pixel_align == 0) {
-				LOG_ERR("Cannot figure out required pixel alignment");
+				LOG_ERROR("Cannot figure out required pixel alignment");
 				return -EIO;
 			}
 
@@ -1650,13 +1651,13 @@ static int stm32_dcmipp_enable_clock(const struct device *dev)
 	err = clock_control_configure(cc_node, (clock_control_subsys_t)&config->dcmipp_pclken_ker,
 				      NULL);
 	if (err < 0) {
-		LOG_ERR("Failed to configure DCMIPP clock. Error %d", err);
+		LOG_ERROR("Failed to configure DCMIPP clock. Error %d", err);
 		return err;
 	}
 
 	err = clock_control_on(cc_node, (clock_control_subsys_t)&config->dcmipp_pclken);
 	if (err < 0) {
-		LOG_ERR("Failed to enable DCMIPP clock. Error %d", err);
+		LOG_ERROR("Failed to enable DCMIPP clock. Error %d", err);
 		return err;
 	}
 
@@ -1664,7 +1665,7 @@ static int stm32_dcmipp_enable_clock(const struct device *dev)
 	/* Turn on CSI peripheral clock */
 	err = clock_control_on(cc_node, (clock_control_subsys_t)&config->csi_pclken);
 	if (err < 0) {
-		LOG_ERR("Failed to enable CSI clock. Error %d", err);
+		LOG_ERROR("Failed to enable CSI clock. Error %d", err);
 		return err;
 	}
 #endif
@@ -1690,7 +1691,7 @@ static int stm32_dcmipp_init(const struct device *dev)
 	if (cfg->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
 		err = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_DEFAULT);
 		if (err < 0) {
-			LOG_ERR("pinctrl setup failed. Error %d.", err);
+			LOG_ERROR("pinctrl setup failed. Error %d.", err);
 			return err;
 		}
 	}
@@ -1698,13 +1699,13 @@ static int stm32_dcmipp_init(const struct device *dev)
 	/* Enable DCMIPP / CSI clocks */
 	err = stm32_dcmipp_enable_clock(dev);
 	if (err < 0) {
-		LOG_ERR("Clock enabling failed.");
+		LOG_ERROR("Clock enabling failed.");
 		return err;
 	}
 
 	/* Reset DCMIPP & CSI */
 	if (!device_is_ready(cfg->reset_dcmipp.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 	reset_line_toggle_dt(&cfg->reset_dcmipp);
@@ -1720,14 +1721,14 @@ static int stm32_dcmipp_init(const struct device *dev)
 	/* Initialize DCMI peripheral */
 	err = HAL_DCMIPP_Init(&dcmipp->hdcmipp);
 	if (err != HAL_OK) {
-		LOG_ERR("DCMIPP initialization failed.");
+		LOG_ERROR("DCMIPP initialization failed.");
 		return -EIO;
 	}
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/* Check if source device is ready */
 	if (!device_is_ready(cfg->source_dev)) {
-		LOG_ERR("Source device not ready");
+		LOG_ERROR("Source device not ready");
 		return -ENODEV;
 	}
 
@@ -1738,13 +1739,13 @@ static int stm32_dcmipp_init(const struct device *dev)
 	 */
 	err = stm32_dcmipp_conf_parallel(dcmipp->dev, &stm32_dcmipp_input_fmt_desc[0]);
 	if (err < 0) {
-		LOG_ERR("Failed to perform dummy parallel configuration");
+		LOG_ERROR("Failed to perform dummy parallel configuration");
 		return err;
 	}
 
 	err = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, cfg->source_dev);
 	if (err < 0) {
-		LOG_ERR("Failed to initialize the ISP");
+		LOG_ERROR("Failed to initialize the ISP");
 		return err;
 	}
 

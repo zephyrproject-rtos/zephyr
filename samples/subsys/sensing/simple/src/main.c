@@ -60,7 +60,7 @@ int main(void)
 
 	ret = sensing_get_sensors(&num, &info);
 	if (ret) {
-		LOG_ERR("sensing_get_sensors error");
+		LOG_ERROR("sensing_get_sensors error");
 		return 0;
 	}
 
@@ -86,15 +86,15 @@ int main(void)
 
 	ret = sensing_open_sensor(accle_info, &base_acc_cb_list, &base_acc);
 	if (ret) {
-		LOG_ERR("sensing_open_sensor, type:0x%x index:0 error:%d",
-			SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D, ret);
+		LOG_ERROR("sensing_open_sensor, type:0x%x index:0 error:%d",
+			  SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D, ret);
 	}
 
 	ret = sensing_open_sensor(hinge_info, &hinge_angle_cb_list,
 					&hinge_angle);
 	if (ret) {
-		LOG_ERR("sensing_open_sensor_by_type, type:0x%x index:0 error:%d",
-			SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE, ret);
+		LOG_ERROR("sensing_open_sensor_by_type, type:0x%x index:0 error:%d",
+			  SENSING_SENSOR_TYPE_MOTION_HINGE_ANGLE, ret);
 	}
 
 	/* set base acc, lid acc, hinge sensor interval */
@@ -102,7 +102,7 @@ int main(void)
 	base_acc_config.interval = 100 * USEC_PER_MSEC;
 	ret = sensing_set_config(base_acc, &base_acc_config, 1);
 	if (ret) {
-		LOG_ERR("base_acc sensing_set_interval error:%d\n", ret);
+		LOG_ERROR("base_acc sensing_set_interval error:%d\n", ret);
 	}
 
 	tmp_sensor_info = sensing_get_sensor_info(hinge_angle);
@@ -110,7 +110,7 @@ int main(void)
 	hinge_angle_config.interval = tmp_sensor_info->minimal_interval;
 	ret = sensing_set_config(hinge_angle, &hinge_angle_config, 1);
 	if (ret) {
-		LOG_ERR("hinge_angle sensing_set_interval error:%d\n", ret);
+		LOG_ERROR("hinge_angle sensing_set_interval error:%d\n", ret);
 	}
 
 	memset(&base_acc_config, 0x00, sizeof(struct sensing_sensor_config));
@@ -120,13 +120,13 @@ int main(void)
 	base_acc_config.attri = SENSING_SENSOR_ATTRIBUTE_INTERVAL;
 	ret = sensing_get_config(base_acc, &base_acc_config, 1);
 	if (ret) {
-		LOG_ERR("base_acc sensing_get_interval error:%d\n", ret);
+		LOG_ERROR("base_acc sensing_get_interval error:%d\n", ret);
 	}
 
 	hinge_angle_config.attri = SENSING_SENSOR_ATTRIBUTE_INTERVAL;
 	ret = sensing_get_config(hinge_angle, &hinge_angle_config, 1);
 	if (ret) {
-		LOG_ERR("hinge_angle sensing_get_interval error:%d\n", ret);
+		LOG_ERROR("hinge_angle sensing_get_interval error:%d\n", ret);
 	}
 
 	/* set base acc, lid acc, hinge sensor sensitivity */
@@ -135,7 +135,7 @@ int main(void)
 	base_acc_config.sensitivity = 0;
 	ret = sensing_set_config(base_acc, &base_acc_config, 1);
 	if (ret) {
-		LOG_ERR("base_acc sensing_set_sensitivity error:%d\n", ret);
+		LOG_ERROR("base_acc sensing_set_sensitivity error:%d\n", ret);
 	}
 
 	hinge_angle_config.attri = SENSING_SENSOR_ATTRIBUTE_SENSITIVITY;
@@ -143,7 +143,7 @@ int main(void)
 	hinge_angle_config.sensitivity = 1;
 	ret = sensing_set_config(hinge_angle, &hinge_angle_config, 1);
 	if (ret) {
-		LOG_ERR("hinge_angle sensing_set_sensitivity error:%d\n", ret);
+		LOG_ERROR("hinge_angle sensing_set_sensitivity error:%d\n", ret);
 	}
 
 	memset(&base_acc_config, 0x00, sizeof(struct sensing_sensor_config));
@@ -154,14 +154,14 @@ int main(void)
 	base_acc_config.data_field = SENSING_SENSITIVITY_INDEX_ALL;
 	ret = sensing_get_config(base_acc, &base_acc_config, 1);
 	if (ret) {
-		LOG_ERR("base_acc sensing_get_sensitivity error:%d\n", ret);
+		LOG_ERROR("base_acc sensing_get_sensitivity error:%d\n", ret);
 	}
 
 	hinge_angle_config.attri = SENSING_SENSOR_ATTRIBUTE_SENSITIVITY;
 	hinge_angle_config.data_field = SENSING_SENSITIVITY_INDEX_ALL;
 	ret = sensing_get_config(hinge_angle, &hinge_angle_config, 1);
 	if (ret) {
-		LOG_ERR("hinge_angle sensing_get_sensitivity error:%d\n", ret);
+		LOG_ERROR("hinge_angle sensing_get_sensitivity error:%d\n", ret);
 	}
 
 	return 0;

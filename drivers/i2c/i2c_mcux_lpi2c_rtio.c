@@ -204,7 +204,7 @@ static bool mcux_lpi2c_start(const struct device *dev)
 		res = mcux_lpi2c_do_configure(dev, sqe->i2c_config);
 		return i2c_rtio_complete(data->ctx, res);
 	default:
-		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
+		LOG_ERROR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
 		return i2c_rtio_complete(data->ctx, -EINVAL);
 	}
 }
@@ -302,7 +302,7 @@ static int mcux_lpi2c_init(const struct device *dev)
 	base = (LPI2C_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 

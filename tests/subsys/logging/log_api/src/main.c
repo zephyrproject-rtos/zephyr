@@ -218,7 +218,7 @@ ZTEST(test_log_api, test_log_various_messages)
 	LOG_WRN("wrn %s", dstr);
 	dstr[0] = '\0';
 
-	LOG_ERR("err");
+	LOG_ERROR("err");
 
 	process_and_validate(false, false);
 

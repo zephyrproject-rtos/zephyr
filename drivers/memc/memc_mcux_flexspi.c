@@ -121,7 +121,7 @@ int memc_flexspi_update_clock(const struct device *dev,
 	int ret = clock_control_get_rate(data->clock_dev, data->clock_subsys, &ccm_clock);
 
 	if (ret < 0) {
-		LOG_ERR("memc flexspi get root clock error: %d", ret);
+		LOG_ERROR("memc flexspi get root clock error: %d", ret);
 		return ret;
 	}
 
@@ -196,7 +196,7 @@ int memc_flexspi_set_device_config(const struct device *dev,
 	uint32_t divider;
 
 	if (port >= kFLEXSPI_PortCount) {
-		LOG_ERR("Invalid port number");
+		LOG_ERROR("Invalid port number");
 		return -EINVAL;
 	}
 
@@ -245,7 +245,7 @@ int memc_flexspi_set_device_config(const struct device *dev,
 	ret = memc_flexspi_update_clock(dev, &tmp_config,
 					port, device_config->flexspiRootClk);
 	if (ret < 0) {
-		LOG_ERR("memc flexspi update clock error: %d", ret);
+		LOG_ERROR("memc flexspi update clock error: %d", ret);
 		return ret;
 	}
 
@@ -253,7 +253,7 @@ int memc_flexspi_set_device_config(const struct device *dev,
 	ret = clock_control_get_rate(data->clock_dev, data->clock_subsys,
 				&tmp_config.flexspiRootClk);
 	if (ret < 0) {
-		LOG_ERR("memc flexspi get root clock error: %d", ret);
+		LOG_ERROR("memc flexspi get root clock error: %d", ret);
 		return ret;
 	}
 	divider = (base->MCR0 & FLEXSPI_MCR0_SERCLKDIV_MASK) >> FLEXSPI_MCR0_SERCLKDIV_SHIFT;
@@ -328,7 +328,7 @@ int memc_flexspi_transfer(const struct device *dev,
 #endif
 
 	if (status != kStatus_Success) {
-		LOG_ERR("Transfer error: %d", status);
+		LOG_ERROR("Transfer error: %d", status);
 		return -EIO;
 	}
 
@@ -343,7 +343,7 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
 	int i;
 
 	if (port >= kFLEXSPI_PortCount) {
-		LOG_ERR("Invalid port number: %u", port);
+		LOG_ERROR("Invalid port number: %u", port);
 		return NULL;
 	}
 

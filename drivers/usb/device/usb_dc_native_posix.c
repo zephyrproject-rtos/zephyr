@@ -160,7 +160,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		cfg->ep_type);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		LOG_ERR("invalid endpoint configuration");
+		LOG_ERROR("invalid endpoint configuration");
 		return -1;
 	}
 
@@ -195,7 +195,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	}
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -213,7 +213,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 	LOG_DBG("ep %x", ep);
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -230,7 +230,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 	LOG_DBG("ep %x", ep);
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -249,7 +249,7 @@ int usb_dc_ep_halt(const uint8_t ep)
 	LOG_DBG("ep %x", ep);
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -266,7 +266,7 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 	LOG_DBG("ep %x", ep);
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -284,7 +284,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	LOG_DBG("ep %x", ep);
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -303,7 +303,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	LOG_DBG("ep %x", ep);
 
 	if (!usbip_ep_is_valid(ep)) {
-		LOG_ERR("Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -315,7 +315,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 	LOG_DBG("ep %x", ep);
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -333,7 +333,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	LOG_DBG("ep %x len %u", ep, data_len);
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -382,25 +382,25 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	uint32_t to_copy;
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
 	/* Check if OUT ep */
 	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
-		LOG_ERR("Wrong endpoint direction");
+		LOG_ERROR("Wrong endpoint direction");
 		return -EINVAL;
 	}
 
 	/* Allow to read 0 bytes */
 	if (!data && max_data_len) {
-		LOG_ERR("Wrong arguments");
+		LOG_ERROR("Wrong arguments");
 		return -EINVAL;
 	}
 
 	/* Check if ep enabled */
 	if (!usbip_ep_is_enabled(ep)) {
-		LOG_ERR("Not enabled endpoint");
+		LOG_ERROR("Not enabled endpoint");
 		return -EINVAL;
 	}
 
@@ -426,13 +426,13 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
 	/* Check if OUT ep */
 	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
-		LOG_ERR("Wrong endpoint direction");
+		LOG_ERROR("Wrong endpoint direction");
 		return -EINVAL;
 	}
 
@@ -474,7 +474,7 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 	LOG_DBG("ep %x callback %p", ep, cb);
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -499,7 +499,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 	LOG_DBG("ep %x", ep);
 
 	if (!usbip_ctrl.attached || !usbip_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -517,13 +517,13 @@ int handle_usb_control(struct usbip_header *hdr)
 
 	ep_ctrl = &usbip_ctrl.out_ep_ctrl[ep_idx];
 	if (ep_ctrl->cb == NULL) {
-		LOG_ERR("Control endpoint callback not set");
+		LOG_ERROR("Control endpoint callback not set");
 		return -EIO;
 	}
 
 	if ((net_ntohl(hdr->common.direction) == USBIP_DIR_IN) ^
 	    USB_REQTYPE_GET_DIR(hdr->u.submit.bmRequestType)) {
-		LOG_ERR("Failed to verify bmRequestType");
+		LOG_ERROR("Failed to verify bmRequestType");
 		return -EIO;
 	}
 

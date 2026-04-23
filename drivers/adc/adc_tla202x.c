@@ -142,7 +142,7 @@ static int tla202x_channel_setup(const struct device *dev, const struct adc_chan
 	struct tla202x_data *data = dev->data;
 
 	if (cfg->channel_id >= config->channel_count) {
-		LOG_ERR("invalid channel selection %u", cfg->channel_id);
+		LOG_ERROR("invalid channel selection %u", cfg->channel_id);
 		return -EINVAL;
 	}
 	tla202x_reg_config_t *reg_config = &data->reg_config[cfg->channel_id];
@@ -169,12 +169,12 @@ static int tla202x_channel_setup(const struct device *dev, const struct adc_chan
 			*reg_config |= PGA_256 << REG_CONFIG_PGA_pos;
 			break;
 		default:
-			LOG_ERR("Invalid gain");
+			LOG_ERROR("Invalid gain");
 			return -EINVAL;
 		}
 	} else {
 		if (cfg->gain != ADC_GAIN_1) {
-			LOG_ERR("Invalid gain");
+			LOG_ERROR("Invalid gain");
 			return -EINVAL;
 		}
 	}
@@ -196,7 +196,7 @@ static int tla202x_channel_setup(const struct device *dev, const struct adc_chan
 			} else if (cfg->input_positive == 2 && cfg->input_negative == 3) {
 				*reg_config |= MUX_DIFF_2_3 << REG_CONFIG_MUX_pos;
 			} else {
-				LOG_ERR("Invalid channel config");
+				LOG_ERROR("Invalid channel config");
 				return -EINVAL;
 			}
 		} else {
@@ -209,7 +209,7 @@ static int tla202x_channel_setup(const struct device *dev, const struct adc_chan
 			} else if (cfg->input_positive == 3) {
 				*reg_config |= MUX_SINGLE_3 << REG_CONFIG_MUX_pos;
 			} else {
-				LOG_ERR("Invalid channel config");
+				LOG_ERROR("Invalid channel config");
 				return -EINVAL;
 			}
 		}
@@ -217,12 +217,12 @@ static int tla202x_channel_setup(const struct device *dev, const struct adc_chan
 #endif
 
 	if (cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Invalid reference");
+		LOG_ERROR("Invalid reference");
 		return -EINVAL;
 	}
 
 	if (cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Invalid acquisition time");
+		LOG_ERROR("Invalid acquisition time");
 		return -EINVAL;
 	}
 
@@ -238,32 +238,32 @@ static int tla202x_start_read(const struct device *dev, const struct adc_sequenc
 	const size_t num_samples = (1 + num_extra_samples) * POPCOUNT(seq->channels);
 
 	if (find_msb_set(seq->channels) > config->channel_count) {
-		LOG_ERR("Selected channel(s) not supported: %x", seq->channels);
+		LOG_ERROR("Selected channel(s) not supported: %x", seq->channels);
 		return -EINVAL;
 	}
 
 	if (seq->resolution != ADC_RESOLUTION) {
-		LOG_ERR("Selected resolution not supported: %d", seq->resolution);
+		LOG_ERROR("Selected resolution not supported: %d", seq->resolution);
 		return -EINVAL;
 	}
 
 	if (seq->oversampling) {
-		LOG_ERR("Oversampling is not supported");
+		LOG_ERROR("Oversampling is not supported");
 		return -EINVAL;
 	}
 
 	if (seq->calibrate) {
-		LOG_ERR("Calibration is not supported");
+		LOG_ERROR("Calibration is not supported");
 		return -EINVAL;
 	}
 
 	if (!seq->buffer) {
-		LOG_ERR("Buffer invalid");
+		LOG_ERROR("Buffer invalid");
 		return -EINVAL;
 	}
 
 	if (seq->buffer_size < (num_samples * sizeof(tla202x_reg_data_t))) {
-		LOG_ERR("buffer size too small");
+		LOG_ERROR("buffer size too small");
 		return -EINVAL;
 	}
 
@@ -398,7 +398,7 @@ static int tla202x_init(const struct device *dev)
 	struct tla202x_data *data = dev->data;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("Bus not ready");
+		LOG_ERROR("Bus not ready");
 		return -EINVAL;
 	}
 
@@ -408,7 +408,7 @@ static int tla202x_init(const struct device *dev)
 
 	ret = tla202x_write_register(dev, REG_CONFIG, data->reg_config[0]);
 	if (ret) {
-		LOG_ERR("Device reset failed: %d", ret);
+		LOG_ERROR("Device reset failed: %d", ret);
 		return ret;
 	}
 

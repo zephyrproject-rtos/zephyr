@@ -113,7 +113,7 @@ static void peripheral_write(uint8_t reg, uint8_t value)
 		peripheral->raw_data[reg] = value;
 		LOG_DBG("peripheral: [0x%02x] <= 0x%02x", reg, value);
 	} else {
-		LOG_ERR("Peripheral not found, addr 0x%02x", addr);
+		LOG_ERROR("Peripheral not found, addr 0x%02x", addr);
 	}
 }
 
@@ -127,7 +127,7 @@ static void peripheral_read(uint8_t reg, uint8_t *value)
 		*value = peripheral->raw_data[reg];
 		LOG_DBG("peripheral: [0x%02x] => 0x%02x", reg, *value);
 	} else {
-		LOG_ERR("Peripheral not found, addr 0x%02x", addr);
+		LOG_ERROR("Peripheral not found, addr 0x%02x", addr);
 	}
 }
 
@@ -197,7 +197,7 @@ static void emul_start_smbus_protocol(void)
 		break;
 	case PCH_SMBUS_HCTL_CMD_PROC_CALL:
 		if (!write) {
-			LOG_ERR("Incorrect operation flag");
+			LOG_ERROR("Incorrect operation flag");
 			return;
 		}
 
@@ -255,7 +255,7 @@ static void emul_start_smbus_protocol(void)
 		break;
 	case PCH_SMBUS_HCTL_CMD_BLOCK_PROC:
 		if (!write) {
-			LOG_ERR("Incorrect operation flag");
+			LOG_ERROR("Incorrect operation flag");
 		} else {
 			uint8_t snd_count = io_area[PCH_SMBUS_HD0];
 			uint8_t reg = io_area[PCH_SMBUS_HCMD];
@@ -293,7 +293,7 @@ static void emul_start_smbus_protocol(void)
 		}
 		break;
 	default:
-		LOG_ERR("Protocol is not implemented yet in emul");
+		LOG_ERROR("Protocol is not implemented yet in emul");
 		break;
 	}
 

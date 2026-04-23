@@ -360,7 +360,7 @@ static int mss_spi_configure(const struct device *dev, const struct spi_config *
 	mss_spi_write(cfg, MSS_SPI_REG_CONTROL, xfer->control);
 
 	if (mss_spi_clk_gen_set(cfg, spi_cfg)) {
-		LOG_ERR("can't set clk divider\n");
+		LOG_ERROR("can't set clk divider\n");
 		return -EINVAL;
 	}
 
@@ -387,7 +387,7 @@ static int mss_spi_transceive(const struct device *dev, const struct spi_config 
 
 	ret = mss_spi_configure(dev, spi_cfg);
 	if (ret) {
-		LOG_ERR("Fail to configure\n\r");
+		LOG_ERROR("Fail to configure\n\r");
 		goto out;
 	}
 

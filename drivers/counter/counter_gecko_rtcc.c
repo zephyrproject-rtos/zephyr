@@ -99,7 +99,7 @@ static int counter_gecko_set_top_value(const struct device *dev,
 	const struct counter_gecko_config *const dev_cfg = dev->config;
 
 	if (dev_cfg->prescaler != 1) {
-		LOG_ERR(ERRATA_RTCC_E201_MESSAGE);
+		LOG_ERROR(ERRATA_RTCC_E201_MESSAGE);
 		return -EINVAL;
 	}
 #endif

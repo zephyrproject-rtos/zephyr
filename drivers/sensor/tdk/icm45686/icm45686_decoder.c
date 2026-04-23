@@ -469,7 +469,7 @@ static int icm45686_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			  (fdata->header & FIFO_HEADER_ACCEL_EN(true)) &&
 			  (fdata->header & FIFO_HEADER_GYRO_EN(true)) &&
 			  (fdata->header & FIFO_HEADER_HIRES_EN(true)))) {
-			LOG_ERR("Unsupported FIFO packet format 0x%02x", fdata->header);
+			LOG_ERROR("Unsupported FIFO packet format 0x%02x", fdata->header);
 			return -ENOTSUP;
 		}
 

@@ -70,17 +70,17 @@ static int adc_rts5912_channel_setup(const struct device *dev,
 	volatile struct adc_regs *regs = cfg->regs;
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Conversion time not supported!");
+		LOG_ERROR("Conversion time not supported!");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->channel_id >= RTS5912_ADC_MAX_CHAN) {
-		LOG_ERR("Channel %d not supported!", channel_cfg->channel_id);
+		LOG_ERROR("Channel %d not supported!", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("ADC gain not supported!");
+		LOG_ERROR("ADC gain not supported!");
 		return -EINVAL;
 	}
 
@@ -132,7 +132,7 @@ static int adc_rts5912_enable(const struct device *dev)
 		k_msleep(RTS5912_ADC_POLLING_TIME_MS);
 	}
 
-	LOG_ERR("ADC enable timeout");
+	LOG_ERROR("ADC enable timeout");
 	regs->ctrl &= ~ADC_CTRL_EN;
 
 	return -EIO;
@@ -143,17 +143,17 @@ static int adc_rts5912_start_read(const struct device *dev, const struct adc_seq
 	struct adc_rts5912_data *const data = dev->data;
 
 	if (sequence->channels & ~BIT_MASK(RTS5912_ADC_MAX_CHAN)) {
-		LOG_ERR("Incorrect channels, bitmask 0x%x", sequence->channels);
+		LOG_ERROR("Incorrect channels, bitmask 0x%x", sequence->channels);
 		return -EINVAL;
 	}
 
 	if (sequence->channels == 0UL) {
-		LOG_ERR("No channel selected");
+		LOG_ERROR("No channel selected");
 		return -EINVAL;
 	}
 
 	if (!adc_rts5912_validate_buffer_size(sequence)) {
-		LOG_ERR("Incorrect buffer size");
+		LOG_ERROR("Incorrect buffer size");
 		return -ENOMEM;
 	}
 
@@ -243,19 +243,19 @@ static int adc_rts5912_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("rts5912 ADC pinctrl setup failed (%d)", ret);
+		LOG_ERROR("rts5912 ADC pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
 #ifdef CONFIG_CLOCK_CONTROL
 	if (!device_is_ready(cfg->clk_dev)) {
-		LOG_ERR("clock \"%s\" device not ready", cfg->clk_dev->name);
+		LOG_ERROR("clock \"%s\" device not ready", cfg->clk_dev->name);
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t)&cfg->sccon_cfg);
 	if (ret != 0) {
-		LOG_ERR("clock power on fail");
+		LOG_ERROR("clock power on fail");
 		return ret;
 	}
 #endif

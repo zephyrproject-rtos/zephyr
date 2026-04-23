@@ -18,20 +18,19 @@ int main(void)
 	const struct device *const dev = DEVICE_DT_GET_ANY(meas_ms5837);
 
 	if (dev == NULL) {
-		LOG_ERR("Could not find MS5837 device, aborting test.");
+		LOG_ERROR("Could not find MS5837 device, aborting test.");
 		return 0;
 	}
 	if (!device_is_ready(dev)) {
-		LOG_ERR("MS5837 device %s is not ready, aborting test.",
-			dev->name);
+		LOG_ERROR("MS5837 device %s is not ready, aborting test.", dev->name);
 		return 0;
 	}
 
-	if (sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_OVERSAMPLING,
-				&oversampling_rate) != 0) {
-		LOG_ERR("Could not set oversampling rate of %d "
-			"on MS5837 device, aborting test.",
-			oversampling_rate.val1);
+	if (sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_OVERSAMPLING, &oversampling_rate) !=
+	    0) {
+		LOG_ERROR("Could not set oversampling rate of %d "
+			  "on MS5837 device, aborting test.",
+			  oversampling_rate.val1);
 		return 0;
 	}
 

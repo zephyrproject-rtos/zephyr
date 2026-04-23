@@ -38,11 +38,11 @@ K_MEM_SLAB_DEFINE(inode_struct_slab, sizeof(struct ext2_inode), MAX_INODES, size
 
 void error_behavior(struct ext2_data *fs, const char *msg)
 {
-	LOG_ERR("File system corrupted: %s", msg);
+	LOG_ERROR("File system corrupted: %s", msg);
 
 	/* If file system is not initialized panic */
 	if (!initialized) {
-		LOG_ERR("File system data not found. Panic...");
+		LOG_ERROR("File system data not found. Panic...");
 		k_panic();
 	}
 
@@ -55,11 +55,11 @@ void error_behavior(struct ext2_data *fs, const char *msg)
 		fs->flags |= EXT2_DATA_FLAGS_RO;
 		break;
 	case EXT2_ERRORS_PANIC:
-		LOG_ERR("Panic...");
+		LOG_ERROR("Panic...");
 		k_panic();
 		break;
 	default:
-		LOG_ERR("Unrecognized errors behavior in superblock s_errors field. Panic...");
+		LOG_ERROR("Unrecognized errors behavior in superblock s_errors field. Panic...");
 		k_panic();
 	}
 }
@@ -73,13 +73,13 @@ static struct ext2_block *get_block_struct(void)
 
 	ret = k_mem_slab_alloc(&ext2_block_struct_slab, (void **)&b, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("get block: alloc block struct error %d", ret);
+		LOG_ERROR("get block: alloc block struct error %d", ret);
 		return NULL;
 	}
 
 	ret = k_mem_slab_alloc(&ext2_block_memory_slab, (void **)&b->data, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("get block: alloc block memory error %d", ret);
+		LOG_ERROR("get block: alloc block memory error %d", ret);
 		k_mem_slab_free(&ext2_block_struct_slab, (void *)b);
 		return NULL;
 	}
@@ -98,7 +98,7 @@ struct ext2_block *ext2_get_block(struct ext2_data *fs, uint32_t block)
 	b->flags = EXT2_BLOCK_ASSIGNED;
 	ret = fs->backend_ops->read_block(fs, b->data, block);
 	if (ret < 0) {
-		LOG_ERR("get block: read block error %d", ret);
+		LOG_ERROR("get block: read block error %d", ret);
 		ext2_drop_block(b);
 		return NULL;
 	}
@@ -215,7 +215,7 @@ int ext2_init_storage(struct ext2_data **fsp, const void *storage_dev, int flags
 
 	if (write_size < 1024 && 1024 % write_size != 0) {
 		ret = -EINVAL;
-		LOG_ERR("expecting sector size that divides 1024 (got: %lld)", write_size);
+		LOG_ERROR("expecting sector size that divides 1024 (got: %lld)", write_size);
 		goto err;
 	}
 
@@ -234,24 +234,24 @@ int ext2_verify_disk_superblock(struct ext2_disk_superblock *sb)
 {
 	/* Check if it is a valid Ext2 file system. */
 	if (sys_le16_to_cpu(sb->s_magic) != EXT2_MAGIC_NUMBER) {
-		LOG_ERR("Wrong file system magic number (%x)", sb->s_magic);
+		LOG_ERROR("Wrong file system magic number (%x)", sb->s_magic);
 		return -EINVAL;
 	}
 
 	/* For now we don't support file systems with frag size different from block size */
 	if (sys_le32_to_cpu(sb->s_log_block_size) != sb->s_log_frag_size) {
-		LOG_ERR("Filesystem with frag_size != block_size is not supported");
+		LOG_ERROR("Filesystem with frag_size != block_size is not supported");
 		return -ENOTSUP;
 	}
 
 	/* Support only second revision */
 	if (sys_le32_to_cpu(sb->s_rev_level) != EXT2_DYNAMIC_REV) {
-		LOG_ERR("Filesystem with revision %d is not supported", sb->s_rev_level);
+		LOG_ERROR("Filesystem with revision %d is not supported", sb->s_rev_level);
 		return -ENOTSUP;
 	}
 
 	if (sys_le16_to_cpu(sb->s_inode_size) != EXT2_GOOD_OLD_INODE_SIZE) {
-		LOG_ERR("Filesystem with inode size %d is not supported", sb->s_inode_size);
+		LOG_ERROR("Filesystem with inode size %d is not supported", sb->s_inode_size);
 		return -ENOTSUP;
 	}
 
@@ -267,7 +267,7 @@ int ext2_verify_disk_superblock(struct ext2_disk_superblock *sb)
 			return -EROFS;
 
 		case EXT2_ERRORS_PANIC:
-			LOG_ERR("File system can't be mounted. Panic...");
+			LOG_ERROR("File system can't be mounted. Panic...");
 			k_panic();
 		default:
 			LOG_WRN("Unknown option for superblock s_errors field.");
@@ -275,13 +275,13 @@ int ext2_verify_disk_superblock(struct ext2_disk_superblock *sb)
 	}
 
 	if ((sys_le32_to_cpu(sb->s_feature_incompat) & EXT2_FEATURE_INCOMPAT_FILETYPE) == 0) {
-		LOG_ERR("File system without file type stored in de is not supported");
+		LOG_ERROR("File system without file type stored in de is not supported");
 		return -ENOTSUP;
 	}
 
 	if ((sys_le32_to_cpu(sb->s_feature_incompat) & ~EXT2_FEATURE_INCOMPAT_SUPPORTED) > 0) {
-		LOG_ERR("File system can't be mounted. Incompat features %d not supported",
-				(sb->s_feature_incompat & ~EXT2_FEATURE_INCOMPAT_SUPPORTED));
+		LOG_ERROR("File system can't be mounted. Incompat features %d not supported",
+			  (sb->s_feature_incompat & ~EXT2_FEATURE_INCOMPAT_SUPPORTED));
 		return -ENOTSUP;
 	}
 
@@ -826,7 +826,7 @@ int ext2_get_direntry(struct ext2_file *dir, struct fs_dirent *ent)
 	struct ext2_direntry *de = ext2_fetch_direntry(disk_de);
 
 	if (de == NULL) {
-		LOG_ERR("Read directory entry name too long");
+		LOG_ERROR("Read directory entry name too long");
 		return -EINVAL;
 	}
 
@@ -1508,7 +1508,7 @@ int ext2_inode_drop(struct ext2_inode *inode)
 		}
 
 		if (offset >= MAX_INODES) {
-			LOG_ERR("Inode structure at %p not in inode_pool", inode);
+			LOG_ERROR("Inode structure at %p not in inode_pool", inode);
 			return -EINVAL;
 		}
 

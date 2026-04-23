@@ -99,7 +99,7 @@ static void receive_can_tx(const struct device *dev, int error, void *arg)
 	ARG_UNUSED(dev);
 
 	if (error != 0) {
-		LOG_ERR("Error sending FC frame (%d)", error);
+		LOG_ERROR("Error sending FC frame (%d)", error);
 		receive_report_error(rctx, ISOTP_N_ERROR);
 		k_work_submit(&rctx->work);
 	}
@@ -163,7 +163,7 @@ static void receive_send_fc(struct isotp_recv_ctx *rctx, uint8_t fs)
 
 	ret = can_send(rctx->can_dev, &frame, K_MSEC(ISOTP_A_TIMEOUT_MS), receive_can_tx, rctx);
 	if (ret) {
-		LOG_ERR("Can't send FC, (%d)", ret);
+		LOG_ERROR("Can't send FC, (%d)", ret);
 		receive_report_error(rctx, ISOTP_N_TIMEOUT_A);
 		receive_state_machine(rctx);
 	}
@@ -208,7 +208,7 @@ static void receive_timeout_handler(struct k_timer *timer)
 
 	switch (rctx->state) {
 	case ISOTP_RX_STATE_WAIT_CF:
-		LOG_ERR("Timeout while waiting for CF");
+		LOG_ERROR("Timeout while waiting for CF");
 		receive_report_error(rctx, ISOTP_N_TIMEOUT_CR);
 		break;
 
@@ -289,8 +289,8 @@ static void receive_state_machine(struct isotp_recv_ctx *rctx)
 		rctx->length -= rctx->buf->len;
 		if (rctx->opts.bs == 0 &&
 		    rctx->length > CONFIG_ISOTP_RX_BUF_COUNT * CONFIG_ISOTP_RX_BUF_SIZE) {
-			LOG_ERR("Pkt length is %d but buffer has only %d bytes", rctx->length,
-				CONFIG_ISOTP_RX_BUF_COUNT * CONFIG_ISOTP_RX_BUF_SIZE);
+			LOG_ERROR("Pkt length is %d but buffer has only %d bytes", rctx->length,
+				  CONFIG_ISOTP_RX_BUF_COUNT * CONFIG_ISOTP_RX_BUF_SIZE);
 			receive_report_error(rctx, ISOTP_N_BUFFER_OVERFLW);
 			receive_state_machine(rctx);
 			break;
@@ -334,7 +334,7 @@ static void receive_state_machine(struct isotp_recv_ctx *rctx)
 		}
 
 		sys_slist_find_and_remove(&global_ctx.alloc_list, &rctx->alloc_node);
-		LOG_ERR("Sent %d wait frames. Giving up to alloc now", rctx->wft);
+		LOG_ERROR("Sent %d wait frames. Giving up to alloc now", rctx->wft);
 		receive_report_error(rctx, ISOTP_N_BUFFER_OVERFLW);
 		__fallthrough;
 	case ISOTP_RX_STATE_ERR:
@@ -473,7 +473,7 @@ static inline void receive_add_mem(struct isotp_recv_ctx *rctx, uint8_t *data, s
 	net_buf_add_mem(rctx->act_frag, data, tailroom);
 	rctx->act_frag = rctx->act_frag->frags;
 	if (!rctx->act_frag) {
-		LOG_ERR("No fragment left to append data");
+		LOG_ERROR("No fragment left to append data");
 		receive_report_error(rctx, ISOTP_N_BUFFER_OVERFLW);
 		return;
 	}
@@ -505,7 +505,7 @@ static void process_cf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 	k_timer_start(&rctx->timer, K_MSEC(ISOTP_CR_TIMEOUT_MS), K_NO_WAIT);
 
 	if ((frame->data[index++] & ISOTP_PCI_SN_MASK) != rctx->sn_expected++) {
-		LOG_ERR("Sequence number mismatch");
+		LOG_ERROR("Sequence number mismatch");
 		receive_report_error(rctx, ISOTP_N_WRONG_SN);
 		k_work_submit(&rctx->work);
 		return;
@@ -514,7 +514,7 @@ static void process_cf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 #ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
 	/* AUTOSAR requirement SWS_CanTp_00346 */
 	if (can_dl < ISOTP_PADDED_FRAME_DL_MIN) {
-		LOG_ERR("CF DL invalid");
+		LOG_ERROR("CF DL invalid");
 		receive_report_error(rctx, ISOTP_N_ERROR);
 		return;
 	}
@@ -524,7 +524,7 @@ static void process_cf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 	 * must have the same length (except the last frame)
 	 */
 	if (can_dl != rctx->rx_addr.dl && rctx->length > can_dl - index) {
-		LOG_ERR("CF DL invalid");
+		LOG_ERROR("CF DL invalid");
 		receive_report_error(rctx, ISOTP_N_ERROR);
 		return;
 	}
@@ -577,7 +577,7 @@ static void receive_can_rx(const struct device *dev, struct can_frame *frame, vo
 		break;
 
 	case ISOTP_RX_STATE_RECYCLE:
-		LOG_ERR("Got a frame but was not yet ready for a new one");
+		LOG_ERROR("Got a frame but was not yet ready for a new one");
 		receive_report_error(rctx, ISOTP_N_BUFFER_OVERFLW);
 		break;
 
@@ -605,7 +605,7 @@ static inline int add_ff_sf_filter(struct isotp_recv_ctx *rctx)
 
 	rctx->filter_id = can_add_rx_filter(rctx->can_dev, receive_can_rx, rctx, &filter);
 	if (rctx->filter_id < 0) {
-		LOG_ERR("Error adding FF filter [%d]", rctx->filter_id);
+		LOG_ERROR("Error adding FF filter [%d]", rctx->filter_id);
 		return ISOTP_NO_FREE_FILTER;
 	}
 
@@ -641,7 +641,7 @@ int isotp_bind(struct isotp_recv_ctx *rctx, const struct device *can_dev,
 	if ((rx_addr->flags & ISOTP_MSG_FDF) != 0 || (tx_addr->flags & ISOTP_MSG_FDF) != 0) {
 		ret = can_get_capabilities(can_dev, &cap);
 		if (ret != 0 || (cap & CAN_MODE_FD) == 0) {
-			LOG_ERR("CAN controller does not support FD mode");
+			LOG_ERROR("CAN controller does not support FD mode");
 			return ISOTP_N_ERROR;
 		}
 	}
@@ -651,13 +651,13 @@ int isotp_bind(struct isotp_recv_ctx *rctx, const struct device *can_dev,
 
 	rctx->buf = net_buf_alloc_fixed(&isotp_rx_sf_ff_pool, timeout);
 	if (!rctx->buf) {
-		LOG_ERR("No buffer for FF left");
+		LOG_ERROR("No buffer for FF left");
 		return ISOTP_NO_NET_BUF_LEFT;
 	}
 
 	ret = add_ff_sf_filter(rctx);
 	if (ret) {
-		LOG_ERR("Can't add filter for binding");
+		LOG_ERROR("Can't add filter for binding");
 		net_buf_unref(rctx->buf);
 		rctx->buf = NULL;
 		return ret;
@@ -785,7 +785,7 @@ static void send_timeout_handler(struct k_timer *timer)
 
 	if (sctx->state != ISOTP_TX_SEND_CF) {
 		send_report_error(sctx, ISOTP_N_TIMEOUT_BS);
-		LOG_ERR("Reception of next FC has timed out");
+		LOG_ERROR("Reception of next FC has timed out");
 	}
 
 	k_work_submit(&sctx->work);
@@ -802,7 +802,7 @@ static void send_process_fc(struct isotp_send_ctx *sctx, struct can_frame *frame
 	}
 
 	if ((*data & ISOTP_PCI_TYPE_MASK) != ISOTP_PCI_TYPE_FC) {
-		LOG_ERR("Got unexpected PDU expected FC");
+		LOG_ERROR("Got unexpected PDU expected FC");
 		send_report_error(sctx, ISOTP_N_UNEXP_PDU);
 		return;
 	}
@@ -810,7 +810,7 @@ static void send_process_fc(struct isotp_send_ctx *sctx, struct can_frame *frame
 #ifdef CONFIG_ISOTP_REQUIRE_RX_PADDING
 	/* AUTOSAR requirement SWS_CanTp_00349 */
 	if (frame->dlc < ISOTP_PADDED_FRAME_DL_MIN) {
-		LOG_ERR("FC DL invalid. Ignore");
+		LOG_ERROR("FC DL invalid. Ignore");
 		send_report_error(sctx, ISOTP_N_ERROR);
 		return;
 	}
@@ -841,7 +841,7 @@ static void send_process_fc(struct isotp_send_ctx *sctx, struct can_frame *frame
 		break;
 
 	case ISOTP_PCI_FS_OVFLW:
-		LOG_ERR("Got overflow FC frame");
+		LOG_ERROR("Got overflow FC frame");
 		send_report_error(sctx, ISOTP_N_BUFFER_OVERFLW);
 		break;
 
@@ -864,7 +864,7 @@ static void send_can_rx_cb(const struct device *dev, struct can_frame *frame, vo
 		k_timer_stop(&sctx->timer);
 		send_process_fc(sctx, frame);
 	} else {
-		LOG_ERR("Got unexpected PDU");
+		LOG_ERROR("Got unexpected PDU");
 		send_report_error(sctx, ISOTP_N_UNEXP_PDU);
 	}
 
@@ -921,7 +921,7 @@ static inline int send_sf(struct isotp_send_ctx *sctx)
 	}
 
 	if (len > sctx->tx_addr.dl - index) {
-		LOG_ERR("SF len does not fit DL");
+		LOG_ERROR("SF len does not fit DL");
 		return -ENOSPC;
 	}
 
@@ -1105,10 +1105,9 @@ static void send_state_machine(struct isotp_send_ctx *sctx)
 			}
 
 			if (ret < 0) {
-				LOG_ERR("Failed to send CF");
-				send_report_error(sctx, ret == -EAGAIN ?
-						ISOTP_N_TIMEOUT_A :
-						ISOTP_N_ERROR);
+				LOG_ERROR("Failed to send CF");
+				send_report_error(sctx, ret == -EAGAIN ? ISOTP_N_TIMEOUT_A
+								       : ISOTP_N_ERROR);
 				break;
 			}
 
@@ -1185,7 +1184,7 @@ static inline int add_fc_filter(struct isotp_send_ctx *sctx)
 	sctx->filter_id = can_add_rx_filter(sctx->can_dev, send_can_rx_cb, sctx,
 					   &filter);
 	if (sctx->filter_id < 0) {
-		LOG_ERR("Error adding FC filter [%d]", sctx->filter_id);
+		LOG_ERROR("Error adding FC filter [%d]", sctx->filter_id);
 		return ISOTP_NO_FREE_FILTER;
 	}
 
@@ -1208,7 +1207,7 @@ static int send(struct isotp_send_ctx *sctx, const struct device *can_dev,
 	if ((rx_addr->flags & ISOTP_MSG_FDF) != 0 || (tx_addr->flags & ISOTP_MSG_FDF) != 0) {
 		ret = can_get_capabilities(can_dev, &cap);
 		if (ret != 0 || (cap & CAN_MODE_FD) == 0) {
-			LOG_ERR("CAN controller does not support FD mode");
+			LOG_ERROR("CAN controller does not support FD mode");
 			return ISOTP_N_ERROR;
 		}
 	}
@@ -1249,12 +1248,12 @@ static int send(struct isotp_send_ctx *sctx, const struct device *can_dev,
 	case 48:
 	case 64:
 		if ((sctx->tx_addr.flags & ISOTP_MSG_FDF) == 0) {
-			LOG_ERR("TX_DL > 8 only supported with FD mode");
+			LOG_ERROR("TX_DL > 8 only supported with FD mode");
 			return ISOTP_N_ERROR;
 		}
 		break;
 	default:
-		LOG_ERR("Invalid TX_DL: %u", sctx->tx_addr.dl);
+		LOG_ERROR("Invalid TX_DL: %u", sctx->tx_addr.dl);
 		return ISOTP_N_ERROR;
 	}
 
@@ -1266,7 +1265,7 @@ static int send(struct isotp_send_ctx *sctx, const struct device *can_dev,
 			  ((sctx->tx_addr.dl > ISOTP_4BIT_SF_MAX_CAN_DL) ? 1 : 0)) {
 		ret = add_fc_filter(sctx);
 		if (ret) {
-			LOG_ERR("Can't add fc filter: %d", ret);
+			LOG_ERROR("Can't add fc filter: %d", ret);
 			free_send_ctx(&sctx);
 			return ret;
 		}

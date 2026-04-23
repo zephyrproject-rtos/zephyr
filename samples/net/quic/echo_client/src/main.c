@@ -154,7 +154,7 @@ static void wait(struct config *cfg)
 
 		if (!once) {
 			once = true;
-			LOG_ERR("Error in poll:%d", errno);
+			LOG_ERROR("Error in poll:%d", errno);
 		}
 	}
 }
@@ -163,13 +163,13 @@ static int compare_quic_data(struct stream_ctx *stream, const char *buf,
 			     uint32_t received)
 {
 	if (stream->received + received > stream->expecting) {
-		LOG_ERR("Too much data received on stream fd=%d", stream->fd);
+		LOG_ERROR("Too much data received on stream fd=%d", stream->fd);
 		return -EIO;
 	}
 
 	if (memcmp(buf, lorem_ipsum + stream->received, received) != 0) {
-		LOG_ERR("Data mismatch on stream fd=%d at offset %u",
-			stream->fd, stream->received);
+		LOG_ERROR("Data mismatch on stream fd=%d at offset %u", stream->fd,
+			  stream->received);
 		LOG_HEXDUMP_ERR(buf, received, "received");
 		LOG_HEXDUMP_ERR(lorem_ipsum+stream->received, received, "expecting");
 		return -EIO;
@@ -192,8 +192,8 @@ static int send_quic_data(struct config *cfg, struct stream_ctx *stream)
 	ret = zsock_send_all(stream->fd, lorem_ipsum, stream->expecting, 0,
 			     K_FOREVER, NULL);
 	if (ret < 0) {
-		LOG_ERR("%s QUIC: stream fd=%d failed to send, errno %d",
-			cfg->proto, stream->fd, errno);
+		LOG_ERROR("%s QUIC: stream fd=%d failed to send, errno %d", cfg->proto, stream->fd,
+			  errno);
 	} else {
 		if (PRINT_PROGRESS) {
 			LOG_DBG("%s QUIC: stream fd=%d sent %u bytes",
@@ -213,7 +213,7 @@ static int start_stream(struct config *cfg, int slot)
 	ret = quic_stream_open(cfg->quic_socket, QUIC_STREAM_CLIENT,
 			       QUIC_STREAM_BIDIRECTIONAL, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to open QUIC stream (slot %d): %d", slot, ret);
+		LOG_ERROR("Failed to open QUIC stream (slot %d): %d", slot, ret);
 		return ret;
 	}
 
@@ -328,8 +328,8 @@ static bool handle_commands(struct config *cfg)
 			}
 
 			if (slot < 0) {
-				LOG_ERR("No free stream slots (max %d)",
-					CONFIG_QUIC_MAX_STREAMS_BIDI);
+				LOG_ERROR("No free stream slots (max %d)",
+					  CONFIG_QUIC_MAX_STREAMS_BIDI);
 				continue;
 			}
 
@@ -340,9 +340,8 @@ static bool handle_commands(struct config *cfg)
 		} else if (msg.op == OP_STOP_STREAM) {
 			int slot = msg.sock;
 
-			if (slot < 0 ||
-			    slot >= CONFIG_QUIC_MAX_STREAMS_BIDI) {
-				LOG_ERR("Invalid slot %d", slot);
+			if (slot < 0 || slot >= CONFIG_QUIC_MAX_STREAMS_BIDI) {
+				LOG_ERROR("Invalid slot %d", slot);
 				continue;
 			}
 
@@ -514,7 +513,7 @@ int init_quic(void)
 				 quic_ca_certificate,
 				 sizeof(quic_ca_certificate));
 	if (ret < 0) {
-		LOG_ERR("Failed to register CA certificate: %d", ret);
+		LOG_ERROR("Failed to register CA certificate: %d", ret);
 	}
 
 	memset(&remote_addr, 0, sizeof(remote_addr));
@@ -549,14 +548,14 @@ skip_ipv6:
 		if (!net_ipaddr_parse(CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
 				      sizeof(CONFIG_NET_CONFIG_PEER_IPV4_ADDR) - 1,
 				      net_sad(&remote_addr))) {
-			LOG_ERR("Invalid %s IPv%d address", "remote", 4);
+			LOG_ERROR("Invalid %s IPv%d address", "remote", 4);
 			return -EINVAL;
 		}
 
 		if (!net_ipaddr_parse(CONFIG_NET_CONFIG_MY_IPV4_ADDR,
 				      sizeof(CONFIG_NET_CONFIG_MY_IPV4_ADDR) - 1,
 				      net_sad(&local_addr))) {
-			LOG_ERR("Invalid %s IPv%d address", "local", 4);
+			LOG_ERROR("Invalid %s IPv%d address", "local", 4);
 			return -EINVAL;
 		}
 
@@ -572,8 +571,7 @@ skip_ipv6:
 			 sec_tag_list, sizeof(sec_tag_list),
 			 (const char **)alpn_list, sizeof(alpn_list));
 	if (ret < 0) {
-		LOG_ERR("Failed to setup QUIC over IPv%d (%d)",
-			proto == AF_INET6 ? 6 : 4, ret);
+		LOG_ERROR("Failed to setup QUIC over IPv%d (%d)", proto == AF_INET6 ? 6 : 4, ret);
 		return ret;
 	}
 
@@ -659,7 +657,7 @@ restart:
 	/* Create the control eventfd that wakes the poll loop. */
 	control_fd = zvfs_eventfd(0, 0);
 	if (control_fd < 0) {
-		LOG_ERR("Failed to create control eventfd: %d", errno);
+		LOG_ERROR("Failed to create control eventfd: %d", errno);
 		return;
 	}
 
@@ -712,8 +710,8 @@ restart:
 
 			ret = process_stream(cfg, stream);
 			if (ret < 0) {
-				LOG_ERR("Stream slot=%zu fd=%d error %d, closing",
-					i, stream->fd, ret);
+				LOG_ERROR("Stream slot=%zu fd=%d error %d, closing", i, stream->fd,
+					  ret);
 				stop_stream(cfg, (int)i);
 				prepare_fds(cfg);
 			}
@@ -746,7 +744,7 @@ static void send_cmd(enum operation op, int sock)
 
 	ret = k_msgq_put(&cmd_msgq, &msg, K_MSEC(10));
 	if (ret < 0) {
-		LOG_ERR("Cannot write to cmd_msgq (%d)", ret);
+		LOG_ERROR("Cannot write to cmd_msgq (%d)", ret);
 		return;
 	}
 

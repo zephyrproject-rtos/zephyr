@@ -65,19 +65,18 @@ static int at24_emul_transfer(const struct emul *target, struct i2c_msg *msgs,
 	cfg = target->cfg;
 
 	if (cfg->addr != addr) {
-		LOG_ERR("Address mismatch, expected %02x, got %02x", cfg->addr,
-			addr);
+		LOG_ERROR("Address mismatch, expected %02x, got %02x", cfg->addr, addr);
 		return -EIO;
 	}
 
 	if (i2c_get_config(data->i2c, &i2c_cfg)) {
-		LOG_ERR("i2c_get_config failed");
+		LOG_ERROR("i2c_get_config failed");
 		return -EIO;
 	}
 	/* For testing purposes, fail if the bus speed is above standard */
 	too_fast = (I2C_SPEED_GET(i2c_cfg) > I2C_SPEED_STANDARD);
 	if (too_fast) {
-		LOG_ERR("Speed too high");
+		LOG_ERROR("Speed too high");
 		return -EIO;
 	}
 
@@ -98,7 +97,7 @@ static int at24_emul_transfer(const struct emul *target, struct i2c_msg *msgs,
 		return 0;
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 		data->cur_reg = msgs->buf[0];
@@ -106,12 +105,12 @@ static int at24_emul_transfer(const struct emul *target, struct i2c_msg *msgs,
 		/* Now process the 'read' part of the message */
 		msgs++;
 		if (!(msgs->flags & I2C_MSG_READ)) {
-			LOG_ERR("Unexpected write");
+			LOG_ERROR("Unexpected write");
 			return -EIO;
 		}
 		break;
 	default:
-		LOG_ERR("Invalid number of messages");
+		LOG_ERROR("Invalid number of messages");
 		return -EIO;
 	}
 

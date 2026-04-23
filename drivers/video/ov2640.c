@@ -515,7 +515,7 @@ static int ov2640_write_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr, ui
 		/* If writing failed wait 5ms before next attempt */
 		k_msleep(5);
 	}
-	LOG_ERR("failed to write 0x%x to 0x%x", value, reg_addr);
+	LOG_ERROR("failed to write 0x%x to 0x%x", value, reg_addr);
 
 	return -1;
 }
@@ -538,7 +538,7 @@ static int ov2640_read_reg(const struct i2c_dt_spec *spec, uint8_t reg_addr)
 		/* If reading failed wait 5ms before next attempt */
 		k_msleep(5);
 	}
-	LOG_ERR("failed to read 0x%x register", reg_addr);
+	LOG_ERROR("failed to read 0x%x register", reg_addr);
 
 	return -1;
 }
@@ -608,7 +608,7 @@ static int ov2640_set_output_format(const struct device *dev, int output_format)
 		/* Disable JPEG compression and set output to RGB565 */
 		ret |= ov2640_write_reg(&cfg->i2c, IMAGE_MODE, IMAGE_MODE_RGB565);
 	} else {
-		LOG_ERR("Image format not supported");
+		LOG_ERROR("Image format not supported");
 		return -ENOTSUP;
 	}
 	k_msleep(30);
@@ -820,7 +820,7 @@ uint8_t ov2640_check_connection(const struct device *dev)
 	reg_ver_val = ov2640_read_reg(&cfg->i2c, REG_VER);
 
 	if (REG_PID_VAL != reg_pid_val || REG_VER_VAL != reg_ver_val) {
-		LOG_ERR("OV2640 not detected\n");
+		LOG_ERROR("OV2640 not detected\n");
 		return -ENODEV;
 	}
 
@@ -836,7 +836,7 @@ static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	/* We only support RGB565 and JPEG pixel formats */
 	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_JPEG) {
-		LOG_ERR("ov2640 camera supports only RGB565 and JPG pixelformats!");
+		LOG_ERROR("ov2640 camera supports only RGB565 and JPG pixelformats!");
 		return -ENOTSUP;
 	}
 
@@ -865,7 +865,7 @@ static int ov2640_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	/* Camera is not capable of handling given format */
-	LOG_ERR("Image format not supported\n");
+	LOG_ERROR("Image format not supported\n");
 	return -ENOTSUP;
 }
 
@@ -1044,7 +1044,7 @@ static int ov2640_init(const struct device *dev)
 
 	ret = ov2640_set_fmt(dev, &fmt);
 	if (ret) {
-		LOG_ERR("Unable to configure default format");
+		LOG_ERROR("Unable to configure default format");
 		return -EIO;
 	}
 
@@ -1077,20 +1077,20 @@ static int ov2640_init_0(const struct device *dev)
 	const struct ov2640_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
+		LOG_ERROR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
 		return -ENODEV;
 	}
 #endif
 
 #if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
 	if (!gpio_is_ready_dt(&cfg->pwdn_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
+		LOG_ERROR("%s: device %s is not ready", dev->name, cfg->pwdn_gpio.port->name);
 		return -ENODEV;
 	}
 #endif
@@ -1098,7 +1098,7 @@ static int ov2640_init_0(const struct device *dev)
 	uint32_t i2c_cfg = I2C_MODE_CONTROLLER | I2C_SPEED_SET(I2C_SPEED_STANDARD);
 
 	if (i2c_configure(cfg->i2c.bus, i2c_cfg)) {
-		LOG_ERR("Failed to configure ov2640 i2c interface.");
+		LOG_ERROR("Failed to configure ov2640 i2c interface.");
 	}
 
 	return ov2640_init(dev);

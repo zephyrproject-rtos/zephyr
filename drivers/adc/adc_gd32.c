@@ -244,22 +244,22 @@ static int adc_gd32_channel_setup(const struct device *dev,
 	const struct adc_gd32_config *cfg = dev->config;
 
 	if (chan_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Gain is not valid");
+		LOG_ERROR("Gain is not valid");
 		return -ENOTSUP;
 	}
 
 	if (chan_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Reference is not valid");
+		LOG_ERROR("Reference is not valid");
 		return -ENOTSUP;
 	}
 
 	if (chan_cfg->differential) {
-		LOG_ERR("Differential sampling not supported");
+		LOG_ERROR("Differential sampling not supported");
 		return -ENOTSUP;
 	}
 
 	if (chan_cfg->channel_id >= cfg->channels) {
-		LOG_ERR("Invalid channel (%u)", chan_cfg->channel_id);
+		LOG_ERROR("Invalid channel (%u)", chan_cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -277,7 +277,7 @@ static int adc_gd32_start_read(const struct device *dev,
 
 	index = find_lsb_set(sequence->channels) - 1;
 	if (sequence->channels > BIT(index)) {
-		LOG_ERR("Only single channel supported");
+		LOG_ERROR("Only single channel supported");
 		return -ENOTSUP;
 	}
 

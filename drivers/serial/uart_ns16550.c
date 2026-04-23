@@ -788,13 +788,13 @@ static int uart_reset_config(const struct reset_dt_spec *reset_spec)
 	int ret;
 
 	if (!device_is_ready(reset_spec->dev)) {
-		LOG_ERR("Reset controller device is not ready");
+		LOG_ERROR("Reset controller device is not ready");
 		return -ENODEV;
 	}
 
 	ret = reset_line_toggle(reset_spec->dev, reset_spec->id);
 	if (ret != 0) {
-		LOG_ERR("UART toggle reset line failed");
+		LOG_ERROR("UART toggle reset line failed");
 		return ret;
 	}
 

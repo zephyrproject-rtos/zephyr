@@ -154,17 +154,17 @@ static int dacx0508_channel_setup(const struct device *dev,
 	struct dacx0508_data *data = dev->data;
 
 	if (channel_cfg->channel_id > DACX0508_MAX_CHANNEL - 1) {
-		LOG_ERR("Unsupported channel %d", channel_cfg->channel_id);
+		LOG_ERROR("Unsupported channel %d", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->resolution != config->resolution) {
-		LOG_ERR("Unsupported resolution %d", channel_cfg->resolution);
+		LOG_ERROR("Unsupported resolution %d", channel_cfg->resolution);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -182,17 +182,17 @@ static int dacx0508_write_value(const struct device *dev, uint8_t channel,
 	int ret;
 
 	if (channel > DACX0508_MAX_CHANNEL - 1) {
-		LOG_ERR("unsupported channel %d", channel);
+		LOG_ERROR("unsupported channel %d", channel);
 		return -ENOTSUP;
 	}
 
 	if (!(data->configured & BIT(channel))) {
-		LOG_ERR("Channel not initialized");
+		LOG_ERROR("Channel not initialized");
 		return -EINVAL;
 	}
 
 	if (value >= (1 << config->resolution)) {
-		LOG_ERR("Value %d out of range", value);
+		LOG_ERROR("Value %d out of range", value);
 		return -EINVAL;
 	}
 
@@ -232,20 +232,19 @@ static int dacx0508_device_id_check(const struct device *dev)
 
 	ret = dacx0508_reg_read(dev, DACX0508_REG_DEVICE_ID, regval);
 	if (ret) {
-		LOG_ERR("Unable to read Device ID");
+		LOG_ERROR("Unable to read Device ID");
 		return -EIO;
 	}
 	dev_id = (regval[0] << 8) | regval[1];
 
 	resolution = dev_id >> 12;
 	if (resolution != (16 - config->resolution) >> 1) {
-		LOG_ERR("Not match chip resolution");
+		LOG_ERROR("Not match chip resolution");
 		return -EINVAL;
 	}
 
-	if ((dev_id & DACX0508_MASK_DEVICE_ID_8CH) !=
-				DACX0508_MASK_DEVICE_ID_8CH) {
-		LOG_ERR("Support channels mismatch");
+	if ((dev_id & DACX0508_MASK_DEVICE_ID_8CH) != DACX0508_MASK_DEVICE_ID_8CH) {
+		LOG_ERROR("Support channels mismatch");
 		return -EINVAL;
 	}
 
@@ -277,22 +276,21 @@ static int dacx0508_setup(const struct device *dev)
 		refdiv_en = true;
 		break;
 	default:
-		LOG_ERR("unsupported channel reference type '%d'",
-			config->reference);
+		LOG_ERROR("unsupported channel reference type '%d'", config->reference);
 		return -ENOTSUP;
 	}
 
 	ret = dacx0508_reg_update(dev, DACX0508_REG_CONFIG,
 				  DACX0508_MASK_CONFIG_REF_PWDWN, ref_pwdwn);
 	if (ret) {
-		LOG_ERR("GAIN Register update failed");
+		LOG_ERROR("GAIN Register update failed");
 		return -EIO;
 	}
 
 	ret = dacx0508_reg_update(dev, DACX0508_REG_GAIN,
 				  DACX0508_MASK_GAIN_REFDIV_EN, refdiv_en);
 	if (ret) {
-		LOG_ERR("GAIN Register update failed");
+		LOG_ERROR("GAIN Register update failed");
 		return -EIO;
 	}
 
@@ -303,26 +301,25 @@ static int dacx0508_setup(const struct device *dev)
 
 	ret = dacx0508_reg_read(dev, DACX0508_REG_GAIN, regval);
 	if (ret) {
-		LOG_ERR("Unable to read GAIN Register");
+		LOG_ERROR("Unable to read GAIN Register");
 		return -EIO;
 	}
 
 	regval[1] = tmp;
 	ret = dacx0508_reg_write(dev, DACX0508_REG_GAIN, regval);
 	if (ret) {
-		LOG_ERR("Unable to write GAIN Register");
+		LOG_ERROR("Unable to write GAIN Register");
 		return -EIO;
 	}
 
 	ret = dacx0508_reg_read(dev, DACX0508_REG_STATUS, regval);
 	if (ret) {
-		LOG_ERR("Unable to read STATUS Register");
+		LOG_ERROR("Unable to read STATUS Register");
 		return -EIO;
 	}
-	if ((regval[1] & DACX0508_MASK_STATUS_REF_ALM) ==
-				DACX0508_MASK_STATUS_REF_ALM) {
-		LOG_ERR("Difference between VREF/DIV and VDD is "
-			"below the required minimum analog threshold");
+	if ((regval[1] & DACX0508_MASK_STATUS_REF_ALM) == DACX0508_MASK_STATUS_REF_ALM) {
+		LOG_ERROR("Difference between VREF/DIV and VDD is "
+			  "below the required minimum analog threshold");
 		return -EIO;
 	}
 
@@ -336,13 +333,13 @@ static int dacx0508_init(const struct device *dev)
 	int ret;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
 	ret = dacx0508_soft_reset(dev);
 	if (ret) {
-		LOG_ERR("Soft-reset failed");
+		LOG_ERROR("Soft-reset failed");
 		return ret;
 	}
 

@@ -280,7 +280,7 @@ static int lis2dh_acc_hp_filter_set(const struct device *dev, int32_t val)
 
 	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL2, val);
 	if (status < 0) {
-		LOG_ERR("Failed to set high pass filters");
+		LOG_ERROR("Failed to set high pass filters");
 	}
 
 	return status;
@@ -372,12 +372,12 @@ int lis2dh_init_chip(const struct device *dev)
 
 	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
 	if (status < 0) {
-		LOG_ERR("Failed to read chip id.");
+		LOG_ERROR("Failed to read chip id.");
 		return status;
 	}
 
 	if (id != LIS2DH_CHIP_ID) {
-		LOG_ERR("Invalid chip ID: %02x\n", id);
+		LOG_ERROR("Invalid chip ID: %02x\n", id);
 		return -EINVAL;
 	}
 
@@ -394,7 +394,7 @@ int lis2dh_init_chip(const struct device *dev)
 						   LIS2DH_SDO_PU_DISC_MASK,
 						   LIS2DH_SDO_PU_DISC_MASK);
 		if (status < 0) {
-			LOG_ERR("Failed to disconnect SDO/SA0 pull-up.");
+			LOG_ERROR("Failed to disconnect SDO/SA0 pull-up.");
 			return status;
 		}
 	}
@@ -411,7 +411,7 @@ int lis2dh_init_chip(const struct device *dev)
 					   sizeof(raw));
 
 	if (status < 0) {
-		LOG_ERR("Failed to reset ctrl registers.");
+		LOG_ERROR("Failed to reset ctrl registers.");
 		return status;
 	}
 
@@ -425,7 +425,7 @@ int lis2dh_init_chip(const struct device *dev)
 #endif
 
 	if (status < 0) {
-		LOG_ERR("Failed to set full scale ctrl register.");
+		LOG_ERROR("Failed to set full scale ctrl register.");
 		return status;
 	}
 
@@ -435,7 +435,7 @@ int lis2dh_init_chip(const struct device *dev)
 					   cfg->temperature.enable_mask);
 
 	if (status < 0) {
-		LOG_ERR("Failed to enable temperature measurement");
+		LOG_ERROR("Failed to enable temperature measurement");
 		return status;
 	}
 #endif
@@ -444,7 +444,7 @@ int lis2dh_init_chip(const struct device *dev)
 	if (cfg->gpio_drdy.port != NULL || cfg->gpio_int.port != NULL) {
 		status = lis2dh_init_interrupt(dev);
 		if (status < 0) {
-			LOG_ERR("Failed to initialize interrupts.");
+			LOG_ERROR("Failed to initialize interrupts.");
 			return status;
 		}
 	}
@@ -473,7 +473,7 @@ static int lis2dh_pm_action(const struct device *dev,
 		/* read REFERENCE register (see datasheet rev 6 section 8.9 footnote 1) */
 		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_REFERENCE, &regdata);
 		if (status < 0) {
-			LOG_ERR("failed to read reg_reference");
+			LOG_ERROR("failed to read reg_reference");
 			return status;
 		}
 
@@ -481,7 +481,7 @@ static int lis2dh_pm_action(const struct device *dev,
 		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 						  lis2dh->reg_ctrl1_active_val);
 		if (status < 0) {
-			LOG_ERR("failed to write reg_ctrl1");
+			LOG_ERROR("failed to write reg_ctrl1");
 			return status;
 		}
 		break;
@@ -490,13 +490,13 @@ static int lis2dh_pm_action(const struct device *dev,
 		status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1,
 						 &lis2dh->reg_ctrl1_active_val);
 		if (status < 0) {
-			LOG_ERR("failed to read reg_ctrl1");
+			LOG_ERROR("failed to read reg_ctrl1");
 			return status;
 		}
 		status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
 						  LIS2DH_SUSPEND);
 		if (status < 0) {
-			LOG_ERR("failed to write reg_ctrl1");
+			LOG_ERROR("failed to write reg_ctrl1");
 			return status;
 		}
 		break;
@@ -516,7 +516,7 @@ static int lis2dh_init(const struct device *dev)
 
 	status = cfg->bus_init(dev);
 	if (status < 0) {
-		LOG_ERR("Failed to initialize the bus.");
+		LOG_ERROR("Failed to initialize the bus.");
 		return status;
 	}
 

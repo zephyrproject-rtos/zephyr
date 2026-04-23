@@ -50,7 +50,7 @@ description: |
       uint32_t pwm_frequency = 1000U; /* 1kHz */
 
       if (!device_is_ready(pwm)) {
-        LOG_ERR("Error: PWM device %s is not ready\n", pwm->name);
+        LOG_ERROR("Error: PWM device %s is not ready\n", pwm->name);
         return -ENODEV;
       }
 

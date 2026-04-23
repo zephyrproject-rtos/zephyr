@@ -38,7 +38,7 @@ static int mcux_wdog_setup(const struct device *dev, uint8_t options)
 	WDOG_Type *base = config->base;
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
@@ -75,12 +75,12 @@ static int mcux_wdog_install_timeout(const struct device *dev,
 	uint32_t clock_freq;
 
 	if (data->timeout_valid) {
-		LOG_ERR("No more timeouts can be installed");
+		LOG_ERROR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -104,7 +104,7 @@ static int mcux_wdog_install_timeout(const struct device *dev,
 
 	if ((data->wdog_config.timeoutValue < MIN_TIMEOUT) ||
 	    (data->wdog_config.timeoutValue < data->wdog_config.windowValue)) {
-		LOG_ERR("Invalid timeout");
+		LOG_ERROR("Invalid timeout");
 		return -EINVAL;
 	}
 
@@ -122,7 +122,7 @@ static int mcux_wdog_feed(const struct device *dev, int channel_id)
 	WDOG_Type *base = config->base;
 
 	if (channel_id != 0) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 

@@ -74,7 +74,7 @@ static void rtc_counter_wait_sync(const volatile uint32_t *sync_reg_addr, uint32
 				RTC_SYNCHRONIZATION_TIMEOUT_IN_US, k_busy_wait(DELAY_US));
 
 	if (!success) {
-		LOG_ERR("%s : Synchronization time-out occurred", __func__);
+		LOG_ERROR("%s : Synchronization time-out occurred", __func__);
 	}
 }
 
@@ -99,8 +99,8 @@ static void rtc_counter_wait_count_change(const void *regs, const uint32_t *coun
 				WAIT_FOR((*counter_value != p_regs->RTC_COUNT),
 					 RTC_SYNCHRONIZATION_TIMEOUT_IN_US, k_busy_wait(DELAY_US));
 			if (!success) {
-				LOG_ERR("%s : Synchronization time-out occurred %d", __func__,
-					max_bit_width);
+				LOG_ERROR("%s : Synchronization time-out occurred %d", __func__,
+					  max_bit_width);
 			}
 		}
 		break;
@@ -114,14 +114,14 @@ static void rtc_counter_wait_count_change(const void *regs, const uint32_t *coun
 				WAIT_FOR((*counter_value != p_regs->RTC_COUNT),
 					 RTC_SYNCHRONIZATION_TIMEOUT_IN_US, k_busy_wait(DELAY_US));
 			if (!success) {
-				LOG_ERR("%s : Synchronization time-out occurred %d", __func__,
-					max_bit_width);
+				LOG_ERROR("%s : Synchronization time-out occurred %d", __func__,
+					  max_bit_width);
 			}
 		}
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		break;
 	}
 }
@@ -185,7 +185,7 @@ static int32_t rtc_counter_init(const void *regs, uint32_t prescaler, const uint
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = COUNTER_RET_FAILED;
 		break;
 	}
@@ -213,7 +213,7 @@ static int32_t rtc_counter_disable(const void *regs, const uint32_t max_bit_widt
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = COUNTER_RET_FAILED;
 		break;
 	}
@@ -240,7 +240,7 @@ static int32_t rtc_counter_start(const void *regs, const uint32_t max_bit_width)
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = COUNTER_RET_FAILED;
 		break;
 	}
@@ -275,7 +275,7 @@ static int32_t rtc_counter_retrigger(const void *regs, const uint32_t max_bit_wi
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = COUNTER_RET_FAILED;
 		break;
 	}
@@ -333,7 +333,7 @@ static uint32_t rtc_counter_get_count(const void *regs, uint32_t *const counter_
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = COUNTER_RET_FAILED;
 		break;
 	}
@@ -362,7 +362,7 @@ static int32_t rtc_counter_set_period(const void *regs, const uint32_t period,
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = COUNTER_RET_FAILED;
 		break;
 	}
@@ -389,7 +389,7 @@ static int32_t rtc_counter_get_period(const void *regs, uint32_t *period,
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = COUNTER_RET_FAILED;
 		break;
 	}
@@ -420,7 +420,7 @@ static int32_t rtc_counter_set_compare(const void *regs, const uint32_t chan_id,
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = COUNTER_RET_FAILED;
 		break;
 	}
@@ -448,7 +448,7 @@ static int32_t rtc_counter_get_pending_irqs(const void *regs, const uint32_t max
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		break;
 	}
 
@@ -481,7 +481,7 @@ static int32_t rtc_counter_alarm_irq_enable(const void *regs, const uint32_t cha
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_status = COUNTER_RET_FAILED;
 		break;
 	}
@@ -513,7 +513,7 @@ static int32_t rtc_counter_alarm_irq_disable(const void *regs, const uint32_t ch
 		p_regs->RTC_INTENCLR = 1U << ((uint32_t)RTC_MODE1_INTFLAG_CMP0_Msk + channel_id);
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_status = COUNTER_RET_FAILED;
 		break;
 	}
@@ -546,7 +546,7 @@ static int32_t rtc_counter_alarm_irq_clear(const void *regs, const uint32_t chan
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_status = COUNTER_RET_FAILED;
 		break;
 	}
@@ -577,7 +577,7 @@ static bool rtc_counter_alarm_irq_status(const uint32_t pending_irq_status,
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_status = false;
 		break;
 	}
@@ -603,7 +603,7 @@ static int32_t rtc_counter_top_irq_enable(const void *regs, const uint32_t max_b
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = COUNTER_RET_FAILED;
 		break;
 	}
@@ -631,7 +631,7 @@ static int32_t rtc_counter_top_irq_disable(const void *regs, const uint32_t max_
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = COUNTER_RET_FAILED;
 		break;
 	}
@@ -659,7 +659,7 @@ static int32_t rtc_counter_top_irq_clear(const void *regs, const uint32_t max_bi
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = COUNTER_RET_FAILED;
 		break;
 	}
@@ -684,7 +684,7 @@ static bool rtc_counter_top_irq_status(const uint32_t pending_irq_status,
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		return_value = false;
 		break;
 	}
@@ -779,12 +779,12 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 
 	/* Check if the requested tick value is less than top (period) value */
 	if (ticks > top_value) {
-		LOG_ERR("tick value is greater than top value");
+		LOG_ERROR("tick value is greater than top value");
 		return -EINVAL;
 	}
 
 	if (NULL != data->channel_data[chan_id].callback) {
-		LOG_ERR("alarm callback already set");
+		LOG_ERROR("alarm callback already set");
 		return -EBUSY;
 	}
 
@@ -984,25 +984,25 @@ static int32_t counter_mchp_init(const struct device *const dev)
 
 	max_counter_val = (uint32_t)((1ULL << cfg->max_bit_width) - 1u);
 	if (max_counter_val != cfg->info.max_top_value) {
-		LOG_ERR("%s : Maximum bit width not allowed", __func__);
+		LOG_ERROR("%s : Maximum bit width not allowed", __func__);
 		return -EINVAL;
 	}
 
 	ret_status = clock_control_on(clk->clock_dev, clk->host_core_sync_clk);
 	if ((ret_status < 0) && (ret_status != -EALREADY)) {
-		LOG_ERR("%s : Unable to initialize host clock", __func__);
+		LOG_ERROR("%s : Unable to initialize host clock", __func__);
 		return ret_status;
 	}
 
 	ret_status = clock_control_on(clk->clock_dev, clk->periph_async_clk);
 	if ((ret_status < 0) && (ret_status != -EALREADY)) {
-		LOG_ERR("%s : Unable to initialize peripheral clock", __func__);
+		LOG_ERROR("%s : Unable to initialize peripheral clock", __func__);
 		return ret_status;
 	}
 
 	ret_status = rtc_counter_init(cfg->regs, cfg->prescaler, cfg->max_bit_width);
 	if (ret_status < 0) {
-		LOG_ERR("%s : Counter failed to initialize", __func__);
+		LOG_ERROR("%s : Counter failed to initialize", __func__);
 		return ret_status;
 	}
 	cfg->irq_config_func(dev);

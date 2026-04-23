@@ -41,8 +41,8 @@ static atomic_t adv_stopped_for_provisioning;
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
-		LOG_ERR("connection to %s failed (0x%02x %s)", bt_conn_dst_str(conn), err,
-			bt_hci_err_to_str(err));
+		LOG_ERROR("connection to %s failed (0x%02x %s)", bt_conn_dst_str(conn), err,
+			  bt_hci_err_to_str(err));
 		return;
 	}
 
@@ -87,7 +87,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
 	if (err) {
-		LOG_ERR("security failed: %s level %u err %d", bt_conn_dst_str(conn), level, err);
+		LOG_ERROR("security failed: %s level %u err %d", bt_conn_dst_str(conn), level, err);
 	} else {
 		LOG_INF("security changed: %s level %u", bt_conn_dst_str(conn), level);
 	}
@@ -120,7 +120,7 @@ static void pairing_complete(struct bt_conn *conn, bool bonded)
 
 static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 {
-	LOG_ERR("pairing failed with %s (reason %u)", bt_conn_dst_str(conn), reason);
+	LOG_ERROR("pairing failed with %s (reason %u)", bt_conn_dst_str(conn), reason);
 }
 
 static const struct bt_conn_auth_cb auth_cb = {
@@ -151,7 +151,7 @@ static void try_connect(void)
 
 	err = wifi_prov_creds_save(&snapshot);
 	if (err) {
-		LOG_ERR("save creds failed (%d)", err);
+		LOG_ERROR("save creds failed (%d)", err);
 		gatt_svc_set_status(GATT_SVC_STATUS_FAILED);
 		return;
 	}
@@ -160,7 +160,7 @@ static void try_connect(void)
 
 	err = wifi_prov_connect_stored();
 	if (err) {
-		LOG_ERR("connect dispatch failed (%d)", err);
+		LOG_ERROR("connect dispatch failed (%d)", err);
 		gatt_svc_set_status(GATT_SVC_STATUS_FAILED);
 	}
 }
@@ -196,7 +196,7 @@ static void erase_work_handler(struct k_work *w)
 	if (atomic_cas(&adv_stopped_for_provisioning, 1, 0)) {
 		err = gatt_svc_adv_start();
 		if (err) {
-			LOG_ERR("adv restart failed (%d)", err);
+			LOG_ERROR("adv restart failed (%d)", err);
 		}
 	}
 
@@ -298,13 +298,13 @@ int main(void)
 
 	err = wifi_prov_init(wifi_result);
 	if (err) {
-		LOG_ERR("wifi_prov_init (%d)", err);
+		LOG_ERROR("wifi_prov_init (%d)", err);
 		return err;
 	}
 
 	err = bt_enable(NULL);
 	if (err) {
-		LOG_ERR("bt_enable (%d)", err);
+		LOG_ERROR("bt_enable (%d)", err);
 		return err;
 	}
 
@@ -315,12 +315,12 @@ int main(void)
 #if defined(CONFIG_WIFI_BLE_PROV_SECURITY_AUTH)
 	err = bt_conn_auth_cb_register(&auth_cb);
 	if (err) {
-		LOG_ERR("bt_conn_auth_cb_register (%d)", err);
+		LOG_ERROR("bt_conn_auth_cb_register (%d)", err);
 		return err;
 	}
 	err = bt_conn_auth_info_cb_register(&auth_info_cb);
 	if (err) {
-		LOG_ERR("bt_conn_auth_info_cb_register (%d)", err);
+		LOG_ERROR("bt_conn_auth_info_cb_register (%d)", err);
 		return err;
 	}
 
@@ -335,7 +335,7 @@ int main(void)
 
 	err = gatt_svc_adv_start();
 	if (err) {
-		LOG_ERR("initial advertising failed (%d)", err);
+		LOG_ERROR("initial advertising failed (%d)", err);
 	}
 
 	if (wifi_prov_has_stored_creds()) {
@@ -344,7 +344,7 @@ int main(void)
 
 		err = wifi_prov_connect_stored();
 		if (err) {
-			LOG_ERR("auto-connect failed (%d)", err);
+			LOG_ERROR("auto-connect failed (%d)", err);
 			gatt_svc_set_status(GATT_SVC_STATUS_FAILED);
 		}
 	} else {

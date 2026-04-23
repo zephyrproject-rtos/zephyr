@@ -239,7 +239,7 @@ static int adc_rza2m_channel_setup(const struct device *dev,
 	uint8_t acq_time = 0;
 
 	if (!((config->channel_available_mask & BIT(channel_cfg->channel_id)) != 0)) {
-		LOG_ERR("Unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("Unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
@@ -248,30 +248,30 @@ static int adc_rza2m_channel_setup(const struct device *dev,
 
 	} else {
 		if (ADC_ACQ_TIME_UNIT(channel_cfg->acquisition_time) != ADC_ACQ_TIME_TICKS) {
-			LOG_ERR("Acquisition time only support ADC_ACQ_TIME_TICKS unit");
+			LOG_ERROR("Acquisition time only support ADC_ACQ_TIME_TICKS unit");
 			return -ENOTSUP;
 		}
 
 		if (!IN_RANGE(ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time), 5, 255)) {
-			LOG_ERR("Acquisition time value %d is out of range (5~255 ticks)",
-				channel_cfg->acquisition_time);
+			LOG_ERROR("Acquisition time value %d is out of range (5~255 ticks)",
+				  channel_cfg->acquisition_time);
 			return -ENOTSUP;
 		}
 		acq_time = ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time);
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Unsupported channel gain %d", channel_cfg->gain);
+		LOG_ERROR("Unsupported channel gain %d", channel_cfg->gain);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Unsupported channel reference");
+		LOG_ERROR("Unsupported channel reference");
 		return -EINVAL;
 	}
 
@@ -323,7 +323,7 @@ static int adc_rza2m_start_read(const struct device *dev, const struct adc_seque
 	int err;
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No channel to read");
+		LOG_ERROR("No channel to read");
 		return -EINVAL;
 	}
 
@@ -344,8 +344,8 @@ static int adc_rza2m_start_read(const struct device *dev, const struct adc_seque
 		adcer |= FIELD_PREP(ADCER_ADPRC_MASK, 0x00);
 		break;
 	default:
-		LOG_ERR("Invalid resolution value %d, (valid value: 8, 10, 12)",
-			sequence->resolution);
+		LOG_ERROR("Invalid resolution value %d, (valid value: 8, 10, 12)",
+			  sequence->resolution);
 		return -EINVAL;
 	}
 
@@ -360,27 +360,27 @@ static int adc_rza2m_start_read(const struct device *dev, const struct adc_seque
 		adadc |= FIELD_PREP(ADADC_ADC_MASK, 0x03) | ADADC_AVEE;
 		break;
 	default:
-		LOG_ERR("Invalid oversampling value %d (valid value: 0, 1, 2)",
-			sequence->oversampling);
+		LOG_ERROR("Invalid oversampling value %d (valid value: 0, 1, 2)",
+			  sequence->oversampling);
 		return -EINVAL;
 	}
 
 	if ((sequence->channels & ~config->channel_available_mask) != 0) {
-		LOG_ERR("Unsupported channels in mask: 0x%08x", sequence->channels);
+		LOG_ERROR("Unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
 	/* Check if channels have been configured via channel_setup */
 	if ((sequence->channels & ~data->configured_channels) != 0) {
-		LOG_ERR("Attempted to read from unconfigured channels in mask: 0x%08x",
-			sequence->channels);
+		LOG_ERROR("Attempted to read from unconfigured channels in mask: 0x%08x",
+			  sequence->channels);
 		return -EINVAL;
 	}
 
 	err = adc_rza2m_check_buffer_size(dev, sequence);
 
 	if (err) {
-		LOG_ERR("Buffer size too small");
+		LOG_ERROR("Buffer size too small");
 		return err;
 	}
 

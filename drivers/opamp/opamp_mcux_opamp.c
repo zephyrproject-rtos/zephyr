@@ -76,7 +76,7 @@ static int mcux_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
 		gain_index = 7;
 		break;
 	default:
-		LOG_ERR("Invalid gain value: %d", gain);
+		LOG_ERROR("Invalid gain value: %d", gain);
 		return -EINVAL;
 	}
 
@@ -109,27 +109,27 @@ int mcux_opamp_init(const struct device *dev)
 
 	/* Enable OPAMP clock. */
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock device is not ready");
+		LOG_ERROR("Clock device is not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 
 	if (ret) {
-		LOG_ERR("Device clock turn on failed");
+		LOG_ERROR("Device clock turn on failed");
 		return ret;
 	}
 
 	/* Only LPC implemented RESET driver */
 #if defined(CONFIG_SOC_FAMILY_LPC)
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("Reset device is not ready");
+		LOG_ERROR("Reset device is not ready");
 		return -ENODEV;
 	}
 
 	ret = reset_line_assert(config->reset.dev, config->reset.id);
 	if (ret) {
-		LOG_ERR("Device clock turn on failed");
+		LOG_ERROR("Device clock turn on failed");
 		return ret;
 	}
 #endif
@@ -192,7 +192,7 @@ int mcux_opamp_init(const struct device *dev)
 #endif
 		break;
 	default:
-		LOG_ERR("Unsupported functional mode %d", config->functional_mode);
+		LOG_ERROR("Unsupported functional mode %d", config->functional_mode);
 		return -ENOTSUP;
 	}
 

@@ -201,7 +201,7 @@ static int lsm9ds1_gyro_odr_set(const struct device *dev, uint16_t freq)
 
 	ret = lsm9ds1_accel_set_odr_raw(dev, odr);
 	if (ret < 0) {
-		LOG_ERR("failed to set accelerometer sampling rate");
+		LOG_ERROR("failed to set accelerometer sampling rate");
 		return ret;
 	}
 
@@ -243,7 +243,7 @@ static int lsm9ds1_accel_odr_set(const struct device *dev, uint16_t freq)
 
 		ret = lsm9ds1_gyro_set_odr_raw(dev, odr);
 		if (ret < 0) {
-			LOG_ERR("failed to set gyroscope sampling rate");
+			LOG_ERROR("failed to set gyroscope sampling rate");
 			return ret;
 		}
 
@@ -583,19 +583,19 @@ static int lsm9ds1_pm_action(const struct device *dev, enum pm_device_action act
 	case PM_DEVICE_ACTION_RESUME:
 		ret = lsm9ds1_accel_set_odr_raw(dev, data->accel_odr);
 		if (ret < 0) {
-			LOG_ERR("Failed to resume accelerometer");
+			LOG_ERROR("Failed to resume accelerometer");
 			return ret;
 		}
 		ret = lsm9ds1_gyro_set_odr_raw(dev, data->gyro_odr);
 		if (ret < 0) {
-			LOG_ERR("Failed to resume gyroscope");
+			LOG_ERROR("Failed to resume gyroscope");
 			return ret;
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = lsm9ds1_imu_data_rate_set(ctx, LSM9DS1_IMU_OFF);
 		if (ret < 0) {
-			LOG_ERR("Failed to suspend accelerometer and gyroscope");
+			LOG_ERROR("Failed to suspend accelerometer and gyroscope");
 			return ret;
 		}
 
@@ -618,18 +618,18 @@ static int lsm9ds1_init(const struct device *dev)
 
 	ret = lsm9ds1_reboot(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to reboot device");
+		LOG_ERROR("Failed to reboot device");
 		return ret;
 	}
 
 	ret = lsm9ds1_read_reg(ctx, LSM9DS1_WHO_AM_I, &chip_id, 1);
 	if (ret < 0) {
-		LOG_ERR("failed reading chip id");
+		LOG_ERROR("failed reading chip id");
 		return ret;
 	}
 
 	if (chip_id != LSM9DS1_IMU_ID) {
-		LOG_ERR("Invalid ID : got %x", chip_id);
+		LOG_ERROR("Invalid ID : got %x", chip_id);
 		return -EIO;
 	}
 	LOG_DBG("chip_id : %x", chip_id);
@@ -637,7 +637,7 @@ static int lsm9ds1_init(const struct device *dev)
 	LOG_DBG("output data rate is %d\n", cfg->imu_odr);
 	ret = lsm9ds1_imu_data_rate_set(ctx, cfg->imu_odr);
 	if (ret < 0) {
-		LOG_ERR("failed to set IMU odr");
+		LOG_ERROR("failed to set IMU odr");
 		return ret;
 	}
 
@@ -645,7 +645,7 @@ static int lsm9ds1_init(const struct device *dev)
 	LOG_DBG("accel range is %d\n", fs);
 	ret = lsm9ds1_xl_full_scale_set(ctx, fs);
 	if (ret < 0) {
-		LOG_ERR("failed to set accelerometer range %d", fs);
+		LOG_ERROR("failed to set accelerometer range %d", fs);
 		return ret;
 	}
 
@@ -655,7 +655,7 @@ static int lsm9ds1_init(const struct device *dev)
 	LOG_DBG("gyro range is %d", fs);
 	ret = lsm9ds1_gy_full_scale_set(ctx, fs);
 	if (ret < 0) {
-		LOG_ERR("failed to set gyroscope range %d\n", fs);
+		LOG_ERROR("failed to set gyroscope range %d\n", fs);
 		return ret;
 	}
 	data->gyro_gain = (lsm9ds1_gyro_fs_sens[fs] * GAIN_UNIT_G);

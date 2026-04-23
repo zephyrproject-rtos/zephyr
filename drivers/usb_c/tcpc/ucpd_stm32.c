@@ -1181,7 +1181,7 @@ static void ucpd_isr(const struct device *dev_inst[])
 			}
 		} else {
 			/* Rx message is complete, but there were bit errors */
-			LOG_ERR("ucpd: rx message error");
+			LOG_ERROR("ucpd: rx message error");
 		}
 	}
 	/* Check for fault conditions */
@@ -1318,7 +1318,7 @@ static int ucpd_init(const struct device *dev)
 	LOG_DBG("Pinctrl signals configuration");
 	ret = pinctrl_apply_state(config->ucpd_pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("USB pinctrl setup failed (%d)", ret);
+		LOG_ERROR("USB pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

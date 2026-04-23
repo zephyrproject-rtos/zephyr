@@ -125,7 +125,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 	adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_LOCAL,
 				 tx->xmit, BUF_TIMEOUT);
 	if (!adv) {
-		LOG_ERR("Out of network advs");
+		LOG_ERROR("Out of network advs");
 		return -ENOBUFS;
 	}
 
@@ -146,7 +146,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 						    tx->src, tx->ctx->addr,
 						    NULL, 1)) {
 			if (BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
-				LOG_ERR("Not enough space in Friend Queue");
+				LOG_ERROR("Not enough space in Friend Queue");
 				bt_mesh_adv_unref(adv);
 				return -ENOBUFS;
 			} else {
@@ -380,14 +380,14 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 
 	if (BT_MESH_ADDR_IS_UNICAST(tx->dst) &&
 	    !tx->attempts_left_without_progress) {
-		LOG_ERR("Ran out of retransmit without progress attempts");
+		LOG_ERROR("Ran out of retransmit without progress attempts");
 		seg_tx_complete(tx, -ETIMEDOUT);
 		return;
 	}
 
 	if (!tx->attempts_left) {
 		if (BT_MESH_ADDR_IS_UNICAST(tx->dst)) {
-			LOG_ERR("Ran out of retransmit attempts");
+			LOG_ERROR("Ran out of retransmit attempts");
 			seg_tx_complete(tx, -ETIMEDOUT);
 		} else {
 			/* Segmented sending to groups doesn't have acks, so
@@ -504,7 +504,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	}
 
 	if (!tx) {
-		LOG_ERR("No multi-segment message contexts available");
+		LOG_ERROR("No multi-segment message contexts available");
 		return -EBUSY;
 	}
 
@@ -545,7 +545,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 					    tx->dst, &tx->seq_auth,
 					    tx->seg_n + 1) &&
 	    BT_MESH_ADDR_IS_UNICAST(tx->dst)) {
-		LOG_ERR("Not enough space in Friend Queue for %u segments", tx->seg_n + 1);
+		LOG_ERROR("Not enough space in Friend Queue for %u segments", tx->seg_n + 1);
 		seg_tx_reset(tx);
 		return -ENOBUFS;
 	}
@@ -557,7 +557,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 
 		err = k_mem_slab_alloc(&segs, &buf, BUF_TIMEOUT);
 		if (err) {
-			LOG_ERR("Out of segment buffers");
+			LOG_ERROR("Out of segment buffers");
 			seg_tx_reset(tx);
 			return -ENOBUFS;
 		}
@@ -650,24 +650,24 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 	int err;
 
 	if (msg->len < 1) {
-		LOG_ERR("Zero-length SDU not allowed");
+		LOG_ERROR("Zero-length SDU not allowed");
 		return -EINVAL;
 	}
 
 	if (msg->len > BT_MESH_TX_SDU_MAX - BT_MESH_MIC_SHORT) {
-		LOG_ERR("Message too big: %u", msg->len);
+		LOG_ERROR("Message too big: %u", msg->len);
 		return -EMSGSIZE;
 	}
 
 	if (net_buf_simple_tailroom(msg) < BT_MESH_MIC_SHORT) {
-		LOG_ERR("Insufficient tailroom for Transport MIC");
+		LOG_ERROR("Insufficient tailroom for Transport MIC");
 		return -EINVAL;
 	}
 
 	if (tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
 		tx->ctx->send_ttl = bt_mesh_default_ttl_get();
 	} else if (tx->ctx->send_ttl > BT_MESH_TTL_MAX) {
-		LOG_ERR("TTL too large (max 127)");
+		LOG_ERROR("TTL too large (max 127)");
 		return -EINVAL;
 	}
 
@@ -678,7 +678,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 	if (tx->ctx->addr == BT_MESH_ADDR_UNASSIGNED ||
 	    (!BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr) &&
 	     BT_MESH_IS_DEV_KEY(tx->ctx->app_idx))) {
-		LOG_ERR("Invalid destination address");
+		LOG_ERROR("Invalid destination address");
 		return -EINVAL;
 	}
 
@@ -854,7 +854,7 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 	uint8_t obo;
 
 	if (buf->len < 6) {
-		LOG_ERR("Too short ack message");
+		LOG_ERROR("Too short ack message");
 		return -EBADMSG;
 	}
 
@@ -882,7 +882,7 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 	}
 
 	if (!BT_MESH_ADDR_IS_UNICAST(tx->dst)) {
-		LOG_ERR("Received ack for group seg");
+		LOG_ERROR("Received ack for group seg");
 		return -EINVAL;
 	}
 
@@ -895,7 +895,7 @@ static int trans_ack(struct bt_mesh_net_rx *rx, uint8_t hdr,
 	}
 
 	if (find_msb_set(ack) - 1 > tx->seg_n) {
-		LOG_ERR("Too large segment number in ack");
+		LOG_ERROR("Too large segment number in ack");
 		return -EINVAL;
 	}
 
@@ -1031,7 +1031,7 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 	LOG_DBG("AFK %u AID 0x%02x", AKF(buf->data), AID(buf->data));
 
 	if (buf->len < 1) {
-		LOG_ERR("Too small unsegmented PDU");
+		LOG_ERROR("Too small unsegmented PDU");
 		return -EBADMSG;
 	}
 
@@ -1046,7 +1046,7 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 	if (rx->ctl) {
 		err = ctl_recv(rx, hdr, buf, seq_auth);
 	} else if (buf->len < 1 + APP_MIC_LEN(0)) {
-		LOG_ERR("Too short SDU + MIC");
+		LOG_ERROR("Too short SDU + MIC");
 		err = -EINVAL;
 	} else {
 		/* Adjust the length to not contain the MIC at the end */
@@ -1071,7 +1071,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, uint8_t ctl_op, void *data,
 	if (tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
 		tx->ctx->send_ttl = bt_mesh_default_ttl_get();
 	} else if (tx->ctx->send_ttl > BT_MESH_TTL_MAX) {
-		LOG_ERR("TTL too large (max 127)");
+		LOG_ERROR("TTL too large (max 127)");
 		return -EINVAL;
 	}
 
@@ -1085,7 +1085,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, uint8_t ctl_op, void *data,
 
 	if (tx->ctx->addr == BT_MESH_ADDR_UNASSIGNED ||
 	    BT_MESH_ADDR_IS_VIRTUAL(tx->ctx->addr)) {
-		LOG_ERR("Invalid destination address");
+		LOG_ERROR("Invalid destination address");
 		return -EINVAL;
 	}
 
@@ -1274,17 +1274,17 @@ static bool seg_rx_is_valid(struct seg_rx *rx, struct bt_mesh_net_rx *net_rx,
 			    const uint8_t *hdr, uint8_t seg_n)
 {
 	if (rx->hdr != *hdr || rx->seg_n != seg_n) {
-		LOG_ERR("Invalid segment for ongoing session");
+		LOG_ERROR("Invalid segment for ongoing session");
 		return false;
 	}
 
 	if (rx->src != net_rx->ctx.addr || rx->dst != net_rx->ctx.recv_dst) {
-		LOG_ERR("Invalid source or destination for segment");
+		LOG_ERROR("Invalid source or destination for segment");
 		return false;
 	}
 
 	if (rx->ctl != net_rx->ctl) {
-		LOG_ERR("Inconsistent CTL in segment");
+		LOG_ERROR("Inconsistent CTL in segment");
 		return false;
 	}
 
@@ -1345,7 +1345,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 	int err;
 
 	if (buf->len < 5) {
-		LOG_ERR("Too short segmented message (len %u)", buf->len);
+		LOG_ERROR("Too short segmented message (len %u)", buf->len);
 		return -EBADMSG;
 	}
 
@@ -1369,7 +1369,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 	LOG_DBG("SeqZero 0x%04x SegO %u SegN %u", seq_zero, seg_o, seg_n);
 
 	if (seg_o > seg_n) {
-		LOG_ERR("SegO greater than SegN (%u > %u)", seg_o, seg_n);
+		LOG_ERROR("SegO greater than SegN (%u > %u)", seg_o, seg_n);
 		return -EBADMSG;
 	}
 
@@ -1444,7 +1444,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 
 	/* Bail out early if we're not ready to receive such a large SDU */
 	if (!sdu_len_is_ok(net_rx->ctl, seg_n)) {
-		LOG_ERR("Too big incoming SDU length");
+		LOG_ERROR("Too big incoming SDU length");
 		send_ack(net_rx->sub, net_rx->ctx.recv_dst, net_rx->ctx.addr,
 			 net_rx->ctx.send_ttl, seq_auth, 0,
 			 net_rx->friend_match);
@@ -1460,7 +1460,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 					    net_rx->ctx.addr,
 					    net_rx->ctx.recv_dst, seq_auth,
 					    *seg_count)) {
-		LOG_ERR("No space in Friend Queue for %u segments", *seg_count);
+		LOG_ERROR("No space in Friend Queue for %u segments", *seg_count);
 		send_ack(net_rx->sub, net_rx->ctx.recv_dst, net_rx->ctx.addr,
 			 net_rx->ctx.send_ttl, seq_auth, 0,
 			 net_rx->friend_match);
@@ -1518,7 +1518,7 @@ found_rx:
 		LOG_DBG("Target len %u * %u + %u = %u", seg_n, seg_len(rx->ctl), buf->len, rx->len);
 
 		if (rx->len > BT_MESH_RX_SDU_MAX) {
-			LOG_ERR("Too large SDU len");
+			LOG_ERROR("Too large SDU len");
 			send_ack(net_rx->sub, net_rx->ctx.recv_dst,
 				 net_rx->ctx.addr, net_rx->ctx.send_ttl,
 				 seq_auth, 0, rx->obo);
@@ -1527,7 +1527,7 @@ found_rx:
 		}
 	} else {
 		if (buf->len != seg_len(rx->ctl)) {
-			LOG_ERR("Incorrect segment size for message type");
+			LOG_ERROR("Incorrect segment size for message type");
 			return -EINVAL;
 		}
 	}
@@ -1578,7 +1578,7 @@ found_rx:
 		seg_rx_assemble(rx, &sdu, 0U);
 		err = ctl_recv(net_rx, *hdr, &sdu, seq_auth);
 	} else if (rx->len < 1 + APP_MIC_LEN(ASZMIC(hdr))) {
-		LOG_ERR("Too short SDU + MIC");
+		LOG_ERROR("Too short SDU + MIC");
 		err = -EINVAL;
 	} else {
 		NET_BUF_SIMPLE_DEFINE_STATIC(seg_buf, BT_MESH_RX_SDU_MAX);

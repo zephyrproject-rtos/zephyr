@@ -28,7 +28,7 @@ static void start_adv(void)
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
-		LOG_ERR("Advertising failed to start (err %d)", err);
+		LOG_ERROR("Advertising failed to start (err %d)", err);
 		return;
 	}
 
@@ -38,7 +38,7 @@ static void start_adv(void)
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
-		LOG_ERR("Connection failed, err 0x%02x %s", err, bt_hci_err_to_str(err));
+		LOG_ERROR("Connection failed, err 0x%02x %s", err, bt_hci_err_to_str(err));
 	} else {
 		LOG_INF("Connected");
 	}
@@ -84,7 +84,7 @@ int main(void)
 	logger_backend_ble_set_hook(backend_ble_hook, NULL);
 	err = bt_enable(NULL);
 	if (err) {
-		LOG_ERR("Bluetooth init failed (err %d)", err);
+		LOG_ERROR("Bluetooth init failed (err %d)", err);
 		return 0;
 	}
 

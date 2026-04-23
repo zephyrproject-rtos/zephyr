@@ -168,7 +168,7 @@ static int gpio_adp5585_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 out:
 	k_sem_give(&parent_data->lock);
 	if (ret != 0) {
-		LOG_ERR("pin configure error: %d", ret);
+		LOG_ERROR("pin configure error: %d", ret);
 	}
 	return ret;
 }
@@ -393,13 +393,13 @@ static int gpio_adp5585_init(const struct device *dev)
 	int ret = 0;
 
 	if (!device_is_ready(cfg->mfd_dev)) {
-		LOG_ERR("%s: parent dev not ready", dev->name);
+		LOG_ERROR("%s: parent dev not ready", dev->name);
 		ret = -ENODEV;
 		goto out;
 	}
 
 	if (!device_is_ready(parent_cfg->i2c_bus.bus)) {
-		LOG_ERR("I2C bus device not found");
+		LOG_ERROR("I2C bus device not found");
 		ret = -EIO;
 		goto out;
 	}
@@ -437,7 +437,7 @@ static int gpio_adp5585_init(const struct device *dev)
 out:
 	k_sem_give(&parent_data->lock);
 	if (ret) {
-		LOG_ERR("%s init failed: %d", dev->name, ret);
+		LOG_ERROR("%s init failed: %d", dev->name, ret);
 	} else {
 		LOG_INF("%s init ok", dev->name);
 	}

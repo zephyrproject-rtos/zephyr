@@ -238,7 +238,7 @@ void tc_attached_snk_entry(void *obj)
 	/* Set CC polarity */
 	ret = tcpc_set_cc_polarity(tcpc, tc->cc_polarity);
 	if (ret != 0) {
-		LOG_ERR("Couldn't set CC polarity to %d: %d", tc->cc_polarity, ret);
+		LOG_ERROR("Couldn't set CC polarity to %d: %d", tc->cc_polarity, ret);
 		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
 		return;
 	}
@@ -250,7 +250,7 @@ void tc_attached_snk_entry(void *obj)
 	if (data->ppc != NULL) {
 		ret = ppc_set_snk_ctrl(data->ppc, true);
 		if (ret != 0 && ret != -ENOTSUP) {
-			LOG_ERR("Couldn't enable PPC sink path: %d", ret);
+			LOG_ERROR("Couldn't enable PPC sink path: %d", ret);
 		}
 	}
 }
@@ -299,7 +299,7 @@ void tc_attached_snk_exit(void *obj)
 	if (data->ppc != NULL) {
 		ret = ppc_set_snk_ctrl(data->ppc, false);
 		if (ret != 0 && ret != -ENOTSUP) {
-			LOG_ERR("Couldn't disable PPC sink path: %d", ret);
+			LOG_ERROR("Couldn't disable PPC sink path: %d", ret);
 		}
 	}
 }
@@ -317,7 +317,7 @@ void tc_cc_rd_entry(void *obj)
 
 	ret = tcpc_set_cc(tcpc, TC_CC_RD);
 	if (ret != 0) {
-		LOG_ERR("Couldn't set CC lines to Rd: %d", ret);
+		LOG_ERROR("Couldn't set CC lines to Rd: %d", ret);
 		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
 	}
 }

@@ -164,7 +164,7 @@ static int spi_sf32lb_configure(const struct device *dev, const struct spi_confi
 	} else if (word_size == 16U) {
 		top_ctrl |= FIELD_PREP(SPI_TOP_CTRL_DSS_Msk, 16U - 1U);
 	} else {
-		LOG_ERR("Unsupported word size: %u", word_size);
+		LOG_ERROR("Unsupported word size: %u", word_size);
 		return -ENOTSUP;
 	}
 
@@ -219,7 +219,7 @@ static void spi_sf32lb_dma_done(const struct device *dev, void *arg, uint32_t ch
 	struct spi_sf32lb_data *data = spi_dev->data;
 
 	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d, status %d", channel, status);
+		LOG_ERROR("DMA callback error with channel %d, status %d", channel, status);
 		data->dma_status_flags |= SPI_SF32LB_DMA_ERROR_FLAG;
 	} else {
 		if (channel == cfg->tx_dma.channel) {
@@ -229,7 +229,7 @@ static void spi_sf32lb_dma_done(const struct device *dev, void *arg, uint32_t ch
 			data->dma_status_flags |= SPI_SF32LB_DMA_RX_DONE_FLAG;
 			sf32lb_dma_stop_dt(&cfg->rx_dma);
 		} else {
-			LOG_ERR("Unknown DMA channel %d", channel);
+			LOG_ERROR("Unknown DMA channel %d", channel);
 			return;
 		}
 	}
@@ -250,13 +250,13 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	/* Wait for DMA transfer completion with timeout */
 	ret = k_sem_take(&data->status_sem, K_MSEC(SPI_MAX_BUSY_WAIT_US));
 	if (ret < 0) {
-		LOG_ERR("DMA transfer timed out");
+		LOG_ERROR("DMA transfer timed out");
 		return -ETIMEDOUT;
 	}
 
 	/* Check DMA transfer status */
 	if (data->dma_status_flags & SPI_SF32LB_DMA_ERROR_FLAG) {
-		LOG_ERR("DMA transfer error");
+		LOG_ERROR("DMA transfer error");
 		ret = -EIO;
 	}
 
@@ -292,13 +292,13 @@ static int spi_sf32lb_dma_tx_load(const struct device *dev, const uint8_t *tx_bu
 
 	ret = sf32lb_dma_config_dt(&cfg->tx_dma, tx_dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("Error configuring TX DMA (%d)", ret);
+		LOG_ERROR("Error configuring TX DMA (%d)", ret);
 		return ret;
 	}
 
 	ret = sf32lb_dma_start_dt(&cfg->tx_dma);
 	if (ret < 0) {
-		LOG_ERR("Error starting TX DMA (%d)", ret);
+		LOG_ERROR("Error starting TX DMA (%d)", ret);
 		return ret;
 	}
 
@@ -331,13 +331,13 @@ static int spi_sf32lb_dma_rx_load(const struct device *dev, uint8_t *rx_buf, siz
 
 	ret = sf32lb_dma_config_dt(&cfg->rx_dma, rx_dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("Error configuring RX DMA (%d)", ret);
+		LOG_ERROR("Error configuring RX DMA (%d)", ret);
 		return ret;
 	}
 
 	ret = sf32lb_dma_start_dt(&cfg->rx_dma);
 	if (ret < 0) {
-		LOG_ERR("Error starting RX DMA (%d)", ret);
+		LOG_ERROR("Error starting RX DMA (%d)", ret);
 		return ret;
 	}
 
@@ -351,13 +351,13 @@ static int spi_sf32lb_transceive_dma_chunk(const struct device *dev, size_t len)
 
 	ret = spi_sf32lb_dma_tx_load(dev, data->ctx.tx_buf, len);
 	if (ret < 0) {
-		LOG_ERR("Error loading TX DMA (%d)", ret);
+		LOG_ERROR("Error loading TX DMA (%d)", ret);
 		return ret;
 	}
 
 	ret = spi_sf32lb_dma_rx_load(dev, data->ctx.rx_buf, len);
 	if (ret < 0) {
-		LOG_ERR("Error loading RX DMA (%d)", ret);
+		LOG_ERROR("Error loading RX DMA (%d)", ret);
 		return ret;
 	}
 
@@ -484,8 +484,8 @@ static int spi_sf32lb_shift_tx(const struct device *dev)
 				sys_write32(tx_frame, cfg->base + SPI_DATA);
 				spi_context_update_tx(ctx, 2, 1);
 			} else {
-				LOG_ERR("Unsupported word size: %u",
-					SPI_WORD_SIZE_GET(ctx->config->operation));
+				LOG_ERROR("Unsupported word size: %u",
+					  SPI_WORD_SIZE_GET(ctx->config->operation));
 				return -ENOTSUP;
 			}
 		}
@@ -498,8 +498,8 @@ static int spi_sf32lb_shift_tx(const struct device *dev)
 				sys_write32(tx_frame, cfg->base + SPI_DATA);
 				spi_context_update_tx(ctx, 2, 1);
 			} else {
-				LOG_ERR("Unsupported word size: %u",
-					SPI_WORD_SIZE_GET(ctx->config->operation));
+				LOG_ERROR("Unsupported word size: %u",
+					  SPI_WORD_SIZE_GET(ctx->config->operation));
 				return -ENOTSUP;
 			}
 		}
@@ -522,8 +522,8 @@ static int spi_sf32lb_shift_rx(const struct device *dev)
 		} else if (SPI_WORD_SIZE_GET(ctx->config->operation) == 16) {
 			sys_write32(0U, cfg->base + SPI_DATA);
 		} else {
-			LOG_ERR("Unsupported word size: %u",
-				SPI_WORD_SIZE_GET(ctx->config->operation));
+			LOG_ERROR("Unsupported word size: %u",
+				  SPI_WORD_SIZE_GET(ctx->config->operation));
 			return -ENOTSUP;
 		}
 	}
@@ -539,8 +539,8 @@ static int spi_sf32lb_shift_rx(const struct device *dev)
 				UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
 				spi_context_update_rx(ctx, 2, 1);
 			} else {
-				LOG_ERR("Unsupported word size: %u",
-					SPI_WORD_SIZE_GET(ctx->config->operation));
+				LOG_ERROR("Unsupported word size: %u",
+					  SPI_WORD_SIZE_GET(ctx->config->operation));
 				return -ENOTSUP;
 			}
 		}
@@ -553,8 +553,8 @@ static int spi_sf32lb_shift_rx(const struct device *dev)
 				(void)sys_read32(cfg->base + SPI_DATA);
 				spi_context_update_rx(ctx, 2, 1);
 			} else {
-				LOG_ERR("Unsupported word size: %u",
-					SPI_WORD_SIZE_GET(ctx->config->operation));
+				LOG_ERROR("Unsupported word size: %u",
+					  SPI_WORD_SIZE_GET(ctx->config->operation));
 				return -ENOTSUP;
 			}
 		}
@@ -735,12 +735,12 @@ static int spi_sf32lb_init(const struct device *dev)
 
 	if (cfg->dma_used) {
 		if (!sf32lb_dma_is_ready_dt(&cfg->tx_dma)) {
-			LOG_ERR("TX DMA device not ready");
+			LOG_ERROR("TX DMA device not ready");
 			return -ENODEV;
 		}
 
 		if (!sf32lb_dma_is_ready_dt(&cfg->rx_dma)) {
-			LOG_ERR("RX DMA device not ready");
+			LOG_ERROR("RX DMA device not ready");
 			return -ENODEV;
 		}
 
@@ -748,19 +748,19 @@ static int spi_sf32lb_init(const struct device *dev)
 	}
 
 	if (!sf32lb_clock_is_ready_dt(&cfg->clock)) {
-		LOG_ERR("Clock control device not ready");
+		LOG_ERROR("Clock control device not ready");
 		return -ENODEV;
 	}
 
 	err = sf32lb_clock_control_on_dt(&cfg->clock);
 	if (err < 0) {
-		LOG_ERR("Failed to enable clock");
+		LOG_ERROR("Failed to enable clock");
 		return err;
 	}
 
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
-		LOG_ERR("Failed to set pinctrl");
+		LOG_ERROR("Failed to set pinctrl");
 		return err;
 	}
 

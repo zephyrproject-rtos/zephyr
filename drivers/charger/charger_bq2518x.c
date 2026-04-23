@@ -344,7 +344,7 @@ static int bq2518x_init(const struct device *dev)
 
 	val &= BQ2518X_DEVICE_ID_MSK;
 	if (val != cfg->device_id) {
-		LOG_ERR("Invalid device id: %02x", val);
+		LOG_ERROR("Invalid device id: %02x", val);
 		return -EINVAL;
 	}
 
@@ -372,7 +372,7 @@ static int bq2518x_init(const struct device *dev)
 
 	ret = bq2518x_set_charge_voltage(dev, cfg->max_voltage_microvolt);
 	if (ret < 0) {
-		LOG_ERR("Could not set the target voltage. (rc: %d)", ret);
+		LOG_ERROR("Could not set the target voltage. (rc: %d)", ret);
 		return ret;
 	}
 

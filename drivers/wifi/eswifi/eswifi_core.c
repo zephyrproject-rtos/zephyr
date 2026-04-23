@@ -112,7 +112,7 @@ static int __parse_scan_res(char *str, struct wifi_scan_result *res)
 			errno = 0;
 			v = strtol(str, &endptr, 10);
 			if (errno || endptr == str || v < INT8_MIN || v > INT8_MAX) {
-				LOG_ERR("Invalid RSSI value");
+				LOG_ERROR("Invalid RSSI value");
 				return -EINVAL;
 			}
 			res->rssi = (int8_t)v;
@@ -134,7 +134,7 @@ static int __parse_scan_res(char *str, struct wifi_scan_result *res)
 			errno = 0;
 			v = strtol(str, &endptr, 10);
 			if (errno || endptr == str || v < 0 || v > UINT8_MAX) {
-				LOG_ERR("Invalid channel value");
+				LOG_ERROR("Invalid channel value");
 				return -EINVAL;
 			}
 			res->channel = (uint8_t)v;
@@ -301,7 +301,7 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "C1=%s\r", eswifi->sta.ssid);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to set SSID");
+		LOG_ERROR("Unable to set SSID");
 		goto error;
 	}
 
@@ -309,7 +309,7 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "C2=%s\r", eswifi->sta.pass);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to set passphrase");
+		LOG_ERROR("Unable to set passphrase");
 		goto error;
 	}
 
@@ -318,14 +318,14 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 		 eswifi->sta.security);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to configure security");
+		LOG_ERROR("Unable to configure security");
 		goto error;
 	}
 
 	/* Join Network */
 	err = eswifi_at_cmd_rsp(eswifi, connect, &rsp);
 	if (err < 0) {
-		LOG_ERR("Unable to join network");
+		LOG_ERROR("Unable to join network");
 		goto error;
 	}
 
@@ -333,7 +333,7 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 	err = __parse_ipv4_address(rsp, eswifi->sta.ssid, (uint8_t *)&addr.s4_addr);
 
 	if (err < 0) {
-		LOG_ERR("Unable to retrieve IP address");
+		LOG_ERROR("Unable to retrieve IP address");
 		goto error;
 	}
 
@@ -365,7 +365,7 @@ static int eswifi_disconnect(struct eswifi_dev *eswifi)
 
 	err = eswifi_at_cmd(eswifi, disconnect);
 	if (err < 0) {
-		LOG_ERR("Unable to disconnect network");
+		LOG_ERROR("Unable to disconnect network");
 		err = -EIO;
 	}
 
@@ -397,7 +397,7 @@ static void eswifi_status_work(struct k_work *work)
 
 	ret = eswifi_at_cmd_rsp(eswifi, status, &rsp);
 	if (ret < 1) {
-		LOG_ERR("Unable to retrieve status");
+		LOG_ERROR("Unable to retrieve status");
 		goto done;
 	}
 
@@ -412,13 +412,13 @@ static void eswifi_status_work(struct k_work *work)
 
 	ret = eswifi_at_cmd_rsp(eswifi, rssi, &rsp);
 	if (ret < 1) {
-		LOG_ERR("Unable to retrieve rssi");
+		LOG_ERROR("Unable to retrieve rssi");
 		/* continue */
 	} else {
 		errno = 0;
 		v = strtol(rsp, &endptr, 10);
 		if (errno || endptr == rsp || v < INT8_MIN || v > INT8_MAX) {
-			LOG_ERR("Invalid RSSI value");
+			LOG_ERROR("Invalid RSSI value");
 		} else {
 			eswifi->sta.rssi = (int8_t)v;
 		}
@@ -507,12 +507,12 @@ static void eswifi_iface_init(struct net_if *iface)
 	eswifi_lock(eswifi);
 
 	if (eswifi_reset(eswifi, cfg) < 0) {
-		LOG_ERR("Unable to reset device");
+		LOG_ERROR("Unable to reset device");
 		return;
 	}
 
 	if (eswifi_get_mac_addr(eswifi, mac) < 0) {
-		LOG_ERR("Unable to read MAC address");
+		LOG_ERROR("Unable to read MAC address");
 		return;
 	}
 
@@ -702,7 +702,7 @@ static int eswifi_mgmt_ap_enable(const struct device *dev,
 		 eswifi->sta.security);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to set Security");
+		LOG_ERROR("Unable to set Security");
 		goto error;
 	}
 
@@ -712,7 +712,7 @@ static int eswifi_mgmt_ap_enable(const struct device *dev,
 			 eswifi->sta.pass);
 		err = eswifi_at_cmd(eswifi, eswifi->buf);
 		if (err < 0) {
-			LOG_ERR("Unable to set passkey");
+			LOG_ERROR("Unable to set passkey");
 			goto error;
 		}
 	}
@@ -722,7 +722,7 @@ static int eswifi_mgmt_ap_enable(const struct device *dev,
 		 eswifi->sta.ssid);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to set SSID");
+		LOG_ERROR("Unable to set SSID");
 		goto error;
 	}
 
@@ -731,7 +731,7 @@ static int eswifi_mgmt_ap_enable(const struct device *dev,
 		 eswifi->sta.channel);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to set Channel");
+		LOG_ERROR("Unable to set Channel");
 		goto error;
 	}
 
@@ -744,7 +744,7 @@ static int eswifi_mgmt_ap_enable(const struct device *dev,
 	}
 
 	if (!unicast) {
-		LOG_ERR("No IPv4 assigned for AP mode");
+		LOG_ERROR("No IPv4 assigned for AP mode");
 		err = -EADDRNOTAVAIL;
 		goto error;
 	}
@@ -753,7 +753,7 @@ static int eswifi_mgmt_ap_enable(const struct device *dev,
 		 net_sprint_ipv4_addr(&unicast->address.in_addr));
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to active access point");
+		LOG_ERROR("Unable to active access point");
 		goto error;
 	}
 
@@ -761,7 +761,7 @@ static int eswifi_mgmt_ap_enable(const struct device *dev,
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "AD\r");
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to active access point");
+		LOG_ERROR("Unable to active access point");
 		goto error;
 	}
 
@@ -777,7 +777,7 @@ error:
 static int eswifi_mgmt_ap_enable(const struct device *dev,
 				 struct wifi_connect_req_params *params)
 {
-	LOG_ERR("IPv4 requested for AP mode");
+	LOG_ERROR("IPv4 requested for AP mode");
 	return -ENOTSUP;
 }
 #endif /* CONFIG_NET_IPV4 */
@@ -817,15 +817,13 @@ static int eswifi_init(const struct device *dev)
 	eswifi->bus->init(eswifi);
 
 	if (!gpio_is_ready_dt(&cfg->resetn)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->resetn.port->name);
+		LOG_ERROR("%s: device %s is not ready", dev->name, cfg->resetn.port->name);
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&cfg->resetn, GPIO_OUTPUT_INACTIVE);
 
 	if (!gpio_is_ready_dt(&cfg->wakeup)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->wakeup.port->name);
+		LOG_ERROR("%s: device %s is not ready", dev->name, cfg->wakeup.port->name);
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&cfg->wakeup, GPIO_OUTPUT_ACTIVE);

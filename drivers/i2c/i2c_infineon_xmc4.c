@@ -83,7 +83,7 @@ static int ifx_xmc4_i2c_configure(const struct device *dev, uint32_t dev_config)
 
 	/* This is deprecated and could be ignored in the future */
 	if (dev_config & I2C_ADDR_10_BITS) {
-		LOG_ERR("Use I2C_MSG_ADDR_10_BITS instead of I2C_ADDR_10_BITS");
+		LOG_ERROR("Use I2C_MSG_ADDR_10_BITS instead of I2C_ADDR_10_BITS");
 		return -EIO;
 	}
 
@@ -95,7 +95,7 @@ static int ifx_xmc4_i2c_configure(const struct device *dev, uint32_t dev_config)
 		data->cfg.baudrate = XMC4_I2C_SPEED_FAST;
 		break;
 	default:
-		LOG_ERR("Unsupported speed");
+		LOG_ERROR("Unsupported speed");
 		return -ERANGE;
 	}
 

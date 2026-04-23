@@ -102,14 +102,14 @@ int dwmac_bus_init(struct dwmac_priv *p)
 		}
 
 		if (ret != 0) {
-			LOG_ERR("Failed to setup ethernet clock #%zu", n);
+			LOG_ERROR("Failed to setup ethernet clock #%zu", n);
 			return -EIO;
 		}
 	}
 
 	ret = pinctrl_apply_state(eth0_pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure ethernet pins");
+		LOG_ERROR("Could not configure ethernet pins");
 		return ret;
 	}
 
@@ -175,7 +175,7 @@ int dwmac_platform_init(struct dwmac_priv *p)
 	}
 
 	if (ret < 0) {
-		LOG_ERR("Failed to load MAC address (%d)", ret);
+		LOG_ERROR("Failed to load MAC address (%d)", ret);
 		return ret;
 	}
 

@@ -67,13 +67,13 @@ static int dma_silabs_get_blocksize(uint32_t src_blen, uint32_t dst_blen, uint32
 	uint32_t arb_unit;
 
 	if (src_blen != dst_blen) {
-		LOG_ERR("Source burst length (%u) and destination burst length(%u) must be equal",
-			src_blen, dst_blen);
+		LOG_ERROR("Source burst length (%u) and destination burst length(%u) must be equal",
+			  src_blen, dst_blen);
 		return -ENOTSUP;
 	}
 
 	if (src_blen % src_dsize) {
-		LOG_ERR("burst length (%u) and data size (%u) mismatch", src_blen, dst_blen);
+		LOG_ERROR("burst length (%u) and data size (%u) mismatch", src_blen, dst_blen);
 		return -EINVAL;
 	}
 
@@ -114,8 +114,8 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 	}
 
 	if (config->source_data_size != config->dest_data_size) {
-		LOG_ERR("Source data size(%u) and destination data size(%u) must be equal",
-			config->source_data_size, config->dest_data_size);
+		LOG_ERROR("Source data size(%u) and destination data size(%u) must be equal",
+			  config->source_data_size, config->dest_data_size);
 		return -ENOTSUP;
 	}
 
@@ -354,7 +354,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 	}
 
 	if (atomic_get(&chan_conf->busy)) {
-		LOG_ERR("DMA channel %u is busy", channel);
+		LOG_ERROR("DMA channel %u is busy", channel);
 		return -EBUSY;
 	}
 
@@ -365,7 +365,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 	}
 
 	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("source and dest data size differ");
+		LOG_ERROR("source and dest data size differ");
 		return -ENOTSUP;
 	}
 
@@ -415,7 +415,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 		xfer_config->ldmaCfgSrcIncSign = ldmaCfgSrcIncSignPos;
 		break;
 	default:
-		LOG_ERR("Addr Adjustment error %d", config->head_block->source_addr_adj);
+		LOG_ERROR("Addr Adjustment error %d", config->head_block->source_addr_adj);
 		break;
 	}
 

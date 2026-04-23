@@ -89,7 +89,7 @@ static uint8_t update_spi_flash_directory(const struct device *flash_dev)
 
 	rc = flash_read(flash_dev, SPI_FLASH_DIRECTORY_OFFSET, buf, len);
 	if (rc != 0) {
-		LOG_ERR("Flash read failed! %d", rc);
+		LOG_ERROR("Flash read failed! %d", rc);
 		return rc;
 	}
 
@@ -103,13 +103,13 @@ static uint8_t update_spi_flash_directory(const struct device *flash_dev)
 
 	rc = flash_erase(flash_dev, SPI_FLASH_DIRECTORY_OFFSET, SPI_FLASH_SECTOR_SIZE);
 	if (rc != 0) {
-		LOG_ERR("erase failed! %d", rc);
+		LOG_ERROR("erase failed! %d", rc);
 	}
 
 	/* Write the first page with updated address entry */
 	rc = flash_write(flash_dev, SPI_FLASH_DIRECTORY_OFFSET, buf, len);
 	if (rc != 0) {
-		LOG_ERR("Flash write failed! %d", rc);
+		LOG_ERROR("Flash write failed! %d", rc);
 		return rc;
 	}
 
@@ -119,7 +119,7 @@ static uint8_t update_spi_flash_directory(const struct device *flash_dev)
 	while (k < 4) {
 		rc = flash_write(flash_dev, (SPI_FLASH_DIRECTORY_OFFSET + k * 0x100), buf, len);
 		if (rc != 0) {
-			LOG_ERR("Flash write failed! %d", rc);
+			LOG_ERROR("Flash write failed! %d", rc);
 			return rc;
 		}
 		k++;
@@ -145,7 +145,7 @@ static uint8_t program_new_image(const struct device *flash_dev, uint8_t *image_
 	temp = image_start;
 
 	if (image_size > 0x1400000) {
-		LOG_ERR("Image is larger than 20Mb");
+		LOG_ERROR("Image is larger than 20Mb");
 		return 1;
 	}
 
@@ -160,7 +160,7 @@ static uint8_t program_new_image(const struct device *flash_dev, uint8_t *image_
 			((SPI_FLASH_NEW_IMAGE_OFFSET - 0x400) + (i * SPI_FLASH_SECTOR_SIZE)),
 			SPI_FLASH_SECTOR_SIZE);
 		if (rc != 0) {
-			LOG_ERR("erase failed! %d", rc);
+			LOG_ERROR("erase failed! %d", rc);
 		}
 
 		if (i % 0x100 == 0) {
@@ -187,7 +187,7 @@ static uint8_t program_new_image(const struct device *flash_dev, uint8_t *image_
 		rc = flash_write(flash_dev, (SPI_FLASH_NEW_IMAGE_OFFSET + i * SPI_FLASH_PAGE_SIZE),
 				 buf, len);
 		if (rc != 0) {
-			LOG_ERR("Flash write failed! %d", rc);
+			LOG_ERROR("Flash write failed! %d", rc);
 			return rc;
 		}
 
@@ -311,22 +311,22 @@ static int mpfs_fpga_load(const struct device *dev, uint32_t *image_ptr, uint32_
 	const struct device *flash_dev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(bitstream_flash));
 
 	if (flash_dev == NULL) {
-		LOG_ERR("Device not found");
+		LOG_ERROR("Device not found");
 		return -ENOENT;
 	}
 
 	if (!device_is_ready(flash_dev)) {
-		LOG_ERR("%s: device not ready.", flash_dev->name);
+		LOG_ERROR("%s: device not ready.", flash_dev->name);
 		return 1;
 	}
 
 	if (img_size == 0) {
-		LOG_ERR("Image size is zero.");
+		LOG_ERROR("Image size is zero.");
 		return -EINVAL;
 	}
 
 	if (image_ptr == NULL) {
-		LOG_ERR("Failed to read FPGA image");
+		LOG_ERROR("Failed to read FPGA image");
 		return -EINVAL;
 	}
 

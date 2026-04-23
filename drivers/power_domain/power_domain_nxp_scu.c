@@ -47,8 +47,7 @@ static int scu_pd_pm_action(const struct device *dev,
 					    scu_data->rsrc,
 					    mode);
 	if (ret != SC_ERR_NONE) {
-		LOG_ERR("failed to set rsrc %d power mode to %d",
-			scu_data->rsrc, mode);
+		LOG_ERROR("failed to set rsrc %d power mode to %d", scu_data->rsrc, mode);
 		return -EIO;
 	}
 

@@ -145,13 +145,13 @@ static int aes_ecb_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 	struct crypto_mchp_aes_session *session = ctx->drv_sessn_state;
 
 	if (!session || (pkt->in_len % 16U) != 0U) {
-		LOG_ERR("Invalid ECB op: session=%p, in_len=%zu", session,
-			session ? pkt->in_len : 0);
+		LOG_ERROR("Invalid ECB op: session=%p, in_len=%zu", session,
+			  session ? pkt->in_len : 0);
 		return -EINVAL;
 	}
 
 	if (pkt->in_len > pkt->out_buf_max) {
-		LOG_ERR("Short of output buffer.");
+		LOG_ERROR("Short of output buffer.");
 		return -ENOSR;
 	}
 
@@ -174,8 +174,8 @@ static int aes_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *i
 	}
 
 	if (!session || (pkt->in_len % 16) != 0U) {
-		LOG_ERR("Invalid CBC op: session=%p, in_len=%zu", session,
-			session ? pkt->in_len : 0);
+		LOG_ERROR("Invalid CBC op: session=%p, in_len=%zu", session,
+			  session ? pkt->in_len : 0);
 		return -EINVAL;
 	}
 
@@ -199,7 +199,7 @@ static int aes_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *i
 	ctr_len_bits = ctx->mode_params.ctr_info.ctr_len;
 
 	if (ctr_len_bits == 0 || (ctr_len_bits % BITS_PER_BYTE) != 0 || ctr_len_bits > 128) {
-		LOG_ERR("Invalid CTR counter length: %u bits", ctr_len_bits);
+		LOG_ERROR("Invalid CTR counter length: %u bits", ctr_len_bits);
 		return -EINVAL;
 	}
 
@@ -232,28 +232,28 @@ static int mchp_aes_check_parameters(struct cipher_ctx *ctx, enum cipher_algo al
 				     enum cipher_mode mode)
 {
 	if (ctx->flags & ~(MCHP_AES_CAPS_SUPPORT)) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -ENOTSUP;
 	}
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		LOG_ERR("Unsupported algorithm: %d", algo);
+		LOG_ERROR("Unsupported algorithm: %d", algo);
 		return -ENOTSUP;
 	}
 
 	if (!(mode == CRYPTO_CIPHER_MODE_ECB || mode == CRYPTO_CIPHER_MODE_CBC ||
 	      mode == CRYPTO_CIPHER_MODE_CTR)) {
-		LOG_ERR("Unsupported mode: %d", mode);
+		LOG_ERROR("Unsupported mode: %d", mode);
 		return -ENOTSUP;
 	}
 
 	if (ctx->key.bit_stream == NULL) {
-		LOG_ERR("No key provided");
+		LOG_ERROR("No key provided");
 		return -EINVAL;
 	}
 
 	if (!(ctx->keylen == 16 || ctx->keylen == 24 || ctx->keylen == 32)) {
-		LOG_ERR("Invalid key length: %zu", ctx->keylen);
+		LOG_ERROR("Invalid key length: %zu", ctx->keylen);
 		return -EINVAL;
 	}
 
@@ -308,7 +308,7 @@ static int mchp_aes_begin_session(const struct device *dev, struct cipher_ctx *c
 		ctx->ops.ctr_crypt_hndlr = aes_ctr_op;
 		break;
 	default:
-		LOG_ERR("Crypto mode is invalid, should not run into this line.");
+		LOG_ERROR("Crypto mode is invalid, should not run into this line.");
 		break;
 	}
 
@@ -321,12 +321,12 @@ static int mchp_aes_begin_session(const struct device *dev, struct cipher_ctx *c
 static int mchp_aes_free_session(const struct device *dev, struct cipher_ctx *ctx)
 {
 	if (!ctx || !ctx->device || !ctx->drv_sessn_state) {
-		LOG_ERR("Tried to free a invalid context or session");
+		LOG_ERROR("Tried to free a invalid context or session");
 		return -EINVAL;
 	}
 
 	if (ctx->device != dev) {
-		LOG_ERR("The context or session tried to free is not related to the device");
+		LOG_ERROR("The context or session tried to free is not related to the device");
 		return -EINVAL;
 	}
 
@@ -356,12 +356,12 @@ static int crypto_mchp_aes_init(const struct device *dev)
 	struct crypto_mchp_aes_data *data = dev->data;
 
 	if (!device_is_ready(pmc)) {
-		LOG_ERR("Power Management Controller device not ready");
+		LOG_ERROR("Power Management Controller device not ready");
 		return -ENODEV;
 	}
 
 	if (clock_control_on(pmc, (clock_control_subsys_t)(uintptr_t)&(cfg->clock_cfg)) != 0) {
-		LOG_ERR("Clock op failed\n");
+		LOG_ERROR("Clock op failed\n");
 		return -EIO;
 	}
 

@@ -46,7 +46,7 @@ void start_updatehub(void)
 			break;
 
 		default:
-			LOG_ERR("Error installing update.");
+			LOG_ERROR("Error installing update.");
 			break;
 		}
 
@@ -56,7 +56,7 @@ void start_updatehub(void)
 		break;
 
 	default:
-		LOG_ERR("Invalid response");
+		LOG_ERROR("Invalid response");
 		break;
 	}
 #endif
@@ -92,7 +92,7 @@ int main(void)
 			       TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 			       server_certificate,
 			       sizeof(server_certificate)) < 0) {
-		LOG_ERR("Failed to register server certificate");
+		LOG_ERROR("Failed to register server certificate");
 		return 0;
 	}
 
@@ -100,7 +100,7 @@ int main(void)
 			       TLS_CREDENTIAL_PRIVATE_KEY,
 			       private_key,
 			       sizeof(private_key)) < 0) {
-		LOG_ERR("Failed to register private key");
+		LOG_ERROR("Failed to register private key");
 		return 0;
 	}
 #endif
@@ -109,7 +109,7 @@ int main(void)
 	LOG_INF("Confirming the boot image");
 	ret = updatehub_confirm();
 	if (ret < 0) {
-		LOG_ERR("Error to confirm the image");
+		LOG_ERROR("Error to confirm the image");
 	}
 
 #if defined(CONFIG_WIFI)

@@ -83,13 +83,13 @@ int main(void)
 	struct usbd_context *sample_usbd;
 
 	if (!device_is_ready(midi)) {
-		LOG_ERR("MIDI device not ready");
+		LOG_ERROR("MIDI device not ready");
 		return -1;
 	}
 
 	if (led.port) {
 		if (gpio_pin_configure_dt(&led, GPIO_OUTPUT)) {
-			LOG_ERR("Unable to setup LED, not using it");
+			LOG_ERROR("Unable to setup LED, not using it");
 			memset(&led, 0, sizeof(led));
 		}
 	}
@@ -98,12 +98,12 @@ int main(void)
 
 	sample_usbd = sample_usbd_init_device(NULL);
 	if (sample_usbd == NULL) {
-		LOG_ERR("Failed to initialize USB device");
+		LOG_ERROR("Failed to initialize USB device");
 		return -1;
 	}
 
 	if (usbd_enable(sample_usbd)) {
-		LOG_ERR("Failed to enable device support");
+		LOG_ERROR("Failed to enable device support");
 		return -1;
 	}
 

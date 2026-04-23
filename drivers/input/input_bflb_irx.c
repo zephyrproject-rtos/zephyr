@@ -195,7 +195,7 @@ static void bflb_irx_isr_handle_prot(const struct device *dev)
 	data = sys_read32(cfg->reg + IRRX_DATA_WORD0_OFFSET);
 	ret = input_report(dev, INPUT_EV_MSC, INPUT_MSC_SCAN, data, true, K_FOREVER);
 	if (ret < 0) {
-		LOG_ERR("Message failed to be enqueued: %d", ret);
+		LOG_ERROR("Message failed to be enqueued: %d", ret);
 	}
 	if (data_count <= 32) {
 		return;
@@ -206,7 +206,7 @@ static void bflb_irx_isr_handle_prot(const struct device *dev)
 	}
 	ret = input_report(dev, INPUT_EV_MSC, INPUT_MSC_SCAN, data, true, K_FOREVER);
 	if (ret < 0) {
-		LOG_ERR("Message failed to be enqueued: %d", ret);
+		LOG_ERROR("Message failed to be enqueued: %d", ret);
 	}
 }
 
@@ -231,13 +231,13 @@ static void bflb_irx_isr_handle_pw(const struct device *dev)
 		ret = input_report(dev, INPUT_EV_MSC, INPUT_MSC_SCAN,
 				   IRX_PW_TO_US(data->clock_rate, x), true, K_FOREVER);
 		if (ret < 0) {
-			LOG_ERR("Message failed to be enqueued: %d", ret);
+			LOG_ERROR("Message failed to be enqueued: %d", ret);
 			break;
 		}
 	}
 
 	if (sys_timepoint_expired(end_timeout)) {
-		LOG_ERR("Timed out");
+		LOG_ERROR("Timed out");
 	}
 
 	tmp = sys_read32(cfg->reg + IRRX_CONFIG_OFFSET);
@@ -246,7 +246,7 @@ static void bflb_irx_isr_handle_pw(const struct device *dev)
 
 	tmp = sys_read32(cfg->reg + IRX_FIFO_OFFSET);
 	if (tmp & IR_RX_FIFO_OVERFLOW) {
-		LOG_ERR("Too many pulses, FIFO overflow!");
+		LOG_ERROR("Too many pulses, FIFO overflow!");
 	}
 	tmp |= IR_RX_FIFO_CLR;
 	sys_write32(tmp, cfg->reg + IRX_FIFO_OFFSET);
@@ -272,14 +272,14 @@ static void bflb_irx_isr_handle_pw(const struct device *dev)
 		ret = input_report(dev, INPUT_EV_MSC, INPUT_MSC_SCAN,
 				   IRX_PW_TO_US(data->clock_rate, x), true, K_FOREVER);
 		if (ret < 0) {
-			LOG_ERR("Message failed to be enqueued: %d", ret);
+			LOG_ERROR("Message failed to be enqueued: %d", ret);
 			break;
 		}
 	}
 
 	tmp = sys_read32(cfg->reg + IRX_FIFO_OFFSET);
 	if (tmp & IR_RX_FIFO_OVERFLOW) {
-		LOG_ERR("Too many pulses, FIFO overflow!");
+		LOG_ERROR("Too many pulses, FIFO overflow!");
 	}
 	tmp |= IR_RX_FIFO_CLR;
 	sys_write32(tmp, cfg->reg + IRX_FIFO_OFFSET);
@@ -316,7 +316,7 @@ static int bflb_irx_init(struct device const *dev)
 	data->dev = dev;
 
 	if (!gpio_is_ready_dt(gpio)) {
-		LOG_ERR("GPIO input pin is not ready");
+		LOG_ERROR("GPIO input pin is not ready");
 		return -ENODEV;
 	}
 

@@ -419,7 +419,7 @@ static int npm10xx_charger_get_prop(const struct device *dev, const charger_prop
 		return 0;
 
 	default:
-		LOG_ERR("Unsupported property %u", prop);
+		LOG_ERROR("Unsupported property %u", prop);
 		return -ENOTSUP;
 	}
 
@@ -470,7 +470,7 @@ static int npm10xx_charger_set_prop(const struct device *dev, const charger_prop
 		addr += NPM10_CHRG_ITERM;
 
 		if (val->custom_uint >= NPM10XX_CHARGER_CURRENT_PERCENT_MAX) {
-			LOG_ERR("Current percentage index (%u) out of range", val->custom_uint);
+			LOG_ERROR("Current percentage index (%u) out of range", val->custom_uint);
 			return -EINVAL;
 		}
 
@@ -507,8 +507,8 @@ static int npm10xx_charger_set_prop(const struct device *dev, const charger_prop
 				return i2c_reg_write_byte_dt(&config->i2c, NPM10_SYS_VBUSILIM, reg);
 			}
 		}
-		LOG_ERR("invalid input_current_regulation_current_ua value %d",
-			val->input_current_regulation_current_ua);
+		LOG_ERROR("invalid input_current_regulation_current_ua value %d",
+			  val->input_current_regulation_current_ua);
 		return -EINVAL;
 
 	case CHARGER_PROP_INPUT_REGULATION_VOLTAGE_UV:
@@ -525,7 +525,7 @@ static int npm10xx_charger_set_prop(const struct device *dev, const charger_prop
 		return i2c_reg_write_byte_dt(&config->i2c, NPM10_SYS_VBUSDPM, 0U);
 
 	default:
-		LOG_ERR("Unsupported property %u", prop);
+		LOG_ERROR("Unsupported property %u", prop);
 		return -ENOTSUP;
 	}
 
@@ -560,8 +560,8 @@ static inline int set_iset(const struct npm10xx_charger_config *config)
 			i_range, config->iset[i] == INT32_MAX ? config->iset[0] : config->iset[i],
 			&idx);
 		if (ret < 0) {
-			LOG_ERR("Charging current (%d) out of range [%d, %d]", config->iset[i],
-				i_range->min, linear_range_get_max_value(i_range));
+			LOG_ERROR("Charging current (%d) out of range [%d, %d]", config->iset[i],
+				  i_range->min, linear_range_get_max_value(i_range));
 			return ret;
 		}
 		iset_regs[i] = idx;
@@ -585,9 +585,9 @@ static inline int set_vterm(const struct npm10xx_charger_config *config)
 			&chrg_vterm_range,
 			config->vterm[i] == INT32_MAX ? config->vterm[0] : config->vterm[i], &idx);
 		if (ret < 0) {
-			LOG_ERR("Termination voltage (%d) out of range [%d, %d]", config->vterm[i],
-				chrg_vterm_range.min,
-				linear_range_get_max_value(&chrg_vterm_range));
+			LOG_ERROR("Termination voltage (%d) out of range [%d, %d]",
+				  config->vterm[i], chrg_vterm_range.min,
+				  linear_range_get_max_value(&chrg_vterm_range));
 			return ret;
 		}
 		vterm_regs[i] = idx;
@@ -614,7 +614,7 @@ static inline int set_ntc_thresholds(const struct npm10xx_charger_config *config
 			continue;
 		}
 		if (config->thermistor_beta == INT32_MAX) {
-			LOG_ERR("A thermistor threshold is set, but beta is not provided");
+			LOG_ERROR("A thermistor threshold is set, but beta is not provided");
 			return -ENOTSUP;
 		}
 
@@ -686,34 +686,34 @@ static int npm10xx_charger_init(const struct device *dev)
 	uint8_t reg, mask;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus is not ready");
+		LOG_ERROR("I2C bus is not ready");
 		return -ENODEV;
 	}
 
 	/* Configuring charging properties requires the charger to be disabled */
 	ret = npm10xx_charger_enable(dev, false);
 	if (ret < 0) {
-		LOG_ERR("failed to disable charger");
+		LOG_ERROR("failed to disable charger");
 		return ret;
 	}
 
 	/* Set voltages and currents */
 	ret = set_iset(config);
 	if (ret < 0) {
-		LOG_ERR("failed to set charging currents");
+		LOG_ERROR("failed to set charging currents");
 		return ret;
 	}
 
 	ret = set_vterm(config);
 	if (ret < 0) {
-		LOG_ERR("failed to set termination voltages");
+		LOG_ERROR("failed to set termination voltages");
 		return ret;
 	}
 
 	if (config->term_current != UINT8_MAX) {
 		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_CHRG_ITERM, config->term_current);
 		if (ret < 0) {
-			LOG_ERR("failed to set termination current");
+			LOG_ERROR("failed to set termination current");
 			return ret;
 		}
 	}
@@ -722,14 +722,14 @@ static int npm10xx_charger_init(const struct device *dev)
 		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_CHRG_ITRICKLE,
 					    config->trickle_current);
 		if (ret < 0) {
-			LOG_ERR("failed to set trickle current");
+			LOG_ERROR("failed to set trickle current");
 			return ret;
 		}
 	}
 	if (config->vtrickle != UINT8_MAX) {
 		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_CHRG_VTRICKLE, config->vtrickle);
 		if (ret < 0) {
-			LOG_ERR("failed to set trickle voltage threshold");
+			LOG_ERROR("failed to set trickle voltage threshold");
 			return ret;
 		}
 	}
@@ -747,13 +747,13 @@ static int npm10xx_charger_init(const struct device *dev)
 	if (mask) {
 		ret = i2c_reg_update_byte_dt(&config->i2c, NPM10_CHRG_THROTTLE, mask, reg);
 		if (ret < 0) {
-			LOG_ERR("failed to set throttle configuration");
+			LOG_ERROR("failed to set throttle configuration");
 			return ret;
 		}
 
 		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_CHRG_SET, CHRG_SET_THROTTLECHG_Msk);
 		if (ret < 0) {
-			LOG_ERR("failed to enable charge throttling");
+			LOG_ERROR("failed to enable charge throttling");
 			return ret;
 		}
 	}
@@ -762,12 +762,12 @@ static int npm10xx_charger_init(const struct device *dev)
 	/* Set temperature thresholds for battery thermistor and die */
 	ret = set_ntc_thresholds(config);
 	if (ret < 0) {
-		LOG_ERR("failed to set NTC region thresholds");
+		LOG_ERROR("failed to set NTC region thresholds");
 		return ret;
 	}
 	ret = set_dietemp_thresholds(config);
 	if (ret < 0) {
-		LOG_ERR("failed to set charge reduce/resume die temperature thresholds");
+		LOG_ERROR("failed to set charge reduce/resume die temperature thresholds");
 		return ret;
 	}
 
@@ -785,7 +785,7 @@ static int npm10xx_charger_init(const struct device *dev)
 	if (mask) {
 		ret = i2c_reg_update_byte_dt(&config->i2c, NPM10_CHRG_TIMEOUT, mask, reg);
 		if (ret < 0) {
-			LOG_ERR("failed to set timeout values");
+			LOG_ERROR("failed to set timeout values");
 			return ret;
 		}
 	}
@@ -796,14 +796,14 @@ static int npm10xx_charger_init(const struct device *dev)
 	if (reg) {
 		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_CHRG_CLR, reg);
 		if (ret < 0) {
-			LOG_ERR("failed to update the CLR register");
+			LOG_ERROR("failed to update the CLR register");
 			return ret;
 		}
 	}
 	if (config->enable_throttle) {
 		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_CHRG_SET, CHRG_SET_THROTTLECHG_Msk);
 		if (ret < 0) {
-			LOG_ERR("failed to update the SET register");
+			LOG_ERROR("failed to update the SET register");
 			return ret;
 		}
 	}
@@ -824,7 +824,7 @@ static int npm10xx_charger_init(const struct device *dev)
 	if (mask) {
 		ret = i2c_reg_update_byte_dt(&config->i2c, NPM10_CHRG_ENABLE, mask, reg);
 		if (ret < 0) {
-			LOG_ERR("failed to update the ENABLE register");
+			LOG_ERROR("failed to update the ENABLE register");
 			return ret;
 		}
 	}
@@ -834,7 +834,7 @@ static int npm10xx_charger_init(const struct device *dev)
 		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_SYS_VBUSILIM,
 					    FIELD_PREP(SYS_VBUSILIM_LVL_Msk, config->vbusilim));
 		if (ret < 0) {
-			LOG_ERR("failed to configure VBUS current limit");
+			LOG_ERROR("failed to configure VBUS current limit");
 			return ret;
 		}
 	}
@@ -843,7 +843,7 @@ static int npm10xx_charger_init(const struct device *dev)
 			&config->i2c, NPM10_SYS_VBUSDPM,
 			SYS_VBUSDPM_ENABLE | FIELD_PREP(SYS_VBUSDPM_LVL_Msk, config->vbusdpm));
 		if (ret < 0) {
-			LOG_ERR("failed to configure VBUSDPM");
+			LOG_ERROR("failed to configure VBUSDPM");
 			return ret;
 		}
 	}

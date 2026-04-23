@@ -32,13 +32,13 @@ static int a4979_set_microstep_pin(const struct device *dev, const struct gpio_d
 	/* Reset microstep pin as it may have been disconnected. */
 	ret = gpio_pin_configure_dt(pin, GPIO_OUTPUT_INACTIVE);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure microstep pin (error: %d)", ret);
+		LOG_ERROR("Failed to configure microstep pin (error: %d)", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_set_dt(pin, value);
 	if (ret != 0) {
-		LOG_ERR("Failed to set microstep pin (error: %d)", ret);
+		LOG_ERROR("Failed to set microstep pin (error: %d)", ret);
 		return ret;
 	}
 
@@ -53,13 +53,13 @@ static int a4979_enable(const struct device *dev)
 
 	/* Check availability of enable pin, as it might be hardwired. */
 	if (!has_enable_pin) {
-		LOG_ERR("%s: Enable pin undefined.", dev->name);
+		LOG_ERROR("%s: Enable pin undefined.", dev->name);
 		return -ENOTSUP;
 	}
 
 	ret = gpio_pin_set_dt(&config->common.en_pin, 1);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
+		LOG_ERROR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
 		return ret;
 	}
 
@@ -74,13 +74,13 @@ static int a4979_disable(const struct device *dev)
 
 	/* Check availability of enable pin, as it might be hardwired. */
 	if (!has_enable_pin) {
-		LOG_ERR("%s: Enable pin undefined.", dev->name);
+		LOG_ERROR("%s: Enable pin undefined.", dev->name);
 		return -ENOTSUP;
 	}
 
 	ret = gpio_pin_set_dt(&config->common.en_pin, 0);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
+		LOG_ERROR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
 		return ret;
 	}
 
@@ -115,7 +115,7 @@ static int a4979_set_micro_step_res(const struct device *dev,
 		m1_value = 1;
 		break;
 	default:
-		LOG_ERR("Unsupported micro step resolution %d", micro_step_res);
+		LOG_ERROR("Unsupported micro step resolution %d", micro_step_res);
 		return -ENOTSUP;
 	}
 
@@ -155,13 +155,13 @@ static int a4979_init(const struct device *dev)
 	/* Configure reset pin if it is available */
 	if (has_reset_pin) {
 		if (!gpio_is_ready_dt(&config->reset_pin)) {
-			LOG_ERR("Enable Pin is not ready");
+			LOG_ERROR("Enable Pin is not ready");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&config->reset_pin, GPIO_OUTPUT_ACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to configure reset_pin (error: %d)", dev->name, ret);
+			LOG_ERROR("%s: Failed to configure reset_pin (error: %d)", dev->name, ret);
 			return ret;
 		}
 	}
@@ -169,42 +169,42 @@ static int a4979_init(const struct device *dev)
 	/* Configure enable pin if it is available */
 	if (has_enable_pin) {
 		if (!gpio_is_ready_dt(&config->common.en_pin)) {
-			LOG_ERR("Enable Pin is not ready");
+			LOG_ERROR("Enable Pin is not ready");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&config->common.en_pin, GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to configure en_pin (error: %d)", dev->name, ret);
+			LOG_ERROR("%s: Failed to configure en_pin (error: %d)", dev->name, ret);
 			return ret;
 		}
 	}
 
 	/* Configure microstep pin 0 */
 	if (!gpio_is_ready_dt(&config->common.m0_pin)) {
-		LOG_ERR("m0 Pin is not ready");
+		LOG_ERROR("m0 Pin is not ready");
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->common.m0_pin, GPIO_OUTPUT_INACTIVE);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to configure m0_pin (error: %d)", dev->name, ret);
+		LOG_ERROR("%s: Failed to configure m0_pin (error: %d)", dev->name, ret);
 		return ret;
 	}
 
 	/* Configure microstep pin 1 */
 	if (!gpio_is_ready_dt(&config->common.m1_pin)) {
-		LOG_ERR("m1 Pin is not ready");
+		LOG_ERROR("m1 Pin is not ready");
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->common.m1_pin, GPIO_OUTPUT_INACTIVE);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to configure m1_pin (error: %d)", dev->name, ret);
+		LOG_ERROR("%s: Failed to configure m1_pin (error: %d)", dev->name, ret);
 		return ret;
 	}
 
 	ret = a4979_set_micro_step_res(dev, data->micro_step_res);
 	if (ret != 0) {
-		LOG_ERR("Failed to set micro step resolution: %d", ret);
+		LOG_ERROR("Failed to set micro step resolution: %d", ret);
 		return ret;
 	}
 

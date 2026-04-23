@@ -304,7 +304,7 @@ static int spi_nand_wait_until_ready(const struct device *dev, const char *op, u
 		k_sleep(K_USEC(poll_us));
 	} while (!sys_timepoint_expired(timeout));
 
-	LOG_ERR("Ready timeout (Op %s, Status %02X)", op, *status);
+	LOG_ERROR("Ready timeout (Op %s, Status %02X)", op, *status);
 	return -ETIMEDOUT;
 }
 
@@ -515,7 +515,7 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 			break;
 		}
 		if (status & SPI_NAND_FEATURE_STATUS_PROGRAM_FAIL) {
-			LOG_ERR("Program operation failed");
+			LOG_ERROR("Program operation failed");
 			ret = -EIO;
 			break;
 		}
@@ -579,7 +579,7 @@ static int spi_nand_erase(const struct device *dev, off_t addr, size_t size)
 			break;
 		}
 		if (status & SPI_NAND_FEATURE_STATUS_ERASE_FAIL) {
-			LOG_ERR("Erase operation failed");
+			LOG_ERROR("Erase operation failed");
 			ret = -EIO;
 			break;
 		}
@@ -731,7 +731,7 @@ static int spi_nand_mark_bad_block(const struct device *dev, off_t addr)
 		return ret;
 	}
 	if (status & SPI_NAND_FEATURE_STATUS_PROGRAM_FAIL) {
-		LOG_ERR("Program operation failed");
+		LOG_ERROR("Program operation failed");
 		ret = -EIO;
 		return ret;
 	}
@@ -811,7 +811,7 @@ static int onfi_parameters_load(const struct device *dev)
 		return ret;
 	}
 	if (!(cfg & SPI_NAND_FEATURE_CONFIG_OTP_EN)) {
-		LOG_ERR("Failed to enable OTP bit to read parameter page");
+		LOG_ERROR("Failed to enable OTP bit to read parameter page");
 		return -EIO;
 	}
 
@@ -853,7 +853,7 @@ static int onfi_parameters_load(const struct device *dev)
 			onfi.integrity_crc);
 	}
 	if (computed_crc != onfi.integrity_crc) {
-		LOG_ERR("No valid ONFI parameters blocks found");
+		LOG_ERROR("No valid ONFI parameters blocks found");
 		return -ENOSPC;
 	}
 

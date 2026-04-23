@@ -228,7 +228,7 @@ static int rtc_sf32lb_alarm_set_time(const struct device *dev, uint16_t id, uint
 	}
 
 	if ((mask & ~RTC_SF32LB_SUPPORTED_ALARM_FIELDS) != 0) {
-		LOG_ERR("unsupported alarm %d field mask 0x%04x", id, mask);
+		LOG_ERROR("unsupported alarm %d field mask 0x%04x", id, mask);
 		return -EINVAL;
 	}
 

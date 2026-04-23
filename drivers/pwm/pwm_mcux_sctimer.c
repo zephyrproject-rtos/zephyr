@@ -110,7 +110,7 @@ static int mcux_sctimer_new_channel(const struct device *dev,
 
 	pwm_freq = (clock_freq / config->prescale) / period_cycles;
 	if (pwm_freq == 0) {
-		LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
+		LOG_ERROR("Could not set up pwm_freq=%d", pwm_freq);
 		return -EINVAL;
 	}
 
@@ -118,10 +118,9 @@ static int mcux_sctimer_new_channel(const struct device *dev,
 
 	LOG_DBG("SETUP dutycycle to %u\n", duty_cycle);
 	data->channel[channel].dutyCyclePercent = duty_cycle;
-	if (SCTIMER_SetupPwm(config->base, &data->channel[channel],
-			     kSCTIMER_EdgeAlignedPwm, pwm_freq,
-			     clock_freq, &data->event_number[channel]) == kStatus_Fail) {
-		LOG_ERR("Could not set up pwm");
+	if (SCTIMER_SetupPwm(config->base, &data->channel[channel], kSCTIMER_EdgeAlignedPwm,
+			     pwm_freq, clock_freq, &data->event_number[channel]) == kStatus_Fail) {
+		LOG_ERROR("Could not set up pwm");
 		return -ENOTSUP;
 	}
 #ifdef CONFIG_PWM_CAPTURE
@@ -176,12 +175,12 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 	int ret;
 
 	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
 	if (period_cycles == 0) {
-		LOG_ERR("Channel can not be set to inactive level");
+		LOG_ERROR("Channel can not be set to inactive level");
 		return -ENOTSUP;
 	}
 
@@ -251,8 +250,8 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		 * if the period matches that of other PWM signals.
 		 */
 		if (period_cycles != data->match_period) {
-			LOG_ERR("Only one PWM period is supported between "
-				"multiple channels");
+			LOG_ERROR("Only one PWM period is supported between "
+				  "multiple channels");
 			return -ENOTSUP;
 		}
 		/* Setup PWM output using MCUX SDK */
@@ -265,8 +264,8 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		 * we cannot do this safely if multiple channels are setup.
 		 */
 		if (data->configured_chan != 1) {
-			LOG_ERR("Cannot change PWM period when multiple "
-				"channels active");
+			LOG_ERROR("Cannot change PWM period when multiple "
+				  "channels active");
 			return -ENOTSUP;
 		}
 
@@ -337,41 +336,41 @@ static int mcux_sctimer_setup_capture_events(const struct device *dev, uint32_t 
 	uint32_t capture_reg;
 
 	/* Create first edge capture event */
-	if (SCTIMER_CreateAndScheduleEvent(config->base, first_edge_event,
-			0, channel, kSCTIMER_Counter_U,
-			first_capture_event) != kStatus_Success) {
-		LOG_ERR("Failed to create first edge event");
+	if (SCTIMER_CreateAndScheduleEvent(config->base, first_edge_event, 0, channel,
+					   kSCTIMER_Counter_U,
+					   first_capture_event) != kStatus_Success) {
+		LOG_ERROR("Failed to create first edge event");
 		return -ENOTSUP;
 	}
 
 	/* Setup capture action for first edge */
-	if (SCTIMER_SetupCaptureAction(config->base, kSCTIMER_Counter_U,
-			&capture_reg, *first_capture_event) != kStatus_Success) {
-		LOG_ERR("Failed to setup first edge capture");
+	if (SCTIMER_SetupCaptureAction(config->base, kSCTIMER_Counter_U, &capture_reg,
+				       *first_capture_event) != kStatus_Success) {
+		LOG_ERROR("Failed to setup first edge capture");
 		return -ENOTSUP;
 	}
 
 	/* Create second edge capture event */
-	if (SCTIMER_CreateAndScheduleEvent(config->base, second_edge_event,
-			0, channel, kSCTIMER_Counter_U,
-			second_capture_event) != kStatus_Success) {
-		LOG_ERR("Failed to create second edge event");
+	if (SCTIMER_CreateAndScheduleEvent(config->base, second_edge_event, 0, channel,
+					   kSCTIMER_Counter_U,
+					   second_capture_event) != kStatus_Success) {
+		LOG_ERROR("Failed to create second edge event");
 		return -ENOTSUP;
 	}
 
 	/* Setup capture action for second edge */
-	if (SCTIMER_SetupCaptureAction(config->base, kSCTIMER_Counter_U,
-			&capture_reg, *second_capture_event) != kStatus_Success) {
-		LOG_ERR("Failed to setup second edge capture");
+	if (SCTIMER_SetupCaptureAction(config->base, kSCTIMER_Counter_U, &capture_reg,
+				       *second_capture_event) != kStatus_Success) {
+		LOG_ERROR("Failed to setup second edge capture");
 		return -ENOTSUP;
 	}
 
 	if (data->match_event == EVENT_NOT_SET) {
 		/* Create limit event for overflow detection */
-		if (SCTIMER_CreateAndScheduleEvent(config->base, kSCTIMER_MatchEventOnly,
-				0xFFFF, 0, kSCTIMER_Counter_U,
-				&data->match_event) != kStatus_Success) {
-			LOG_ERR("Failed to create limit event");
+		if (SCTIMER_CreateAndScheduleEvent(config->base, kSCTIMER_MatchEventOnly, 0xFFFF, 0,
+						   kSCTIMER_Counter_U,
+						   &data->match_event) != kStatus_Success) {
+			LOG_ERROR("Failed to create limit event");
 			return -ENOTSUP;
 		}
 		/* Setup counter limit action */
@@ -398,22 +397,22 @@ static int mcux_sctimer_configure_capture(const struct device *dev,
 	int ret;
 
 	if (channel >= CAPTURE_CHANNEL_COUNT) {
-		LOG_ERR("invalid channel %d", channel);
+		LOG_ERROR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
-		LOG_ERR("No capture type specified");
+		LOG_ERROR("No capture type specified");
 		return -EINVAL;
 	}
 
 	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
+		LOG_ERROR("Cannot capture both period and pulse width");
 		return -ENOTSUP;
 	}
 
 	if (data->capture_data[channel].channel_used) {
-		LOG_ERR("pwm capture in progress");
+		LOG_ERROR("pwm capture in progress");
 		return -EBUSY;
 	}
 
@@ -461,17 +460,17 @@ static int mcux_sctimer_enable_capture(const struct device *dev, uint32_t channe
 	uint32_t status_flags;
 
 	if (channel >= CAPTURE_CHANNEL_COUNT) {
-		LOG_ERR("invalid channel %d", channel);
+		LOG_ERROR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	if (!data->capture_data[channel].callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
 	if (data->capture_data[channel].channel_used) {
-		LOG_ERR("pwm capture channel in progress");
+		LOG_ERROR("pwm capture channel in progress");
 		return -EBUSY;
 	}
 
@@ -499,7 +498,7 @@ static int mcux_sctimer_disable_capture(const struct device *dev, uint32_t chann
 	struct pwm_mcux_sctimer_data *data = dev->data;
 
 	if (channel >= CAPTURE_CHANNEL_COUNT) {
-		LOG_ERR("invalid channel %d", channel);
+		LOG_ERROR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -725,7 +724,7 @@ static int mcux_sctimer_pwm_init_common(const struct device *dev)
 
 	status = SCTIMER_Init(config->base, &pwm_config);
 	if (status != kStatus_Success) {
-		LOG_ERR("Unable to init PWM");
+		LOG_ERROR("Unable to init PWM");
 		return -EIO;
 	}
 

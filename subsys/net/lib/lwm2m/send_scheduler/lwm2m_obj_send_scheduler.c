@@ -263,7 +263,7 @@ static int send_sched_validate_rule(uint16_t obj_inst_id, uint16_t res_id, uint1
 
 	entry_idx = send_sched_rules_index_for_inst(obj_inst_id);
 	if (entry_idx < 0) {
-		LOG_ERR("Sampling rule instance %u not found", obj_inst_id);
+		LOG_ERROR("Sampling rule instance %u not found", obj_inst_id);
 		return -ENOENT;
 	}
 
@@ -283,7 +283,7 @@ static int send_sched_validate_rule(uint16_t obj_inst_id, uint16_t res_id, uint1
 	}
 
 	if (current_slot < 0 || current_slot >= LWM2M_SEND_SCHED_MAX_RULE_STRINGS) {
-		LOG_ERR("Sampling rule index out of range (%d)", current_slot);
+		LOG_ERROR("Sampling rule index out of range (%d)", current_slot);
 		return -EINVAL;
 	}
 
@@ -608,7 +608,7 @@ int lwm2m_send_sched_init(void)
 
 	ret = lwm2m_create_obj_inst(SEND_SCHED_CTRL_OBJECT_ID, 0, &obj_inst);
 	if (ret < 0 && ret != -EEXIST) {
-		LOG_ERR("Failed to instantiate scheduler control object (%d)", ret);
+		LOG_ERROR("Failed to instantiate scheduler control object (%d)", ret);
 		return ret;
 	}
 
@@ -617,7 +617,7 @@ int lwm2m_send_sched_init(void)
 			&LWM2M_OBJ(SEND_SCHED_CTRL_OBJECT_ID, 0, SEND_SCHED_CTRL_RES_MAX_SAMPLES),
 			send_sched_ctrl_max_samples_post_write_cb);
 		if (cb_ret < 0) {
-			LOG_ERR("Failed to register max-samples callback (%d)", cb_ret);
+			LOG_ERROR("Failed to register max-samples callback (%d)", cb_ret);
 			return cb_ret;
 		}
 		scheduler_max_samples_cb_registered = true;
@@ -628,7 +628,7 @@ int lwm2m_send_sched_init(void)
 			&LWM2M_OBJ(SEND_SCHED_CTRL_OBJECT_ID, 0, SEND_SCHED_CTRL_RES_MAX_AGE),
 			send_sched_ctrl_max_age_post_write_cb);
 		if (cb_ret < 0) {
-			LOG_ERR("Failed to register max-age callback (%d)", cb_ret);
+			LOG_ERROR("Failed to register max-age callback (%d)", cb_ret);
 			return cb_ret;
 		}
 		scheduler_max_age_cb_registered = true;

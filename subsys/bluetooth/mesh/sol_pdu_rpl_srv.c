@@ -102,7 +102,7 @@ const struct bt_mesh_model_op _bt_mesh_sol_pdu_rpl_srv_op[] = {
 static int sol_pdu_rpl_srv_init(const struct bt_mesh_model *mod)
 {
 	if (!bt_mesh_model_in_primary(mod)) {
-		LOG_ERR("Solicitation PDU RPL Configuration server not in primary element");
+		LOG_ERROR("Solicitation PDU RPL Configuration server not in primary element");
 		return -EINVAL;
 	}
 

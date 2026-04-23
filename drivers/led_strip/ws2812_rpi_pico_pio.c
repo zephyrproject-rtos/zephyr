@@ -171,7 +171,7 @@ static void ws2812_led_strip_dma_callback(const struct device *dma_dev, void *ar
 	}
 
 	if (status < 0) {
-		LOG_ERR("dma:%p ch:%d callback gets error: %d", dma_dev, channel, status);
+		LOG_ERROR("dma:%p ch:%d callback gets error: %d", dma_dev, channel, status);
 
 		return;
 	}
@@ -220,13 +220,13 @@ static int ws2812_led_strip_dma_setup(const struct device *dev)
 
 	ret = dma_config(dev_cfg->dma_config.dev, dma_channel, dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("dma ctrl %p: dma_config failed with %d", dev_cfg->dma_config.dev, ret);
+		LOG_ERROR("dma ctrl %p: dma_config failed with %d", dev_cfg->dma_config.dev, ret);
 		return ret;
 	}
 
 	ret = dma_start(dev_cfg->dma_config.dev, dma_channel);
 	if (ret < 0) {
-		LOG_ERR("dma ctrl %p: dma_start failed with %d", dev_cfg->dma_config.dev, ret);
+		LOG_ERROR("dma ctrl %p: dma_start failed with %d", dev_cfg->dma_config.dev, ret);
 		return ret;
 	}
 
@@ -292,7 +292,7 @@ static int ws2812_led_strip_init(const struct device *dev)
 	int sm;
 
 	if (!device_is_ready(config->piodev)) {
-		LOG_ERR("%s: PIO device not ready", dev->name);
+		LOG_ERROR("%s: PIO device not ready", dev->name);
 		return -ENODEV;
 	}
 
@@ -304,9 +304,9 @@ static int ws2812_led_strip_init(const struct device *dev)
 		case LED_COLOR_ID_BLUE:
 			break;
 		default:
-			LOG_ERR("%s: invalid channel to color mapping."
-				" Check the color-mapping DT property",
-				dev->name);
+			LOG_ERROR("%s: invalid channel to color mapping."
+				  " Check the color-mapping DT property",
+				  dev->name);
 			return -EINVAL;
 		}
 	}
@@ -335,7 +335,7 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
 	PIO pio;
 
 	if (!device_is_ready(config->piodev)) {
-		LOG_ERR("%s: PIO device not ready", dev->name);
+		LOG_ERROR("%s: PIO device not ready", dev->name);
 		return -ENODEV;
 	}
 

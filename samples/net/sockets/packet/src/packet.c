@@ -69,10 +69,9 @@ static int start_socket(int *sock)
 							SOCK_DGRAM : SOCK_RAW,
 		       htons(ETH_P_ALL));
 	if (*sock < 0) {
-		LOG_ERR("Failed to create %s socket : %d",
-			IS_ENABLED(CONFIG_NET_SAMPLE_ENABLE_PACKET_DGRAM) ?
-							"DGRAM" : "RAW",
-			errno);
+		LOG_ERROR("Failed to create %s socket : %d",
+			  IS_ENABLED(CONFIG_NET_SAMPLE_ENABLE_PACKET_DGRAM) ? "DGRAM" : "RAW",
+			  errno);
 		return -errno;
 	}
 
@@ -82,7 +81,7 @@ static int start_socket(int *sock)
 	ret = bind(*sock, (const struct sockaddr *)&dst,
 		   sizeof(struct sockaddr_ll));
 	if (ret < 0) {
-		LOG_ERR("Failed to bind packet socket : %d", errno);
+		LOG_ERROR("Failed to bind packet socket : %d", errno);
 		return -errno;
 	}
 
@@ -110,7 +109,7 @@ static int recv_packet_socket(struct packet_data *packet)
 				continue;
 			}
 
-			LOG_ERR("RAW : recv error %d", errno);
+			LOG_ERROR("RAW : recv error %d", errno);
 			ret = -errno;
 			break;
 		}
@@ -170,8 +169,7 @@ static int send_packet_socket(struct packet_data *packet)
 			dst.sll_halen,
 			CONFIG_NET_SAMPLE_DESTINATION_ADDR);
 		if (ret < 0) {
-			LOG_ERR("Invalid MAC address '%s'",
-				CONFIG_NET_SAMPLE_DESTINATION_ADDR);
+			LOG_ERROR("Invalid MAC address '%s'", CONFIG_NET_SAMPLE_DESTINATION_ADDR);
 		}
 	}
 
@@ -186,7 +184,7 @@ static int send_packet_socket(struct packet_data *packet)
 			     (const struct sockaddr *)&dst,
 			     sizeof(struct sockaddr_ll));
 		if (ret < 0) {
-			LOG_ERR("Failed to send, errno %d", errno);
+			LOG_ERROR("Failed to send, errno %d", errno);
 			break;
 		} else {
 			if (!FLOOD) {

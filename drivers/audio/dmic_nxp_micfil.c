@@ -72,18 +72,18 @@ static int nxp_micfil_configure(const struct device *dev, struct dmic_cfg *cfg_i
 	 * to keep alignment and simplify processing.
 	 */
 	if (stream->pcm_width != 32U) {
-		LOG_ERR("Unsupported pcm width %u", stream->pcm_width);
+		LOG_ERROR("Unsupported pcm width %u", stream->pcm_width);
 		return -EINVAL;
 	}
 
 	if (chan->req_num_streams != 1U) {
-		LOG_ERR("Only 1 stream supported");
+		LOG_ERROR("Only 1 stream supported");
 		return -EINVAL;
 	}
 
 	/* Basic channel count sanity and support limit */
 	if ((chan->req_num_chan == 0U) || (chan->req_num_chan > ARRAY_SIZE(data->hw_chan))) {
-		LOG_ERR("Unsupported number of channels: %u", chan->req_num_chan);
+		LOG_ERROR("Unsupported number of channels: %u", chan->req_num_chan);
 		return -ENOTSUP;
 	}
 
@@ -101,20 +101,20 @@ static int nxp_micfil_configure(const struct device *dev, struct dmic_cfg *cfg_i
 		uint8_t hw_chan = micfil_idx;
 
 		if (hw_chan >= ARRAY_SIZE(data->hw_chan)) {
-			LOG_ERR("Requested hw channel index %u exceeds supported %u",
-					hw_chan, (uint32_t)ARRAY_SIZE(data->hw_chan));
+			LOG_ERROR("Requested hw channel index %u exceeds supported %u", hw_chan,
+				  (uint32_t)ARRAY_SIZE(data->hw_chan));
 			return -EINVAL;
 		}
 
 		if ((cfg->ch_enabled_mask & BIT(hw_chan)) == 0U) {
-			LOG_ERR("Requested hw channel %u not enabled in DT", hw_chan);
+			LOG_ERROR("Requested hw channel %u not enabled in DT", hw_chan);
 			return -EINVAL;
 		}
 
 		/* Avoid duplicates */
 		for (uint8_t i = 0U; i < act; i++) {
 			if (data->hw_chan[i] == hw_chan) {
-				LOG_ERR("Duplicate channel request for hw channel %u", hw_chan);
+				LOG_ERROR("Duplicate channel request for hw channel %u", hw_chan);
 				return -EINVAL;
 			}
 		}
@@ -132,7 +132,7 @@ static int nxp_micfil_configure(const struct device *dev, struct dmic_cfg *cfg_i
 			chan_map = (chan->req_chan_map_hi >> ((index - 8U) * 4U)) & 0xFU;
 		}
 		if (chan_map != 0U) {
-			LOG_ERR("Extra mapping present for logical channel %u", index);
+			LOG_ERROR("Extra mapping present for logical channel %u", index);
 			return -EINVAL;
 		}
 	}
@@ -153,7 +153,7 @@ static int nxp_micfil_configure(const struct device *dev, struct dmic_cfg *cfg_i
 					index + 1U, &micfil1, &lr1);
 
 		if (lr0 == lr1) {
-			LOG_ERR("Pair %u/%u has same L/R selection", index, index + 1U);
+			LOG_ERROR("Pair %u/%u has same L/R selection", index, index + 1U);
 			return -EINVAL;
 		}
 		/* Require consecutive DMIC channel numbers within a pair (e.g., 0/1, 2/3).
@@ -163,14 +163,14 @@ static int nxp_micfil_configure(const struct device *dev, struct dmic_cfg *cfg_i
 		uint8_t maxp = MAX(micfil0, micfil1);
 
 		if (!((maxp == (uint8_t)(minp + 1U)) && ((minp & 0x1U) == 0U))) {
-			LOG_ERR("Pair %u/%u must map to consecutive DMIC channels.",
-				index, index + 1U);
+			LOG_ERROR("Pair %u/%u must map to consecutive DMIC channels.", index,
+				  index + 1U);
 			return -EINVAL;
 		}
 	}
 
 	if (act == 0U) {
-		LOG_ERR("No channels requested");
+		LOG_ERROR("No channels requested");
 		return -EINVAL;
 	}
 
@@ -183,8 +183,8 @@ static int nxp_micfil_configure(const struct device *dev, struct dmic_cfg *cfg_i
 	uint32_t frame_bytes = (uint32_t)data->channels * (uint32_t)data->sample_bytes;
 
 	if ((data->block_size % frame_bytes) != 0U) {
-		LOG_ERR("block_size %u not aligned to frame size %u (channels=%u)",
-			data->block_size, (uint32_t)frame_bytes, data->channels);
+		LOG_ERROR("block_size %u not aligned to frame size %u (channels=%u)",
+			  data->block_size, (uint32_t)frame_bytes, data->channels);
 		return -EINVAL;
 	}
 
@@ -318,7 +318,7 @@ static int nxp_micfil_trigger(const struct device *dev, enum dmic_trigger cmd)
 		int ret = nxp_micfil_start_capture(data);
 
 		if (ret) {
-			LOG_ERR("Failed to start capture: %d", ret);
+			LOG_ERROR("Failed to start capture: %d", ret);
 			return ret;
 		}
 
@@ -376,7 +376,7 @@ static int nxp_micfil_read(const struct device *dev, uint8_t stream,
 		uint32_t now = k_uptime_get_32();
 
 		if ((now - last_warn_ms) > 1000U) {
-			LOG_ERR("DMIC fallback: no IRQ data yet, returning silence\n");
+			LOG_ERROR("DMIC fallback: no IRQ data yet, returning silence\n");
 			last_warn_ms = now;
 		}
 
@@ -494,7 +494,7 @@ static int nxp_micfil_init(const struct device *dev)
 	if (cfg->clock_dev != NULL) {
 		ret = clock_control_on(cfg->clock_dev, cfg->clock_name);
 		if (ret) {
-			LOG_ERR("Device clock turn on failed");
+			LOG_ERROR("Device clock turn on failed");
 			return ret;
 		}
 
@@ -506,7 +506,7 @@ static int nxp_micfil_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure pins (%d)", ret);
+		LOG_ERROR("Failed to configure pins (%d)", ret);
 		return ret;
 	}
 
@@ -566,8 +566,8 @@ static int nxp_micfil_init(const struct device *dev)
 		uint32_t osr_reg_max = (PDM_CTRL_2_CICOSR_MASK >> PDM_CTRL_2_CICOSR_SHIFT);
 
 		if (cfg->cic_decimation_rate > osr_reg_max) {
-			LOG_ERR("CIC decimation rate %u exceeds max %u",
-				cfg->cic_decimation_rate, (uint32_t)osr_reg_max);
+			LOG_ERROR("CIC decimation rate %u exceeds max %u", cfg->cic_decimation_rate,
+				  (uint32_t)osr_reg_max);
 			return -EINVAL;
 		}
 
@@ -576,8 +576,8 @@ static int nxp_micfil_init(const struct device *dev)
 		uint32_t micfil_clock_rate = cfg->sample_rate * real_osr * 8U;
 
 		if (clk_rate < micfil_clock_rate) {
-			LOG_ERR("Clock rate %u too low for sample rate %u (OSR=%u)",
-					clk_rate, cfg->sample_rate, real_osr);
+			LOG_ERROR("Clock rate %u too low for sample rate %u (OSR=%u)", clk_rate,
+				  cfg->sample_rate, real_osr);
 			return -EINVAL;
 		}
 

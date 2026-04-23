@@ -73,7 +73,7 @@ static int ad56xx_write_command(const struct device *dev, enum ad56xx_command co
 	int result = spi_transceive_dt(&config->bus, &tx, &rx);
 
 	if (result != 0) {
-		LOG_ERR("spi_transceive failed with error %i", result);
+		LOG_ERROR("spi_transceive failed with error %i", result);
 		return result;
 	}
 
@@ -85,17 +85,17 @@ static int ad56xx_channel_setup(const struct device *dev, const struct dac_chann
 	const struct ad56xx_config *config = dev->config;
 
 	if (channel_cfg->channel_id >= config->channel_count) {
-		LOG_ERR("invalid channel %i", channel_cfg->channel_id);
+		LOG_ERROR("invalid channel %i", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->resolution != config->resolution) {
-		LOG_ERR("invalid resolution %i", channel_cfg->resolution);
+		LOG_ERROR("invalid resolution %i", channel_cfg->resolution);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -107,12 +107,12 @@ static int ad56xx_write_value(const struct device *dev, uint8_t channel, uint32_
 	const struct ad56xx_config *config = dev->config;
 
 	if (value > BIT(config->resolution) - 1) {
-		LOG_ERR("invalid value %i", value);
+		LOG_ERROR("invalid value %i", value);
 		return -EINVAL;
 	}
 
 	if (channel >= config->channel_count) {
-		LOG_ERR("invalid channel %i", channel);
+		LOG_ERROR("invalid channel %i", channel);
 		return -EINVAL;
 	}
 
@@ -126,7 +126,7 @@ static int ad56xx_init(const struct device *dev)
 	int result;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
@@ -134,7 +134,7 @@ static int ad56xx_init(const struct device *dev)
 		LOG_DBG("reset %s with GPIO", dev->name);
 		result = gpio_pin_configure_dt(&config->gpio_reset, GPIO_OUTPUT_ACTIVE);
 		if (result != 0) {
-			LOG_ERR("failed to initialize GPIO for reset");
+			LOG_ERROR("failed to initialize GPIO for reset");
 			return result;
 		}
 
@@ -144,7 +144,7 @@ static int ad56xx_init(const struct device *dev)
 		LOG_DBG("reset %s with command", dev->name);
 		result = ad56xx_write_command(dev, AD56XX_CMD_SOFTWARE_RESET, 0, 0);
 		if (result != 0) {
-			LOG_ERR("failed to send reset command");
+			LOG_ERROR("failed to send reset command");
 			return result;
 		}
 	}

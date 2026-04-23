@@ -71,7 +71,7 @@ static int nxp_cmp_set_trigger(const struct device *dev,
 		break;
 
 	default:
-		LOG_ERR("Invalid trigger type.");
+		LOG_ERROR("Invalid trigger type.");
 		return -EINVAL;
 	}
 
@@ -169,7 +169,7 @@ static int nxp_cmp_init(const struct device *dev)
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 
 	if (ret) {
-		LOG_ERR("Device clock turn on failed");
+		LOG_ERROR("Device clock turn on failed");
 		return ret;
 	}
 

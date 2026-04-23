@@ -52,13 +52,13 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	if (IS_ENABLED(I2C_STM32_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
 					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
+			LOG_ERROR("Failed call clock_control_get_rate(pclken[1])");
 			return -EIO;
 		}
 	} else {
 		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0],
 					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
+			LOG_ERROR("Failed call clock_control_get_rate(pclken[0])");
 			return -EIO;
 		}
 	}
@@ -68,7 +68,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret < 0) {
-		LOG_ERR("Failed enabling I2C clock");
+		LOG_ERROR("Failed enabling I2C clock");
 		return ret;
 	}
 #endif
@@ -76,14 +76,14 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	LL_I2C_Disable(i2c);
 	ret = i2c_stm32_configure_timing(dev, i2c_clock);
 	if (ret < 0) {
-		LOG_ERR("Failed configuring I2C timing");
+		LOG_ERROR("Failed configuring I2C timing");
 		return ret;
 	}
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret < 0) {
-		LOG_ERR("Failed disabling I2C clock");
+		LOG_ERROR("Failed disabling I2C clock");
 		return ret;
 	}
 #endif
@@ -124,7 +124,7 @@ bool i2c_stm32_start(const struct device *dev)
 		res = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
 		return i2c_rtio_complete(data->ctx, res);
 	default:
-		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
+		LOG_ERROR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
 		return i2c_rtio_complete(data->ctx, -EINVAL);
 	}
 }
@@ -157,8 +157,8 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
 	 * in between. This means that flags shall not be used by the generic I2C framework.
 	 */
 	if ((msgs[0].flags & I2C_MSG_STM32_USE_RELOAD_MODE) != 0U) {
-		LOG_ERR("Unexpected bit mask 0x%02lx set in I2C message",
-			I2C_MSG_STM32_USE_RELOAD_MODE);
+		LOG_ERROR("Unexpected bit mask 0x%02lx set in I2C message",
+			  I2C_MSG_STM32_USE_RELOAD_MODE);
 		return -EINVAL;
 	}
 #endif
@@ -166,20 +166,20 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
 	for (size_t n = 1; n < num_msgs; n++) {
 #ifdef CONFIG_I2C_STM32_V2
 		if ((msgs[n].flags & I2C_MSG_STM32_USE_RELOAD_MODE) != 0U) {
-			LOG_ERR("Unexpected bit mask 0x%02lx set in I2C message",
-				I2C_MSG_STM32_USE_RELOAD_MODE);
+			LOG_ERROR("Unexpected bit mask 0x%02lx set in I2C message",
+				  I2C_MSG_STM32_USE_RELOAD_MODE);
 			return -EINVAL;
 		}
 #endif
 
 		if ((OPERATION(msgs + n - 1) != OPERATION(msgs + n)) &&
 		    ((msgs[n].flags & I2C_MSG_RESTART) == 0U)) {
-			LOG_ERR("Missing restart flag between message of different directions");
+			LOG_ERROR("Missing restart flag between message of different directions");
 			return -EINVAL;
 		}
 
 		if ((msgs[n - 1].flags & I2C_MSG_STOP) != 0U) {
-			LOG_ERR("Stop condition is only allowed on last message");
+			LOG_ERROR("Stop condition is only allowed on last message");
 			return -EINVAL;
 		}
 	}
@@ -260,7 +260,7 @@ static int i2c_stm32_init(const struct device *dev)
 
 	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
-		LOG_ERR("i2c: failure initializing");
+		LOG_ERROR("i2c: failure initializing");
 		return ret;
 	}
 

@@ -58,7 +58,7 @@ static inline int32_t adc_keys_read(const struct device *dev)
 
 	ret = adc_read(cfg->channel.dev, &data->seq);
 	if (ret) {
-		LOG_ERR("ADC read failed %d", ret);
+		LOG_ERROR("ADC read failed %d", ret);
 		return cfg->keyup_mv;
 	}
 
@@ -173,13 +173,13 @@ static int adc_keys_init(const struct device *dev)
 
 	ret = adc_channel_setup_dt(&cfg->channel);
 	if (ret) {
-		LOG_ERR("ADC channel setup failed %d", ret);
+		LOG_ERROR("ADC channel setup failed %d", ret);
 		return ret;
 	}
 
 	ret = adc_sequence_init_dt(&cfg->channel, &data->seq);
 	if (ret) {
-		LOG_ERR("ADC sequence init failed %d", ret);
+		LOG_ERROR("ADC sequence init failed %d", ret);
 		return ret;
 	}
 

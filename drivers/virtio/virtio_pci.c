@@ -126,7 +126,7 @@ static bool virtio_pci_read_cap(
 	uint16_t status = (pcie_conf_read(bdf, STATUS_COMMAND_REG) & GENMASK(31, 16)) >> 16;
 
 	if (!(status & BIT(CABABILITY_LIST_VALID_BIT))) {
-		LOG_ERR("no capability list for device with bdf 0x%x", bdf);
+		LOG_ERROR("no capability list for device with bdf 0x%x", bdf);
 		return false;
 	}
 
@@ -232,12 +232,9 @@ static int virtio_pci_set_virtqueue(
 	uint16_t max_queue_size = sys_le16_to_cpu(data->common_cfg->queue_size);
 
 	if (max_queue_size < virtqueue->num) {
-		LOG_ERR(
-			"virtio pci device doesn't support queue %d bigger than %d, tried to set one with size %d",
-			virtqueue_n,
-			max_queue_size,
-			virtqueue->num
-		);
+		LOG_ERROR("virtio pci device doesn't support queue %d bigger than %d, tried to set "
+			  "one with size %d",
+			  virtqueue_n, max_queue_size, virtqueue->num);
 		return -EINVAL;
 	}
 	data->common_cfg->queue_size = sys_cpu_to_le16(virtqueue->num);
@@ -263,13 +260,13 @@ static int virtio_pci_init_virtqueues(
 	uint16_t queue_count = sys_le16_to_cpu(data->common_cfg->num_queues);
 
 	if (num_queues > queue_count) {
-		LOG_ERR("requested more virtqueues than available");
+		LOG_ERROR("requested more virtqueues than available");
 		return -EINVAL;
 	}
 
 	data->virtqueues = k_malloc(num_queues * sizeof(struct virtq));
 	if (!data->virtqueues) {
-		LOG_ERR("failed to allocate virtqueue array");
+		LOG_ERROR("failed to allocate virtqueue array");
 		return -ENOMEM;
 	}
 	data->virtqueue_count = num_queues;
@@ -319,7 +316,7 @@ static bool virtio_pci_map_cap(pcie_bdf_t bdf, struct virtio_pci_cap *cap, void 
 	struct pcie_bar mbar;
 
 	if (!pcie_get_mbar(bdf, cap->bar, &mbar)) {
-		LOG_ERR("no mbar for capability type %d found", cap->cfg_type);
+		LOG_ERROR("no mbar for capability type %d found", cap->cfg_type);
 		return false;
 	}
 	assert(mbar.phys_addr + cap->offset + cap->length <= mbar.phys_addr + mbar.size);
@@ -419,7 +416,7 @@ static int virtio_pci_init_common(const struct device *dev)
 	struct virtio_pci_notify_cap vpnc = { .notify_off_multiplier = 0 };
 
 	if (conf->pcie->bdf == PCIE_BDF_NONE) {
-		LOG_ERR("no virtio pci device with id 0x%x on the bus", conf->pcie->id);
+		LOG_ERROR("no virtio pci device with id 0x%x on the bus", conf->pcie->id);
 		return 1;
 	}
 	LOG_INF(
@@ -431,11 +428,9 @@ static int virtio_pci_init_common(const struct device *dev)
 			return 1;
 		}
 	} else {
-		LOG_ERR(
-			"no VIRTIO_PCI_CAP_COMMON_CFG for the device with id 0x%x and bdf 0x%x, legacy device?",
-			conf->pcie->id,
-			conf->pcie->bdf
-		);
+		LOG_ERROR("no VIRTIO_PCI_CAP_COMMON_CFG for the device with id 0x%x and bdf 0x%x, "
+			  "legacy device?",
+			  conf->pcie->id, conf->pcie->bdf);
 		return 1;
 	}
 
@@ -444,11 +439,8 @@ static int virtio_pci_init_common(const struct device *dev)
 			return 1;
 		}
 	} else {
-		LOG_ERR(
-			"no VIRTIO_PCI_CAP_ISR_CFG for the device with id 0x%x and bdf 0x%x",
-			conf->pcie->id,
-			conf->pcie->bdf
-		);
+		LOG_ERROR("no VIRTIO_PCI_CAP_ISR_CFG for the device with id 0x%x and bdf 0x%x",
+			  conf->pcie->id, conf->pcie->bdf);
 		return 1;
 	}
 
@@ -460,11 +452,8 @@ static int virtio_pci_init_common(const struct device *dev)
 		}
 		data->notify_off_multiplier = sys_le32_to_cpu(vpnc.notify_off_multiplier);
 	} else {
-		LOG_ERR(
-			"no VIRTIO_PCI_CAP_NOTIFY_CFG for the device with id 0x%x and bdf 0x%x",
-			conf->pcie->id,
-			conf->pcie->bdf
-		);
+		LOG_ERROR("no VIRTIO_PCI_CAP_NOTIFY_CFG for the device with id 0x%x and bdf 0x%x",
+			  conf->pcie->id, conf->pcie->bdf);
 		return 1;
 	}
 
@@ -525,12 +514,9 @@ static int virtio_pci_init_common(const struct device *dev)
 	 * in legacy devices, but we are leaving it here as a sanity check
 	 */
 	if (!virtio_pci_read_device_feature_bit(dev, VIRTIO_F_VERSION_1)) {
-		LOG_ERR(
-			"virtio pci device with id 0x%x and bdf 0x%x doesn't advertise "
-			"VIRTIO_F_VERSION_1 feature support",
-			conf->pcie->id,
-			conf->pcie->bdf
-		);
+		LOG_ERROR("virtio pci device with id 0x%x and bdf 0x%x doesn't advertise "
+			  "VIRTIO_F_VERSION_1 feature support",
+			  conf->pcie->id, conf->pcie->bdf);
 		return 1;
 	}
 
@@ -564,16 +550,13 @@ int virtio_pci_commit_feature_bits(const struct device *dev)
 
 	virtio_pci_write_status_bit(dev, DEVICE_STATUS_FEATURES_OK);
 	if (!virtio_pci_read_status_bit(dev, DEVICE_STATUS_FEATURES_OK)) {
-		LOG_ERR(
-			"virtio pci device with id 0x%x and bdf 0x%x doesn't support selected "
-			"feature bits: 0x%.8x%.8x%.8x%.8x",
-			conf->pcie->id,
-			conf->pcie->bdf,
-			virtio_pci_read_device_feature_word(dev, 3),
-			virtio_pci_read_device_feature_word(dev, 2),
-			virtio_pci_read_device_feature_word(dev, 1),
-			virtio_pci_read_device_feature_word(dev, 0)
-		);
+		LOG_ERROR("virtio pci device with id 0x%x and bdf 0x%x doesn't support selected "
+			  "feature bits: 0x%.8x%.8x%.8x%.8x",
+			  conf->pcie->id, conf->pcie->bdf,
+			  virtio_pci_read_device_feature_word(dev, 3),
+			  virtio_pci_read_device_feature_word(dev, 2),
+			  virtio_pci_read_device_feature_word(dev, 1),
+			  virtio_pci_read_device_feature_word(dev, 0));
 		return -EINVAL;
 	}
 

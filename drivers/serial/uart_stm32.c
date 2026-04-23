@@ -232,7 +232,7 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 						 (clock_control_subsys_t)&config->pclken[1],
 						 &clock_rate);
 		if (ret < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
+			LOG_ERROR("Failed call clock_control_get_rate(pclken[1])");
 			return ret;
 		}
 	} else {
@@ -240,7 +240,7 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 						 (clock_control_subsys_t)&config->pclken[0],
 						 &clock_rate);
 		if (ret < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
+			LOG_ERROR("Failed call clock_control_get_rate(pclken[0])");
 			return ret;
 		}
 	}
@@ -262,7 +262,7 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 		}
 
 		if (presc_idx == ARRAY_SIZE(STM32_LPUART_PRESCALER_TAB)) {
-			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
+			LOG_ERROR("Unable to set %s to %d", dev->name, baud_rate);
 			return -EINVAL;
 		}
 
@@ -272,7 +272,7 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 #else
 		lpuartdiv = lpuartdiv_calc(clock_rate, baud_rate);
 		if (lpuartdiv < STM32_LPUART_BRR_MIN_VALUE || lpuartdiv > STM32_LPUART_BRR_MASK) {
-			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
+			LOG_ERROR("Unable to set %s to %d", dev->name, baud_rate);
 			return -EINVAL;
 		}
 #endif /* USART_PRESC_PRESCALER */
@@ -300,7 +300,7 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 #endif
 							       baud_rate);
 		if (usartdiv < 16) {
-			LOG_ERR("Unable to set %s to %d", dev->name, baud_rate);
+			LOG_ERROR("Unable to set %s to %d", dev->name, baud_rate);
 			return -EINVAL;
 		}
 
@@ -1767,7 +1767,7 @@ static int uart_stm32_async_tx(const struct device *dev,
 	}
 
 	if (!stm32_buf_in_nocache((uintptr_t)tx_data, buf_size)) {
-		LOG_ERR("Tx buffer should be placed in a nocache memory region");
+		LOG_ERROR("Tx buffer should be placed in a nocache memory region");
 		return -EFAULT;
 	}
 
@@ -1812,12 +1812,12 @@ static int uart_stm32_async_tx(const struct device *dev,
 				 &data->dma_tx.dma_cfg);
 
 		if (ret != 0) {
-			LOG_ERR("dma tx config error!");
+			LOG_ERROR("dma tx config error!");
 			return -EINVAL;
 		}
 
 		if (dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel)) {
-			LOG_ERR("UART err: TX DMA start failed!");
+			LOG_ERROR("UART err: TX DMA start failed!");
 			return -EFAULT;
 		}
 
@@ -1934,7 +1934,7 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 	}
 
 	if (!stm32_buf_in_nocache((uintptr_t)rx_buf, buf_size)) {
-		LOG_ERR("Rx buffer should be placed in a nocache memory region");
+		LOG_ERROR("Rx buffer should be placed in a nocache memory region");
 		return -EFAULT;
 	}
 
@@ -1953,12 +1953,12 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &data->dma_rx.dma_cfg);
 
 	if (ret != 0) {
-		LOG_ERR("UART ERR: RX DMA config failed!");
+		LOG_ERROR("UART ERR: RX DMA config failed!");
 		return -EINVAL;
 	}
 
 	if (dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel)) {
-		LOG_ERR("UART ERR: RX DMA start failed!");
+		LOG_ERROR("UART ERR: RX DMA start failed!");
 		return -EFAULT;
 	}
 
@@ -2063,7 +2063,7 @@ static int uart_stm32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 	LOG_DBG("replace buffer (%d)", len);
 
 	if (!stm32_buf_in_nocache((uintptr_t)buf, len)) {
-		LOG_ERR("Rx buffer should be placed in a nocache memory region");
+		LOG_ERROR("Rx buffer should be placed in a nocache memory region");
 		return -EFAULT;
 	}
 
@@ -2271,7 +2271,7 @@ static int uart_stm32_clocks_enable(const struct device *dev)
 	/* enable clock */
 	err = clock_control_on(config->clock, (clock_control_subsys_t)&config->pclken[0]);
 	if (err != 0) {
-		LOG_ERR("Could not enable (LP)UART clock");
+		LOG_ERROR("Could not enable (LP)UART clock");
 		return err;
 	}
 
@@ -2280,7 +2280,7 @@ static int uart_stm32_clocks_enable(const struct device *dev)
 					      (clock_control_subsys_t) &config->pclken[1],
 					      NULL);
 		if (err != 0) {
-			LOG_ERR("Could not select UART domain clock");
+			LOG_ERROR("Could not select UART domain clock");
 			return err;
 		}
 	}
@@ -2298,7 +2298,7 @@ static int uart_stm32_registers_configure(const struct device *dev)
 	LL_USART_Disable(usart);
 
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 
@@ -2339,7 +2339,7 @@ static int uart_stm32_registers_configure(const struct device *dev)
 #if HAS_DRIVER_ENABLE
 	if (config->de_enable) {
 		if (!IS_UART_DRIVER_ENABLE_INSTANCE(usart)) {
-			LOG_ERR("%s does not support driver enable", dev->name);
+			LOG_ERROR("%s does not support driver enable", dev->name);
 			return -EINVAL;
 		}
 
@@ -2488,7 +2488,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 		/* Enable bus clock */
 		err = clock_control_on(config->clock, (clock_control_subsys_t)&config->pclken[0]);
 		if (err < 0) {
-			LOG_ERR("Could not enable (LP)UART clock");
+			LOG_ERROR("Could not enable (LP)UART clock");
 			return err;
 		}
 
@@ -2520,7 +2520,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 		/* Stop device clock. Note: fixed clocks are not handled yet. */
 		err = clock_control_off(config->clock, (clock_control_subsys_t)&config->pclken[0]);
 		if (err < 0) {
-			LOG_ERR("Could not disable (LP)UART clock");
+			LOG_ERROR("Could not disable (LP)UART clock");
 			return err;
 		}
 

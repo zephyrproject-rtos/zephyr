@@ -181,7 +181,7 @@ static int crypto_sifli_aes_init(uint32_t base, const uint32_t *key, int key_siz
 		ks = SIFLI_AES_KEY_LEN_256;
 		break;
 	default:
-		LOG_ERR("Unsupported key size: %d", key_size);
+		LOG_ERROR("Unsupported key size: %d", key_size);
 		return -EINVAL;
 	}
 
@@ -245,7 +245,7 @@ static int crypto_sifli_aes_run(uint32_t base, uint8_t enc, uint8_t *in_data, ui
 	/* Wait for completion */
 	if (!WAIT_FOR(crypto_sifli_aes_busy(base) != true, CRYPTO_SIFLI_TIMEOUT_US,
 		      k_busy_wait(1))) {
-		LOG_ERR("AES operation timeout");
+		LOG_ERROR("AES operation timeout");
 		return -ETIMEDOUT;
 	}
 
@@ -253,7 +253,7 @@ static int crypto_sifli_aes_run(uint32_t base, uint8_t enc, uint8_t *in_data, ui
 	uint32_t irq = sys_read32(base + AES_IRQ_OFFSET);
 
 	if (irq & (AES_ACC_IRQ_BUS_ERR_STAT | AES_ACC_IRQ_SETUP_ERR_STAT)) {
-		LOG_ERR("AES error: IRQ=0x%08x", irq);
+		LOG_ERROR("AES error: IRQ=0x%08x", irq);
 		return -EIO;
 	}
 
@@ -305,7 +305,7 @@ static int crypto_sifli_aes_run_async(const struct device *dev, uint8_t enc, uin
 	if (cb == NULL) {
 		/* Synchronous mode: wait for completion via semaphore */
 		if (k_sem_take(&data->sync_sem, K_USEC(CRYPTO_SIFLI_TIMEOUT_US)) != 0) {
-			LOG_ERR("AES operation timeout");
+			LOG_ERROR("AES operation timeout");
 			/* Disable IRQ mask */
 			sys_write32(0, base + AES_SETTING_OFFSET);
 			data->cipher_pkt = NULL;
@@ -330,17 +330,17 @@ static int crypto_sifli_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *p
 	int ret;
 
 	if ((pkt->in_buf == NULL) || (pkt->out_buf == NULL)) {
-		LOG_ERR("Invalid input/output buffer");
+		LOG_ERROR("Invalid input/output buffer");
 		return -EINVAL;
 	}
 
 	if (pkt->in_len != SIFLI_AES_BLOCK_SIZE) {
-		LOG_ERR("ECB mode requires a single block");
+		LOG_ERROR("ECB mode requires a single block");
 		return -EINVAL;
 	}
 
 	if (pkt->out_buf_max < SIFLI_AES_BLOCK_SIZE) {
-		LOG_ERR("Output buffer too small");
+		LOG_ERROR("Output buffer too small");
 		return -EINVAL;
 	}
 
@@ -388,17 +388,17 @@ static int crypto_sifli_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *p
 	int ret;
 
 	if ((pkt->in_buf == NULL) || (pkt->out_buf == NULL)) {
-		LOG_ERR("Invalid input/output buffer");
+		LOG_ERROR("Invalid input/output buffer");
 		return -EINVAL;
 	}
 
 	if (pkt->in_len != SIFLI_AES_BLOCK_SIZE) {
-		LOG_ERR("ECB mode requires a single block");
+		LOG_ERROR("ECB mode requires a single block");
 		return -EINVAL;
 	}
 
 	if (pkt->out_buf_max < SIFLI_AES_BLOCK_SIZE) {
-		LOG_ERR("Output buffer too small");
+		LOG_ERROR("Output buffer too small");
 		return -EINVAL;
 	}
 
@@ -447,17 +447,17 @@ static int crypto_sifli_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *p
 	int out_len;
 
 	if ((pkt->in_buf == NULL) || (pkt->out_buf == NULL)) {
-		LOG_ERR("Invalid input/output buffer");
+		LOG_ERROR("Invalid input/output buffer");
 		return -EINVAL;
 	}
 
 	if (iv == NULL) {
-		LOG_ERR("Missing IV");
+		LOG_ERROR("Missing IV");
 		return -EINVAL;
 	}
 
 	if ((pkt->in_len <= 0) || ((pkt->in_len % SIFLI_AES_BLOCK_SIZE) != 0)) {
-		LOG_ERR("Invalid input length");
+		LOG_ERROR("Invalid input length");
 		return -EINVAL;
 	}
 
@@ -476,7 +476,7 @@ static int crypto_sifli_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *p
 
 	out_len = pkt->in_len + out_offset;
 	if (pkt->out_buf_max < out_len) {
-		LOG_ERR("Output buffer too small");
+		LOG_ERROR("Output buffer too small");
 		k_sem_give(&data->device_sem);
 		return -EINVAL;
 	}
@@ -521,17 +521,17 @@ static int crypto_sifli_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *p
 	int out_len;
 
 	if ((pkt->in_buf == NULL) || (pkt->out_buf == NULL)) {
-		LOG_ERR("Invalid input/output buffer");
+		LOG_ERROR("Invalid input/output buffer");
 		return -EINVAL;
 	}
 
 	if (iv == NULL) {
-		LOG_ERR("Missing IV");
+		LOG_ERROR("Missing IV");
 		return -EINVAL;
 	}
 
 	if ((pkt->in_len <= 0) || ((pkt->in_len % SIFLI_AES_BLOCK_SIZE) != 0)) {
-		LOG_ERR("Invalid input length");
+		LOG_ERROR("Invalid input length");
 		return -EINVAL;
 	}
 
@@ -549,14 +549,14 @@ static int crypto_sifli_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *p
 	}
 
 	if (pkt->in_len <= in_offset) {
-		LOG_ERR("Invalid input length");
+		LOG_ERROR("Invalid input length");
 		k_sem_give(&data->device_sem);
 		return -EINVAL;
 	}
 
 	out_len = pkt->in_len - in_offset;
 	if (pkt->out_buf_max < out_len) {
-		LOG_ERR("Output buffer too small");
+		LOG_ERROR("Output buffer too small");
 		k_sem_give(&data->device_sem);
 		return -EINVAL;
 	}
@@ -599,29 +599,29 @@ static int crypto_sifli_ctr_crypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 	int nonce_len;
 
 	if ((pkt->in_buf == NULL) || (pkt->out_buf == NULL)) {
-		LOG_ERR("Invalid input/output buffer");
+		LOG_ERROR("Invalid input/output buffer");
 		return -EINVAL;
 	}
 
 	if ((ctr_len == 0U) || ((ctr_len & 0x7U) != 0U) ||
 	    (ctr_len > (SIFLI_AES_BLOCK_SIZE * 8U))) {
-		LOG_ERR("Invalid CTR length");
+		LOG_ERROR("Invalid CTR length");
 		return -EINVAL;
 	}
 
 	nonce_len = SIFLI_AES_BLOCK_SIZE - (ctr_len >> 3);
 	if ((nonce_len > 0) && (iv == NULL)) {
-		LOG_ERR("Missing IV");
+		LOG_ERROR("Missing IV");
 		return -EINVAL;
 	}
 
 	if ((pkt->in_len <= 0) || ((pkt->in_len % SIFLI_AES_BLOCK_SIZE) != 0)) {
-		LOG_ERR("Invalid input length");
+		LOG_ERROR("Invalid input length");
 		return -EINVAL;
 	}
 
 	if (pkt->out_buf_max < pkt->in_len) {
-		LOG_ERR("Output buffer too small");
+		LOG_ERROR("Output buffer too small");
 		return -EINVAL;
 	}
 
@@ -698,29 +698,29 @@ static int crypto_sifli_session_setup(const struct device *dev, struct cipher_ct
 	struct crypto_sifli_session *session;
 
 	if (ctx->flags & ~(CRYP_SUPPORT)) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -ENOTSUP;
 	}
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		LOG_ERR("Unsupported algo: %d", algo);
+		LOG_ERROR("Unsupported algo: %d", algo);
 		return -ENOTSUP;
 	}
 
 	if ((mode != CRYPTO_CIPHER_MODE_ECB) && (mode != CRYPTO_CIPHER_MODE_CBC) &&
 	    (mode != CRYPTO_CIPHER_MODE_CTR)) {
-		LOG_ERR("Unsupported mode: %d", mode);
+		LOG_ERROR("Unsupported mode: %d", mode);
 		return -ENOTSUP;
 	}
 
 	if ((ctx->keylen != 16U) && (ctx->keylen != 24U) && (ctx->keylen != 32U)) {
-		LOG_ERR("Unsupported key size: %u", ctx->keylen);
+		LOG_ERROR("Unsupported key size: %u", ctx->keylen);
 		return -ENOTSUP;
 	}
 
 	ctx_idx = crypto_sifli_get_unused_session_index(dev);
 	if (ctx_idx < 0) {
-		LOG_ERR("No free session");
+		LOG_ERROR("No free session");
 		return -ENOSPC;
 	}
 
@@ -837,24 +837,24 @@ static int crypto_sifli_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 	uint32_t hash_setting;
 
 	if (!pkt || !pkt->out_buf) {
-		LOG_ERR("Invalid packet buffers");
+		LOG_ERROR("Invalid packet buffers");
 		return -EINVAL;
 	}
 
 	/* in_buf can be NULL for empty message, but in_len should be 0 */
 	if (!pkt->in_buf && pkt->in_len != 0) {
-		LOG_ERR("Invalid input buffer");
+		LOG_ERROR("Invalid input buffer");
 		return -EINVAL;
 	}
 
 	if (!finish) {
 		/* HW requires non-final chunks to be 4-byte aligned; multipart not supported. */
-		LOG_ERR("Multipart hashing not supported yet");
+		LOG_ERROR("Multipart hashing not supported yet");
 		return -ENOTSUP;
 	}
 
 	if (session->algo >= ARRAY_SIZE(hash_result_sizes)) {
-		LOG_ERR("Invalid hash algorithm: %u", session->algo);
+		LOG_ERROR("Invalid hash algorithm: %u", session->algo);
 		return -EINVAL;
 	}
 
@@ -914,7 +914,7 @@ static int crypto_sifli_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 	if (data->hash_cb == NULL) {
 		/* Wait for completion via semaphore */
 		if (k_sem_take(&data->sync_sem, K_USEC(CRYPTO_SIFLI_TIMEOUT_US)) != 0) {
-			LOG_ERR("HASH operation timeout");
+			LOG_ERROR("HASH operation timeout");
 			/* Disable IRQ mask */
 			sys_write32(sys_read32(base + AES_SETTING_OFFSET) &
 					    ~(AES_ACC_SETTING_HASH_DONE_MASK |
@@ -943,7 +943,7 @@ static int crypto_sifli_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 	/* Wait for completion */
 	if (!WAIT_FOR(crypto_sifli_hash_busy(base) != true, CRYPTO_SIFLI_TIMEOUT_US,
 		      k_busy_wait(1))) {
-		LOG_ERR("HASH operation timeout");
+		LOG_ERROR("HASH operation timeout");
 		k_sem_give(&data->device_sem);
 		return -ETIMEDOUT;
 	}
@@ -957,7 +957,7 @@ static int crypto_sifli_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 		    base + AES_IRQ_OFFSET);
 
 	if (irq & (AES_ACC_IRQ_HASH_BUS_ERR_STAT | AES_ACC_IRQ_HASH_PAD_ERR_STAT)) {
-		LOG_ERR("HASH error: IRQ=0x%08x", irq);
+		LOG_ERROR("HASH error: IRQ=0x%08x", irq);
 		k_sem_give(&data->device_sem);
 		return -EIO;
 	}
@@ -989,13 +989,13 @@ static int crypto_sifli_hash_begin_session(const struct device *dev, struct hash
 		hw_algo = SIFLI_HASH_ALGO_SHA256;
 		break;
 	default:
-		LOG_ERR("Unsupported hash algorithm: %d", algo);
+		LOG_ERROR("Unsupported hash algorithm: %d", algo);
 		return -ENOTSUP;
 	}
 
 	ctx_idx = crypto_sifli_hash_get_unused_session_index(dev);
 	if (ctx_idx < 0) {
-		LOG_ERR("No free hash session");
+		LOG_ERROR("No free hash session");
 		return -ENOSPC;
 	}
 
@@ -1057,13 +1057,13 @@ static int crypto_sifli_init(const struct device *dev)
 	int ret;
 
 	if (!sf32lb_clock_is_ready_dt(&config->clock)) {
-		LOG_ERR("Clock device not ready");
+		LOG_ERROR("Clock device not ready");
 		return -ENODEV;
 	}
 
 	ret = sf32lb_clock_control_on_dt(&config->clock);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable clock");
+		LOG_ERROR("Failed to enable clock");
 		return ret;
 	}
 

@@ -285,8 +285,7 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 			LOG_WRN("request ep 0x%02x, len %u cancelled",
 				bi->ep, buf->len);
 		} else {
-			LOG_ERR("request ep 0x%02x, len %u failed",
-				bi->ep, buf->len);
+			LOG_ERROR("request ep 0x%02x, len %u failed", bi->ep, buf->len);
 		}
 
 		if (bi->ep == cdc_acm_get_bulk_out(c_data)) {
@@ -567,7 +566,7 @@ static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 
 	if (cfg->if_desc_data != NULL && desc->if0.iInterface == 0) {
 		if (usbd_add_descriptor(uds_ctx, cfg->if_desc_data)) {
-			LOG_ERR("Failed to add interface string descriptor");
+			LOG_ERROR("Failed to add interface string descriptor");
 		} else {
 			desc->if0.iInterface = usbd_str_desc_get_idx(cfg->if_desc_data);
 		}
@@ -670,7 +669,7 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue");
+		LOG_ERROR("Failed to enqueue");
 		net_buf_unref(buf);
 		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 	}
@@ -722,8 +721,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x",
-			cdc_acm_get_bulk_out(c_data));
+		LOG_ERROR("Failed to enqueue net_buf for 0x%02x", cdc_acm_get_bulk_out(c_data));
 		net_buf_unref(buf);
 	}
 }
@@ -922,7 +920,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	c_data = cfg->c_data;
 
 	if (data->cb == NULL) {
-		LOG_ERR("IRQ callback is not set");
+		LOG_ERROR("IRQ callback is not set");
 		return;
 	}
 

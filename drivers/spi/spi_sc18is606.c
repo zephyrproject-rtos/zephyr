@@ -45,19 +45,19 @@ static int sc18is606_spi_configure(const struct device *dev, const struct spi_co
 	uint8_t buffer[2];
 
 	if ((config->operation & SPI_OP_MODE_SLAVE) != 0U) {
-		LOG_ERR("SC18IS606 does not support Slave mode");
+		LOG_ERROR("SC18IS606 does not support Slave mode");
 		return -ENOTSUP;
 	}
 
 	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Unsupported line configuration");
+		LOG_ERROR("Unsupported line configuration");
 		return -ENOTSUP;
 	}
 
 	const int bits = SPI_WORD_SIZE_GET(config->operation);
 
 	if (bits > 8) {
-		LOG_ERR("Word sizes > 8 bits not supported");
+		LOG_ERROR("Word sizes > 8 bits not supported");
 		return -ENOTSUP;
 	}
 
@@ -90,7 +90,7 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 	}
 
 	if (!tx_buffer_set && !rx_buffer_set) {
-		LOG_ERR("SC18IS606 at least one buffer_set should be set");
+		LOG_ERROR("SC18IS606 at least one buffer_set should be set");
 		return -EINVAL;
 	}
 
@@ -98,7 +98,7 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 	uint8_t ss_idx = spi_cfg->slave;
 
 	if (ss_idx > 2) {
-		LOG_ERR("SC18IS606: Invalid SS Index (%u) must be 0-2", ss_idx);
+		LOG_ERROR("SC18IS606: Invalid SS Index (%u) must be 0-2", ss_idx);
 		return -EINVAL;
 	}
 
@@ -113,8 +113,8 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 			ret = nxp_sc18is606_transfer(cfg->bridge, tx_buf->buf, tx_buf->len, NULL, 0,
 						     id_buf);
 			if (ret < 0) {
-				LOG_ERR("SC18IS606: TX of size: %d failed %s", tx_buf->len,
-					dev->name);
+				LOG_ERROR("SC18IS606: TX of size: %d failed %s", tx_buf->len,
+					  dev->name);
 				return ret;
 			}
 		}
@@ -131,8 +131,8 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 						     rx_buf->buf, rx_buf->len, NULL);
 
 			if (ret < 0) {
-				LOG_ERR("SC18IS606: RX of size: %d failed on  (%s)", rx_buf->len,
-					dev->name);
+				LOG_ERROR("SC18IS606: RX of size: %d failed on  (%s)", rx_buf->len,
+					  dev->name);
 				return ret;
 			}
 		}
@@ -170,7 +170,7 @@ static int sc18is606_spi_init(const struct device *dev)
 
 	ret = sc18is606_spi_configure(dev, &my_config);
 	if (ret != 0) {
-		LOG_ERR("Failed to CONFIGURE the SC18IS606: %d", ret);
+		LOG_ERROR("Failed to CONFIGURE the SC18IS606: %d", ret);
 		return ret;
 	}
 

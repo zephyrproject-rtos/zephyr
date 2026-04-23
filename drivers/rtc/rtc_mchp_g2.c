@@ -145,11 +145,11 @@ static int rtc_mchp_set_time(const struct device *dev, const struct rtc_time *ti
 	int ret = 0;
 
 	if (timeptr == NULL) {
-		LOG_ERR("RTC set time failed: time pointer is NULL");
+		LOG_ERROR("RTC set time failed: time pointer is NULL");
 
 		return -EINVAL;
 	} else if (rtc_utils_validate_rtc_time(timeptr, RTC_MCHP_TIME_MASK) == false) {
-		LOG_ERR("RTC time parameters are invalid");
+		LOG_ERROR("RTC time parameters are invalid");
 
 		return -EINVAL;
 	}
@@ -168,7 +168,7 @@ static int rtc_mchp_set_time(const struct device *dev, const struct rtc_time *ti
 		regs->RTC_TIMR = rtc_mchp_timr_from_tm(timeptr);
 		regs->RTC_CALR = rtc_mchp_calr_from_tm(timeptr);
 	} else {
-		LOG_ERR("RTC wait ACKUPD timed out");
+		LOG_ERROR("RTC wait ACKUPD timed out");
 		printf("%s %d\n", __FILE__, __LINE__);
 		ret = -EAGAIN;
 	}
@@ -383,26 +383,26 @@ static int rtc_mchp_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	k_spinlock_key_t key;
 
 	if ((id != 0)) {
-		LOG_ERR("RTC Alarm id is out of range");
+		LOG_ERROR("RTC Alarm id is out of range");
 
 		return -EINVAL;
 	}
 
 	/* Check if the time pointer is provided when the alarm mask is not zero */
 	if ((mask != 0) && (timeptr == NULL)) {
-		LOG_ERR("No pointer is provided to set RTC alarm");
+		LOG_ERROR("No pointer is provided to set RTC alarm");
 
 		return -EINVAL;
 	}
 
 	if ((mask & ~RTC_MCHP_ALARM_SUPPORTED_MASK) != 0) {
-		LOG_ERR("Invalid RTC alarm mask");
+		LOG_ERROR("Invalid RTC alarm mask");
 
 		return -EINVAL;
 	}
 
 	if (rtc_utils_validate_rtc_time(timeptr, mask) == false) {
-		LOG_ERR("Invalid RTC time");
+		LOG_ERROR("Invalid RTC time");
 
 		return -EINVAL;
 	}
@@ -551,7 +551,7 @@ static int rtc_mchp_set_calibration(const struct device *dev, int32_t calibratio
 
 	if ((calibration < RTC_MCHP_CALIBRATE_PPB_MIN) ||
 	    (calibration > RTC_MCHP_CALIBRATE_PPB_MAX)) {
-		LOG_ERR("calibration value (%d) out of range", calibration);
+		LOG_ERROR("calibration value (%d) out of range", calibration);
 
 		return -EINVAL;
 	}
@@ -592,7 +592,7 @@ static int rtc_mchp_get_calibration(const struct device *dev, int32_t *calibrati
 	uint32_t mr;
 
 	if (calibration == NULL) {
-		LOG_ERR("Invalid input: calibration pointer is NULL");
+		LOG_ERROR("Invalid input: calibration pointer is NULL");
 		return -EINVAL;
 	}
 

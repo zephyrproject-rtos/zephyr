@@ -64,7 +64,7 @@ static int lps22hh_sample_fetch(const struct device *dev, enum sensor_channel ch
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported sensor channel");
+		LOG_ERROR("Unsupported sensor channel");
 		return -ENOTSUP;
 	}
 
@@ -178,12 +178,12 @@ static int lps22hh_init_chip(const struct device *dev)
 	int ret;
 
 	if (lps22hh_device_id_get(ctx, &chip_id) < 0) {
-		LOG_ERR("%s: Not able to read dev id", dev->name);
+		LOG_ERROR("%s: Not able to read dev id", dev->name);
 		return -EIO;
 	}
 
 	if (chip_id != LPS22HH_ID) {
-		LOG_ERR("%s: Invalid chip ID 0x%02x", dev->name, chip_id);
+		LOG_ERROR("%s: Invalid chip ID 0x%02x", dev->name, chip_id);
 		return -EIO;
 	}
 
@@ -199,13 +199,13 @@ static int lps22hh_init_chip(const struct device *dev)
 
 		ret = lps22hh_i3c_interface_set(ctx, LPS22HH_I3C_ENABLE);
 		if (ret < 0) {
-			LOG_ERR("Cannot enable I3C interface");
+			LOG_ERROR("Cannot enable I3C interface");
 			return ret;
 		}
 
 		ret = lps22hh_i2c_interface_set(ctx, LPS22HH_I2C_DISABLE);
 		if (ret < 0) {
-			LOG_ERR("Cannot disable I2C interface");
+			LOG_ERROR("Cannot disable I2C interface");
 			return ret;
 		}
 	}
@@ -215,12 +215,12 @@ static int lps22hh_init_chip(const struct device *dev)
 	LOG_DBG("%s: odr: %d", dev->name, cfg->odr);
 	ret = lps22hh_set_odr_raw(dev, cfg->odr);
 	if (ret < 0) {
-		LOG_ERR("%s: Failed to set odr %d", dev->name, cfg->odr);
+		LOG_ERROR("%s: Failed to set odr %d", dev->name, cfg->odr);
 		return ret;
 	}
 
 	if (lps22hh_block_data_update_set(ctx, PROPERTY_ENABLE) < 0) {
-		LOG_ERR("%s: Failed to set BDU", dev->name);
+		LOG_ERROR("%s: Failed to set BDU", dev->name);
 		return ret;
 	}
 
@@ -237,14 +237,14 @@ static int lps22hh_pm_action(const struct device *dev, enum pm_device_action act
 		/* Full chip bring‑up */
 		ret = lps22hh_init_chip(dev);
 		if (ret != 0) {
-			LOG_ERR("%s: failed to initialise chip: %d", dev->name, ret);
+			LOG_ERROR("%s: failed to initialise chip: %d", dev->name, ret);
 		}
 		break;
 
 	case PM_DEVICE_ACTION_RESUME:
 		ret = lps22hh_set_odr_raw(dev, cfg->odr);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to set odr %d", dev->name, cfg->odr);
+			LOG_ERROR("%s: Failed to set odr %d", dev->name, cfg->odr);
 		}
 		break;
 
@@ -252,7 +252,7 @@ static int lps22hh_pm_action(const struct device *dev, enum pm_device_action act
 		/* set odr to 0 for power-down mode */
 		ret = lps22hh_set_odr_raw(dev, 0);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to reset odr", dev->name);
+			LOG_ERROR("%s: Failed to reset odr", dev->name);
 		}
 		break;
 
@@ -280,14 +280,14 @@ static int lps22hh_init(const struct device *dev)
 		 */
 		data->i3c_dev = i3c_device_find(cfg->i3c.bus, &cfg->i3c.dev_id);
 		if (data->i3c_dev == NULL) {
-			LOG_ERR("Cannot find I3C device descriptor");
+			LOG_ERROR("Cannot find I3C device descriptor");
 			return -ENODEV;
 		}
 	}
 #endif
 #ifdef CONFIG_LPS22HH_TRIGGER
 	if (lps22hh_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt.");
+		LOG_ERROR("Failed to initialize interrupt.");
 		return -EIO;
 	}
 #endif

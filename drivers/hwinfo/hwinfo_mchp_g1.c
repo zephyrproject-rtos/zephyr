@@ -61,7 +61,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	uint32_t result = 0;
 
 	if (cause == NULL) {
-		LOG_ERR("Invalid argument: NULL pointer passed");
+		LOG_ERROR("Invalid argument: NULL pointer passed");
 		return -EINVAL;
 	}
 

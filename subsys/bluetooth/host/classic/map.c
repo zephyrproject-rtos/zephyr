@@ -102,7 +102,7 @@ static bool has_required_hdrs(struct net_buf *buf, const struct map_required_hdr
 {
 	for (uint8_t index = 0; index < hdr->count; index++) {
 		if (!bt_obex_has_header(buf, hdr->hdrs[index])) {
-			LOG_ERR("Not found required header %u", hdr->hdrs[index]);
+			LOG_ERROR("Not found required header %u", hdr->hdrs[index]);
 			return false;
 		}
 	}
@@ -113,7 +113,7 @@ static bool has_required_app_params(struct net_buf *buf, const struct map_requir
 {
 	for (uint8_t index = 0; index < ap->count; index++) {
 		if (!bt_obex_has_app_param(buf, ap->tags[index])) {
-			LOG_ERR("Not found required app param %u", ap->tags[index]);
+			LOG_ERROR("Not found required app param %u", ap->tags[index]);
 			return false;
 		}
 	}
@@ -293,12 +293,12 @@ static int map_check_conn_id(uint32_t id, struct net_buf *buf)
 
 	err = bt_obex_get_header_conn_id(buf, &conn_id);
 	if (err != 0) {
-		LOG_ERR("Failed to get connection ID: %d (expected: %u)", err, id);
+		LOG_ERROR("Failed to get connection ID: %d (expected: %u)", err, id);
 		return err;
 	}
 
 	if (conn_id != id) {
-		LOG_ERR("Conn id is mismatched %u != %u", conn_id, id);
+		LOG_ERROR("Conn id is mismatched %u != %u", conn_id, id);
 		return -EINVAL;
 	}
 
@@ -314,18 +314,18 @@ static int map_check_who(const struct bt_uuid *uuid, struct net_buf *buf)
 
 	err = bt_obex_get_header_who(buf, &len, &who);
 	if (err != 0) {
-		LOG_ERR("Failed to get who: %d", err);
+		LOG_ERROR("Failed to get who: %d", err);
 		return err;
 	}
 
 	err = bt_obex_make_uuid(&obex_uuid, who, len);
 	if (err != 0) {
-		LOG_ERR("Invalid UUID of who: %d", err);
+		LOG_ERROR("Invalid UUID of who: %d", err);
 		return err;
 	}
 
 	if (bt_uuid_cmp(uuid, &obex_uuid.uuid) != 0) {
-		LOG_ERR("WHO is mismatched");
+		LOG_ERROR("WHO is mismatched");
 		return -EINVAL;
 	}
 
@@ -341,18 +341,18 @@ static int map_check_target(const struct bt_uuid *uuid, struct net_buf *buf)
 
 	err = bt_obex_get_header_target(buf, &len, &target);
 	if (err != 0) {
-		LOG_ERR("Failed to get target: %d", err);
+		LOG_ERROR("Failed to get target: %d", err);
 		return err;
 	}
 
 	err = bt_obex_make_uuid(&obex_uuid, target, len);
 	if (err != 0) {
-		LOG_ERR("Invalid UUID of target: %d", err);
+		LOG_ERROR("Invalid UUID of target: %d", err);
 		return err;
 	}
 
 	if (bt_uuid_cmp(uuid, &obex_uuid.u128.uuid) != 0) {
-		LOG_ERR("Invalid UUID of target");
+		LOG_ERROR("Invalid UUID of target");
 		return -EINVAL;
 	}
 
@@ -449,7 +449,7 @@ static int mce_mas_transport_connect(struct bt_conn *conn, struct bt_map_mce_mas
 	}
 
 	if (err != 0) {
-		LOG_ERR("Transport connect failed: %d", err);
+		LOG_ERROR("Transport connect failed: %d", err);
 		atomic_set(&mce_mas->_transport_state, BT_MAP_TRANSPORT_STATE_DISCONNECTED);
 	}
 
@@ -498,7 +498,7 @@ static int mce_mas_transport_disconnect(struct bt_map_mce_mas *mce_mas, uint8_t 
 	}
 
 	if (err != 0) {
-		LOG_ERR("Transport disconnect failed: %d", err);
+		LOG_ERROR("Transport disconnect failed: %d", err);
 		atomic_set(&mce_mas->_transport_state, BT_MAP_TRANSPORT_STATE_CONNECTED);
 	}
 
@@ -528,7 +528,7 @@ static void mce_mas_connect(struct bt_obex_client *client, uint8_t rsp_code, uin
 		atomic_set(&c->_state, BT_MAP_STATE_CONNECTED);
 		err = bt_obex_get_header_conn_id(buf, &c->_conn_id);
 		if (err != 0) {
-			LOG_ERR("Failed to get connection ID: %d", err);
+			LOG_ERROR("Failed to get connection ID: %d", err);
 			mce_mas_transport_disconnect(c, c->_transport_type);
 		} else {
 			LOG_DBG("Connection ID: %u", c->_conn_id);
@@ -614,7 +614,7 @@ static void mce_mas_abort(struct bt_obex_client *client, uint8_t rsp_code, struc
 
 	err = bt_map_mce_mas_disconnect(c, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send MCE MAS disconnect: %d", err);
+		LOG_ERROR("Failed to send MCE MAS disconnect: %d", err);
 	}
 }
 
@@ -642,7 +642,7 @@ static const struct bt_obex_client_ops mce_mas_ops = {
 struct net_buf *bt_map_mce_mas_create_pdu(struct bt_map_mce_mas *mce_mas, struct net_buf_pool *pool)
 {
 	if (mce_mas == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return NULL;
 	}
 
@@ -660,7 +660,7 @@ int bt_map_mce_mas_connect(struct bt_map_mce_mas *mce_mas, struct net_buf *buf)
 	}
 
 	if (atomic_get(&mce_mas->_state) != BT_MAP_STATE_DISCONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mce_mas->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mce_mas->_state));
 		return -EINVAL;
 	}
 
@@ -669,7 +669,7 @@ int bt_map_mce_mas_connect(struct bt_map_mce_mas *mce_mas, struct net_buf *buf)
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&mce_mas->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -684,7 +684,7 @@ int bt_map_mce_mas_connect(struct bt_map_mce_mas *mce_mas, struct net_buf *buf)
 		sys_memcpy_swap(val, map_mas_uuid->val, sizeof(val));
 		err = bt_obex_add_header_target(buf, sizeof(val), val);
 		if (err != 0) {
-			LOG_ERR("Failed to add header target: %d", err);
+			LOG_ERROR("Failed to add header target: %d", err);
 			goto failed;
 		}
 	}
@@ -694,7 +694,7 @@ int bt_map_mce_mas_connect(struct bt_map_mce_mas *mce_mas, struct net_buf *buf)
 
 	err = bt_obex_connect(&mce_mas->_client, mce_mas->goep.obex.rx.mtu, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send conn req: %d", err);
+		LOG_ERROR("Failed to send conn req: %d", err);
 		goto failed;
 	}
 
@@ -718,7 +718,7 @@ int bt_map_mce_mas_disconnect(struct bt_map_mce_mas *mce_mas, struct net_buf *bu
 	}
 
 	if (atomic_get(&mce_mas->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mce_mas->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mce_mas->_state));
 		return -EINVAL;
 	}
 
@@ -727,7 +727,7 @@ int bt_map_mce_mas_disconnect(struct bt_map_mce_mas *mce_mas, struct net_buf *bu
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&mce_mas->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -736,7 +736,7 @@ int bt_map_mce_mas_disconnect(struct bt_map_mce_mas *mce_mas, struct net_buf *bu
 	if (!bt_obex_has_header(buf, BT_OBEX_HEADER_ID_CONN_ID)) {
 		err = bt_obex_add_header_conn_id(buf, mce_mas->_conn_id);
 		if (err != 0) {
-			LOG_ERR("Failed to add header conn id: %d", err);
+			LOG_ERROR("Failed to add header conn id: %d", err);
 			goto failed;
 		}
 	} else {
@@ -748,7 +748,7 @@ int bt_map_mce_mas_disconnect(struct bt_map_mce_mas *mce_mas, struct net_buf *bu
 
 	err = bt_obex_disconnect(&mce_mas->_client, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send disconn req: %d", err);
+		LOG_ERROR("Failed to send disconn req: %d", err);
 		goto failed;
 	}
 
@@ -772,12 +772,12 @@ int bt_map_mce_mas_abort(struct bt_map_mce_mas *mce_mas, struct net_buf *buf)
 	}
 
 	if (atomic_get(&mce_mas->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mce_mas->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mce_mas->_state));
 		return -EINVAL;
 	}
 
 	if (mce_mas->_rsp_cb == NULL) {
-		LOG_ERR("No operation is ongoing");
+		LOG_ERROR("No operation is ongoing");
 		return -EINVAL;
 	}
 
@@ -786,7 +786,7 @@ int bt_map_mce_mas_abort(struct bt_map_mce_mas *mce_mas, struct net_buf *buf)
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&mce_mas->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -800,14 +800,14 @@ int bt_map_mce_mas_abort(struct bt_map_mce_mas *mce_mas, struct net_buf *buf)
 	} else {
 		err = bt_obex_add_header_conn_id(buf, mce_mas->_conn_id);
 		if (err != 0) {
-			LOG_ERR("Failed to add header conn id: %d", err);
+			LOG_ERROR("Failed to add header conn id: %d", err);
 			goto failed;
 		}
 	}
 
 	err = bt_obex_abort(&mce_mas->_client, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send abort request: %d", err);
+		LOG_ERROR("Failed to send abort request: %d", err);
 		goto failed;
 	}
 
@@ -830,18 +830,18 @@ int bt_map_mce_mas_set_folder(struct bt_map_mce_mas *mce_mas, uint8_t flags, str
 	}
 
 	if (atomic_get(&mce_mas->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mce_mas->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mce_mas->_state));
 		return -EINVAL;
 	}
 
 	if (mce_mas->_rsp_cb != NULL) {
-		LOG_ERR("Previous operation is not completed");
+		LOG_ERROR("Previous operation is not completed");
 		return -EINVAL;
 	}
 
 	if ((flags == BT_MAP_SET_FOLDER_FLAGS_DOWN || flags == BT_MAP_SET_FOLDER_FLAGS_ROOT) &&
 	    (!bt_obex_has_header(buf, BT_OBEX_HEADER_ID_NAME))) {
-		LOG_ERR("Failed to get name when flags is root or down");
+		LOG_ERROR("Failed to get name when flags is root or down");
 		return -EINVAL;
 	}
 
@@ -850,7 +850,7 @@ int bt_map_mce_mas_set_folder(struct bt_map_mce_mas *mce_mas, uint8_t flags, str
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&mce_mas->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -859,7 +859,7 @@ int bt_map_mce_mas_set_folder(struct bt_map_mce_mas *mce_mas, uint8_t flags, str
 	if (!bt_obex_has_header(buf, BT_OBEX_HEADER_ID_CONN_ID)) {
 		err = bt_obex_add_header_conn_id(buf, mce_mas->_conn_id);
 		if (err != 0) {
-			LOG_ERR("Failed to add header conn id: %d", err);
+			LOG_ERROR("Failed to add header conn id: %d", err);
 			goto failed;
 		}
 	} else {
@@ -871,7 +871,7 @@ int bt_map_mce_mas_set_folder(struct bt_map_mce_mas *mce_mas, uint8_t flags, str
 
 	err = bt_obex_setpath(&mce_mas->_client, flags, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send setpath: %d", err);
+		LOG_ERROR("Failed to send setpath: %d", err);
 		goto failed;
 	}
 	return 0;
@@ -960,7 +960,7 @@ static int mce_mas_get_or_put(struct bt_map_mce_mas *mce_mas, bool is_get, const
 	}
 
 	if (atomic_get(&mce_mas->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mce_mas->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mce_mas->_state));
 		return -EINVAL;
 	}
 
@@ -972,18 +972,18 @@ static int mce_mas_get_or_put(struct bt_map_mce_mas *mce_mas, bool is_get, const
 	if (mce_mas->_rsp_cb == NULL || bt_obex_has_header(buf, BT_OBEX_HEADER_ID_TYPE)) {
 		if (is_get && mce_mas->goep._goep_v2 &&
 		    !bt_obex_has_header(buf, BT_OBEX_HEADER_ID_SRM)) {
-			LOG_ERR("Failed to get SRM");
+			LOG_ERROR("Failed to get SRM");
 			return -ENODATA;
 		}
 
 		err = mce_mas_get_req_cb(mce_mas, type, buf, is_get, &cb, &req_type);
 		if (err != 0) {
-			LOG_ERR("Invalid request: %d", err);
+			LOG_ERROR("Invalid request: %d", err);
 			return err;
 		}
 
 		if (mce_mas->_rsp_cb != NULL && cb != mce_mas->_rsp_cb) {
-			LOG_ERR("Previous operation is not completed");
+			LOG_ERROR("Previous operation is not completed");
 			return -EINVAL;
 		}
 
@@ -992,7 +992,7 @@ static int mce_mas_get_or_put(struct bt_map_mce_mas *mce_mas, bool is_get, const
 	}
 
 	if (mce_mas->_req_type != NULL && strcmp(mce_mas->_req_type, type) != 0) {
-		LOG_ERR("Invalid request type %s != %s", mce_mas->_req_type, type);
+		LOG_ERROR("Invalid request type %s != %s", mce_mas->_req_type, type);
 		err = -EINVAL;
 		goto failed;
 	}
@@ -1005,7 +1005,7 @@ static int mce_mas_get_or_put(struct bt_map_mce_mas *mce_mas, bool is_get, const
 	}
 
 	if (!is_get && final && !bt_obex_has_header(buf, BT_OBEX_HEADER_ID_END_BODY)) {
-		LOG_ERR("OBEX header (End of Body) is missing");
+		LOG_ERROR("OBEX header (End of Body) is missing");
 		goto failed;
 	}
 
@@ -1019,7 +1019,7 @@ failed:
 	if (err != 0) {
 		mce_mas->_rsp_cb = old_cb;
 		mce_mas->_req_type = old_req_type;
-		LOG_ERR("Failed to send get/put req: %d", err);
+		LOG_ERROR("Failed to send get/put req: %d", err);
 	}
 
 	return err;
@@ -1101,7 +1101,7 @@ static void mce_mns_transport_disconnected(struct bt_goep *goep)
 
 	err = bt_obex_server_unregister(&mce_mns->_server);
 	if (err != 0) {
-		LOG_ERR("Failed to unregister obex server: %d", err);
+		LOG_ERROR("Failed to unregister obex server: %d", err);
 	}
 
 	if (mce_mns->_transport_type == MAP_TRANSPORT_TYPE_L2CAP) {
@@ -1143,7 +1143,7 @@ static int mce_mns_transport_disconnect(struct bt_map_mce_mns *mce_mns, uint8_t 
 	}
 
 	if (err != 0) {
-		LOG_ERR("Transport disconnect failed: %d", err);
+		LOG_ERROR("Transport disconnect failed: %d", err);
 		atomic_set(&mce_mns->_transport_state, BT_MAP_TRANSPORT_STATE_CONNECTED);
 	}
 
@@ -1277,7 +1277,7 @@ failed:
 	mce_mns_clear_pending_request(s);
 	err = bt_obex_put_rsp(server, rsp_code, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send put rsp: %d", err);
+		LOG_ERROR("Failed to send put rsp: %d", err);
 	}
 }
 
@@ -1296,7 +1296,7 @@ static void mce_mns_abort(struct bt_obex_server *server, struct net_buf *buf)
 	LOG_WRN("No cb for abort req");
 	err = bt_obex_abort_rsp(server, BT_OBEX_RSP_CODE_NOT_IMPL, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send abort rsp: %d", err);
+		LOG_ERROR("Failed to send abort rsp: %d", err);
 	}
 }
 
@@ -1354,7 +1354,7 @@ static int mce_mns_accept(struct bt_conn *conn, void *server, uint8_t type, stru
 	mce_mns->_conn_id = map_get_connect_id();
 	err = bt_obex_server_register(&mce_mns->_server, map_mns_uuid);
 	if (err != 0) {
-		LOG_ERR("Failed to register obex server: %d", err);
+		LOG_ERROR("Failed to register obex server: %d", err);
 		return err;
 	}
 	*goep = &mce_mns->goep;
@@ -1403,7 +1403,7 @@ int bt_map_mce_mns_l2cap_register(struct bt_map_mce_mns_l2cap_server *server)
 struct net_buf *bt_map_mce_mns_create_pdu(struct bt_map_mce_mns *mce_mns, struct net_buf_pool *pool)
 {
 	if (mce_mns == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return NULL;
 	}
 
@@ -1421,7 +1421,7 @@ int bt_map_mce_mns_connect(struct bt_map_mce_mns *mce_mns, uint8_t rsp_code, str
 	}
 
 	if (atomic_get(&mce_mns->_state) != BT_MAP_STATE_CONNECTING) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mce_mns->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mce_mns->_state));
 		return -EINVAL;
 	}
 
@@ -1430,7 +1430,7 @@ int bt_map_mce_mns_connect(struct bt_map_mce_mns *mce_mns, uint8_t rsp_code, str
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&mce_mns->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -1455,7 +1455,7 @@ int bt_map_mce_mns_connect(struct bt_map_mce_mns *mce_mns, uint8_t rsp_code, str
 			sys_memcpy_swap(val, map_mns_uuid->val, sizeof(val));
 			err = bt_obex_add_header_who(buf, sizeof(val), val);
 			if (err != 0) {
-				LOG_ERR("Failed to add header target: %d", err);
+				LOG_ERROR("Failed to add header target: %d", err);
 				goto failed;
 			}
 		}
@@ -1463,7 +1463,7 @@ int bt_map_mce_mns_connect(struct bt_map_mce_mns *mce_mns, uint8_t rsp_code, str
 		if (!bt_obex_has_header(buf, BT_OBEX_HEADER_ID_CONN_ID)) {
 			err = bt_obex_add_header_conn_id(buf, mce_mns->_conn_id);
 			if (err != 0) {
-				LOG_ERR("Failed to add header conn id: %d", err);
+				LOG_ERROR("Failed to add header conn id: %d", err);
 				goto failed;
 			}
 		}
@@ -1471,7 +1471,7 @@ int bt_map_mce_mns_connect(struct bt_map_mce_mns *mce_mns, uint8_t rsp_code, str
 
 	err = bt_obex_connect_rsp(&mce_mns->_server, rsp_code, mce_mns->goep.obex.rx.mtu, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send conn rsp: %d", err);
+		LOG_ERROR("Failed to send conn rsp: %d", err);
 		goto failed;
 	}
 
@@ -1498,7 +1498,7 @@ int bt_map_mce_mns_disconnect(struct bt_map_mce_mns *mce_mns, uint8_t rsp_code, 
 	}
 
 	if (atomic_get(&mce_mns->_state) != BT_MAP_STATE_DISCONNECTING) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mce_mns->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mce_mns->_state));
 		return -EINVAL;
 	}
 
@@ -1506,7 +1506,7 @@ int bt_map_mce_mns_disconnect(struct bt_map_mce_mns *mce_mns, uint8_t rsp_code, 
 
 	err = bt_obex_disconnect_rsp(&mce_mns->_server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send disconn rsp: %d", err);
+		LOG_ERROR("Failed to send disconn rsp: %d", err);
 		return err;
 	}
 
@@ -1527,7 +1527,7 @@ int bt_map_mce_mns_abort(struct bt_map_mce_mns *mce_mns, uint8_t rsp_code, struc
 	}
 
 	if (atomic_get(&mce_mns->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mce_mns->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mce_mns->_state));
 		return -EINVAL;
 	}
 
@@ -1535,7 +1535,7 @@ int bt_map_mce_mns_abort(struct bt_map_mce_mns *mce_mns, uint8_t rsp_code, struc
 
 	err = bt_obex_abort_rsp(&mce_mns->_server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send abort rsp: %d", err);
+		LOG_ERROR("Failed to send abort rsp: %d", err);
 		return err;
 	}
 
@@ -1556,12 +1556,12 @@ static int mce_mns_get_or_put_rsp(struct bt_map_mce_mns *mce_mns, bool is_get, c
 	}
 
 	if (atomic_get(&mce_mns->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mce_mns->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mce_mns->_state));
 		return -EINVAL;
 	}
 
 	if (mce_mns->_optype != NULL && strcmp(mce_mns->_optype, type) != 0) {
-		LOG_ERR("Invalid operation type %s != %s", mce_mns->_optype, type);
+		LOG_ERROR("Invalid operation type %s != %s", mce_mns->_optype, type);
 		return -EINVAL;
 	}
 
@@ -1570,14 +1570,14 @@ static int mce_mns_get_or_put_rsp(struct bt_map_mce_mns *mce_mns, bool is_get, c
 
 	if (is_get) {
 		if (mce_mns->_opcode != BT_OBEX_OPCODE_GET) {
-			LOG_ERR("Operation %u != %u", mce_mns->_opcode, BT_OBEX_OPCODE_GET);
+			LOG_ERROR("Operation %u != %u", mce_mns->_opcode, BT_OBEX_OPCODE_GET);
 			return -EINVAL;
 		}
 
 		err = bt_obex_get_rsp(&mce_mns->_server, rsp_code, buf);
 	} else {
 		if (mce_mns->_opcode != BT_OBEX_OPCODE_PUT) {
-			LOG_ERR("Operation %u != %u", mce_mns->_opcode, BT_OBEX_OPCODE_PUT);
+			LOG_ERROR("Operation %u != %u", mce_mns->_opcode, BT_OBEX_OPCODE_PUT);
 			return -EINVAL;
 		}
 
@@ -1585,7 +1585,7 @@ static int mce_mns_get_or_put_rsp(struct bt_map_mce_mns *mce_mns, bool is_get, c
 	}
 
 	if (err != 0) {
-		LOG_ERR("Failed to send get/put rsp: %d", err);
+		LOG_ERROR("Failed to send get/put rsp: %d", err);
 		return err;
 	}
 
@@ -1652,7 +1652,7 @@ static void mse_mas_transport_disconnected(struct bt_goep *goep)
 
 	err = bt_obex_server_unregister(&mse_mas->_server);
 	if (err != 0) {
-		LOG_ERR("Failed to unregister obex server: %d", err);
+		LOG_ERROR("Failed to unregister obex server: %d", err);
 	}
 
 	if (mse_mas->_transport_type == MAP_TRANSPORT_TYPE_L2CAP) {
@@ -1694,7 +1694,7 @@ static int mse_mas_transport_disconnect(struct bt_map_mse_mas *mse_mas, uint8_t 
 	}
 
 	if (err != 0) {
-		LOG_ERR("Transport disconnect failed: %d", err);
+		LOG_ERROR("Transport disconnect failed: %d", err);
 		atomic_set(&mse_mas->_transport_state, BT_MAP_TRANSPORT_STATE_CONNECTED);
 	}
 
@@ -1828,7 +1828,7 @@ failed:
 	mse_mas_clear_pending_request(s);
 	err = bt_obex_put_rsp(server, rsp_code, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send put rsp: %d", err);
+		LOG_ERROR("Failed to send put rsp: %d", err);
 	}
 }
 
@@ -1862,7 +1862,7 @@ failed:
 	mse_mas_clear_pending_request(s);
 	err = bt_obex_get_rsp(server, rsp_code, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send get rsp: %d", err);
+		LOG_ERROR("Failed to send get rsp: %d", err);
 	}
 }
 
@@ -1881,7 +1881,7 @@ static void mse_mas_abort(struct bt_obex_server *server, struct net_buf *buf)
 	LOG_WRN("No cb for abort req");
 	err = bt_obex_abort_rsp(server, BT_OBEX_RSP_CODE_NOT_IMPL, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send abort rsp: %d", err);
+		LOG_ERROR("Failed to send abort rsp: %d", err);
 	}
 }
 
@@ -1900,7 +1900,7 @@ static void mse_mas_setpath(struct bt_obex_server *server, uint8_t flags, struct
 	LOG_WRN("No cb for set_folder req");
 	err = bt_obex_setpath_rsp(server, BT_OBEX_RSP_CODE_NOT_IMPL, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send set_folder rsp: %d", err);
+		LOG_ERROR("Failed to send set_folder rsp: %d", err);
 	}
 }
 
@@ -1958,7 +1958,7 @@ static int mse_mas_accept(struct bt_conn *conn, void *server, uint8_t type, stru
 	mse_mas->_conn_id = map_get_connect_id();
 	err = bt_obex_server_register(&mse_mas->_server, map_mas_uuid);
 	if (err != 0) {
-		LOG_ERR("Failed to register obex server: %d", err);
+		LOG_ERROR("Failed to register obex server: %d", err);
 		return err;
 	}
 	*goep = &mse_mas->goep;
@@ -2007,7 +2007,7 @@ int bt_map_mse_mas_l2cap_register(struct bt_map_mse_mas_l2cap_server *server)
 struct net_buf *bt_map_mse_mas_create_pdu(struct bt_map_mse_mas *mse_mas, struct net_buf_pool *pool)
 {
 	if (mse_mas == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return NULL;
 	}
 
@@ -2025,7 +2025,7 @@ int bt_map_mse_mas_connect(struct bt_map_mse_mas *mse_mas, uint8_t rsp_code, str
 	}
 
 	if (atomic_get(&mse_mas->_state) != BT_MAP_STATE_CONNECTING) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mse_mas->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mse_mas->_state));
 		return -EINVAL;
 	}
 
@@ -2034,7 +2034,7 @@ int bt_map_mse_mas_connect(struct bt_map_mse_mas *mse_mas, uint8_t rsp_code, str
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&mse_mas->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -2059,7 +2059,7 @@ int bt_map_mse_mas_connect(struct bt_map_mse_mas *mse_mas, uint8_t rsp_code, str
 			sys_memcpy_swap(val, map_mas_uuid->val, sizeof(val));
 			err = bt_obex_add_header_who(buf, sizeof(val), val);
 			if (err != 0) {
-				LOG_ERR("Failed to add header who: %d", err);
+				LOG_ERROR("Failed to add header who: %d", err);
 				goto failed;
 			}
 		}
@@ -2067,7 +2067,7 @@ int bt_map_mse_mas_connect(struct bt_map_mse_mas *mse_mas, uint8_t rsp_code, str
 		if (!bt_obex_has_header(buf, BT_OBEX_HEADER_ID_CONN_ID)) {
 			err = bt_obex_add_header_conn_id(buf, mse_mas->_conn_id);
 			if (err != 0) {
-				LOG_ERR("Failed to add header conn id: %d", err);
+				LOG_ERROR("Failed to add header conn id: %d", err);
 				goto failed;
 			}
 		}
@@ -2075,7 +2075,7 @@ int bt_map_mse_mas_connect(struct bt_map_mse_mas *mse_mas, uint8_t rsp_code, str
 
 	err = bt_obex_connect_rsp(&mse_mas->_server, rsp_code, mse_mas->goep.obex.rx.mtu, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send conn rsp: %d", err);
+		LOG_ERROR("Failed to send conn rsp: %d", err);
 		goto failed;
 	}
 
@@ -2102,7 +2102,7 @@ int bt_map_mse_mas_disconnect(struct bt_map_mse_mas *mse_mas, uint8_t rsp_code, 
 	}
 
 	if (atomic_get(&mse_mas->_state) != BT_MAP_STATE_DISCONNECTING) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mse_mas->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mse_mas->_state));
 		return -EINVAL;
 	}
 
@@ -2110,7 +2110,7 @@ int bt_map_mse_mas_disconnect(struct bt_map_mse_mas *mse_mas, uint8_t rsp_code, 
 
 	err = bt_obex_disconnect_rsp(&mse_mas->_server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send disconnect rsp: %d", err);
+		LOG_ERROR("Failed to send disconnect rsp: %d", err);
 		return err;
 	}
 
@@ -2131,7 +2131,7 @@ int bt_map_mse_mas_abort(struct bt_map_mse_mas *mse_mas, uint8_t rsp_code, struc
 	}
 
 	if (atomic_get(&mse_mas->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mse_mas->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mse_mas->_state));
 		return -EINVAL;
 	}
 
@@ -2139,7 +2139,7 @@ int bt_map_mse_mas_abort(struct bt_map_mse_mas *mse_mas, uint8_t rsp_code, struc
 
 	err = bt_obex_abort_rsp(&mse_mas->_server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send abort rsp: %d", err);
+		LOG_ERROR("Failed to send abort rsp: %d", err);
 		return err;
 	}
 
@@ -2159,7 +2159,7 @@ int bt_map_mse_mas_set_folder(struct bt_map_mse_mas *mse_mas, uint8_t rsp_code, 
 	}
 
 	if (atomic_get(&mse_mas->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mse_mas->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mse_mas->_state));
 		return -EINVAL;
 	}
 
@@ -2167,7 +2167,7 @@ int bt_map_mse_mas_set_folder(struct bt_map_mse_mas *mse_mas, uint8_t rsp_code, 
 
 	err = bt_obex_setpath_rsp(&mse_mas->_server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send setpath rsp: %d", err);
+		LOG_ERROR("Failed to send setpath rsp: %d", err);
 		return err;
 	}
 
@@ -2184,12 +2184,12 @@ static int mse_mas_get_or_put_rsp(struct bt_map_mse_mas *mse_mas, bool is_get, c
 	}
 
 	if (atomic_get(&mse_mas->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mse_mas->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mse_mas->_state));
 		return -EINVAL;
 	}
 
 	if (mse_mas->_optype != NULL && strcmp(mse_mas->_optype, type) != 0) {
-		LOG_ERR("Invalid operation type %s != %s", mse_mas->_optype, type);
+		LOG_ERROR("Invalid operation type %s != %s", mse_mas->_optype, type);
 		return -EINVAL;
 	}
 
@@ -2198,14 +2198,14 @@ static int mse_mas_get_or_put_rsp(struct bt_map_mse_mas *mse_mas, bool is_get, c
 
 	if (is_get) {
 		if (mse_mas->_opcode != BT_OBEX_OPCODE_GET) {
-			LOG_ERR("Operation %u != %u", mse_mas->_opcode, BT_OBEX_OPCODE_GET);
+			LOG_ERROR("Operation %u != %u", mse_mas->_opcode, BT_OBEX_OPCODE_GET);
 			return -EINVAL;
 		}
 
 		err = bt_obex_get_rsp(&mse_mas->_server, rsp_code, buf);
 	} else {
 		if (mse_mas->_opcode != BT_OBEX_OPCODE_PUT) {
-			LOG_ERR("Operation %u != %u", mse_mas->_opcode, BT_OBEX_OPCODE_PUT);
+			LOG_ERROR("Operation %u != %u", mse_mas->_opcode, BT_OBEX_OPCODE_PUT);
 			return -EINVAL;
 		}
 
@@ -2213,7 +2213,7 @@ static int mse_mas_get_or_put_rsp(struct bt_map_mse_mas *mse_mas, bool is_get, c
 	}
 
 	if (err != 0) {
-		LOG_ERR("Failed to send get/put rsp: %d", err);
+		LOG_ERROR("Failed to send get/put rsp: %d", err);
 		return err;
 	}
 
@@ -2340,7 +2340,7 @@ static int mse_mns_transport_connect(struct bt_conn *conn, struct bt_map_mse_mns
 	}
 
 	if (err != 0) {
-		LOG_ERR("Transport connect failed: %d", err);
+		LOG_ERROR("Transport connect failed: %d", err);
 		atomic_set(&mse_mns->_transport_state, BT_MAP_TRANSPORT_STATE_DISCONNECTED);
 	}
 
@@ -2389,7 +2389,7 @@ static int mse_mns_transport_disconnect(struct bt_map_mse_mns *mse_mns, uint8_t 
 	}
 
 	if (err != 0) {
-		LOG_ERR("Transport disconnect failed: %d", err);
+		LOG_ERROR("Transport disconnect failed: %d", err);
 		atomic_set(&mse_mns->_transport_state, BT_MAP_TRANSPORT_STATE_CONNECTED);
 	}
 
@@ -2419,7 +2419,7 @@ static void mse_mns_connect(struct bt_obex_client *client, uint8_t rsp_code, uin
 		atomic_set(&c->_state, BT_MAP_STATE_CONNECTED);
 		err = bt_obex_get_header_conn_id(buf, &c->_conn_id);
 		if (err != 0) {
-			LOG_ERR("Failed to get connection ID: %d", err);
+			LOG_ERROR("Failed to get connection ID: %d", err);
 			mse_mns_transport_disconnect(c, c->_transport_type);
 		} else {
 			LOG_DBG("Connection ID: %u", c->_conn_id);
@@ -2487,7 +2487,7 @@ static void mse_mns_abort(struct bt_obex_client *client, uint8_t rsp_code, struc
 
 	err = bt_map_mse_mns_disconnect(c, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send MSE MNS disconnect: %d", err);
+		LOG_ERROR("Failed to send MSE MNS disconnect: %d", err);
 	}
 }
 
@@ -2504,7 +2504,7 @@ static const struct bt_obex_client_ops mse_mns_ops = {
 struct net_buf *bt_map_mse_mns_create_pdu(struct bt_map_mse_mns *mse_mns, struct net_buf_pool *pool)
 {
 	if (mse_mns == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return NULL;
 	}
 
@@ -2522,7 +2522,7 @@ int bt_map_mse_mns_connect(struct bt_map_mse_mns *mse_mns, struct net_buf *buf)
 	}
 
 	if (atomic_get(&mse_mns->_state) != BT_MAP_STATE_DISCONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mse_mns->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mse_mns->_state));
 		return -EINVAL;
 	}
 
@@ -2531,7 +2531,7 @@ int bt_map_mse_mns_connect(struct bt_map_mse_mns *mse_mns, struct net_buf *buf)
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&mse_mns->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -2546,7 +2546,7 @@ int bt_map_mse_mns_connect(struct bt_map_mse_mns *mse_mns, struct net_buf *buf)
 		sys_memcpy_swap(val, map_mns_uuid->val, sizeof(val));
 		err = bt_obex_add_header_target(buf, sizeof(val), val);
 		if (err != 0) {
-			LOG_ERR("Failed to add header target: %d", err);
+			LOG_ERROR("Failed to add header target: %d", err);
 			goto failed;
 		}
 	}
@@ -2556,7 +2556,7 @@ int bt_map_mse_mns_connect(struct bt_map_mse_mns *mse_mns, struct net_buf *buf)
 
 	err = bt_obex_connect(&mse_mns->_client, mse_mns->goep.obex.rx.mtu, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send conn req: %d", err);
+		LOG_ERROR("Failed to send conn req: %d", err);
 		goto failed;
 	}
 
@@ -2580,7 +2580,7 @@ int bt_map_mse_mns_disconnect(struct bt_map_mse_mns *mse_mns, struct net_buf *bu
 	}
 
 	if (atomic_get(&mse_mns->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mse_mns->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mse_mns->_state));
 		return -EINVAL;
 	}
 
@@ -2589,7 +2589,7 @@ int bt_map_mse_mns_disconnect(struct bt_map_mse_mns *mse_mns, struct net_buf *bu
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&mse_mns->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -2598,7 +2598,7 @@ int bt_map_mse_mns_disconnect(struct bt_map_mse_mns *mse_mns, struct net_buf *bu
 	if (!bt_obex_has_header(buf, BT_OBEX_HEADER_ID_CONN_ID)) {
 		err = bt_obex_add_header_conn_id(buf, mse_mns->_conn_id);
 		if (err != 0) {
-			LOG_ERR("Failed to add header conn id: %d", err);
+			LOG_ERROR("Failed to add header conn id: %d", err);
 			goto failed;
 		}
 	} else {
@@ -2610,7 +2610,7 @@ int bt_map_mse_mns_disconnect(struct bt_map_mse_mns *mse_mns, struct net_buf *bu
 
 	err = bt_obex_disconnect(&mse_mns->_client, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send disconn req: %d", err);
+		LOG_ERROR("Failed to send disconn req: %d", err);
 		goto failed;
 	}
 
@@ -2633,12 +2633,12 @@ int bt_map_mse_mns_abort(struct bt_map_mse_mns *mse_mns, struct net_buf *buf)
 	}
 
 	if (atomic_get(&mse_mns->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mse_mns->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mse_mns->_state));
 		return -EINVAL;
 	}
 
 	if (mse_mns->_rsp_cb == NULL) {
-		LOG_ERR("No operation is ongoing");
+		LOG_ERROR("No operation is ongoing");
 		return -EINVAL;
 	}
 
@@ -2647,7 +2647,7 @@ int bt_map_mse_mns_abort(struct bt_map_mse_mns *mse_mns, struct net_buf *buf)
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&mse_mns->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -2661,14 +2661,14 @@ int bt_map_mse_mns_abort(struct bt_map_mse_mns *mse_mns, struct net_buf *buf)
 	} else {
 		err = bt_obex_add_header_conn_id(buf, mse_mns->_conn_id);
 		if (err != 0) {
-			LOG_ERR("Failed to add header conn id: %d", err);
+			LOG_ERROR("Failed to add header conn id: %d", err);
 			goto failed;
 		}
 	}
 
 	err = bt_obex_abort(&mse_mns->_client, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send abort request: %d", err);
+		LOG_ERROR("Failed to send abort request: %d", err);
 		goto failed;
 	}
 
@@ -2758,7 +2758,7 @@ static int mse_mns_get_or_put(struct bt_map_mse_mns *mse_mns, bool is_get, const
 	}
 
 	if (atomic_get(&mse_mns->_state) != BT_MAP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&mse_mns->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&mse_mns->_state));
 		return -EINVAL;
 	}
 
@@ -2770,18 +2770,18 @@ static int mse_mns_get_or_put(struct bt_map_mse_mns *mse_mns, bool is_get, const
 	if (mse_mns->_rsp_cb == NULL || bt_obex_has_header(buf, BT_OBEX_HEADER_ID_TYPE)) {
 		if (is_get && mse_mns->goep._goep_v2 &&
 		    !bt_obex_has_header(buf, BT_OBEX_HEADER_ID_SRM)) {
-			LOG_ERR("Failed to get SRM");
+			LOG_ERROR("Failed to get SRM");
 			return -ENODATA;
 		}
 
 		err = mse_mns_get_req_cb(mse_mns, type, buf, is_get, &cb, &req_type);
 		if (err != 0) {
-			LOG_ERR("Invalid request: %d", err);
+			LOG_ERROR("Invalid request: %d", err);
 			return err;
 		}
 
 		if (mse_mns->_rsp_cb != NULL && cb != mse_mns->_rsp_cb) {
-			LOG_ERR("Previous operation is not completed");
+			LOG_ERROR("Previous operation is not completed");
 			return -EINVAL;
 		}
 
@@ -2790,7 +2790,7 @@ static int mse_mns_get_or_put(struct bt_map_mse_mns *mse_mns, bool is_get, const
 	}
 
 	if (mse_mns->_req_type != NULL && strcmp(mse_mns->_req_type, type) != 0) {
-		LOG_ERR("Invalid request type %s != %s", mse_mns->_req_type, type);
+		LOG_ERROR("Invalid request type %s != %s", mse_mns->_req_type, type);
 		err = -EINVAL;
 		goto failed;
 	}
@@ -2803,7 +2803,7 @@ static int mse_mns_get_or_put(struct bt_map_mse_mns *mse_mns, bool is_get, const
 	}
 
 	if (!is_get && final && !bt_obex_has_header(buf, BT_OBEX_HEADER_ID_END_BODY)) {
-		LOG_ERR("OBEX header (End of Body) is missing");
+		LOG_ERROR("OBEX header (End of Body) is missing");
 		goto failed;
 	}
 
@@ -2817,7 +2817,7 @@ failed:
 	if (err != 0) {
 		mse_mns->_rsp_cb = old_cb;
 		mse_mns->_req_type = old_req_type;
-		LOG_ERR("Failed to send get/put req: %d", err);
+		LOG_ERROR("Failed to send get/put req: %d", err);
 	}
 
 	return err;

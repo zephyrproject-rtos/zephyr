@@ -75,7 +75,7 @@ int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_a
 
 	acpi_child = acpi_device_get(hid, uid);
 	if (!acpi_child) {
-		LOG_ERR("acpi_device_get failed");
+		LOG_ERROR("acpi_device_get failed");
 		return -EIO;
 	}
 
@@ -83,7 +83,7 @@ int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_a
 	mmio_res.reg_base = reg_base;
 	ret = acpi_device_mmio_get(acpi_child, &mmio_res);
 	if (ret) {
-		LOG_ERR("acpi_device_mmio_get failed");
+		LOG_ERROR("acpi_device_mmio_get failed");
 		return ret;
 	}
 
@@ -91,7 +91,7 @@ int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_a
 	irq_res.irqs = irqs;
 	ret = acpi_device_irq_get(acpi_child, &irq_res);
 	if (ret) {
-		LOG_ERR("acpi_device_irq_get failed");
+		LOG_ERROR("acpi_device_irq_get failed");
 		return ret;
 	}
 
@@ -108,7 +108,7 @@ int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_a
 		for (int i = 0; i < num_fields; i++) {
 			ret = gpio_info_acpi_get(uid_int, bank_idx, i, &field_val[i], ginf);
 			if (ret) {
-				LOG_ERR("gpio_info_acpi_get failed");
+				LOG_ERROR("gpio_info_acpi_get failed");
 				return ret;
 			}
 		}
@@ -142,7 +142,7 @@ int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_a
 			res->base_num = field_val[6];
 		}
 	} else {
-		LOG_ERR("ACPI_RES_TYPE_MEM failed");
+		LOG_ERROR("ACPI_RES_TYPE_MEM failed");
 		return -ENODEV;
 	}
 

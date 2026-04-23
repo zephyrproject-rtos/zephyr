@@ -145,7 +145,7 @@ int siwx91x_disconnect(const struct device *dev)
 	int ret;
 
 	if (sidev->state != WIFI_STATE_COMPLETED) {
-		LOG_ERR("Command given in invalid state");
+		LOG_ERROR("Command given in invalid state");
 		return -EINVAL;
 	}
 
@@ -184,7 +184,7 @@ static int siwx91x_disconnect_if_required(const struct device *dev,
 		ret = sl_net_get_credential(SL_NET_DEFAULT_WIFI_CLIENT_CREDENTIAL_ID, &psk_type,
 					    prev_psk, &prev_psk_length);
 		if (ret < 0) {
-			LOG_ERR("Failed to get credentials: 0x%x", ret);
+			LOG_ERROR("Failed to get credentials: 0x%x", ret);
 			return -EIO;
 		}
 
@@ -194,7 +194,7 @@ static int siwx91x_disconnect_if_required(const struct device *dev,
 		}
 	}
 
-	LOG_ERR("Device already in active state");
+	LOG_ERROR("Device already in active state");
 	return -EALREADY;
 }
 
@@ -269,7 +269,7 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 	}
 
 	if (ret) {
-		LOG_ERR("Failed to set credentials: 0x%x", ret);
+		LOG_ERROR("Failed to set credentials: 0x%x", ret);
 		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
 		return -EINVAL;
 	}
@@ -279,7 +279,7 @@ int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *pa
 	 */
 	ret = sl_wifi_set_mfp(interface, (sl_wifi_mfp_mode_t)params->mfp);
 	if (ret != SL_STATUS_OK) {
-		LOG_ERR("Failed to set MFP: 0x%x", ret);
+		LOG_ERROR("Failed to set MFP: 0x%x", ret);
 		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
 		return -EINVAL;
 	}

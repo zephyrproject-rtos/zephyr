@@ -184,7 +184,7 @@ static int ft5336_init(const struct device *dev)
 		/* Enable reset GPIO and assert reset */
 		r = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (r < 0) {
-			LOG_ERR("Could not enable reset GPIO");
+			LOG_ERROR("Could not enable reset GPIO");
 			return r;
 		}
 		/*
@@ -208,14 +208,14 @@ static int ft5336_init(const struct device *dev)
 
 	r = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (r < 0) {
-		LOG_ERR("Could not configure interrupt GPIO pin");
+		LOG_ERROR("Could not configure interrupt GPIO pin");
 		return r;
 	}
 
 	r = gpio_pin_interrupt_configure_dt(&config->int_gpio,
 					    GPIO_INT_EDGE_TO_ACTIVE);
 	if (r < 0) {
-		LOG_ERR("Could not configure interrupt GPIO interrupt.");
+		LOG_ERROR("Could not configure interrupt GPIO interrupt.");
 		return r;
 	}
 
@@ -223,7 +223,7 @@ static int ft5336_init(const struct device *dev)
 			   BIT(config->int_gpio.pin));
 	r = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (r < 0) {
-		LOG_ERR("Could not set gpio callback");
+		LOG_ERROR("Could not set gpio callback");
 		return r;
 	}
 #else
@@ -234,7 +234,7 @@ static int ft5336_init(const struct device *dev)
 
 	r = pm_device_runtime_enable(dev);
 	if (r < 0 && r != -ENOTSUP) {
-		LOG_ERR("Failed to enable runtime power management");
+		LOG_ERROR("Failed to enable runtime power management");
 		return r;
 	}
 

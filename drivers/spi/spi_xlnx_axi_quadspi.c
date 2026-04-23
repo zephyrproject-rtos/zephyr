@@ -168,26 +168,25 @@ static int xlnx_quadspi_configure(const struct device *dev,
 	}
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (spi_cfg->slave >= config->num_ss_bits) {
-		LOG_ERR("unsupported slave %d, num_ss_bits %d",
-			spi_cfg->slave, config->num_ss_bits);
+		LOG_ERROR("unsupported slave %d, num_ss_bits %d", spi_cfg->slave,
+			  config->num_ss_bits);
 		return -ENOTSUP;
 	}
 
-	if (!IS_ENABLED(CONFIG_SPI_SLAVE) && \
-	    (spi_cfg->operation & SPI_OP_MODE_SLAVE)) {
-		LOG_ERR("slave mode support not enabled");
+	if (!IS_ENABLED(CONFIG_SPI_SLAVE) && (spi_cfg->operation & SPI_OP_MODE_SLAVE)) {
+		LOG_ERROR("slave mode support not enabled");
 		return -ENOTSUP;
 	}
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size != (config->num_xfer_bytes * 8)) {
-		LOG_ERR("unsupported word size %d bits, num_xfer_bytes %d",
-			word_size, config->num_xfer_bytes);
+		LOG_ERROR("unsupported word size %d bits, num_xfer_bytes %d", word_size,
+			  config->num_xfer_bytes);
 		return -ENOTSUP;
 	}
 
@@ -223,7 +222,7 @@ static int xlnx_quadspi_configure(const struct device *dev,
 	xlnx_quadspi_write32(dev, spicr, SPICR_OFFSET);
 	spisr = xlnx_quadspi_read32(dev, SPISR_OFFSET);
 	if (spisr & SPISR_ERROR_MASK) {
-		LOG_ERR("unsupported configuration, spisr = 0x%08x", spisr);
+		LOG_ERROR("unsupported configuration, spisr = 0x%08x", spisr);
 		xlnx_quadspi_write32(dev, SPICR_MASTER_XFER_INH, SPICR_OFFSET);
 		ctx->config = NULL;
 		return -ENOTSUP;
@@ -315,7 +314,7 @@ static bool xlnx_quadspi_start_tx(const struct device *dev)
 	spisr = xlnx_quadspi_read32(dev, SPISR_OFFSET);
 	if (spisr & SPISR_COMMAND_ERROR) {
 		/* Command not supported by memory type configured in IP core */
-		LOG_ERR("unsupported command");
+		LOG_ERROR("unsupported command");
 		xlnx_quadspi_cs_control(dev, false);
 
 		spicr = xlnx_quadspi_read32(dev, SPICR_OFFSET);
@@ -418,7 +417,7 @@ static int xlnx_quadspi_transceive(const struct device *dev,
 		if (!k_event_wait(&data->dtr_empty, 1, false,
 				  K_MSEC(20 + CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE))) {
 			/* Timeout */
-			LOG_ERR("DTR empty timeout");
+			LOG_ERROR("DTR empty timeout");
 			spi_context_complete(ctx, dev, -ETIMEDOUT);
 			break;
 		}
@@ -533,7 +532,7 @@ static int xlnx_quadspi_startup_block_workaround(const struct device *dev)
 		k_msleep(1);
 	}
 	if ((xlnx_quadspi_read32(dev, SPISR_OFFSET) & SPISR_TX_EMPTY) == 0) {
-		LOG_ERR("timeout waiting for TX_EMPTY");
+		LOG_ERROR("timeout waiting for TX_EMPTY");
 		return -EIO;
 	}
 	spicr |= SPICR_MASTER_XFER_INH;

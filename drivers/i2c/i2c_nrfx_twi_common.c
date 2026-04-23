@@ -20,8 +20,7 @@ int i2c_nrfx_twi_init(const struct device *dev)
 	int result = nrfx_twi_init(&data->twi, &config->config,
 				   config->event_handler, (void *)dev);
 	if (result != 0) {
-		LOG_ERR("Failed to initialize device: %s",
-			    dev->name);
+		LOG_ERROR("Failed to initialize device: %s", dev->name);
 		return result;
 	}
 
@@ -45,7 +44,7 @@ int i2c_nrfx_twi_configure(const struct device *dev, uint32_t dev_config)
 		nrf_twi_frequency_set(inst->p_reg, NRF_TWI_FREQ_400K);
 		break;
 	default:
-		LOG_ERR("unsupported speed");
+		LOG_ERROR("unsupported speed");
 		return -EINVAL;
 	}
 	data->dev_config = dev_config;
@@ -98,7 +97,7 @@ int i2c_nrfx_twi_msg_transfer(const struct device *dev, uint8_t flags,
 	};
 
 	if (flags & I2C_MSG_ADDR_10_BITS) {
-		LOG_ERR("10-bit I2C Addr devices not supported");
+		LOG_ERROR("10-bit I2C Addr devices not supported");
 		ret = -ENOTSUP;
 	} else if (!(flags & I2C_MSG_STOP)) {
 		/* - if the transfer consists of more messages

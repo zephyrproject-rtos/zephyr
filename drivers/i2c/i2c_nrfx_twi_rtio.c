@@ -107,7 +107,7 @@ static bool i2c_nrfx_twi_rtio_start(const struct device *dev)
 					    (void *)dev);
 		return false;
 	default:
-		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
+		LOG_ERROR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
 		return i2c_rtio_complete(ctx, -EINVAL);
 	}
 }

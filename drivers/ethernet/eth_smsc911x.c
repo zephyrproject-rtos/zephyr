@@ -459,7 +459,7 @@ static int smsc_write_tx_fifo(const uint8_t *buf, uint32_t len, bool is_last)
 	}
 
 	if ((len & 3) != 0U || len == 0U) {
-		LOG_ERR("Chunk size not aligned: %u", len);
+		LOG_ERROR("Chunk size not aligned: %u", len);
 		return -1;
 	}
 
@@ -502,7 +502,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 
 error:
-	LOG_ERR("Writing pkt to FIFO failed");
+	LOG_ERROR("Writing pkt to FIFO failed");
 	return -1;
 }
 
@@ -569,7 +569,7 @@ static struct net_pkt *smsc_recv_pkt(const struct device *dev,
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, rem_size,
 					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		LOG_ERR("Failed to obtain RX buffer");
+		LOG_ERROR("Failed to obtain RX buffer");
 		smsc_discard_pkt();
 		return NULL;
 	}
@@ -645,7 +645,7 @@ static void eth_smsc911x_isr(const struct device *dev)
 			int res = net_recv_data(context->iface, pkt);
 
 			if (res < 0) {
-				LOG_ERR("net_recv_data: %d", res);
+				LOG_ERROR("net_recv_data: %d", res);
 				net_pkt_unref(pkt);
 			}
 		}
@@ -668,7 +668,7 @@ int eth_init(const struct device *dev)
 	int ret = smsc_init();
 
 	if (ret != 0) {
-		LOG_ERR("smsc911x failed to initialize");
+		LOG_ERROR("smsc911x failed to initialize");
 		return -ENODEV;
 	}
 

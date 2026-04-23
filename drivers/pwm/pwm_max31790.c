@@ -110,7 +110,7 @@ static bool max31790_convert_pwm_frequency_into_hz(uint16_t *result, uint8_t pwm
 		*result = 25000;
 		return true;
 	default:
-		LOG_ERR("invalid value %i for PWM frequency register", pwm_frequency);
+		LOG_ERROR("invalid value %i for PWM frequency register", pwm_frequency);
 		return false;
 	}
 }
@@ -155,7 +155,7 @@ static bool max31790_convert_pwm_frequency_into_register(uint8_t *result, uint32
 		*result = 11;
 		return true;
 	default:
-		LOG_ERR("invalid value %i for PWM frequency in Hz", pwm_frequency);
+		LOG_ERROR("invalid value %i for PWM frequency in Hz", pwm_frequency);
 		return false;
 	}
 }
@@ -270,12 +270,12 @@ static int max31790_set_cycles(const struct device *dev, uint32_t channel, uint3
 		pulse_count, channel, flags);
 
 	if (channel > MAX31790_CHANNEL_COUNT) {
-		LOG_ERR("invalid channel number %i", channel);
+		LOG_ERROR("invalid channel number %i", channel);
 		return -EINVAL;
 	}
 
 	if (period_count == 0) {
-		LOG_ERR("period count must be > 0");
+		LOG_ERROR("period count must be > 0");
 		return -EINVAL;
 	}
 
@@ -296,7 +296,7 @@ static int max31790_get_cycles_per_sec(const struct device *dev, uint32_t channe
 	uint16_t pwm_frequency_in_hz;
 
 	if (channel > MAX31790_CHANNEL_COUNT) {
-		LOG_ERR("invalid channel number %i", channel);
+		LOG_ERROR("invalid channel number %i", channel);
 		return -EINVAL;
 	}
 
@@ -334,7 +334,7 @@ static int max31790_pwm_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 

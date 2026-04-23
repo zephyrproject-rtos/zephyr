@@ -464,7 +464,7 @@ static void wm8962_set_master_clock(const struct device *dev, audio_dai_cfg_t *c
 				  (uint16_t)regClkDiv);
 		wm8962_write_reg(dev, WM8962_REG_IFACE2, (uint16_t)(bitWidth * 2U));
 	} else {
-		LOG_ERR("Unsupported divider.");
+		LOG_ERROR("Unsupported divider.");
 	}
 }
 
@@ -476,7 +476,7 @@ static int wm8962_configure(const struct device *dev, struct audio_codec_cfg *cf
 	const struct wm8962_driver_config *const dev_cfg = DEV_CFG(dev);
 
 	if (cfg->dai_type >= AUDIO_DAI_TYPE_INVALID) {
-		LOG_ERR("dai_type not supported");
+		LOG_ERROR("dai_type not supported");
 		return -EINVAL;
 	}
 
@@ -484,13 +484,13 @@ static int wm8962_configure(const struct device *dev, struct audio_codec_cfg *cf
 		int err = clock_control_on(dev_cfg->mclk_dev, dev_cfg->mclk_name);
 
 		if (err < 0) {
-			LOG_ERR("MCLK clock source enable fail: %d", err);
+			LOG_ERROR("MCLK clock source enable fail: %d", err);
 		}
 
 		err = clock_control_get_rate(dev_cfg->mclk_dev, dev_cfg->mclk_name,
 					     &cfg->mclk_freq);
 		if (err < 0) {
-			LOG_ERR("MCLK clock source freq acquire fail: %d", err);
+			LOG_ERROR("MCLK clock source freq acquire fail: %d", err);
 		}
 	}
 
@@ -630,7 +630,7 @@ static void wm8962_write_reg(const struct device *dev, uint16_t reg, uint16_t va
 	ret = i2c_write(dev_cfg->i2c.bus, data, 4, dev_cfg->i2c.addr);
 
 	if (ret != 0) {
-		LOG_ERR("i2c write to codec error %d", ret);
+		LOG_ERROR("i2c write to codec error %d", ret);
 	}
 
 	LOG_DBG("REG:%#02x VAL:%#02x", reg, val);

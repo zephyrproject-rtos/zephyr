@@ -137,8 +137,8 @@ void wrapper_set_idle(const struct device *dev,
 		      const uint8_t id, const uint32_t duration)
 {
 	if (id != 0U) {
-		LOG_ERR("Set Idle for %s ID %u duration %u cannot be propagated",
-			dev->name, id, duration);
+		LOG_ERROR("Set Idle for %s ID %u duration %u cannot be propagated", dev->name, id,
+			  duration);
 	}
 }
 
@@ -203,7 +203,7 @@ int hid_int_ep_read(const struct device *dev,
 	ARG_UNUSED(max_data_len);
 	ARG_UNUSED(ret_bytes);
 
-	LOG_ERR("Not supported");
+	LOG_ERROR("Not supported");
 
 	return -ENOTSUP;
 }
@@ -233,7 +233,7 @@ void usb_hid_register_device(const struct device *dev,
 		if (wrappers[i].dev == dev) {
 			wrappers[i].legacy_ops = ops;
 			if (hid_device_register(dev, desc, size, wrappers[i].ops)) {
-				LOG_ERR("Failed to register HID device");
+				LOG_ERROR("Failed to register HID device");
 			}
 		}
 	}

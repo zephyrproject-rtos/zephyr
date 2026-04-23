@@ -98,14 +98,14 @@ struct feedback_ctx *feedback_init(void)
 
 	err = nrfx_timer_init(&feedback_timer_instance, &cfg, NULL);
 	if (err != 0) {
-		LOG_ERR("nrfx timer init error - Return value: %d", err);
+		LOG_ERROR("nrfx timer init error - Return value: %d", err);
 		return &fb_ctx;
 	}
 
 	/* Subscribe TIMER CAPTURE task to USBD SOF event */
 	err = nrfx_gppi_conn_alloc(USB_SOF_EVENT_ADDRESS, tsk1, &usbd_sof_gppi_handle);
 	if (err < 0) {
-		LOG_ERR("gppi_channel_alloc failed with: %d\n", err);
+		LOG_ERROR("gppi_channel_alloc failed with: %d\n", err);
 		return &fb_ctx;
 	}
 
@@ -115,7 +115,7 @@ struct feedback_ctx *feedback_init(void)
 	/* Subscribe TIMER CAPTURE task to I2S FRAMESTART event */
 	err = nrfx_gppi_conn_alloc(I2S_FRAMESTART_EVENT_ADDRESS, tsk3, &i2s_framestart_gppi_handle);
 	if (err < 0) {
-		LOG_ERR("gppi_conn_alloc failed with: %d\n", err);
+		LOG_ERROR("gppi_conn_alloc failed with: %d\n", err);
 		return &fb_ctx;
 	}
 

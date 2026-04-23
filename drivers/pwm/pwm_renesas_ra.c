@@ -145,13 +145,13 @@ static int pwm_renesas_ra_set_cycles(const struct device *dev, uint32_t pin, uin
 	fsp_err_t err;
 
 	if (pin >= MAX_PIN) {
-		LOG_ERR("Only valid for gtioca and gtiocb pins");
+		LOG_ERROR("Only valid for gtioca and gtiocb pins");
 		return -EINVAL;
 	}
 
 	if ((data->fsp_ctrl.variant == TIMER_VARIANT_16_BIT && period_cycles > UINT16_MAX) ||
 	    (data->fsp_ctrl.variant == TIMER_VARIANT_32_BIT && period_cycles > UINT32_MAX)) {
-		LOG_ERR("Out of range period cycles are not valid");
+		LOG_ERROR("Out of range period cycles are not valid");
 		return -EINVAL;
 	}
 
@@ -216,7 +216,7 @@ static int pwm_renesas_ra_get_cycles_per_sec(const struct device *dev, uint32_t 
 	fsp_err_t err;
 
 	if (pin >= MAX_PIN) {
-		LOG_ERR("Only valid for gtioca and gtiocb pins");
+		LOG_ERROR("Only valid for gtioca and gtiocb pins");
 		return -EINVAL;
 	}
 
@@ -255,19 +255,19 @@ static int pwm_renesas_ra_configure_capture(const struct device *dev, uint32_t p
 	struct pwm_renesas_ra_data *data = dev->data;
 
 	if (pin != GPT_IO_PIN_GTIOCA) {
-		LOG_ERR("Feature only support for gtioca");
+		LOG_ERROR("Feature only support for gtioca");
 		return -EINVAL;
 	}
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
-		LOG_ERR("No PWWM capture type specified");
+		LOG_ERROR("No PWWM capture type specified");
 		return -EINVAL;
 	}
 	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
+		LOG_ERROR("Cannot capture both period and pulse width");
 		return -ENOTSUP;
 	}
 	if (data->capture.is_busy) {
-		LOG_ERR("Capture already active on this pin");
+		LOG_ERROR("Capture already active on this pin");
 		return -EBUSY;
 	}
 
@@ -335,17 +335,17 @@ static int pwm_renesas_ra_enable_capture(const struct device *dev, uint32_t pin)
 	fsp_err_t err;
 
 	if (pin != GPT_IO_PIN_GTIOCA) {
-		LOG_ERR("Feature only support for gtioca");
+		LOG_ERROR("Feature only support for gtioca");
 		return -EINVAL;
 	}
 
 	if (data->capture.is_busy) {
-		LOG_ERR("Capture already active on this pin");
+		LOG_ERROR("Capture already active on this pin");
 		return -EBUSY;
 	}
 
 	if (!data->capture.callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
@@ -373,7 +373,7 @@ static int pwm_renesas_ra_disable_capture(const struct device *dev, uint32_t pin
 	fsp_err_t err;
 
 	if (pin != GPT_IO_PIN_GTIOCA) {
-		LOG_ERR("Feature only support for gtioca");
+		LOG_ERROR("Feature only support for gtioca");
 		return -EINVAL;
 	}
 	data->capture.is_busy = false;
@@ -475,19 +475,19 @@ static int pwm_renesas_ra_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(cfg->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	err = clock_control_on(cfg->clock_dev, (clock_control_subsys_t)&cfg->clock_subsys);
 	if (err < 0) {
-		LOG_ERR("Could not initialize clock (%d)", err);
+		LOG_ERROR("Could not initialize clock (%d)", err);
 		return err;
 	}
 
 	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
-		LOG_ERR("Failed to configure pins for PWM (%d)", err);
+		LOG_ERROR("Failed to configure pins for PWM (%d)", err);
 		return err;
 	}
 
@@ -502,7 +502,7 @@ static int pwm_renesas_ra_init(const struct device *dev)
 					   data->start_renesas_elc.peripheral,
 					   data->start_renesas_elc.event);
 		if (err) {
-			LOG_ERR("Failed to set Renesas ELC link for PWM start source(%d)", err);
+			LOG_ERROR("Failed to set Renesas ELC link for PWM start source(%d)", err);
 			return err;
 		}
 	}
@@ -512,7 +512,7 @@ static int pwm_renesas_ra_init(const struct device *dev)
 					   data->stop_renesas_elc.peripheral,
 					   data->stop_renesas_elc.event);
 		if (err) {
-			LOG_ERR("Failed to set Renesas ELC link for PWM stop source(%d)", err);
+			LOG_ERROR("Failed to set Renesas ELC link for PWM stop source(%d)", err);
 			return err;
 		}
 	}

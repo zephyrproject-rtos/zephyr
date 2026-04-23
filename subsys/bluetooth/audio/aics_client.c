@@ -360,7 +360,7 @@ static uint8_t internal_read_state_cb(struct bt_conn *conn, uint8_t err,
 	memset(params, 0, sizeof(*params));
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -609,7 +609,7 @@ static int store_attr_handle_and_subscribe(struct bt_aics_client *client_inst, s
 
 		err = bt_gatt_subscribe(conn, sub_params);
 		if (err != 0 && err != -EALREADY) {
-			LOG_ERR("Failed to subscribe: %d", err);
+			LOG_ERROR("Failed to subscribe: %d", err);
 
 			return err;
 		}

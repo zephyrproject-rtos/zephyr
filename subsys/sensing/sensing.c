@@ -49,7 +49,7 @@ int sensing_open_sensor_by_dt(const struct device *dev,
 
 	sensor = get_sensor_by_dev(dev);
 	if (sensor == NULL) {
-		LOG_ERR("cannot get sensor from dev:%p", dev);
+		LOG_ERROR("cannot get sensor from dev:%p", dev);
 		return -ENODEV;
 	}
 
@@ -83,7 +83,7 @@ int sensing_set_config(sensing_sensor_handle_t handle,
 	}
 
 	if (count <= 0 || count > SENSING_SENSOR_ATTRIBUTE_MAX) {
-		LOG_ERR("invalid config count:%d", count);
+		LOG_ERROR("invalid config count:%d", count);
 		return -EINVAL;
 	}
 
@@ -103,7 +103,7 @@ int sensing_set_config(sensing_sensor_handle_t handle,
 
 		default:
 			ret = -EINVAL;
-			LOG_ERR("invalid config attribute:%d\n", cfg->attri);
+			LOG_ERROR("invalid config attribute:%d\n", cfg->attri);
 			break;
 		}
 	}
@@ -123,7 +123,7 @@ int sensing_get_config(sensing_sensor_handle_t handle,
 	}
 
 	if (count <= 0 || count > SENSING_SENSOR_ATTRIBUTE_MAX) {
-		LOG_ERR("invalid config count:%d", count);
+		LOG_ERROR("invalid config count:%d", count);
 		return -EINVAL;
 	}
 
@@ -143,7 +143,7 @@ int sensing_get_config(sensing_sensor_handle_t handle,
 
 		default:
 			ret = -EINVAL;
-			LOG_ERR("invalid config attribute:%d\n", cfg->attri);
+			LOG_ERROR("invalid config attribute:%d\n", cfg->attri);
 			break;
 		}
 	}

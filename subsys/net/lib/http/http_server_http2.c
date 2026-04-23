@@ -499,7 +499,7 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	ret = http_server_find_file(fname, sizeof(fname), &client->data_len, 0, NULL);
 #endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 	if (ret < 0) {
-		LOG_ERR("fs_stat %s: %d", fname, ret);
+		LOG_ERROR("fs_stat %s: %d", fname, ret);
 
 		ret = send_headers_frame(client, HTTP_404_NOT_FOUND, frame->stream_identifier, NULL,
 					 0, NULL, 0);
@@ -511,7 +511,7 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	fs_file_t_init(&file);
 	ret = fs_open(&file, fname, FS_O_READ);
 	if (ret < 0) {
-		LOG_ERR("fs_open %s: %d", fname, ret);
+		LOG_ERROR("fs_open %s: %d", fname, ret);
 		if (ret < 0) {
 			return ret;
 		}
@@ -533,7 +533,7 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	while (remaining > 0) {
 		len = fs_read(&file, tmp, sizeof(tmp));
 		if (len < 0) {
-			LOG_ERR("Filesystem read error (%d)", len);
+			LOG_ERROR("Filesystem read error (%d)", len);
 			goto out;
 		}
 
@@ -1023,7 +1023,7 @@ int handle_http_frame_header(struct http_client_ctx *client)
 
 	if (client->expect_continuation &&
 	    client->current_frame.type != HTTP2_CONTINUATION_FRAME) {
-		LOG_ERR("Continuation frame expected");
+		LOG_ERROR("Continuation frame expected");
 		return -EBADMSG;
 	}
 
@@ -1453,7 +1453,7 @@ static int handle_incomplete_http_header(struct http_client_ctx *client)
 		 * and no continuation frame is expected - report protocol
 		 * error.
 		 */
-		LOG_ERR("Incomplete header field");
+		LOG_ERROR("Incomplete header field");
 		return -EBADMSG;
 	}
 
@@ -1474,7 +1474,7 @@ static int handle_incomplete_http_header(struct http_client_ctx *client)
 
 	/* Continuation frame expected. */
 	if (frame->type != HTTP2_CONTINUATION_FRAME) {
-		LOG_ERR("Continuation frame expected");
+		LOG_ERROR("Continuation frame expected");
 		return -EBADMSG;
 	}
 
@@ -1609,7 +1609,7 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		}
 
 		if (ret > frame->length) {
-			LOG_ERR("Protocol error, frame length exceeded");
+			LOG_ERROR("Protocol error, frame length exceeded");
 			ret = -EBADMSG;
 			goto error;
 		}

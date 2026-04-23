@@ -183,7 +183,7 @@ static int pwm_npcx_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -191,14 +191,14 @@ static int pwm_npcx_init(const struct device *dev)
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)
 							&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on PWM clock fail %d", ret);
+		LOG_ERROR("Turn on PWM clock fail %d", ret);
 		return ret;
 	}
 
 	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
 			&config->clk_cfg, &data->cycles_per_sec);
 	if (ret < 0) {
-		LOG_ERR("Get PWM clock rate error %d", ret);
+		LOG_ERROR("Get PWM clock rate error %d", ret);
 		return ret;
 	}
 
@@ -208,7 +208,7 @@ static int pwm_npcx_init(const struct device *dev)
 	/* Configure pin-mux for PWM device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
+		LOG_ERROR("PWM pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

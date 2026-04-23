@@ -94,7 +94,7 @@ static void rtl87x2g_bt_controller_init(void)
 		bt_controller_entry();
 		LOG_INF("Loaded Realtek Bee BT Controller ROM.");
 	} else {
-		LOG_ERR("Failed to load Realtek Bee BT Controller ROM.");
+		LOG_ERROR("Failed to load Realtek Bee BT Controller ROM.");
 	}
 }
 #endif

@@ -66,8 +66,8 @@ static int setup_socket(sa_family_t family, const char *server, int port,
 			ret = setsockopt(*sock, SOL_TLS, TLS_SEC_TAG_LIST,
 					 sec_tag_list, sizeof(sec_tag_list));
 			if (ret < 0) {
-				LOG_ERR("Failed to set %s secure option (%d)",
-					family_str, -errno);
+				LOG_ERROR("Failed to set %s secure option (%d)", family_str,
+					  -errno);
 				ret = -errno;
 			}
 
@@ -75,8 +75,9 @@ static int setup_socket(sa_family_t family, const char *server, int port,
 					 TLS_PEER_HOSTNAME,
 					 sizeof(TLS_PEER_HOSTNAME));
 			if (ret < 0) {
-				LOG_ERR("Failed to set %s TLS_HOSTNAME "
-					"option (%d)", family_str, -errno);
+				LOG_ERROR("Failed to set %s TLS_HOSTNAME "
+					  "option (%d)",
+					  family_str, -errno);
 				ret = -errno;
 			}
 		}
@@ -85,8 +86,7 @@ static int setup_socket(sa_family_t family, const char *server, int port,
 	}
 
 	if (*sock < 0) {
-		LOG_ERR("Failed to create %s HTTP socket (%d)", family_str,
-			-errno);
+		LOG_ERROR("Failed to create %s HTTP socket (%d)", family_str, -errno);
 	}
 
 	return ret;
@@ -144,9 +144,8 @@ static int connect_socket(sa_family_t family, const char *server, int port,
 
 	ret = connect(*sock, addr, addr_len);
 	if (ret < 0) {
-		LOG_ERR("Cannot connect to %s remote (%d)",
-			family == AF_INET ? "IPv4" : "IPv6",
-			-errno);
+		LOG_ERROR("Cannot connect to %s remote (%d)", family == AF_INET ? "IPv4" : "IPv6",
+			  -errno);
 		close(*sock);
 		*sock = -1;
 		ret = -errno;
@@ -171,8 +170,7 @@ static int run_queries(void)
 					 ca_certificate,
 					 sizeof(ca_certificate));
 		if (ret < 0) {
-			LOG_ERR("Failed to register public certificate: %d",
-				ret);
+			LOG_ERROR("Failed to register public certificate: %d", ret);
 			return ret;
 		}
 
@@ -184,7 +182,7 @@ static int run_queries(void)
 				     &sock4, (struct sockaddr *)&addr4,
 				     sizeof(addr4));
 		if (sock4 < 0) {
-			LOG_ERR("Cannot create HTTP IPv4 connection.");
+			LOG_ERROR("Cannot create HTTP IPv4 connection.");
 			return -ECONNABORTED;
 		}
 
@@ -200,7 +198,7 @@ static int run_queries(void)
 
 		ret = http_client_req(sock4, &req, timeout, "IPv4 GET");
 		if (ret < 0) {
-			LOG_ERR("Client error %d", ret);
+			LOG_ERROR("Client error %d", ret);
 		}
 
 		close(sock4);
@@ -211,7 +209,7 @@ static int run_queries(void)
 				     &sock6, (struct sockaddr *)&addr6,
 				     sizeof(addr6));
 		if (sock6 < 0) {
-			LOG_ERR("Cannot create HTTP IPv6 connection.");
+			LOG_ERROR("Cannot create HTTP IPv6 connection.");
 			return -ECONNABORTED;
 		}
 
@@ -227,7 +225,7 @@ static int run_queries(void)
 
 		ret = http_client_req(sock6, &req, timeout, "IPv6 GET");
 		if (ret < 0) {
-			LOG_ERR("Client error %d", ret);
+			LOG_ERROR("Client error %d", ret);
 		}
 
 		close(sock6);
@@ -241,7 +239,7 @@ static int run_queries(void)
 				     &sock4, (struct sockaddr *)&addr4,
 				     sizeof(addr4));
 		if (sock4 < 0) {
-			LOG_ERR("Cannot create HTTP IPv4 connection.");
+			LOG_ERROR("Cannot create HTTP IPv4 connection.");
 			return -ECONNABORTED;
 		}
 
@@ -259,7 +257,7 @@ static int run_queries(void)
 
 		ret = http_client_req(sock4, &req, timeout, "IPv4 POST");
 		if (ret < 0) {
-			LOG_ERR("Client error %d", ret);
+			LOG_ERROR("Client error %d", ret);
 		}
 
 		close(sock4);
@@ -270,7 +268,7 @@ static int run_queries(void)
 				     &sock6, (struct sockaddr *)&addr6,
 				     sizeof(addr6));
 		if (sock6 < 0) {
-			LOG_ERR("Cannot create HTTP IPv6 connection.");
+			LOG_ERROR("Cannot create HTTP IPv6 connection.");
 			return -ECONNABORTED;
 		}
 
@@ -288,7 +286,7 @@ static int run_queries(void)
 
 		ret = http_client_req(sock6, &req, timeout, "IPv6 POST");
 		if (ret < 0) {
-			LOG_ERR("Client error %d", ret);
+			LOG_ERROR("Client error %d", ret);
 		}
 
 		close(sock6);
@@ -309,7 +307,7 @@ static int run_queries(void)
 				     &sock4, (struct sockaddr *)&addr4,
 				     sizeof(addr4));
 		if (sock4 < 0) {
-			LOG_ERR("Cannot create HTTP IPv4 connection.");
+			LOG_ERROR("Cannot create HTTP IPv4 connection.");
 			return -ECONNABORTED;
 		}
 
@@ -327,7 +325,7 @@ static int run_queries(void)
 
 		ret = http_client_req(sock4, &req, timeout, "IPv4 POST");
 		if (ret < 0) {
-			LOG_ERR("Client error %d", ret);
+			LOG_ERROR("Client error %d", ret);
 		}
 
 		close(sock4);
@@ -343,7 +341,7 @@ static int run_queries(void)
 				     &sock6, (struct sockaddr *)&addr6,
 				     sizeof(addr6));
 		if (sock6 < 0) {
-			LOG_ERR("Cannot create HTTP IPv6 connection.");
+			LOG_ERROR("Cannot create HTTP IPv6 connection.");
 			return -ECONNABORTED;
 		}
 
@@ -361,7 +359,7 @@ static int run_queries(void)
 
 		ret = http_client_req(sock6, &req, timeout, "IPv6 POST");
 		if (ret < 0) {
-			LOG_ERR("Client error %d", ret);
+			LOG_ERROR("Client error %d", ret);
 		}
 
 		close(sock6);

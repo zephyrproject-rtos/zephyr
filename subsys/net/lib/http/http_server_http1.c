@@ -612,13 +612,13 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 	ret = http_server_find_file(fname, sizeof(fname), &file_size, 0, NULL);
 #endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 	if (ret < 0) {
-		LOG_ERR("fs_stat %s: %d", fname, ret);
+		LOG_ERROR("fs_stat %s: %d", fname, ret);
 		return send_http1_404(client);
 	}
 	fs_file_t_init(&file);
 	ret = fs_open(&file, fname, FS_O_READ);
 	if (ret < 0) {
-		LOG_ERR("fs_open %s: %d", fname, ret);
+		LOG_ERROR("fs_open %s: %d", fname, ret);
 		if (ret < 0) {
 			return ret;
 		}
@@ -648,7 +648,7 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 	while (remaining > 0) {
 		len = fs_read(&file, http_response, sizeof(http_response));
 		if (len < 0) {
-			LOG_ERR("Filesystem read error (%d)", len);
+			LOG_ERROR("Filesystem read error (%d)", len);
 			goto close;
 		}
 
@@ -897,7 +897,7 @@ static int on_header_value(struct http_parser *parser,
 			if (ctx->websocket_sec_key_next) {
 #if defined(CONFIG_WEBSOCKET)
 				if (offset >= sizeof(ctx->ws_sec_key)) {
-					LOG_ERR("Sec-WebSocket-Key too long");
+					LOG_ERROR("Sec-WebSocket-Key too long");
 					return -EBADMSG;
 				}
 				memcpy(ctx->ws_sec_key, ctx->header_buffer, offset);
@@ -1017,13 +1017,13 @@ int handle_http1_request(struct http_client_ctx *client)
 				     client->cursor, client->data_len);
 
 	if (parsed > client->data_len) {
-		LOG_ERR("HTTP/1 parser error, too much data consumed");
+		LOG_ERROR("HTTP/1 parser error, too much data consumed");
 		ret = -EBADMSG;
 		goto error;
 	}
 
 	if (client->parser.http_errno != HPE_OK) {
-		LOG_ERR("HTTP/1 parsing error, %d", client->parser.http_errno);
+		LOG_ERROR("HTTP/1 parsing error, %d", client->parser.http_errno);
 		ret = -EBADMSG;
 		goto error;
 	}

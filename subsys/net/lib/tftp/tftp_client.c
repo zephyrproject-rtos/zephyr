@@ -64,7 +64,7 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 
 	do {
 		if (send_count > TFTP_REQ_RETX) {
-			LOG_ERR("No more retransmits. Exiting");
+			LOG_ERROR("No more retransmits. Exiting");
 			return TFTPC_RETRIES_EXHAUSTED;
 		}
 
@@ -75,7 +75,7 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 
 		ret = zsock_send(sock, client->tftp_buf, data_size + TFTP_HEADER_SIZE, 0);
 		if (ret < 0) {
-			LOG_ERR("send() error: %d", -errno);
+			LOG_ERROR("send() error: %d", -errno);
 			return -errno;
 		}
 
@@ -87,15 +87,15 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 
 			ret = zsock_poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT);
 			if (ret < 0) {
-				LOG_ERR("recv() error: %d", -errno);
-				return -errno;  /* IO error */
+				LOG_ERROR("recv() error: %d", -errno);
+				return -errno; /* IO error */
 			} else if (ret == 0) {
 				break;		/* no response, re-send data */
 			}
 
 			ret = zsock_recv(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0);
 			if (ret < 0) {
-				LOG_ERR("recv() error: %d", -errno);
+				LOG_ERROR("recv() error: %d", -errno);
 				return -errno;
 			}
 
@@ -128,7 +128,7 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 				LOG_WRN("Server responded with obsolete block number.");
 				break;
 			} else {
-				LOG_ERR("Server responded with invalid opcode or block number.");
+				LOG_ERROR("Server responded with invalid opcode or block number.");
 				break; /* wrong response, re-send data */
 			}
 		} while (true);
@@ -230,7 +230,7 @@ static int send_request(int sock, struct tftpc *client,
 		/* Limit communication to the specific address:port */
 		if (zsock_connect(sock, &from_addr, from_addr_len) < 0) {
 			ret = -errno;
-			LOG_ERR("connect failed, err %d", ret);
+			LOG_ERROR("connect failed, err %d", ret);
 			break;
 		}
 
@@ -260,7 +260,7 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 
 	sock = zsock_socket(client->server.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
-		LOG_ERR("Failed to create UDP socket: %d", errno);
+		LOG_ERROR("Failed to create UDP socket: %d", errno);
 		return -errno;
 	}
 
@@ -289,7 +289,7 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 			ret = TFTPC_REMOTE_ERROR;
 			break;
 		} else if (opcode != DATA_OPCODE) {
-			LOG_ERR("Server responded with invalid opcode.");
+			LOG_ERROR("Server responded with invalid opcode.");
 			ret = TFTPC_REMOTE_ERROR;
 			break;
 		}
@@ -302,10 +302,9 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 			tx_count = 0;
 
 			if (client->callback == NULL) {
-				LOG_ERR("No callback defined.");
+				LOG_ERROR("No callback defined.");
 				if (send_err(sock, client, TFTP_ERROR_DISK_FULL, NULL) < 0) {
-					LOG_ERR("Failed to send error response, err: %d",
-						-errno);
+					LOG_ERROR("Failed to send error response, err: %d", -errno);
 				}
 				ret = TFTPC_BUFFER_OVERFLOW;
 				goto get_end;
@@ -345,7 +344,7 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 
 		do {
 			if (tx_count > TFTP_REQ_RETX) {
-				LOG_ERR("No more retransmits. Exiting");
+				LOG_ERROR("No more retransmits. Exiting");
 				ret = TFTPC_RETRIES_EXHAUSTED;
 				goto get_end;
 			}
@@ -385,7 +384,7 @@ int tftp_put(struct tftpc *client, const char *remote_file, const char *mode,
 
 	sock = zsock_socket(client->server.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
-		LOG_ERR("Failed to create UDP socket: %d", errno);
+		LOG_ERROR("Failed to create UDP socket: %d", errno);
 		return -errno;
 	}
 
@@ -409,11 +408,11 @@ int tftp_put(struct tftpc *client, const char *remote_file, const char *mode,
 				evt.param.error.code = block_no;
 				client->callback(&evt);
 			}
-			LOG_ERR("Server responded with service reject.");
+			LOG_ERROR("Server responded with service reject.");
 			ret = TFTPC_REMOTE_ERROR;
 			goto put_end;
 		} else if (opcode != ACK_OPCODE || block_no != 0) {
-			LOG_ERR("Server responded with invalid opcode or block number.");
+			LOG_ERROR("Server responded with invalid opcode or block number.");
 			ret = TFTPC_REMOTE_ERROR;
 			goto put_end;
 		}

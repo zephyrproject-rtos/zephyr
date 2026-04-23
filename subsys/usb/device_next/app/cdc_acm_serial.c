@@ -58,13 +58,13 @@ static int register_cdc_acm_0(struct usbd_context *const uds_ctx,
 
 	err = usbd_add_configuration(uds_ctx, speed, cfg_nd);
 	if (err) {
-		LOG_ERR("Failed to add configuration");
+		LOG_ERROR("Failed to add configuration");
 		return err;
 	}
 
 	err = usbd_register_class(&cdc_acm_serial, "cdc_acm_0", speed, 1);
 	if (err) {
-		LOG_ERR("Failed to register classes");
+		LOG_ERROR("Failed to register classes");
 		return err;
 	}
 
@@ -79,19 +79,19 @@ static int cdc_acm_serial_init_device(void)
 
 	err = usbd_add_descriptor(&cdc_acm_serial, &cdc_acm_serial_lang);
 	if (err) {
-		LOG_ERR("Failed to initialize %s (%d)", "language descriptor", err);
+		LOG_ERROR("Failed to initialize %s (%d)", "language descriptor", err);
 		return err;
 	}
 
 	err = usbd_add_descriptor(&cdc_acm_serial, &cdc_acm_serial_mfr);
 	if (err) {
-		LOG_ERR("Failed to initialize %s (%d)", "manufacturer descriptor", err);
+		LOG_ERROR("Failed to initialize %s (%d)", "manufacturer descriptor", err);
 		return err;
 	}
 
 	err = usbd_add_descriptor(&cdc_acm_serial, &cdc_acm_serial_product);
 	if (err) {
-		LOG_ERR("Failed to initialize %s (%d)", "product descriptor", err);
+		LOG_ERROR("Failed to initialize %s (%d)", "product descriptor", err);
 		return err;
 	}
 
@@ -99,7 +99,7 @@ static int cdc_acm_serial_init_device(void)
 		err = usbd_add_descriptor(&cdc_acm_serial, &cdc_acm_serial_sn);
 	))
 	if (err) {
-		LOG_ERR("Failed to initialize %s (%d)", "SN descriptor", err);
+		LOG_ERROR("Failed to initialize %s (%d)", "SN descriptor", err);
 		return err;
 	}
 
@@ -118,14 +118,14 @@ static int cdc_acm_serial_init_device(void)
 
 	err = usbd_init(&cdc_acm_serial);
 	if (err) {
-		LOG_ERR("Failed to initialize %s (%d)", "device support", err);
+		LOG_ERROR("Failed to initialize %s (%d)", "device support", err);
 		return err;
 	}
 
 	if (IS_ENABLED(CONFIG_CDC_ACM_SERIAL_ENABLE_AT_BOOT)) {
 		err = usbd_enable(&cdc_acm_serial);
 		if (err) {
-			LOG_ERR("Failed to enable %s (%d)", "device support", err);
+			LOG_ERROR("Failed to enable %s (%d)", "device support", err);
 			return err;
 		}
 	}

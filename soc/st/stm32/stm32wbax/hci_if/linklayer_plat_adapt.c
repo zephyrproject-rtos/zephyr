@@ -50,7 +50,7 @@ void LINKLAYER_PLAT_GetRNG(uint8_t *ptr_rnd, uint32_t len)
 	/* Read 32-bit random values from HW driver */
 	ret = entropy_get_entropy_isr(rng_dev, (char *)ptr_rnd, len, 0);
 	if (ret < 0) {
-		LOG_ERR("Error: entropy_get_entropy failed: %d", ret);
+		LOG_ERROR("Error: entropy_get_entropy failed: %d", ret);
 	}
 	LOG_DBG("n %d, val: %p", len, (void *)ptr_rnd);
 }

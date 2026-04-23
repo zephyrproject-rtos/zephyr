@@ -45,11 +45,11 @@ static int update_dir_pin(const struct device *dev)
 		ret = gpio_pin_set_dt(&config->dir_pin, 0 ^ config->common.invert_direction);
 		break;
 	default:
-		LOG_ERR("Unsupported direction: %d", data->common.direction);
+		LOG_ERROR("Unsupported direction: %d", data->common.direction);
 		return -ENOTSUP;
 	}
 	if (ret < 0) {
-		LOG_ERR("Failed to set direction: %d", ret);
+		LOG_ERROR("Failed to set direction: %d", ret);
 		return ret;
 	}
 
@@ -66,7 +66,7 @@ static void stepper_handle_timing_signal(const struct device *dev)
 
 	ret = gpio_pin_set_dt(&config->step_pin, atomic_get(&step_pin_status));
 	if (ret < 0) {
-		LOG_ERR("Failed to set step pin: %d", ret);
+		LOG_ERROR("Failed to set step pin: %d", ret);
 		return;
 	}
 
@@ -104,13 +104,13 @@ static int start_stepping(const struct device *dev)
 		dev, data->dual_edge ? data->common.microstep_interval_ns
 				     : data->common.microstep_interval_ns / 2);
 	if (ret < 0) {
-		LOG_ERR("Failed to update timing source: %d", ret);
+		LOG_ERROR("Failed to update timing source: %d", ret);
 		return ret;
 	}
 
 	ret = config->common.timing_source->start(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to start timing source: %d", ret);
+		LOG_ERROR("Failed to start timing source: %d", ret);
 		return ret;
 	}
 
@@ -125,7 +125,7 @@ static int gpio_step_dir_stepper_ctrl_move_by(const struct device *dev, const in
 	int ret;
 
 	if (data->common.microstep_interval_ns == 0) {
-		LOG_ERR("Step interval not set or invalid step interval set");
+		LOG_ERROR("Step interval not set or invalid step interval set");
 		return -EINVAL;
 	}
 
@@ -157,17 +157,17 @@ static int gpio_step_dir_stepper_ctrl_set_microstep_interval(const struct device
 	struct gpio_step_dir_stepper_ctrl_data *data = dev->data;
 
 	if (microstep_interval_ns == 0) {
-		LOG_ERR("Step interval cannot be zero");
+		LOG_ERROR("Step interval cannot be zero");
 		return -EINVAL;
 	}
 
 	if (data->dual_edge && (microstep_interval_ns < data->step_width_ns)) {
-		LOG_ERR("Step interval too small for configured step width");
+		LOG_ERROR("Step interval too small for configured step width");
 		return -EINVAL;
 	}
 
 	if (microstep_interval_ns < 2 * data->step_width_ns) {
-		LOG_ERR("Step interval too small for configured step width");
+		LOG_ERROR("Step interval too small for configured step width");
 		return -EINVAL;
 	}
 
@@ -188,7 +188,7 @@ int gpio_step_dir_stepper_ctrl_run(const struct device *dev,
 	int ret;
 
 	if (data->microstep_interval_ns == 0) {
-		LOG_ERR("Step interval not set or invalid step interval set");
+		LOG_ERROR("Step interval not set or invalid step interval set");
 		return -EINVAL;
 	}
 
@@ -214,7 +214,7 @@ int gpio_step_dir_stepper_ctrl_stop(const struct device *dev)
 
 	ret = config->common.timing_source->stop(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to stop timing source: %d", ret);
+		LOG_ERROR("Failed to stop timing source: %d", ret);
 		return ret;
 	}
 
@@ -240,19 +240,19 @@ static int gpio_step_dir_stepper_init(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->step_pin) || !gpio_is_ready_dt(&config->dir_pin)) {
-		LOG_ERR("GPIO pins are not ready");
+		LOG_ERROR("GPIO pins are not ready");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&config->step_pin, GPIO_OUTPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure step pin: %d", ret);
+		LOG_ERROR("Failed to configure step pin: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&config->dir_pin, GPIO_OUTPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure dir pin: %d", ret);
+		LOG_ERROR("Failed to configure dir pin: %d", ret);
 		return ret;
 	}
 
@@ -263,7 +263,7 @@ static int gpio_step_dir_stepper_init(const struct device *dev)
 			data->step_width_ns = drv_config->step_width_ns;
 			data->dual_edge = drv_config->dual_edge;
 		} else {
-			LOG_ERR("Stepper driver device not ready");
+			LOG_ERROR("Stepper driver device not ready");
 			return -ENODEV;
 		}
 	} else {

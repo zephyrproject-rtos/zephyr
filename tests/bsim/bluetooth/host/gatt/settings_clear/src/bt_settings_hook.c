@@ -120,7 +120,7 @@ int get_settings_list_size(void)
 	int number_of_settings = 0;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_list, loop_node, node) {
-		LOG_ERR("Setting registered: %s", loop_node->key);
+		LOG_ERROR("Setting registered: %s", loop_node->key);
 		number_of_settings += 1;
 	}
 

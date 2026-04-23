@@ -167,7 +167,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 
 	total_len = net_pkt_get_len(pkt);
 	if (total_len > (ETH_STM32_TX_BUF_SIZE * ETH_TXBUFNB)) {
-		LOG_ERR("PKT too big");
+		LOG_ERROR("PKT too big");
 		return -EIO;
 	}
 
@@ -222,7 +222,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	tx_config.TxBuffer = &dma_tx_buffer_header[ctx->first_tx_buffer_index].tx_buff;
 
 	if (HAL_ETH_Transmit_IT(heth, &tx_config) != HAL_OK) {
-		LOG_ERR("HAL_ETH_Transmit: failed!");
+		LOG_ERROR("HAL_ETH_Transmit: failed!");
 		res = -EIO;
 	}
 
@@ -271,7 +271,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 
 	total_len = net_pkt_get_len(pkt);
 	if (total_len > (ETH_STM32_TX_BUF_SIZE * ETH_TXBUFNB)) {
-		LOG_ERR("PKT too big");
+		LOG_ERROR("PKT too big");
 		return -EIO;
 	}
 
@@ -325,7 +325,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	hal_ret = HAL_ETH_Transmit_IT(heth, &tx_config);
 
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_Transmit: failed!");
+		LOG_ERROR("HAL_ETH_Transmit: failed!");
 		res = -EIO;
 		goto error;
 	}
@@ -339,33 +339,30 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	if (k_sem_take(&dev_data->tx_int_sem,
 			K_MSEC(ETH_DMA_TX_TIMEOUT_MS)) != 0) {
 
-		LOG_ERR("HAL_ETH_TransmitIT tx_int_sem take timeout");
+		LOG_ERROR("HAL_ETH_TransmitIT tx_int_sem take timeout");
 		res = -EIO;
 
 		/* Check for errors */
 		/* Ethernet device was put in error state */
 		/* Error state is unrecoverable ? */
 		if (HAL_ETH_GetState(heth) == HAL_ETH_STATE_ERROR) {
-			LOG_ERR("%s: ETH in error state: errorcode:%x",
-				__func__,
-				HAL_ETH_GetError(heth));
+			LOG_ERROR("%s: ETH in error state: errorcode:%x", __func__,
+				  HAL_ETH_GetError(heth));
 			/* TODO recover from error state by restarting eth */
 		}
 
 		/* Check for DMA errors */
 		if (HAL_ETH_GetDMAError(heth) != 0U) {
-			LOG_ERR("%s: ETH DMA error: dmaerror:%x",
-				__func__,
-				HAL_ETH_GetDMAError(heth));
+			LOG_ERROR("%s: ETH DMA error: dmaerror:%x", __func__,
+				  HAL_ETH_GetDMAError(heth));
 			/* DMA fatal bus errors are putting in error state*/
 			/* TODO recover from this */
 		}
 
 		/* Check for MAC errors */
 		if (HAL_ETH_GetMACError(heth) != 0U) {
-			LOG_ERR("%s: ETH MAC error: macerror:%x",
-				__func__,
-				HAL_ETH_GetMACError(heth));
+			LOG_ERROR("%s: ETH MAC error: macerror:%x", __func__,
+				  HAL_ETH_GetMACError(heth));
 			/* MAC errors are putting in error state*/
 			/* TODO recover from this */
 		}
@@ -428,7 +425,7 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 	pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface,
 					   total_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
-		LOG_ERR("Failed to obtain RX buffer");
+		LOG_ERROR("Failed to obtain RX buffer");
 		goto release_desc;
 	}
 
@@ -438,7 +435,7 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 
 		__ASSERT_NO_MSG(index < ETH_RXBUFNB);
 		if (net_pkt_write(pkt, dma_rx_buffer[index], rx_header->size)) {
-			LOG_ERR("Failed to append RX buffer to context buffer");
+			LOG_ERROR("Failed to append RX buffer to context buffer");
 			net_pkt_unref(pkt);
 			pkt = NULL;
 			goto release_desc;
@@ -608,7 +605,7 @@ int eth_stm32_hal_init(const struct device *dev)
 
 	hal_ret = HAL_ETH_Init(heth);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
+		LOG_ERROR("HAL_ETH_Init failed: %d", hal_ret);
 		return -EINVAL;
 	}
 
@@ -659,7 +656,7 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 
 	hal_ret = HAL_ETH_GetMACConfig(heth, &mac_config);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_GetMACConfig failed: %d", hal_ret);
+		LOG_ERROR("HAL_ETH_GetMACConfig failed: %d", hal_ret);
 		__ASSERT_NO_MSG(0);
 		return;
 	}
@@ -685,7 +682,7 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 
 	hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_SetMACConfig failed: %d", hal_ret);
+		LOG_ERROR("HAL_ETH_SetMACConfig failed: %d", hal_ret);
 		__ASSERT_NO_MSG(0);
 	}
 }
@@ -723,7 +720,7 @@ int eth_stm32_hal_start(const struct device *dev)
 	hal_ret = HAL_ETH_Start_IT(heth);
 
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_Start{_IT} failed");
+		LOG_ERROR("HAL_ETH_Start{_IT} failed");
 	}
 
 	return 0;

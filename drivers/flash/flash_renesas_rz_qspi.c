@@ -101,7 +101,7 @@ static int qspi_wait_until_ready(const struct device *dev)
 	while ((status.write_in_progress) && (timeout > 0)) {
 		err = config->fsp_api->statusGet(data->fsp_ctrl, &status);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Status get failed");
+			LOG_ERROR("Status get failed");
 			return -EIO;
 		}
 		timeout--;
@@ -146,7 +146,7 @@ static int qspi_flash_rz_read_jedec_id(const struct device *dev, uint8_t *id)
 	ret = config->fsp_api->directTransfer(data->fsp_ctrl, &trans,
 					      SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
 	if (FSP_SUCCESS != (fsp_err_t)ret) {
-		LOG_ERR("Failed to read device id");
+		LOG_ERROR("Failed to read device id");
 		release_device(dev);
 		return -EIO;
 	}
@@ -186,7 +186,7 @@ static int qspi_flash_renesas_rz_sfdp_read(const struct device *dev, off_t addr,
 						      SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
 
 		if (FSP_SUCCESS != (fsp_err_t)ret) {
-			LOG_ERR("Failed to read SFDP id");
+			LOG_ERROR("Failed to read SFDP id");
 			release_device(dev);
 			return -EIO;
 		}
@@ -226,25 +226,25 @@ static int qspi_flash_rz_erase(const struct device *dev, off_t offset, size_t le
 	}
 
 	if (!qspi_flash_rz_valid(config->flash_size, offset, len)) {
-		LOG_ERR("The offset 0x%lx is invalid", (long)offset);
+		LOG_ERROR("The offset 0x%lx is invalid", (long)offset);
 		return -EINVAL;
 	}
 
 	if (0 != (len % config->erase_block_size)) {
-		LOG_ERR("The size %zu is not align with block size (%u)", len,
-			config->erase_block_size);
+		LOG_ERROR("The size %zu is not align with block size (%u)", len,
+			  config->erase_block_size);
 		return -EINVAL;
 	}
 
 	rc = flash_get_page_info_by_offs(dev, offset, &page_info_start);
 	if ((rc != 0) || (offset != page_info_start.start_offset)) {
-		LOG_ERR("The offset 0x%lx is not aligned with the starting sector", (long)offset);
+		LOG_ERROR("The offset 0x%lx is not aligned with the starting sector", (long)offset);
 		return -EINVAL;
 	}
 
 	rc = flash_get_page_info_by_offs(dev, (offset + len), &page_info_end);
 	if ((rc != 0) || ((offset + len) != page_info_end.start_offset)) {
-		LOG_ERR("The size %zu is not aligned with the ending sector", len);
+		LOG_ERROR("The size %zu is not aligned with the ending sector", len);
 		return -EINVAL;
 	}
 
@@ -263,14 +263,14 @@ static int qspi_flash_rz_erase(const struct device *dev, off_t offset, size_t le
 		dest += (size_t)offset;
 		err = config->fsp_api->erase(data->fsp_ctrl, dest, erase_size);
 		if (FSP_SUCCESS != (fsp_err_t)err) {
-			LOG_ERR("Erase failed");
+			LOG_ERROR("Erase failed");
 			err = -EIO;
 			break;
 		}
 
 		err = qspi_wait_until_ready(dev);
 		if (err) {
-			LOG_ERR("Failed to get status for QSPI operation");
+			LOG_ERROR("Failed to get status for QSPI operation");
 			err = -EIO;
 			break;
 		}
@@ -346,14 +346,14 @@ static int qspi_flash_rz_write(const struct device *dev, off_t offset, const voi
 		dest += (size_t)offset;
 		err = config->fsp_api->write(dev_data->fsp_ctrl, (const uint8_t *)data, dest, size);
 		if (FSP_SUCCESS != (fsp_err_t)err) {
-			LOG_ERR("Flash write failed");
+			LOG_ERROR("Flash write failed");
 			err = -EIO;
 			break;
 		}
 
 		err = qspi_wait_until_ready(dev);
 		if (err) {
-			LOG_ERR("Failed to get status for QSPI operation");
+			LOG_ERROR("Failed to get status for QSPI operation");
 			err = -EIO;
 			break;
 		}
@@ -399,7 +399,7 @@ static int flash_renesas_rz_init(const struct device *dev)
 	if (config->pin_cfg != NULL) {
 		ret = pinctrl_apply_state(config->pin_cfg, PINCTRL_STATE_DEFAULT);
 		if (ret) {
-			LOG_ERR("Failed to configure pins for QSPI with code: %d", ret);
+			LOG_ERROR("Failed to configure pins for QSPI with code: %d", ret);
 			return -EIO;
 		}
 	}
@@ -408,7 +408,7 @@ static int flash_renesas_rz_init(const struct device *dev)
 
 	ret = config->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
 	if (FSP_SUCCESS != (fsp_err_t)ret) {
-		LOG_ERR("Open failed");
+		LOG_ERROR("Open failed");
 		return -EIO;
 	}
 

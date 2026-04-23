@@ -101,17 +101,17 @@ static int esp32_ipm_send(const struct device *dev, int wait, uint32_t id,
 	struct esp32_ipm_data *dev_data = (struct esp32_ipm_data *)dev->data;
 
 	if (size > 0 && data == NULL) {
-		LOG_ERR("Invalid data source");
+		LOG_ERROR("Invalid data source");
 		return -EINVAL;
 	}
 
 	if (id > 0xFFFF) {
-		LOG_ERR("Invalid message ID format");
+		LOG_ERROR("Invalid message ID format");
 		return -EINVAL;
 	}
 
 	if (dev_data->shm_size < size) {
-		LOG_ERR("Not enough memory in IPM channel");
+		LOG_ERROR("Not enough memory in IPM channel");
 		return -ENOMEM;
 	}
 
@@ -227,7 +227,7 @@ static int esp32_ipm_init(const struct device *dev)
 				NULL);
 
 		if (ret != 0) {
-			LOG_ERR("could not allocate interrupt (err %d)", ret);
+			LOG_ERROR("could not allocate interrupt (err %d)", ret);
 			return ret;
 		}
 
@@ -245,7 +245,7 @@ static int esp32_ipm_init(const struct device *dev)
 				NULL);
 
 		if (ret != 0) {
-			LOG_ERR("could not allocate interrupt (err %d)", ret);
+			LOG_ERROR("could not allocate interrupt (err %d)", ret);
 			return ret;
 		}
 

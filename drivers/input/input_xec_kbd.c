@@ -119,7 +119,7 @@ static int xec_kbd_pm_action(const struct device *dev, enum pm_device_action act
 	case PM_DEVICE_ACTION_RESUME:
 		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret != 0) {
-			LOG_ERR("XEC KSCAN pinctrl init failed (%d)", ret);
+			LOG_ERROR("XEC KSCAN pinctrl init failed (%d)", ret);
 			return ret;
 		}
 
@@ -155,7 +155,7 @@ static int xec_kbd_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("XEC KSCAN pinctrl init failed (%d)", ret);
+		LOG_ERROR("XEC KSCAN pinctrl init failed (%d)", ret);
 		return ret;
 	}
 

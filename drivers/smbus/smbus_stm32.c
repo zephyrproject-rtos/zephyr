@@ -72,13 +72,13 @@ static int smbus_stm32_init(const struct device *dev)
 	data->dev = dev;
 
 	if (!device_is_ready(config->i2c_dev)) {
-		LOG_ERR("%s: I2C device is not ready", dev->name);
+		LOG_ERROR("%s: I2C device is not ready", dev->name);
 		return -ENODEV;
 	}
 
 	result = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (result < 0) {
-		LOG_ERR("%s: pinctrl setup failed (%d)", dev->name, result);
+		LOG_ERROR("%s: pinctrl setup failed (%d)", dev->name, result);
 		return result;
 	}
 
@@ -97,7 +97,7 @@ static int smbus_stm32_configure(const struct device *dev, uint32_t config_value
 	struct smbus_stm32_data *data = dev->data;
 
 	if (config_value & SMBUS_MODE_HOST_NOTIFY) {
-		LOG_ERR("%s: not available", dev->name);
+		LOG_ERROR("%s: not available", dev->name);
 		return -EINVAL;
 	}
 
@@ -139,7 +139,7 @@ static int smbus_stm32_quick(const struct device *dev, uint16_t periph_addr,
 	case SMBUS_MSG_READ:
 		return i2c_read(config->i2c_dev, NULL, 0, periph_addr);
 	default:
-		LOG_ERR("%s: invalid smbus direction %i", dev->name, rw);
+		LOG_ERROR("%s: invalid smbus direction %i", dev->name, rw);
 		return -EINVAL;
 	}
 }

@@ -31,7 +31,7 @@ extern "C" {
 #define NET_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(),	\
 				  ##__VA_ARGS__)
 #endif /* CONFIG_THREAD_NAME */
-#define NET_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
+#define NET_ERR(fmt, ...)  LOG_ERROR(fmt, ##__VA_ARGS__)
 #define NET_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) LOG_INF(fmt,  ##__VA_ARGS__)
 

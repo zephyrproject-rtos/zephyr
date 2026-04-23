@@ -71,7 +71,7 @@ static const struct dai_properties
 		return cfg->rx_props;
 	}
 
-	LOG_ERR("invalid direction %d", dir);
+	LOG_ERROR("invalid direction %d", dir);
 	return NULL;
 }
 
@@ -79,7 +79,7 @@ static int dai_nxp_micfil_trigger(const struct device *dev, enum dai_dir dir,
 				  enum dai_trigger_cmd cmd)
 {
 	if (dir != DAI_DIR_RX) {
-		LOG_ERR("invalid direction %d", dir);
+		LOG_ERROR("invalid direction %d", dir);
 		return -EINVAL;
 	}
 
@@ -95,7 +95,7 @@ static int dai_nxp_micfil_trigger(const struct device *dev, enum dai_dir dir,
 	case DAI_TRIGGER_COPY:
 		return 0;
 	default:
-		LOG_ERR("invalid trigger cmd %d", cmd);
+		LOG_ERROR("invalid trigger cmd %d", cmd);
 		return -EINVAL;
 	}
 
@@ -122,7 +122,7 @@ static int dai_nxp_micfil_set_config(const struct device *dev,
 	int ret, i;
 
 	if (cfg->type != DAI_IMX_MICFIL) {
-		LOG_ERR("wrong DAI type: %d", cfg->type);
+		LOG_ERROR("wrong DAI type: %d", cfg->type);
 		return -EINVAL;
 	}
 
@@ -140,7 +140,7 @@ static int dai_nxp_micfil_set_config(const struct device *dev,
 
 	ret = PDM_SetSampleRateConfig(micfil_cfg->base, MICFIL_CLK_ROOT, bespoke->pdm_rate);
 	if (ret == kStatus_Fail) {
-		LOG_ERR("Failure to set samplerate config rate %d", bespoke->pdm_rate);
+		LOG_ERROR("Failure to set samplerate config rate %d", bespoke->pdm_rate);
 		return -EINVAL;
 	}
 

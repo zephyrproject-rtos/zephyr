@@ -36,14 +36,13 @@ int board_daplink_qspi_mux_select(enum board_daplink_qspi_mux_mode mode)
 	}
 
 	if (!gpio_is_ready_dt(&mux)) {
-		LOG_ERR("DAPLink QSPI MUX GPIO device not ready");
+		LOG_ERROR("DAPLink QSPI MUX GPIO device not ready");
 		return -EINVAL;
 	}
 
 	err = gpio_pin_configure_dt(&mux, flags);
 	if (err) {
-		LOG_ERR("failed to configure DAPLink QSPI MUX GPIO (err %d)",
-			err);
+		LOG_ERROR("failed to configure DAPLink QSPI MUX GPIO (err %d)", err);
 		return err;
 	}
 

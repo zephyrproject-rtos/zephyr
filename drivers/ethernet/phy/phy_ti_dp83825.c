@@ -106,14 +106,14 @@ static int phy_ti_dp83825_clear_interrupt(struct ti_dp83825_data *data)
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERROR("PHY mutex lock error");
 		return ret;
 	}
 
 	/* Read/clear PHY interrupt status register */
 	ret = phy_ti_dp83825_read(dev, PHY_TI_DP83825_MISR_REG, &reg_val);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) interrupt status register", config->addr);
+		LOG_ERROR("Error reading phy (%d) interrupt status register", config->addr);
 	}
 
 	/* Unlock mutex */
@@ -130,7 +130,7 @@ static void phy_ti_dp83825_interrupt_handler(const struct device *port, struct g
 
 	ret = k_work_reschedule(&data->phy_monitor_work, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to schedule phy_monitor_work from ISR");
+		LOG_ERROR("Failed to schedule phy_monitor_work from ISR");
 	}
 }
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
@@ -144,7 +144,7 @@ static int phy_ti_dp83825_autonegotiate(const struct device *dev)
 	/* Read control register to write back with autonegotiation bit */
 	ret = phy_ti_dp83825_read(dev, MII_BMCR, &bmcr);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) basic control register", config->addr);
+		LOG_ERROR("Error reading phy (%d) basic control register", config->addr);
 		return ret;
 	}
 
@@ -155,7 +155,7 @@ static int phy_ti_dp83825_autonegotiate(const struct device *dev)
 
 	ret = phy_ti_dp83825_write(dev, MII_BMCR, bmcr);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) basic control register", config->addr);
+		LOG_ERROR("Error writing phy (%d) basic control register", config->addr);
 		return ret;
 	}
 
@@ -176,14 +176,14 @@ static int phy_ti_dp83825_get_link(const struct device *dev, struct phy_link_sta
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERROR("PHY mutex lock error");
 		return ret;
 	}
 
 	/* Read link state */
 	ret = phy_ti_dp83825_read(dev, MII_BMSR, &bmsr);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) basic status register", config->addr);
+		LOG_ERROR("Error reading phy (%d) basic status register", config->addr);
 		k_mutex_unlock(&data->mutex);
 		return ret;
 	}
@@ -197,7 +197,7 @@ static int phy_ti_dp83825_get_link(const struct device *dev, struct phy_link_sta
 	/* Read currently configured advertising options */
 	ret = phy_ti_dp83825_read(dev, MII_ANAR, &anar);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) advertising register", config->addr);
+		LOG_ERROR("Error reading phy (%d) advertising register", config->addr);
 		k_mutex_unlock(&data->mutex);
 		return ret;
 	}
@@ -205,7 +205,7 @@ static int phy_ti_dp83825_get_link(const struct device *dev, struct phy_link_sta
 	/* Read link partner capability */
 	ret = phy_ti_dp83825_read(dev, MII_ANLPAR, &anlpar);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) link partner register", config->addr);
+		LOG_ERROR("Error reading phy (%d) link partner register", config->addr);
 		k_mutex_unlock(&data->mutex);
 		return ret;
 	}
@@ -318,7 +318,7 @@ static int phy_ti_dp83825_reset(const struct device *dev)
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERROR("PHY mutex lock error");
 		return ret;
 	}
 
@@ -369,14 +369,14 @@ static int phy_ti_dp83825_cfg_link(const struct device *dev, enum phy_link_speed
 	int ret;
 
 	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
-		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		LOG_ERROR("Disabling auto-negotiation is not supported by this driver");
 		return -ENOTSUP;
 	}
 
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERROR("PHY mutex lock error");
 		goto done;
 	}
 
@@ -403,14 +403,14 @@ static int phy_ti_dp83825_cfg_link(const struct device *dev, enum phy_link_speed
 
 	ret = phy_mii_set_anar_reg(dev, speeds);
 	if ((ret < 0) && (ret != -EALREADY)) {
-		LOG_ERR("Error setting ANAR register for phy (%d)", config->addr);
+		LOG_ERROR("Error setting ANAR register for phy (%d)", config->addr);
 		goto done;
 	}
 
 	/* (re)do autonegotiation */
 	ret = phy_ti_dp83825_autonegotiate(dev);
 	if (ret && (ret != -ENETDOWN)) {
-		LOG_ERR("Error in autonegotiation");
+		LOG_ERROR("Error in autonegotiation");
 		goto done;
 	}
 

@@ -53,31 +53,31 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) != SPI_WORD_SIZE) {
-		LOG_ERR("Word size must be %d", SPI_WORD_SIZE);
+		LOG_ERROR("Word size must be %d", SPI_WORD_SIZE);
 		return -ENOTSUP;
 	}
 
 	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only supports single mode");
+		LOG_ERROR("Only supports single mode");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_LOCK_ON) {
-		LOG_ERR("Lock On not supported");
+		LOG_ERROR("Lock On not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB first not supported");
+		LOG_ERROR("LSB first not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 	if (config->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback mode not supported");
+		LOG_ERROR("Loopback mode not supported");
 		return -ENOTSUP;
 	}
 

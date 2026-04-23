@@ -192,8 +192,8 @@ static int sdhc_infineon_reset(const struct device *dev)
 
 	if (!WAIT_FOR(config->reg_addr->CORE.SW_RST_R == 0, timeout_us, k_busy_wait(1))) {
 		/* Reset was not cleared by SDHC IP Block. Something wrong. Are clocks enabled? */
-		LOG_ERR("Software reset is not completed...timeout, reg:0x%08X",
-			config->reg_addr->CORE.SW_RST_R);
+		LOG_ERROR("Software reset is not completed...timeout, reg:0x%08X",
+			  config->reg_addr->CORE.SW_RST_R);
 		return -ETIMEDOUT;
 	}
 
@@ -435,7 +435,7 @@ static int sdhc_send_cmd(const struct device *dev, cy_stc_sd_host_cmd_config_t *
 				result = k_sem_take(&sdhc_data->transfer_sem,
 						    K_MSEC(data->timeout_ms));
 				if (result != 0U) {
-					LOG_ERR("Cannot take sem!");
+					LOG_ERROR("Cannot take sem!");
 				}
 
 #if defined(CONFIG_CPU_HAS_DCACHE) && defined(__DCACHE_PRESENT) && __DCACHE_PRESENT
@@ -518,7 +518,7 @@ static int sdhc_send_cmd53(const struct device *dev, cy_stc_sd_host_cmd_config_t
 	if (result == 0) {
 		result = k_sem_take(&sdhc_data->transfer_sem, K_MSEC(data->timeout_ms));
 		if (result != 0U) {
-			LOG_ERR("Cannot take sem!");
+			LOG_ERROR("Cannot take sem!");
 		}
 
 #if defined(CONFIG_CPU_HAS_DCACHE) && defined(__DCACHE_PRESENT) && __DCACHE_PRESENT
@@ -779,7 +779,7 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 			if (ret == 0) {
 				LOG_INF("Bus width set successfully to %d bit", ios->bus_width);
 			} else {
-				LOG_ERR("Error configuring bus width");
+				LOG_ERROR("Error configuring bus width");
 				return -EINVAL;
 			}
 
@@ -809,7 +809,7 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 			speed_mode = CY_SD_HOST_BUS_SPEED_DDR50;
 			break;
 		default:
-			LOG_ERR("Timing mode not supported for this device");
+			LOG_ERROR("Timing mode not supported for this device");
 			return -ENOTSUP;
 		}
 
@@ -819,7 +819,7 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 			if (ret == 0) {
 				LOG_INF("Timing set successfully to %d", ios->timing);
 			} else {
-				LOG_ERR("Error configuring Timing");
+				LOG_ERROR("Error configuring Timing");
 				return -EINVAL;
 			}
 
@@ -835,7 +835,7 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 			/* Check for frequency boundaries supported by host */
 			if (ios->clock > sdhc_data->props.f_max ||
 			    ios->clock < sdhc_data->props.f_min) {
-				LOG_ERR("Proposed clock outside supported host range");
+				LOG_ERROR("Proposed clock outside supported host range");
 				return -EINVAL;
 			}
 
@@ -847,7 +847,7 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 			if (ret == 0) {
 				LOG_INF("Bus clock successfully set to %d kHz", ios->clock / 1000);
 			} else {
-				LOG_ERR("Error configuring card clock");
+				LOG_ERROR("Error configuring card clock");
 				return -EINVAL;
 			}
 		}
@@ -981,13 +981,13 @@ static int sdhc_infineon_init(const struct device *dev)
 
 	if (config->cd_gpio.port != NULL) {
 		if (!device_is_ready(config->cd_gpio.port)) {
-			LOG_ERR("Card detect GPIO device not ready");
+			LOG_ERROR("Card detect GPIO device not ready");
 			return -ENODEV;
 		}
 
 		result = gpio_pin_configure_dt(&config->cd_gpio, GPIO_INPUT);
 		if (result < 0) {
-			LOG_ERR("Couldn't configure card-detect pin; (%d)", result);
+			LOG_ERROR("Couldn't configure card-detect pin; (%d)", result);
 			return result;
 		}
 	}

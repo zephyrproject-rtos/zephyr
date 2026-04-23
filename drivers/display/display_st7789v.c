@@ -239,8 +239,8 @@ static int st7789v_set_pixel_format(const struct device *dev,
 	if (pixel_format == config->pixel_format) {
 		return 0;
 	}
-	LOG_ERR("Runtime pixel format change not supported (configured: %d, requested: %d)",
-		config->pixel_format, pixel_format);
+	LOG_ERROR("Runtime pixel format change not supported (configured: %d, requested: %d)",
+		  config->pixel_format, pixel_format);
 	return -ENOTSUP;
 }
 
@@ -250,7 +250,7 @@ static int st7789v_set_orientation(const struct device *dev,
 	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
 		return 0;
 	}
-	LOG_ERR("Changing display orientation not implemented");
+	LOG_ERROR("Changing display orientation not implemented");
 	return -ENOTSUP;
 }
 
@@ -399,7 +399,7 @@ static int st7789v_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->mipi_dbi)) {
-		LOG_ERR("MIPI DBI device not ready");
+		LOG_ERROR("MIPI DBI device not ready");
 		return -ENODEV;
 	}
 
@@ -407,25 +407,25 @@ static int st7789v_init(const struct device *dev)
 
 	ret = st7789v_reset_display(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset display (%d)", ret);
+		LOG_ERROR("Failed to reset display (%d)", ret);
 		return ret;
 	}
 
 	ret = st7789v_blanking_on(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to turn blanking on (%d)", ret);
+		LOG_ERROR("Failed to turn blanking on (%d)", ret);
 		return ret;
 	}
 
 	ret = st7789v_lcd_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to init display (%d)", ret);
+		LOG_ERROR("Failed to init display (%d)", ret);
 		return ret;
 	}
 
 	ret = st7789v_exit_sleep(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to exit the sleep mode (%d)", ret);
+		LOG_ERROR("Failed to exit the sleep mode (%d)", ret);
 		return ret;
 	}
 

@@ -97,7 +97,7 @@ static int lwm2m_event_log_init(void)
 	/* auto create the first instance */
 	ret = lwm2m_create_obj_inst(LWM2M_OBJECT_EVENT_LOG_ID, 0, &obj_inst);
 	if (ret < 0) {
-		LOG_ERR("Create LWM2M Event Log instance 0 error: %d", ret);
+		LOG_ERROR("Create LWM2M Event Log instance 0 error: %d", ret);
 	}
 
 	return ret;

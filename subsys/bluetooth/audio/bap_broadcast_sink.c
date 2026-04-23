@@ -261,8 +261,8 @@ static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, enum bt_bap_ep_sta
 		}
 		break;
 	default:
-		LOG_ERR("Invalid broadcast sync endpoint state: %s",
-			bt_bap_ep_state_str(old_state));
+		LOG_ERROR("Invalid broadcast sync endpoint state: %s",
+			  bt_bap_ep_state_str(old_state));
 		return;
 	}
 
@@ -294,13 +294,13 @@ static void broadcast_sink_iso_recv(struct bt_iso_chan *chan,
 	size_t buf_len;
 
 	if (ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		LOG_ERROR("iso %p not bound with ep", chan);
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -358,13 +358,13 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 	struct bt_bap_ep *ep = iso->rx.ep;
 
 	if (ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		LOG_ERROR("iso %p not bound with ep", chan);
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -377,7 +377,7 @@ static void broadcast_sink_iso_connected(struct bt_iso_chan *chan)
 
 	sink = broadcast_sink_lookup_iso_chan(chan);
 	if (sink == NULL) {
-		LOG_ERR("Could not lookup sink by iso %p", chan);
+		LOG_ERROR("Could not lookup sink by iso %p", chan);
 		return;
 	}
 
@@ -405,13 +405,13 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 	struct bt_bap_broadcast_sink *sink;
 
 	if (ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		LOG_ERROR("iso %p not bound with ep", chan);
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -426,7 +426,7 @@ static void broadcast_sink_iso_disconnected(struct bt_iso_chan *chan,
 
 	sink = broadcast_sink_lookup_iso_chan(chan);
 	if (sink == NULL) {
-		LOG_ERR("Could not lookup sink by iso %p", chan);
+		LOG_ERROR("Could not lookup sink by iso %p", chan);
 	} else {
 		if (!sys_slist_find_and_remove(&sink->streams, &stream->_node)) {
 			LOG_DBG("Could not find and remove stream %p from sink %p", stream, sink);

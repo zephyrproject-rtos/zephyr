@@ -234,7 +234,7 @@ static int gpio_max32_init(const struct device *dev)
 		/* enable clock */
 		ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
 		if (ret != 0) {
-			LOG_ERR("cannot enable GPIO clock");
+			LOG_ERROR("cannot enable GPIO clock");
 			return ret;
 		}
 	}

@@ -141,7 +141,7 @@ int clk_register_peripheral(pmc_registers_t *const pmc,
 
 	periph = &clocks_periph[clocks_periph_idx++];
 	if (clocks_periph_idx > ARRAY_SIZE(clocks_periph)) {
-		LOG_ERR("Array for peripheral clock not enough");
+		LOG_ERROR("Array for peripheral clock not enough");
 		return -ENOMEM;
 	}
 

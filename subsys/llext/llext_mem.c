@@ -169,8 +169,8 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	if (!ext->mem[mem_idx]) {
-		LOG_ERR("Failed allocating %zd bytes %zd-aligned for region %d",
-			(size_t)region_alloc, (size_t)region_align, mem_idx);
+		LOG_ERROR("Failed allocating %zd bytes %zd-aligned for region %d",
+			  (size_t)region_alloc, (size_t)region_align, mem_idx);
 		return -ENOMEM;
 	}
 
@@ -345,8 +345,7 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain)
 		}
 		ret = k_mem_domain_add_partition(domain, &ext->mem_parts[i]);
 		if (ret != 0) {
-			LOG_ERR("Failed adding memory partition %d to domain %p",
-				i, domain);
+			LOG_ERROR("Failed adding memory partition %d to domain %p", i, domain);
 			return ret;
 		}
 	}

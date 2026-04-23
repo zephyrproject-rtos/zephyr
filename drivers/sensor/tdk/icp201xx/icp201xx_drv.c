@@ -124,7 +124,7 @@ static int icp201xx_attr_set(const struct device *dev, enum sensor_channel chan,
 				inv_icp201xx_app_warmup(&(data->icp_device), data->op_mode,
 							ICP201XX_MEAS_MODE_CONTINUOUS);
 			} else {
-				LOG_ERR("Not supported ATTR value");
+				LOG_ERROR("Not supported ATTR value");
 				icp201xx_mutex_unlock(dev);
 				return -EINVAL;
 			}
@@ -136,13 +136,13 @@ static int icp201xx_attr_set(const struct device *dev, enum sensor_channel chan,
 			if (val->val1 > 0) {
 				data->pressure_threshold = *val;
 			} else {
-				LOG_ERR("Not supported ATTR value");
+				LOG_ERROR("Not supported ATTR value");
 				icp201xx_mutex_unlock(dev);
 				return -EINVAL;
 			}
 #endif
 		} else {
-			LOG_ERR("Not supported ATTR");
+			LOG_ERROR("Not supported ATTR");
 			icp201xx_mutex_unlock(dev);
 			return -EINVAL;
 		}
@@ -301,49 +301,49 @@ static int icp201xx_init(const struct device *dev)
 
 	rc = icp201xx_set_drive_strength(dev, config->drive_strength);
 	if (rc != INV_ERROR_SUCCESS) {
-		LOG_ERR("Drive strength error");
+		LOG_ERROR("Drive strength error");
 		return rc;
 	}
 
 	rc = inv_icp201xx_init(&(data->icp_device), &icp_serif);
 	if (rc != INV_ERROR_SUCCESS) {
-		LOG_ERR("Init error");
+		LOG_ERROR("Init error");
 		return rc;
 	}
 
 	rc = inv_icp201xx_soft_reset(&(data->icp_device));
 	if (rc != INV_ERROR_SUCCESS) {
-		LOG_ERR("Reset error");
+		LOG_ERROR("Reset error");
 		return rc;
 	}
 
 	/* Check WHOAMI */
 	rc = inv_icp201xx_get_devid_version(&(data->icp_device), &who_am_i, &icp_version);
 	if (rc != 0) {
-		LOG_ERR("Device id error");
+		LOG_ERROR("Device id error");
 		return -2;
 	}
 
 	if (who_am_i != EXPECTED_DEVICE_ID) {
-		LOG_ERR("Wrong device id");
+		LOG_ERROR("Wrong device id");
 		return -3;
 	}
 
 	/* Boot up OTP config */
 	rc = inv_icp201xx_OTP_bootup_cfg(&(data->icp_device));
 	if (rc != 0) {
-		LOG_ERR("Bootup error");
+		LOG_ERROR("Bootup error");
 		return rc;
 	}
 	rc = inv_icp201xx_soft_reset(&(data->icp_device));
 	if (rc != 0) {
-		LOG_ERR("Reset error");
+		LOG_ERROR("Reset error");
 		return rc;
 	}
 	rc = inv_icp201xx_config(&(data->icp_device), data->op_mode,
 				 ICP201XX_FIFO_READOUT_MODE_PRES_TEMP);
 	if (rc != 0) {
-		LOG_ERR("Config error");
+		LOG_ERROR("Config error");
 		return rc;
 	}
 	inv_icp201xx_app_warmup(&(data->icp_device), data->op_mode, ICP201XX_MEAS_MODE_CONTINUOUS);
@@ -351,7 +351,7 @@ static int icp201xx_init(const struct device *dev)
 	if (IS_ENABLED(CONFIG_ICP201XX_TRIGGER)) {
 		rc = icp201xx_trigger_init(dev);
 		if (rc < 0) {
-			LOG_ERR("Failed to initialize interrupt.");
+			LOG_ERROR("Failed to initialize interrupt.");
 			return rc;
 		}
 	}

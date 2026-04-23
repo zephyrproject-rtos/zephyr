@@ -132,8 +132,8 @@ static int blinfo_init(void)
 
 		if (rc == 0 && header.tlv_magic != SHARED_DATA_TLV_INFO_MAGIC) {
 			/* Unknown data present */
-			LOG_ERR("MCUboot data load failed, expected magic value: 0x%x, got: 0x%x",
-				SHARED_DATA_TLV_INFO_MAGIC, header.tlv_magic);
+			LOG_ERROR("MCUboot data load failed, expected magic value: 0x%x, got: 0x%x",
+				  SHARED_DATA_TLV_INFO_MAGIC, header.tlv_magic);
 			rc = -EINVAL;
 		}
 	}

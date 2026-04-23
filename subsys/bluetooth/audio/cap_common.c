@@ -343,7 +343,7 @@ static void csis_client_discover_cb(struct bt_conn *conn,
 		bt_csip_set_coordinator_csis_inst_by_handle(conn, client->csis_start_handle);
 
 	if (member == NULL || set_count == 0 || client->csis_inst == NULL) {
-		LOG_ERR("Unable to find CSIS for CAS");
+		LOG_ERROR("Unable to find CSIS for CAS");
 
 		cap_common_discover_complete(conn, -ENODATA, NULL, NULL);
 	} else {

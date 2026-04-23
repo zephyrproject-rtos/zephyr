@@ -61,7 +61,7 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -77,7 +77,7 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -88,7 +88,7 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	struct rtio_sqe *read_accel_sqe = rtio_sqe_acquire(bma4xx->r);
 
 	if (!write_accel_sqe || !read_accel_sqe) {
-		LOG_ERR("Failed to acquire RTIO SQEs");
+		LOG_ERROR("Failed to acquire RTIO SQEs");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
@@ -112,7 +112,7 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	struct rtio_sqe *read_temp_sqe = rtio_sqe_acquire(bma4xx->r);
 
 	if (!write_temp_sqe || !read_temp_sqe) {
-		LOG_ERR("Failed to acquire RTIO SQEs");
+		LOG_ERROR("Failed to acquire RTIO SQEs");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
@@ -133,7 +133,7 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(bma4xx->r);
 
 	if (!complete_sqe) {
-		LOG_ERR("Failed to acquire RTIO SQEs");
+		LOG_ERROR("Failed to acquire RTIO SQEs");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}

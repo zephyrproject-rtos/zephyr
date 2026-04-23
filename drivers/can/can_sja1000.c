@@ -161,7 +161,7 @@ int can_sja1000_start(const struct device *dev)
 	if (config->common.phy != NULL) {
 		err = can_transceiver_enable(config->common.phy, data->common.mode);
 		if (err != 0) {
-			LOG_ERR("failed to enable CAN transceiver (err %d)", err);
+			LOG_ERROR("failed to enable CAN transceiver (err %d)", err);
 			return err;
 		}
 	}
@@ -203,7 +203,7 @@ int can_sja1000_stop(const struct device *dev)
 	if (config->common.phy != NULL) {
 		err = can_transceiver_disable(config->common.phy);
 		if (err != 0) {
-			LOG_ERR("failed to disable CAN transceiver (err %d)", err);
+			LOG_ERROR("failed to disable CAN transceiver (err %d)", err);
 			return err;
 		}
 	}
@@ -228,7 +228,7 @@ int can_sja1000_set_mode(const struct device *dev, can_mode_t mode)
 	}
 
 	if ((mode & ~(supported)) != 0) {
-		LOG_ERR("unsupported mode: 0x%08x", mode);
+		LOG_ERROR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
 
@@ -287,7 +287,7 @@ static void can_sja1000_read_frame(const struct device *dev, struct can_frame *f
 
 	frame->dlc = CAN_SJA1000_FRAME_INFO_DLC_GET(info);
 	if (frame->dlc > CAN_MAX_DLC) {
-		LOG_ERR("RX frame DLC %u exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
+		LOG_ERROR("RX frame DLC %u exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return;
 	}
 
@@ -373,12 +373,12 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 	uint8_t sr;
 
 	if (frame->dlc > CAN_MAX_DLC) {
-		LOG_ERR("TX frame DLC %u exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
+		LOG_ERROR("TX frame DLC %u exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;
 	}
 
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 
@@ -397,7 +397,7 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 
 	sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
 	if ((sr & CAN_SJA1000_SR_TBS) == 0) {
-		LOG_ERR("transmit buffer locked, sr = 0x%02x", sr);
+		LOG_ERROR("transmit buffer locked, sr = 0x%02x", sr);
 		return -EIO;
 	}
 
@@ -428,7 +428,7 @@ int can_sja1000_add_rx_filter(const struct device *dev, can_rx_callback_t callba
 	int filter_id = -ENOSPC;
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
-		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		LOG_ERROR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
@@ -453,7 +453,7 @@ void can_sja1000_remove_rx_filter(const struct device *dev, int filter_id)
 	struct can_sja1000_data *data = dev->data;
 
 	if (filter_id < 0 || filter_id >= ARRAY_SIZE(data->filters)) {
-		LOG_ERR("filter ID %d out of bounds", filter_id);
+		LOG_ERROR("filter ID %d out of bounds", filter_id);
 		return;
 	}
 
@@ -495,7 +495,7 @@ int can_sja1000_recover(const struct device *dev, k_timeout_t timeout)
 
 	err = can_sja1000_leave_reset_mode(dev);
 	if (err != 0) {
-		LOG_ERR("failed to initiate bus recovery");
+		LOG_ERROR("failed to initiate bus recovery");
 		k_mutex_unlock(&data->mod_lock);
 		return err;
 	}
@@ -741,7 +741,7 @@ int can_sja1000_init(const struct device *dev)
 
 	if (config->common.phy != NULL) {
 		if (!device_is_ready(config->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
+			LOG_ERROR("CAN transceiver not ready");
 			return -ENODEV;
 		}
 	}
@@ -776,7 +776,7 @@ int can_sja1000_init(const struct device *dev)
 	err = can_calc_timing(dev, &timing, config->common.bitrate,
 			      config->common.sample_point);
 	if (err == -EINVAL) {
-		LOG_ERR("bitrate/sample point cannot be met (err %d)", err);
+		LOG_ERROR("bitrate/sample point cannot be met (err %d)", err);
 		return err;
 	}
 
@@ -785,7 +785,7 @@ int can_sja1000_init(const struct device *dev)
 	/* Configure timing */
 	err = can_set_timing(dev, &timing);
 	if (err != 0) {
-		LOG_ERR("timing parameters cannot be met (err %d)", err);
+		LOG_ERROR("timing parameters cannot be met (err %d)", err);
 		return err;
 	}
 

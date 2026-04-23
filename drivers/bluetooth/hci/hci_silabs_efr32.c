@@ -107,7 +107,7 @@ static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const int16_t len)
 	const int16_t params_len = len - sizeof(*hdr);
 
 	if (len < sizeof(*hdr)) {
-		LOG_ERR("Event header is missing");
+		LOG_ERROR("Event header is missing");
 		return NULL;
 	}
 
@@ -147,7 +147,7 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 	LOG_HEXDUMP_DBG(data, len, "host packet data:");
 
 	if (len < 1) {
-		LOG_ERR("HCI packet type is missing");
+		LOG_ERROR("HCI packet type is missing");
 		return -EINVAL;
 	}
 
@@ -164,7 +164,7 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 		buf = slz_bt_recv_acl(data, len);
 		break;
 	default:
-		LOG_ERR("Unknown HCI type: %d", packet_type);
+		LOG_ERROR("Unknown HCI type: %d", packet_type);
 		return -EINVAL;
 	}
 
@@ -269,7 +269,7 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	/* Initialize Controller features based on Kconfig values */
 	sl_status = sl_btctrl_init();
 	if (sl_status != SL_STATUS_OK) {
-		LOG_ERR("sl_bt_controller_init failed, status=%d", sl_status);
+		LOG_ERROR("sl_bt_controller_init failed, status=%d", sl_status);
 		ret = -EIO;
 		goto deinit;
 	}
@@ -283,15 +283,14 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 		status = sl_rail_config_sleep(sli_btctrl_get_radio_context_handle(),
 					      &timer_sync_config);
 		if (status != SL_RAIL_STATUS_NO_ERROR) {
-			LOG_ERR("RAIL: failed to configure sleep, status=%d", status);
+			LOG_ERROR("RAIL: failed to configure sleep, status=%d", status);
 			ret = -EIO;
 			goto deinit;
 		}
 
 		status = sl_rail_init_power_manager();
 		if (status != SL_RAIL_STATUS_NO_ERROR) {
-			LOG_ERR("RAIL: failed to initialize power management, status=%d",
-					status);
+			LOG_ERROR("RAIL: failed to initialize power management, status=%d", status);
 			ret = -EIO;
 			goto deinit;
 		}

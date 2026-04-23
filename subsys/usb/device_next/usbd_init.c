@@ -72,7 +72,7 @@ static int unassign_eps(struct usbd_context *const uds_ctx,
 
 		if (usbd_ep_bm_is_set(class_ep_bm, ep_in)) {
 			if (!usbd_ep_bm_is_set(config_ep_bm, ep_in)) {
-				LOG_ERR("Endpoing 0x%02x not assigned", ep_in);
+				LOG_ERROR("Endpoing 0x%02x not assigned", ep_in);
 				return -EINVAL;
 			}
 
@@ -82,7 +82,7 @@ static int unassign_eps(struct usbd_context *const uds_ctx,
 
 		if (usbd_ep_bm_is_set(class_ep_bm, ep_out)) {
 			if (!usbd_ep_bm_is_set(config_ep_bm, ep_out)) {
-				LOG_ERR("Endpoing 0x%02x not assigned", ep_out);
+				LOG_ERROR("Endpoing 0x%02x not assigned", ep_out);
 				return -EINVAL;
 			}
 
@@ -218,13 +218,13 @@ static int init_configuration(struct usbd_context *const uds_ctx,
 		ret = init_configuration_inst(uds_ctx, speed, c_nd,
 					      &config_ep_bm, &nif);
 		if (ret != 0) {
-			LOG_ERR("Failed to assign endpoint addresses");
+			LOG_ERROR("Failed to assign endpoint addresses");
 			return ret;
 		}
 
 		ret = usbd_class_init(c_nd->c_data);
 		if (ret != 0) {
-			LOG_ERR("Failed to initialize class instance");
+			LOG_ERROR("Failed to initialize class instance");
 			return ret;
 		}
 
@@ -287,8 +287,8 @@ int usbd_init_configurations(struct usbd_context *const uds_ctx)
 
 			ret = init_configuration(uds_ctx, USBD_SPEED_HS, cfg_nd);
 			if (ret) {
-				LOG_ERR("Failed to init HS configuration %u",
-					usbd_config_get_value(cfg_nd));
+				LOG_ERROR("Failed to init HS configuration %u",
+					  usbd_config_get_value(cfg_nd));
 				return ret;
 			}
 
@@ -302,8 +302,8 @@ int usbd_init_configurations(struct usbd_context *const uds_ctx)
 
 		ret = init_configuration(uds_ctx, USBD_SPEED_FS, cfg_nd);
 		if (ret) {
-			LOG_ERR("Failed to init FS configuration %u",
-				usbd_config_get_value(cfg_nd));
+			LOG_ERROR("Failed to init FS configuration %u",
+				  usbd_config_get_value(cfg_nd));
 			return ret;
 		}
 

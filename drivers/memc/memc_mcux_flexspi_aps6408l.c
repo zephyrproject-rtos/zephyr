@@ -210,7 +210,7 @@ static int memc_flexspi_aps6408l_init(const struct device *dev)
 	uint8_t vendor_id;
 
 	if (!device_is_ready(data->controller)) {
-		LOG_ERR("Controller device not ready");
+		LOG_ERROR("Controller device not ready");
 		return -ENODEV;
 	}
 
@@ -218,19 +218,19 @@ static int memc_flexspi_aps6408l_init(const struct device *dev)
 	    (const uint32_t *) memc_flexspi_aps6408l_lut,
 	    sizeof(memc_flexspi_aps6408l_lut) / MEMC_FLEXSPI_CMD_SIZE,
 	    config->port)) {
-		LOG_ERR("Could not set device configuration");
+		LOG_ERROR("Could not set device configuration");
 		return -EINVAL;
 	}
 
 	memc_flexspi_reset(data->controller);
 
 	if (memc_flexspi_aps6408l_reset(dev)) {
-		LOG_ERR("Could not reset pSRAM");
+		LOG_ERROR("Could not reset pSRAM");
 		return -EIO;
 	}
 
 	if (memc_flexspi_aps6408l_get_vendor_id(dev, &vendor_id)) {
-		LOG_ERR("Could not read vendor id");
+		LOG_ERROR("Could not read vendor id");
 		return -EIO;
 	}
 	LOG_DBG("Vendor id: 0x%0x", vendor_id);
@@ -245,7 +245,7 @@ static int memc_flexspi_aps6408l_init(const struct device *dev)
 	if (memc_flexspi_aps6408l_update_reg(dev, APS_6408L_MR_8,
 			(APS_6408L_ROW_CROSS_MASK | APS_6408L_BURST_TYPE_MASK),
 			(APS_6408L_ROW_CROSS_EN | APS_6408L_BURST_1K))) {
-		LOG_ERR("Could not enable RBX 1K burst length");
+		LOG_ERROR("Could not enable RBX 1K burst length");
 		return -EIO;
 	}
 
@@ -253,13 +253,13 @@ static int memc_flexspi_aps6408l_init(const struct device *dev)
 	if (memc_flexspi_aps6408l_update_reg(dev, APS_6408L_MR_0,
 			(APS_6408L_RLC_MASK | APS_6408L_RLT_MASK),
 			(APS_6408L_RLC_200 | APS_6408L_RLT_VARIABLE))) {
-		LOG_ERR("Could not set 200MHz read latency code");
+		LOG_ERROR("Could not set 200MHz read latency code");
 		return -EIO;
 	}
 	/* Set write latency code and type for 200MHz flash clock operation */
 	if (memc_flexspi_aps6408l_update_reg(dev, APS_6408L_MR_4,
 			APS_6408L_WLC_MASK, APS_6408L_WLC_200)) {
-		LOG_ERR("Could not set 200MHz write latency code");
+		LOG_ERROR("Could not set 200MHz write latency code");
 		return -EIO;
 	}
 

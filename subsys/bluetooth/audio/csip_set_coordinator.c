@@ -204,12 +204,12 @@ static int member_rank_compare_asc(const void *m1, const void *m2)
 	svc_inst_2 = lookup_instance_by_set_info(member_2, &active.info);
 
 	if (svc_inst_1 == NULL) {
-		LOG_ERR("svc_inst_1 was NULL for member %p", member_1);
+		LOG_ERROR("svc_inst_1 was NULL for member %p", member_1);
 		return 0;
 	}
 
 	if (svc_inst_2 == NULL) {
-		LOG_ERR("svc_inst_2 was NULL for member %p", member_2);
+		LOG_ERROR("svc_inst_2 was NULL for member %p", member_2);
 		return 0;
 	}
 
@@ -431,9 +431,9 @@ static uint8_t sirk_notify_func(struct bt_conn *conn,
 					err = sirk_decrypt(conn, sirk->value,
 							   dst_sirk);
 					if (err != 0) {
-						LOG_ERR("Could not decrypt "
-							"SIRK %d",
-							err);
+						LOG_ERROR("Could not decrypt "
+							  "SIRK %d",
+							  err);
 					}
 				} else {
 					LOG_DBG("Encrypted SIRK not supported");
@@ -960,9 +960,9 @@ static int parse_sirk(struct bt_csip_set_coordinator_inst *client,
 						"Encrypted SIRK");
 				err = sirk_decrypt(client->conn, recvd_sirk->value, sirk);
 				if (err != 0) {
-					LOG_ERR("Could not decrypt "
-						"SIRK %d",
-						err);
+					LOG_ERROR("Could not decrypt "
+						  "SIRK %d",
+						  err);
 					return err;
 				}
 			} else {

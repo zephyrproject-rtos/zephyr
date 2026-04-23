@@ -390,12 +390,12 @@ static struct net_pkt *eth_esp32_rx(
 		dev_data->iface, receive_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == NULL) {
 		eth_stats_update_errors_rx(dev_data->iface);
-		LOG_ERR("Could not allocate rx buffer");
+		LOG_ERROR("Could not allocate rx buffer");
 		return NULL;
 	}
 
 	if (net_pkt_write(pkt, dev_data->rxb, receive_len) != 0) {
-		LOG_ERR("Unable to write frame into the pkt");
+		LOG_ERROR("Unable to write frame into the pkt");
 		eth_stats_update_errors_rx(dev_data->iface);
 		net_pkt_unref(pkt);
 		return NULL;
@@ -612,7 +612,7 @@ static void eth_esp32_iface_init(struct net_if *iface)
 		phy_link_callback_set(eth_esp32_phy_dev, phy_link_state_changed,
 				      (void *)iface);
 	} else {
-		LOG_ERR("PHY device not ready");
+		LOG_ERROR("PHY device not ready");
 	}
 }
 

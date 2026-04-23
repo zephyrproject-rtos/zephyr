@@ -90,7 +90,7 @@ static int32_t multicast_schedule_class_c_session(uint8_t id, uint32_t session_t
 	time_to_start = session_time - current_time;
 
 	if (err != 0 || time_to_start > 0xFFFFFF) {
-		LOG_ERR("Clocks not synchronized, cannot schedule class C session");
+		LOG_ERROR("Clocks not synchronized, cannot schedule class C session");
 
 		/* truncate value to indicates that clocks are out of sync */
 		time_to_start = 0xFFFFFF;
@@ -120,7 +120,7 @@ static void multicast_package_callback(uint8_t port, uint8_t flags, int16_t rssi
 		uint8_t command_id = rx_buf[rx_pos++];
 
 		if (sizeof(tx_buf) - tx_pos < MAX_MULTICAST_ANS_LEN) {
-			LOG_ERR("insufficient tx_buf size, some requests discarded");
+			LOG_ERROR("insufficient tx_buf size, some requests discarded");
 			break;
 		}
 
@@ -132,7 +132,7 @@ static void multicast_package_callback(uint8_t port, uint8_t flags, int16_t rssi
 			LOG_DBG("PackageVersionReq");
 			break;
 		case MULTICAST_CMD_MC_GROUP_STATUS:
-			LOG_ERR("McGroupStatusReq not implemented");
+			LOG_ERROR("McGroupStatusReq not implemented");
 			return;
 		case MULTICAST_CMD_MC_GROUP_SETUP: {
 			uint8_t id = rx_buf[rx_pos++] & 0x03;
@@ -168,7 +168,7 @@ static void multicast_package_callback(uint8_t port, uint8_t flags, int16_t rssi
 				/* set IDerror flag */
 				tx_buf[tx_pos++] = (1U << 2) | id;
 			} else {
-				LOG_ERR("McGroupSetupReq failed: %s", lorawan_status2str(ret));
+				LOG_ERROR("McGroupSetupReq failed: %s", lorawan_status2str(ret));
 				return;
 			}
 			break;
@@ -187,7 +187,7 @@ static void multicast_package_callback(uint8_t port, uint8_t flags, int16_t rssi
 				/* set McGroupUndefined flag */
 				tx_buf[tx_pos++] = (1U << 2) | id;
 			} else {
-				LOG_ERR("McGroupDeleteReq failed: %s", lorawan_status2str(ret));
+				LOG_ERROR("McGroupDeleteReq failed: %s", lorawan_status2str(ret));
 				return;
 			}
 			break;
@@ -229,13 +229,13 @@ static void multicast_package_callback(uint8_t port, uint8_t flags, int16_t rssi
 					sys_put_le24(time_to_start, tx_buf + tx_pos);
 					tx_pos += 3;
 				} else {
-					LOG_ERR("Missed class C session start at %d in %d s",
-						session_time, time_to_start);
+					LOG_ERROR("Missed class C session start at %d in %d s",
+						  session_time, time_to_start);
 					/* set StartMissed flag */
 					tx_buf[tx_pos++] = (1U << 5) | status;
 				}
 			} else {
-				LOG_ERR("McClassCSessionReq failed: %s", lorawan_status2str(ret));
+				LOG_ERROR("McClassCSessionReq failed: %s", lorawan_status2str(ret));
 				if (ret == LORAMAC_STATUS_MC_GROUP_UNDEFINED) {
 					/* set McGroupUndefined flag */
 					tx_buf[tx_pos++] = (1U << 4) | status;
@@ -248,7 +248,7 @@ static void multicast_package_callback(uint8_t port, uint8_t flags, int16_t rssi
 			break;
 		}
 		case MULTICAST_CMD_MC_CLASS_B_SESSION:
-			LOG_ERR("McClassBSessionReq not implemented");
+			LOG_ERROR("McClassBSessionReq not implemented");
 			return;
 		default:
 			return;

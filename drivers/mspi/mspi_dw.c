@@ -214,7 +214,7 @@ static void async_timeout_work_handler(struct k_work *work)
 	const struct device *dev = dev_data->dev;
 	int rc;
 
-	LOG_ERR("Async transfer timed out");
+	LOG_ERROR("Async transfer timed out");
 
 	rc = finalize_packet(dev, -ETIMEDOUT);
 	rc = finalize_transceive(dev, rc);
@@ -575,7 +575,7 @@ static void mspi_dw_isr(const struct device *dev)
 
 	rc = k_work_submit(&dev_data->fifo_work);
 	if (rc < 0) {
-		LOG_ERR("k_work_submit failed: %d\n", rc);
+		LOG_ERROR("k_work_submit failed: %d\n", rc);
 	}
 #else
 	handle_fifos(dev);
@@ -628,7 +628,7 @@ static bool apply_io_mode(struct mspi_dw_data *dev_data,
 					       CTRLR0_SPI_FRF_OCTAL);
 		break;
 	default:
-		LOG_ERR("IO mode %d not supported", io_mode);
+		LOG_ERROR("IO mode %d not supported", io_mode);
 		return false;
 	}
 
@@ -679,7 +679,7 @@ static bool apply_cmd_length(struct mspi_dw_data *dev_data, uint32_t cmd_length)
 						   SPI_CTRLR0_INST_L16);
 		break;
 	default:
-		LOG_ERR("Command length %u not supported", cmd_length);
+		LOG_ERROR("Command length %u not supported", cmd_length);
 		return false;
 	}
 
@@ -690,7 +690,7 @@ static bool apply_addr_length(struct mspi_dw_data *dev_data,
 			      uint32_t addr_length)
 {
 	if (addr_length > 4) {
-		LOG_ERR("Address length %u not supported", addr_length);
+		LOG_ERROR("Address length %u not supported", addr_length);
 		return false;
 	}
 
@@ -710,7 +710,7 @@ static bool apply_xip_io_mode(const struct mspi_dw_data *dev_data,
 	/* Frame format used for transferring data. */
 
 	if (io_mode == MSPI_IO_MODE_SINGLE) {
-		LOG_ERR("XIP not available in single line mode");
+		LOG_ERROR("XIP not available in single line mode");
 		return false;
 	}
 
@@ -740,7 +740,7 @@ static bool apply_xip_io_mode(const struct mspi_dw_data *dev_data,
 					  XIP_WRITE_CTRL_FRF_OCTAL);
 		break;
 	default:
-		LOG_ERR("IO mode %d not supported", io_mode);
+		LOG_ERROR("IO mode %d not supported", io_mode);
 		return false;
 	}
 
@@ -806,7 +806,7 @@ static bool apply_xip_cmd_length(const struct mspi_dw_data *dev_data,
 					  XIP_WRITE_CTRL_INST_L16);
 		break;
 	default:
-		LOG_ERR("Command length %u not supported", cmd_length);
+		LOG_ERROR("Command length %u not supported", cmd_length);
 		return false;
 	}
 
@@ -819,7 +819,7 @@ static bool apply_xip_addr_length(const struct mspi_dw_data *dev_data,
 	uint8_t addr_length = dev_data->xip_params_active.addr_length;
 
 	if (addr_length > 4) {
-		LOG_ERR("Address length %u not supported", addr_length);
+		LOG_ERROR("Address length %u not supported", addr_length);
 		return false;
 	}
 
@@ -839,28 +839,28 @@ static int _api_dev_config(const struct device *dev,
 
 	if (param_mask & MSPI_DEVICE_CONFIG_ENDIAN) {
 		if (cfg->endian != MSPI_XFER_BIG_ENDIAN) {
-			LOG_ERR("Only big endian transfers are supported.");
+			LOG_ERROR("Only big endian transfers are supported.");
 			return -ENOTSUP;
 		}
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_CE_POL) {
 		if (cfg->ce_polarity != MSPI_CE_ACTIVE_LOW) {
-			LOG_ERR("Only active low CE is supported.");
+			LOG_ERROR("Only active low CE is supported.");
 			return -ENOTSUP;
 		}
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_MEM_BOUND) {
 		if (cfg->mem_boundary) {
-			LOG_ERR("Auto CE break is not supported.");
+			LOG_ERROR("Auto CE break is not supported.");
 			return -ENOTSUP;
 		}
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_BREAK_TIME) {
 		if (cfg->time_to_break) {
-			LOG_ERR("Auto CE break is not supported.");
+			LOG_ERROR("Auto CE break is not supported.");
 			return -ENOTSUP;
 		}
 	}
@@ -883,7 +883,7 @@ static int _api_dev_config(const struct device *dev,
 		if (!dev_data->xip_enabled) {
 			dev_data->xip_cpp = cfg->cpp;
 		} else if (dev_data->xip_cpp != cfg->cpp) {
-			LOG_ERR("Conflict with configuration used for XIP.");
+			LOG_ERROR("Conflict with configuration used for XIP.");
 			return -EINVAL;
 		}
 #endif
@@ -914,9 +914,9 @@ static int _api_dev_config(const struct device *dev,
 	if (param_mask & MSPI_DEVICE_CONFIG_FREQUENCY) {
 		if (cfg->freq > dev_config->clock_frequency / 2 ||
 		    cfg->freq < dev_config->clock_frequency / 65534) {
-			LOG_ERR("Invalid frequency: %u, MIN: %u, MAX: %u",
-				cfg->freq, dev_config->clock_frequency / 65534,
-				dev_config->clock_frequency / 2);
+			LOG_ERROR("Invalid frequency: %u, MIN: %u, MAX: %u", cfg->freq,
+				  dev_config->clock_frequency / 65534,
+				  dev_config->clock_frequency / 2);
 			return -EINVAL;
 		}
 
@@ -927,7 +927,7 @@ static int _api_dev_config(const struct device *dev,
 		if (!dev_data->xip_enabled) {
 			dev_data->xip_freq = cfg->freq;
 		} else if (dev_data->xip_freq != cfg->freq) {
-			LOG_ERR("Conflict with configuration used for XIP.");
+			LOG_ERROR("Conflict with configuration used for XIP.");
 			return -EINVAL;
 		}
 #endif
@@ -951,8 +951,7 @@ static int _api_dev_config(const struct device *dev,
 			break;
 #endif
 		default:
-			LOG_ERR("Data rate %d not supported",
-				cfg->data_rate);
+			LOG_ERROR("Data rate %d not supported", cfg->data_rate);
 			return -ENOTSUP;
 		}
 	}
@@ -1016,7 +1015,7 @@ static int api_dev_config(const struct device *dev,
 		}
 #endif
 		if (rc < 0) {
-			LOG_ERR("Failed to switch controller to device");
+			LOG_ERROR("Failed to switch controller to device");
 			return -EBUSY;
 		}
 
@@ -1156,8 +1155,7 @@ static int start_next_packet(const struct device *dev)
 	}
 
 	if (data_frames > UINT16_MAX + 1) {
-		LOG_ERR("Packet length (%u) exceeds supported maximum",
-			packet->num_bytes);
+		LOG_ERROR("Packet length (%u) exceeds supported maximum", packet->num_bytes);
 		return -EINVAL;
 	}
 
@@ -1166,8 +1164,8 @@ static int start_next_packet(const struct device *dev)
 		/* Check if the packet buffer is accessible */
 		if (packet->num_bytes > 0 &&
 		    !vendor_specific_dma_accessible_check(dev, packet->data_buf)) {
-			LOG_ERR("Buffer not DMA accessible: ptr=0x%lx, size=%u",
-				(uintptr_t)packet->data_buf, packet->num_bytes);
+			LOG_ERROR("Buffer not DMA accessible: ptr=0x%lx, size=%u",
+				  (uintptr_t)packet->data_buf, packet->num_bytes);
 			return -EINVAL;
 		}
 	}
@@ -1237,7 +1235,7 @@ static int start_next_packet(const struct device *dev)
 	if (dev_data->dev_id->ce.port) {
 		rc = gpio_pin_set_dt(&dev_data->dev_id->ce, 1);
 		if (rc < 0) {
-			LOG_ERR("Failed to activate CE line (%d)", rc);
+			LOG_ERROR("Failed to activate CE line (%d)", rc);
 			return rc;
 		}
 	}
@@ -1441,10 +1439,10 @@ static int finalize_packet(const struct device *dev, int rc)
 				       (false));
 
 	if (read_risr(dev) & RISR_RXOIR_BIT) {
-		LOG_ERR("RX FIFO overflow occurred");
+		LOG_ERROR("RX FIFO overflow occurred");
 		rc = -EIO;
 	} else if (rc == -ETIMEDOUT) {
-		LOG_ERR("Transfer timed out");
+		LOG_ERROR("Transfer timed out");
 	}
 
 	/* Disable the controller. This will immediately halt the transfer
@@ -1476,7 +1474,7 @@ static int finalize_packet(const struct device *dev, int rc)
 		/* Do not use `rc` to not overwrite potential packet error. */
 		rc2 = gpio_pin_set_dt(&dev_data->dev_id->ce, 0);
 		if (rc2 < 0) {
-			LOG_ERR("Failed to deactivate CE line (%d)", rc2);
+			LOG_ERROR("Failed to deactivate CE line (%d)", rc2);
 			return rc2;
 		}
 	}
@@ -1503,17 +1501,17 @@ static int _api_transceive(const struct device *dev,
 					& ~SPI_CTRLR0_ADDR_L_MASK;
 
 		if (req->tx_dummy) {
-			LOG_ERR("TX dummy cycles unsupported in single line mode");
+			LOG_ERROR("TX dummy cycles unsupported in single line mode");
 			return -EINVAL;
 		}
 		if (req->rx_dummy % 8) {
-			LOG_ERR("Unsupported RX (%u) dummy cycles", req->rx_dummy);
+			LOG_ERROR("Unsupported RX (%u) dummy cycles", req->rx_dummy);
 			return -EINVAL;
 		}
 	} else if (req->rx_dummy > SPI_CTRLR0_WAIT_CYCLES_MAX ||
 		   req->tx_dummy > SPI_CTRLR0_WAIT_CYCLES_MAX) {
-		LOG_ERR("Unsupported RX (%u) or TX (%u) dummy cycles",
-			req->rx_dummy, req->tx_dummy);
+		LOG_ERROR("Unsupported RX (%u) or TX (%u) dummy cycles", req->rx_dummy,
+			  req->tx_dummy);
 		return -EINVAL;
 	} else {
 		if (!apply_cmd_length(dev_data, req->cmd_length) ||
@@ -1552,18 +1550,18 @@ static int api_transceive(const struct device *dev,
 	int rc;
 
 	if (dev_id != dev_data->dev_id) {
-		LOG_ERR("Controller is not configured for this device");
+		LOG_ERROR("Controller is not configured for this device");
 		return -EINVAL;
 	}
 
 	if (req->async && !IS_ENABLED(CONFIG_MULTITHREADING)) {
-		LOG_ERR("Asynchronous transfers require multithreading");
+		LOG_ERROR("Asynchronous transfers require multithreading");
 		return -ENOTSUP;
 	}
 
 	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+		LOG_ERROR("pm_device_runtime_get() failed: %d", rc);
 		return rc;
 	}
 
@@ -1596,7 +1594,7 @@ static int finalize_transceive(const struct device *dev, int rc)
 
 	rc2 = pm_device_runtime_put(dev);
 	if (rc2 < 0) {
-		LOG_ERR("pm_device_runtime_put() failed: %d", rc2);
+		LOG_ERROR("pm_device_runtime_put() failed: %d", rc2);
 		rc = (rc < 0 ? rc : rc2);
 	}
 
@@ -1613,14 +1611,14 @@ static int api_register_callback(const struct device *dev,
 	struct mspi_dw_data *dev_data = dev->data;
 
 	if (dev_id != dev_data->dev_id) {
-		LOG_ERR("Controller is not configured for this device");
+		LOG_ERROR("Controller is not configured for this device");
 		return -EINVAL;
 	}
 
 	if (evt_type != MSPI_BUS_ERROR &&
 	    evt_type != MSPI_BUS_XFER_COMPLETE &&
 	    evt_type != MSPI_BUS_TIMEOUT) {
-		LOG_ERR("Callback type %d not supported", evt_type);
+		LOG_ERROR("Callback type %d not supported", evt_type);
 		return -ENOTSUP;
 	}
 
@@ -1670,7 +1668,7 @@ static int _api_xip_config(const struct device *dev,
 			 */
 			rc = pm_device_runtime_put(dev);
 			if (rc < 0) {
-				LOG_ERR("pm_device_runtime_put() failed: %d", rc);
+				LOG_ERROR("pm_device_runtime_put() failed: %d", rc);
 				return rc;
 			}
 		}
@@ -1692,8 +1690,8 @@ static int _api_xip_config(const struct device *dev,
 
 		if (params->rx_dummy > XIP_CTRL_WAIT_CYCLES_MAX ||
 		    params->tx_dummy > XIP_WRITE_CTRL_WAIT_CYCLES_MAX) {
-			LOG_ERR("Unsupported RX (%u) or TX (%u) dummy cycles",
-				params->rx_dummy, params->tx_dummy);
+			LOG_ERROR("Unsupported RX (%u) or TX (%u) dummy cycles", params->rx_dummy,
+				  params->tx_dummy);
 			return -EINVAL;
 		}
 
@@ -1702,7 +1700,7 @@ static int _api_xip_config(const struct device *dev,
 		 */
 		rc = pm_device_runtime_get(dev);
 		if (rc < 0) {
-			LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+			LOG_ERROR("pm_device_runtime_get() failed: %d", rc);
 			return rc;
 		}
 
@@ -1724,19 +1722,15 @@ static int _api_xip_config(const struct device *dev,
 		write_xip_write_incr_inst(dev, params->write_cmd);
 		write_xip_write_wrap_inst(dev, params->write_cmd);
 		write_xip_write_ctrl(dev, ctrl.write);
-	} else if (dev_data->xip_params_active.read_cmd !=
-		   dev_data->xip_params_stored.read_cmd ||
-		   dev_data->xip_params_active.write_cmd !=
-		   dev_data->xip_params_stored.write_cmd ||
+	} else if (dev_data->xip_params_active.read_cmd != dev_data->xip_params_stored.read_cmd ||
+		   dev_data->xip_params_active.write_cmd != dev_data->xip_params_stored.write_cmd ||
 		   dev_data->xip_params_active.cmd_length !=
-		   dev_data->xip_params_stored.cmd_length ||
+			   dev_data->xip_params_stored.cmd_length ||
 		   dev_data->xip_params_active.addr_length !=
-		   dev_data->xip_params_stored.addr_length ||
-		   dev_data->xip_params_active.rx_dummy !=
-		   dev_data->xip_params_stored.rx_dummy ||
-		   dev_data->xip_params_active.tx_dummy !=
-		   dev_data->xip_params_stored.tx_dummy) {
-		LOG_ERR("Conflict with configuration already used for XIP.");
+			   dev_data->xip_params_stored.addr_length ||
+		   dev_data->xip_params_active.rx_dummy != dev_data->xip_params_stored.rx_dummy ||
+		   dev_data->xip_params_active.tx_dummy != dev_data->xip_params_stored.tx_dummy) {
+		LOG_ERROR("Conflict with configuration already used for XIP.");
 		return -EINVAL;
 	}
 
@@ -1760,13 +1754,13 @@ static int api_xip_config(const struct device *dev,
 	int rc, rc2;
 
 	if (cfg->enable && dev_id != dev_data->dev_id) {
-		LOG_ERR("Controller is not configured for this device");
+		LOG_ERROR("Controller is not configured for this device");
 		return -EINVAL;
 	}
 
 	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+		LOG_ERROR("pm_device_runtime_get() failed: %d", rc);
 		return rc;
 	}
 
@@ -1786,7 +1780,7 @@ static int api_xip_config(const struct device *dev,
 
 	rc2 = pm_device_runtime_put(dev);
 	if (rc2 < 0) {
-		LOG_ERR("pm_device_runtime_put() failed: %d", rc2);
+		LOG_ERROR("pm_device_runtime_put() failed: %d", rc2);
 		rc = (rc < 0 ? rc : rc2);
 	}
 
@@ -1806,7 +1800,7 @@ static int dev_pm_action_cb(const struct device *dev,
 					     PINCTRL_STATE_DEFAULT);
 
 		if (rc < 0) {
-			LOG_ERR("Cannot apply default pins state (%d)", rc);
+			LOG_ERROR("Cannot apply default pins state (%d)", rc);
 			return rc;
 		}
 #endif
@@ -1829,7 +1823,7 @@ static int dev_pm_action_cb(const struct device *dev,
 					     PINCTRL_STATE_SLEEP);
 
 		if (rc < 0) {
-			LOG_ERR("Cannot apply sleep pins state (%d)", rc);
+			LOG_ERROR("Cannot apply sleep pins state (%d)", rc);
 			return rc;
 		}
 #endif
@@ -1839,7 +1833,7 @@ static int dev_pm_action_cb(const struct device *dev,
 #else
 		if (xip_enabled) {
 #endif
-			LOG_ERR("Controller in use, cannot be suspended");
+			LOG_ERROR("Controller in use, cannot be suspended");
 			return -EBUSY;
 		}
 
@@ -1892,8 +1886,7 @@ static int dev_init(const struct device *dev)
 	     ce_gpio < &dev_config->ce_gpios[dev_config->ce_gpios_len];
 	     ce_gpio++) {
 		if (!device_is_ready(ce_gpio->port)) {
-			LOG_ERR("CE GPIO port %s is not ready",
-				ce_gpio->port->name);
+			LOG_ERROR("CE GPIO port %s is not ready", ce_gpio->port->name);
 			return -ENODEV;
 		}
 
@@ -1907,7 +1900,7 @@ static int dev_init(const struct device *dev)
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		rc = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 		if (rc < 0) {
-			LOG_ERR("Cannot apply sleep pins state (%d)", rc);
+			LOG_ERROR("Cannot apply sleep pins state (%d)", rc);
 			return rc;
 		}
 	}

@@ -52,7 +52,7 @@ static int adc_ad559x_channel_setup(const struct device *dev,
 	struct adc_ad559x_data *data = dev->data;
 
 	if (channel_cfg->channel_id >= AD559X_PIN_MAX) {
-		LOG_ERR("invalid channel id %d", channel_cfg->channel_id);
+		LOG_ERROR("invalid channel id %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -83,18 +83,18 @@ static int adc_ad559x_start_read(const struct device *dev, const struct adc_sequ
 	int ret;
 
 	if (sequence->resolution != AD559X_ADC_RESOLUTION) {
-		LOG_ERR("invalid resolution %d", sequence->resolution);
+		LOG_ERROR("invalid resolution %d", sequence->resolution);
 		return -EINVAL;
 	}
 
 	if (find_msb_set(sequence->channels) > AD559X_PIN_MAX) {
-		LOG_ERR("invalid channels in mask: 0x%08x", sequence->channels);
+		LOG_ERROR("invalid channels in mask: 0x%08x", sequence->channels);
 		return -EINVAL;
 	}
 
 	ret = adc_ad559x_validate_buffer_size(dev, sequence);
 	if (ret < 0) {
-		LOG_ERR("insufficient buffer size");
+		LOG_ERROR("insufficient buffer size");
 		return ret;
 	}
 
@@ -204,7 +204,7 @@ static void adc_ad559x_acquisition_thread(struct adc_ad559x_data *data)
 
 			ret = adc_ad559x_read_channel(data->dev, channel, &result);
 			if (ret < 0) {
-				LOG_ERR("failed to read channel %d (ret %d)", channel, ret);
+				LOG_ERROR("failed to read channel %d (ret %d)", channel, ret);
 				adc_context_complete(&data->ctx, ret);
 				break;
 			}

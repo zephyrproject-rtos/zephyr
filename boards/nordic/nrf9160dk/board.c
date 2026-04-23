@@ -125,14 +125,14 @@ static int reset_pin_configure(void)
 	gpio_dt_flags_t flags = GET_FLAGS(reset_input, gpios, 0);
 
 	if (!device_is_ready(gpio)) {
-		LOG_ERR("%s is not ready", gpio->name);
+		LOG_ERROR("%s is not ready", gpio->name);
 		return -ENODEV;
 	}
 
 	rc = gpio_pin_configure(gpio, pin, flags | GPIO_INPUT);
 	if (rc) {
-		LOG_ERR("Error %d while configuring pin P%d.%02d",
-			rc, GET_PORT(reset_input, gpios, 0), pin);
+		LOG_ERROR("Error %d while configuring pin P%d.%02d", rc,
+			  GET_PORT(reset_input, gpios, 0), pin);
 		return rc;
 	}
 
@@ -169,7 +169,7 @@ void board_late_init_hook(void)
 		gpio_flags_t flags = cfg->flags;
 
 		if (!device_is_ready(cfg->gpio)) {
-			LOG_ERR("%s is not ready", cfg->gpio->name);
+			LOG_ERROR("%s is not ready", cfg->gpio->name);
 			return;
 		}
 
@@ -180,8 +180,8 @@ void board_late_init_hook(void)
 		LOG_DBG("Configuring P%d.%02d with flags: 0x%08x",
 			cfg->port, cfg->pin, flags);
 		if (rc) {
-			LOG_ERR("Error %d while configuring pin P%d.%02d (%s)",
-				rc, cfg->port, cfg->pin, cfg->name);
+			LOG_ERROR("Error %d while configuring pin P%d.%02d (%s)", rc, cfg->port,
+				  cfg->pin, cfg->name);
 		} else if (cfg->info) {
 			LOG_INF("%s is %s",
 				cfg->name, cfg->on ? "ENABLED" : "disabled");
@@ -200,7 +200,7 @@ void board_late_init_hook(void)
 #if USE_RESET_GPIO
 	rc = reset_pin_configure();
 	if (rc) {
-		LOG_ERR("Unable to configure reset pin, err %d", rc);
+		LOG_ERROR("Unable to configure reset pin, err %d", rc);
 		return;
 	}
 #endif

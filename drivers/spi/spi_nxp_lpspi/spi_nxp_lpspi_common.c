@@ -380,7 +380,7 @@ int spi_nxp_init_common(const struct device *dev)
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -389,7 +389,7 @@ int spi_nxp_init_common(const struct device *dev)
 		/* Check if error is due to lack of support */
 		if (err != -ENOSYS) {
 			/* Real error occurred */
-			LOG_ERR("Failed to configure clock: %d", err);
+			LOG_ERROR("Failed to configure clock: %d", err);
 			return err;
 		}
 	}

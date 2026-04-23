@@ -158,7 +158,7 @@ static int nxp_ewm_init(const struct device *dev)
 		base->CLKCTRL = EWM_CLKCTRL_CLKSEL(3);
 		break;
 	default:
-		LOG_ERR("Invalid clock select value: %d", config->clk_sel);
+		LOG_ERROR("Invalid clock select value: %d", config->clk_sel);
 		return -EINVAL;
 	}
 #endif /* DT_INST_NODE_HAS_PROP(0, clk_sel) */

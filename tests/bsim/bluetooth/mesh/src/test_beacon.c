@@ -1899,10 +1899,10 @@ static void proxy_adv_confirm_evt(struct expected_proxy_adv_evt *exp_evts, uint8
 
 	for (int i = 0; i < cnt; i++) {
 		if (exp_evts[i].evt_cnt) {
-			LOG_ERR("Missing %d expected %s idx %d events in period %llums-%llums",
-				exp_evts[i].evt_cnt, proxy_adv_str[exp_evts[i].evt_type],
-				exp_evts[i].net_idx, exp_evts[i].time.after,
-				exp_evts[i].time.before);
+			LOG_ERROR("Missing %d expected %s idx %d events in period %llums-%llums",
+				  exp_evts[i].evt_cnt, proxy_adv_str[exp_evts[i].evt_type],
+				  exp_evts[i].net_idx, exp_evts[i].time.after,
+				  exp_evts[i].time.before);
 			missing_evts = true;
 		}
 	}

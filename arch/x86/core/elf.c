@@ -42,7 +42,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	ret = llext_read_symbol(ldr, ext, rel, &sym);
 
 	if (ret != 0) {
-		LOG_ERR("Could not read symbol from binary!");
+		LOG_ERROR("Could not read symbol from binary!");
 		return ret;
 	}
 
@@ -51,7 +51,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	ret = llext_lookup_symbol(ldr, ext, &sym_base_addr, rel, &sym, sym_name, shdr);
 
 	if (ret != 0) {
-		LOG_ERR("Could not find symbol %s!", sym_name);
+		LOG_ERROR("Could not find symbol %s!", sym_name);
 		return ret;
 	}
 
@@ -70,7 +70,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 		*(uint32_t *)loc = sym_base_addr;
 		break;
 	default:
-		LOG_ERR("unknown relocation: %u\n", reloc_type);
+		LOG_ERROR("unknown relocation: %u\n", reloc_type);
 		ret = -ENOEXEC;
 		break;
 	}
@@ -107,7 +107,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	ret = llext_read_symbol(ldr, ext, rel, &sym);
 
 	if (ret != 0) {
-		LOG_ERR("Could not read symbol from binary!");
+		LOG_ERROR("Could not read symbol from binary!");
 		return ret;
 	}
 
@@ -116,7 +116,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	ret = llext_lookup_symbol(ldr, ext, &sym_base_addr, rel, &sym, sym_name, shdr);
 
 	if (ret != 0) {
-		LOG_ERR("Could not find symbol %s!", sym_name);
+		LOG_ERROR("Could not find symbol %s!", sym_name);
 		return ret;
 	}
 
@@ -132,7 +132,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 		*(uint32_t *)loc = sym_base_addr - loc;
 		break;
 	default:
-		LOG_ERR("unknown relocation: %u\n", reloc_type);
+		LOG_ERROR("unknown relocation: %u\n", reloc_type);
 		ret = -ENOEXEC;
 		break;
 	}

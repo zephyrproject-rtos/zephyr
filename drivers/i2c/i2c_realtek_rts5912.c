@@ -57,7 +57,7 @@ static inline int i2c_rts5912_disable(const struct device *dev)
 	clear_bit_enable_en(reg_base);
 
 	if (!WAIT_FOR(!test_bit_enable_sts(reg_base), RECOVERY_TIME_US, NULL)) {
-		LOG_ERR("Disable Fail");
+		LOG_ERROR("Disable Fail");
 		ret = -EIO;
 	} else {
 		LOG_DBG("Disable success");
@@ -78,7 +78,7 @@ static inline int i2c_rts5912_abort(const struct device *dev)
 	set_bit_enable_abort(reg_base);
 
 	if (!WAIT_FOR(!test_bit_enable_abort(reg_base), RECOVERY_TIME_US, NULL)) {
-		LOG_ERR("ERROR: ABORT Fail!");
+		LOG_ERROR("ERROR: ABORT Fail!");
 		ret = -EIO;
 	} else {
 		LOG_DBG("ABORT success");
@@ -103,7 +103,7 @@ static inline int i2c_rts5912_reset_sda_stuck(const struct device *dev)
 	/* initiate the Master Clock Reset */
 	set_bit_enable_clk_reset(reg_base);
 	if (!WAIT_FOR(!test_bit_enable_clk_reset(reg_base), RECOVERY_TIME_US, NULL)) {
-		LOG_ERR("ERROR: CLK recovery Fail");
+		LOG_ERROR("ERROR: CLK recovery Fail");
 		ret = -EIO;
 	} else {
 		LOG_DBG("CLK Recovery Success");
@@ -114,7 +114,7 @@ static inline int i2c_rts5912_reset_sda_stuck(const struct device *dev)
 	WAIT_FOR(!test_bit_enable_sdarecov(reg_base), RECOVERY_TIME_US, NULL);
 	/* Check if bus is not clear */
 	if (test_bit_status_sdanotrecov(reg_base)) {
-		LOG_ERR("ERROR: SDA Recovery Fail");
+		LOG_ERROR("ERROR: SDA Recovery Fail");
 		ret = -EIO;
 	} else {
 		LOG_DBG("SDA Recovery Success");
@@ -196,7 +196,7 @@ static int i2c_rts5912_recover_bus(const struct device *dev)
 	/* Set GPIO back to I2C alternate function */
 	pin_ret = pinctrl_apply_state(rom->pcfg, PINCTRL_STATE_DEFAULT);
 	if (pin_ret < 0) {
-		LOG_ERR("Failed to configure I2C pins");
+		LOG_ERROR("Failed to configure I2C pins");
 		return pin_ret;
 	}
 
@@ -210,7 +210,8 @@ static int i2c_rts5912_recover_bus(const struct device *dev)
 	ret |= i2c_rts5912_disable(dev);
 
 	if (ret) {
-		LOG_ERR("ERROR: Bus Recover Fail, a device may be faulty or require a power reset, "
+		LOG_ERROR(
+			"ERROR: Bus Recover Fail, a device may be faulty or require a power reset, "
 			"EC try reset i2c bus");
 		ret = i2c_rts5912_reset_sda_stuck(dev);
 	} else {
@@ -226,18 +227,18 @@ static int i2c_rts5912_initialize(const struct device *dev)
 
 	/* Register our recovery routine with the DW I2C driver. */
 	if (!device_is_ready(config->dw_i2c_dev)) {
-		LOG_ERR("DW i2c not ready");
+		LOG_ERROR("DW i2c not ready");
 		return -ENODEV;
 	}
 	i2c_dw_register_recover_bus_cb(config->dw_i2c_dev, i2c_rts5912_recover_bus, dev);
 
 	if (!device_is_ready(config->clk_dev)) {
-		LOG_ERR("clock source not ready");
+		LOG_ERROR("clock source not ready");
 		return -ENODEV;
 	}
 	ret = clock_control_on(config->clk_dev, (clock_control_subsys_t)&config->sccon_cfg);
 	if (ret != 0) {
-		LOG_ERR("enable i2c[%s] clock source power fail", dev->name);
+		LOG_ERROR("enable i2c[%s] clock source power fail", dev->name);
 		return ret;
 	}
 

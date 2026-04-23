@@ -27,9 +27,7 @@ static void tftp_event_callback(const struct tftp_evt *evt)
 				"Received data: ");
 		break;
 	case TFTP_EVT_ERROR:
-		LOG_ERR("Error code %d msg: %s",
-			evt->param.error.code,
-			evt->param.error.msg);
+		LOG_ERROR("Error code %d msg: %s", evt->param.error.code, evt->param.error.msg);
 	default:
 		break;
 	}
@@ -46,7 +44,7 @@ static int tftp_init(const char *hostname)
 
 	ret = getaddrinfo(hostname, CONFIG_TFTP_APP_PORT, &hints, &res);
 	if (ret != 0) {
-		LOG_ERR("Unable to resolve address");
+		LOG_ERROR("Unable to resolve address");
 		/* DNS error codes don't align with normal errors */
 		return -ENOENT;
 	}
@@ -70,14 +68,14 @@ int main(void)
 
 	ret = tftp_init(CONFIG_TFTP_APP_SERVER);
 	if (ret < 0) {
-		LOG_ERR("Unable to initialize TFTP client");
+		LOG_ERROR("Unable to initialize TFTP client");
 		return ret;
 	}
 
 	/* Get file1.bin in octet mode */
 	ret = tftp_get(&client, "file1.bin", "octet");
 	if (ret < 0) {
-		LOG_ERR("Error while getting file (%d)", ret);
+		LOG_ERROR("Error while getting file (%d)", ret);
 		return ret;
 	}
 
@@ -87,7 +85,7 @@ int main(void)
 	ret = tftp_put(&client, "newfile.bin", "octet",
 			TFTP_SAMPLE_DATA, sizeof(TFTP_SAMPLE_DATA));
 	if (ret < 0 || ret != sizeof(TFTP_SAMPLE_DATA)) {
-		LOG_ERR("Error while putting file (%d)", ret);
+		LOG_ERROR("Error while putting file (%d)", ret);
 		return ret;
 	}
 

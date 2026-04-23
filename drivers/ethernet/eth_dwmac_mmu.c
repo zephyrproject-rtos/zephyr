@@ -92,7 +92,7 @@ int dwmac_platform_init(struct dwmac_priv *p)
 		return 0;
 	}
 	if (ret < 0) {
-		LOG_ERR("Failed to load MAC address (%d)", ret);
+		LOG_ERROR("Failed to load MAC address (%d)", ret);
 		return ret;
 	}
 

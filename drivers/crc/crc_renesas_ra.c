@@ -224,13 +224,13 @@ static int crc_ra_init(const struct device *dev)
 	crc_cfg_t const *const crc_cfg = &data->crc_config;
 
 	if (!device_is_ready(cfg->clock_dev)) {
-		LOG_ERR("CRC: Clock control device not ready");
+		LOG_ERROR("CRC: Clock control device not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(cfg->clock_dev, (clock_control_subsys_t)&cfg->clock_id);
 	if (ret < 0) {
-		LOG_ERR("CRC: Clock control device could not initialize");
+		LOG_ERROR("CRC: Clock control device could not initialize");
 		return -EIO;
 	}
 

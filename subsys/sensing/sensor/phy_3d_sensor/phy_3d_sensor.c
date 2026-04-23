@@ -113,8 +113,8 @@ static int phy_3d_sensor_init(const struct device *dev)
 			data->customs[i] = &custom_gyro;
 		break;
 		default:
-			LOG_ERR("phy_3d_sensor doesn't support sensor type %d",
-			cfg->sensor_types[i]);
+			LOG_ERROR("phy_3d_sensor doesn't support sensor type %d",
+				  cfg->sensor_types[i]);
 			return -ENOTSUP;
 		}
 	}
@@ -180,14 +180,14 @@ static void phy_3d_sensor_submit(const struct device *dev,
 
 	ret = sensor_sample_fetch_chan(cfg->hw_dev, custom->chan_all);
 	if (ret) {
-		LOG_ERR("%s: sample fetch failed: %d", dev->name, ret);
+		LOG_ERROR("%s: sample fetch failed: %d", dev->name, ret);
 		rtio_iodev_sqe_err(sqe, ret);
 		return;
 	}
 
 	ret = sensor_channel_get(cfg->hw_dev, custom->chan_all, value);
 	if (ret) {
-		LOG_ERR("%s: channel get failed: %d", dev->name, ret);
+		LOG_ERROR("%s: channel get failed: %d", dev->name, ret);
 		rtio_iodev_sqe_err(sqe, ret);
 		return;
 	}

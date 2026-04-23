@@ -152,12 +152,12 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	if ((offset % FLASH_ERASE_BLOCK_SIZE) != 0) {
-		LOG_ERR("offset 0x%lx is not on a page boundary", (long)offset);
+		LOG_ERROR("offset 0x%lx is not on a page boundary", (long)offset);
 		return -EINVAL;
 	}
 
 	if ((len % FLASH_ERASE_BLOCK_SIZE) != 0) {
-		LOG_ERR("len %zu is not multiple of a page size", len);
+		LOG_ERROR("len %zu is not multiple of a page size", len);
 		return -EINVAL;
 	}
 #else

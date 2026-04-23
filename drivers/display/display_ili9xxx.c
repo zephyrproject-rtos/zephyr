@@ -295,7 +295,7 @@ ili9xxx_set_pixel_format(const struct device *dev,
 		bytes_per_pixel = 3U;
 		tx_data = ILI9XXX_PIXSET_MCU_18_BIT | ILI9XXX_PIXSET_RGB_18_BIT;
 	} else {
-		LOG_ERR("Unsupported pixel format");
+		LOG_ERROR("Unsupported pixel format");
 		return -ENOTSUP;
 	}
 
@@ -393,7 +393,7 @@ static int ili9xxx_configure(const struct device *dev)
 	} else if (config->pixel_format == PANEL_PIXEL_FORMAT_RGB_888) {
 		pixel_format = PIXEL_FORMAT_RGB_888;
 	} else {
-		LOG_ERR("Unsupported pixel format in DT");
+		LOG_ERROR("Unsupported pixel format in DT");
 		return -ENOTSUP;
 	}
 
@@ -456,7 +456,7 @@ static int ili9xxx_init(const struct device *dev)
 	int r;
 
 	if (!device_is_ready(config->mipi_dev)) {
-		LOG_ERR("MIPI DBI device is not ready");
+		LOG_ERROR("MIPI DBI device is not ready");
 		return -ENODEV;
 	}
 
@@ -464,7 +464,7 @@ static int ili9xxx_init(const struct device *dev)
 
 	r = ili9xxx_transmit(dev, ILI9XXX_SWRESET, NULL, 0);
 	if (r < 0) {
-		LOG_ERR("Error transmit command Software Reset (%d)", r);
+		LOG_ERROR("Error transmit command Software Reset (%d)", r);
 		return r;
 	}
 
@@ -479,13 +479,13 @@ static int ili9xxx_init(const struct device *dev)
 
 	r = ili9xxx_configure(dev);
 	if (r < 0) {
-		LOG_ERR("Could not configure display (%d)", r);
+		LOG_ERROR("Could not configure display (%d)", r);
 		return r;
 	}
 
 	r = ili9xxx_exit_sleep(dev);
 	if (r < 0) {
-		LOG_ERR("Could not exit sleep mode (%d)", r);
+		LOG_ERROR("Could not exit sleep mode (%d)", r);
 		return r;
 	}
 

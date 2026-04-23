@@ -317,7 +317,7 @@ static int st730x_convert(const struct device *dev, const uint8_t *buf, uint32_t
 	uint32_t max_lines = (config->conversion_buf_size / (desc->width / ST730X_PPB)) & ~0x1;
 
 	if (max_lines < ST730X_PPYA) {
-		LOG_ERR("Buffer too small, cannot convert");
+		LOG_ERROR("Buffer too small, cannot convert");
 		return -EINVAL;
 	}
 
@@ -366,23 +366,23 @@ static int st730x_write(const struct device *dev, const uint16_t x, const uint16
 	uint8_t y_position[] = {y / ST730X_PPYA, (y + desc->height) / ST730X_PPYA - 1};
 
 	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is not width");
+		LOG_ERROR("Pitch is not width");
 		return -EINVAL;
 	}
 
 	buf_len = MIN(desc->buf_size, desc->height * desc->width / ST730X_PPB);
 	if (buf == NULL || buf_len == 0U) {
-		LOG_ERR("Display buffer is not available");
+		LOG_ERROR("Display buffer is not available");
 		return -EINVAL;
 	}
 
 	if (x % ST730X_PPXA || desc->width % ST730X_PPXA) {
-		LOG_ERR("X coordinate and size must be aligned by 12 pixels");
+		LOG_ERROR("X coordinate and size must be aligned by 12 pixels");
 		return -EINVAL;
 	}
 
 	if (y % ST730X_PPYA || desc->height % ST730X_PPYA) {
-		LOG_ERR("Y coordinate and size must be aligned by 2 pixels");
+		LOG_ERROR("Y coordinate and size must be aligned by 2 pixels");
 		return -EINVAL;
 	}
 
@@ -446,7 +446,7 @@ static int st730x_set_pixel_format(const struct device *dev, const enum display_
 	if (pf == PIXEL_FORMAT_MONO01) {
 		return 0;
 	}
-	LOG_ERR("Unsupported pixel format");
+	LOG_ERROR("Unsupported pixel format");
 
 	return -ENOTSUP;
 }
@@ -490,19 +490,19 @@ static int st730x_init(const struct device *dev)
 	LOG_DBG("Initializing device");
 
 	if (!device_is_ready(config->mipi_dev)) {
-		LOG_ERR("MIPI Device not ready!");
+		LOG_ERROR("MIPI Device not ready!");
 		return -ENODEV;
 	}
 
 	err = mipi_dbi_reset(config->mipi_dev, ST730X_RESET_DELAY);
 	if (err < 0) {
-		LOG_ERR("Failed to reset device!");
+		LOG_ERROR("Failed to reset device!");
 		return err;
 	}
 
 	err = st730x_init_device(dev);
 	if (err < 0) {
-		LOG_ERR("Failed to initialize device! %d", err);
+		LOG_ERROR("Failed to initialize device! %d", err);
 		return err;
 	}
 

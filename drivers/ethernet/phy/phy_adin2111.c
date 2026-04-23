@@ -477,20 +477,18 @@ static int phy_adin2111_init(const struct device *dev)
 
 	ret = phy_adin2111_await_phy(dev);
 	if (ret < 0) {
-		LOG_ERR("PHY %u didn't come out of reset, %d",
-			cfg->phy_addr, ret);
+		LOG_ERROR("PHY %u didn't come out of reset, %d", cfg->phy_addr, ret);
 		return -ENODEV;
 	}
 
 	ret = phy_adin2111_id(dev, &phy_id);
 	if (ret < 0) {
-		LOG_ERR("Failed to read PHY %u ID, %d",
-			cfg->phy_addr, ret);
+		LOG_ERROR("Failed to read PHY %u ID, %d", cfg->phy_addr, ret);
 		return -ENODEV;
 	}
 
 	if (phy_id != ADIN2111_PHY_ID && phy_id != ADIN1110_PHY_ID && phy_id != ADIN1100_PHY_ID) {
-		LOG_ERR("PHY %u unexpected PHY ID %X", cfg->phy_addr, phy_id);
+		LOG_ERROR("PHY %u unexpected PHY ID %X", cfg->phy_addr, phy_id);
 		return -EINVAL;
 	}
 
@@ -525,7 +523,7 @@ static int phy_adin2111_init(const struct device *dev)
 	}
 
 	if (val & ADIN2111_PHY_CRSM_IRQ_STATUS_FATAL_ERR) {
-		LOG_ERR("PHY %u CRSM reports fatal system error", cfg->phy_addr);
+		LOG_ERROR("PHY %u CRSM reports fatal system error", cfg->phy_addr);
 		return -ENODEV;
 	}
 
@@ -566,8 +564,7 @@ static int phy_adin2111_init(const struct device *dev)
 		tx_24v_supported ? "supported" : "not supported");
 
 	if (!cfg->tx_24v & tx_24v_supported) {
-		LOG_ERR("PHY %u 2.4V mode supported, but not enabled",
-			cfg->phy_addr);
+		LOG_ERROR("PHY %u 2.4V mode supported, but not enabled", cfg->phy_addr);
 	}
 
 	/* config 2.4V auto-negotiation */
@@ -584,8 +581,7 @@ static int phy_adin2111_init(const struct device *dev)
 
 	if (cfg->tx_24v) {
 		if (!tx_24v_supported) {
-			LOG_ERR("PHY %u 2.4V mode enabled, but not supported",
-				cfg->phy_addr);
+			LOG_ERROR("PHY %u 2.4V mode enabled, but not supported", cfg->phy_addr);
 			return -EINVAL;
 		}
 

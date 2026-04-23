@@ -126,12 +126,12 @@ static int ipm_sedi_send(const struct device *dev,
 	/* check params, check status */
 	if ((msg_size > IPC_DATA_LEN_MAX) || ((msg_size > 0) && (msg == NULL)) ||
 	    ((drbl & BIT(IPC_BUSY_BIT)) == 0)) {
-		LOG_ERR("bad params when sending ipm msg on device: %p", dev);
+		LOG_ERROR("bad params when sending ipm msg on device: %p", dev);
 		return -EINVAL;
 	}
 
 	if (wait == 0) {
-		LOG_ERR("not support no wait mode when sending ipm msg");
+		LOG_ERROR("not support no wait mode when sending ipm msg");
 		return -ENOTSUP;
 	}
 
@@ -153,7 +153,7 @@ static int ipm_sedi_send(const struct device *dev,
 		sedi_ret = sedi_ipc_write_msg(device, (uint8_t *)msg,
 					 (uint32_t)msg_size);
 		if (sedi_ret != SEDI_DRIVER_OK) {
-			LOG_ERR("ipm write data fail on device: %p", dev);
+			LOG_ERROR("ipm write data fail on device: %p", dev);
 			ret = -EBUSY;
 			goto write_err;
 		}
@@ -164,7 +164,7 @@ static int ipm_sedi_send(const struct device *dev,
 	sedi_ret = sedi_ipc_write_dbl(device, drbl);
 
 	if (sedi_ret != SEDI_DRIVER_OK) {
-		LOG_ERR("ipm write doorbell fail on device: %p", dev);
+		LOG_ERROR("ipm write doorbell fail on device: %p", dev);
 		ret = -EBUSY;
 		goto func_out;
 	}
@@ -197,7 +197,7 @@ static void ipm_sedi_register_callback(const struct device *dev, ipm_callback_t 
 	struct ipm_sedi_context *ipm = dev->data;
 
 	if (cb == NULL) {
-		LOG_ERR("bad params when add ipm callback on device: %p", dev);
+		LOG_ERROR("bad params when add ipm callback on device: %p", dev);
 		return;
 	}
 
@@ -205,7 +205,7 @@ static void ipm_sedi_register_callback(const struct device *dev, ipm_callback_t 
 		ipm->rx_msg_notify_cb = cb;
 		ipm->rx_msg_notify_cb_data = user_data;
 	} else {
-		LOG_ERR("ipm rx callback already exists on device: %p", dev);
+		LOG_ERROR("ipm rx callback already exists on device: %p", dev);
 	}
 }
 
@@ -220,7 +220,7 @@ static void ipm_sedi_complete(const struct device *dev)
 
 	ret = sedi_ipc_send_ack_drbl(device, 0);
 	if (ret != SEDI_DRIVER_OK) {
-		LOG_ERR("ipm send ack drl fail on device: %p", dev);
+		LOG_ERROR("ipm send ack drl fail on device: %p", dev);
 	}
 
 	clear_ipm_dev_busy(dev, false);

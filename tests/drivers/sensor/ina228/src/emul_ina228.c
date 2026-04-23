@@ -120,7 +120,7 @@ static int ina228_emul_i2c_write(const struct emul *target, struct i2c_msg msgs[
 
 	/* Write 16 bits */
 	if (msgs[0].len != 3) {
-		LOG_ERR("Write messages should contain 3 bytes, has %d bytes", msgs[0].len);
+		LOG_ERROR("Write messages should contain 3 bytes, has %d bytes", msgs[0].len);
 		return -EIO;
 	}
 
@@ -128,20 +128,20 @@ static int ina228_emul_i2c_write(const struct emul *target, struct i2c_msg msgs[
 	write_value = sys_get_be16(&msgs[0].buf[1]);
 
 	if (reg_addr >= NUM_REGS) {
-		LOG_ERR("Invalid register address for write: %02X", reg_addr);
+		LOG_ERROR("Invalid register address for write: %02X", reg_addr);
 		return -EIO;
 	}
 	expected_register_size = register_sizes[reg_addr];
 	is_write_allowed = write_allowed[reg_addr];
 
 	if (!is_write_allowed) {
-		LOG_ERR("Register %u is read-only", reg_addr);
+		LOG_ERROR("Register %u is read-only", reg_addr);
 		return -EIO;
 	}
 
 	if (expected_register_size != sizeof(uint16_t)) {
-		LOG_ERR("Illegal to write to register %u, as the register has size %u bytes",
-			reg_addr, expected_register_size);
+		LOG_ERROR("Illegal to write to register %u, as the register has size %u bytes",
+			  reg_addr, expected_register_size);
 		return -EIO;
 	}
 
@@ -165,13 +165,13 @@ static int ina228_emul_i2c_read(const struct emul *target, struct i2c_msg msgs[]
 	struct ina228_emul_data *data = (struct ina228_emul_data *)target->data;
 
 	if (!(msgs[1].flags & I2C_MSG_READ)) {
-		LOG_ERR("The second I2C message should be of type read");
+		LOG_ERROR("The second I2C message should be of type read");
 		return -EIO;
 	}
 	if (msgs[0].len != 1) {
-		LOG_ERR("First message for read should have 1 byte for register address, but has "
-			"%d bytes",
-			msgs[0].len);
+		LOG_ERROR("First message for read should have 1 byte for register address, but has "
+			  "%d bytes",
+			  msgs[0].len);
 		return -EIO;
 	}
 
@@ -179,13 +179,13 @@ static int ina228_emul_i2c_read(const struct emul *target, struct i2c_msg msgs[]
 	reg_addr = msgs[0].buf[0];
 	if ((reg_addr >= NUM_REGS) && (reg_addr != INA237_REG_MANUFACTURER_ID) &&
 	    (reg_addr != INA228_REG_DEVICE_ID)) {
-		LOG_ERR("Invalid register address for read: %u", reg_addr);
+		LOG_ERROR("Invalid register address for read: %u", reg_addr);
 		return -EIO;
 	}
 
 	if (reg_addr == INA237_REG_MANUFACTURER_ID) {
 		if (read_len != sizeof(uint16_t)) {
-			LOG_ERR("Invalid read size for MANUFACTURER_ID: %02X", read_len);
+			LOG_ERROR("Invalid read size for MANUFACTURER_ID: %02X", read_len);
 			return -EIO;
 		}
 		sys_put_be16(0x5449, msgs[1].buf); /* Value from data sheet */
@@ -195,7 +195,7 @@ static int ina228_emul_i2c_read(const struct emul *target, struct i2c_msg msgs[]
 
 	if (reg_addr == INA228_REG_DEVICE_ID) {
 		if (read_len != sizeof(uint16_t)) {
-			LOG_ERR("Invalid read size for DEVICE_ID: %u", read_len);
+			LOG_ERROR("Invalid read size for DEVICE_ID: %u", read_len);
 			return -EIO;
 		}
 		sys_put_be16(0x2281, msgs[1].buf); /* Value from data sheet */
@@ -205,7 +205,8 @@ static int ina228_emul_i2c_read(const struct emul *target, struct i2c_msg msgs[]
 
 	expected_register_size = register_sizes[reg_addr];
 	if (read_len != expected_register_size) {
-		LOG_ERR("Invalid read size for register %u: Register is %u bytes, but asked for %u "
+		LOG_ERROR(
+			"Invalid read size for register %u: Register is %u bytes, but asked for %u "
 			"bytes",
 			reg_addr, expected_register_size, read_len);
 		return -EIO;
@@ -232,7 +233,7 @@ static int ina228_emul_i2c_read(const struct emul *target, struct i2c_msg msgs[]
 		return 0;
 	}
 
-	LOG_ERR("Invalid read size for register %u: %u bytes", reg_addr, read_len);
+	LOG_ERROR("Invalid read size for register %u: %u bytes", reg_addr, read_len);
 	return -EIO;
 }
 
@@ -240,12 +241,12 @@ static int ina228_emul_transfer_i2c(const struct emul *target, struct i2c_msg ms
 				    int addr)
 {
 	if (!msgs || num_msgs < 1 || num_msgs > 2) {
-		LOG_ERR("Invalid number of I2C messages: %d", num_msgs);
+		LOG_ERROR("Invalid number of I2C messages: %d", num_msgs);
 		return -EIO;
 	}
 
 	if (msgs[0].flags & I2C_MSG_READ) {
-		LOG_ERR("The first I2C message should be write");
+		LOG_ERROR("The first I2C message should be write");
 		return -EIO;
 	}
 

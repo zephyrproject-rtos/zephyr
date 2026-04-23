@@ -188,7 +188,7 @@ int nxp_flexio_child_attach(const struct device *dev,
 		int shifter_idx = mcux_flexio_child_take_shifter_idx(dev);
 
 		if (shifter_idx < 0) {
-			LOG_ERR("Failed to take shifter index: %d", shifter_idx);
+			LOG_ERROR("Failed to take shifter index: %d", shifter_idx);
 			return shifter_idx;
 		}
 		child_res->shifter_index[i] = shifter_idx;
@@ -200,7 +200,7 @@ int nxp_flexio_child_attach(const struct device *dev,
 		int timer_idx = mcux_flexio_child_take_timer_idx(dev);
 
 		if (timer_idx < 0) {
-			LOG_ERR("Failed to take timer index: %d", timer_idx);
+			LOG_ERROR("Failed to take timer index: %d", timer_idx);
 			return timer_idx;
 		}
 		child_res->timer_index[i] = timer_idx;

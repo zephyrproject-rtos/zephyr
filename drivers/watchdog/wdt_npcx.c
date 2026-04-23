@@ -119,7 +119,7 @@ static inline int wdt_t0out_reload(const struct device *dev)
 		if (k_uptime_get() - st > NPCX_T0CSR_RST_CLEAR_TIMEOUT) {
 			/* RST bit is still set? */
 			if (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_RST)) {
-				LOG_ERR("Timeout: reload T0 timer!");
+				LOG_ERROR("Timeout: reload T0 timer!");
 				return -ETIMEDOUT;
 			}
 		}
@@ -139,7 +139,7 @@ static inline int wdt_wait_stopped(const struct device *dev)
 		if (k_uptime_get() - st > NPCX_WATCHDOG_STOP_TIMEOUT) {
 			/* WD_RUN bit is still set? */
 			if (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_WD_RUN)) {
-				LOG_ERR("Timeout: stop watchdog timer!");
+				LOG_ERROR("Timeout: stop watchdog timer!");
 				return -ETIMEDOUT;
 			}
 		}
@@ -233,17 +233,17 @@ static int wdt_npcx_setup(const struct device *dev, uint8_t options)
 	npcx_miwu_irq_disable(&config->t0out);
 
 	if (!data->timeout_installed) {
-		LOG_ERR("No valid WDT timeout installed");
+		LOG_ERROR("No valid WDT timeout installed");
 		return -EINVAL;
 	}
 
 	if (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_WD_RUN)) {
-		LOG_ERR("WDT timer is busy");
+		LOG_ERROR("WDT timer is busy");
 		return -EBUSY;
 	}
 
 	if ((options & WDT_OPT_PAUSE_IN_SLEEP) != 0) {
-		LOG_ERR("WDT_OPT_PAUSE_IN_SLEEP is not supported");
+		LOG_ERROR("WDT_OPT_PAUSE_IN_SLEEP is not supported");
 		return -ENOTSUP;
 	}
 

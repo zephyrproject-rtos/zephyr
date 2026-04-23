@@ -67,7 +67,7 @@ static void paa3905_submit_one_shot(const struct device *dev, struct rtio_iodev_
 
 	err = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (err) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -76,7 +76,7 @@ static void paa3905_submit_one_shot(const struct device *dev, struct rtio_iodev_
 
 	err = paa3905_encode(dev, channels, num_channels, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to encode sensor data");
+		LOG_ERROR("Failed to encode sensor data");
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -86,7 +86,7 @@ static void paa3905_submit_one_shot(const struct device *dev, struct rtio_iodev_
 	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->rtio.ctx);
 
 	if (!write_sqe || !read_sqe || !complete_sqe) {
-		LOG_ERR("Failed to acquire RTIO SQEs");
+		LOG_ERROR("Failed to acquire RTIO SQEs");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
@@ -126,7 +126,7 @@ static void paa3905_submit(const struct device *dev, struct rtio_iodev_sqe *iode
 	} else if (IS_ENABLED(CONFIG_PAA3905_STREAM)) {
 		paa3905_stream_submit(dev, iodev_sqe);
 	} else {
-		LOG_ERR("Streaming not supported");
+		LOG_ERROR("Streaming not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }
@@ -169,7 +169,7 @@ static int detection_mode_standard(const struct device *dev)
 					&paa3905_detection_mode_std[i].val,
 					1);
 		if (err) {
-			LOG_ERR("Failed to write detection mode standard");
+			LOG_ERROR("Failed to write detection mode standard");
 			return err;
 		}
 	}
@@ -193,14 +193,14 @@ static int paa3905_configure(const struct device *dev)
 	/* Configure registers for Standard detection mode */
 	err = detection_mode_standard(dev);
 	if (err) {
-		LOG_ERR("Failed to configure detection mode");
+		LOG_ERROR("Failed to configure detection mode");
 		return err;
 	}
 
 	val = cfg->resolution;
 	err = paa3905_bus_write(dev, REG_RESOLUTION, &val, 1);
 	if (err) {
-		LOG_ERR("Failed to configure resolution");
+		LOG_ERROR("Failed to configure resolution");
 		return err;
 	}
 
@@ -215,7 +215,7 @@ static int paa3905_configure(const struct device *dev)
 					&led_control_regs[i].val,
 					1);
 		if (err) {
-			LOG_ERR("Failed to write LED control reg");
+			LOG_ERROR("Failed to write LED control reg");
 			return err;
 		}
 	}
@@ -232,7 +232,7 @@ int paa3905_recover(const struct device *dev)
 	val = POWER_UP_RESET_VAL;
 	err = paa3905_bus_write(dev, REG_POWER_UP_RESET, &val, 1);
 	if (err) {
-		LOG_ERR("Failed to write Power up reset reg");
+		LOG_ERROR("Failed to write Power up reset reg");
 		return err;
 	}
 	/* As per datasheet, writing power-up reset requires 1-ms afterwards. */
@@ -241,7 +241,7 @@ int paa3905_recover(const struct device *dev)
 	/* Configure registers for Standard detection mode */
 	err = paa3905_configure(dev);
 	if (err) {
-		LOG_ERR("Failed to configure");
+		LOG_ERROR("Failed to configure");
 		return err;
 	}
 
@@ -260,10 +260,10 @@ static int paa3905_init(const struct device *dev)
 	/* Read Product ID */
 	err = paa3905_bus_read(dev, REG_PRODUCT_ID, &val, 1);
 	if (err) {
-		LOG_ERR("Failed to read Product ID");
+		LOG_ERROR("Failed to read Product ID");
 		return err;
 	} else if (val != PRODUCT_ID) {
-		LOG_ERR("Invalid Product ID: 0x%02X", val);
+		LOG_ERROR("Invalid Product ID: 0x%02X", val);
 		return -EIO;
 	}
 
@@ -271,7 +271,7 @@ static int paa3905_init(const struct device *dev)
 	val = POWER_UP_RESET_VAL;
 	err = paa3905_bus_write(dev, REG_POWER_UP_RESET, &val, 1);
 	if (err) {
-		LOG_ERR("Failed to write Power up reset reg");
+		LOG_ERROR("Failed to write Power up reset reg");
 		return err;
 	}
 	/* As per datasheet, writing power-up reset requires 1-ms afterwards. */
@@ -280,21 +280,21 @@ static int paa3905_init(const struct device *dev)
 	/* Read reg's 0x02-0x06 to clear motion data. */
 	err = paa3905_bus_read(dev, REG_MOTION, motion_data, sizeof(motion_data));
 	if (err) {
-		LOG_ERR("Failed to read motion data");
+		LOG_ERROR("Failed to read motion data");
 		return err;
 	}
 
 	if (IS_ENABLED(CONFIG_PAA3905_STREAM)) {
 		err = paa3905_stream_init(dev);
 		if (err) {
-			LOG_ERR("Failed to initialize streaming");
+			LOG_ERROR("Failed to initialize streaming");
 			return err;
 		}
 	}
 
 	err = paa3905_configure(dev);
 	if (err) {
-		LOG_ERR("Failed to configure");
+		LOG_ERROR("Failed to configure");
 		return err;
 	}
 

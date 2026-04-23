@@ -44,7 +44,7 @@ static ssize_t decode_payload_length(struct net_buf_simple *buf)
 	 * minus 3 bytes for the length field itself
 	 */
 	if (buflen > UINT16_MAX) {
-		LOG_ERR("Message too large");
+		LOG_ERROR("Message too large");
 		return -EFBIG;
 	}
 
@@ -55,12 +55,12 @@ static ssize_t decode_payload_length(struct net_buf_simple *buf)
 	}
 
 	if (length != buflen) {
-		LOG_ERR("Message length %zu != buffer size %zu", length, buflen);
+		LOG_ERROR("Message length %zu != buffer size %zu", length, buflen);
 		return -EPROTO;
 	}
 
 	if (length <= length_field_s) {
-		LOG_ERR("Message length %zu - contains no data?", length);
+		LOG_ERROR("Message length %zu - contains no data?", length);
 		return -ENODATA;
 	}
 
@@ -92,7 +92,7 @@ static void decode_data(struct net_buf_simple *buf, struct mqtt_sn_data *dest)
 static int decode_empty_message(struct net_buf_simple *buf)
 {
 	if (buf->len) {
-		LOG_ERR("Message not empty");
+		LOG_ERROR("Message not empty");
 		return -EPROTO;
 	}
 
@@ -334,7 +334,7 @@ int mqtt_sn_decode_msg(struct net_buf_simple *buf, struct mqtt_sn_param *params)
 
 	len = decode_payload_length(buf);
 	if (len < 0) {
-		LOG_ERR("Could not decode message: %d", (int)len);
+		LOG_ERROR("Could not decode message: %d", (int)len);
 		return (int)len;
 	}
 
@@ -384,7 +384,7 @@ int mqtt_sn_decode_msg(struct net_buf_simple *buf, struct mqtt_sn_param *params)
 	case MQTT_SN_MSG_TYPE_WILLMSGRESP:
 		return decode_msg_willmsgresp(buf, &params->params.willmsgresp);
 	default:
-		LOG_ERR("Got unexpected message type %d", params->type);
+		LOG_ERROR("Got unexpected message type %d", params->type);
 		return -EINVAL;
 	}
 }

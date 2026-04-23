@@ -472,7 +472,7 @@ static int settings_zms_save(struct settings_store *cs, const char *name, const 
 		/* We must create a new hash based on incremented collision_num */
 		if (collision_num > ZMS_MAX_COLLISIONS) {
 			/* At this step there is no more space to store hash values */
-			LOG_ERR("Maximum hash collisions reached");
+			LOG_ERROR("Maximum hash collisions reached");
 			return -ENOSPC;
 		}
 		cf->hash_collision_num = collision_num;

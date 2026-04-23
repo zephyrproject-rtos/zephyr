@@ -121,13 +121,13 @@ static int pwm_sifive_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	if (channel >= SF_NUMCHANNELS) {
-		LOG_ERR("The requested PWM channel %d is invalid\n", channel);
+		LOG_ERROR("The requested PWM channel %d is invalid\n", channel);
 		return -EINVAL;
 	}
 
 	/* Channel 0 sets the period, we can't output PWM with it */
 	if (channel == 0U) {
-		LOG_ERR("PWM channel 0 cannot be configured\n");
+		LOG_ERROR("PWM channel 0 cannot be configured\n");
 		return -ENOTSUP;
 	}
 
@@ -135,8 +135,7 @@ static int pwm_sifive_set_cycles(const struct device *dev, uint32_t channel,
 	count_max = (1 << (config->cmpwidth + SF_PWMCOUNT_MIN_WIDTH)) - 1;
 
 	if (period_cycles > count_max) {
-		LOG_ERR("Requested period is %d but maximum is %d\n",
-			period_cycles, count_max);
+		LOG_ERROR("Requested period is %d but maximum is %d\n", period_cycles, count_max);
 		return -EIO;
 	}
 
@@ -153,8 +152,8 @@ static int pwm_sifive_set_cycles(const struct device *dev, uint32_t channel,
 
 	/* Make sure that we can scale that much */
 	if (pwmscale > SF_PWMSCALEMASK) {
-		LOG_ERR("Requested period is %d but maximum is %d\n",
-			period_cycles, max_cmp_val << pwmscale);
+		LOG_ERROR("Requested period is %d but maximum is %d\n", period_cycles,
+			  max_cmp_val << pwmscale);
 		return -EIO;
 	}
 
@@ -186,13 +185,13 @@ static int pwm_sifive_get_cycles_per_sec(const struct device *dev,
 	const struct pwm_sifive_cfg *config;
 
 	if (dev == NULL) {
-		LOG_ERR("The device instance pointer was NULL\n");
+		LOG_ERROR("The device instance pointer was NULL\n");
 		return -EFAULT;
 	}
 
 	config = dev->config;
 	if (config == NULL) {
-		LOG_ERR("The device configuration is NULL\n");
+		LOG_ERROR("The device configuration is NULL\n");
 		return -EFAULT;
 	}
 

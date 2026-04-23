@@ -211,7 +211,7 @@ static int iproc_i2c_target_set_address(const struct device *dev, uint16_t addr)
 	uint32_t val;
 
 	if ((addr == 0) && (addr > I2C_MAX_TARGET_ADDR)) {
-		LOG_ERR("Invalid target address(0x%x) received", addr);
+		LOG_ERROR("Invalid target address(0x%x) received", addr);
 		return -EINVAL;
 	}
 
@@ -283,9 +283,9 @@ static int iproc_i2c_check_target_status(const struct device *dev)
 	val = (val >> S_CMD_STATUS_SHIFT) & S_CMD_STATUS_MASK;
 	if ((val == S_CMD_STATUS_TIMEOUT) || (val == S_CMD_STATUS_MASTER_ABORT)) {
 		if (val == S_CMD_STATUS_TIMEOUT) {
-			LOG_ERR("target random stretch time timeout");
+			LOG_ERROR("target random stretch time timeout");
 		} else if (val == S_CMD_STATUS_MASTER_ABORT) {
-			LOG_ERR("Master aborted read transaction");
+			LOG_ERROR("Master aborted read transaction");
 		}
 
 		/* re-initialize i2c for recovery */
@@ -462,7 +462,7 @@ static int iproc_i2c_target_register(const struct device *dev,
 	int ret = 0;
 
 	if (dd->target_cfg) {
-		LOG_ERR("Target already registered");
+		LOG_ERROR("Target already registered");
 		return -EBUSY;
 	}
 
@@ -471,8 +471,8 @@ static int iproc_i2c_target_register(const struct device *dev,
 
 	ret = iproc_i2c_target_init(dev, false);
 	if (ret < 0) {
-		LOG_ERR("Failed to register iproc_i2c(0x%x) as target, ret %d", (uint32_t)base,
-			ret);
+		LOG_ERROR("Failed to register iproc_i2c(0x%x) as target, ret %d", (uint32_t)base,
+			  ret);
 		return ret;
 	}
 
@@ -537,37 +537,37 @@ static int iproc_i2c_check_status(const struct device *dev, uint16_t dev_addr, s
 		break;
 
 	case M_CMD_STATUS_LOST_ARB:
-		LOG_ERR("lost bus arbitration");
+		LOG_ERROR("lost bus arbitration");
 		rc = -EAGAIN;
 		break;
 
 	case M_CMD_STATUS_NACK_ADDR:
-		LOG_ERR("NAK addr:0x%02x", dev_addr);
+		LOG_ERROR("NAK addr:0x%02x", dev_addr);
 		rc = -ENXIO;
 		break;
 
 	case M_CMD_STATUS_NACK_DATA:
-		LOG_ERR("NAK data");
+		LOG_ERROR("NAK data");
 		rc = -ENXIO;
 		break;
 
 	case M_CMD_STATUS_TIMEOUT:
-		LOG_ERR("bus timeout");
+		LOG_ERROR("bus timeout");
 		rc = -ETIMEDOUT;
 		break;
 
 	case M_CMD_STATUS_FIFO_UNDERRUN:
-		LOG_ERR("FIFO Under-run");
+		LOG_ERROR("FIFO Under-run");
 		rc = -ENXIO;
 		break;
 
 	case M_CMD_STATUS_RX_FIFO_FULL:
-		LOG_ERR("RX FIFO full");
+		LOG_ERROR("RX FIFO full");
 		rc = -ETIMEDOUT;
 		break;
 
 	default:
-		LOG_ERR("Unknown Error : 0x%x", val);
+		LOG_ERROR("Unknown Error : 0x%x", val);
 		iproc_i2c_enable_disable(dev, false);
 		iproc_i2c_common_init(dev);
 		iproc_i2c_enable_disable(dev, true);
@@ -589,7 +589,7 @@ static int iproc_i2c_configure(const struct device *dev, uint32_t dev_cfg_raw)
 	mem_addr_t base = DEV_BASE(dev);
 
 	if (I2C_ADDR_10_BITS & dev_cfg_raw) {
-		LOG_ERR("10-bit addressing not supported");
+		LOG_ERROR("10-bit addressing not supported");
 		return -ENOTSUP;
 	}
 
@@ -601,7 +601,7 @@ static int iproc_i2c_configure(const struct device *dev, uint32_t dev_cfg_raw)
 		sys_set_bit(base + TIM_CFG_OFFSET, TIM_CFG_MODE_400_SHIFT);
 		break;
 	default:
-		LOG_ERR("Only standard or Fast speed modes are supported");
+		LOG_ERROR("Only standard or Fast speed modes are supported");
 		return -ENOTSUP;
 	}
 
@@ -666,7 +666,7 @@ static int iproc_i2c_transfer_one(const struct device *dev, struct i2c_msg *msg,
 	int rc;
 
 	if (!!(sys_read32(base + M_CMD_OFFSET) & BIT(M_CMD_START_BUSY_SHIFT))) {
-		LOG_ERR("Bus busy, prev xfer ongoing");
+		LOG_ERROR("Bus busy, prev xfer ongoing");
 		return -EBUSY;
 	}
 
@@ -777,12 +777,12 @@ static int iproc_i2c_transfer_multi(const struct device *dev, struct i2c_msg *ms
 	/* pre-check all msgs */
 	for (uint8_t i = 0; i < num_msgs; i++, msgs_chk++) {
 		if (!msgs_chk->buf) {
-			LOG_ERR("Invalid msg buffer");
+			LOG_ERROR("Invalid msg buffer");
 			return -EINVAL;
 		}
 
 		if (I2C_MSG_ADDR_10_BITS & msgs_chk->flags) {
-			LOG_ERR("10-bit addressing not supported");
+			LOG_ERROR("10-bit addressing not supported");
 			return -ENOTSUP;
 		}
 	}

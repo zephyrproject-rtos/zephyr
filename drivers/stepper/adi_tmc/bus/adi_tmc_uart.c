@@ -58,7 +58,7 @@ static int tmc_uart_send_byte_with_echo(const struct device *uart, uint8_t byte)
 		}
 	} while (err == -1 && !sys_timepoint_expired(end));
 
-	LOG_ERR("Echo mismatch or timeout: sent 0x%02X", byte);
+	LOG_ERROR("Echo mismatch or timeout: sent 0x%02X", byte);
 	return -EIO;
 }
 
@@ -79,7 +79,7 @@ int tmc_uart_write_register(const struct device *uart, uint8_t device_addr,
 	for (size_t i = 0; i < ADI_TMC_UART_DATAGRAM_SIZE; i++) {
 		err = tmc_uart_send_byte_with_echo(uart, buffer[i]);
 		if (err) {
-			LOG_ERR("Failed to send byte %d: 0x%02X", i, buffer[i]);
+			LOG_ERROR("Failed to send byte %d: 0x%02X", i, buffer[i]);
 			return err;
 		}
 	}
@@ -99,7 +99,7 @@ int tmc_uart_read_register(const struct device *uart, uint8_t device_addr, uint8
 	/* Get current UART configuration */
 	err = uart_config_get(uart, &uart_cfg);
 	if (err) {
-		LOG_ERR("Failed to get UART configuration: %d", err);
+		LOG_ERROR("Failed to get UART configuration: %d", err);
 		return -EIO;
 	}
 
@@ -116,7 +116,7 @@ int tmc_uart_read_register(const struct device *uart, uint8_t device_addr, uint8
 	for (size_t i = 0; i < ADI_TMC_UART_READ_REQ_DATAGRAM_SIZE; i++) {
 		err = tmc_uart_send_byte_with_echo(uart, write_buffer[i]);
 		if (err) {
-			LOG_ERR("Failed to send byte %d: 0x%02X", i, write_buffer[i]);
+			LOG_ERROR("Failed to send byte %d: 0x%02X", i, write_buffer[i]);
 			return -EIO;
 		}
 	}
@@ -133,13 +133,13 @@ int tmc_uart_read_register(const struct device *uart, uint8_t device_addr, uint8
 		} while (err == -1 && !sys_timepoint_expired(end));
 
 		if (err == -1) {
-			LOG_ERR("Timeout waiting for byte %d for register 0x%x", i,
-				register_address);
+			LOG_ERROR("Timeout waiting for byte %d for register 0x%x", i,
+				  register_address);
 			return -EAGAIN;
 		}
 		if (err < 0) {
-			LOG_ERR("Error %d receiving byte %d for register 0x%x", err, i,
-				register_address);
+			LOG_ERROR("Error %d receiving byte %d for register 0x%x", err, i,
+				  register_address);
 			return -EIO;
 		}
 	}
@@ -151,8 +151,8 @@ int tmc_uart_read_register(const struct device *uart, uint8_t device_addr, uint8
 	uint8_t crc = tmc_uart_calc_crc(read_buffer, ADI_TMC_UART_DATAGRAM_SIZE - 1U);
 
 	if (crc != read_buffer[7]) {
-		LOG_ERR("CRC mismatch for register 0x%x: got 0x%x, expected 0x%x", register_address,
-			read_buffer[7], crc);
+		LOG_ERROR("CRC mismatch for register 0x%x: got 0x%x, expected 0x%x",
+			  register_address, read_buffer[7], crc);
 		return -EIO;
 	}
 

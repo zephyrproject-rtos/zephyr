@@ -406,7 +406,7 @@ static int32_t cdns_i2c_configure(const struct device *dev, uint32_t dev_config)
 		i2c_speed = I2C_BITRATE_FAST_PLUS; /* 1 MHz */
 		break;
 	default:
-		LOG_ERR("Unsupported I2C speed requested: %u", i2c_speed);
+		LOG_ERROR("Unsupported I2C speed requested: %u", i2c_speed);
 		ret = -ERANGE;
 		goto out;
 	}
@@ -414,7 +414,7 @@ static int32_t cdns_i2c_configure(const struct device *dev, uint32_t dev_config)
 	/* Set I2C Speed (SCL frequency) */
 	ret = cdns_i2c_setclk(dev, i2c_speed);
 	if (ret != 0) {
-		LOG_ERR("Invalid SCL clock: %u Hz", i2c_speed);
+		LOG_ERROR("Invalid SCL clock: %u Hz", i2c_speed);
 		ret = -EIO;
 		goto out;
 	}
@@ -737,7 +737,7 @@ static void cdns_i2c_master_handle_receive_interrupt(const struct device *dev, u
 			}
 		} else {
 			/* Handle receive buffer overflow or unexpected condition */
-			LOG_ERR("I2C receive buffer overflow. Transfer aborted!");
+			LOG_ERROR("I2C receive buffer overflow. Transfer aborted!");
 			i2c_bus->err_status |= CDNS_I2C_IXR_TO;
 			break;
 		}
@@ -1205,7 +1205,7 @@ static int32_t cdns_i2c_master_handle_repeated_start(const struct device *dev, s
 	 */
 	for (uint8_t count = 0; count < num_msgs - 1; count++) {
 		if (msgs[count].flags & I2C_MSG_READ) {
-			LOG_ERR("Can't do repeated start after a receive message");
+			LOG_ERROR("Can't do repeated start after a receive message");
 			return -EOPNOTSUPP;
 		}
 	}
@@ -1422,7 +1422,7 @@ static int32_t cdns_i2c_init(const struct device *dev)
 	/* Set the I2C clock frequency */
 	ret = cdns_i2c_setclk(dev, i2c_bus->i2c_clk);
 	if (ret != 0) {
-		LOG_ERR("Invalid SCL clock: %u Hz", i2c_bus->i2c_clk);
+		LOG_ERROR("Invalid SCL clock: %u Hz", i2c_bus->i2c_clk);
 		ret = -EINVAL;
 		goto out;
 	}

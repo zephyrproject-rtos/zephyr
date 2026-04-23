@@ -126,22 +126,22 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) != SPI_WORD_SIZE) {
-		LOG_ERR("Word size must be %d", SPI_WORD_SIZE);
+		LOG_ERROR("Word size must be %d", SPI_WORD_SIZE);
 		return -ENOTSUP;
 	}
 
 	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only supports single mode");
+		LOG_ERROR("Only supports single mode");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_LOCK_ON) {
-		LOG_ERR("Lock On not supported");
+		LOG_ERROR("Lock On not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB first not supported");
+		LOG_ERROR("LSB first not supported");
 		return -ENOTSUP;
 	}
 
@@ -160,16 +160,16 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	}
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Device mode not supported");
+		LOG_ERROR("Device mode not supported");
 		return -ENOTSUP;
 	}
 	if (config->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback mode not supported");
+		LOG_ERROR("Loopback mode not supported");
 		return -ENOTSUP;
 	}
 
 	if (cfg->clock_freq > AM_HAL_IOM_MAX_FREQ) {
-		LOG_ERR("Clock frequency too high");
+		LOG_ERROR("Clock frequency too high");
 		return -ENOTSUP;
 	}
 
@@ -325,7 +325,7 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 				ret = spi_ambiq_xfer_full_duplex(dev);
 				if (ret != 0) {
 					spi_ambiq_reset(dev);
-					LOG_ERR("SPI full-duplex comm error: %d", ret);
+					LOG_ERROR("SPI full-duplex comm error: %d", ret);
 					return ret;
 				}
 			}
@@ -337,7 +337,7 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 				ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_TX);
 				if (ret != 0) {
 					spi_ambiq_reset(dev);
-					LOG_ERR("SPI TX comm error: %d", ret);
+					LOG_ERROR("SPI TX comm error: %d", ret);
 					return ret;
 				}
 			}
@@ -348,7 +348,7 @@ static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *con
 				ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_RX);
 				if (ret != 0) {
 					spi_ambiq_reset(dev);
-					LOG_ERR("SPI Rx comm error: %d", ret);
+					LOG_ERROR("SPI Rx comm error: %d", ret);
 					return ret;
 				}
 			}
@@ -384,7 +384,7 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 	ret = spi_config(dev, config);
 
 	if (ret) {
-		LOG_ERR("spi_config failed: %d", ret);
+		LOG_ERROR("spi_config failed: %d", ret);
 		goto xfer_end;
 	}
 
@@ -433,7 +433,7 @@ static int spi_ambiq_init(const struct device *dev)
 	int ret = 0;
 
 	if (AM_HAL_STATUS_SUCCESS != am_hal_iom_initialize(cfg->inst_idx, &data->iom_handler)) {
-		LOG_ERR("Fail to initialize SPI\n");
+		LOG_ERROR("Fail to initialize SPI\n");
 		return -ENXIO;
 	}
 
@@ -442,7 +442,7 @@ static int spi_ambiq_init(const struct device *dev)
 	ret |= pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	ret |= spi_context_cs_configure_all(&data->ctx);
 	if (ret < 0) {
-		LOG_ERR("Fail to config SPI pins\n");
+		LOG_ERROR("Fail to config SPI pins\n");
 		goto end;
 	}
 
@@ -502,7 +502,7 @@ static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 	err = am_hal_iom_power_ctrl(data->iom_handler, status, true);
 
 	if (err != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("am_hal_iom_power_ctrl failed: %d", err);
+		LOG_ERROR("am_hal_iom_power_ctrl failed: %d", err);
 		return -EPERM;
 	} else {
 		return 0;

@@ -97,7 +97,7 @@ static void renesas_ra_rtc_callback(rtc_callback_args_t *p_args)
 	}
 #endif /* CONFIG_RTC_UPDATE */
 	else {
-		LOG_ERR("Invalid callback event");
+		LOG_ERROR("Invalid callback event");
 	}
 }
 #endif /* CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE */
@@ -151,7 +151,7 @@ static int rtc_renesas_ra_init(const struct device *dev)
 
 	fsp_err = R_RTC_Open(&data->fsp_ctrl, &data->fsp_cfg);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to initialize the device");
+		LOG_ERROR("Failed to initialize the device");
 		return -EIO;
 	}
 
@@ -172,7 +172,7 @@ static int rtc_renesas_ra_init(const struct device *dev)
 #ifdef CONFIG_RTC_UPDATE
 	fsp_err = R_RTC_PeriodicIrqRateSet(&data->fsp_ctrl, RTC_PERIODIC_IRQ_SELECT_1_SECOND);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to configure update interrupt");
+		LOG_ERROR("Failed to configure update interrupt");
 		return -EIO;
 	}
 #endif /* CONFIG_RTC_UPDATE */
@@ -188,23 +188,23 @@ static int rtc_renesas_ra_set_time(const struct device *dev, const struct rtc_ti
 	fsp_err_t fsp_err;
 
 	if (timeptr == NULL) {
-		LOG_ERR("No pointer is provided to set time");
+		LOG_ERROR("No pointer is provided to set time");
 		return -EINVAL;
 	}
 
 	if (timeptr->tm_year + TM_YEAR_REF < RTC_RENESAS_RA_YEAR_REF) {
-		LOG_ERR("RTC time exceeds HW capabilities. Year must be 2000-2099");
+		LOG_ERROR("RTC time exceeds HW capabilities. Year must be 2000-2099");
 		return -EINVAL;
 	}
 
 	if (!rtc_utils_validate_rtc_time(timeptr, RTC_RENESAS_RA_SUPPORTED_ALARM_FIELDS)) {
-		LOG_ERR("RTC time is invalid");
+		LOG_ERROR("RTC time is invalid");
 		return -EINVAL;
 	}
 
 	fsp_err = R_RTC_CalendarTimeSet(&data->fsp_ctrl, (struct tm *const)timeptr);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Time set operation was not successful.");
+		LOG_ERROR("Time set operation was not successful.");
 		return -EIO;
 	}
 
@@ -218,7 +218,7 @@ static int rtc_renesas_ra_get_time(const struct device *dev, struct rtc_time *ti
 	rtc_info_t rtc_info;
 
 	if (timeptr == NULL) {
-		LOG_ERR("Pointer provided to store the requested time is NULL");
+		LOG_ERROR("Pointer provided to store the requested time is NULL");
 		return -EINVAL;
 	}
 
@@ -228,7 +228,7 @@ static int rtc_renesas_ra_get_time(const struct device *dev, struct rtc_time *ti
 	}
 
 	if (rtc_info.status != RTC_STATUS_RUNNING) {
-		LOG_ERR("RTC time has not been set");
+		LOG_ERROR("RTC time has not been set");
 		return -ENODATA;
 	}
 
@@ -252,12 +252,12 @@ static int rtc_renesas_ra_alarm_get_supported_fields(const struct device *dev, u
 	const struct rtc_renesas_ra_config *config = dev->config;
 
 	if (mask == NULL) {
-		LOG_ERR("Mask pointer is NULL");
+		LOG_ERROR("Mask pointer is NULL");
 		return -EINVAL;
 	}
 
 	if (id > config->alarms_count) {
-		LOG_ERR("Invalid alarm ID %d", id);
+		LOG_ERROR("Invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -277,23 +277,23 @@ static int rtc_renesas_ra_alarm_set_time(const struct device *dev, uint16_t id, 
 	rtc_alarm_time_t fsp_alarm_cfg;
 
 	if ((timeptr == NULL) && (mask != 0)) {
-		LOG_ERR("No pointer is provided to set alarm");
+		LOG_ERROR("No pointer is provided to set alarm");
 		return -EINVAL;
 	}
 
 	if (id > config->alarms_count) {
-		LOG_ERR("Invalid alarm ID %d", id);
+		LOG_ERROR("Invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
 	if (mask & ~RTC_RENESAS_RA_SUPPORTED_ALARM_FIELDS) {
-		LOG_ERR("Invalid alarm mask");
+		LOG_ERROR("Invalid alarm mask");
 		return -EINVAL;
 	}
 
 	if (mask > 0) {
 		if (!rtc_utils_validate_rtc_time(timeptr, mask)) {
-			LOG_ERR("Invalid alarm fields values");
+			LOG_ERROR("Invalid alarm fields values");
 			return -EINVAL;
 		}
 
@@ -317,7 +317,7 @@ static int rtc_renesas_ra_alarm_set_time(const struct device *dev, uint16_t id, 
 
 	fsp_err = R_RTC_CalendarAlarmSet(&data->fsp_ctrl, &fsp_alarm_cfg);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Alarm time set is not successful!");
+		LOG_ERROR("Alarm time set is not successful!");
 		return -EIO;
 	}
 
@@ -333,18 +333,18 @@ static int rtc_renesas_ra_alarm_get_time(const struct device *dev, uint16_t id, 
 	rtc_alarm_time_t fsp_alarm_cfg;
 
 	if ((mask == NULL) || (timeptr == NULL)) {
-		LOG_ERR("No pointer is provided to store the requested alarm time/mask");
+		LOG_ERROR("No pointer is provided to store the requested alarm time/mask");
 		return -EINVAL;
 	}
 
 	if (id > config->alarms_count) {
-		LOG_ERR("Invalid alarm ID %d", id);
+		LOG_ERROR("Invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
 	fsp_err = R_RTC_CalendarAlarmGet(&data->fsp_ctrl, &fsp_alarm_cfg);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Alarm time get is not successful!");
+		LOG_ERROR("Alarm time get is not successful!");
 		return -EIO;
 	}
 
@@ -396,7 +396,7 @@ static int rtc_renesas_ra_alarm_set_callback(const struct device *dev, uint16_t 
 	unsigned int key;
 
 	if (id > config->alarms_count) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -416,7 +416,7 @@ static int rtc_renesas_ra_alarm_is_pending(const struct device *dev, uint16_t id
 	int ret;
 
 	if (!(id < config->alarms_count)) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -499,7 +499,7 @@ static int rtc_renesas_ra_set_calibration(const struct device *dev, int32_t cali
 
 		if ((adjustment_cycles_ten_seconds > RTC_RENESAS_RA_MAX_ERROR_ADJUSTMENT_VALUE) &&
 		    (adjustment_cycles_one_minute > RTC_RENESAS_RA_MAX_ERROR_ADJUSTMENT_VALUE)) {
-			LOG_ERR("Calibration out of HW range");
+			LOG_ERROR("Calibration out of HW range");
 			return -EINVAL;
 		}
 

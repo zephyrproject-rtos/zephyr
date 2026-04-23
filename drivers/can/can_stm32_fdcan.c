@@ -417,14 +417,14 @@ static int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 		if (clock_control_get_rate(clk,
 			 (clock_control_subsys_t) &stm32fd_cfg->pclken[1],
 			  &rate_tmp) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
+			LOG_ERROR("Failed call clock_control_get_rate(pclk[1])");
 			return -EIO;
 		}
 	} else {
 		if (clock_control_get_rate(clk,
 			 (clock_control_subsys_t) &stm32fd_cfg->pclken[0],
 			  &rate_tmp) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclk[0])");
+			LOG_ERROR("Failed call clock_control_get_rate(pclk[0])");
 			return -EIO;
 		}
 	}
@@ -450,7 +450,7 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 				(clock_control_subsys_t)&stm32fd_cfg->pclken[1],
 				NULL);
 		if (ret < 0) {
-			LOG_ERR("Could not select can_stm32fd domain clock");
+			LOG_ERROR("Could not select can_stm32fd domain clock");
 			return ret;
 		}
 	}
@@ -478,13 +478,13 @@ static int can_stm32fd_init(const struct device *dev)
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(stm32fd_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("CAN pinctrl setup failed (%d)", ret);
+		LOG_ERROR("CAN pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
 	ret = can_stm32fd_clock_enable(dev);
 	if (ret < 0) {
-		LOG_ERR("Could not turn on CAN clock (%d)", ret);
+		LOG_ERROR("Could not turn on CAN clock (%d)", ret);
 		return ret;
 	}
 
@@ -519,20 +519,20 @@ static int can_stm32fd_init(const struct device *dev)
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	if (stm32fd_cfg->external_timestamp_counter_dev != NULL) {
 		if (!device_is_ready(stm32fd_cfg->external_timestamp_counter_dev)) {
-			LOG_ERR("Timestamp counter device not ready");
+			LOG_ERROR("Timestamp counter device not ready");
 			return -ENODEV;
 		}
 
 		ret = counter_start(stm32fd_cfg->external_timestamp_counter_dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to start timestamp counter (%d)", ret);
+			LOG_ERROR("Failed to start timestamp counter (%d)", ret);
 			return ret;
 		}
 
 		/* Use External Timestamp counter (TSS=2) */
 		ret = can_mcan_write_reg(dev, CAN_MCAN_TSCC, FIELD_PREP(CAN_MCAN_TSCC_TSS, 0x2));
 		if (ret != 0) {
-			LOG_ERR("Failed to write TSCC register");
+			LOG_ERROR("Failed to write TSCC register");
 			return ret;
 		}
 	}

@@ -130,7 +130,7 @@ static int crypto_cc23x0_dma_enable(const struct device *dev, bool *dma_enabled)
 
 	ret = pm_device_runtime_get(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to resume DMA");
+		LOG_ERROR("Failed to resume DMA");
 		*dma_enabled = false;
 	} else {
 		*dma_enabled = true;
@@ -219,13 +219,13 @@ static int crypto_cc23x0_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *
 
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
 	if (CRYPTO_CC23_IS_INVALID_DATA_LEN_DMA(pkt->in_len)) {
-		LOG_ERR("In DMA mode, data length must be a multiple of %d", AES_BLOCK_SIZE);
+		LOG_ERROR("In DMA mode, data length must be a multiple of %d", AES_BLOCK_SIZE);
 		return -EINVAL;
 	}
 #endif
 
 	if (pkt->out_buf_max < ROUND_UP(pkt->in_len, AES_BLOCK_SIZE)) {
-		LOG_ERR("Output buffer too small");
+		LOG_ERROR("Output buffer too small");
 		return -EINVAL;
 	}
 
@@ -261,13 +261,13 @@ static int crypto_cc23x0_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_a, &dma_cfg_cha);
 	if (ret) {
-		LOG_ERR("Failed to configure DMA CHA");
+		LOG_ERROR("Failed to configure DMA CHA");
 		goto cleanup;
 	}
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_b, &dma_cfg_chb);
 	if (ret) {
-		LOG_ERR("Failed to configure DMA CHB");
+		LOG_ERROR("Failed to configure DMA CHB");
 		goto cleanup;
 	}
 
@@ -392,13 +392,13 @@ static int crypto_cc23x0_ctr(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uin
 
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
 	if (CRYPTO_CC23_IS_INVALID_DATA_LEN_DMA(pkt->in_len)) {
-		LOG_ERR("In DMA mode, data length must be a multiple of %d", AES_BLOCK_SIZE);
+		LOG_ERROR("In DMA mode, data length must be a multiple of %d", AES_BLOCK_SIZE);
 		return -EINVAL;
 	}
 #endif
 
 	if (pkt->out_buf_max < ROUND_UP(pkt->in_len, AES_BLOCK_SIZE)) {
-		LOG_ERR("Output buffer too small");
+		LOG_ERROR("Output buffer too small");
 		return -EINVAL;
 	}
 
@@ -433,13 +433,13 @@ static int crypto_cc23x0_ctr(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uin
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_a, &dma_cfg_cha);
 	if (ret) {
-		LOG_ERR("Failed to configure DMA CHA");
+		LOG_ERROR("Failed to configure DMA CHA");
 		goto cleanup;
 	}
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_b, &dma_cfg_chb);
 	if (ret) {
-		LOG_ERR("Failed to configure DMA CHB");
+		LOG_ERROR("Failed to configure DMA CHB");
 		goto cleanup;
 	}
 
@@ -553,13 +553,13 @@ static int crypto_cc23x0_cmac(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
 	if (CRYPTO_CC23_IS_INVALID_DATA_LEN_DMA(pkt->in_len)) {
-		LOG_ERR("In DMA mode, data length must be a multiple of %d", AES_BLOCK_SIZE);
+		LOG_ERROR("In DMA mode, data length must be a multiple of %d", AES_BLOCK_SIZE);
 		return -EINVAL;
 	}
 #endif
 
 	if (pkt->out_buf_max < AES_BLOCK_SIZE) {
-		LOG_ERR("Output buffer too small");
+		LOG_ERROR("Output buffer too small");
 		return -EINVAL;
 	}
 
@@ -596,7 +596,7 @@ static int crypto_cc23x0_cmac(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 
 		ret = dma_config(cfg->dma_dev, cfg->dma_channel_a, &dma_cfg_cha);
 		if (ret) {
-			LOG_ERR("Failed to configure DMA CHA");
+			LOG_ERROR("Failed to configure DMA CHA");
 			goto out;
 		}
 
@@ -629,7 +629,7 @@ static int crypto_cc23x0_cmac(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 
 		ret = dma_config(cfg->dma_dev, cfg->dma_channel_a, &dma_cfg_cha);
 		if (ret) {
-			LOG_ERR("Failed to configure DMA CHA");
+			LOG_ERROR("Failed to configure DMA CHA");
 			goto out;
 		}
 
@@ -662,7 +662,7 @@ static int crypto_cc23x0_cmac(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_a, &dma_cfg_cha);
 	if (ret) {
-		LOG_ERR("Failed to configure DMA CHA");
+		LOG_ERROR("Failed to configure DMA CHA");
 		goto out;
 	}
 
@@ -727,24 +727,24 @@ static int crypto_cc23x0_ccm_check_param(struct cipher_ctx *ctx, struct cipher_a
 	uint16_t nonce_len = ctx->mode_params.ccm_info.nonce_len;
 
 	if (aead_op->pkt->out_buf_max < ROUND_UP(aead_op->pkt->in_len, AES_BLOCK_SIZE)) {
-		LOG_ERR("Output buffer too small");
+		LOG_ERROR("Output buffer too small");
 		return -EINVAL;
 	}
 
 	if (tag_len < CCM_CC23_TAG_SIZE_MIN || tag_len > CCM_CC23_TAG_SIZE_MAX || tag_len & 1) {
-		LOG_ERR("CCM parameter invalid (tag_len must be an even value from %d to %d)",
-			CCM_CC23_TAG_SIZE_MIN, CCM_CC23_TAG_SIZE_MAX);
+		LOG_ERROR("CCM parameter invalid (tag_len must be an even value from %d to %d)",
+			  CCM_CC23_TAG_SIZE_MIN, CCM_CC23_TAG_SIZE_MAX);
 		return -EINVAL;
 	}
 
 	if (nonce_len < CCM_CC23_NONCE_LEN_SIZE_MIN || nonce_len > CCM_CC23_NONCE_LEN_SIZE_MAX) {
-		LOG_ERR("CCM parameter invalid (nonce_len must be a value from %d to %d)",
-			CCM_CC23_NONCE_LEN_SIZE_MIN, CCM_CC23_NONCE_LEN_SIZE_MAX);
+		LOG_ERROR("CCM parameter invalid (nonce_len must be a value from %d to %d)",
+			  CCM_CC23_NONCE_LEN_SIZE_MIN, CCM_CC23_NONCE_LEN_SIZE_MAX);
 		return -EINVAL;
 	}
 
 	if (ad_len > CCM_CC23_AD_DATA_SIZE_MAX) {
-		LOG_ERR("CCM parameter invalid (ad_len max = %d)", CCM_CC23_AD_DATA_SIZE_MAX);
+		LOG_ERROR("CCM parameter invalid (ad_len max = %d)", CCM_CC23_AD_DATA_SIZE_MAX);
 		return -EINVAL;
 	}
 
@@ -968,7 +968,7 @@ static int crypto_cc23x0_ccm_decrypt(struct cipher_ctx *ctx,
 		return 0;
 	}
 
-	LOG_ERR("Invalid tag");
+	LOG_ERROR("Invalid tag");
 	ret = -EINVAL;
 
 clear_out_buf:
@@ -984,29 +984,29 @@ static int crypto_cc23x0_session_setup(const struct device *dev,
 				       enum cipher_op op_type)
 {
 	if (ctx->flags & ~(CRYPTO_CC23_CAP)) {
-		LOG_ERR("Unsupported feature");
+		LOG_ERROR("Unsupported feature");
 		return -ENOTSUP;
 	}
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		LOG_ERR("Unsupported algo");
+		LOG_ERROR("Unsupported algo");
 		return -ENOTSUP;
 	}
 
 	if (mode != CRYPTO_CIPHER_MODE_ECB &&
 	    mode != CRYPTO_CIPHER_MODE_CTR &&
 	    mode != CRYPTO_CIPHER_MODE_CCM) {
-		LOG_ERR("Unsupported mode");
+		LOG_ERROR("Unsupported mode");
 		return -ENOTSUP;
 	}
 
 	if (ctx->keylen != 16U) {
-		LOG_ERR("%u key size is not supported", ctx->keylen);
+		LOG_ERROR("%u key size is not supported", ctx->keylen);
 		return -ENOTSUP;
 	}
 
 	if (!ctx->key.bit_stream) {
-		LOG_ERR("No key provided");
+		LOG_ERROR("No key provided");
 		return -EINVAL;
 	}
 
@@ -1027,7 +1027,7 @@ static int crypto_cc23x0_session_setup(const struct device *dev,
 	} else {
 		switch (mode) {
 		case CRYPTO_CIPHER_MODE_ECB:
-			LOG_ERR("ECB decryption not supported by the hardware");
+			LOG_ERROR("ECB decryption not supported by the hardware");
 			return -ENOTSUP;
 		case CRYPTO_CIPHER_MODE_CTR:
 			ctx->ops.ctr_crypt_hndlr = crypto_cc23x0_ctr;
@@ -1093,7 +1093,7 @@ static int crypto_cc23x0_init(const struct device *dev)
 
 	ret = pm_device_runtime_enable(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to enable DMA runtime PM");
+		LOG_ERROR("Failed to enable DMA runtime PM");
 		return ret;
 	}
 #else

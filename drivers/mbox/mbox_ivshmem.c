@@ -47,7 +47,7 @@ static void ivshmem_mbox_event_loop_thread(void *arg, void *p2, void *p3)
 	int ret = ivshmem_register_handler(dev_cfg->ivshmem_dev, &sig, 0);
 
 	if (ret < 0) {
-		LOG_ERR("registering handlers must be supported: %d\n", ret);
+		LOG_ERROR("registering handlers must be supported: %d\n", ret);
 		k_panic();
 	}
 
@@ -85,7 +85,7 @@ static int ivshmem_mbox_register_callback(const struct device *dev, mbox_channel
 	struct ivshmem_mbox_data *dev_data = (struct ivshmem_mbox_data *)dev->data;
 
 	if (!cb) {
-		LOG_ERR("Must provide a callback");
+		LOG_ERROR("Must provide a callback");
 		return -EINVAL;
 	}
 

@@ -99,7 +99,7 @@ static int pwm_rz_mtu_set_cycles(const struct device *dev, uint32_t channel, uin
 	}
 
 	if (channel != RZ_PWM_MTIOCxA) {
-		LOG_ERR("Valid only for RZ_PWM_MTIOCxA pins");
+		LOG_ERROR("Valid only for RZ_PWM_MTIOCxA pins");
 		return -EINVAL;
 	}
 
@@ -189,7 +189,7 @@ static int pwm_rz_mtu_get_cycles_per_sec(const struct device *dev, uint32_t chan
 	fsp_err_t err;
 
 	if (!(channel == RZ_PWM_MTIOCxA || channel == RZ_PWM_MTIOCxB)) {
-		LOG_ERR("Valid only for RZ_PWM_MTIOCxA and RZ_PWM_MTIOCxB pins");
+		LOG_ERROR("Valid only for RZ_PWM_MTIOCxA and RZ_PWM_MTIOCxB pins");
 		return -EINVAL;
 	}
 
@@ -241,15 +241,15 @@ static int pwm_rz_mtu_configure_capture(const struct device *dev, uint32_t chann
 	fsp_err_t err;
 
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
-		LOG_ERR("No PWM capture type specified");
+		LOG_ERROR("No PWM capture type specified");
 		return -EINVAL;
 	}
 	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
+		LOG_ERROR("Cannot capture both period and pulse width");
 		return -ENOTSUP;
 	}
 	if (data->capture.is_busy) {
-		LOG_ERR("Capture already active on this pin");
+		LOG_ERROR("Capture already active on this pin");
 		return -EBUSY;
 	}
 
@@ -329,12 +329,12 @@ static int pwm_rz_mtu_enable_capture(const struct device *dev, uint32_t channel)
 	data->capture.capture_channel = channel;
 
 	if (data->capture.is_busy) {
-		LOG_ERR("Capture already active on this pin");
+		LOG_ERROR("Capture already active on this pin");
 		return -EBUSY;
 	}
 
 	if (!data->capture.callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
@@ -479,7 +479,7 @@ static int pwm_rz_mtu_init(const struct device *dev)
 
 	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
-		LOG_ERR("Failed to configure pins for PWM (%d)", err);
+		LOG_ERROR("Failed to configure pins for PWM (%d)", err);
 		return err;
 	}
 

@@ -359,7 +359,7 @@ static int st7796s_init(const struct device *dev)
 	/* Configure controller parameters */
 	ret = st7796s_lcd_config(dev);
 	if (ret < 0) {
-		LOG_ERR("Could not set LCD configuration (%d)", ret);
+		LOG_ERROR("Could not set LCD configuration (%d)", ret);
 		return ret;
 	}
 

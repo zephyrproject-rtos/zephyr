@@ -57,7 +57,7 @@ static int acmphs_renesas_get_output(const struct device *dev)
 		return 1;
 
 	case COMPARATOR_STATE_OUTPUT_DISABLED:
-		LOG_ERR("Need to set trigger to open comparator first");
+		LOG_ERROR("Need to set trigger to open comparator first");
 		return -EIO;
 	}
 

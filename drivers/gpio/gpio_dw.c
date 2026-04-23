@@ -191,27 +191,27 @@ static int gpio_dw_pin_interrupt_configure(const struct device *port,
 
 	/* Check for invalid pin number */
 	if (pin >= config->ngpios) {
-		LOG_ERR("Invalid pin number");
+		LOG_ERROR("Invalid pin number");
 		return -EINVAL;
 	}
 
 	/* Only PORT-A supports interrupts */
 	if (data_port != SWPORTA_DR) {
-		LOG_ERR("Only PORT-A supports interrupts");
+		LOG_ERROR("Only PORT-A supports interrupts");
 		return -ENOTSUP;
 	}
 
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		/* Check if GPIO port supports interrupts */
 		if (!dw_interrupt_support(config)) {
-			LOG_ERR("GPIO port does not support interrupts");
+			LOG_ERROR("GPIO port does not support interrupts");
 			return -ENOTSUP;
 		}
 
 		/* Interrupt to be enabled but pin is not set to input */
 		dir_reg = dw_read(base_addr, dir_port) & BIT(pin);
 		if (dir_reg != 0U) {
-			LOG_ERR("Pin is not set to input");
+			LOG_ERROR("Pin is not set to input");
 			return -EINVAL;
 		}
 	}
@@ -219,7 +219,7 @@ static int gpio_dw_pin_interrupt_configure(const struct device *port,
 	/* Does not support both edges */
 	if ((mode == GPIO_INT_MODE_EDGE) &&
 	    (trig == GPIO_INT_TRIG_BOTH)) {
-		LOG_ERR("Does not support both edges");
+		LOG_ERROR("Does not support both edges");
 		return -ENOTSUP;
 	}
 
@@ -484,13 +484,13 @@ static int gpio_dw_initialize(const struct device *port)
 
 	if (config->reset.dev != NULL) {
 		if (!device_is_ready(config->reset.dev)) {
-			LOG_ERR("Reset controller device not ready");
+			LOG_ERROR("Reset controller device not ready");
 			return -ENODEV;
 		}
 
 		ret = reset_line_toggle_dt(&config->reset);
 		if (ret != 0) {
-			LOG_ERR("GPIO reset failed");
+			LOG_ERROR("GPIO reset failed");
 			return ret;
 		}
 	}

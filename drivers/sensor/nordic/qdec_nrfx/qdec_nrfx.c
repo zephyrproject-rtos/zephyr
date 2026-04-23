@@ -184,7 +184,7 @@ static void qdec_nrfx_event_handler(nrfx_qdec_event_t event, void *p_context)
 		break;
 
 	default:
-		LOG_ERR("unhandled event (0x%x)", event.type);
+		LOG_ERROR("unhandled event (0x%x)", event.type);
 		break;
 	}
 }

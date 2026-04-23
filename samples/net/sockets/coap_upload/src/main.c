@@ -55,7 +55,7 @@ static void response_cb(const struct coap_client_response_data *data,
 	return;
 
 error:
-	LOG_ERR("Error during CoAP upload, result_code=%d", data->result_code);
+	LOG_ERROR("Error during CoAP upload, result_code=%d", data->result_code);
 	k_sem_give(&coap_done_sem);
 }
 
@@ -113,7 +113,7 @@ static int coap_upload_single(struct coap_client *client, int sock,
 
 	ret = coap_client_req(client, sock, NULL, request, NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to send CoAP request, err %d", ret);
+		LOG_ERROR("Failed to send CoAP request, err %d", ret);
 		return ret;
 	}
 
@@ -175,13 +175,13 @@ static void coap_upload(struct coap_client *client, struct sockaddr *sa,
 
 	sock = socket(sa->sa_family, SOCK_DGRAM, 0);
 	if (sock < 0) {
-		LOG_ERR("Failed to create socket, err %d", errno);
+		LOG_ERROR("Failed to create socket, err %d", errno);
 		return;
 	}
 
 	ret = connect(sock, sa, addrlen);
 	if (ret < 0) {
-		LOG_ERR("Failed to connect socket, err %d", errno);
+		LOG_ERROR("Failed to connect socket, err %d", errno);
 		goto out;
 
 	}
@@ -189,8 +189,8 @@ static void coap_upload(struct coap_client *client, struct sockaddr *sa,
 	ARRAY_FOR_EACH(requests, i) {
 		ret = coap_upload_single(client, sock, &requests[i]);
 		if (ret < 0) {
-			LOG_ERR("CoAP upload %s failed, err %d",
-				(char *)requests[i].user_data, ret);
+			LOG_ERROR("CoAP upload %s failed, err %d", (char *)requests[i].user_data,
+				  ret);
 			goto out;
 		}
 	}
@@ -210,7 +210,7 @@ int main(void)
 
 	ret = coap_client_init(&client, NULL);
 	if (ret) {
-		LOG_ERR("Failed to init CoAP client, err %d", ret);
+		LOG_ERROR("Failed to init CoAP client, err %d", ret);
 		return ret;
 	}
 

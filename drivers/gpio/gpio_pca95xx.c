@@ -139,8 +139,8 @@ static int read_port_regs(const struct device *dev, uint8_t reg,
 	ret = i2c_burst_read_dt(&config->bus, reg, (uint8_t *)&port_data,
 				sizeof(port_data));
 	if (ret != 0) {
-		LOG_ERR("PCA95XX[0x%X]: error reading register 0x%X (%d)",
-			config->bus.addr, reg, ret);
+		LOG_ERROR("PCA95XX[0x%X]: error reading register 0x%X (%d)", config->bus.addr, reg,
+			  ret);
 		return ret;
 	}
 
@@ -177,8 +177,9 @@ static int write_port_reg(const struct device *dev, uint8_t reg, uint8_t pin,
 	if (ret == 0) {
 		*cache = value;
 	} else {
-		LOG_ERR("PCA95XX[0x%X]: error writing to register 0x%X "
-			"(%d)", config->bus.addr, reg, ret);
+		LOG_ERROR("PCA95XX[0x%X]: error writing to register 0x%X "
+			  "(%d)",
+			  config->bus.addr, reg, ret);
 	}
 
 	return ret;
@@ -214,8 +215,9 @@ static int write_port_regs(const struct device *dev, uint8_t reg,
 	if (ret == 0) {
 		*cache = value;
 	} else {
-		LOG_ERR("PCA95XX[0x%X]: error writing to register 0x%X "
-			"(%d)", config->bus.addr, reg, ret);
+		LOG_ERROR("PCA95XX[0x%X]: error writing to register 0x%X "
+			  "(%d)",
+			  config->bus.addr, reg, ret);
 	}
 
 	return ret;
@@ -452,15 +454,15 @@ static int gpio_pca95xx_config(const struct device *dev,
 
 	ret = setup_pin_dir(dev, pin, flags);
 	if (ret) {
-		LOG_ERR("PCA95XX[0x%X]: error setting pin direction (%d)",
-			config->bus.addr, ret);
+		LOG_ERROR("PCA95XX[0x%X]: error setting pin direction (%d)", config->bus.addr, ret);
 		goto done;
 	}
 
 	ret = setup_pin_pullupdown(dev, pin, flags);
 	if (ret) {
-		LOG_ERR("PCA95XX[0x%X]: error setting pin pull up/down "
-			"(%d)", config->bus.addr, ret);
+		LOG_ERROR("PCA95XX[0x%X]: error setting pin pull up/down "
+			  "(%d)",
+			  config->bus.addr, ret);
 		goto done;
 	}
 
@@ -648,10 +650,8 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 	}
 
 	/* Check configured pin direction */
-	if ((mode != GPIO_INT_MODE_DISABLED) &&
-	    (BIT(pin) & drv_data->reg_cache.dir) != BIT(pin)) {
-		LOG_ERR("PCA95XX[0x%X]: output pin cannot trigger interrupt",
-			config->bus.addr);
+	if ((mode != GPIO_INT_MODE_DISABLED) && (BIT(pin) & drv_data->reg_cache.dir) != BIT(pin)) {
+		LOG_ERROR("PCA95XX[0x%X]: output pin cannot trigger interrupt", config->bus.addr);
 		return -ENOTSUP;
 	}
 
@@ -666,8 +666,8 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 
 		ret = update_int_mask_reg(dev, pin, reg_out);
 		if (ret != 0) {
-			LOG_ERR("PCA95XX[0x%X]: failed to update int mask (%d)",
-				config->bus.addr, ret);
+			LOG_ERROR("PCA95XX[0x%X]: failed to update int mask (%d)", config->bus.addr,
+				  ret);
 			goto err;
 		}
 	}
@@ -697,9 +697,9 @@ static int gpio_pca95xx_pin_interrupt_configure(const struct device *dev,
 				   GPIO_INT_EDGE_TO_ACTIVE :
 				   GPIO_INT_MODE_DISABLED);
 		if (ret != 0) {
-			LOG_ERR("PCA95XX[0x%X]: failed to configure interrupt "
-				"on pin %d (%d)", config->bus.addr,
-				config->int_gpio.pin, ret);
+			LOG_ERROR("PCA95XX[0x%X]: failed to configure interrupt "
+				  "on pin %d (%d)",
+				  config->bus.addr, config->int_gpio.pin, ret);
 			goto err;
 		}
 		drv_data->interrupt_active = active;
@@ -787,16 +787,15 @@ static int gpio_pca95xx_init(const struct device *dev)
 
 		/* Configure GPIO interrupt pin */
 		if (!gpio_is_ready_dt(&config->int_gpio)) {
-			LOG_ERR("PCA95XX[0x%X]: interrupt GPIO not ready",
-				config->bus.addr);
+			LOG_ERROR("PCA95XX[0x%X]: interrupt GPIO not ready", config->bus.addr);
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 		if (ret != 0) {
-			LOG_ERR("PCA95XX[0x%X]: failed to configure interrupt"
-				" pin %d (%d)", config->bus.addr,
-				config->int_gpio.pin, ret);
+			LOG_ERROR("PCA95XX[0x%X]: failed to configure interrupt"
+				  " pin %d (%d)",
+				  config->bus.addr, config->int_gpio.pin, ret);
 			return ret;
 		}
 
@@ -806,9 +805,9 @@ static int gpio_pca95xx_init(const struct device *dev)
 				   BIT(config->int_gpio.pin));
 		ret = gpio_add_callback(config->int_gpio.port, &drv_data->gpio_callback);
 		if (ret != 0) {
-			LOG_ERR("PCA95XX[0x%X]: failed to add interrupt callback for"
-				" pin %d (%d)", config->bus.addr,
-				config->int_gpio.pin, ret);
+			LOG_ERROR("PCA95XX[0x%X]: failed to add interrupt callback for"
+				  " pin %d (%d)",
+				  config->bus.addr, config->int_gpio.pin, ret);
 			return ret;
 		}
 	}

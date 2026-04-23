@@ -78,8 +78,8 @@ void z_vim_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 
 	if (irq > CONFIG_NUM_IRQS || prio > VIM_PRI_INT_MAX ||
 	    (flags != IRQ_TYPE_EDGE && flags != IRQ_TYPE_LEVEL)) {
-		LOG_ERR("%s: Invalid argument irq = %u prio = %u flags = %u\n",
-			__func__, irq, prio, flags);
+		LOG_ERROR("%s: Invalid argument irq = %u prio = %u flags = %u\n", __func__, irq,
+			  prio, flags);
 		return;
 	}
 
@@ -104,7 +104,7 @@ void z_vim_irq_enable(unsigned int irq)
 	uint32_t irq_group_num, irq_bit_num;
 
 	if (irq > CONFIG_NUM_IRQS) {
-		LOG_ERR("%s: Invalid irq number = %u\n", __func__, irq);
+		LOG_ERROR("%s: Invalid irq number = %u\n", __func__, irq);
 		return;
 	}
 
@@ -119,7 +119,7 @@ void z_vim_irq_disable(unsigned int irq)
 	uint32_t irq_group_num, irq_bit_num;
 
 	if (irq > CONFIG_NUM_IRQS) {
-		LOG_ERR("%s: Invalid irq number = %u\n", __func__, irq);
+		LOG_ERROR("%s: Invalid irq number = %u\n", __func__, irq);
 		return;
 	}
 
@@ -134,7 +134,7 @@ int z_vim_irq_is_enabled(unsigned int irq)
 	uint32_t irq_group_num, irq_bit_num, regval;
 
 	if (irq > CONFIG_NUM_IRQS) {
-		LOG_ERR("%s: Invalid irq number = %u\n", __func__, irq);
+		LOG_ERROR("%s: Invalid irq number = %u\n", __func__, irq);
 		return -EINVAL;
 	}
 
@@ -151,7 +151,7 @@ void z_vim_arm_enter_irq(int irq)
 	uint32_t irq_group_num, irq_bit_num;
 
 	if (irq > CONFIG_NUM_IRQS) {
-		LOG_ERR("%s: Invalid irq number = %u\n", __func__, irq);
+		LOG_ERROR("%s: Invalid irq number = %u\n", __func__, irq);
 		return;
 	}
 

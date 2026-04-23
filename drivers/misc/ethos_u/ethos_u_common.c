@@ -27,7 +27,7 @@ void *ethosu_mutex_create(void)
 
 	mutex = k_malloc(sizeof(*mutex));
 	if (mutex == NULL) {
-		LOG_ERR("Failed allocate mutex");
+		LOG_ERROR("Failed allocate mutex");
 		return NULL;
 	}
 
@@ -42,7 +42,7 @@ int ethosu_mutex_lock(void *mutex)
 
 	status = k_mutex_lock((struct k_mutex *)mutex, K_FOREVER);
 	if (status != 0) {
-		LOG_ERR("Failed to lock mutex with error - %d", status);
+		LOG_ERROR("Failed to lock mutex with error - %d", status);
 		return -1;
 	}
 
@@ -61,7 +61,7 @@ void *ethosu_semaphore_create(void)
 
 	sem = k_malloc(sizeof(*sem));
 	if (sem == NULL) {
-		LOG_ERR("Failed to allocate semaphore");
+		LOG_ERROR("Failed to allocate semaphore");
 		return NULL;
 	}
 
@@ -88,7 +88,7 @@ int ethosu_semaphore_take(void *sem, uint64_t timeout)
 		 * developer if necessary.
 		 */
 		if (status != -EAGAIN) {
-			LOG_ERR("Failed to take semaphore with error - %d", status);
+			LOG_ERROR("Failed to take semaphore with error - %d", status);
 		}
 		return -1;
 	}

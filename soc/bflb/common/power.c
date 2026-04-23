@@ -36,7 +36,7 @@ static void power_bflb_isr(const struct device *dev)
 	uint32_t tmp;
 
 	tmp = sys_read32(config->base_hbn + HBN_IRQ_STAT_OFFSET);
-	LOG_ERR("Unexpected Power Management Interrupt: %x", tmp);
+	LOG_ERROR("Unexpected Power Management Interrupt: %x", tmp);
 	sys_write32(tmp, config->base_hbn + HBN_IRQ_CLR_OFFSET);
 }
 

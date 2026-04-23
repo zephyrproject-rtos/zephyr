@@ -148,7 +148,7 @@ static int it51xxx_ps2_write(const struct device *dev, uint8_t value)
 	/* allow the ps2 controller to complete a rx transaction */
 	if (!WAIT_FOR(!it51xxx_ps2_bus_busy(dev), cfg->bus_busy_timeout_us,
 		      k_busy_wait(PS2_BUSY_TIMEOUT_UNIT_US))) {
-		LOG_ERR("failed to send ps2 data");
+		LOG_ERROR("failed to send ps2 data");
 		k_sem_give(&data->lock);
 		return -EBUSY;
 	}
@@ -174,7 +174,7 @@ static int it51xxx_ps2_write(const struct device *dev, uint8_t value)
 	enable_standby_state(false);
 
 	if (k_sem_take(&data->tx_sem, PS2_TRANSMIT_TIMEOUT) != 0) {
-		LOG_ERR("sw: tx timeout");
+		LOG_ERROR("sw: tx timeout");
 
 		it51xxx_ps2_inhibit_bus(dev, true);
 		data->xfer_status = -ETIMEDOUT;
@@ -249,7 +249,7 @@ static int it51xxx_ps2_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("failed to apply pinctrl, ret %d", ret);
+		LOG_ERROR("failed to apply pinctrl, ret %d", ret);
 		return ret;
 	}
 
@@ -282,20 +282,20 @@ static void it51xxx_ps2_isr(const struct device *dev)
 
 	if (int_status & XFER_ERROR_MASK) {
 		if (IS_BIT_SET(int_status, BIT_TIMEOUT_ERR)) {
-			LOG_ERR("isr: %s: timeout event occurs", xfer_is_tx ? "tx" : "rx");
+			LOG_ERROR("isr: %s: timeout event occurs", xfer_is_tx ? "tx" : "rx");
 
 			data->xfer_status = -ETIMEDOUT;
 			sys_write8(BIT(BIT_TIMEOUT_ERR), cfg->base + ITE_PS208_STATUS);
 		}
 
 		if (IS_BIT_SET(int_status, BIT_FRAME_ERR)) {
-			LOG_ERR("isr: %s: frame error occurs", xfer_is_tx ? "tx" : "rx");
+			LOG_ERROR("isr: %s: frame error occurs", xfer_is_tx ? "tx" : "rx");
 
 			data->xfer_status = -EPROTO;
 		}
 
 		if (IS_BIT_SET(int_status, BIT_PARITY_ERR)) {
-			LOG_ERR("isr: %s: parity error occurs", xfer_is_tx ? "tx" : "rx");
+			LOG_ERROR("isr: %s: parity error occurs", xfer_is_tx ? "tx" : "rx");
 
 			data->xfer_status = -EIO;
 		}
@@ -334,24 +334,24 @@ static inline int it51xxx_ps2_pm_action(const struct device *dev, enum pm_device
 	case PM_DEVICE_ACTION_RESUME:
 		ret = gpio_pin_interrupt_configure_dt(&cfg->clk_gpios, GPIO_INT_MODE_DISABLED);
 		if (ret) {
-			LOG_ERR("failed to disable clock-gpio wui, %d", ret);
+			LOG_ERROR("failed to disable clock-gpio wui, %d", ret);
 			return ret;
 		}
 		ret = gpio_pin_interrupt_configure_dt(&cfg->data_gpios, GPIO_INT_MODE_DISABLED);
 		if (ret) {
-			LOG_ERR("failed to disable data-gpio wui, %d", ret);
+			LOG_ERROR("failed to disable data-gpio wui, %d", ret);
 			return ret;
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = gpio_pin_interrupt_configure_dt(&cfg->clk_gpios, GPIO_INT_EDGE_FALLING);
 		if (ret) {
-			LOG_ERR("failed to configure clock-gpio wui, %d", ret);
+			LOG_ERROR("failed to configure clock-gpio wui, %d", ret);
 			return ret;
 		}
 		ret = gpio_pin_interrupt_configure_dt(&cfg->data_gpios, GPIO_INT_EDGE_FALLING);
 		if (ret) {
-			LOG_ERR("failed to configure data-gpio wui, %d", ret);
+			LOG_ERROR("failed to configure data-gpio wui, %d", ret);
 			return ret;
 		}
 		break;

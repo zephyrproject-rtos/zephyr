@@ -113,7 +113,7 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 			static size_t cnt;
 
 			if (cnt++ % (CONFIG_INFO_REPORTING_INTERVAL * 10) == 0) {
-				LOG_ERR("[%zu]: Failed to send USB audio: %d", cnt, err);
+				LOG_ERROR("[%zu]: Failed to send USB audio: %d", cnt, err);
 			}
 		}
 
@@ -354,7 +354,7 @@ int usb_init(void)
 	}
 
 	if (!device_is_ready(mic_dev)) {
-		LOG_ERR("Cannot get USB Microphone Device");
+		LOG_ERROR("Cannot get USB Microphone Device");
 		return -EIO;
 	}
 

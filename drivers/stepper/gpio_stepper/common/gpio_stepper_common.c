@@ -16,7 +16,7 @@ int gpio_stepper_common_init(const struct device *dev)
 	if (config->timing_source->init) {
 		ret = config->timing_source->init(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to initialize timing source: %d", ret);
+			LOG_ERROR("Failed to initialize timing source: %d", ret);
 			return ret;
 		}
 	}

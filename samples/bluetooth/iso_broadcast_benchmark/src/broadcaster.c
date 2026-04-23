@@ -609,7 +609,7 @@ static void iso_timer_timeout(struct k_work *work)
 	for (int i = 0; i < big_create_param.num_bis; i++) {
 		buf = net_buf_alloc(&bis_tx_pool, K_NO_WAIT);
 		if (buf == NULL) {
-			LOG_ERR("Could not allocate buffer");
+			LOG_ERROR("Could not allocate buffer");
 			return;
 		}
 
@@ -617,7 +617,7 @@ static void iso_timer_timeout(struct k_work *work)
 		net_buf_add_mem(buf, iso_data, iso_tx_qos.sdu);
 		ret = bt_iso_chan_send(&bis_iso_chans[i], buf, seq_num);
 		if (ret < 0) {
-			LOG_ERR("Unable to broadcast data: %d", ret);
+			LOG_ERROR("Unable to broadcast data: %d", ret);
 			net_buf_unref(buf);
 			return;
 		}
@@ -686,14 +686,14 @@ static int create_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 	LOG_INF("Creating Extended Advertising set");
 	err = bt_le_ext_adv_create(ext_adv_param, NULL, adv);
 	if (err != 0) {
-		LOG_ERR("Failed to create advertising set (err %d)", err);
+		LOG_ERROR("Failed to create advertising set (err %d)", err);
 		return err;
 	}
 
 	/* Set advertising data to have complete local name set */
 	err = bt_le_ext_adv_set_data(*adv, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
-		LOG_ERR("Failed to set advertising data (err %d)", err);
+		LOG_ERROR("Failed to set advertising data (err %d)", err);
 		return err;
 	}
 
@@ -701,8 +701,7 @@ static int create_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 	/* Set periodic advertising parameters */
 	err = bt_le_per_adv_set_param(*adv, per_adv_param);
 	if (err != 0) {
-		LOG_ERR("Failed to set periodic advertising parameters (err %d)",
-			err);
+		LOG_ERROR("Failed to set periodic advertising parameters (err %d)", err);
 		return err;
 	}
 
@@ -710,7 +709,7 @@ static int create_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 	LOG_INF("Starting Periodic Advertising");
 	err = bt_le_per_adv_start(*adv);
 	if (err != 0) {
-		LOG_ERR("Failed to enable periodic advertising (err %d)", err);
+		LOG_ERROR("Failed to enable periodic advertising (err %d)", err);
 		return err;
 	}
 
@@ -718,7 +717,7 @@ static int create_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 	LOG_INF("Starting Extended Advertising set");
 	err = bt_le_ext_adv_start(*adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
-		LOG_ERR("Failed to start extended advertising (err %d)", err);
+		LOG_ERROR("Failed to start extended advertising (err %d)", err);
 		return err;
 	}
 
@@ -733,14 +732,14 @@ static int create_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 	LOG_INF("Creating BIG");
 	err = bt_iso_big_create(*adv, &big_create_param, big);
 	if (err != 0) {
-		LOG_ERR("Failed to create BIG (err %d)", err);
+		LOG_ERROR("Failed to create BIG (err %d)", err);
 		return err;
 	}
 
 	LOG_INF("Waiting for BIG complete");
 	err = k_sem_take(&sem_big_complete, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("failed to take sem_big_complete (err %d)", err);
+		LOG_ERROR("failed to take sem_big_complete (err %d)", err);
 		return err;
 	}
 	LOG_INF("BIG created");
@@ -755,12 +754,12 @@ static int delete_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 	if (*big != NULL) {
 		err = bt_iso_big_terminate(*big);
 		if (err != 0) {
-			LOG_ERR("Failed to terminate BIG (err %d)", err);
+			LOG_ERROR("Failed to terminate BIG (err %d)", err);
 			return err;
 		}
 		err = k_sem_take(&sem_big_term, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("failed to take sem_big_term (err %d)", err);
+			LOG_ERROR("failed to take sem_big_term (err %d)", err);
 			return err;
 		}
 		*big = NULL;
@@ -769,19 +768,19 @@ static int delete_big(struct bt_le_ext_adv **adv, struct bt_iso_big **big)
 	if (*adv != NULL) {
 		err = bt_le_per_adv_stop(*adv);
 		if (err != 0) {
-			LOG_ERR("Failed to stop periodic advertising (err %d)", err);
+			LOG_ERROR("Failed to stop periodic advertising (err %d)", err);
 			return err;
 		}
 
 		err = bt_le_ext_adv_stop(*adv);
 		if (err != 0) {
-			LOG_ERR("Failed to stop advertising (err %d)", err);
+			LOG_ERROR("Failed to stop advertising (err %d)", err);
 			return err;
 		}
 
 		err = bt_le_ext_adv_delete(*adv);
 		if (err != 0) {
-			LOG_ERR("Failed to delete advertiser (err %d)", err);
+			LOG_ERROR("Failed to delete advertiser (err %d)", err);
 			return err;
 		}
 
@@ -818,7 +817,7 @@ int test_run_broadcaster(void)
 	if (c == 'y') {
 		err = parse_args();
 		if (err != 0) {
-			LOG_ERR("Could not parse args: %d", err);
+			LOG_ERROR("Could not parse args: %d", err);
 			return err;
 		}
 
@@ -834,11 +833,11 @@ int test_run_broadcaster(void)
 	if (err) {
 		int del_err;
 
-		LOG_ERR("Could not create BIG: %d", err);
+		LOG_ERROR("Could not create BIG: %d", err);
 
 		del_err = delete_big(&adv, &big);
 		if (del_err) {
-			LOG_ERR("Could not delete BIG: %d", del_err);
+			LOG_ERROR("Could not delete BIG: %d", del_err);
 		}
 
 		return err;
@@ -871,7 +870,7 @@ int test_run_broadcaster(void)
 
 	err = delete_big(&adv, &big);
 	if (err) {
-		LOG_ERR("Could not delete BIG: %d", err);
+		LOG_ERROR("Could not delete BIG: %d", err);
 		return err;
 	}
 

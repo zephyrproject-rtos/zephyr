@@ -122,7 +122,7 @@ static inline int npcx_itim_evt_enable(void)
 						NPCX_ITIM_EN_TIMEOUT_CYCLES) {
 			/* ITEN bit is still unset? */
 			if (!IS_BIT_SET(evt_tmr->ITCTS32, NPCX_ITCTSXX_ITEN)) {
-				LOG_ERR("Timeout: enabling EVT timer!");
+				LOG_ERROR("Timeout: enabling EVT timer!");
 				return -ETIMEDOUT;
 			}
 		}
@@ -338,7 +338,7 @@ static int sys_clock_driver_init(void)
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -347,7 +347,7 @@ static int sys_clock_driver_init(void)
 		ret = clock_control_on(clk_dev, (clock_control_subsys_t)
 				&itim_clk_cfg[i]);
 		if (ret < 0) {
-			LOG_ERR("Turn on timer %d clock failed.", i);
+			LOG_ERROR("Turn on timer %d clock failed.", i);
 			return ret;
 		}
 	}
@@ -359,13 +359,14 @@ static int sys_clock_driver_init(void)
 	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)
 			&itim_clk_cfg[1], &sys_tmr_rate);
 	if (ret < 0) {
-		LOG_ERR("Get ITIM64 clock rate failed %d", ret);
+		LOG_ERROR("Get ITIM64 clock rate failed %d", ret);
 		return ret;
 	}
 
 	if (sys_tmr_rate != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
-		LOG_ERR("CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC doesn't match "
-			"ITIM64 clock frequency %d", sys_tmr_rate);
+		LOG_ERROR("CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC doesn't match "
+			  "ITIM64 clock frequency %d",
+			  sys_tmr_rate);
 		return -EINVAL;
 	}
 

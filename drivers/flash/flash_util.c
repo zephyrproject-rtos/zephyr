@@ -31,7 +31,7 @@ int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 	size_t stored = 0;
 
 	if (sizeof(filler) < fparams->write_block_size) {
-		LOG_ERR("Size of CONFIG_FLASH_FILL_BUFFER_SIZE");
+		LOG_ERROR("Size of CONFIG_FLASH_FILL_BUFFER_SIZE");
 		return -EINVAL;
 	}
 	/* The flash_write will, probably, check write alignment but this
@@ -43,12 +43,12 @@ int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 	 * a driver, so only basic check on offset.
 	 */
 	if (offset < 0) {
-		LOG_ERR("Negative offset not allowed\n");
+		LOG_ERROR("Negative offset not allowed\n");
 		return -EINVAL;
 	}
 	if ((size | (size_t)offset) & (fparams->write_block_size - 1)) {
-		LOG_ERR("Incorrect size or offset alignment, expected %zx\n",
-			fparams->write_block_size);
+		LOG_ERROR("Incorrect size or offset alignment, expected %zx\n",
+			  fparams->write_block_size);
 		return -EINVAL;
 	}
 
@@ -59,8 +59,8 @@ int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 
 		rc = api->write(dev, offset + stored, filler, chunk);
 		if (rc < 0) {
-			LOG_ERR("Fill to dev %p failed at offset 0x%zx\n",
-				dev, (size_t)offset + stored);
+			LOG_ERROR("Fill to dev %p failed at offset 0x%zx\n", dev,
+				  (size_t)offset + stored);
 			break;
 		}
 		stored += chunk;

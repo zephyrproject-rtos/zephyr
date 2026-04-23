@@ -70,7 +70,7 @@ static int clk_utmi_sama7g5_on(const struct device *dev, clock_control_subsys_t 
 
 	ret = clock_control_get_rate(utmi->parent, NULL, &parent_rate);
 	if (ret) {
-		LOG_ERR("get parent clock rate failed.");
+		LOG_ERROR("get parent clock rate failed.");
 		return ret;
 	}
 
@@ -88,7 +88,7 @@ static int clk_utmi_sama7g5_on(const struct device *dev, clock_control_subsys_t 
 		val = 5;
 		break;
 	default:
-		LOG_ERR("UTMICK: unsupported main_xtal rate\n");
+		LOG_ERROR("UTMICK: unsupported main_xtal rate\n");
 		return -EINVAL;
 	}
 
@@ -109,7 +109,7 @@ static enum clock_control_status clk_utmi_sama7g5_get_status(const struct device
 
 	ret = clock_control_get_rate(utmi->parent, NULL, &parent_rate);
 	if (ret) {
-		LOG_ERR("get parent clock rate failed.");
+		LOG_ERROR("get parent clock rate failed.");
 		return ret;
 	}
 

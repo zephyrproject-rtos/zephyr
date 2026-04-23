@@ -93,7 +93,7 @@ static void coredump_in_memory_backend_start(void)
 {
 	in_memory_erase();
 
-	LOG_ERR(COREDUMP_PREFIX_STR "LOCATION %p", (void *)in_memory_coredump);
+	LOG_ERROR(COREDUMP_PREFIX_STR "LOCATION %p", (void *)in_memory_coredump);
 
 	memcpy(in_memory_coredump, in_memory_canary, IN_MEMORY_CANARY_SIZE);
 	cur_ptr = &in_memory_coredump[IN_MEMORY_START];
@@ -105,7 +105,7 @@ static void coredump_in_memory_backend_start(void)
 	}
 
 	LOG_PANIC();
-	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_BEGIN_STR);
+	LOG_ERROR(COREDUMP_PREFIX_STR COREDUMP_BEGIN_STR);
 }
 
 static void coredump_in_memory_backend_end(void)
@@ -115,7 +115,7 @@ static void coredump_in_memory_backend_end(void)
 
 	*coredump_size = cur_ptr - &in_memory_coredump[IN_MEMORY_START];
 
-	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_END_STR);
+	LOG_ERROR(COREDUMP_PREFIX_STR COREDUMP_END_STR);
 }
 
 static void coredump_in_memory_backend_buffer_output(uint8_t *buf,

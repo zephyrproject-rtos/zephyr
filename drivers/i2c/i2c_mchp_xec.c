@@ -297,7 +297,7 @@ static bool check_lines_high(const struct device *dev)
 	gpio_port_value_t sda = 0, scl = 0;
 
 	if (gpio_port_get_raw(config->sda_gpio.port, &sda)) {
-		LOG_ERR("gpio_port_get_raw for %s SDA failed", dev->name);
+		LOG_ERROR("gpio_port_get_raw for %s SDA failed", dev->name);
 		return false;
 	}
 
@@ -306,8 +306,7 @@ static bool check_lines_high(const struct device *dev)
 		scl = sda;
 	} else {
 		if (gpio_port_get_raw(config->scl_gpio.port, &scl)) {
-			LOG_ERR("gpio_port_get_raw for %s SCL failed",
-				dev->name);
+			LOG_ERROR("gpio_port_get_raw for %s SCL failed", dev->name);
 			return false;
 		}
 	}
@@ -365,8 +364,7 @@ static int i2c_xec_poll_write(const struct device *dev, struct i2c_msg msg,
 		ret = wait_completion(dev);
 		if (ret) {
 			data->timeout_seen = 1;
-			LOG_ERR("%s: %s wait_completion failure %d\n",
-				__func__, dev->name, ret);
+			LOG_ERROR("%s: %s wait_completion failure %d\n", __func__, dev->name, ret);
 			return ret;
 		}
 		data->timeout_seen = 0;
@@ -444,8 +442,8 @@ static int i2c_xec_poll_write(const struct device *dev, struct i2c_msg msg,
 
 		default:
 			data->error_seen = 1;
-			LOG_ERR("%s: %s wait_comp error %d for addr send",
-				__func__, dev->name, ret);
+			LOG_ERROR("%s: %s wait_comp error %d for addr send", __func__, dev->name,
+				  ret);
 			return ret;
 		}
 	}
@@ -460,20 +458,20 @@ static int i2c_xec_poll_write(const struct device *dev, struct i2c_msg msg,
 			break;
 
 		case -EIO:
-			LOG_ERR("%s: No Data ACK from Slave 0x%x on %s",
-				__func__, addr >> 1, dev->name);
+			LOG_ERROR("%s: No Data ACK from Slave 0x%x on %s", __func__, addr >> 1,
+				  dev->name);
 			return ret;
 
 		case -ETIMEDOUT:
 			data->timeout_seen = 1;
-			LOG_ERR("%s: Clk stretch Timeout - Slave 0x%x on %s",
-				__func__, addr >> 1, dev->name);
+			LOG_ERROR("%s: Clk stretch Timeout - Slave 0x%x on %s", __func__, addr >> 1,
+				  dev->name);
 			return ret;
 
 		default:
 			data->error_seen = 1;
-			LOG_ERR("%s: %s wait_completion error %d for data send",
-				__func__, dev->name, ret);
+			LOG_ERROR("%s: %s wait_completion error %d for data send", __func__,
+				  dev->name, ret);
 			return ret;
 		}
 	}
@@ -510,8 +508,7 @@ static int i2c_xec_poll_read(const struct device *dev, struct i2c_msg msg,
 		ret = wait_completion(dev);
 		if (ret) {
 			data->timeout_seen = 1;
-			LOG_ERR("%s: %s wait_completion failure %d\n",
-				__func__, dev->name, ret);
+			LOG_ERROR("%s: %s wait_completion failure %d\n", __func__, dev->name, ret);
 			return ret;
 		}
 		data->timeout_seen = 0;
@@ -583,14 +580,14 @@ static int i2c_xec_poll_read(const struct device *dev, struct i2c_msg msg,
 	case -ETIMEDOUT:
 		data->previously_in_read = 1;
 		data->timeout_seen = 1;
-		LOG_ERR("%s: Clk stretch Timeout - Slave 0x%x on %s",
-			__func__, addr >> 1, dev->name);
+		LOG_ERROR("%s: Clk stretch Timeout - Slave 0x%x on %s", __func__, addr >> 1,
+			  dev->name);
 		return ret;
 
 	default:
 		data->error_seen = 1;
-		LOG_ERR("%s: %s wait_completion error %d for address send",
-			__func__, dev->name, ret);
+		LOG_ERROR("%s: %s wait_completion error %d for address send", __func__, dev->name,
+			  ret);
 		return ret;
 	}
 
@@ -609,21 +606,21 @@ static int i2c_xec_poll_read(const struct device *dev, struct i2c_msg msg,
 			break;
 
 		case -EIO:
-			LOG_ERR("%s: No Data ACK from Slave 0x%x on %s",
-				__func__, addr >> 1, dev->name);
+			LOG_ERROR("%s: No Data ACK from Slave 0x%x on %s", __func__, addr >> 1,
+				  dev->name);
 			return ret;
 
 		case -ETIMEDOUT:
 			data->previously_in_read = 1;
 			data->timeout_seen = 1;
-			LOG_ERR("%s: Clk stretch Timeout - Slave 0x%x on %s",
-				__func__, addr >> 1, dev->name);
+			LOG_ERROR("%s: Clk stretch Timeout - Slave 0x%x on %s", __func__, addr >> 1,
+				  dev->name);
 			return ret;
 
 		default:
 			data->error_seen = 1;
-			LOG_ERR("%s: %s wait_completion error %d for data send",
-				__func__, dev->name, ret);
+			LOG_ERROR("%s: %s wait_completion error %d for data send", __func__,
+				  dev->name, ret);
 			return ret;
 		}
 
@@ -656,7 +653,7 @@ static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 	struct i2c_xec_data *data = dev->data;
 
 	if (data->slave_attached) {
-		LOG_ERR("%s Device is registered as slave", dev->name);
+		LOG_ERROR("%s Device is registered as slave", dev->name);
 		return -EBUSY;
 	}
 #endif
@@ -666,13 +663,13 @@ static int i2c_xec_transfer(const struct device *dev, struct i2c_msg *msgs,
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
 			ret = i2c_xec_poll_write(dev, msgs[i], addr);
 			if (ret) {
-				LOG_ERR("%s Write error: %d", dev->name, ret);
+				LOG_ERROR("%s Write error: %d", dev->name, ret);
 				return ret;
 			}
 		} else {
 			ret = i2c_xec_poll_read(dev, msgs[i], addr);
 			if (ret) {
-				LOG_ERR("%s Read error: %d", dev->name, ret);
+				LOG_ERROR("%s Read error: %d", dev->name, ret);
 				return ret;
 			}
 		}
@@ -853,17 +850,17 @@ static int i2c_xec_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("XEC I2C pinctrl setup failed (%d)", ret);
+		LOG_ERROR("XEC I2C pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->sda_gpio)) {
-		LOG_ERR("%s GPIO device is not ready for SDA GPIO", dev->name);
+		LOG_ERROR("%s GPIO device is not ready for SDA GPIO", dev->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->scl_gpio)) {
-		LOG_ERR("%s GPIO device is not ready for SCL GPIO", dev->name);
+		LOG_ERROR("%s GPIO device is not ready for SCL GPIO", dev->name);
 		return -ENODEV;
 	}
 
@@ -872,7 +869,7 @@ static int i2c_xec_init(const struct device *dev)
 				I2C_MODE_CONTROLLER |
 				I2C_SPEED_SET(I2C_SPEED_STANDARD));
 	if (ret) {
-		LOG_ERR("%s configure failed %d", dev->name, ret);
+		LOG_ERROR("%s configure failed %d", dev->name, ret);
 		return ret;
 	}
 

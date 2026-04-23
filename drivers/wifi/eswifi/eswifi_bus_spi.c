@@ -72,7 +72,7 @@ static int eswifi_spi_write(struct eswifi_dev *eswifi, char *data, size_t dlen)
 
 	status = spi_write_dt(&spi->cfg->bus, &spi_tx);
 	if (status) {
-		LOG_ERR("SPI write error %d", status);
+		LOG_ERROR("SPI write error %d", status);
 	} else {
 		status = dlen;
 	}
@@ -94,7 +94,7 @@ static int eswifi_spi_read(struct eswifi_dev *eswifi, char *data, size_t dlen)
 
 	status = spi_read_dt(&spi->cfg->bus, &spi_rx);
 	if (status) {
-		LOG_ERR("SPI read error %d", status);
+		LOG_ERROR("SPI read error %d", status);
 	} else {
 		status = dlen;
 	}
@@ -139,7 +139,7 @@ static int eswifi_spi_request(struct eswifi_dev *eswifi, char *cmd, size_t clen,
 	/* CMD/DATA READY signals the Command Phase */
 	err = eswifi_spi_wait_cmddata_ready(spi);
 	if (err) {
-		LOG_ERR("CMD ready timeout\n");
+		LOG_ERROR("CMD ready timeout\n");
 		return err;
 	}
 
@@ -158,7 +158,7 @@ data:
 	/* CMD/DATA READY signals the Data Phase */
 	err = eswifi_spi_wait_cmddata_ready(spi);
 	if (err) {
-		LOG_ERR("DATA ready timeout\n");
+		LOG_ERROR("DATA ready timeout\n");
 		return err;
 	}
 
@@ -199,13 +199,13 @@ static void eswifi_spi_read_msg(struct eswifi_dev *eswifi)
 
 	ret = eswifi_at_cmd_rsp(eswifi, cmd, &rsp);
 	if (ret < 0) {
-		LOG_ERR("Unable to read msg %d", ret);
+		LOG_ERROR("Unable to read msg %d", ret);
 		eswifi_unlock(eswifi);
 		return;
 	}
 
 	if (strncmp(rsp, startstr, sizeof(endstr) - 1)) {
-		LOG_ERR("Malformed async msg");
+		LOG_ERROR("Malformed async msg");
 		eswifi_unlock(eswifi);
 		return;
 	}
@@ -239,14 +239,14 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 
 	/* SPI DATA READY PIN */
 	if (!gpio_is_ready_dt(&cfg->dr)) {
-		LOG_ERR("device %s is not ready", cfg->dr.port->name);
+		LOG_ERROR("device %s is not ready", cfg->dr.port->name);
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&cfg->dr, GPIO_INPUT);
 
 	/* SPI BUS */
 	if (!spi_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("SPI bus is not ready");
+		LOG_ERROR("SPI bus is not ready");
 		return -ENODEV;
 	};
 

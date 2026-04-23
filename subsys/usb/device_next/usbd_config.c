@@ -113,7 +113,7 @@ int usbd_config_set(struct usbd_context *const uds_ctx,
 	if (usbd_get_config_value(uds_ctx) != 0) {
 		ret = usbd_config_reset(uds_ctx);
 		if (ret) {
-			LOG_ERR("Failed to reset configuration");
+			LOG_ERROR("Failed to reset configuration");
 			return ret;
 		}
 	}
@@ -161,7 +161,7 @@ int usbd_config_attrib_rwup(struct usbd_context *const uds_ctx,
 
 	caps = udc_caps(uds_ctx->dev);
 	if (!caps.rwup) {
-		LOG_ERR("Feature not supported by controller");
+		LOG_ERROR("Feature not supported by controller");
 		ret = -ENOTSUP;
 		goto attrib_rwup_exit;
 	}
@@ -261,20 +261,20 @@ int usbd_add_configuration(struct usbd_context *const uds_ctx,
 	usbd_device_lock(uds_ctx);
 
 	if (usbd_is_initialized(uds_ctx)) {
-		LOG_ERR("USB device support is initialized");
+		LOG_ERROR("USB device support is initialized");
 		ret = -EBUSY;
 		goto add_configuration_exit;
 	}
 
 	if (speed == USBD_SPEED_HS && !USBD_SUPPORTS_HIGH_SPEED) {
-		LOG_ERR("Stack was compiled without High-Speed support");
+		LOG_ERROR("Stack was compiled without High-Speed support");
 		ret = -ENOTSUP;
 		goto add_configuration_exit;
 	}
 
 	if (speed == USBD_SPEED_HS &&
 	    usbd_caps_speed(uds_ctx) == USBD_SPEED_FS) {
-		LOG_ERR("Controller doesn't support HS");
+		LOG_ERROR("Controller doesn't support HS");
 		ret = -ENOTSUP;
 		goto add_configuration_exit;
 	}
@@ -283,7 +283,7 @@ int usbd_add_configuration(struct usbd_context *const uds_ctx,
 		struct udc_device_caps caps = udc_caps(uds_ctx->dev);
 
 		if (!caps.rwup) {
-			LOG_ERR("Feature not supported by controller");
+			LOG_ERROR("Feature not supported by controller");
 			ret = -ENOTSUP;
 			goto add_configuration_exit;
 		}
@@ -294,7 +294,7 @@ int usbd_add_configuration(struct usbd_context *const uds_ctx,
 	case USBD_SPEED_HS:
 		SYS_SLIST_FOR_EACH_NODE(&uds_ctx->fs_configs, node) {
 			if (node == &cfg_nd->node) {
-				LOG_ERR("HS config already on FS list");
+				LOG_ERROR("HS config already on FS list");
 				ret = -EINVAL;
 				goto add_configuration_exit;
 			}
@@ -303,14 +303,14 @@ int usbd_add_configuration(struct usbd_context *const uds_ctx,
 	case USBD_SPEED_FS:
 		SYS_SLIST_FOR_EACH_NODE(&uds_ctx->hs_configs, node) {
 			if (node == &cfg_nd->node) {
-				LOG_ERR("FS config already on HS list");
+				LOG_ERROR("FS config already on HS list");
 				ret = -EINVAL;
 				goto add_configuration_exit;
 			}
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported configuration speed");
+		LOG_ERROR("Unsupported configuration speed");
 		ret = -ENOTSUP;
 		goto add_configuration_exit;
 	}
@@ -328,7 +328,7 @@ int usbd_add_configuration(struct usbd_context *const uds_ctx,
 	if (cfg_nd->str_desc_nd != NULL) {
 		ret = usbd_add_descriptor(uds_ctx, cfg_nd->str_desc_nd);
 		if (ret != 0) {
-			LOG_ERR("Failed to add configuration string descriptor");
+			LOG_ERROR("Failed to add configuration string descriptor");
 			goto add_configuration_exit;
 		}
 

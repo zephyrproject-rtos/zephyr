@@ -386,7 +386,7 @@ static int pwm_xec_pm_action(const struct device *dev, enum pm_device_action act
 	case PM_DEVICE_ACTION_RESUME:
 		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret != 0) {
-			LOG_ERR("XEC PWM pinctrl setup failed (%d)", ret);
+			LOG_ERROR("XEC PWM pinctrl setup failed (%d)", ret);
 		}
 
 		/* Turn on PWM only if it is ON before sleep */
@@ -429,7 +429,7 @@ static int pwm_xec_init(const struct device *dev)
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
-		LOG_ERR("XEC PWM pinctrl init failed (%d)", ret);
+		LOG_ERROR("XEC PWM pinctrl init failed (%d)", ret);
 		return ret;
 	}
 

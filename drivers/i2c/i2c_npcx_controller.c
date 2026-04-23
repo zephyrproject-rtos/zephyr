@@ -224,7 +224,7 @@ static volatile uint8_t *npcx_i2c_ctrl_target_get_reg_smbaddr(const struct devic
 	case 7:
 		return &inst->SMBADDR8;
 	default:
-		LOG_ERR("Invalid SMBADDR index: %d", index);
+		LOG_ERROR("Invalid SMBADDR index: %d", index);
 		return NULL;
 	}
 }
@@ -369,7 +369,7 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	ret = i2c_ctrl_wait_stop_completed(dev, I2C_MAX_TIMEOUT);
 	inst->SMBCST |= BIT(NPCX_SMBCST_BB);
 	if (ret != 0) {
-		LOG_ERR("Abort i2c %s::%02x fail! Bus might be stalled.", dev->name, data->port);
+		LOG_ERROR("Abort i2c %s::%02x fail! Bus might be stalled.", dev->name, data->port);
 	}
 
 	/*
@@ -381,7 +381,7 @@ static int i2c_ctrl_recovery(const struct device *dev)
 	inst->SMBCTL2 &= ~BIT(NPCX_SMBCTL2_ENABLE);
 	ret = i2c_ctrl_wait_idle_completed(dev, I2C_MAX_TIMEOUT);
 	if (ret != 0) {
-		LOG_ERR("Reset i2c %s::%02x fail! Bus might be stalled.", dev->name, data->port);
+		LOG_ERROR("Reset i2c %s::%02x fail! Bus might be stalled.", dev->name, data->port);
 		return -EIO;
 	}
 
@@ -442,8 +442,7 @@ static int i2c_ctrl_proc_write_msg(const struct device *dev,
 		return i2c_ctrl_wait_completion(dev);
 	}
 
-	LOG_ERR("Unexpected state %d during writing i2c port%02x!",
-					data->oper_state, data->port);
+	LOG_ERROR("Unexpected state %d during writing i2c port%02x!", data->oper_state, data->port);
 	data->trans_err = -EIO;
 	return data->trans_err;
 }
@@ -496,8 +495,8 @@ static int i2c_ctrl_proc_read_msg(const struct device *dev, struct i2c_msg *msg)
 		return i2c_ctrl_wait_completion(dev);
 	}
 
-	LOG_ERR("Unexpected state  %d during reading i2c port%02x!",
-					data->oper_state, data->port);
+	LOG_ERROR("Unexpected state  %d during reading i2c port%02x!", data->oper_state,
+		  data->port);
 	data->trans_err = -EIO;
 	return data->trans_err;
 }
@@ -626,8 +625,8 @@ static void i2c_ctrl_target_isr(const struct device *dev, uint8_t status)
 				target_cb->write_received(data->target_cfg[data->target_idx], val);
 			}
 		} else {
-			LOG_ERR("Unexpected oper state %d on i2c target port%02x!",
-				data->oper_state, data->port);
+			LOG_ERROR("Unexpected oper state %d on i2c target port%02x!",
+				  data->oper_state, data->port);
 		}
 		return;
 	}
@@ -635,8 +634,8 @@ static void i2c_ctrl_target_isr(const struct device *dev, uint8_t status)
 	/* Clear unexpected status bits */
 	if (status != 0) {
 		inst->SMBST = status;
-		LOG_ERR("Unexpected  SMBST 0x%02x occurred on i2c target port%02x!",
-			status, data->port);
+		LOG_ERROR("Unexpected  SMBST 0x%02x occurred on i2c target port%02x!", status,
+			  data->port);
 	}
 }
 #endif /* CONFIG_I2C_TARGET */
@@ -671,7 +670,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 		/* Make sure slave doesn't hold bus by reading FIFO again */
 		tmp = i2c_ctrl_data_read(dev);
 
-		LOG_ERR("Bus error occurred on i2c %s::%02x!", dev->name, data->port);
+		LOG_ERROR("Bus error occurred on i2c %s::%02x!", dev->name, data->port);
 		data->oper_state = NPCX_I2C_ERROR_RECOVERY;
 
 		/* I/O error occurred */
@@ -724,8 +723,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 	/* Clear unexpected status bits */
 	if (status != 0) {
 		inst->SMBST = status;
-		LOG_ERR("Unexpected  SMBST 0x%02x occurred on i2c port%02x!",
-			status, data->port);
+		LOG_ERROR("Unexpected  SMBST 0x%02x occurred on i2c port%02x!", status, data->port);
 	}
 }
 
@@ -838,11 +836,11 @@ int npcx_i2c_ctrl_recover_bus(const struct device *dev)
 	}
 
 	if (!IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SDA_LVL)) {
-		LOG_ERR("Recover SDA fail");
+		LOG_ERROR("Recover SDA fail");
 		ret = -EBUSY;
 	}
 	if (!IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SCL_LVL)) {
-		LOG_ERR("Recover SCL fail");
+		LOG_ERROR("Recover SCL fail");
 		ret = -EBUSY;
 	}
 
@@ -869,7 +867,7 @@ int npcx_i2c_ctrl_target_register(const struct device *i2c_dev,
 
 	/* A transiaction is ongoing */
 	if (data->oper_state != NPCX_I2C_IDLE && data->oper_state != NPCX_I2C_ERROR_RECOVERY) {
-		LOG_ERR("Reg TGT in err state: %d", data->oper_state);
+		LOG_ERROR("Reg TGT in err state: %d", data->oper_state);
 		return -EBUSY;
 	}
 	if (data->oper_state == NPCX_I2C_ERROR_RECOVERY) {
@@ -879,7 +877,7 @@ int npcx_i2c_ctrl_target_register(const struct device *i2c_dev,
 	/* Find valid smbaddr location */
 	avail_addr_slot = find_lsb_set(~i2c_tgt_mask) - 1;
 	if (avail_addr_slot == -1 || avail_addr_slot >= NPCX_I2C_FLAG_COUNT) {
-		LOG_ERR("No available smbaddr register, smbaddr_idx: %d", avail_addr_slot);
+		LOG_ERROR("No available smbaddr register, smbaddr_idx: %d", avail_addr_slot);
 		return -ENOSPC;
 	}
 
@@ -890,7 +888,7 @@ int npcx_i2c_ctrl_target_register(const struct device *i2c_dev,
 
 		/* Check if the address is duplicated */
 		if (*reg_smbaddr == smbaddr_val) {
-			LOG_ERR("Address %#x is already set", target_cfg->address);
+			LOG_ERROR("Address %#x is already set", target_cfg->address);
 			return -EINVAL;
 		}
 
@@ -952,8 +950,8 @@ int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
 	uint32_t i2c_tgt_mask = (uint32_t)atomic_get(&data->registered_target_mask);
 
 	/* No I2c module has been configured to target mode */
-	if (atomic_get(&data->registered_target_mask) == (atomic_val_t) 0) {
-		LOG_ERR("No available target to ungister");
+	if (atomic_get(&data->registered_target_mask) == (atomic_val_t)0) {
+		LOG_ERROR("No available target to ungister");
 		return -EINVAL;
 	}
 
@@ -967,7 +965,7 @@ int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
 		cur_addr_slot = find_lsb_set(i2c_tgt_mask) - 1;
 		reg_smbaddr = npcx_i2c_ctrl_target_get_reg_smbaddr(i2c_dev, cur_addr_slot);
 		if (reg_smbaddr == NULL) {
-			LOG_ERR("Invalid smbaddr register");
+			LOG_ERROR("Invalid smbaddr register");
 			return -EINVAL;
 		}
 
@@ -981,7 +979,7 @@ int npcx_i2c_ctrl_target_unregister(const struct device *i2c_dev,
 
 	/* Input address is not in the smbaddr */
 	if (i2c_tgt_mask == 0 || reg_smbaddr == NULL) {
-		LOG_ERR("Address %#x is not found", target_cfg->address);
+		LOG_ERROR("Address %#x is not found", target_cfg->address);
 		return -EINVAL;
 	}
 
@@ -1068,7 +1066,7 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs, u
 		    data->oper_state == NPCX_I2C_ERROR_RECOVERY) {
 			ret = npcx_i2c_ctrl_recover_bus(i2c_dev);
 			if (ret != 0) {
-				LOG_ERR("Recover Bus failed: %s::%d", i2c_dev->name, port);
+				LOG_ERROR("Recover Bus failed: %s::%d", i2c_dev->name, port);
 				goto out;
 			}
 
@@ -1109,8 +1107,8 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs, u
 		if (data->trans_err == 0) {
 			data->oper_state = NPCX_I2C_IDLE;
 		} else {
-			LOG_ERR("STOP fail! bus is held on i2c %s::%02x!\n", i2c_dev->name,
-				data->port);
+			LOG_ERROR("STOP fail! bus is held on i2c %s::%02x!\n", i2c_dev->name,
+				  data->port);
 			data->oper_state = NPCX_I2C_ERROR_RECOVERY;
 		}
 	}
@@ -1140,14 +1138,13 @@ static int i2c_ctrl_init(const struct device *dev)
 	uint32_t i2c_rate;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	/* Turn on device clock first and get source clock freq. */
-	if (clock_control_on(clk_dev,
-		(clock_control_subsys_t) &config->clk_cfg) != 0) {
-		LOG_ERR("Turn on %s clock fail.", dev->name);
+	if (clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg) != 0) {
+		LOG_ERROR("Turn on %s clock fail.", dev->name);
 		return -EIO;
 	}
 
@@ -1156,9 +1153,9 @@ static int i2c_ctrl_init(const struct device *dev)
 	 * configuration of the device to meet SMBus timing spec. Please refer
 	 * Table 21/22/23 and section 7.5.9 SMBus Timing for more detail.
 	 */
-	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t)
-			&config->clk_cfg, &i2c_rate) != 0) {
-		LOG_ERR("Get %s clock rate error.", dev->name);
+	if (clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg, &i2c_rate) !=
+	    0) {
+		LOG_ERROR("Get %s clock rate error.", dev->name);
 		return -EIO;
 	}
 
@@ -1175,7 +1172,7 @@ static int i2c_ctrl_init(const struct device *dev)
 	} else if (i2c_rate == 50000000) {
 		data->ptr_speed_confs = npcx_50m_speed_confs;
 	} else {
-		LOG_ERR("Unsupported apb2/3 freq for %s.", dev->name);
+		LOG_ERROR("Unsupported apb2/3 freq for %s.", dev->name);
 		return -EIO;
 	}
 

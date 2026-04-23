@@ -133,7 +133,7 @@ static int emul_host_set_vw(const struct emul *target,
 	idx = emul_host_find_index(data, vw);
 
 	if (idx < 0 || data->vw_state[idx].dir != ESPI_TARGET_TO_CONTROLLER) {
-		LOG_ERR("%s: invalid vw: %d", __func__, vw);
+		LOG_ERROR("%s: invalid vw: %d", __func__, vw);
 		return -EPERM;
 	}
 
@@ -151,7 +151,7 @@ static int emul_host_get_vw(const struct emul *target,
 	idx = emul_host_find_index(data, vw);
 
 	if (idx < 0 || data->vw_state[idx].dir != ESPI_CONTROLLER_TO_TARGET) {
-		LOG_ERR("%s: invalid vw: %d", __func__, vw);
+		LOG_ERROR("%s: invalid vw: %d", __func__, vw);
 		return -EPERM;
 	}
 
@@ -180,7 +180,7 @@ int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal
 
 	idx = emul_host_find_index(data_host, vw);
 	if (idx < 0 || data_host->vw_state[idx].dir != ESPI_CONTROLLER_TO_TARGET) {
-		LOG_ERR("%s: invalid vw: %d", __func__, vw);
+		LOG_ERROR("%s: invalid vw: %d", __func__, vw);
 		return -EPERM;
 	}
 

@@ -112,7 +112,7 @@ static inline void adc_wait_synchronization(adc_registers_t *adc_reg)
 	if (WAIT_FOR(((adc_reg->ADC_SYNCBUSY & ADC_SYNCBUSY_Msk) == 0),
 		     TIMEOUT_VALUE_US,                  /* 1 ms timeout */
 		     k_busy_wait(DELAY_US)) == false) { /* 2 µs delay between polls */
-		LOG_ERR("Timeout waiting for ADC_SYNCBUSY to clear");
+		LOG_ERROR("Timeout waiting for ADC_SYNCBUSY to clear");
 	}
 }
 
@@ -178,7 +178,7 @@ static int adc_set_oversampling(adc_registers_t *adc_reg, uint8_t oversampling)
 	 * Valid range: 0 to 10 (inclusive)
 	 */
 	if (oversampling > ADC_MAX_OVERSAMPLING_VAL) {
-		LOG_ERR("Invalid oversampling: %d\n", oversampling);
+		LOG_ERROR("Invalid oversampling: %d\n", oversampling);
 		return -EINVAL;
 	}
 	reg_val = adc_reg->ADC_AVGCTRL;
@@ -219,7 +219,7 @@ static inline int adc_set_acq_time(adc_registers_t *adc_reg, uint16_t sample_len
 
 	/* Valid sample length: 0–63 */
 	if (sample_length >= 64U) {
-		LOG_ERR("Invalid Sample Length : %d\n", sample_length);
+		LOG_ERROR("Invalid Sample Length : %d\n", sample_length);
 		return -EINVAL;
 	}
 	reg_val = adc_reg->ADC_SAMPCTRL;
@@ -256,10 +256,10 @@ static int adc_set_reference(adc_registers_t *adc_reg, enum adc_reference refere
 		break;
 	case ADC_REF_VDD_1_3:
 	case ADC_REF_VDD_1_4:
-		LOG_ERR("ADC Selected reference is not supported: %d\n", reference);
+		LOG_ERROR("ADC Selected reference is not supported: %d\n", reference);
 		return -EINVAL;
 	default:
-		LOG_ERR("ADC Selected reference is not valid: %d\n", reference);
+		LOG_ERROR("ADC Selected reference is not valid: %d\n", reference);
 		return -EINVAL;
 	}
 
@@ -359,14 +359,14 @@ static int adc_set_resolution(adc_registers_t *adc_reg, uint8_t resolution, uint
 	switch (resolution) {
 	case ADC_RESOLUTION_8BIT:
 		if (oversampling != 0) {
-			LOG_ERR("Invalid oversampling: %d\n", oversampling);
+			LOG_ERROR("Invalid oversampling: %d\n", oversampling);
 			return -EINVAL;
 		}
 		resolution_val = ADC_CTRLB_RESSEL_8BIT_Val;
 		break;
 	case ADC_RESOLUTION_10BIT:
 		if (oversampling != 0) {
-			LOG_ERR("Invalid oversampling: %d\n", oversampling);
+			LOG_ERROR("Invalid oversampling: %d\n", oversampling);
 			return -EINVAL;
 		}
 		resolution_val = ADC_CTRLB_RESSEL_10BIT_Val;
@@ -379,7 +379,7 @@ static int adc_set_resolution(adc_registers_t *adc_reg, uint8_t resolution, uint
 		}
 		break;
 	default:
-		LOG_ERR("Invalid oversampling: %d\n", oversampling);
+		LOG_ERROR("Invalid oversampling: %d\n", oversampling);
 		return -EINVAL;
 	}
 	reg_val = adc_reg->ADC_CTRLB;
@@ -457,7 +457,7 @@ static inline int adc_set_acq_time(adc_registers_t *adc_reg, uint16_t sample_len
 
 	/* Valid sample length: 0–63 */
 	if (sample_length >= 64U) {
-		LOG_ERR("Invalid Sample Length : %d\n", sample_length);
+		LOG_ERROR("Invalid Sample Length : %d\n", sample_length);
 		return -EINVAL;
 	}
 
@@ -507,10 +507,10 @@ static int adc_set_reference(adc_registers_t *adc_reg, enum adc_reference refere
 	case ADC_REF_VDD_1_3:
 	case ADC_REF_VDD_1_4:
 	case ADC_REF_EXTERNAL1:
-		LOG_ERR("ADC Selected reference is not supported: %d\n", reference);
+		LOG_ERROR("ADC Selected reference is not supported: %d\n", reference);
 		return -EINVAL;
 	default:
-		LOG_ERR("ADC Selected reference is not valid: %d\n", reference);
+		LOG_ERROR("ADC Selected reference is not valid: %d\n", reference);
 		return -EINVAL;
 	}
 	adc_reg->ADC_REFCTRL = reg_val;
@@ -568,14 +568,14 @@ static int adc_set_resolution(adc_registers_t *adc_reg, uint8_t resolution, uint
 	switch (resolution) {
 	case ADC_RESOLUTION_8BIT:
 		if (oversampling != 0) {
-			LOG_ERR("Invalid oversampling: %d\n", oversampling);
+			LOG_ERROR("Invalid oversampling: %d\n", oversampling);
 			return -EINVAL;
 		}
 		resolution_val = ADC_CTRLC_RESSEL_8BIT_Val;
 		break;
 	case ADC_RESOLUTION_10BIT:
 		if (oversampling != 0) {
-			LOG_ERR("Invalid oversampling: %d\n", oversampling);
+			LOG_ERROR("Invalid oversampling: %d\n", oversampling);
 			return -EINVAL;
 		}
 		resolution_val = ADC_CTRLC_RESSEL_10BIT_Val;
@@ -588,7 +588,7 @@ static int adc_set_resolution(adc_registers_t *adc_reg, uint8_t resolution, uint
 		}
 		break;
 	default:
-		LOG_ERR("Invalid oversampling: %d\n", oversampling);
+		LOG_ERROR("Invalid oversampling: %d\n", oversampling);
 		return -EINVAL;
 	}
 	reg_val = adc_reg->ADC_CTRLC;
@@ -676,7 +676,7 @@ static int adc_set_gain(adc_registers_t *adc_reg, enum adc_gain gain)
 		gain_corr = ADC_GAIN_CORR_4_5;
 		break;
 	default:
-		LOG_ERR("Invalid gain: %d\n", gain);
+		LOG_ERROR("Invalid gain: %d\n", gain);
 		return -EINVAL;
 	}
 
@@ -692,31 +692,31 @@ static int adc_validate_channel_params(enum adc_gain gain, enum adc_reference re
 	/* Validate gain */
 	if (gain != ADC_GAIN_1_2 && gain != ADC_GAIN_2_3 && gain != ADC_GAIN_4_5 &&
 	    gain != ADC_GAIN_1) {
-		LOG_ERR("Invalid gain : %d\n", gain);
+		LOG_ERROR("Invalid gain : %d\n", gain);
 		return -EINVAL;
 	}
 
 	/* Validate reference */
 	if ((reference < ADC_REF_VDD_1) || (reference > ADC_REF_EXTERNAL1)) {
-		LOG_ERR("Invalid reference : %d\n", reference);
+		LOG_ERROR("Invalid reference : %d\n", reference);
 		return -EINVAL;
 	}
 
 	/* Valid sample length range: 1–63 */
 	if ((sample_length == 0) || (sample_length >= 64U)) {
-		LOG_ERR("Invalid Sample Length : %d\n", sample_length);
+		LOG_ERROR("Invalid Sample Length : %d\n", sample_length);
 		return -EINVAL;
 	}
 
 	/* Validate input_positive */
 	if ((BIT(input_positive) & MCHP_ADC_MUXPOS_VALID_MASK) == 0) {
-		LOG_ERR("Invalid input positive: %d\n", input_positive);
+		LOG_ERROR("Invalid input positive: %d\n", input_positive);
 		return -EINVAL;
 	}
 
 	/* Validate input_negative */
 	if ((BIT(input_negative) & MCHP_ADC_MUXNEG_VALID_MASK) == 0) {
-		LOG_ERR("Invalid input negative: %d\n", input_negative);
+		LOG_ERROR("Invalid input negative: %d\n", input_negative);
 		return -EINVAL;
 	}
 
@@ -730,7 +730,7 @@ static int adc_select_channels(const struct device *dev, struct adc_channel_cfg 
 	/* Set channels */
 	ret = adc_set_input_positive(ADC_REGS, channel_config->input_positive);
 	if (ret != 0) {
-		LOG_ERR("Invalid input_positive : %d\n", channel_config->input_positive);
+		LOG_ERROR("Invalid input_positive : %d\n", channel_config->input_positive);
 		return ret;
 	}
 
@@ -738,7 +738,7 @@ static int adc_select_channels(const struct device *dev, struct adc_channel_cfg 
 	ret = adc_set_input_negative(ADC_REGS, channel_config->input_negative,
 				     channel_config->differential);
 	if (ret != 0) {
-		LOG_ERR("Invalid input_negative : %d\n", channel_config->input_negative);
+		LOG_ERROR("Invalid input_negative : %d\n", channel_config->input_negative);
 	}
 
 	return ret;
@@ -781,19 +781,19 @@ static int adc_apply_channel_config(const struct device *dev,
 						       dev_data->freq, dev_cfg->prescaler);
 	ret = adc_set_acq_time(ADC_REGS, sample_length);
 	if (ret < 0) {
-		LOG_ERR("Selected ADC acquisition time is not valid");
+		LOG_ERROR("Selected ADC acquisition time is not valid");
 		return ret;
 	}
 
 	ret = adc_set_gain(ADC_REGS, channel_config->gain);
 	if (ret < 0) {
-		LOG_ERR("Invalid gain value: %d", channel_config->gain);
+		LOG_ERROR("Invalid gain value: %d", channel_config->gain);
 		return ret;
 	}
 
 	ret = adc_set_reference(ADC_REGS, channel_config->reference);
 	if (ret < 0) {
-		LOG_ERR("Invalid reference: %d", channel_config->reference);
+		LOG_ERROR("Invalid reference: %d", channel_config->reference);
 	}
 
 	return ret;
@@ -834,8 +834,8 @@ static int adc_check_buffer_size(const struct adc_sequence *sequence, uint8_t ac
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
-			needed_buffer_size);
+		LOG_ERROR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			  needed_buffer_size);
 		return -ENOMEM;
 	}
 
@@ -850,21 +850,21 @@ static int adc_start_read(const struct device *dev, const struct adc_sequence *s
 	uint32_t channels, channel_count, index;
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No channels selected!\n");
+		LOG_ERROR("No channels selected!\n");
 		return -EINVAL;
 	}
 
 	/* Set oversampling */
 	ret = adc_set_oversampling(ADC_REGS, sequence->oversampling);
 	if (ret != 0) {
-		LOG_ERR("Invalid oversampling : %d\n", sequence->oversampling);
+		LOG_ERROR("Invalid oversampling : %d\n", sequence->oversampling);
 		return ret;
 	}
 
 	/* Set Resolution */
 	ret = adc_set_resolution(ADC_REGS, sequence->resolution, sequence->oversampling);
 	if (ret != 0) {
-		LOG_ERR("Invalid resolution : %d\n", sequence->resolution);
+		LOG_ERROR("Invalid resolution : %d\n", sequence->resolution);
 		return ret;
 	}
 
@@ -875,12 +875,12 @@ static int adc_start_read(const struct device *dev, const struct adc_sequence *s
 		/* Iterate through all channels and check if they are initialized */
 		index = find_lsb_set(channels) - 1;
 		if (index >= dev_cfg->num_channels) {
-			LOG_ERR("Invalid channel number : %d", index);
+			LOG_ERROR("Invalid channel number : %d", index);
 			return -EINVAL;
 		}
 		/* If the channels is not initialized return invalid */
 		if (dev_data->channel_config[index].initialized == false) {
-			LOG_ERR("Channel is not initialized");
+			LOG_ERROR("Channel is not initialized");
 			return -EINVAL;
 		}
 		channel_count++;
@@ -890,7 +890,7 @@ static int adc_start_read(const struct device *dev, const struct adc_sequence *s
 	/* Check buffer */
 	ret = adc_check_buffer_size(sequence, channel_count);
 	if (ret != 0) {
-		LOG_ERR("Check buffer size invalid\n");
+		LOG_ERROR("Check buffer size invalid\n");
 		return ret;
 	}
 
@@ -961,7 +961,7 @@ static int adc_mchp_channel_setup(const struct device *dev,
 	uint16_t sample_length;
 
 	if (channel_cfg->channel_id >= dev_cfg->num_channels) {
-		LOG_ERR("Invalid Channel id : %d\n", channel_cfg->channel_id);
+		LOG_ERROR("Invalid Channel id : %d\n", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 	/* Update the channel configuration */
@@ -981,7 +981,7 @@ static int adc_mchp_channel_setup(const struct device *dev,
 					  channel_cfg->input_positive, channel_cfg->input_negative);
 
 	if (ret != 0) {
-		LOG_ERR("Invalid ADC channel config");
+		LOG_ERROR("Invalid ADC channel config");
 		return ret;
 	}
 
@@ -1052,14 +1052,14 @@ static int adc_mchp_init(const struct device *dev)
 	/* On Global clock for ADC */
 	ret = clock_control_on(dev_cfg->adc_clock.clock_dev, dev_cfg->adc_clock.gclk_sys);
 	if ((ret != 0) && (ret != -EALREADY)) {
-		LOG_ERR("Failed to enable the GCLK for ADC: %d", ret);
+		LOG_ERROR("Failed to enable the GCLK for ADC: %d", ret);
 		return ret;
 	}
 
 	/* On Main clock for ADC */
 	ret = clock_control_on(dev_cfg->adc_clock.clock_dev, dev_cfg->adc_clock.mclk_sys);
 	if ((ret != 0) && (ret != -EALREADY)) {
-		LOG_ERR("Failed to enable the MCLK for ADC: %d", ret);
+		LOG_ERROR("Failed to enable the MCLK for ADC: %d", ret);
 		return ret;
 	}
 
@@ -1067,7 +1067,7 @@ static int adc_mchp_init(const struct device *dev)
 	ret = clock_control_get_rate(dev_cfg->adc_clock.clock_dev, dev_cfg->adc_clock.gclk_sys,
 				     &dev_data->freq);
 	if (ret != 0) {
-		LOG_ERR("Failed to get the clock rate for ADC: %d", ret);
+		LOG_ERROR("Failed to get the clock rate for ADC: %d", ret);
 		return ret;
 	}
 

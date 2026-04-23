@@ -238,7 +238,7 @@ static int nxp_bt_send_vs_command(uint16_t opcode, const uint8_t *params, uint8_
 		/* Allocate buffer for the hci command */
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (buf == NULL) {
-			LOG_ERR("Unable to allocate command buffer");
+			LOG_ERROR("Unable to allocate command buffer");
 			return -ENOMEM;
 		}
 
@@ -333,7 +333,7 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 			memcpy((void *)bleDeviceAddress, (const void *)&unique_val_crc,
 			       BD_ADDR_UUID_PART_SIZE);
 		} else {
-			LOG_ERR("UUID is empty, cannot generate address.");
+			LOG_ERROR("UUID is empty, cannot generate address.");
 			return -EFAULT;
 		}
 
@@ -401,11 +401,11 @@ static struct net_buf *bt_evt_recv(uint8_t *data, size_t len)
 
 	/* Data Check */
 	if (len < BT_HCI_EVT_HDR_SIZE) {
-		LOG_ERR("Event header is missing");
+		LOG_ERROR("Event header is missing");
 		return NULL;
 	}
 	if ((len - BT_HCI_EVT_HDR_SIZE) != payload_len) {
-		LOG_ERR("Event payload length is incorrect");
+		LOG_ERROR("Event payload length is incorrect");
 		return NULL;
 	}
 
@@ -417,8 +417,8 @@ static struct net_buf *bt_evt_recv(uint8_t *data, size_t len)
 	if (buf) {
 		space_in_buffer = net_buf_tailroom(buf);
 		if (len > space_in_buffer) {
-			LOG_ERR("Buffer size error,INFO : evt_hdr=%d, data_len=%zu, buf_size=%zu",
-				evt_hdr, len, space_in_buffer);
+			LOG_ERROR("Buffer size error,INFO : evt_hdr=%d, data_len=%zu, buf_size=%zu",
+				  evt_hdr, len, space_in_buffer);
 			net_buf_unref(buf);
 			return NULL;
 		}
@@ -428,7 +428,7 @@ static struct net_buf *bt_evt_recv(uint8_t *data, size_t len)
 		if (discardable_evt) {
 			LOG_DBG("Discardable buffer pool full, ignoring event");
 		} else {
-			LOG_ERR("No available event buffers!");
+			LOG_ERROR("No available event buffers!");
 		}
 		return NULL;
 	}
@@ -443,12 +443,12 @@ static struct net_buf *bt_acl_recv(uint8_t *data, size_t len)
 
 	/* Data Check */
 	if (len < BT_HCI_ACL_HDR_SIZE) {
-		LOG_ERR("ACL header is missing");
+		LOG_ERROR("ACL header is missing");
 		return NULL;
 	}
 	memcpy((void *)&payload_len, (void *)&data[2], 2);
 	if ((len - BT_HCI_ACL_HDR_SIZE) != payload_len) {
-		LOG_ERR("ACL payload length is incorrect");
+		LOG_ERROR("ACL payload length is incorrect");
 		return NULL;
 	}
 	/* Allocate a buffer for the received data */
@@ -456,14 +456,14 @@ static struct net_buf *bt_acl_recv(uint8_t *data, size_t len)
 
 	if (buf) {
 		if (len > net_buf_tailroom(buf)) {
-			LOG_ERR("Buffer doesn't have enough space to store the data");
+			LOG_ERROR("Buffer doesn't have enough space to store the data");
 			net_buf_unref(buf);
 			return NULL;
 		}
 		/* Copy the data to the buffer */
 		net_buf_add_mem(buf, data, len);
 	} else {
-		LOG_ERR("ACL buffer is empty");
+		LOG_ERROR("ACL buffer is empty");
 		return NULL;
 	}
 
@@ -487,7 +487,7 @@ static void process_rx(uint8_t packetType, uint8_t *data, uint16_t len)
 		break;
 	default:
 		buf = NULL;
-		LOG_ERR("Unknown HCI type");
+		LOG_ERROR("Unknown HCI type");
 	}
 
 	if (buf) {
@@ -510,7 +510,7 @@ static void bt_rx_thread(void *p1, void *p2, void *p3)
 
 	while (true) {
 		if (k_msgq_get(&rx_msgq, &hci_rx_frame, K_FOREVER) < 0) {
-			LOG_ERR("Failed to get RX data from message queue");
+			LOG_ERROR("Failed to get RX data from message queue");
 			continue;
 		}
 		process_rx(hci_rx_frame.packetType, hci_rx_frame.data, hci_rx_frame.len);
@@ -530,7 +530,7 @@ static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
 	hci_rx_frame.data = k_malloc(len);
 
 	if (!hci_rx_frame.data) {
-		LOG_ERR("Failed to allocate RX buffer");
+		LOG_ERROR("Failed to allocate RX buffer");
 		return;
 	}
 
@@ -539,7 +539,7 @@ static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
 
 	ret = k_msgq_put(&rx_msgq, &hci_rx_frame, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to push RX data to message queue: %d", ret);
+		LOG_ERROR("Failed to push RX data to message queue: %d", ret);
 		k_free(hci_rx_frame.data);
 	}
 }
@@ -566,7 +566,7 @@ static void bt_nxp_send_vs_cmd_complete(const struct device *dev, uint16_t opcod
 
 	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_NO_WAIT);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer for complete event");
+		LOG_ERROR("Failed to allocate buffer for complete event");
 		return;
 	}
 
@@ -715,19 +715,19 @@ static int bt_nxp_open(const struct device *dev, bt_hci_recv_t recv)
 	do {
 		ret = PLATFORM_InitBle();
 		if (ret < 0) {
-			LOG_ERR("Failed to initialize BLE controller");
+			LOG_ERROR("Failed to initialize BLE controller");
 			break;
 		}
 
 		ret = PLATFORM_SetHciRxCallback(hci_rx_cb);
 		if (ret < 0) {
-			LOG_ERR("BLE HCI RX callback registration failed");
+			LOG_ERROR("BLE HCI RX callback registration failed");
 			break;
 		}
 
 		ret = PLATFORM_StartHci();
 		if (ret < 0) {
-			LOG_ERR("HCI open failed");
+			LOG_ERROR("HCI open failed");
 			break;
 		}
 
@@ -747,7 +747,7 @@ int bt_nxp_setup(const struct device *dev, const struct bt_hci_setup_params *par
 		if (IS_ENABLED(CONFIG_HCI_NXP_SET_CAL_DATA)) {
 			ret = bt_nxp_set_calibration_data();
 			if (ret < 0) {
-				LOG_ERR("Failed to set calibration data");
+				LOG_ERROR("Failed to set calibration data");
 				break;
 			}
 			if (IS_ENABLED(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)) {
@@ -758,7 +758,7 @@ int bt_nxp_setup(const struct device *dev, const struct bt_hci_setup_params *par
 
 				ret = bt_nxp_set_calibration_data_annex100();
 				if (ret < 0) {
-					LOG_ERR("Failed to set calibration data");
+					LOG_ERROR("Failed to set calibration data");
 					break;
 				}
 			}
@@ -767,13 +767,13 @@ int bt_nxp_setup(const struct device *dev, const struct bt_hci_setup_params *par
 		if (IS_ENABLED(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP)) {
 			ret = nxp_bt_set_host_sleep_config();
 			if (ret < 0) {
-				LOG_ERR("Failed to set host sleep config");
+				LOG_ERROR("Failed to set host sleep config");
 				break;
 			}
 
 			ret = nxp_bt_enable_controller_autosleep();
 			if (ret < 0) {
-				LOG_ERR("Failed to configure controller autosleep");
+				LOG_ERROR("Failed to configure controller autosleep");
 				break;
 			}
 		}
@@ -781,7 +781,7 @@ int bt_nxp_setup(const struct device *dev, const struct bt_hci_setup_params *par
 		if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
 			ret = bt_nxp_set_mac_address(&(params->public_addr));
 			if (ret < 0) {
-				LOG_ERR("Failed to set MAC address");
+				LOG_ERROR("Failed to set MAC address");
 				break;
 			}
 		}
@@ -817,7 +817,7 @@ static int bt_nxp_init(const struct device *dev)
 	do {
 		status = PLATFORM_InitBle();
 		if (status < 0) {
-			LOG_ERR("BLE Controller initialization failed");
+			LOG_ERROR("BLE Controller initialization failed");
 			ret = status;
 			break;
 		}

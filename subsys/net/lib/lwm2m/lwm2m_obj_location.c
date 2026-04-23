@@ -62,7 +62,7 @@ static struct lwm2m_engine_obj_inst *location_create(uint16_t obj_inst_id)
 	int i = 0, j = 0;
 
 	if (inst.resource_count) {
-		LOG_ERR("Only 1 instance of Location object can exist.");
+		LOG_ERROR("Only 1 instance of Location object can exist.");
 		return NULL;
 	}
 

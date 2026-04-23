@@ -235,13 +235,13 @@ int nrf_wifi_config_sr_switch(bool separate_antennas)
 	int ret;
 
 	if (!device_is_ready(sr_rf_switch_spec.port)) {
-		LOG_ERR("Unable to open GPIO device");
+		LOG_ERROR("Unable to open GPIO device");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&sr_rf_switch_spec, GPIO_OUTPUT);
 	if (ret < 0) {
-		LOG_ERR("Unable to configure GPIO device");
+		LOG_ERROR("Unable to configure GPIO device");
 		return -1;
 	}
 
@@ -281,7 +281,7 @@ int nrf_wifi_coex_hw_reset(void)
 				(void *)(&params), cmd_len);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("CH reset configuration failed");
+		LOG_ERROR("CH reset configuration failed");
 		return -1;
 	}
 
@@ -312,7 +312,7 @@ int sr_gpio_config_early(void)
 	 */
 	ret = gpio_pin_configure_dt(&sr_rf_switch_spec, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
-		LOG_ERR("SR GPIO early configuration failed %d", ret);
+		LOG_ERROR("SR GPIO early configuration failed %d", ret);
 	}
 
 	return ret;
@@ -328,7 +328,7 @@ int sr_gpio_config(void)
 
 	ret = gpio_pin_configure_dt(&sr_rf_switch_spec, GPIO_OUTPUT);
 	if (ret) {
-		LOG_ERR("SR GPIO configuration failed %d", ret);
+		LOG_ERROR("SR GPIO configuration failed %d", ret);
 	}
 
 	return ret;
@@ -340,7 +340,7 @@ int sr_gpio_remove(void)
 
 	ret = gpio_pin_configure_dt(&sr_rf_switch_spec, GPIO_DISCONNECTED);
 	if (ret) {
-		LOG_ERR("SR GPIO remove failed %d", ret);
+		LOG_ERROR("SR GPIO remove failed %d", ret);
 	}
 
 	return ret;
@@ -352,7 +352,7 @@ int sr_ant_switch(unsigned int ant_switch)
 
 	ret = gpio_pin_set_dt(&sr_rf_switch_spec, ant_switch & 0x1);
 	if (ret) {
-		LOG_ERR("SR GPIO set failed %d", ret);
+		LOG_ERROR("SR GPIO set failed %d", ret);
 	}
 
 	return ret;

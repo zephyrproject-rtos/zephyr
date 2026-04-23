@@ -119,7 +119,7 @@ static int sy1xx_mac_initialize(const struct device *dev)
 	/* PAD config */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("failed to configure pins");
+		LOG_ERROR("failed to configure pins");
 		return ret;
 	}
 
@@ -176,7 +176,7 @@ static int sy1xx_mac_set_mac_addr(const struct device *dev)
 	ret = net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
 				   NET_LINK_ETHERNET);
 	if (ret) {
-		LOG_ERR("%s failed to set link address", dev->name);
+		LOG_ERROR("%s failed to set link address", dev->name);
 		return ret;
 	}
 
@@ -260,7 +260,7 @@ static void phy_link_state_changed(const struct device *pdev, struct phy_link_st
 			     (SY1XX_MAC_CTRL_CLK_DIV_1 << SY1XX_MAC_CTRL_CLK_DIV_OFFS);
 			break;
 		default:
-			LOG_ERR("invalid link speed");
+			LOG_ERROR("invalid link speed");
 			return;
 		}
 		sys_write32(v, cfg->ctrl_addr + SY1XX_MAC_CTRL_REG);
@@ -313,7 +313,7 @@ static void sy1xx_mac_iface_init(struct net_if *iface)
 	if (device_is_ready(cfg->phy_dev)) {
 		phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed, (void *)dev);
 	} else {
-		LOG_ERR("PHY device not ready");
+		LOG_ERROR("PHY device not ready");
 	}
 }
 
@@ -389,7 +389,7 @@ static int sy1xx_mac_low_level_send(const struct device *dev, uint8_t *tx, uint1
 	/* udma is ready, double check if last transmission was successful */
 	if (SY1XX_UDMA_GET_REMAINING_TX(cfg->base_addr)) {
 		SY1XX_UDMA_CANCEL_TX(cfg->base_addr);
-		LOG_ERR("tx - last transmission failed");
+		LOG_ERROR("tx - last transmission failed");
 		return -EINVAL;
 	}
 
@@ -453,7 +453,7 @@ static int sy1xx_mac_send(const struct device *dev, struct net_pkt *pkt)
 			if (data->temp.tx_len < MAX_MAC_PACKET_LEN) {
 				data->temp.tx[data->temp.tx_len++] = frag->data[i];
 			} else {
-				LOG_ERR("tx buffer overflow");
+				LOG_ERROR("tx buffer overflow");
 				return -ENOMEM;
 			}
 		}
@@ -469,7 +469,7 @@ static int sy1xx_mac_send(const struct device *dev, struct net_pkt *pkt)
 			break;
 		}
 		if (ret != -EBUSY) {
-			LOG_ERR("tx error");
+			LOG_ERROR("tx error");
 			return ret;
 		}
 		k_sleep(K_MSEC(1));
@@ -487,13 +487,13 @@ static int sy1xx_mac_receive_data(const struct device *dev, uint8_t *rx, uint16_
 
 	rx_pkt = net_pkt_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
 	if (rx_pkt == NULL) {
-		LOG_ERR("rx packet allocation failed");
+		LOG_ERROR("rx packet allocation failed");
 		return -EINVAL;
 	}
 
 	/* add data to the net_pkt */
 	if (net_pkt_write(rx_pkt, rx, len)) {
-		LOG_ERR("failed to write data to net_pkt");
+		LOG_ERROR("failed to write data to net_pkt");
 		net_pkt_unref(rx_pkt);
 		return -EINVAL;
 	}
@@ -501,7 +501,7 @@ static int sy1xx_mac_receive_data(const struct device *dev, uint8_t *rx, uint16_
 	/* register new packet in stack */
 	ret = net_recv_data(data->iface, rx_pkt);
 	if (ret) {
-		LOG_ERR("rx packet registration failed");
+		LOG_ERROR("rx packet registration failed");
 		return ret;
 	}
 

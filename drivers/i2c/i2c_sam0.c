@@ -238,7 +238,7 @@ static void i2c_sam0_dma_write_done(const struct device *dma_dev, void *arg,
 	}
 
 	if (error_code < 0) {
-		LOG_ERR("DMA write error on %s: %d", dev->name, error_code);
+		LOG_ERROR("DMA write error on %s: %d", dev->name, error_code);
 		i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 		irq_unlock(key);
 
@@ -295,14 +295,14 @@ static bool i2c_sam0_dma_write_start(const struct device *dev)
 
 	retval = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
 	if (retval != 0) {
-		LOG_ERR("Write DMA configure on %s failed: %d",
+		LOG_ERROR("Write DMA configure on %s failed: %d",
 			dev->name, retval);
 		return false;
 	}
 
 	retval = dma_start(cfg->dma_dev, cfg->dma_channel);
 	if (retval != 0) {
-		LOG_ERR("Write DMA start on %s failed: %d",
+		LOG_ERROR("Write DMA start on %s failed: %d",
 			dev->name, retval);
 		return false;
 	}
@@ -329,7 +329,7 @@ static void i2c_sam0_dma_read_done(const struct device *dma_dev, void *arg,
 	}
 
 	if (error_code < 0) {
-		LOG_ERR("DMA read error on %s: %d", dev->name, error_code);
+		LOG_ERROR("DMA read error on %s: %d", dev->name, error_code);
 		i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
 		irq_unlock(key);
 
@@ -388,14 +388,14 @@ static bool i2c_sam0_dma_read_start(const struct device *dev)
 
 	retval = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
 	if (retval != 0) {
-		LOG_ERR("Read DMA configure on %s failed: %d",
+		LOG_ERROR("Read DMA configure on %s failed: %d",
 			dev->name, retval);
 		return false;
 	}
 
 	retval = dma_start(cfg->dma_dev, cfg->dma_channel);
 	if (retval != 0) {
-		LOG_ERR("Read DMA start on %s failed: %d",
+		LOG_ERROR("Read DMA start on %s failed: %d",
 			dev->name, retval);
 		return false;
 	}
@@ -524,7 +524,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 				goto unlock;
 			}
 
-			LOG_ERR("Transaction error on %s: %08X",
+			LOG_ERROR("Transaction error on %s: %08X",
 				dev->name, data->msg.status);
 			ret = -EIO;
 			goto unlock;

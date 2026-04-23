@@ -117,7 +117,7 @@ static int encode_and_send(struct mqtt_sn_client *client, struct mqtt_sn_param *
 	LOG_HEXDUMP_DBG(client->tx.data, client->tx.len, "Send message");
 
 	if (!client->transport->sendto) {
-		LOG_ERR("Can't send: no callback");
+		LOG_ERROR("Can't send: no callback");
 		err = -ENOTSUP;
 		goto end;
 	}
@@ -146,7 +146,7 @@ static int encode_and_send(struct mqtt_sn_client *client, struct mqtt_sn_param *
 
 end:
 	if (err) {
-		LOG_ERR("Error during send: %d", err);
+		LOG_ERROR("Error during send: %d", err);
 	}
 	net_buf_simple_reset(&client->tx);
 
@@ -183,7 +183,7 @@ static struct mqtt_sn_publish *mqtt_sn_publish_create(struct mqtt_sn_client *cli
 	struct mqtt_sn_publish *pub;
 
 	if (k_mem_slab_alloc(&publishes, (void **)&pub, K_NO_WAIT)) {
-		LOG_ERR("Can't create PUB: no free slot");
+		LOG_ERROR("Can't create PUB: no free slot");
 		return NULL;
 	}
 
@@ -191,7 +191,7 @@ static struct mqtt_sn_publish *mqtt_sn_publish_create(struct mqtt_sn_client *cli
 
 	if (data && data->data && data->size) {
 		if (data->size > sizeof(pub->pubdata)) {
-			LOG_ERR("Can't create PUB: Too much data (%zu)", data->size);
+			LOG_ERROR("Can't create PUB: Too much data (%zu)", data->size);
 			return NULL;
 		}
 
@@ -238,19 +238,19 @@ static struct mqtt_sn_topic *mqtt_sn_topic_create(struct mqtt_sn_client *client,
 	struct mqtt_sn_topic *topic;
 
 	if (k_mem_slab_alloc(&topics, (void **)&topic, K_NO_WAIT)) {
-		LOG_ERR("Can't create topic: no free slot");
+		LOG_ERROR("Can't create topic: no free slot");
 		return NULL;
 	}
 
 	memset(topic, 0, sizeof(*topic));
 
 	if (!name || !name->data || !name->size) {
-		LOG_ERR("Can't create topic with empty name");
+		LOG_ERROR("Can't create topic with empty name");
 		return NULL;
 	}
 
 	if (name->size > sizeof(topic->name)) {
-		LOG_ERR("Can't create topic: name too long (%zu)", name->size);
+		LOG_ERROR("Can't create topic: name too long (%zu)", name->size);
 		return NULL;
 	}
 
@@ -448,7 +448,7 @@ static void mqtt_sn_do_subscribe(struct mqtt_sn_client *client, struct mqtt_sn_t
 	}
 
 	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
-		LOG_ERR("Cannot subscribe: not connected");
+		LOG_ERROR("Cannot subscribe: not connected");
 		return;
 	}
 
@@ -466,7 +466,7 @@ static void mqtt_sn_do_subscribe(struct mqtt_sn_client *client, struct mqtt_sn_t
 		p.params.subscribe.topic.topic_id = topic->topic_id;
 		break;
 	default:
-		LOG_ERR("Unexpected topic type %d", topic->type);
+		LOG_ERROR("Unexpected topic type %d", topic->type);
 		return;
 	}
 
@@ -488,7 +488,7 @@ static void mqtt_sn_do_unsubscribe(struct mqtt_sn_client *client, struct mqtt_sn
 	}
 
 	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
-		LOG_ERR("Cannot unsubscribe: not connected");
+		LOG_ERROR("Cannot unsubscribe: not connected");
 		return;
 	}
 
@@ -504,7 +504,7 @@ static void mqtt_sn_do_unsubscribe(struct mqtt_sn_client *client, struct mqtt_sn
 		p.params.unsubscribe.topic.topic_id = topic->topic_id;
 		break;
 	default:
-		LOG_ERR("Unexpected topic type %d", topic->type);
+		LOG_ERROR("Unexpected topic type %d", topic->type);
 		return;
 	}
 
@@ -526,7 +526,7 @@ static void mqtt_sn_do_register(struct mqtt_sn_client *client, struct mqtt_sn_to
 	}
 
 	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
-		LOG_ERR("Cannot register: not connected");
+		LOG_ERROR("Cannot register: not connected");
 		return;
 	}
 
@@ -538,7 +538,7 @@ static void mqtt_sn_do_register(struct mqtt_sn_client *client, struct mqtt_sn_to
 		p.params.reg.topic.size = topic->namelen;
 		break;
 	default:
-		LOG_ERR("Unexpected topic type %d", topic->type);
+		LOG_ERROR("Unexpected topic type %d", topic->type);
 		return;
 	}
 
@@ -563,7 +563,7 @@ static void mqtt_sn_do_publish(struct mqtt_sn_client *client, struct mqtt_sn_pub
 	}
 
 	if (pub->qos != MQTT_SN_QOS_M1 && client->state != MQTT_SN_CLIENT_ACTIVE) {
-		LOG_ERR("Cannot publish: not connected");
+		LOG_ERROR("Cannot publish: not connected");
 		return;
 	}
 
@@ -633,7 +633,7 @@ static void mqtt_sn_do_will_topic_update(struct mqtt_sn_client *client)
 	}
 
 	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
-		LOG_ERR("Cannot update will topic: not connected");
+		LOG_ERROR("Cannot update will topic: not connected");
 		return;
 	}
 
@@ -656,7 +656,7 @@ static void mqtt_sn_do_will_message_update(struct mqtt_sn_client *client)
 	}
 
 	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
-		LOG_ERR("Cannot update will message: not connected");
+		LOG_ERROR("Cannot update will message: not connected");
 		return;
 	}
 
@@ -1244,7 +1244,7 @@ int mqtt_sn_connect(struct mqtt_sn_client *client, bool will, bool clean_session
 	}
 
 	if (will && (!client->will_msg.data || !client->will_topic.data)) {
-		LOG_ERR("will set to true, but no will data in client");
+		LOG_ERROR("will set to true, but no will data in client");
 		return -EINVAL;
 	}
 
@@ -1308,7 +1308,7 @@ int mqtt_sn_subscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 	}
 
 	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
-		LOG_ERR("Cannot subscribe: not connected");
+		LOG_ERROR("Cannot subscribe: not connected");
 		return -ENOTCONN;
 	}
 
@@ -1348,7 +1348,7 @@ int mqtt_sn_unsubscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 	}
 
 	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
-		LOG_ERR("Cannot unsubscribe: not connected");
+		LOG_ERROR("Cannot unsubscribe: not connected");
 		return -ENOTCONN;
 	}
 
@@ -1359,7 +1359,7 @@ int mqtt_sn_unsubscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 	}
 
 	if (topic->state != MQTT_SN_TOPIC_STATE_SUBSCRIBED) {
-		LOG_ERR("Cannot unsubscribe: not subscribed");
+		LOG_ERROR("Cannot unsubscribe: not subscribed");
 		return -EAGAIN;
 	}
 
@@ -1383,11 +1383,11 @@ static int mqtt_sn_publish_m1(struct mqtt_sn_client *client, struct mqtt_sn_data
 
 	topic = mqtt_sn_topic_find_by_name(client, topic_name);
 	if (!topic) {
-		LOG_ERR("Topic not found");
+		LOG_ERROR("Topic not found");
 		return -EINVAL;
 	}
 	if (topic->type != MQTT_SN_TOPIC_TYPE_PREDEF && topic->type != MQTT_SN_TOPIC_TYPE_SHORT) {
-		LOG_ERR("Topic must be predefined or short");
+		LOG_ERROR("Topic must be predefined or short");
 		return -EINVAL;
 	}
 
@@ -1427,7 +1427,7 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 	}
 
 	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
-		LOG_ERR("Cannot publish: disconnected");
+		LOG_ERROR("Cannot publish: disconnected");
 		return -ENOTCONN;
 	}
 
@@ -1562,7 +1562,7 @@ static void handle_connack(struct mqtt_sn_client *client, struct mqtt_sn_param_c
 			client->ping_retries = N_RETRY;
 			break;
 		default:
-			LOG_ERR("Client received CONNACK but was in state %d", client->state);
+			LOG_ERROR("Client received CONNACK but was in state %d", client->state);
 			return;
 		}
 	} else {
@@ -1623,7 +1623,7 @@ static void handle_regack(struct mqtt_sn_client *client, struct mqtt_sn_param_re
 	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_by_msg_id(client, p->msg_id);
 
 	if (!topic) {
-		LOG_ERR("Can't REGACK, no topic found");
+		LOG_ERROR("Can't REGACK, no topic found");
 		return;
 	}
 
@@ -1668,7 +1668,7 @@ static void handle_puback(struct mqtt_sn_client *client, struct mqtt_sn_param_pu
 	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_by_msg_id(client, p->msg_id);
 
 	if (!pub) {
-		LOG_ERR("No matching PUBLISH found for msg id %u", p->msg_id);
+		LOG_ERROR("No matching PUBLISH found for msg id %u", p->msg_id);
 		return;
 	}
 
@@ -1681,7 +1681,7 @@ static void handle_pubrec(struct mqtt_sn_client *client, struct mqtt_sn_param_pu
 	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_by_msg_id(client, p->msg_id);
 
 	if (!pub) {
-		LOG_ERR("No matching PUBLISH found for msg id %u", p->msg_id);
+		LOG_ERROR("No matching PUBLISH found for msg id %u", p->msg_id);
 		return;
 	}
 
@@ -1707,7 +1707,7 @@ static void handle_pubcomp(struct mqtt_sn_client *client, struct mqtt_sn_param_p
 	struct mqtt_sn_publish *pub = mqtt_sn_publish_find_by_msg_id(client, p->msg_id);
 
 	if (!pub) {
-		LOG_ERR("No matching PUBLISH found for msg id %u", p->msg_id);
+		LOG_ERROR("No matching PUBLISH found for msg id %u", p->msg_id);
 		return;
 	}
 
@@ -1719,7 +1719,7 @@ static void handle_suback(struct mqtt_sn_client *client, struct mqtt_sn_param_su
 	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_by_msg_id(client, p->msg_id);
 
 	if (!topic) {
-		LOG_ERR("No matching SUBSCRIBE found for msg id %u", p->msg_id);
+		LOG_ERROR("No matching SUBSCRIBE found for msg id %u", p->msg_id);
 		return;
 	}
 
@@ -1737,7 +1737,7 @@ static void handle_unsuback(struct mqtt_sn_client *client, struct mqtt_sn_param_
 	struct mqtt_sn_topic *topic = mqtt_sn_topic_find_by_msg_id(client, p->msg_id);
 
 	if (!topic || topic->state != MQTT_SN_TOPIC_STATE_UNSUBSCRIBING) {
-		LOG_ERR("No matching UNSUBSCRIBE found for msg id %u", p->msg_id);
+		LOG_ERROR("No matching UNSUBSCRIBE found for msg id %u", p->msg_id);
 		return;
 	}
 
@@ -1776,7 +1776,7 @@ static void handle_willtopicresp(struct mqtt_sn_client *client,
 				 struct mqtt_sn_param_willtopicresp *p)
 {
 	if (!client->will_topic_update.in_progress) {
-		LOG_ERR("There's no will topic update in progress");
+		LOG_ERROR("There's no will topic update in progress");
 		return;
 	}
 
@@ -1790,7 +1790,7 @@ static void handle_willtopicresp(struct mqtt_sn_client *client,
 static void handle_willmsgresp(struct mqtt_sn_client *client, struct mqtt_sn_param_willmsgresp *p)
 {
 	if (!client->will_message_update.in_progress) {
-		LOG_ERR("There's no will message update in progress");
+		LOG_ERROR("There's no will message update in progress");
 		return;
 	}
 
@@ -1875,7 +1875,7 @@ static int handle_msg(struct mqtt_sn_client *client, struct mqtt_sn_data rx_addr
 		handle_willmsgresp(client, &p.params.willmsgresp);
 		break;
 	default:
-		LOG_ERR("Unexpected message type %d", p.type);
+		LOG_ERROR("Unexpected message type %d", p.type);
 		break;
 	}
 

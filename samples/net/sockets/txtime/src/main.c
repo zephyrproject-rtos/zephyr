@@ -229,7 +229,7 @@ static int get_local_ipv6(struct net_if *iface, struct sockaddr *peer,
 
 	addr = net_if_ipv6_select_src_addr(iface, &net_sin6(peer)->sin6_addr);
 	if (!addr) {
-		LOG_ERR("Cannot get local %s address", "IPv6");
+		LOG_ERROR("Cannot get local %s address", "IPv6");
 		return -EINVAL;
 	}
 
@@ -251,7 +251,7 @@ static int get_local_ipv4(struct net_if *iface, struct sockaddr *peer,
 
 	addr = net_if_ipv4_select_src_addr(iface, &net_sin(peer)->sin_addr);
 	if (!addr) {
-		LOG_ERR("Cannot get local %s address", "IPv4");
+		LOG_ERROR("Cannot get local %s address", "IPv4");
 		return -EINVAL;
 	}
 
@@ -278,8 +278,7 @@ static int create_socket(struct net_if *iface, struct sockaddr *peer)
 
 		sock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 		if (sock < 0) {
-			LOG_ERR("Cannot create %s socket (%d)", "packet",
-				-errno);
+			LOG_ERROR("Cannot create %s socket (%d)", "packet", -errno);
 			return -errno;
 		}
 
@@ -297,7 +296,7 @@ static int create_socket(struct net_if *iface, struct sockaddr *peer)
 
 		sock = socket(peer->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 		if (sock < 0) {
-			LOG_ERR("Cannot create %s socket (%d)", "UDP", -errno);
+			LOG_ERROR("Cannot create %s socket (%d)", "UDP", -errno);
 			return -errno;
 		}
 
@@ -320,7 +319,7 @@ static int create_socket(struct net_if *iface, struct sockaddr *peer)
 			net_addr_ntop(AF_INET, &net_sin(&local)->sin_addr,
 				      addr_str, sizeof(addr_str));
 		} else {
-			LOG_ERR("Invalid socket family %d", peer->sa_family);
+			LOG_ERROR("Invalid socket family %d", peer->sa_family);
 			return -EINVAL;
 		}
 
@@ -329,14 +328,14 @@ static int create_socket(struct net_if *iface, struct sockaddr *peer)
 
 	ret = bind(sock, &local, addrlen);
 	if (ret < 0) {
-		LOG_ERR("Cannot bind socket (%d)", -errno);
+		LOG_ERROR("Cannot bind socket (%d)", -errno);
 		return -errno;
 	}
 
 	optval = true;
 	ret = setsockopt(sock, SOL_SOCKET, SO_TXTIME, &optval, sizeof(optval));
 	if (ret < 0) {
-		LOG_ERR("Cannot set SO_TXTIME (%d)", -errno);
+		LOG_ERROR("Cannot set SO_TXTIME (%d)", -errno);
 		return -errno;
 	}
 
@@ -344,7 +343,7 @@ static int create_socket(struct net_if *iface, struct sockaddr *peer)
 	ret = setsockopt(sock, SOL_SOCKET, SO_PRIORITY, &priority,
 			 sizeof(priority));
 	if (ret < 0) {
-		LOG_ERR("Cannot set SO_PRIORITY (%d)", -errno);
+		LOG_ERROR("Cannot set SO_PRIORITY (%d)", -errno);
 		return -errno;
 	}
 
@@ -360,7 +359,7 @@ static int get_peer_address(struct net_if **iface, char *addr_str,
 			       strlen(CONFIG_NET_SAMPLE_PEER),
 			       &peer_data.peer);
 	if (!ret) {
-		LOG_ERR("Cannot parse '%s'", CONFIG_NET_SAMPLE_PEER);
+		LOG_ERROR("Cannot parse '%s'", CONFIG_NET_SAMPLE_PEER);
 		return -EINVAL;
 	}
 
@@ -462,8 +461,8 @@ static void set_qbv_params(struct net_if *iface)
 				       iface, &params,
 				       sizeof(struct ethernet_req_params));
 			if (ret) {
-				LOG_ERR("Could not set %s%s (%d) to port %d",
-					"gate control list", "", ret, i);
+				LOG_ERROR("Could not set %s%s (%d) to port %d", "gate control list",
+					  "", ret, i);
 			}
 		}
 
@@ -477,8 +476,8 @@ static void set_qbv_params(struct net_if *iface)
 		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM, iface,
 			       &params, sizeof(struct ethernet_req_params));
 		if (ret) {
-			LOG_ERR("Could not set %s%s (%d) to port %d",
-				"gate control list", " len", ret, i);
+			LOG_ERROR("Could not set %s%s (%d) to port %d", "gate control list", " len",
+				  ret, i);
 		}
 
 		memset(&params, 0, sizeof(params));
@@ -494,8 +493,7 @@ static void set_qbv_params(struct net_if *iface)
 		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM, iface,
 			       &params, sizeof(struct ethernet_req_params));
 		if (ret) {
-			LOG_ERR("Could not set %s%s (%d) to port %d",
-				"base time", "", ret, i);
+			LOG_ERROR("Could not set %s%s (%d) to port %d", "base time", "", ret, i);
 		}
 	}
 }
@@ -575,7 +573,7 @@ int main(void)
 	}
 
 	if (!iface) {
-		LOG_ERR("Cannot get local network interface!");
+		LOG_ERROR("Cannot get local network interface!");
 		return 0;
 	}
 
@@ -583,19 +581,18 @@ int main(void)
 
 	caps = net_eth_get_hw_capabilities(iface);
 	if (!(caps & ETHERNET_PTP)) {
-		LOG_ERR("Interface %p does not support %s", iface, "PTP");
+		LOG_ERROR("Interface %p does not support %s", iface, "PTP");
 		return 0;
 	}
 
 	if (!(caps & ETHERNET_TXTIME)) {
-		LOG_ERR("Interface %p does not support %s", iface, "TXTIME");
+		LOG_ERROR("Interface %p does not support %s", iface, "TXTIME");
 		return 0;
 	}
 
 	peer_data.clk = net_eth_get_ptp_clock_by_index(if_index);
 	if (!peer_data.clk) {
-		LOG_ERR("Interface %p does not support %s", iface,
-			"PTP clock");
+		LOG_ERROR("Interface %p does not support %s", iface, "PTP clock");
 		return 0;
 	}
 
@@ -625,7 +622,7 @@ int main(void)
 
 	peer_data.sock = create_socket(iface, &peer_data.peer);
 	if (peer_data.sock < 0) {
-		LOG_ERR("Cannot create socket (%d)", peer_data.sock);
+		LOG_ERROR("Cannot create socket (%d)", peer_data.sock);
 		return 0;
 	}
 
@@ -635,7 +632,7 @@ int main(void)
 				 NULL, NULL, THREAD_PRIORITY, 0,
 				 K_FOREVER);
 	if (!tx_tid) {
-		LOG_ERR("Cannot create TX thread!");
+		LOG_ERROR("Cannot create TX thread!");
 		return 0;
 	}
 
@@ -647,7 +644,7 @@ int main(void)
 				 NULL, NULL, THREAD_PRIORITY, 0,
 				 K_FOREVER);
 	if (!rx_tid) {
-		LOG_ERR("Cannot create RX thread!");
+		LOG_ERROR("Cannot create RX thread!");
 		return 0;
 	}
 

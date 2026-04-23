@@ -31,7 +31,7 @@ static int gt5x_validate_id(const struct device *dev, uint16_t api_id)
 	const struct gt5x_config *cfg = dev->config;
 
 	if (api_id < 1 || api_id > cfg->max_templates) {
-		LOG_ERR("Invalid ID %u (valid: 1-%u)", api_id, cfg->max_templates);
+		LOG_ERROR("Invalid ID %u (valid: 1-%u)", api_id, cfg->max_templates);
 		return -EINVAL;
 	}
 
@@ -189,7 +189,7 @@ static int gt5x_send_command(const struct device *dev, uint16_t cmd, uint32_t pa
 
 	if (k_sem_take(&data->uart_tx_sem, K_MSEC(GT5X_UART_TIMEOUT_MS)) != 0) {
 		uart_irq_tx_disable(cfg->uart_dev);
-		LOG_ERR("UART TX timeout");
+		LOG_ERROR("UART TX timeout");
 		return -ETIMEDOUT;
 	}
 
@@ -215,17 +215,17 @@ static int gt5x_recv_response(const struct device *dev, uint32_t *param_out)
 
 	if (k_sem_take(&data->uart_rx_sem, K_MSEC(GT5X_UART_TIMEOUT_MS)) != 0) {
 		uart_irq_rx_disable(cfg->uart_dev);
-		LOG_ERR("UART RX timeout");
+		LOG_ERROR("UART RX timeout");
 		return -ETIMEDOUT;
 	}
 
 	if (data->rx_error == GT5X_RX_OVERFLOW) {
-		LOG_ERR("RX buffer overflow");
+		LOG_ERROR("RX buffer overflow");
 		return -EOVERFLOW;
 	}
 
 	if (data->rx_error == GT5X_RX_INVALID) {
-		LOG_ERR("Invalid RX state");
+		LOG_ERROR("Invalid RX state");
 		return -EBADMSG;
 	}
 
@@ -234,13 +234,13 @@ static int gt5x_recv_response(const struct device *dev, uint32_t *param_out)
 	/* Validate start codes */
 	if (data->rx_pkt.buf[0] != GT5X_CMD_START_CODE1 ||
 	    data->rx_pkt.buf[1] != GT5X_CMD_START_CODE2) {
-		LOG_ERR("Invalid start codes");
+		LOG_ERROR("Invalid start codes");
 		return -EBADMSG;
 	}
 
 	/* Validate device ID */
 	if (sys_get_le16(&data->rx_pkt.buf[2]) != GT5X_DEVICE_ID) {
-		LOG_ERR("Device ID mismatch");
+		LOG_ERROR("Device ID mismatch");
 		return -EBADMSG;
 	}
 
@@ -251,7 +251,8 @@ static int gt5x_recv_response(const struct device *dev, uint32_t *param_out)
 	recv_checksum = sys_get_le16(&data->rx_pkt.buf[10]);
 
 	if (recv_checksum != calc_checksum) {
-		LOG_ERR("Checksum mismatch: recv=0x%04x calc=0x%04x", recv_checksum, calc_checksum);
+		LOG_ERROR("Checksum mismatch: recv=0x%04x calc=0x%04x", recv_checksum,
+			  calc_checksum);
 		return -EBADMSG;
 	}
 
@@ -264,7 +265,7 @@ static int gt5x_recv_response(const struct device *dev, uint32_t *param_out)
 	}
 
 	if (response != GT5X_ACK) {
-		LOG_ERR("Invalid response code: 0x%04x", response);
+		LOG_ERROR("Invalid response code: 0x%04x", response);
 		return -EBADMSG;
 	}
 
@@ -342,7 +343,7 @@ static int gt5x_send_data_packet(const struct device *dev, const uint8_t *data, 
 
 		if (k_sem_take(&drv_data->uart_tx_sem, K_MSEC(GT5X_UART_TIMEOUT_MS)) != 0) {
 			uart_irq_tx_disable(cfg->uart_dev);
-			LOG_ERR("Data packet TX timeout at offset %zu", offset);
+			LOG_ERROR("Data packet TX timeout at offset %zu", offset);
 			ret = -ETIMEDOUT;
 			goto cleanup;
 		}
@@ -384,13 +385,13 @@ static int gt5x_recv_data_packet(const struct device *dev, uint8_t *data, size_t
 
 		if (k_sem_take(&drv_data->uart_rx_sem, K_MSEC(GT5X_UART_TIMEOUT_MS)) != 0) {
 			uart_irq_rx_disable(cfg->uart_dev);
-			LOG_ERR("Data packet RX timeout at offset %zu", offset);
+			LOG_ERROR("Data packet RX timeout at offset %zu", offset);
 			ret = -ETIMEDOUT;
 			goto cleanup;
 		}
 
 		if (drv_data->rx_error != GT5X_RX_OK) {
-			LOG_ERR("RX error during data packet reception");
+			LOG_ERROR("RX error during data packet reception");
 			ret = -EIO;
 			goto cleanup;
 		}
@@ -403,14 +404,14 @@ static int gt5x_recv_data_packet(const struct device *dev, uint8_t *data, size_t
 
 	/* Validate start codes */
 	if (packet[0] != GT5X_DATA_START_CODE1 || packet[1] != GT5X_DATA_START_CODE2) {
-		LOG_ERR("Invalid data packet start codes");
+		LOG_ERROR("Invalid data packet start codes");
 		ret = -EBADMSG;
 		goto cleanup;
 	}
 
 	/* Validate device ID */
 	if (sys_get_le16(&packet[2]) != GT5X_DEVICE_ID) {
-		LOG_ERR("Data packet device ID mismatch");
+		LOG_ERROR("Data packet device ID mismatch");
 		ret = -EBADMSG;
 		goto cleanup;
 	}
@@ -422,7 +423,7 @@ static int gt5x_recv_data_packet(const struct device *dev, uint8_t *data, size_t
 	recv_checksum = sys_get_le16(&packet[packet_size - GT5X_CHECKSUM_SIZE]);
 
 	if (recv_checksum != calc_checksum) {
-		LOG_ERR("Data packet checksum mismatch");
+		LOG_ERROR("Data packet checksum mismatch");
 		ret = -EBADMSG;
 		goto cleanup;
 	}
@@ -474,7 +475,7 @@ static int gt5x_capture_finger_internal(const struct device *dev, bool best_qual
 
 	ret = gt5x_led_control_internal(dev, true);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable LED before capture");
+		LOG_ERROR("Failed to enable LED before capture");
 		return ret;
 	}
 
@@ -732,7 +733,7 @@ static int gt5x_enroll_capture(const struct device *dev, k_timeout_t timeout,
 
 	ret = gt5x_transceive(dev, cmd, 0, NULL);
 	if (ret < 0) {
-		LOG_ERR("Enroll%u failed: %d", pass, ret);
+		LOG_ERROR("Enroll%u failed: %d", pass, ret);
 		k_mutex_unlock(&data->lock);
 		return ret;
 	}
@@ -830,7 +831,7 @@ static int gt5x_template_store(const struct device *dev, uint16_t id, const uint
 	}
 
 	if (size != cfg->template_size) {
-		LOG_ERR("Template size mismatch: %zu != %u", size, cfg->template_size);
+		LOG_ERROR("Template size mismatch: %zu != %u", size, cfg->template_size);
 		return -EINVAL;
 	}
 
@@ -880,7 +881,7 @@ static int gt5x_template_read(const struct device *dev, uint16_t id, uint8_t *da
 	}
 
 	if (size < cfg->template_size) {
-		LOG_ERR("Buffer too small: %zu < %u", size, cfg->template_size);
+		LOG_ERROR("Buffer too small: %zu < %u", size, cfg->template_size);
 		return -EINVAL;
 	}
 
@@ -1109,7 +1110,7 @@ static int gt5x_init(const struct device *dev)
 	bool sn_valid;
 
 	if (!device_is_ready(cfg->uart_dev)) {
-		LOG_ERR("UART device not ready");
+		LOG_ERROR("UART device not ready");
 		return -ENODEV;
 	}
 
@@ -1131,7 +1132,7 @@ static int gt5x_init(const struct device *dev)
 	/* Allocate template buffer based on model */
 	data->template_buf = k_malloc(cfg->template_size);
 	if (!data->template_buf) {
-		LOG_ERR("Failed to allocate template buffer (%u bytes)", cfg->template_size);
+		LOG_ERROR("Failed to allocate template buffer (%u bytes)", cfg->template_size);
 		return -ENOMEM;
 	}
 
@@ -1153,7 +1154,7 @@ static int gt5x_init(const struct device *dev)
 
 		ret = gt5x_transceive(dev, GT5X_CMD_OPEN, 1, &resp_param);
 		if (ret < 0) {
-			LOG_ERR("Open failed after recovery: %d", ret);
+			LOG_ERROR("Open failed after recovery: %d", ret);
 			k_free(data->template_buf);
 			return ret;
 		}
@@ -1165,7 +1166,7 @@ static int gt5x_init(const struct device *dev)
 	ret = gt5x_recv_data_packet(dev, (uint8_t *)&data->devinfo,
 				    sizeof(struct gt5x_device_info));
 	if (ret < 0) {
-		LOG_ERR("Failed to receive DeviceInfo: %d", ret);
+		LOG_ERROR("Failed to receive DeviceInfo: %d", ret);
 		k_free(data->template_buf);
 		return ret;
 	}

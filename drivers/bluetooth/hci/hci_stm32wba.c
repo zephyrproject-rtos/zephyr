@@ -102,7 +102,7 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 	size_t buf_tailroom;
 
 	if (len < sizeof(hdr)) {
-		LOG_ERR("Not enough data for event header");
+		LOG_ERROR("Not enough data for event header");
 		return NULL;
 	}
 
@@ -113,8 +113,8 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 	len -= sizeof(hdr);
 
 	if (len != hdr.len) {
-		LOG_ERR("Event payload length is not correct.\n");
-		LOG_ERR("len: %d, hdr.len: %d\n", len, hdr.len);
+		LOG_ERROR("Event payload length is not correct.\n");
+		LOG_ERROR("len: %d, hdr.len: %d\n", len, hdr.len);
 		return NULL;
 	}
 	LOG_DBG("len %u", hdr.len);
@@ -124,8 +124,7 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 		if (discardable) {
 			LOG_DBG("Discardable buffer pool full, ignoring event");
 		} else {
-			LOG_ERR("No available event buffers!");
-
+			LOG_ERROR("No available event buffers!");
 		}
 		__ASSERT_NO_MSG(buf);
 		return buf;
@@ -135,7 +134,7 @@ static struct net_buf *treat_evt(const uint8_t *data, size_t len)
 
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < len) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
+		LOG_ERROR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -153,7 +152,7 @@ static struct net_buf *treat_acl(const uint8_t *data, size_t len,
 	size_t buf_tailroom;
 
 	if (len < sizeof(hdr)) {
-		LOG_ERR("Not enough data for ACL header");
+		LOG_ERROR("Not enough data for ACL header");
 		return NULL;
 	}
 
@@ -163,12 +162,12 @@ static struct net_buf *treat_acl(const uint8_t *data, size_t len,
 		data += sizeof(hdr);
 		len -= sizeof(hdr);
 	} else {
-		LOG_ERR("No available ACL buffers!");
+		LOG_ERROR("No available ACL buffers!");
 		return NULL;
 	}
 
 	if (ext_len != sys_le16_to_cpu(hdr.len)) {
-		LOG_ERR("ACL payload length is not correct");
+		LOG_ERROR("ACL payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -176,7 +175,7 @@ static struct net_buf *treat_acl(const uint8_t *data, size_t len,
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < len) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
+		LOG_ERROR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -195,7 +194,7 @@ static struct net_buf *treat_iso(const uint8_t *data, size_t len,
 	size_t buf_tailroom;
 
 	if (len < sizeof(hdr)) {
-		LOG_ERR("Not enough data for ISO header");
+		LOG_ERROR("Not enough data for ISO header");
 		return NULL;
 	}
 
@@ -205,12 +204,12 @@ static struct net_buf *treat_iso(const uint8_t *data, size_t len,
 		data += sizeof(hdr);
 		len -= sizeof(hdr);
 	} else {
-		LOG_ERR("No available ISO buffers!");
+		LOG_ERROR("No available ISO buffers!");
 		return NULL;
 	}
 
 	if (ext_len != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
-		LOG_ERR("ISO payload length is not correct");
+		LOG_ERROR("ISO payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -218,7 +217,7 @@ static struct net_buf *treat_iso(const uint8_t *data, size_t len,
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < len) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
+		LOG_ERROR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -256,7 +255,7 @@ static int receive_data(const struct device *dev, const uint8_t *data, size_t le
 		break;
 	default:
 		buf = NULL;
-		LOG_ERR("Unknown HCI type %u", pkt_indicator);
+		LOG_ERROR("Unknown HCI type %u", pkt_indicator);
 	}
 
 	if (buf) {
@@ -318,7 +317,7 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 		 */
 		evt_buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_FOREVER);
 		if (!evt_buf) {
-			LOG_ERR("No available event buffers!");
+			LOG_ERROR("No available event buffers!");
 			__ASSERT_NO_MSG(evt_buf);
 			k_sem_give(&hci_sem);
 			return -ENOMEM;
@@ -559,11 +558,11 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 
 		evt_status = aci_set_ble_addr_cmd[6];
 		if (evt_status != 0) {
-			LOG_ERR("Failed to set BLE address, status: 0x%02X", evt_status);
+			LOG_ERROR("Failed to set BLE address, status: 0x%02X", evt_status);
 			return -EIO;
 		}
 	} else {
-		LOG_ERR("No response received for setting BLE address");
+		LOG_ERROR("No response received for setting BLE address");
 		return -EIO;
 	}
 

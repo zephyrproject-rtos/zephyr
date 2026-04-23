@@ -95,7 +95,7 @@ static int flash_numaker_erase(const struct device *dev, off_t offset, size_t le
 	while (page_nums) {
 		/* erase page */
 		if (RMC_Erase(addr)) {
-			LOG_ERR("Erase flash page failed or erase time-out");
+			LOG_ERROR("Erase flash page failed or erase time-out");
 			rc = -EIO;
 			goto done;
 		}

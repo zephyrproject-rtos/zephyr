@@ -208,7 +208,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 	}
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -224,10 +224,11 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 		len = read_cb(cb_arg, &bt_dev.id_addr, sizeof(bt_dev.id_addr));
 		if (len < sizeof(bt_dev.id_addr[0])) {
 			if (len < 0) {
-				LOG_ERR("Failed to read ID address from storage"
-				       " (err %zd)", len);
+				LOG_ERROR("Failed to read ID address from storage"
+					  " (err %zd)",
+					  len);
 			} else {
-				LOG_ERR("Invalid length ID address in storage");
+				LOG_ERROR("Invalid length ID address in storage");
 				LOG_HEXDUMP_DBG(&bt_dev.id_addr, len, "data read");
 			}
 			(void)memset(bt_dev.id_addr, 0,
@@ -249,8 +250,9 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 	if ((len == 4) && (memcmp(name, "name", len) == 0)) {
 		len = read_cb(cb_arg, &bt_dev.name, sizeof(bt_dev.name) - 1);
 		if (len < 0) {
-			LOG_ERR("Failed to read device name from storage"
-			       " (err %zd)", len);
+			LOG_ERROR("Failed to read device name from storage"
+				  " (err %zd)",
+				  len);
 		} else {
 			bt_dev.name[len] = '\0';
 
@@ -263,7 +265,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	if ((len == 10) && (memcmp(name, "appearance", len) == 0)) {
 		if (len_rd != sizeof(bt_dev.appearance)) {
-			LOG_ERR("Ignoring settings entry 'bt/appearance'. Wrong length.");
+			LOG_ERROR("Ignoring settings entry 'bt/appearance'. Wrong length.");
 			return -EINVAL;
 		}
 
@@ -281,10 +283,11 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 		len = read_cb(cb_arg, bt_dev.irk, sizeof(bt_dev.irk));
 		if (len < sizeof(bt_dev.irk[0])) {
 			if (len < 0) {
-				LOG_ERR("Failed to read IRK from storage"
-				       " (err %zd)", len);
+				LOG_ERROR("Failed to read IRK from storage"
+					  " (err %zd)",
+					  len);
 			} else {
-				LOG_ERR("Invalid length IRK in storage");
+				LOG_ERROR("Invalid length IRK in storage");
 				(void)memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
 			}
 		} else {
@@ -337,7 +340,7 @@ static int commit_settings(void)
 	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
 		err = bt_br_write_local_name(bt_dev.name);
 		if (err != 0) {
-			LOG_ERR("Unable to set BR/EDR local name (err %d)", err);
+			LOG_ERROR("Unable to set BR/EDR local name (err %d)", err);
 			return err;
 		}
 	}
@@ -345,7 +348,7 @@ static int commit_settings(void)
 	if (!bt_dev.id_count) {
 		err = bt_setup_public_id_addr();
 		if (err) {
-			LOG_ERR("Unable to setup an identity address");
+			LOG_ERROR("Unable to setup an identity address");
 			return err;
 		}
 	}
@@ -353,7 +356,7 @@ static int commit_settings(void)
 	if (!bt_dev.id_count) {
 		err = bt_setup_random_id_addr();
 		if (err) {
-			LOG_ERR("Unable to setup an identity address");
+			LOG_ERROR("Unable to setup an identity address");
 			return err;
 		}
 	}
@@ -385,7 +388,7 @@ int bt_settings_init(void)
 
 	err = settings_subsys_init();
 	if (err) {
-		LOG_ERR("settings_subsys_init failed (err %d)", err);
+		LOG_ERROR("settings_subsys_init failed (err %d)", err);
 		return err;
 	}
 
@@ -528,7 +531,7 @@ static void do_store_id(struct k_work *work)
 	int err = bt_settings_store("id", 0, NULL, &bt_dev.id_addr, ID_DATA_LEN(bt_dev.id_addr));
 
 	if (err) {
-		LOG_ERR("Failed to save ID (err %d)", err);
+		LOG_ERROR("Failed to save ID (err %d)", err);
 	}
 }
 
@@ -552,7 +555,7 @@ static void do_store_irk(struct k_work *work)
 	int err = bt_settings_store("irk", 0, NULL, bt_dev.irk, ID_DATA_LEN(bt_dev.irk));
 
 	if (err) {
-		LOG_ERR("Failed to save IRK (err %d)", err);
+		LOG_ERROR("Failed to save IRK (err %d)", err);
 	}
 #endif
 }

@@ -47,16 +47,16 @@ static void coredump_mem_window_backend_start(void)
 	}
 
 	LOG_PANIC();
-	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_BEGIN_STR);
+	LOG_ERROR(COREDUMP_PREFIX_STR COREDUMP_BEGIN_STR);
 }
 
 static void coredump_mem_window_backend_end(void)
 {
 	if (error != 0) {
-		LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_ERROR_STR);
+		LOG_ERROR(COREDUMP_PREFIX_STR COREDUMP_ERROR_STR);
 	}
 
-	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_END_STR);
+	LOG_ERROR(COREDUMP_PREFIX_STR COREDUMP_END_STR);
 }
 
 static void coredump_mem_window_backend_buffer_output(uint8_t *buf, size_t buflen)

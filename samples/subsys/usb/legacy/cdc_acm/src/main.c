@@ -57,13 +57,13 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 
 			recv_len = uart_fifo_read(dev, buffer, len);
 			if (recv_len < 0) {
-				LOG_ERR("Failed to read UART FIFO");
+				LOG_ERROR("Failed to read UART FIFO");
 				recv_len = 0;
 			};
 
 			rb_len = ring_buf_put(&ringbuf, buffer, recv_len);
 			if (rb_len < recv_len) {
-				LOG_ERR("Drop %u bytes", recv_len - rb_len);
+				LOG_ERROR("Drop %u bytes", recv_len - rb_len);
 			}
 
 			LOG_DBG("tty fifo -> ringbuf %d bytes", rb_len);
@@ -90,7 +90,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 
 			send_len = uart_fifo_fill(dev, buffer, rb_len);
 			if (send_len < rb_len) {
-				LOG_ERR("Drop %d bytes", rb_len - send_len);
+				LOG_ERROR("Drop %d bytes", rb_len - send_len);
 			}
 
 			LOG_DBG("ringbuf -> tty fifo %d bytes", send_len);
@@ -103,13 +103,13 @@ int main(void)
 	int ret;
 
 	if (!device_is_ready(uart_dev)) {
-		LOG_ERR("CDC ACM device not ready");
+		LOG_ERROR("CDC ACM device not ready");
 		return 0;
 	}
 
 	ret = usb_enable(NULL);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
+		LOG_ERROR("Failed to enable USB");
 		return 0;
 	}
 

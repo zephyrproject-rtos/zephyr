@@ -48,10 +48,10 @@ int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
 	}
 
 	CHECKIF((frame->id & ~(id_mask)) != 0U) {
-		LOG_ERR("invalid frame with %s (%d-bit) CAN ID 0x%0*x",
-			(frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
-			(frame->flags & CAN_FRAME_IDE) != 0 ? 29 : 11,
-			(frame->flags & CAN_FRAME_IDE) != 0 ? 8 : 3, frame->id);
+		LOG_ERROR("invalid frame with %s (%d-bit) CAN ID 0x%0*x",
+			  (frame->flags & CAN_FRAME_IDE) != 0 ? "extended" : "standard",
+			  (frame->flags & CAN_FRAME_IDE) != 0 ? 29 : 11,
+			  (frame->flags & CAN_FRAME_IDE) != 0 ? 8 : 3, frame->id);
 		return -EINVAL;
 	}
 
@@ -90,11 +90,11 @@ int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 	}
 
 	CHECKIF(((filter->id & ~(id_mask)) != 0U) || ((filter->mask & ~(id_mask)) != 0U)) {
-		LOG_ERR("invalid filter with %s (%d-bit) CAN ID 0x%0*x, CAN ID mask 0x%0*x",
-			(filter->flags & CAN_FILTER_IDE) != 0 ? "extended" : "standard",
-			(filter->flags & CAN_FILTER_IDE) != 0 ? 29 : 11,
-			(filter->flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter->id,
-			(filter->flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter->mask);
+		LOG_ERROR("invalid filter with %s (%d-bit) CAN ID 0x%0*x, CAN ID mask 0x%0*x",
+			  (filter->flags & CAN_FILTER_IDE) != 0 ? "extended" : "standard",
+			  (filter->flags & CAN_FILTER_IDE) != 0 ? 29 : 11,
+			  (filter->flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter->id,
+			  (filter->flags & CAN_FILTER_IDE) != 0 ? 8 : 3, filter->mask);
 		return -EINVAL;
 	}
 
@@ -112,7 +112,7 @@ static void can_msgq_put(const struct device *dev, struct can_frame *frame, void
 
 	ret = k_msgq_put(msgq, frame, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Msgq %p overflowed. Frame ID: 0x%x", msgq, frame->id);
+		LOG_ERROR("Msgq %p overflowed. Frame ID: 0x%x", msgq, frame->id);
 	}
 }
 

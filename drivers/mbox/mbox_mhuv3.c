@@ -647,7 +647,7 @@ static int mbox_mhuv3_receiver_send_data(const struct device *dev,
 	ARG_UNUSED(channel_id);
 	ARG_UNUSED(msg);
 
-	LOG_ERR("Trying to transmit on a MBX MHUv3 frame");
+	LOG_ERROR("Trying to transmit on a MBX MHUv3 frame");
 
 	return -ENOTSUP;
 }
@@ -697,7 +697,7 @@ static struct mbox_mhuv3_channel *mbox_mhuv3_dbe_get_channel(const struct device
 	struct mbox_mhuv3_extension *ext = &data->ext[DBE_EXT];
 
 	if (channel >= ext->num_chans || doorbell >= MHUV3_FLAG_BITS) {
-		LOG_ERR("Couldn't find a valid channel (%d: %d)", channel, doorbell);
+		LOG_ERROR("Couldn't find a valid channel (%d: %d)", channel, doorbell);
 		return NULL;
 	}
 
@@ -872,7 +872,7 @@ static struct mbox_mhuv3_channel *mbox_mhuv3_dbe_chan_from_comb_irq_get(const st
 
 		channel = i * MHUV3_FLAG_BITS + (find_lsb_set(int_st) - 1);
 		if (channel >= ext->num_chans) {
-			LOG_ERR("Invalid %s channel: %d", mbox_mhuv3_str[data->frame], channel);
+			LOG_ERROR("Invalid %s channel: %d", mbox_mhuv3_str[data->frame], channel);
 			return NULL;
 		}
 
@@ -1043,7 +1043,7 @@ static int mbox_mhuv3_frame_init(const struct device *dev)
 
 	data->frame = read_bitmask32((mem_addr_t)&cfg->ctrl->blk_id, BLK_ID_BLK_ID);
 	if (data->frame > MBX_FRAME) {
-		LOG_ERR("Invalid Frame type- %d", data->frame);
+		LOG_ERROR("Invalid Frame type- %d", data->frame);
 		return -EIO;
 	}
 
@@ -1054,8 +1054,8 @@ static int mbox_mhuv3_frame_init(const struct device *dev)
 	data->var = read_bitmask32((mem_addr_t)&cfg->ctrl->iidr, IIDR_VARIANT);
 	data->prod_id = read_bitmask32((mem_addr_t)&cfg->ctrl->iidr, IIDR_PRODUCT_ID);
 	if (data->major != MHUV3_MAJOR_VERSION) {
-		LOG_ERR("Unsupported MHU %s block - major:%d  minor:%d",
-			mbox_mhuv3_str[data->frame], data->major, data->minor);
+		LOG_ERROR("Unsupported MHU %s block - major:%d  minor:%d",
+			  mbox_mhuv3_str[data->frame], data->major, data->minor);
 		return -EIO;
 	}
 
@@ -1080,10 +1080,8 @@ static int mbox_mhuv3_frame_init(const struct device *dev)
 		 */
 		ret = mhuv3_extension_init[i](dev);
 		if (ret) {
-			LOG_ERR("Failed to initialize %s %s: %d",
-				mbox_mhuv3_str[data->frame],
-				mbox_mhuv3_ext_str[i],
-				ret);
+			LOG_ERROR("Failed to initialize %s %s: %d", mbox_mhuv3_str[data->frame],
+				  mbox_mhuv3_ext_str[i], ret);
 			return -EIO;
 		}
 	}
@@ -1169,7 +1167,7 @@ static void mbox_mhuv3_mbx_comb_interrupt(const struct device *dev)
 			void *data = chan->ops->read_data(dev, chan);
 
 			if (!data) {
-				LOG_ERR("Failed to read in-band data.");
+				LOG_ERROR("Failed to read in-band data.");
 				goto rx_ack;
 			}
 		}
@@ -1185,7 +1183,7 @@ rx_ack:
 	}
 
 	if (found == 0) {
-		LOG_ERR("Failed to find channel for the RX interrupt");
+		LOG_ERROR("Failed to find channel for the RX interrupt");
 	}
 }
 
@@ -1255,7 +1253,7 @@ static int mbox_mhuv3_setup_mbx(const struct device *dev)
 	const struct mbox_mhuv3_config *cfg = dev->config;
 
 	if (cfg->cmb_irq_config == NULL) {
-		LOG_ERR("MBX combined IRQ is missing!");
+		LOG_ERROR("MBX combined IRQ is missing!");
 		return -EINVAL;
 	}
 
@@ -1350,7 +1348,7 @@ static int mbox_mhuv3_sender_register_callback(const struct device *dev,
 	ARG_UNUSED(cb);
 	ARG_UNUSED(user_data);
 
-	LOG_ERR("Trying to register a callback on a PBX MHUv3 frame");
+	LOG_ERROR("Trying to register a callback on a PBX MHUv3 frame");
 
 	return -ENOTSUP;
 }
@@ -1443,7 +1441,7 @@ static int mbox_mhuv3_receiver_mtu_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	LOG_ERR("Trying to get maximum transmit units on a MBX MHUv3 frame");
+	LOG_ERROR("Trying to get maximum transmit units on a MBX MHUv3 frame");
 
 	return 0;
 }

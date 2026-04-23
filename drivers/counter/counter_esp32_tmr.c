@@ -97,7 +97,7 @@ static int counter_esp32_init(const struct device *dev)
 				 (intr_handler_t)counter_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
-		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		LOG_ERROR("could not allocate interrupt (err %d)", ret);
 	}
 
 	return ret;

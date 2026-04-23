@@ -287,7 +287,7 @@ int smp_client_send_cmd(struct smp_client_object *smp_client, struct net_buf *nb
 	struct smp_client_cmd_req *cmd_req;
 
 	if (timeout_in_sec > 30) {
-		LOG_ERR("Command timeout can't be over 30 seconds");
+		LOG_ERROR("Command timeout can't be over 30 seconds");
 		return MGMT_ERR_EINVAL;
 	}
 

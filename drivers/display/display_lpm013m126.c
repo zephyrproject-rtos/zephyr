@@ -157,11 +157,11 @@ static int lpm_write(const struct device *dev, const uint16_t x, const uint16_t 
 	const struct lpm013m126_config *cfg = dev->config;
 
 	if (x != 0 || desc->width != cfg->width) {
-		LOG_ERR("Only full-width writes supported");
+		LOG_ERROR("Only full-width writes supported");
 		return -ENOTSUP;
 	}
 	if ((y + desc->height) > cfg->height) {
-		LOG_ERR("Buffer out of bounds");
+		LOG_ERROR("Buffer out of bounds");
 		return -EINVAL;
 	}
 
@@ -216,15 +216,15 @@ static int lpm_init(const struct device *dev)
 	struct lpm013m126_data *data = dev->data;
 
 	if (!spi_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("SPI not ready");
+		LOG_ERROR("SPI not ready");
 		return -ENODEV;
 	}
 	if (!gpio_is_ready_dt(&cfg->disp_gpio)) {
-		LOG_ERR("DISP pin not ready");
+		LOG_ERROR("DISP pin not ready");
 		return -ENODEV;
 	}
 	if (!gpio_is_ready_dt(&cfg->extcomin_gpio)) {
-		LOG_ERR("EXTCOMIN pin not ready");
+		LOG_ERROR("EXTCOMIN pin not ready");
 		return -ENODEV;
 	}
 

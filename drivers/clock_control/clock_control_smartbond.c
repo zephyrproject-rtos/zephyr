@@ -180,7 +180,7 @@ static int smartbond_clock_set_pll_status(bool status)
 	int ret;
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("Regulator device is not ready");
+		LOG_ERROR("Regulator device is not ready");
 		return -ENODEV;
 	}
 
@@ -191,7 +191,7 @@ static int smartbond_clock_set_pll_status(bool status)
 
 			/* QSPIC read pipe delay should be updated when switching to PLL */
 		} else {
-			LOG_ERR("Failed to set VDD_LEVEL to 1.2V");
+			LOG_ERROR("Failed to set VDD_LEVEL to 1.2V");
 			return -EIO;
 		}
 	} else {

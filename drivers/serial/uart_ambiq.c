@@ -533,7 +533,7 @@ static int uart_ambiq_init(const struct device *dev)
 
 	if (AM_HAL_STATUS_SUCCESS !=
 	    am_hal_uart_initialize(config->inst_idx, &data->uart_handler)) {
-		LOG_ERR("Fail to initialize UART\n");
+		LOG_ERROR("Fail to initialize UART\n");
 		return -ENXIO;
 	}
 
@@ -541,13 +541,13 @@ static int uart_ambiq_init(const struct device *dev)
 
 	ret |= uart_ambiq_configure(dev, &data->uart_cfg);
 	if (ret < 0) {
-		LOG_ERR("Fail to config UART\n");
+		LOG_ERROR("Fail to config UART\n");
 		goto end;
 	}
 
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Fail to config UART pins\n");
+		LOG_ERROR("Fail to config UART pins\n");
 		goto end;
 	}
 
@@ -770,7 +770,7 @@ static int uart_ambiq_async_tx(const struct device *dev, const uint8_t *buf, siz
 
 	if (am_hal_uart_dma_transfer(data->uart_handler, &uart_tx) != AM_HAL_STATUS_SUCCESS) {
 		ret = -EINVAL;
-		LOG_ERR("Error starting Tx DMA (%d)", ret);
+		LOG_ERROR("Error starting Tx DMA (%d)", ret);
 		irq_unlock(key);
 		return ret;
 	}
@@ -987,7 +987,7 @@ static int uart_ambiq_async_rx_enable(const struct device *dev, uint8_t *buf, si
 
 	if (am_hal_uart_dma_transfer(data->uart_handler, &uart_rx) != AM_HAL_STATUS_SUCCESS) {
 		ret = -EINVAL;
-		LOG_ERR("Error starting Rx DMA (%d)", ret);
+		LOG_ERROR("Error starting Rx DMA (%d)", ret);
 		irq_unlock(key);
 		return ret;
 	}

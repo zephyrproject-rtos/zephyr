@@ -143,10 +143,8 @@ static int lp50xx_set_color(const struct device *dev, uint32_t led,
 	}
 
 	if (num_colors != led_info->num_colors) {
-		LOG_ERR("%s: invalid number of colors: got=%d, expected=%d",
-			dev->name,
-			num_colors,
-			led_info->num_colors);
+		LOG_ERROR("%s: invalid number of colors: got=%d, expected=%d", dev->name,
+			  num_colors, led_info->num_colors);
 		return -EINVAL;
 	}
 
@@ -226,7 +224,7 @@ static int lp50xx_hw_enable(const struct device *dev, bool enable)
 
 	err = gpio_pin_set_dt(&config->gpio_enable, enable);
 	if (err < 0) {
-		LOG_ERR("%s: failed to set enable gpio", dev->name);
+		LOG_ERROR("%s: failed to set enable gpio", dev->name);
 		return err;
 	}
 
@@ -253,16 +251,14 @@ static int lp50xx_init(const struct device *dev)
 	int err;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("%s: I2C device not ready", dev->name);
+		LOG_ERROR("%s: I2C device not ready", dev->name);
 		return -ENODEV;
 	}
 
 	/* Check LED configuration found in DT */
 	if (config->num_leds > config->max_leds) {
-		LOG_ERR("%s: invalid number of LEDs %d (max %d)",
-			dev->name,
-			config->num_leds,
-			config->max_leds);
+		LOG_ERROR("%s: invalid number of LEDs %d (max %d)", dev->name, config->num_leds,
+			  config->max_leds);
 		return -EINVAL;
 	}
 	for (led = 0; led < config->num_leds; led++) {
@@ -270,8 +266,8 @@ static int lp50xx_init(const struct device *dev)
 			lp50xx_led_to_info(config, led);
 
 		if (led_info->num_colors > LP50XX_COLORS_PER_LED) {
-			LOG_ERR("%s: LED %d: invalid number of colors (max %d)",
-				dev->name, led, LP50XX_COLORS_PER_LED);
+			LOG_ERROR("%s: LED %d: invalid number of colors (max %d)", dev->name, led,
+				  LP50XX_COLORS_PER_LED);
 			return -EINVAL;
 		}
 	}
@@ -279,15 +275,14 @@ static int lp50xx_init(const struct device *dev)
 	/* Configure GPIO if present */
 	if (config->gpio_enable.port != NULL) {
 		if (!gpio_is_ready_dt(&config->gpio_enable)) {
-			LOG_ERR("%s: enable gpio is not ready", dev->name);
+			LOG_ERROR("%s: enable gpio is not ready", dev->name);
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->gpio_enable,
 					    GPIO_OUTPUT_INACTIVE);
 		if (err < 0) {
-			LOG_ERR("%s: failed to initialize enable gpio",
-				dev->name);
+			LOG_ERROR("%s: failed to initialize enable gpio", dev->name);
 			return err;
 		}
 	}
@@ -295,21 +290,21 @@ static int lp50xx_init(const struct device *dev)
 	/* Enable hardware */
 	err = lp50xx_hw_enable(dev, true);
 	if (err < 0) {
-		LOG_ERR("%s: failed to enable hardware", dev->name);
+		LOG_ERROR("%s: failed to enable hardware", dev->name);
 		return err;
 	}
 
 	/* Reset device */
 	err = lp50xx_reset(dev);
 	if (err < 0) {
-		LOG_ERR("%s: failed to reset", dev->name);
+		LOG_ERROR("%s: failed to reset", dev->name);
 		return err;
 	}
 
 	/* Enable device */
 	err = lp50xx_enable(dev, true);
 	if (err < 0) {
-		LOG_ERR("%s: failed to enable", dev->name);
+		LOG_ERROR("%s: failed to enable", dev->name);
 		return err;
 	}
 

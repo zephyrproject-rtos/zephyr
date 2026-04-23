@@ -58,7 +58,7 @@ static int xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 		}
 
 		if (sh_ndx == ext->sect_cnt) {
-			LOG_ERR("%#x not found in any of the sections", *got_entry);
+			LOG_ERROR("%#x not found in any of the sections", *got_entry);
 			return -ENOENT;
 		}
 
@@ -86,7 +86,7 @@ static int xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 			ret = llext_read(ldr, &rsym, sizeof(elf_sym_t));
 		}
 		if (ret) {
-			LOG_ERR("Failed to read a symbol table entry, LLEXT linking might fail.");
+			LOG_ERROR("Failed to read a symbol table entry, LLEXT linking might fail.");
 			return ret;
 		}
 

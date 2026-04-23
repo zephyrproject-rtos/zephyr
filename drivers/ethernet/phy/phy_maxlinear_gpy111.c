@@ -135,7 +135,7 @@ static int reset(const struct device *dev)
 		/* Issue a hard reset */
 		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure RST pin (%d)", ret);
+			LOG_ERROR("Failed to configure RST pin (%d)", ret);
 			return ret;
 		}
 
@@ -144,7 +144,7 @@ static int reset(const struct device *dev)
 
 		ret = gpio_pin_set_dt(&cfg->reset_gpio, 0);
 		if (ret < 0) {
-			LOG_ERR("Failed to de-assert RST pin (%d)", ret);
+			LOG_ERROR("Failed to de-assert RST pin (%d)", ret);
 			return ret;
 		}
 
@@ -480,15 +480,15 @@ static int maxlinear_gpy111_init(const struct device *dev)
 	if (cfg->no_reset == false) {
 		ret = reset(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to reset PHY (%d): %d", cfg->phy_addr, ret);
+			LOG_ERROR("Failed to reset PHY (%d): %d", cfg->phy_addr, ret);
 			return ret;
 		}
 	}
 
 	if (get_id(dev, &phy_id) == 0) {
 		if (phy_id != GPY111_PHY_ID) {
-			LOG_ERR("PHY (%d) ID 0x%X not as expected, expected PHY ID: 0x%X",
-				cfg->phy_addr, phy_id, GPY111_PHY_ID);
+			LOG_ERROR("PHY (%d) ID 0x%X not as expected, expected PHY ID: 0x%X",
+				  cfg->phy_addr, phy_id, GPY111_PHY_ID);
 
 			return -EINVAL;
 		}

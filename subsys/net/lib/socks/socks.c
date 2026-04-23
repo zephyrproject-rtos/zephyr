@@ -95,7 +95,7 @@ static int socks5_tcp_connect(struct net_context *ctx,
 				 proxy, proxy_len, NULL, K_NO_WAIT,
 				 ctx->user_data);
 	if (ret < 0) {
-		LOG_ERR("Could not send negotiation packet");
+		LOG_ERROR("Could not send negotiation packet");
 		return ret;
 	}
 
@@ -103,17 +103,17 @@ static int socks5_tcp_connect(struct net_context *ctx,
 			       K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
 			       &method_rsp);
 	if (ret < 0) {
-		LOG_ERR("Could not receive negotiation response");
+		LOG_ERROR("Could not receive negotiation response");
 		return ret;
 	}
 
 	if (method_rsp.ver != SOCKS5_PKT_MAGIC) {
-		LOG_ERR("Invalid negotiation response magic");
+		LOG_ERROR("Invalid negotiation response magic");
 		return -EINVAL;
 	}
 
 	if (method_rsp.method != SOCKS5_AUTH_METHOD_NOAUTH) {
-		LOG_ERR("Invalid negotiation response");
+		LOG_ERROR("Invalid negotiation response");
 		return -ENOTSUP;
 	}
 
@@ -156,7 +156,7 @@ static int socks5_tcp_connect(struct net_context *ctx,
 				 proxy, proxy_len, NULL, K_NO_WAIT,
 				 ctx->user_data);
 	if (ret < 0) {
-		LOG_ERR("Could not send CONNECT command");
+		LOG_ERROR("Could not send CONNECT command");
 		return ret;
 	}
 
@@ -164,17 +164,17 @@ static int socks5_tcp_connect(struct net_context *ctx,
 			       K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
 			       &cmd_rsp);
 	if (ret < 0) {
-		LOG_ERR("Could not receive CONNECT response");
+		LOG_ERROR("Could not receive CONNECT response");
 		return ret;
 	}
 
 	if (cmd_rsp.r.ver != SOCKS5_PKT_MAGIC) {
-		LOG_ERR("Invalid CONNECT response");
+		LOG_ERROR("Invalid CONNECT response");
 		return -EINVAL;
 	}
 
 	if (cmd_rsp.r.rep != SOCKS5_CMD_RESP_SUCCESS) {
-		LOG_ERR("Unable to connect to destination");
+		LOG_ERROR("Unable to connect to destination");
 		return -EINVAL;
 	}
 

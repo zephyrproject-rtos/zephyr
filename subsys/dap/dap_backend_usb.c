@@ -102,11 +102,11 @@ static int dap_func_request_handler(struct usbd_class_data *c_data,
 		}
 
 		if (usbd_ep_enqueue(c_data, buf)) {
-			LOG_ERR("Failed to enqueue buffer");
+			LOG_ERROR("Failed to enqueue buffer");
 			usbd_ep_buf_free(uds_ctx, buf);
 		}
 	} else {
-		LOG_ERR("Function is disabled or transfer failed");
+		LOG_ERROR("Function is disabled or transfer failed");
 		usbd_ep_buf_free(uds_ctx, buf);
 	}
 
@@ -169,12 +169,12 @@ static void dap_func_enable(struct usbd_class_data *const c_data)
 
 		buf = dap_func_buf_alloc(c_data, dap_func_get_bulk_out(c_data));
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return;
 		}
 
 		if (usbd_ep_enqueue(c_data, buf)) {
-			LOG_ERR("Failed to enqueue buffer");
+			LOG_ERROR("Failed to enqueue buffer");
 			usbd_ep_buf_free(uds_ctx, buf);
 		}
 	}
@@ -195,14 +195,14 @@ static int dap_func_init(struct usbd_class_data *c_data)
 	struct dap_func_desc *desc = data->desc;
 
 	if (data->dap_link_ctx == NULL) {
-		LOG_ERR("No DAP Link context provided");
+		LOG_ERROR("No DAP Link context provided");
 		return -EIO;
 	}
 
 	LOG_DBG("Init class instance %p", (void *)c_data);
 
 	if (usbd_add_descriptor(uds_ctx, data->iface_str_desc_nd)) {
-		LOG_ERR("Failed to add interface string descriptor");
+		LOG_ERROR("Failed to add interface string descriptor");
 	} else {
 		desc->if0.iInterface = usbd_str_desc_get_idx(data->iface_str_desc_nd);
 	}

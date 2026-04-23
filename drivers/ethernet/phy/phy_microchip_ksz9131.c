@@ -79,7 +79,7 @@ static int ksz9131_read(const struct device *dev, uint16_t reg_addr, uint16_t *v
 	int ret = mdio_read(cfg->mdio, cfg->phy_addr, reg_addr, value);
 
 	if (ret < 0) {
-		LOG_ERR("Error reading phy (%d) register (%d)", cfg->phy_addr, reg_addr);
+		LOG_ERROR("Error reading phy (%d) register (%d)", cfg->phy_addr, reg_addr);
 	}
 
 	LOG_DBG("Read 0x%x from phy (%d) register (%d)", *value, cfg->phy_addr, reg_addr);
@@ -93,7 +93,7 @@ static int ksz9131_write(const struct device *dev, uint16_t reg_addr, uint16_t v
 	int ret = mdio_write(cfg->mdio, cfg->phy_addr, reg_addr, value);
 
 	if (ret < 0) {
-		LOG_ERR("Error writing phy (%d) register (%d)", cfg->phy_addr, reg_addr);
+		LOG_ERROR("Error writing phy (%d) register (%d)", cfg->phy_addr, reg_addr);
 	}
 
 	LOG_DBG("Write 0x%x to phy (%d) register (%d)", value, cfg->phy_addr, reg_addr);
@@ -156,7 +156,7 @@ static int phy_check_ksz9131_id(const struct device *dev)
 	phy_id |= value;
 
 	if ((phy_id & PHY_ID_KSZ9131_MSK) != PHY_ID_KSZ9131) {
-		LOG_ERR("PHY (%d) ID 0x%X not as expected", cfg->phy_addr, phy_id);
+		LOG_ERROR("PHY (%d) ID 0x%X not as expected", cfg->phy_addr, phy_id);
 		return -EINVAL;
 	}
 
@@ -202,7 +202,7 @@ static int phy_mchp_ksz9131_clear_interrupt(struct mchp_ksz9131_data *data)
 	/* Read/clear PHY interrupt status register */
 	ret = ksz9131_read(dev, PHY_KSZ9131_ICS_REG, &reg_val);
 	if (ret < 0) {
-		LOG_ERR("Error reading phy (%d) interrupt status register", cfg->phy_addr);
+		LOG_ERROR("Error reading phy (%d) interrupt status register", cfg->phy_addr);
 	}
 
 	k_sem_give(&data->sem);
@@ -242,7 +242,7 @@ static void phy_mchp_ksz9131_interrupt_handler(const struct device *port, struct
 	int ret = k_work_reschedule(&data->monitor_work, K_NO_WAIT);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to schedule monitor_work from ISR");
+		LOG_ERROR("Failed to schedule monitor_work from ISR");
 	}
 }
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
@@ -282,7 +282,7 @@ static int phy_mchp_ksz9131_autonegotiate(const struct device *dev)
 	/* Wait for the auto-negotiation process to complete */
 	do {
 		if (timeout-- == 0U) {
-			LOG_ERR("PHY (%d) auto-negotiate timedout", cfg->phy_addr);
+			LOG_ERROR("PHY (%d) auto-negotiate timedout", cfg->phy_addr);
 			ret = -ETIMEDOUT;
 			break;
 		}
@@ -313,7 +313,7 @@ static int phy_mchp_ksz9131_cfg_link(const struct device *dev, enum phy_link_spe
 	int ret;
 
 	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
-		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		LOG_ERROR("Disabling auto-negotiation is not supported by this driver");
 		return -ENOTSUP;
 	}
 
@@ -458,7 +458,7 @@ static int phy_mchp_ksz9131_update_link(const struct device *dev)
 	}
 done:
 	if (ret < 0) {
-		LOG_ERR("Failed to get %s state", dev->name);
+		LOG_ERROR("Failed to get %s state", dev->name);
 	}
 
 	k_sem_give(&data->sem);
@@ -551,7 +551,7 @@ static int ksz9131_init_int_gpios(const struct device *dev)
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 done:
 	if (ret < 0) {
-		LOG_ERR("PHY (%d) config interrupt failed", cfg->phy_addr);
+		LOG_ERROR("PHY (%d) config interrupt failed", cfg->phy_addr);
 	}
 
 	return ret;
@@ -679,7 +679,7 @@ static int phy_mchp_ksz9131_init(const struct device *dev)
 	}
 	ret = ksz9131_enable_dll_delays(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable KSZ9131 DLL delays");
+		LOG_ERROR("Failed to enable KSZ9131 DLL delays");
 		return ret;
 	}
 	ret = ksz9131_init_int_gpios(dev);

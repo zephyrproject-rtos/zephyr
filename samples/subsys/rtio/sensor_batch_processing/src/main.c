@@ -57,11 +57,11 @@ int main(void)
 			LOG_DBG("Consumed completion event %d", m);
 
 			if (cqe->result < 0) {
-				LOG_ERR("Operation failed");
+				LOG_ERROR("Operation failed");
 			}
 
 			if (rtio_cqe_get_mempool_buffer(&ez_io, cqe, &userdata[m], &data_len[m])) {
-				LOG_ERR("Failed to get mempool buffer info");
+				LOG_ERROR("Failed to get mempool buffer info");
 			}
 			rtio_cqe_release(&ez_io, cqe);
 			m++;

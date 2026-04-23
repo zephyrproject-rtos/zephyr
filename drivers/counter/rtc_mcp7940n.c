@@ -404,7 +404,7 @@ int mcp7940n_rtc_set_time(const struct device *dev, time_t unix_time)
 	int rc = 0;
 
 	if (unix_time > UINT32_MAX) {
-		LOG_ERR("Unix time must be 32-bit");
+		LOG_ERROR("Unix time must be 32-bit");
 		return -EINVAL;
 	}
 
@@ -670,7 +670,7 @@ static int mcp7940n_init(const struct device *dev)
 	k_sem_init(&data->lock, 0, 1);
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C device %s is not ready", cfg->i2c.bus->name);
+		LOG_ERROR("I2C device %s is not ready", cfg->i2c.bus->name);
 		rc = -ENODEV;
 		goto out;
 	}
@@ -700,8 +700,7 @@ static int mcp7940n_init(const struct device *dev)
 	/* Configure alarm interrupt gpio */
 	if (cfg->int_gpios.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->int_gpios)) {
-			LOG_ERR("Port device %s is not ready",
-				cfg->int_gpios.port->name);
+			LOG_ERROR("Port device %s is not ready", cfg->int_gpios.port->name);
 			rc = -ENODEV;
 			goto out;
 		}

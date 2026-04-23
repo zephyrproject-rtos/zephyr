@@ -105,19 +105,19 @@ static int audio_clock_enable(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(audio_clk_dev)) {
-		LOG_ERR("Invalid audio_clock device");
+		LOG_ERROR("Invalid audio_clock device");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(audio_clk_dev, NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable Audio clock, error %d", ret);
+		LOG_ERROR("Failed to enable Audio clock, error %d", ret);
 		return ret;
 	}
 
 	ret = clock_control_get_rate(config->audio_clock_dev, NULL, &rate);
 	if (ret < 0) {
-		LOG_ERR("Failed to get audio clock rate, error: (%d)", ret);
+		LOG_ERROR("Failed to get audio clock rate, error: (%d)", ret);
 		return ret;
 	}
 
@@ -175,7 +175,7 @@ static int renesas_ra_ssie_set_clock_divider(const struct device *dev,
 
 	ret = clock_control_get_rate(config->audio_clock_dev, NULL, &rate);
 	if (ret < 0) {
-		LOG_ERR("Failed to get audio clock rate, error: (%d)", ret);
+		LOG_ERROR("Failed to get audio clock rate, error: (%d)", ret);
 		return ret;
 	}
 
@@ -204,14 +204,14 @@ static int renesas_ra_ssie_set_clock_divider(const struct device *dev,
 	}
 
 	if (selected_div == 0 || error_min > 100) {
-		LOG_ERR("Cannot find suitable clock config for target bit clock: %llu Hz",
-			target_bclk);
+		LOG_ERROR("Cannot find suitable clock config for target bit clock: %llu Hz",
+			  target_bclk);
 		return -EIO;
 	}
 
 	bit_clock_div = get_ssi_clock_div_enum(selected_div);
 	if (bit_clock_div == SSI_CLOCK_DIV_INVALID) {
-		LOG_ERR("Invalid clock divisor selected");
+		LOG_ERROR("Invalid clock divisor selected");
 		return -EINVAL;
 	}
 
@@ -318,7 +318,7 @@ static int renesas_ra_ssie_rx_start_transfer(const struct device *dev)
 
 	fsp_err = R_SSI_Read(&dev_data->fsp_ctrl, stream->mem_block, stream->mem_block_len);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to start read data");
+		LOG_ERROR("Failed to start read data");
 		dev_data->state = I2S_STATE_ERROR;
 		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream);
 #ifdef CONFIG_I2S_RENESAS_RA_SSIE_RX_SECONDARY_BUFFER
@@ -347,7 +347,7 @@ static int renesas_ra_ssie_tx_start_transfer(const struct device *dev)
 
 	fsp_err = R_SSI_Write(&dev_data->fsp_ctrl, tx_stream->mem_block, tx_stream->mem_block_len);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to start write data");
+		LOG_ERROR("Failed to start write data");
 		dev_data->state = I2S_STATE_ERROR;
 		i2s_renesas_ra_free_stream(&dev_data->tx_cfg, tx_stream);
 		return -EIO;
@@ -399,7 +399,7 @@ static int renesas_ra_ssie_tx_rx_start_transfer(const struct device *dev)
 		dev_data->state = I2S_STATE_ERROR;
 		i2s_renesas_ra_free_stream(&dev_data->tx_cfg, stream_tx);
 		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, stream_rx);
-		LOG_ERR("Failed to start write and read data");
+		LOG_ERROR("Failed to start write and read data");
 		return -EIO;
 	}
 
@@ -484,7 +484,7 @@ static void renesas_ra_ssie_rx_callback(const struct device *dev)
 				     dev_data->rx_stream_next.mem_block_len);
 		if (fsp_err != FSP_SUCCESS) {
 			dev_data->state = I2S_STATE_ERROR;
-			LOG_ERR("Failed to restart RX transfer");
+			LOG_ERROR("Failed to restart RX transfer");
 			free_next_stream = true;
 		}
 	} else {
@@ -568,7 +568,7 @@ stop:
 				     dev_data->rx_stream.mem_block_len);
 		if (fsp_err != FSP_SUCCESS) {
 			dev_data->state = I2S_STATE_ERROR;
-			LOG_ERR("Failed to restart RX transfer");
+			LOG_ERROR("Failed to restart RX transfer");
 			goto free;
 		}
 	}
@@ -615,7 +615,7 @@ static void renesas_ra_ssie_tx_callback(const struct device *dev)
 		fsp_err = R_SSI_Write(&dev_data->fsp_ctrl, tx_stream->mem_block,
 				      tx_stream->mem_block_len);
 		if (fsp_err != FSP_SUCCESS) {
-			LOG_ERR("Failed to restart write data");
+			LOG_ERROR("Failed to restart write data");
 		}
 	}
 
@@ -644,7 +644,7 @@ static void renesas_ra_ssie_idle_callback(const struct device *dev)
 		renesas_ra_ssie_idle_rx_handle(dev);
 		break;
 	default:
-		LOG_ERR("Invalid direction: %d", dev_data->active_dir);
+		LOG_ERROR("Invalid direction: %d", dev_data->active_dir);
 	}
 }
 
@@ -666,7 +666,7 @@ static void renesas_ra_ssie_callback(i2s_callback_args_t *p_args)
 		break;
 
 	default:
-		LOG_ERR("Invalid trigger event: %d", p_args->event);
+		LOG_ERROR("Invalid trigger event: %d", p_args->event);
 	}
 }
 
@@ -691,7 +691,7 @@ static int renesas_ra_ssie_start_transfer(const struct device *dev, enum i2s_dir
 		ret = renesas_ra_ssie_rx_start_transfer(dev);
 		break;
 	default:
-		LOG_ERR("Invalid direction: %d", dir);
+		LOG_ERROR("Invalid direction: %d", dir);
 		ret = -EIO;
 	}
 
@@ -759,7 +759,7 @@ static int renesas_ra_trigger_drop(const struct device *dev, enum i2s_dir dir)
 	if (dev_data->state != I2S_STATE_READY) {
 		fsp_err = R_SSI_Stop(&dev_data->fsp_ctrl);
 		if (fsp_err != FSP_SUCCESS) {
-			LOG_ERR("Failed to stop SSI, error: (%d)", fsp_err);
+			LOG_ERROR("Failed to stop SSI, error: (%d)", fsp_err);
 			return -EIO;
 		}
 	}
@@ -816,7 +816,7 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 
 	/* Supports only the I2S format */
 	if ((i2s_cfg->format & I2S_UNSUPPORTED_FORMATS) != 0) {
-		LOG_ERR("Unsupported format: 0x%02x", i2s_cfg->format);
+		LOG_ERROR("Unsupported format: 0x%02x", i2s_cfg->format);
 		return -ENOTSUP;
 	}
 
@@ -831,25 +831,25 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 	}
 
 	if ((i2s_cfg->options & ~I2S_SUPPORTED_OPTIONS)) {
-		LOG_ERR("Unsupported options: 0x%02x", i2s_cfg->options);
+		LOG_ERROR("Unsupported options: 0x%02x", i2s_cfg->options);
 		return -ENOTSUP;
 	}
 
 	/* If the state is not in ready or not ready state, return ERROR */
 	if (!(dev_data->state == I2S_STATE_READY || dev_data->state == I2S_STATE_NOT_READY)) {
-		LOG_ERR("Cannot configure in state: %d", dev_data->state);
+		LOG_ERROR("Cannot configure in state: %d", dev_data->state);
 		return -EINVAL;
 	}
 
 	/* If the node do not only full duplex, return ERROR when configure I2S_DIR_BOTH */
 	if (dev_data->full_duplex == false && dir == I2S_DIR_BOTH) {
-		LOG_ERR("Cannot configure I2S_DIR_BOTH direction for half-duplex device");
+		LOG_ERROR("Cannot configure I2S_DIR_BOTH direction for half-duplex device");
 		return -ENOSYS;
 	}
 
 	/* Module always generate bit clock although there is no data transferring */
 	if (i2s_cfg->options & I2S_OPT_BIT_CLK_GATED) {
-		LOG_ERR("Unsupported option: I2S_OPT_BIT_CLK_GATED");
+		LOG_ERROR("Unsupported option: I2S_OPT_BIT_CLK_GATED");
 		return -ENOTSUP;
 	}
 
@@ -875,17 +875,17 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 	}
 
 	if (i2s_cfg->channels != 2) {
-		LOG_ERR("Unsupported number of channels: %u", i2s_cfg->channels);
+		LOG_ERROR("Unsupported number of channels: %u", i2s_cfg->channels);
 		return -EINVAL;
 	}
 
 	if (i2s_cfg->mem_slab == NULL) {
-		LOG_ERR("No memory block to store data");
+		LOG_ERROR("No memory block to store data");
 		return -EINVAL;
 	}
 
 	if (i2s_cfg->block_size == 0) {
-		LOG_ERR("Block size must be greater than 0");
+		LOG_ERROR("Block size must be greater than 0");
 		return -EINVAL;
 	}
 
@@ -911,12 +911,12 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 		frame_size_bytes = 8;
 		break;
 	default:
-		LOG_ERR("Unsupported word size: %u", i2s_cfg->word_size);
+		LOG_ERROR("Unsupported word size: %u", i2s_cfg->word_size);
 		return -EINVAL;
 	}
 
 	if ((i2s_cfg->block_size % frame_size_bytes) != 0) {
-		LOG_ERR("Block size must be multiple of frame size");
+		LOG_ERROR("Block size must be multiple of frame size");
 		return -EINVAL;
 	}
 
@@ -952,7 +952,7 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 
 	fsp_err = R_SSI_Close(&dev_data->fsp_ctrl);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to configure the device");
+		LOG_ERROR("Failed to configure the device");
 		return -EIO;
 	}
 
@@ -967,7 +967,7 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 
 	fsp_err = R_SSI_Open(&dev_data->fsp_ctrl, fsp_cfg);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to configure the device");
+		LOG_ERROR("Failed to configure the device");
 		return -EIO;
 	}
 
@@ -1001,18 +1001,18 @@ static int i2s_renesas_ra_ssie_write(const struct device *dev, void *mem_block, 
 	int ret;
 
 	if (!dev_data->tx_configured) {
-		LOG_ERR("Device is not configured");
+		LOG_ERROR("Device is not configured");
 		return -EIO;
 	}
 
 	if (dev_data->state != I2S_STATE_RUNNING && dev_data->state != I2S_STATE_READY) {
-		LOG_ERR("Cannot write in state: %d", dev_data->state);
+		LOG_ERROR("Cannot write in state: %d", dev_data->state);
 		return -EIO;
 	}
 
 	if (size > dev_data->tx_cfg.block_size) {
-		LOG_ERR("This device can only write blocks up to %u bytes",
-			dev_data->tx_cfg.block_size);
+		LOG_ERROR("This device can only write blocks up to %u bytes",
+			  dev_data->tx_cfg.block_size);
 		return -EIO;
 	}
 
@@ -1033,13 +1033,13 @@ static int i2s_renesas_ra_ssie_read(const struct device *dev, void **mem_block, 
 	int ret;
 
 	if (!dev_data->rx_configured) {
-		LOG_ERR("Device is not configured");
+		LOG_ERROR("Device is not configured");
 		return -EIO;
 	}
 
 	/* If read in not ready state, return ERROR */
 	if (dev_data->state == I2S_STATE_NOT_READY) {
-		LOG_ERR("RX invalid state: %d", (int)dev_data->state);
+		LOG_ERROR("RX invalid state: %d", (int)dev_data->state);
 		return -EIO;
 	}
 
@@ -1065,7 +1065,7 @@ static int i2s_renesas_ra_ssie_trigger(const struct device *dev, enum i2s_dir di
 
 	if (dir == I2S_DIR_BOTH) {
 		if (dev_data->full_duplex == false) {
-			LOG_ERR("I2S_DIR_BOTH is not supported for half-duplex device");
+			LOG_ERROR("I2S_DIR_BOTH is not supported for half-duplex device");
 			return -ENOSYS;
 		}
 
@@ -1077,13 +1077,13 @@ static int i2s_renesas_ra_ssie_trigger(const struct device *dev, enum i2s_dir di
 	}
 
 	if (!configured) {
-		LOG_ERR("Device is not configured");
+		LOG_ERROR("Device is not configured");
 		return -EIO;
 	}
 
 	if (dev_data->state == I2S_STATE_RUNNING && dev_data->active_dir != dir) {
-		LOG_ERR("Inappropriate trigger (%d/%d), active stream(s): %d", cmd, dir,
-			dev_data->active_dir);
+		LOG_ERROR("Inappropriate trigger (%d/%d), active stream(s): %d", cmd, dir,
+			  dev_data->active_dir);
 		return -EINVAL;
 	}
 
@@ -1105,7 +1105,7 @@ static int i2s_renesas_ra_ssie_trigger(const struct device *dev, enum i2s_dir di
 			ret = renesas_ra_trigger_prepare(dev, dir);
 			break;
 		default:
-			LOG_ERR("Invalid trigger: %d", cmd);
+			LOG_ERROR("Invalid trigger: %d", cmd);
 			ret = -EINVAL;
 		}
 	}
@@ -1126,13 +1126,13 @@ static int i2s_renesas_ra_ssie_init(const struct device *dev)
 
 	ret = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_subsys);
 	if (ret < 0) {
-		LOG_ERR("Failed to start ssie bus clock, err=%d", ret);
+		LOG_ERROR("Failed to start ssie bus clock, err=%d", ret);
 		return ret;
 	}
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("%s: pinctrl config failed.", __func__);
+		LOG_ERROR("%s: pinctrl config failed.", __func__);
 		return ret;
 	}
 
@@ -1145,7 +1145,7 @@ static int i2s_renesas_ra_ssie_init(const struct device *dev)
 
 	fsp_err = R_SSI_Open(&dev_data->fsp_ctrl, &dev_data->fsp_cfg);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to initialize the device");
+		LOG_ERROR("Failed to initialize the device");
 		return -EIO;
 	}
 

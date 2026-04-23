@@ -121,27 +121,27 @@ static int adc_rz_channel_setup(const struct device *dev, const struct adc_chann
 	const struct adc_rz_config *config = dev->config;
 
 	if (!((config->channel_available_mask & BIT(channel_cfg->channel_id)) != 0)) {
-		LOG_ERR("Unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("Unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Unsupported channel acquisition time");
+		LOG_ERROR("Unsupported channel acquisition time");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Unsupported channel gain %d", channel_cfg->gain);
+		LOG_ERROR("Unsupported channel gain %d", channel_cfg->gain);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Unsupported channel reference");
+		LOG_ERROR("Unsupported channel reference");
 		return -EINVAL;
 	}
 
@@ -229,36 +229,36 @@ static int adc_rz_start_read(const struct device *dev, const struct adc_sequence
 	int err;
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No channel to read");
+		LOG_ERROR("No channel to read");
 		return -EINVAL;
 	}
 
 	if (sequence->resolution > ADC_RZ_MAX_RESOLUTION || sequence->resolution == 0) {
-		LOG_ERR("Unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("Unsupported resolution %d", sequence->resolution);
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling != 0) {
-		LOG_ERR("Oversampling is not supported");
+		LOG_ERROR("Oversampling is not supported");
 		return -EINVAL;
 	}
 
 	if ((sequence->channels & ~config->channel_available_mask) != 0) {
-		LOG_ERR("Unsupported channels in mask: 0x%08x", sequence->channels);
+		LOG_ERROR("Unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
 	/* Check if channels have been configured via channel_setup */
 	if ((sequence->channels & ~data->configured_channels) != 0) {
-		LOG_ERR("Attempted to read from unconfigured channels in mask: 0x%08x",
-			sequence->channels);
+		LOG_ERROR("Attempted to read from unconfigured channels in mask: 0x%08x",
+			  sequence->channels);
 		return -EINVAL;
 	}
 
 	err = adc_rz_check_buffer_size(dev, sequence);
 
 	if (err) {
-		LOG_ERR("buffer size too small");
+		LOG_ERROR("buffer size too small");
 		return err;
 	}
 

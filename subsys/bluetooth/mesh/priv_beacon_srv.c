@@ -174,7 +174,7 @@ static int handle_node_id_set(const struct bt_mesh_model *mod,
 	node_id = net_buf_simple_pull_u8(buf);
 	if (node_id != BT_MESH_NODE_IDENTITY_RUNNING &&
 	    node_id != BT_MESH_NODE_IDENTITY_STOPPED) {
-		LOG_ERR("Invalid node ID value 0x%02x", node_id);
+		LOG_ERROR("Invalid node ID value 0x%02x", node_id);
 		return -EINVAL;
 	}
 
@@ -201,7 +201,7 @@ static int priv_beacon_srv_init(const struct bt_mesh_model *mod)
 		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_CFG_SRV);
 
 	if (config_srv == NULL) {
-		LOG_ERR("Private Beacon server cannot extend Configuration server");
+		LOG_ERROR("Private Beacon server cannot extend Configuration server");
 		return -EINVAL;
 	}
 
@@ -236,7 +236,7 @@ static int priv_beacon_srv_settings_set(const struct bt_mesh_model *model, const
 
 	err = bt_mesh_settings_set(read_cb, cb_data, &priv_beacon_state, sizeof(priv_beacon_state));
 	if (err) {
-		LOG_ERR("Failed to set Private Beacon state");
+		LOG_ERROR("Failed to set Private Beacon state");
 		return err;
 	}
 

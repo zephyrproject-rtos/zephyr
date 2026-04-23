@@ -29,43 +29,43 @@ int main(void)
 
 	ret = dap_link_init(&sample_dap_ctx);
 	if (ret) {
-		LOG_ERR("Failed to initialize DAP controller, %d", ret);
+		LOG_ERROR("Failed to initialize DAP controller, %d", ret);
 		return ret;
 	}
 
 	ret = dap_link_backend_usb_init(&sample_dap_ctx);
 	if (ret) {
-		LOG_ERR("Failed to initialize DAP Link USB backend, %d", ret);
+		LOG_ERROR("Failed to initialize DAP Link USB backend, %d", ret);
 		return ret;
 	}
 
 	sample_usbd = sample_usbd_setup_device(NULL);
 	if (sample_usbd == NULL) {
-		LOG_ERR("Failed to setup USB device");
+		LOG_ERROR("Failed to setup USB device");
 		return -ENODEV;
 	}
 
 	ret = usbd_add_descriptor(sample_usbd, &bos_vreq_msosv2);
 	if (ret) {
-		LOG_ERR("Failed to add MSOSv2 capability descriptor");
+		LOG_ERROR("Failed to add MSOSv2 capability descriptor");
 		return ret;
 	}
 
 	ret = usbd_add_descriptor(sample_usbd, &bos_vreq_webusb);
 	if (ret) {
-		LOG_ERR("Failed to add WebUSB capability descriptor");
+		LOG_ERROR("Failed to add WebUSB capability descriptor");
 		return ret;
 	}
 
 	ret = usbd_init(sample_usbd);
 	if (ret) {
-		LOG_ERR("Failed to initialize device support");
+		LOG_ERROR("Failed to initialize device support");
 		return ret;
 	}
 
 	ret = usbd_enable(sample_usbd);
 	if (ret) {
-		LOG_ERR("Failed to enable device support");
+		LOG_ERROR("Failed to enable device support");
 		return ret;
 	}
 

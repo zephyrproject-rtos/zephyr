@@ -121,7 +121,7 @@ static void setup_disk(void)
 	if (IS_ENABLED(CONFIG_DISK_DRIVER_FLASH)) {
 		rc = setup_flash(mp);
 		if (rc < 0) {
-			LOG_ERR("Failed to setup flash area");
+			LOG_ERROR("Failed to setup flash area");
 			return;
 		}
 	}
@@ -134,7 +134,7 @@ static void setup_disk(void)
 
 	rc = mount_app_fs(mp);
 	if (rc < 0) {
-		LOG_ERR("Failed to mount filesystem");
+		LOG_ERROR("Failed to mount filesystem");
 		return;
 	}
 
@@ -159,7 +159,7 @@ static void setup_disk(void)
 	printk("%s opendir: %d\n", mp->mnt_point, rc);
 
 	if (rc < 0) {
-		LOG_ERR("Failed to open directory");
+		LOG_ERROR("Failed to open directory");
 	}
 
 	while (rc >= 0) {
@@ -167,7 +167,7 @@ static void setup_disk(void)
 
 		rc = fs_readdir(&dir, &ent);
 		if (rc < 0) {
-			LOG_ERR("Failed to read directory entries");
+			LOG_ERROR("Failed to read directory entries");
 			break;
 		}
 		if (ent.name[0] == 0) {
@@ -193,18 +193,18 @@ int main(void)
 
 	sample_usbd = sample_usbd_init_device(NULL);
 	if (sample_usbd == NULL) {
-		LOG_ERR("Failed to initialize USB device");
+		LOG_ERROR("Failed to initialize USB device");
 		return -ENODEV;
 	}
 
 	ret = usbd_enable(sample_usbd);
 	if (ret) {
-		LOG_ERR("Failed to enable device support");
+		LOG_ERROR("Failed to enable device support");
 		return ret;
 	}
 
 	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
+		LOG_ERROR("Failed to enable USB");
 		return 0;
 	}
 

@@ -129,7 +129,7 @@ static int memc_bflb_bl61x_get_psram_reg(const struct device *dev, uint8_t reg, 
 
 	err = memc_bflb_bl61x_get_psram_ctrl(dev);
 	if (err < 0) {
-		LOG_ERR("Get PSRAM control timed out");
+		LOG_ERROR("Get PSRAM control timed out");
 		return err;
 	}
 
@@ -194,7 +194,7 @@ static int memc_bflb_bl61x_init_psram(const struct device *dev)
 
 	err = syscon_read_reg(efuse, EFUSE_PSRAM_TRIM_OFFSET, &psram_trim);
 	if (err < 0) {
-		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
+		LOG_ERROR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;
 	}
 	if (!((psram_trim >> EFUSE_PSRAM_TRIM_EN_POS) & 1)) {
@@ -204,7 +204,7 @@ static int memc_bflb_bl61x_init_psram(const struct device *dev)
 	psram_parity = (psram_trim >> EFUSE_PSRAM_TRIM_PARITY_POS) & 1;
 	psram_trim = (psram_trim >> EFUSE_PSRAM_TRIM_POS) & EFUSE_PSRAM_TRIM_MSK;
 	if (psram_parity != (POPCOUNT(psram_trim) & 1)) {
-		LOG_ERR("Bad trim Parity");
+		LOG_ERROR("Bad trim Parity");
 		return -EINVAL;
 	}
 	a = psram_trim & 0xf;
@@ -216,7 +216,7 @@ static int memc_bflb_bl61x_init_psram(const struct device *dev)
 
 	err = memc_bflb_bl61x_get_psram_ctrl(dev);
 	if (err < 0) {
-		LOG_ERR("Get PSRAM control timed out");
+		LOG_ERROR("Get PSRAM control timed out");
 		return err;
 	}
 
@@ -292,7 +292,7 @@ static int memc_bflb_bl61x_init_psram(const struct device *dev)
 	/* Check it worked by reading PSRAM ID */
 	err = memc_bflb_bl61x_get_psram_reg(dev, 0, &check_dat);
 	if (err < 0) {
-		LOG_ERR("PSRAM check failed");
+		LOG_ERROR("PSRAM check failed");
 		return err;
 	}
 	LOG_INF("PSRAM ID: %x", check_dat);
@@ -311,7 +311,7 @@ static int memc_bflb_bl61x_init(const struct device *dev)
 
 	err = syscon_read_reg(efuse, EFUSE_DEV_INFOS_OFFSET, &dev_infos);
 	if (err < 0) {
-		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
+		LOG_ERROR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;
 	}
 	psram_size = (dev_infos >> EFUSE_PSRAM_SIZE_POS) & EFUSE_PSRAM_SIZE_MSK;
@@ -366,7 +366,7 @@ static int memc_bflb_bl61x_init(const struct device *dev)
 
 	/* TODO: configurable values for other PSRAM sizes (QCC74x) */
 	if (data->psram_size != 0x400000) {
-		LOG_ERR("Only existing 4MB Winbond X8 PSRAM Config is supported");
+		LOG_ERROR("Only existing 4MB Winbond X8 PSRAM Config is supported");
 		return -ENOTSUP;
 	}
 
@@ -377,7 +377,7 @@ static int memc_bflb_bl61x_init(const struct device *dev)
 		(clock_control_subsys_t)BL61X_CLKID_CLK_AUPLL) == CLOCK_CONTROL_STATUS_ON) {
 		memc_bflb_bl61x_init_psram_clock(dev, 1);
 	} else {
-		LOG_ERR("WIFIPLL or AUPLL must be enabled to use PSRAM");
+		LOG_ERROR("WIFIPLL or AUPLL must be enabled to use PSRAM");
 		return -ENOTSUP;
 	}
 

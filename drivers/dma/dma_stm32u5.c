@@ -319,7 +319,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		status = DMA_STATUS_COMPLETE;
 	} else {
-		LOG_ERR("Transfer Error.");
+		LOG_ERROR("Transfer Error.");
 		stream->busy = false;
 		dma_stm32_dump_stream_irq(dev, id);
 		dma_stm32_clear_stream_irq(dev, id);
@@ -334,7 +334,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 static int dma_stm32_get_priority(uint8_t priority, uint32_t *ll_priority)
 {
 	if (priority > ARRAY_SIZE(table_priority)) {
-		LOG_ERR("Priority error. %d", priority);
+		LOG_ERROR("Priority error. %d", priority);
 		return -EINVAL;
 	}
 
@@ -356,7 +356,7 @@ static int dma_stm32_get_direction(enum dma_channel_direction direction,
 		*ll_direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
 		break;
 	default:
-		LOG_ERR("Direction error. %d", direction);
+		LOG_ERROR("Direction error. %d", direction);
 		return -EINVAL;
 	}
 
@@ -393,17 +393,17 @@ static int dma_stm32_configure(const struct device *dev,
 	int ret;
 
 	if (id >= dev_config->max_streams) {
-		LOG_ERR("cannot configure the dma stream %d.", id);
+		LOG_ERROR("cannot configure the dma stream %d.", id);
 		return -EINVAL;
 	}
 
 	if (stream->busy) {
-		LOG_ERR("dma stream %d is busy.", id);
+		LOG_ERROR("dma stream %d is busy.", id);
 		return -EBUSY;
 	}
 
 	if (dma_stm32_disable_stream(dma, id) != 0) {
-		LOG_ERR("could not disable dma stream %d.", id);
+		LOG_ERROR("could not disable dma stream %d.", id);
 		return -EBUSY;
 	}
 
@@ -423,42 +423,40 @@ static int dma_stm32_configure(const struct device *dev,
 	}
 
 	if (config->head_block->block_size > DMA_STM32_MAX_DATA_ITEMS) {
-		LOG_ERR("Data size too big: %d\n",
-		       config->head_block->block_size);
+		LOG_ERROR("Data size too big: %d\n", config->head_block->block_size);
 		return -EINVAL;
 	}
 
 	/* Support only the same data width for source and dest */
 	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("source and dest data size differ.");
+		LOG_ERROR("source and dest data size differ.");
 		return -EINVAL;
 	}
 
 	if (config->source_data_size != 4U &&
 	    config->source_data_size != 2U &&
 	    config->source_data_size != 1U) {
-		LOG_ERR("source and dest unit size error, %d",
-			config->source_data_size);
+		LOG_ERROR("source and dest unit size error, %d", config->source_data_size);
 		return -EINVAL;
 	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32C5X)
 	if ((config->source_burst_length % config->source_data_size) != 0) {
-		LOG_ERR("Source burst length %d is not aligned to source data size %d",
-			config->source_burst_length, config->source_data_size);
+		LOG_ERROR("Source burst length %d is not aligned to source data size %d",
+			  config->source_burst_length, config->source_data_size);
 		return -EINVAL;
 	}
 
 	if ((config->dest_burst_length % config->dest_data_size) != 0) {
-		LOG_ERR("Destination burst length %d is not aligned to destination data size %d",
-			config->dest_burst_length, config->dest_data_size);
+		LOG_ERROR("Destination burst length %d is not aligned to destination data size %d",
+			  config->dest_burst_length, config->dest_data_size);
 		return -EINVAL;
 	}
 
 	uint32_t burst_beats = config->source_burst_length / config->source_data_size;
 
 	if (burst_beats > STM32U5_DMA_MAX_BURST_LENGTH) {
-		LOG_ERR("Source burst length %d is invalid", config->source_burst_length);
+		LOG_ERROR("Source burst length %d is invalid", config->source_burst_length);
 		return -EINVAL;
 	} else if (burst_beats > 0) {
 		LL_DMA_SetSrcBurstLength(STM32_DMA_GET_CHANNEL(dma, id), burst_beats);
@@ -471,7 +469,7 @@ static int dma_stm32_configure(const struct device *dev,
 	burst_beats = config->dest_burst_length / config->dest_data_size;
 
 	if (burst_beats > STM32U5_DMA_MAX_BURST_LENGTH) {
-		LOG_ERR("Destination burst length %d is invalid", config->dest_burst_length);
+		LOG_ERROR("Destination burst length %d is invalid", config->dest_burst_length);
 		return -EINVAL;
 	} else if (burst_beats > 0) {
 		LL_DMA_SetDestBurstLength(STM32_DMA_GET_CHANNEL(dma, id), burst_beats);
@@ -527,8 +525,7 @@ static int dma_stm32_configure(const struct device *dev,
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Memory increment error. %d",
-			config->head_block->source_addr_adj);
+		LOG_ERROR("Memory increment error. %d", config->head_block->source_addr_adj);
 		return -EINVAL;
 	}
 	LOG_DBG("Channel (%d) src inc (%x).", id,
@@ -546,8 +543,7 @@ static int dma_stm32_configure(const struct device *dev,
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Periph increment error. %d",
-			config->head_block->dest_addr_adj);
+		LOG_ERROR("Periph increment error. %d", config->head_block->dest_addr_adj);
 		return -EINVAL;
 	}
 	LOG_DBG("Channel (%d) dest inc (%x).", id,
@@ -795,9 +791,8 @@ static int dma_stm32_init(const struct device *dev)
 	const struct dma_stm32_config *config = dev->config;
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (clock_control_on(clk,
-		(clock_control_subsys_t) &config->pclken) != 0) {
-		LOG_ERR("clock op failed\n");
+	if (clock_control_on(clk, (clock_control_subsys_t)&config->pclken) != 0) {
+		LOG_ERROR("clock op failed\n");
 		return -EIO;
 	}
 

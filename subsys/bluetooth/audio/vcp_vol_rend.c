@@ -111,8 +111,8 @@ static void notify_work_reschedule(struct bt_vcp_vol_rend *inst, enum vol_rend_n
 
 	err = k_work_reschedule(&inst->notify_work, delay);
 	if (err < 0) {
-		LOG_ERR("Failed to reschedule %s notification err %d", vol_rend_notify_str(notify),
-			err);
+		LOG_ERROR("Failed to reschedule %s notification err %d",
+			  vol_rend_notify_str(notify), err);
 	} else if (!K_TIMEOUT_EQ(delay, K_NO_WAIT)) {
 		LOG_DBG("%s notification scheduled in %dms", vol_rend_notify_str(notify),
 			k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&inst->notify_work)));
@@ -128,7 +128,7 @@ static void notify(struct bt_vcp_vol_rend *inst, enum vol_rend_notify notify,
 	if (err == -ENOMEM) {
 		notify_work_reschedule(inst, notify, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 	} else if (err < 0 && err != -ENOTCONN) {
-		LOG_ERR("Notify %s err %d", vol_rend_notify_str(notify), err);
+		LOG_ERROR("Notify %s err %d", vol_rend_notify_str(notify), err);
 	}
 }
 
@@ -355,8 +355,7 @@ static int prepare_vocs_inst(struct bt_vcp_vol_rend_register_param *param)
 			vol_rend.vocs_insts[j] = bt_vocs_free_instance_get();
 
 			if (vol_rend.vocs_insts[j] == NULL) {
-				LOG_ERR("Could not get free VOCS instances[%d]",
-					j);
+				LOG_ERROR("Could not get free VOCS instances[%d]", j);
 				return -ENOMEM;
 			}
 
@@ -401,8 +400,7 @@ static int prepare_aics_inst(struct bt_vcp_vol_rend_register_param *param)
 			vol_rend.aics_insts[j] = bt_aics_free_instance_get();
 
 			if (vol_rend.aics_insts[j] == NULL) {
-				LOG_ERR("Could not get free AICS instances[%d]",
-					j);
+				LOG_ERROR("Could not get free AICS instances[%d]", j);
 				return -ENOMEM;
 			}
 

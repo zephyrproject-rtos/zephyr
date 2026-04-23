@@ -29,18 +29,18 @@ static int crypto_rpi_pico_sha256_hash_handler(struct hash_ctx *ctx, struct hash
 	int ret;
 
 	if (!finish) {
-		LOG_ERR("Multipart hashing not supported");
+		LOG_ERROR("Multipart hashing not supported");
 		return -ENOTSUP;
 	}
 
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret != 0) {
-		LOG_ERR("Failed to lock mutex: %d", ret);
+		LOG_ERROR("Failed to lock mutex: %d", ret);
 		return ret;
 	}
 
 	if (!data->state.locked) {
-		LOG_ERR("Invalid lock status: unlocked");
+		LOG_ERROR("Invalid lock status: unlocked");
 		ret = -EINVAL;
 		goto end;
 	}
@@ -80,23 +80,23 @@ static int crypto_rpi_pico_sha256_hash_begin_session(const struct device *dev, s
 	int ret;
 
 	if (algo != CRYPTO_HASH_ALGO_SHA256) {
-		LOG_ERR("Unsupported algo: %d", algo);
+		LOG_ERROR("Unsupported algo: %d", algo);
 		return -EINVAL;
 	}
 
 	if (ctx->flags & ~(crypto_rpi_pico_sha256_query_hw_caps(dev))) {
-		LOG_ERR("Unsupported flag 0x%x", ctx->flags);
+		LOG_ERROR("Unsupported flag 0x%x", ctx->flags);
 		return -EINVAL;
 	}
 
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret != 0) {
-		LOG_ERR("Failed to lock mutex: %d", ret);
+		LOG_ERROR("Failed to lock mutex: %d", ret);
 		return ret;
 	}
 
 	if (!bootrom_try_acquire_lock(BOOTROM_LOCK_SHA_256)) {
-		LOG_ERR("bootrom_try_acquire_lock failed");
+		LOG_ERROR("bootrom_try_acquire_lock failed");
 		ret = -EBUSY;
 		goto end;
 	}
@@ -128,7 +128,7 @@ static int crypto_rpi_pico_sha256_hash_session_free(const struct device *dev, st
 
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret != 0) {
-		LOG_ERR("Failed to lock mutex: %d", ret);
+		LOG_ERROR("Failed to lock mutex: %d", ret);
 		return ret;
 	}
 

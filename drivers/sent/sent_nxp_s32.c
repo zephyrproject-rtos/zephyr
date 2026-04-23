@@ -70,7 +70,7 @@ static int sent_nxp_s32_start_listening(const struct device *dev, uint8_t channe
 	err = Srx_Ip_StartChannelReceiving(config->ctrl_id, channel_data->channel_id);
 
 	if (err) {
-		LOG_ERR("Failed to start SENT %d channel %d", config->ctrl_inst, channel);
+		LOG_ERROR("Failed to start SENT %d channel %d", config->ctrl_inst, channel);
 		k_mutex_unlock(&channel_data->lock);
 		return -EIO;
 	}
@@ -102,7 +102,7 @@ static int sent_nxp_s32_stop_listening(const struct device *dev, uint8_t channel
 	err = Srx_Ip_StopChannelReceiving(config->ctrl_id, channel_data->channel_id);
 
 	if (err) {
-		LOG_ERR("Failed to stop SENT %d channel %d", config->ctrl_inst, channel);
+		LOG_ERROR("Failed to stop SENT %d channel %d", config->ctrl_inst, channel);
 		k_mutex_unlock(&channel_data->lock);
 		return -EIO;
 	}
@@ -389,19 +389,19 @@ static void sent_nxp_s32_isr_error(const struct device *dev)
 		uint32_t rate;                                                                     \
                                                                                                    \
 		if (!device_is_ready(config->clock_dev)) {                                         \
-			LOG_ERR("Clock control device not ready");                                 \
+			LOG_ERROR("Clock control device not ready");                               \
 			return -ENODEV;                                                            \
 		}                                                                                  \
                                                                                                    \
 		err = clock_control_on(config->clock_dev, config->clock_subsys);                   \
 		if (err) {                                                                         \
-			LOG_ERR("Failed to enable clock");                                         \
+			LOG_ERROR("Failed to enable clock");                                       \
 			return err;                                                                \
 		}                                                                                  \
                                                                                                    \
 		err = clock_control_get_rate(config->clock_dev, config->clock_subsys, &rate);      \
 		if (err) {                                                                         \
-			LOG_ERR("Failed to get clock");                                            \
+			LOG_ERROR("Failed to get clock");                                          \
 			return err;                                                                \
 		}                                                                                  \
                                                                                                    \
@@ -410,7 +410,7 @@ static void sent_nxp_s32_isr_error(const struct device *dev)
                                                                                                    \
 		err = pinctrl_apply_state(config->pin_cfg, PINCTRL_STATE_DEFAULT);                 \
 		if (err < 0) {                                                                     \
-			LOG_ERR("SENT pinctrl setup failed (%d)", err);                            \
+			LOG_ERROR("SENT pinctrl setup failed (%d)", err);                          \
 			return err;                                                                \
 		}                                                                                  \
                                                                                                    \
@@ -431,7 +431,7 @@ static void sent_nxp_s32_isr_error(const struct device *dev)
 		return 0;                                                                          \
 	}                                                                                          \
 	DEVICE_DT_INST_DEFINE(n, sent_nxp_s32_init_##n, NULL, &sent_nxp_s32_data_##n,              \
-			      &sent_nxp_s32_config_##n, POST_KERNEL,                               \
-			      CONFIG_SENT_INIT_PRIORITY, &sent_nxp_s32_driver_api);
+			      &sent_nxp_s32_config_##n, POST_KERNEL, CONFIG_SENT_INIT_PRIORITY,    \
+			      &sent_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEV_SENT_NXP_S32_INIT)

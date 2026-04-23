@@ -57,7 +57,7 @@ static int read_vactual(const struct device *dev, int32_t *actual_velocity)
 
 	err = tmc51xx_read(controller, TMC51XX_VACTUAL, &raw_value);
 	if (err) {
-		LOG_ERR("Failed to read VACTUAL register");
+		LOG_ERROR("Failed to read VACTUAL register");
 		return err;
 	}
 
@@ -79,7 +79,7 @@ int tmc51xx_stepper_ctrl_set_max_velocity(const struct device *dev, uint32_t vel
 
 	err = tmc51xx_write(config->controller, TMC51XX_VMAX, velocity_fclk);
 	if (err != 0) {
-		LOG_ERR("%s: Failed to set max velocity", dev->name);
+		LOG_ERROR("%s: Failed to set max velocity", dev->name);
 		return -EIO;
 	}
 	return 0;
@@ -94,7 +94,7 @@ int tmc51xx_stepper_ctrl_stallguard_enable(const struct device *dev, const bool 
 
 	err = tmc51xx_read(controller, TMC51XX_SWMODE, &reg_value);
 	if (err) {
-		LOG_ERR("Failed to read SWMODE register");
+		LOG_ERROR("Failed to read SWMODE register");
 		return -EIO;
 	}
 
@@ -115,7 +115,7 @@ int tmc51xx_stepper_ctrl_stallguard_enable(const struct device *dev, const bool 
 	}
 	err = tmc51xx_write(controller, TMC51XX_SWMODE, reg_value);
 	if (err) {
-		LOG_ERR("Failed to write SWMODE register");
+		LOG_ERROR("Failed to write SWMODE register");
 		return -EIO;
 	}
 
@@ -137,7 +137,7 @@ static void stallguard_work_handler(struct k_work *work)
 		k_work_reschedule(dwork, K_MSEC(config->sg_velocity_check_interval_ms));
 	}
 	if (err == -EIO) {
-		LOG_ERR("Failed to enable stallguard because of I/O error");
+		LOG_ERROR("Failed to enable stallguard because of I/O error");
 	}
 }
 
@@ -163,7 +163,7 @@ static int tmc51xx_stepper_ctrl_is_moving(const struct device *dev, bool *is_mov
 	err = tmc51xx_read(controller, TMC51XX_DRVSTATUS, &reg_value);
 
 	if (err != 0) {
-		LOG_ERR("%s: Failed to read DRVSTATUS register", dev->name);
+		LOG_ERROR("%s: Failed to read DRVSTATUS register", dev->name);
 		return -EIO;
 	}
 

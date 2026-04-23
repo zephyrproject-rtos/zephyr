@@ -103,7 +103,7 @@ shell_mgmt_exec(struct smp_streamer *ctxt)
 	/* Failed to compose command line? */
 	if (len == 0) {
 		/* We do not bother to close decoder */
-		LOG_ERR("Failed to compose command line");
+		LOG_ERROR("Failed to compose command line");
 		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_SHELL, SHELL_MGMT_ERR_EMPTY_COMMAND);
 		goto end;
 	}

@@ -324,7 +324,7 @@ static int uart_xec_pm_action(const struct device *dev, enum pm_device_action ac
 			ret = gpio_pin_interrupt_configure_dt(
 				&dev_cfg->wakerx_gpio, GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);
 			if (ret < 0) {
-				LOG_ERR("Failed to configure UART wake interrupt (ret %d)", ret);
+				LOG_ERROR("Failed to configure UART wake interrupt (ret %d)", ret);
 				return ret;
 			}
 		}
@@ -385,7 +385,7 @@ static int uart_xec_init(const struct device *dev)
 
 		ret = gpio_add_callback(dev_cfg->wakerx_gpio.port, &uart_xec_wake_cb);
 		if (ret < 0) {
-			LOG_ERR("Failed to add UART wake callback (err %d)", ret);
+			LOG_ERROR("Failed to add UART wake callback (err %d)", ret);
 			return ret;
 		}
 	}

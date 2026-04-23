@@ -170,7 +170,7 @@ static void spi_renesas_ra_sci_b_retransmit(struct spi_renesas_ra_sci_b_data *da
 	}
 
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Continue transmission error!");
+		LOG_ERROR("Continue transmission error!");
 	}
 }
 
@@ -238,7 +238,7 @@ static void renesas_ra_sci_b_transceive_data_polling(struct spi_renesas_ra_sci_b
 	/* Start the polling transfer*/
 	fsp_err = RP_SCI_B_SPI_StartTransferPolling(&data->fsp_ctrl);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Start polling transfer error!");
+		LOG_ERROR("Start polling transfer error!");
 	}
 
 	do {
@@ -252,12 +252,12 @@ static void renesas_ra_sci_b_transceive_data_polling(struct spi_renesas_ra_sci_b
 
 		fsp_err = RP_SCI_B_SPI_WriteOneBytePolling(&data->fsp_ctrl, tx_byte);
 		if (fsp_err != FSP_SUCCESS) {
-			LOG_ERR("Transmit data error!");
+			LOG_ERROR("Transmit data error!");
 		}
 
 		fsp_err = RP_SCI_B_SPI_ReadOneBytePolling(&data->fsp_ctrl, &rx_byte);
 		if (fsp_err != FSP_SUCCESS) {
-			LOG_ERR("Receive data error!");
+			LOG_ERROR("Receive data error!");
 		}
 
 		/* Put received data to buffer if rx_buf not null and update rx context */
@@ -277,7 +277,7 @@ static void renesas_ra_sci_b_transceive_data_polling(struct spi_renesas_ra_sci_b
 
 	fsp_err = RP_SCI_B_SPI_EndTransferPolling(&data->fsp_ctrl);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Stop polling transfer error!");
+		LOG_ERROR("Stop polling transfer error!");
 	}
 }
 #endif
@@ -293,38 +293,38 @@ static int spi_renesas_ra_sci_b_configure(const struct device *dev, const struct
 	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
-		LOG_ERR("TI frame format is not supported");
+		LOG_ERROR("TI frame format is not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) {
-		LOG_ERR("Internal hardware loopback is not supported");
+		LOG_ERROR("Internal hardware loopback is not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
-		LOG_ERR("Word sizes other than 8 bits are not supported");
+		LOG_ERROR("Word sizes other than 8 bits are not supported");
 		return -ENOTSUP;
 	}
 
 	if ((config->operation & SPI_OP_MODE_SLAVE) && !IS_ENABLED(CONFIG_SPI_SLAVE)) {
-		LOG_ERR("Kconfig for enable SPI in slave mode is not enabled");
+		LOG_ERROR("Kconfig for enable SPI in slave mode is not enabled");
 		return -ENOTSUP;
 	}
 
 	if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) &&
 	    (config->frequency == 0)) {
-		LOG_ERR("Invalid frequency value");
+		LOG_ERROR("Invalid frequency value");
 		return -EINVAL;
 	}
 
 	if (config->frequency > 2500000) {
-		LOG_ERR("Frequencies more than 2,5 MHz are not supported");
+		LOG_ERROR("Frequencies more than 2,5 MHz are not supported");
 		return -EINVAL;
 	}
 
@@ -378,7 +378,7 @@ static int spi_renesas_ra_sci_b_configure(const struct device *dev, const struct
 
 	fsp_err = R_SCI_B_SPI_Open(&data->fsp_ctrl, &data->fsp_cfg);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to apply spi configuration");
+		LOG_ERROR("Failed to apply spi configuration");
 		return -EINVAL;
 	}
 	memcpy(&data->config, config, sizeof(struct spi_config));

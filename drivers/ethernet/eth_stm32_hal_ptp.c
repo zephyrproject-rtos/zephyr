@@ -310,18 +310,18 @@ static int ptp_stm32_init(const struct device *port)
 	ret = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE), rate_clk,
 				     &ptp_clk_rate);
 	if (ret) {
-		LOG_ERR("Failed to query PTP reference clock");
+		LOG_ERROR("Failed to query PTP reference clock");
 		return -EIO;
 	}
 
 	/* Program the subsecond increment register based on the PTP clock freq */
 	if (NSEC_PER_SEC % CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ != 0) {
-		LOG_ERR("PTP clock period must be an integer nanosecond value");
+		LOG_ERROR("PTP clock period must be an integer nanosecond value");
 		return -EINVAL;
 	}
 	ss_incr_ns = NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ;
 	if (ss_incr_ns > UINT8_MAX) {
-		LOG_ERR("PTP clock period is more than %d nanoseconds", UINT8_MAX);
+		LOG_ERROR("PTP clock period is more than %d nanoseconds", UINT8_MAX);
 		return -EINVAL;
 	}
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)

@@ -51,13 +51,13 @@ static int lvd_renesas_ra_get_output(const struct device *dev)
 	fsp_err_t err;
 
 	if (config->reset_only) {
-		LOG_ERR("Get output is not supported on this LVD channel");
+		LOG_ERROR("Get output is not supported on this LVD channel");
 		return -ENOTSUP;
 	}
 
 	err = R_LVD_StatusGet(&data->lvd_ctrl, &status);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to get LVD status");
+		LOG_ERROR("Failed to get LVD status");
 		return -EIO;
 	}
 
@@ -79,7 +79,7 @@ static int lvd_renesas_ra_set_trigger(const struct device *dev, enum comparator_
 	}
 
 	if (reset && trigger == COMPARATOR_TRIGGER_BOTH_EDGES) {
-		LOG_ERR("Could not set both edges trigger when action is reset");
+		LOG_ERROR("Could not set both edges trigger when action is reset");
 		return -EINVAL;
 	}
 
@@ -123,7 +123,7 @@ static int lvd_renesas_ra_set_trigger_callback(const struct device *dev,
 	bool enabled_status;
 
 	if (config->action == LVD_ACTION_NONE || config->action == LVD_ACTION_RESET) {
-		LOG_ERR("Could not set callback for when action is not interrupt");
+		LOG_ERROR("Could not set callback for when action is not interrupt");
 		return -ENOTSUP;
 	}
 
@@ -155,7 +155,7 @@ static int lvd_renesas_ra_trigger_is_pending(const struct device *dev)
 	fsp_err_t fsp_err;
 
 	if (config->reset_only) {
-		LOG_ERR("Get output is not supported on this LVD channel");
+		LOG_ERROR("Get output is not supported on this LVD channel");
 		return -ENOTSUP;
 	}
 
@@ -215,7 +215,7 @@ static int lvd_renesas_ra_init(const struct device *dev)
 
 	err = R_LVD_Open(&data->lvd_ctrl, &data->lvd_config);
 	if (err != 0) {
-		LOG_ERR("Failed to initialize LVD channel %d", data->lvd_config.monitor_number);
+		LOG_ERROR("Failed to initialize LVD channel %d", data->lvd_config.monitor_number);
 		return -EIO;
 	}
 

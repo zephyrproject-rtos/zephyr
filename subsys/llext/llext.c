@@ -181,7 +181,7 @@ int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
 
 	*ext = llext_alloc_metadata(sizeof(struct llext));
 	if (*ext == NULL) {
-		LOG_ERR("Not enough memory for extension metadata");
+		LOG_ERROR("Not enough memory for extension metadata");
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -268,7 +268,7 @@ static int call_fn_table(struct llext *ext, bool is_init)
 
 	ret = llext_get_fn_table(ext, is_init, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to get table size: %d", (int)ret);
+		LOG_ERROR("Failed to get table size: %d", (int)ret);
 		return ret;
 	}
 
@@ -279,7 +279,7 @@ static int call_fn_table(struct llext *ext, bool is_init)
 
 	ret = llext_get_fn_table(ext, is_init, &fn_table, sizeof(fn_table));
 	if (ret < 0) {
-		LOG_ERR("Failed to get function table: %d", (int)ret);
+		LOG_ERROR("Failed to get function table: %d", (int)ret);
 		return ret;
 	}
 
@@ -309,7 +309,7 @@ void llext_bootstrap(struct llext *ext, llext_entry_fn_t entry_fn, void *user_da
 	/* Call initialization functions */
 	ret = llext_bringup(ext);
 	if (ret < 0) {
-		LOG_ERR("Failed to call init functions: %d", ret);
+		LOG_ERROR("Failed to call init functions: %d", ret);
 		return;
 	}
 
@@ -320,7 +320,7 @@ void llext_bootstrap(struct llext *ext, llext_entry_fn_t entry_fn, void *user_da
 	/* Call de-initialization functions */
 	ret = llext_teardown(ext);
 	if (ret < 0) {
-		LOG_ERR("Failed to call de-init functions: %d", ret);
+		LOG_ERROR("Failed to call de-init functions: %d", ret);
 		return;
 	}
 }

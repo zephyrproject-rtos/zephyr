@@ -48,27 +48,19 @@ static int virtiofs_validate_response(
 	uint32_t expected_len)
 {
 	if (used_len < sizeof(*header)) {
-		LOG_ERR("used length is smaller than size of fuse_out_header");
+		LOG_ERROR("used length is smaller than size of fuse_out_header");
 		return -EIO;
 	}
 
 	if (header->error != 0) {
-		LOG_ERR(
-			"%s error %d (%s)",
-			fuse_opcode_to_string(opcode),
-			-header->error,
-			strerror(-header->error)
-		);
+		LOG_ERROR("%s error %d (%s)", fuse_opcode_to_string(opcode), -header->error,
+			  strerror(-header->error));
 		return header->error;
 	}
 
 	if (expected_len != -1 && header->len != expected_len) {
-		LOG_ERR(
-			"%s return message has invalid length (0x%x), expected 0x%x",
-			fuse_opcode_to_string(opcode),
-			header->len,
-			expected_len
-		);
+		LOG_ERROR("%s return message has invalid length (0x%x), expected 0x%x",
+			  fuse_opcode_to_string(opcode), header->len, expected_len);
 		return -EIO;
 	}
 
@@ -124,12 +116,12 @@ int virtiofs_init(const struct device *dev, struct fuse_init_out *response)
 	int ret = 0;
 
 	if (!fs_config) {
-		LOG_ERR("no virtio_fs_config present");
+		LOG_ERROR("no virtio_fs_config present");
 		return -ENXIO;
 	}
 	if (fs_config->num_request_queues < 1) {
 		/* this shouldn't ever happen */
-		LOG_ERR("no request queue present");
+		LOG_ERROR("no request queue present");
 		return -ENODEV;
 	}
 
@@ -140,7 +132,7 @@ int virtiofs_init(const struct device *dev, struct fuse_init_out *response)
 
 	ret = virtio_init_virtqueues(dev, QUEUE_COUNT, virtiofs_queue_enum_cb, NULL);
 	if (ret != 0) {
-		LOG_ERR("failed to initialize fs virtqueues");
+		LOG_ERROR("failed to initialize fs virtqueues");
 		return ret;
 	}
 
@@ -167,20 +159,14 @@ int virtiofs_init(const struct device *dev, struct fuse_init_out *response)
 	}
 
 	if (req.init_out.major != FUSE_MAJOR_VERSION) {
-		LOG_ERR(
-			"FUSE_INIT major version mismatch (%d), version %d is supported",
-			req.init_out.major,
-			FUSE_MAJOR_VERSION
-		);
+		LOG_ERROR("FUSE_INIT major version mismatch (%d), version %d is supported",
+			  req.init_out.major, FUSE_MAJOR_VERSION);
 		return -ENOTSUP;
 	}
 
 	if (req.init_out.minor < FUSE_MINOR_VERSION) {
-		LOG_ERR(
-			"FUSE_INIT minor version is too low (%d), version %d is supported",
-			req.init_out.minor,
-			FUSE_MINOR_VERSION
-		);
+		LOG_ERROR("FUSE_INIT minor version is too low (%d), version %d is supported",
+			  req.init_out.minor, FUSE_MINOR_VERSION);
 		return -ENOTSUP;
 	}
 

@@ -22,7 +22,7 @@ config $(module)_LOG_LEVEL_OFF
 config $(module)_LOG_LEVEL_ERR
 	bool "Error"
 	help
-	  Only write to log when NET_ERR or LOG_ERR is used.
+	  Only write to log when NET_ERR or LOG_ERROR is used.
 
 config $(module)_LOG_LEVEL_WRN
 	bool "Warning"

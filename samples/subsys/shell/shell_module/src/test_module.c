@@ -12,7 +12,7 @@ void foo(void)
 {
 	LOG_INF("info message");
 	LOG_WRN("warning message");
-	LOG_ERR("err message");
+	LOG_ERROR("err message");
 }
 
 /* Commands below are added using memory section approach which allows to build

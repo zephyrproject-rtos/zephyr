@@ -162,7 +162,7 @@ static int hl78xx_evt_monitor_sys_init(void)
 
 	err = hl78xx_evt_notif_handler_set(hl78xx_evt_monitor_dispatch);
 	if (err) {
-		LOG_ERR("Failed to hook the dispatch function, err %d", err);
+		LOG_ERROR("Failed to hook the dispatch function, err %d", err);
 	}
 
 	return 0;

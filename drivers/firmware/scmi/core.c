@@ -74,7 +74,7 @@ static int scmi_core_setup_chan(const struct device *transport,
 	/* setup transport-related channel data */
 	ret = scmi_transport_setup_chan(transport, chan, tx);
 	if (ret < 0) {
-		LOG_ERR("failed to setup channel");
+		LOG_ERROR("failed to setup channel");
 		return ret;
 	}
 
@@ -128,26 +128,26 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 	if (!k_is_pre_kernel()) {
 		ret = k_mutex_lock(&proto->tx->lock, K_USEC(SCMI_CHAN_LOCK_TIMEOUT_USEC));
 		if (ret < 0) {
-			LOG_ERR("failed to acquire TX channel lock: %d", ret);
+			LOG_ERROR("failed to acquire TX channel lock: %d", ret);
 			return ret;
 		}
 	}
 
 	ret = scmi_transport_send_message(proto->transport, proto->tx, msg, use_polling);
 	if (ret < 0) {
-		LOG_ERR("failed to send message at transport layer: %d", ret);
+		LOG_ERROR("failed to send message at transport layer: %d", ret);
 		goto out_release_mutex;
 	}
 
 	ret = scmi_core_wait_reply(proto, use_polling);
 	if (ret < 0) {
-		LOG_ERR("failed to wait for message reply: %d", ret);
+		LOG_ERROR("failed to wait for message reply: %d", ret);
 		goto out_release_mutex;
 	}
 
 	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
 	if (ret < 0) {
-		LOG_ERR("failed to read message reply: %d", ret);
+		LOG_ERROR("failed to read message reply: %d", ret);
 		goto out_release_mutex;
 	}
 
@@ -172,14 +172,13 @@ static int scmi_core_protocol_negotiate(struct scmi_protocol *proto)
 	agent_version = proto->version;
 
 	if (!agent_version) {
-		LOG_ERR("Protocol 0x%X: Agent version not specified", proto->id);
+		LOG_ERROR("Protocol 0x%X: Agent version not specified", proto->id);
 		return -EINVAL;
 	}
 
 	ret = scmi_protocol_get_version(proto, &platform_version);
 	if (ret < 0) {
-		LOG_ERR("Protocol 0x%X: Failed to get platform version: %d",
-			proto->id, ret);
+		LOG_ERROR("Protocol 0x%X: Failed to get platform version: %d", proto->id, ret);
 		return ret;
 	}
 

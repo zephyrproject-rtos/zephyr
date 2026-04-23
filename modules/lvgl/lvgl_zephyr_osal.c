@@ -43,7 +43,7 @@ lv_result_t lv_thread_delete(lv_thread_t *thread)
 	int ret;
 
 	if (thread == NULL || thread->tid == NULL) {
-		LOG_ERR("Invalid thread pointer");
+		LOG_ERROR("Invalid thread pointer");
 		return LV_RESULT_INVALID;
 	}
 
@@ -55,7 +55,7 @@ lv_result_t lv_thread_delete(lv_thread_t *thread)
 
 	ret = k_thread_stack_free(thread->stack);
 	if (ret < 0) {
-		LOG_ERR("Failed to delete thread: %d", ret);
+		LOG_ERROR("Failed to delete thread: %d", ret);
 		return LV_RESULT_INVALID;
 	}
 
@@ -74,7 +74,7 @@ lv_result_t lv_mutex_lock(lv_mutex_t *mutex)
 
 	ret = k_mutex_lock(mutex, K_FOREVER);
 	if (ret != 0) {
-		LOG_ERR("Failed to lock mutex: %d", ret);
+		LOG_ERROR("Failed to lock mutex: %d", ret);
 		return LV_RESULT_INVALID;
 	}
 
@@ -87,7 +87,7 @@ lv_result_t lv_mutex_lock_isr(lv_mutex_t *mutex)
 
 	ret = k_mutex_lock(mutex, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("Failed to lock mutex: %d", ret);
+		LOG_ERROR("Failed to lock mutex: %d", ret);
 		return LV_RESULT_INVALID;
 	}
 
@@ -100,7 +100,7 @@ lv_result_t lv_mutex_unlock(lv_mutex_t *mutex)
 
 	ret = k_mutex_unlock(mutex);
 	if (ret != 0) {
-		LOG_ERR("Failed to unlock mutex: %d", ret);
+		LOG_ERROR("Failed to unlock mutex: %d", ret);
 		return LV_RESULT_INVALID;
 	}
 
@@ -119,7 +119,7 @@ lv_result_t lv_thread_sync_init(lv_thread_sync_t *sync)
 
 	ret = k_sem_init(sync, 0, 1);
 	if (ret != 0) {
-		LOG_ERR("Failed to init thread sync: %d", ret);
+		LOG_ERROR("Failed to init thread sync: %d", ret);
 		return LV_RESULT_INVALID;
 	}
 
@@ -132,7 +132,7 @@ lv_result_t lv_thread_sync_wait(lv_thread_sync_t *sync)
 
 	ret = k_sem_take(sync, K_FOREVER);
 	if (ret < 0) {
-		LOG_ERR("Error waiting on thread sync: %d", ret);
+		LOG_ERROR("Error waiting on thread sync: %d", ret);
 		return LV_RESULT_INVALID;
 	}
 
@@ -178,7 +178,7 @@ uint32_t lv_os_get_idle_percent(void)
 	int load = cpu_load_get(true);
 
 	if (load < 0) {
-		LOG_ERR("Failed to get CPU load, returning UINT32_MAX");
+		LOG_ERROR("Failed to get CPU load, returning UINT32_MAX");
 		return UINT32_MAX;
 	}
 

@@ -145,7 +145,7 @@ void access_control_add(uint16_t obj_id, uint16_t obj_inst_id, int server_obj_in
 	}
 
 	if (avail < 0) {
-		LOG_ERR("Can not create access control instance - no more room: %u", obj_inst_id);
+		LOG_ERROR("Can not create access control instance - no more room: %u", obj_inst_id);
 		return;
 	}
 
@@ -269,7 +269,7 @@ int access_control_check_access(uint16_t obj_id, uint16_t obj_inst_id, uint16_t 
 	int short_server_id = lwm2m_server_get_ssid(server_obj_inst);
 
 	if (short_server_id < 0) {
-		LOG_ERR("No server obj instance %u exist", server_obj_inst);
+		LOG_ERROR("No server obj instance %u exist", server_obj_inst);
 		return -EACCES;
 	}
 
@@ -362,7 +362,7 @@ static int write_validate_cb(uint16_t obj_inst_id, uint16_t res_id,
 	}
 
 	if (idx < 0) {
-		LOG_ERR("Object instance not found - %u", obj_inst_id);
+		LOG_ERROR("Object instance not found - %u", obj_inst_id);
 		return -ENOENT;
 	}
 
@@ -383,9 +383,9 @@ static struct lwm2m_engine_obj_inst *ac_create(uint16_t obj_inst_id)
 	/* Check that there is no other instance with this ID */
 	for (index = 0; index < ARRAY_SIZE(inst); index++) {
 		if (inst[index].obj && inst[index].obj_inst_id == obj_inst_id) {
-			LOG_ERR("Can not create access control instance - "
-				"already existing: %u",
-				obj_inst_id);
+			LOG_ERROR("Can not create access control instance - "
+				  "already existing: %u",
+				  obj_inst_id);
 			return NULL;
 		}
 
@@ -396,7 +396,7 @@ static struct lwm2m_engine_obj_inst *ac_create(uint16_t obj_inst_id)
 	}
 
 	if (avail < 0) {
-		LOG_ERR("Can not create access control instance - no more room: %u", obj_inst_id);
+		LOG_ERROR("Can not create access control instance - no more room: %u", obj_inst_id);
 		return NULL;
 	}
 

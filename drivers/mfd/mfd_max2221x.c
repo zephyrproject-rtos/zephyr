@@ -117,7 +117,7 @@ static int max2221x_init(const struct device *dev)
 	const struct mfd_max2221x_config *config = dev->config;
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI device %s not ready", config->spi.bus->name);
+		LOG_ERROR("SPI device %s not ready", config->spi.bus->name);
 		return -ENODEV;
 	}
 

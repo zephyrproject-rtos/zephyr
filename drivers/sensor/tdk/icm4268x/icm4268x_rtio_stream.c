@@ -49,7 +49,7 @@ void icm4268x_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *
 		int rc = icm4268x_safely_configure(sensor, &new_config);
 
 		if (rc != 0) {
-			LOG_ERR("%p Failed to configure sensor", sensor);
+			LOG_ERROR("%p Failed to configure sensor", sensor);
 			rtio_iodev_sqe_err(iodev_sqe, rc);
 			return;
 		}
@@ -100,7 +100,7 @@ static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 
 	if (drv_data->streaming_sqe == NULL ||
 	    FIELD_GET(RTIO_SQE_CANCELED, drv_data->streaming_sqe->sqe.flags)) {
-		LOG_ERR("%p Complete CB triggered with NULL handle. Disabling Interrupt", dev);
+		LOG_ERROR("%p Complete CB triggered with NULL handle. Disabling Interrupt", dev);
 		(void)gpio_pin_interrupt_configure_dt(&dev_cfg->gpio_int1, GPIO_INT_DISABLE);
 		(void)atomic_set(&drv_data->state, ICM4268X_STREAM_OFF);
 		return;
@@ -128,7 +128,7 @@ static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 
 	rc = rtio_sqe_rx_buf(streaming_sqe, required_len, required_len, &buf, &buf_len);
 	CHECKIF(rc < 0 || !buf) {
-		LOG_ERR("%p Failed to obtain SQE buffer: %d", dev, rc);
+		LOG_ERROR("%p Failed to obtain SQE buffer: %d", dev, rc);
 		icm4268x_stream_result(dev, -ENOMEM);
 		return;
 	}
@@ -160,7 +160,7 @@ static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 		rc = icm4268x_prep_reg_write_rtio_async(&drv_data->bus, REG_SIGNAL_PATH_RESET,
 							&val, 1, NULL);
 		CHECKIF(rc < 0) {
-			LOG_ERR("%p Failed to flush the FIFO buffer: %d", dev, rc);
+			LOG_ERROR("%p Failed to flush the FIFO buffer: %d", dev, rc);
 			icm4268x_stream_result(dev, rc);
 			return;
 		}
@@ -193,7 +193,7 @@ void icm4268x_fifo_event(const struct device *dev)
 
 	if (drv_data->streaming_sqe == NULL ||
 	    FIELD_GET(RTIO_SQE_CANCELED, drv_data->streaming_sqe->sqe.flags)) {
-		LOG_ERR("%p FIFO event triggered with no stream submisssion. Disabling IRQ", dev);
+		LOG_ERROR("%p FIFO event triggered with no stream submisssion. Disabling IRQ", dev);
 		(void)gpio_pin_interrupt_configure_dt(&dev_cfg->gpio_int1, GPIO_INT_DISABLE);
 		(void)atomic_set(&drv_data->state, ICM4268X_STREAM_OFF);
 		return;
@@ -205,7 +205,7 @@ void icm4268x_fifo_event(const struct device *dev)
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("%p Failed to get sensor clock cycles", dev);
+		LOG_ERROR("%p Failed to get sensor clock cycles", dev);
 		icm4268x_stream_result(dev, rc);
 		return;
 	}
@@ -214,7 +214,7 @@ void icm4268x_fifo_event(const struct device *dev)
 	rc = icm4268x_prep_reg_read_rtio_async(&drv_data->bus, REG_INT_STATUS | REG_SPI_READ_BIT,
 					       &drv_data->int_status, 1, &sqe);
 	CHECKIF(rc < 0 || !sqe) {
-		LOG_ERR("%p Could not prepare async read: %d", dev, rc);
+		LOG_ERROR("%p Could not prepare async read: %d", dev, rc);
 		icm4268x_stream_result(dev, -ENOMEM);
 		return;
 	}
@@ -234,7 +234,7 @@ void icm4268x_fifo_event(const struct device *dev)
 		rc = rtio_sqe_rx_buf(drv_data->streaming_sqe, required_len, required_len, &buf,
 				     &buf_len);
 		if (rc < 0) {
-			LOG_ERR("%p Failed to allocate buffer for the FIFO read: %d", dev, rc);
+			LOG_ERROR("%p Failed to allocate buffer for the FIFO read: %d", dev, rc);
 			icm4268x_stream_result(dev, rc);
 			return;
 		}
@@ -248,7 +248,7 @@ void icm4268x_fifo_event(const struct device *dev)
 						       REG_FIFO_DATA | REG_SPI_READ_BIT,
 						       read_buf, payload_read_len, &sqe);
 		if (rc < 0 || !sqe) {
-			LOG_ERR("%p Could not prepare async read: %d", dev, rc);
+			LOG_ERROR("%p Could not prepare async read: %d", dev, rc);
 			icm4268x_stream_result(dev, -ENOMEM);
 			return;
 		}
@@ -262,7 +262,7 @@ void icm4268x_fifo_event(const struct device *dev)
 		rc = icm4268x_prep_reg_write_rtio_async(&drv_data->bus, REG_SIGNAL_PATH_RESET,
 							&val, 1, &sqe);
 		if (rc < 0 || !sqe) {
-			LOG_ERR("%p Could not prepare async read: %d", dev, rc);
+			LOG_ERROR("%p Could not prepare async read: %d", dev, rc);
 			icm4268x_stream_result(dev, -ENOMEM);
 			return;
 		}

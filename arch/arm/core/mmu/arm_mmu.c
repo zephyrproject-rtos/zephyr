@@ -715,10 +715,11 @@ static void arm_mmu_l2_unmap_page(uint32_t va)
 	}
 
 	if ((l2_page_table->entries[l2_index].undefined.id & ARM_MMU_PTE_ID_SMALL_PAGE) !=
-			ARM_MMU_PTE_ID_SMALL_PAGE) {
-		LOG_ERR("Cannot unmap virtual memory at 0x%08X: invalid "
-			"page table entry type in level 2 page table at "
-			"L1 index [%u], L2 index [%u]", va, l1_index, l2_index);
+	    ARM_MMU_PTE_ID_SMALL_PAGE) {
+		LOG_ERROR("Cannot unmap virtual memory at 0x%08X: invalid "
+			  "page table entry type in level 2 page table at "
+			  "L1 index [%u], L2 index [%u]",
+			  va, l1_index, l2_index);
 		return;
 	}
 
@@ -883,8 +884,9 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	int key;
 
 	if (size == 0) {
-		LOG_ERR("Cannot map physical memory at 0x%08X: invalid "
-			"zero size", (uint32_t)phys);
+		LOG_ERROR("Cannot map physical memory at 0x%08X: invalid "
+			  "zero size",
+			  (uint32_t)phys);
 		return -EINVAL;
 	}
 
@@ -958,7 +960,7 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	int ret = __arch_mem_map(virt, phys, size, flags);
 
 	if (ret) {
-		LOG_ERR("__arch_mem_map() returned %d", ret);
+		LOG_ERROR("__arch_mem_map() returned %d", ret);
 		k_panic();
 	} else {
 		invalidate_tlb_all();
@@ -981,13 +983,14 @@ static int __arch_mem_unmap(void *addr, size_t size)
 	int key;
 
 	if (addr == NULL) {
-		LOG_ERR("Cannot unmap virtual memory: invalid NULL pointer");
+		LOG_ERROR("Cannot unmap virtual memory: invalid NULL pointer");
 		return -EINVAL;
 	}
 
 	if (size == 0) {
-		LOG_ERR("Cannot unmap virtual memory at 0x%08X: invalid "
-			"zero size", (uint32_t)addr);
+		LOG_ERROR("Cannot unmap virtual memory at 0x%08X: invalid "
+			  "zero size",
+			  (uint32_t)addr);
 		return -EINVAL;
 	}
 
@@ -1018,7 +1021,7 @@ void arch_mem_unmap(void *addr, size_t size)
 	int ret = __arch_mem_unmap(addr, size);
 
 	if (ret) {
-		LOG_ERR("__arch_mem_unmap() returned %d", ret);
+		LOG_ERROR("__arch_mem_unmap() returned %d", ret);
 	} else {
 		invalidate_tlb_all();
 	}

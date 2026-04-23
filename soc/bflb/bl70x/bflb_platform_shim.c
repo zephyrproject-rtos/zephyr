@@ -482,7 +482,7 @@ void ble_assert_err(const char *file, int line, uint32_t param0, uint32_t param1
 
 void ble_assert_param(const char *file, int line, uint32_t param0, uint32_t param1)
 {
-	LOG_ERR("BLE ASSERT PARAM: %s:%d (0x%x, 0x%x)", file, line, param0, param1);
+	LOG_ERROR("BLE ASSERT PARAM: %s:%d (0x%x, 0x%x)", file, line, param0, param1);
 }
 
 void ble_assert_warn(const char *file, int line, uint32_t param0, uint32_t param1)

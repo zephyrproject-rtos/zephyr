@@ -394,7 +394,7 @@ int bt_mesh_scan_enable(void)
 
 	err = bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
 	if (err && err != -EALREADY) {
-		LOG_ERR("starting scan failed (err %d)", err);
+		LOG_ERROR("starting scan failed (err %d)", err);
 		return err;
 	}
 
@@ -409,7 +409,7 @@ int bt_mesh_scan_disable(void)
 
 	err = bt_le_scan_stop();
 	if (err && err != -EALREADY) {
-		LOG_ERR("stopping scan failed (err %d)", err);
+		LOG_ERROR("stopping scan failed (err %d)", err);
 		return err;
 	}
 

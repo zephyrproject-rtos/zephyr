@@ -104,7 +104,7 @@ static int mcux_lcdifv3_write(const struct device *dev, const uint16_t x, const 
 	} else {
 		/* We must use partial framebuffer copy */
 		if (CONFIG_MCUX_LCDIFV3_FB_NUM == 0) {
-			LOG_ERR("Partial display refresh requires driver framebuffers");
+			LOG_ERROR("Partial display refresh requires driver framebuffers");
 			return -ENOTSUP;
 		} else if (data->active_fb != data->fb[data->next_idx]) {
 			/*
@@ -181,7 +181,7 @@ static int mcux_lcdifv3_set_pixel_format(const struct device *dev,
 	struct mcux_lcdifv3_data *dev_data = dev->data;
 
 	if (!(pixel_format & mcux_lcdifv3_supported_fmts)) {
-		LOG_ERR("Unsupported pixel format");
+		LOG_ERROR("Unsupported pixel format");
 		return -ENOTSUP;
 	}
 
@@ -248,7 +248,7 @@ static int mcux_axi_apb_configure_clock(const struct device *dev)
 
 	/* configure media_axi_clk */
 	if (!device_is_ready(config->media_axi_clk_dev)) {
-		LOG_ERR("media_axi clock control device not ready");
+		LOG_ERROR("media_axi clock control device not ready");
 		return -ENODEV;
 	}
 	clock_control_set_rate(config->media_axi_clk_dev, config->media_axi_clk_subsys,
@@ -261,7 +261,7 @@ static int mcux_axi_apb_configure_clock(const struct device *dev)
 
 	/* configure media_apb_clk */
 	if (!device_is_ready(config->media_apb_clk_dev)) {
-		LOG_ERR("media_apb clock control device not ready");
+		LOG_ERROR("media_apb clock control device not ready");
 		return -ENODEV;
 	}
 	clock_control_set_rate(config->media_apb_clk_dev, config->media_apb_clk_subsys,
@@ -302,7 +302,7 @@ static int mcux_lcdifv3_init(const struct device *dev)
 		data->pixel_format = PIXEL_FORMAT_ABGR_8888;
 		break;
 	default:
-		LOG_ERR("Pixel format not supported");
+		LOG_ERROR("Pixel format not supported");
 		return -ENOTSUP;
 	}
 
@@ -324,7 +324,7 @@ static int mcux_lcdifv3_init(const struct device *dev)
 
 	/* configure disp_pix_clk */
 	if (!device_is_ready(config->disp_pix_clk_dev)) {
-		LOG_ERR("disp_pix clock control device not ready");
+		LOG_ERROR("disp_pix clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -333,7 +333,7 @@ static int mcux_lcdifv3_init(const struct device *dev)
 
 	if (clock_control_get_rate(config->disp_pix_clk_dev, config->disp_pix_clk_subsys,
 				   &clk_freq)) {
-		LOG_ERR("Failed to get disp_pix_clk");
+		LOG_ERROR("Failed to get disp_pix_clk");
 		return -EINVAL;
 	}
 	LOG_INF("disp_pix clock frequency %d", clk_freq);

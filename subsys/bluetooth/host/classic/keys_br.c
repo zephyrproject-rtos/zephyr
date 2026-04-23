@@ -141,7 +141,7 @@ void bt_keys_link_key_store(struct bt_keys_link_key *link_key)
 		err = bt_settings_store_link_key(&le_addr, link_key->storage_start,
 						 BT_KEYS_LINK_KEY_STORAGE_LEN);
 		if (err) {
-			LOG_ERR("Failed to save link key (err %d)", err);
+			LOG_ERROR("Failed to save link key (err %d)", err);
 		}
 	}
 }
@@ -175,13 +175,13 @@ static int link_key_set(const char *name, size_t len_rd,
 	char val[BT_KEYS_LINK_KEY_STORAGE_LEN];
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -EINVAL;
 	}
 
 	len = read_cb(cb_arg, val, sizeof(val));
 	if (len < 0) {
-		LOG_ERR("Failed to read value (err %zu)", len);
+		LOG_ERROR("Failed to read value (err %zu)", len);
 		return -EINVAL;
 	}
 
@@ -189,7 +189,7 @@ static int link_key_set(const char *name, size_t len_rd,
 
 	err = bt_settings_decode_key(name, &le_addr);
 	if (err) {
-		LOG_ERR("Unable to decode address %s", name);
+		LOG_ERROR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 

@@ -195,7 +195,7 @@ static int xlnx_sdhc_setup_adma(const struct device *dev, const struct sdhc_data
 	}
 
 	if (adma_table > CONFIG_HOST_ADMA2_DESC_SIZE) {
-		LOG_ERR("Descriptor size is too big");
+		LOG_ERROR("Descriptor size is too big");
 		return -ENOTSUP;
 	}
 
@@ -309,12 +309,12 @@ static int8_t xlnx_sdhc_cmd_response(const struct device *dev, struct sdhc_comma
 		ret = xlnx_sdhc_wait_for_events((void *)&reg->normal_int_stat,
 				cmd->timeout_ms, mask);
 		if (ret != 0) {
-			LOG_ERR("No response from card");
+			LOG_ERROR("No response from card");
 			return ret;
 		}
 
 		if ((reg->normal_int_stat & XLNX_SDHC_INTR_ERR_MASK) != 0U) {
-			LOG_ERR("Error response from card");
+			LOG_ERROR("Error response from card");
 			reg->err_int_stat = XLNX_SDHC_ERROR_INTR_ALL;
 			return -EINVAL;
 		}
@@ -325,13 +325,13 @@ static int8_t xlnx_sdhc_cmd_response(const struct device *dev, struct sdhc_comma
 		events = k_event_wait(&dev_data->irq_event, mask, false, timeout);
 
 		if ((events & XLNX_SDHC_INTR_ERR_MASK) != 0U) {
-			LOG_ERR("Error response from card");
+			LOG_ERROR("Error response from card");
 			ret = -EINVAL;
 		} else if ((events & XLNX_SDHC_INTR_CC_MASK) ||
 				(events & XLNX_SDHC_INTR_BRR_MASK)) {
 			ret = 0;
 		} else {
-			LOG_ERR("No response from card");
+			LOG_ERROR("No response from card");
 			ret = -EAGAIN;
 		}
 	}
@@ -392,7 +392,7 @@ static int8_t xlnx_sdhc_cmd(const struct device *dev, struct sdhc_command *cmd, 
 	if ((cmd->opcode != SD_SEND_TUNING_BLOCK) && (cmd->opcode != MMC_SEND_TUNING_BLOCK)) {
 		if (((reg->present_state & XLNX_SDHC_PSR_INHIBIT_DAT_MASK) != 0U) &&
 				((command & XLNX_SDHC_DAT_PRESENT_SEL_MASK) != 0U)) {
-			LOG_ERR("Card data lines busy");
+			LOG_ERROR("Card data lines busy");
 			return -EBUSY;
 		}
 	}
@@ -434,13 +434,13 @@ static int8_t xlnx_sdhc_xfr(const struct device *dev, struct sdhc_data *data)
 		ret = xlnx_sdhc_wait_for_events((void *)&reg->normal_int_stat,
 				data->timeout_ms, mask);
 		if (ret != 0) {
-			LOG_ERR("Data transfer timeout");
+			LOG_ERROR("Data transfer timeout");
 			return ret;
 		}
 
 		if ((reg->normal_int_stat & XLNX_SDHC_INTR_ERR_MASK) != 0U) {
 			reg->err_int_stat = XLNX_SDHC_ERROR_INTR_ALL;
-			LOG_ERR("Error at data transfer");
+			LOG_ERROR("Error at data transfer");
 			return -EINVAL;
 		}
 
@@ -451,12 +451,12 @@ static int8_t xlnx_sdhc_xfr(const struct device *dev, struct sdhc_data *data)
 		events = k_event_wait(&dev_data->irq_event, mask, false, timeout);
 
 		if ((events & XLNX_SDHC_INTR_ERR_MASK) != 0U) {
-			LOG_ERR("Error at data transfer");
+			LOG_ERROR("Error at data transfer");
 			ret = -EINVAL;
 		} else if ((events & XLNX_SDHC_INTR_TC_MASK) != 0U) {
 			ret = 0;
 		} else {
-			LOG_ERR("Data transfer timeout");
+			LOG_ERROR("Data transfer timeout");
 			ret = -EAGAIN;
 		}
 	}
@@ -475,7 +475,7 @@ static int8_t xlnx_sdhc_transfer(const struct device *dev, struct sdhc_command *
 
 	/* Check command line is in use */
 	if ((reg->present_state & 1U) != 0U) {
-		LOG_ERR("Command lines are busy");
+		LOG_ERROR("Command lines are busy");
 		return -EBUSY;
 	}
 
@@ -719,7 +719,7 @@ static int8_t xlnx_sdhc_enable_dll_clock(volatile struct reg_base *reg)
 	ret = xlnx_sdhc_waitl_events((void *)&reg->phy_ctrl2, 100,
 			XLNX_SDHC_PHYREG2_DLL_RDY_MASK, XLNX_SDHC_PHYREG2_DLL_RDY_MASK);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable dll clock");
+		LOG_ERROR("Failed to enable dll clock");
 	}
 
 	return ret;
@@ -746,7 +746,7 @@ static int xlnx_sdhc_set_clock(const struct device *dev, enum sdhc_clock_speed s
 	/* Get input clock rate */
 	ret = clock_control_get_rate(config->clock_dev, NULL, &dev_data->maxclock);
 	if (ret != 0) {
-		LOG_ERR("Failed to get clock\n");
+		LOG_ERROR("Failed to get clock\n");
 		return ret;
 	}
 
@@ -1120,7 +1120,7 @@ static int xlnx_sdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 	/* Check given clock is valid */
 	if ((ios->clock != 0) && ((ios->clock > dev_data->props.f_max) ||
 				(ios->clock < dev_data->props.f_min))) {
-		LOG_ERR("Invalid clock value");
+		LOG_ERROR("Invalid clock value");
 		return -EINVAL;
 	}
 
@@ -1134,7 +1134,7 @@ static int xlnx_sdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 	if (ios->signal_voltage != host_io->signal_voltage) {
 		ret = xlnx_sdhc_set_voltage(reg, ios->signal_voltage);
 		if (ret != 0) {
-			LOG_ERR("Failed to set voltage level");
+			LOG_ERROR("Failed to set voltage level");
 			return ret;
 		}
 		host_io->signal_voltage = ios->signal_voltage;
@@ -1144,7 +1144,7 @@ static int xlnx_sdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 	if (ios->timing != host_io->timing) {
 		ret = xlnx_sdhc_set_timing(dev, ios->timing);
 		if (ret != 0) {
-			LOG_ERR("Failed to set speed mode");
+			LOG_ERROR("Failed to set speed mode");
 			return ret;
 		}
 		host_io->timing = ios->timing;
@@ -1154,7 +1154,7 @@ static int xlnx_sdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 	if (ios->clock != host_io->clock) {
 		ret = xlnx_sdhc_set_clock(dev, ios->clock);
 		if (ret != 0) {
-			LOG_ERR("Failed to set clock");
+			LOG_ERROR("Failed to set clock");
 			return ret;
 		}
 		host_io->clock = ios->clock;
@@ -1164,7 +1164,7 @@ static int xlnx_sdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 	if (ios->bus_width != host_io->bus_width) {
 		ret = xlnx_sdhc_set_buswidth(reg, ios->bus_width);
 		if (ret != 0) {
-			LOG_ERR("Failed to set bus width");
+			LOG_ERROR("Failed to set bus width");
 			return ret;
 		}
 		host_io->bus_width = ios->bus_width;
@@ -1189,7 +1189,7 @@ static int xlnx_sdhc_host_reset(const struct device *dev)
 	ret = xlnx_sdhc_waitb_events((void *)&reg->sw_reset, 100,
 			XLNX_SDHC_SWRST_ALL_MASK, 0);
 	if (ret != 0) {
-		LOG_ERR("Device is busy");
+		LOG_ERROR("Device is busy");
 		return -EBUSY;
 	}
 
@@ -1307,7 +1307,7 @@ static int xlnx_sdhc_init(const struct device *dev)
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
 	if (device_is_ready(config->clock_dev) == 0) {
-		LOG_ERR("Clock control device not ready");
+		LOG_ERROR("Clock control device not ready");
 		return -ENODEV;
 	}
 

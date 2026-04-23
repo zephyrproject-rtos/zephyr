@@ -158,7 +158,7 @@ static int hid_on_get_idle(struct hid_device_info *dev_data,
 	uint8_t report_id = (uint8_t)setup->wValue;
 
 	if (report_id > CONFIG_USB_HID_REPORTS) {
-		LOG_ERR("Report id out of limit: %d", report_id);
+		LOG_ERROR("Report id out of limit: %d", report_id);
 		return -ENOTSUP;
 	}
 
@@ -202,7 +202,7 @@ static int hid_on_get_protocol(struct hid_device_info *dev_data,
 	uint32_t size = sizeof(dev_data->protocol);
 
 	if (setup->wValue) {
-		LOG_ERR("wValue should be 0");
+		LOG_ERROR("wValue should be 0");
 		return -ENOTSUP;
 	}
 
@@ -225,7 +225,7 @@ static int hid_on_set_idle(struct hid_device_info *dev_data,
 	uint8_t report_id = (uint8_t)setup->wValue;
 
 	if (report_id > CONFIG_USB_HID_REPORTS) {
-		LOG_ERR("Report id out of limit: %d", report_id);
+		LOG_ERROR("Report id out of limit: %d", report_id);
 		return -ENOTSUP;
 	}
 
@@ -268,7 +268,7 @@ static int hid_on_set_protocol(const struct device *dev,
 	uint16_t protocol = setup->wValue;
 
 	if (protocol > HID_PROTOCOL_REPORT) {
-		LOG_ERR("Unsupported protocol: %u", protocol);
+		LOG_ERROR("Unsupported protocol: %u", protocol);
 		return -ENOTSUP;
 	}
 
@@ -472,7 +472,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 		case USB_HID_GET_PROTOCOL:
 			return hid_on_get_protocol(dev_data, setup, len, data);
 		default:
-			LOG_ERR("Unhandled request 0x%02x", setup->bRequest);
+			LOG_ERROR("Unhandled request 0x%02x", setup->bRequest);
 			break;
 		}
 	} else {
@@ -491,7 +491,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 		case USB_HID_SET_PROTOCOL:
 			return hid_on_set_protocol(dev, dev_data, setup);
 		default:
-			LOG_ERR("Unhandled request 0x%02x", setup->bRequest);
+			LOG_ERROR("Unhandled request 0x%02x", setup->bRequest);
 			break;
 		}
 	}

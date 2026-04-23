@@ -344,16 +344,17 @@ static int i2c_rza2m_riic_validate_msgs(const struct device *dev, struct i2c_msg
 			/* Restart condition between messages of different directions is required */
 			if ((OPERATION(current) != OPERATION(next)) &&
 			    !(next->flags & I2C_MSG_RESTART)) {
-				LOG_ERR("%s: Restart condition between messages of "
-					"different directions is required."
-					"Current/Total: [%d/%d]",
-					__func__, i, num_msgs);
+				LOG_ERROR("%s: Restart condition between messages of "
+					  "different directions is required."
+					  "Current/Total: [%d/%d]",
+					  __func__, i, num_msgs);
 				return -EIO;
 			}
 
 			/* Stop condition is only allowed on last message */
 			if (current->flags & I2C_MSG_STOP) {
-				LOG_ERR("%s: Invalid stop flag. Stop condition is only allowed on "
+				LOG_ERROR(
+					"%s: Invalid stop flag. Stop condition is only allowed on "
 					"last message. "
 					"Current/Total: [%d/%d]",
 					__func__, i, num_msgs);
@@ -430,7 +431,7 @@ static int i2c_rza2m_riic_transfer(const struct device *dev, struct i2c_msg *msg
 	/* Wait for the bus to be available */
 	ret = i2c_rza2m_riic_wait_for_clear(dev, RIIC_CR2, RIIC_CR2_BBSY);
 	if (ret < 0) {
-		LOG_ERR("Bus is busy. Another transfer was in progress.");
+		LOG_ERROR("Bus is busy. Another transfer was in progress.");
 		ret = -EIO;
 		goto exit;
 	}
@@ -623,16 +624,16 @@ static int i2c_rza2m_riic_configure(const struct device *dev, uint32_t dev_confi
 	if (I2C_SPEED_GET(dev_config) != I2C_SPEED_STANDARD &&
 	    I2C_SPEED_GET(dev_config) != I2C_SPEED_FAST &&
 	    I2C_SPEED_GET(dev_config) != I2C_SPEED_FAST_PLUS) {
-		LOG_ERR("%s: supported only I2C_SPEED_STANDARD, I2C_SPEED_FAST and "
-			"I2C_SPEED_FAST_PLUS",
-			dev->name);
+		LOG_ERROR("%s: supported only I2C_SPEED_STANDARD, I2C_SPEED_FAST and "
+			  "I2C_SPEED_FAST_PLUS",
+			  dev->name);
 		return -EIO;
 	}
 	i2c_rza2m_riic_calc_clock_setting(dev, &data->clk_settings);
 
 	/* Prohibiting the bus configuration during transfer. */
 	if (k_mutex_lock(&data->i2c_lock_mtx, K_MSEC(TRANSFER_TIMEOUT_MS))) {
-		LOG_ERR("Bus is busy");
+		LOG_ERROR("Bus is busy");
 		return -EIO;
 	}
 
@@ -695,14 +696,14 @@ static int i2c_rza2m_riic_init(const struct device *dev)
 	k_mutex_init(&data->i2c_lock_mtx);
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Device %s is not ready", dev->name);
+		LOG_ERROR("Device %s is not ready", dev->name);
 		return -ENODEV;
 	}
 
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Can't apply pinctrl state for %s", dev->name);
+		LOG_ERROR("Can't apply pinctrl state for %s", dev->name);
 		return ret;
 	}
 
@@ -722,7 +723,7 @@ static int i2c_rza2m_riic_init(const struct device *dev)
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 	ret = i2c_rza2m_riic_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret != 0) {
-		LOG_ERR("Can't configure device %s", dev->name);
+		LOG_ERROR("Can't configure device %s", dev->name);
 	}
 
 	return ret;

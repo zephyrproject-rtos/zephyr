@@ -97,7 +97,7 @@ static int read_reg(const struct device *dev, uint8_t reg, uint8_t *buf)
 
 	ret = i2c_burst_read_dt(&config->i2c_spec, reg, (uint8_t *)&value, 1);
 	if (ret != 0) {
-		LOG_ERR("%s: error reading register 0x%X (%d)", dev->name, reg, ret);
+		LOG_ERROR("%s: error reading register 0x%X (%d)", dev->name, reg, ret);
 		return ret;
 	}
 
@@ -129,7 +129,7 @@ static int write_reg(const struct device *dev, uint8_t reg, uint8_t value)
 	buf[1] = value;
 	ret = i2c_write_dt(&config->i2c_spec, buf, sizeof(buf));
 	if (ret != 0) {
-		LOG_ERR("%s: error writing to register 0x%X (%d)", dev->name, reg, ret);
+		LOG_ERROR("%s: error writing to register 0x%X (%d)", dev->name, reg, ret);
 	}
 
 	return ret;
@@ -153,7 +153,7 @@ static int read_port_regs(const struct device *dev, uint8_t reg, uint32_t *buf)
 
 	ret = i2c_burst_read_dt(&config->i2c_spec, reg, (uint8_t *)&port_data, 3);
 	if (ret != 0) {
-		LOG_ERR("%s: error reading register 0x%X (%d)", dev->name, reg, ret);
+		LOG_ERROR("%s: error reading register 0x%X (%d)", dev->name, reg, ret);
 		return ret;
 	}
 
@@ -189,7 +189,7 @@ static int write_port_regs(const struct device *dev, uint8_t reg, uint32_t value
 	sys_put_le24(value, &buf[1]);
 	ret = i2c_write_dt(&config->i2c_spec, buf, sizeof(buf));
 	if (ret != 0) {
-		LOG_ERR("%s: error writing to register 0x%X (%d)", dev->name, reg, ret);
+		LOG_ERROR("%s: error writing to register 0x%X (%d)", dev->name, reg, ret);
 	}
 
 	return ret;
@@ -360,7 +360,7 @@ static int mfxstm32l152_configure(const struct device *dev, gpio_pin_t pin, gpio
 
 	ret = set_pin_dir_mode(dev, pin, flags);
 	if (ret != 0) {
-		LOG_ERR("%s: error setting pin direction and mode (%d)", dev->name, ret);
+		LOG_ERROR("%s: error setting pin direction and mode (%d)", dev->name, ret);
 	}
 
 	k_sem_give(&drvdata->lock);
@@ -526,7 +526,7 @@ static int mfxstm32l152_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(drv_cfg->i2c_spec.bus)) {
-		LOG_ERR("I2C device not found");
+		LOG_ERROR("I2C device not found");
 		return -ENODEV;
 	}
 
@@ -534,38 +534,38 @@ static int mfxstm32l152_init(const struct device *dev)
 
 	ret = read_reg(dev, REG_ID, &chip_id);
 	if (ret != 0) {
-		LOG_ERR("%s: Unable to read Chip ID", dev->name);
+		LOG_ERROR("%s: Unable to read Chip ID", dev->name);
 		return ret;
 	}
 
 	if (chip_id != MFXSTM32L152_ID) {
-		LOG_ERR("%s: Invalid Chip ID", dev->name);
+		LOG_ERROR("%s: Invalid Chip ID", dev->name);
 		return -EINVAL;
 	}
 
 	ret = read_port_regs(dev, REG_GPIO_DIR, &drvdata->pins_state.direction);
 	if (ret != 0) {
-		LOG_ERR("%s: Unable to read initial directions", dev->name);
+		LOG_ERROR("%s: Unable to read initial directions", dev->name);
 		return ret;
 	}
 
 	ret = read_port_regs(dev, REG_GPIO_PUPD, &drvdata->pins_state.pupd);
 	if (ret != 0) {
-		LOG_ERR("%s: Unable to read initial directions", dev->name);
+		LOG_ERROR("%s: Unable to read initial directions", dev->name);
 		return ret;
 	}
 
 	ret = write_reg(dev, REG_SYS_CTRL, 0x01);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to enable GPIO", dev->name);
+		LOG_ERROR("%s: Failed to enable GPIO", dev->name);
 		return ret;
 	}
 
 	/* If the INT line is available, configure the callback for it. */
 	if (drv_cfg->int_gpio.port) {
 		if (!gpio_is_ready_dt(&drv_cfg->int_gpio)) {
-			LOG_ERR("Cannot get pointer to gpio interrupt device %s init failed",
-				dev->name);
+			LOG_ERROR("Cannot get pointer to gpio interrupt device %s init failed",
+				  dev->name);
 			return -EINVAL;
 		}
 
@@ -575,13 +575,13 @@ static int mfxstm32l152_init(const struct device *dev)
 
 		ret = gpio_pin_configure_dt(&drv_cfg->int_gpio, GPIO_INPUT);
 		if (ret != 0) {
-			LOG_ERR("%s init failed: %d", dev->name, ret);
+			LOG_ERROR("%s init failed: %d", dev->name, ret);
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&drv_cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s init failed: %d", dev->name, ret);
+			LOG_ERROR("%s init failed: %d", dev->name, ret);
 			return ret;
 		}
 
@@ -590,7 +590,7 @@ static int mfxstm32l152_init(const struct device *dev)
 
 		ret = gpio_add_callback(drv_cfg->int_gpio.port, &drvdata->int_gpio_cb);
 		if (ret != 0) {
-			LOG_ERR("%s init failed: %d", dev->name, ret);
+			LOG_ERROR("%s init failed: %d", dev->name, ret);
 			return ret;
 		}
 

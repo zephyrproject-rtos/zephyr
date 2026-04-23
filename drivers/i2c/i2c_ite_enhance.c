@@ -395,7 +395,7 @@ static int i2c_enhance_get_config(const struct device *dev, uint32_t *dev_config
 	uint32_t speed;
 
 	if (!data->bus_freq) {
-		LOG_ERR("The bus frequency is not initially configured.");
+		LOG_ERROR("The bus frequency is not initially configured.");
 		return -EIO;
 	}
 
@@ -696,8 +696,8 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 			data->err = ETIMEDOUT;
 			/* reset i2c port */
 			i2c_reset(dev);
-			LOG_ERR("I2C ch%d:0x%X reset cause %d",
-				config->port, data->addr_16bit, I2C_RC_TIMEOUT);
+			LOG_ERROR("I2C ch%d:0x%X reset cause %d", config->port, data->addr_16bit,
+				  I2C_RC_TIMEOUT);
 			/* If this message is sent fail, drop the transaction. */
 			break;
 		}
@@ -902,8 +902,8 @@ static int i2c_enhance_cq_transfer(const struct device *dev,
 		data->err = ETIMEDOUT;
 		/* Reset i2c port. */
 		i2c_reset(dev);
-		LOG_ERR("I2C ch%d:0x%X reset cause %d",
-			config->port, data->addr_16bit, I2C_RC_TIMEOUT);
+		LOG_ERROR("I2C ch%d:0x%X reset cause %d", config->port, data->addr_16bit,
+			  I2C_RC_TIMEOUT);
 	}
 
 	/* Permit to enter idle mode. */
@@ -991,7 +991,7 @@ static int i2c_enhance_transfer(const struct device *dev,
 
 #ifdef CONFIG_I2C_TARGET
 	if (data->target_attached) {
-		LOG_ERR("Device is registered as target");
+		LOG_ERROR("Device is registered as target");
 		return -EBUSY;
 	}
 #endif
@@ -1063,10 +1063,9 @@ static void target_i2c_isr_dma(const struct device *dev,
 	}
 	/* The number of received data exceeds the byte counter setting */
 	if (interrupt_status & IT8XXX2_I2C_CNT_HOLD) {
-		LOG_ERR("The excess data written starts "
-			"from the memory address:%p",
-			target_buffer->in_buffer +
-			CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE);
+		LOG_ERROR("The excess data written starts "
+			  "from the memory address:%p",
+			  target_buffer->in_buffer + CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE);
 	}
 	/* Controller to write data */
 	if (interrupt_status & IT8XXX2_I2C_SLVDATAFLG) {
@@ -1098,9 +1097,9 @@ static void target_i2c_isr_dma(const struct device *dev,
 			&rdata, &len);
 
 		if (len > CONFIG_I2C_TARGET_IT8XXX2_MAX_BUF_SIZE) {
-			LOG_ERR("The buffer size exceeds "
-				"I2C_TARGET_IT8XXX2_MAX_BUF_SIZE: len=%d",
-				len);
+			LOG_ERROR("The buffer size exceeds "
+				  "I2C_TARGET_IT8XXX2_MAX_BUF_SIZE: len=%d",
+				  len);
 		} else {
 			memcpy(target_buffer->out_buffer, rdata, len);
 		}
@@ -1331,7 +1330,7 @@ static int i2c_enhance_init(const struct device *dev)
 		data->i2ccs = I2C_CH_NORMAL;
 
 		if (error) {
-			LOG_ERR("i2c: failure initializing");
+			LOG_ERROR("i2c: failure initializing");
 			return error;
 		}
 #ifdef CONFIG_I2C_TARGET
@@ -1341,7 +1340,7 @@ static int i2c_enhance_init(const struct device *dev)
 	/* Set the pin to I2C alternate function. */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure I2C pins");
+		LOG_ERROR("Failed to configure I2C pins");
 		return status;
 	}
 
@@ -1357,15 +1356,15 @@ static int i2c_enhance_init(const struct device *dev)
 		gpio_init_callback(&data->gpio_wui_scl_cb, wui_scl_isr, BIT(config->scl_gpios.pin));
 		status = gpio_add_callback(config->scl_gpios.port, &data->gpio_wui_scl_cb);
 		if (status < 0) {
-			LOG_ERR("Failed to add SCL %d wui pin callback (err %d)", config->port,
-				status);
+			LOG_ERROR("Failed to add SCL %d wui pin callback (err %d)", config->port,
+				  status);
 			return status;
 		}
 		gpio_init_callback(&data->gpio_wui_sda_cb, wui_sda_isr, BIT(config->sda_gpios.pin));
 		status = gpio_add_callback(config->sda_gpios.port, &data->gpio_wui_sda_cb);
 		if (status < 0) {
-			LOG_ERR("Failed to add SDA %d wui pin callback (err %d)", config->port,
-				status);
+			LOG_ERROR("Failed to add SDA %d wui pin callback (err %d)", config->port,
+				  status);
 			return status;
 		}
 	}
@@ -1420,20 +1419,19 @@ static int i2c_enhance_recover_bus(const struct device *dev)
 
 	ret = i2c_bitbang_recover_bus(&data->bitbang);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to recover bus (err %d)", dev->name, ret);
+		LOG_ERROR("%s: Failed to recover bus (err %d)", dev->name, ret);
 	}
 
 	/* Set GPIO back to I2C alternate function */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure I2C pins");
+		LOG_ERROR("Failed to configure I2C pins");
 		return status;
 	}
 
 	/* reset i2c port */
 	i2c_reset(dev);
-	LOG_ERR("I2C ch%d reset cause %d", config->port,
-		I2C_RC_NO_IDLE_FOR_START);
+	LOG_ERROR("I2C ch%d reset cause %d", config->port, I2C_RC_NO_IDLE_FOR_START);
 
 	return 0;
 }
@@ -1583,15 +1581,15 @@ static inline int i2c_enhance_pm_action(const struct device *dev, enum pm_device
 			ret = gpio_pin_interrupt_configure_dt(&config->scl_gpios,
 							      GPIO_INT_MODE_DISABLED);
 			if (ret < 0) {
-				LOG_ERR("Failed to configure I2C%d WUI (ret %d)", config->port,
-					ret);
+				LOG_ERROR("Failed to configure I2C%d WUI (ret %d)", config->port,
+					  ret);
 				return ret;
 			}
 			ret = gpio_pin_interrupt_configure_dt(&config->sda_gpios,
 							      GPIO_INT_MODE_DISABLED);
 			if (ret < 0) {
-				LOG_ERR("Failed to configure I2C%d WUI (ret %d)", config->port,
-					ret);
+				LOG_ERROR("Failed to configure I2C%d WUI (ret %d)", config->port,
+					  ret);
 				return ret;
 			}
 			break;
@@ -1601,15 +1599,15 @@ static inline int i2c_enhance_pm_action(const struct device *dev, enum pm_device
 			ret = gpio_pin_interrupt_configure_dt(
 				&config->scl_gpios, GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_BOTH);
 			if (ret < 0) {
-				LOG_ERR("Failed to configure I2C%d WUI (ret %d)", config->port,
-					ret);
+				LOG_ERROR("Failed to configure I2C%d WUI (ret %d)", config->port,
+					  ret);
 				return ret;
 			}
 			ret = gpio_pin_interrupt_configure_dt(
 				&config->sda_gpios, GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_BOTH);
 			if (ret < 0) {
-				LOG_ERR("Failed to configure I2C%d WUI (ret %d)", config->port,
-					ret);
+				LOG_ERROR("Failed to configure I2C%d WUI (ret %d)", config->port,
+					  ret);
 				return ret;
 			}
 			break;

@@ -213,18 +213,18 @@ static int cap12xx_init(const struct device *dev)
 	}
 	ret = i2c_reg_write_byte_dt(&config->i2c, REG_SIGNAL_GUARD_ENABLE, guarded_channels);
 	if (ret < 0) {
-		LOG_ERR("Could not set guarded channels");
+		LOG_ERROR("Could not set guarded channels");
 		return ret;
 	}
 	ret = cap12xx_set_calsens(&config->i2c, config->calib_sensitivity, config->input_channels);
 	if (ret < 0) {
-		LOG_ERR("Could not set calibration sensitivities");
+		LOG_ERROR("Could not set calibration sensitivities");
 		return ret;
 	}
 	/* Convert the enumerated gain to the corresponding register value */
 	ret = cap12xx_set_sensor_gain(&config->i2c, ilog2(config->sensor_gain));
 	if (ret < 0) {
-		LOG_ERR("Could not set analog gain");
+		LOG_ERROR("Could not set analog gain");
 		return ret;
 	}
 	/* Convert the enumerated sensitivity to the corresponding register value,
@@ -233,7 +233,7 @@ static int cap12xx_init(const struct device *dev)
 	ret = cap12xx_set_sensitivity(&config->i2c,
 				      DELTA_SENSE_MAX - ilog2(config->sensitivity_delta_sense));
 	if (ret < 0) {
-		LOG_ERR("Could not set sensitivity");
+		LOG_ERROR("Could not set sensitivity");
 		return ret;
 	}
 	if (config->int_gpio == NULL) {
@@ -241,7 +241,7 @@ static int cap12xx_init(const struct device *dev)
 		k_timer_init(&data->poll_timer, cap12xx_timer_handler, NULL);
 		ret = cap12xx_enable_interrupt(&config->i2c, true);
 		if (ret < 0) {
-			LOG_ERR("Could not configure interrupt");
+			LOG_ERROR("Could not configure interrupt");
 			return ret;
 		}
 		k_timer_start(&data->poll_timer, K_MSEC(config->poll_interval_ms),
@@ -255,13 +255,13 @@ static int cap12xx_init(const struct device *dev)
 
 		ret = gpio_pin_configure_dt(config->int_gpio, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Could not configure interrupt GPIO pin");
+			LOG_ERROR("Could not configure interrupt GPIO pin");
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure interrupt GPIO interrupt");
+			LOG_ERROR("Could not configure interrupt GPIO interrupt");
 			return ret;
 		}
 
@@ -270,24 +270,24 @@ static int cap12xx_init(const struct device *dev)
 
 		ret = gpio_add_callback_dt(config->int_gpio, &data->int_gpio_cb);
 		if (ret < 0) {
-			LOG_ERR("Could not set gpio callback");
+			LOG_ERROR("Could not set gpio callback");
 			return ret;
 		}
 
 		ret = cap12xx_clear_interrupt(&config->i2c);
 		if (ret < 0) {
-			LOG_ERR("Could not clear interrupt");
+			LOG_ERROR("Could not clear interrupt");
 			return ret;
 		}
 		ret = cap12xx_enable_interrupt(&config->i2c, true);
 		if (ret < 0) {
-			LOG_ERR("Could not configure interrupt");
+			LOG_ERROR("Could not configure interrupt");
 			return ret;
 		}
 		if (config->repeat) {
 			ret = i2c_reg_write_byte_dt(&config->i2c, REG_REPEAT_ENABLE, REPEAT_ENABLE);
 			if (ret < 0) {
-				LOG_ERR("Could not disable repeated interrupts");
+				LOG_ERROR("Could not disable repeated interrupts");
 				return ret;
 			}
 			LOG_DBG("cap12xx enabled repeated interrupts");
@@ -295,7 +295,7 @@ static int cap12xx_init(const struct device *dev)
 			ret = i2c_reg_write_byte_dt(&config->i2c, REG_REPEAT_ENABLE,
 						    REPEAT_DISABLE);
 			if (ret < 0) {
-				LOG_ERR("Could not enable repeated interrupts");
+				LOG_ERROR("Could not enable repeated interrupts");
 				return ret;
 			}
 			LOG_DBG("cap12xx disabled repeated interrupts");

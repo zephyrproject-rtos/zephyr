@@ -177,7 +177,7 @@ static int pch_configure(const struct device *dev, uint32_t config)
 		uint8_t status;
 
 		if (!IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY)) {
-			LOG_ERR("Error configuring Host Notify");
+			LOG_ERROR("Error configuring Host Notify");
 			return -EINVAL;
 		}
 
@@ -191,7 +191,7 @@ static int pch_configure(const struct device *dev, uint32_t config)
 		uint8_t status;
 
 		if (!IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_SMBALERT)) {
-			LOG_ERR("Error configuring SMBALERT");
+			LOG_ERROR("Error configuring SMBALERT");
 			return -EINVAL;
 		}
 
@@ -225,7 +225,7 @@ static int pch_smbus_init(const struct device *dev)
 	uint32_t val;
 
 	if (config->pcie->bdf == PCIE_BDF_NONE) {
-		LOG_ERR("Cannot probe PCI device");
+		LOG_ERROR("Cannot probe PCI device");
 		return -ENODEV;
 	}
 
@@ -247,7 +247,7 @@ static int pch_smbus_init(const struct device *dev)
 		pcie_set_cmd(config->pcie->bdf, PCIE_CONF_CMDSTAT_IO, true);
 		val = pcie_conf_read(config->pcie->bdf, PCIE_CONF_BAR4);
 		if (!PCIE_CONF_BAR_IO(val)) {
-			LOG_ERR("Cannot read IO BAR");
+			LOG_ERROR("Cannot read IO BAR");
 			return -EINVAL;
 		}
 
@@ -258,7 +258,7 @@ static int pch_smbus_init(const struct device *dev)
 
 	val = pcie_conf_read(config->pcie->bdf, PCH_SMBUS_HCFG);
 	if ((val & PCH_SMBUS_HCFG_HST_EN) == 0) {
-		LOG_ERR("SMBus Host Controller is disabled");
+		LOG_ERROR("SMBus Host Controller is disabled");
 		return -EINVAL;
 	}
 
@@ -281,7 +281,7 @@ static int pch_smbus_init(const struct device *dev)
 	config->config_func(dev);
 
 	if (pch_configure(dev, SMBUS_MODE_CONTROLLER)) {
-		LOG_ERR("SMBus: Cannot set default configuration");
+		LOG_ERROR("SMBus: Cannot set default configuration");
 		return -EIO;
 	}
 
@@ -297,7 +297,7 @@ static int pch_prepare_transfer(const struct device *dev)
 	pch_dump_register_hsts(hsts);
 
 	if (hsts & PCH_SMBUS_HSTS_HOST_BUSY) {
-		LOG_ERR("Return BUSY status");
+		LOG_ERROR("Return BUSY status");
 		return -EBUSY;
 	}
 
@@ -482,7 +482,7 @@ static int pch_smbus_quick(const struct device *dev, uint16_t periph_addr,
 	/* Wait for completion from ISR */
 	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
 	if (ret != 0) {
-		LOG_ERR("SMBus Quick timed out");
+		LOG_ERROR("SMBus Quick timed out");
 		ret = -ETIMEDOUT;
 		goto unlock;
 	}
@@ -515,7 +515,7 @@ static int pch_smbus_byte_write(const struct device *dev, uint16_t periph_addr,
 	/* Wait for completion from ISR */
 	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
 	if (ret != 0) {
-		LOG_ERR("SMBus Byte Write timed out");
+		LOG_ERROR("SMBus Byte Write timed out");
 		ret = -ETIMEDOUT;
 		goto unlock;
 	}
@@ -548,7 +548,7 @@ static int pch_smbus_byte_read(const struct device *dev, uint16_t periph_addr,
 	/* Wait for completion from ISR */
 	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
 	if (ret != 0) {
-		LOG_ERR("SMBus Byte Read timed out");
+		LOG_ERROR("SMBus Byte Read timed out");
 		ret = -ETIMEDOUT;
 		goto unlock;
 	}
@@ -587,7 +587,7 @@ static int pch_smbus_byte_data_write(const struct device *dev,
 	/* Wait for completion from ISR */
 	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
 	if (ret != 0) {
-		LOG_ERR("SMBus Byte Data Write timed out");
+		LOG_ERROR("SMBus Byte Data Write timed out");
 		ret = -ETIMEDOUT;
 		goto unlock;
 	}
@@ -621,7 +621,7 @@ static int pch_smbus_byte_data_read(const struct device *dev,
 	/* Wait for completion from ISR */
 	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
 	if (ret != 0) {
-		LOG_ERR("SMBus Byte Data Read timed out");
+		LOG_ERROR("SMBus Byte Data Read timed out");
 		ret = -ETIMEDOUT;
 		goto unlock;
 	}
@@ -660,7 +660,7 @@ static int pch_smbus_word_data_write(const struct device *dev,
 	/* Wait for completion from ISR */
 	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
 	if (ret != 0) {
-		LOG_ERR("SMBus Word Data Write timed out");
+		LOG_ERROR("SMBus Word Data Write timed out");
 		ret = -ETIMEDOUT;
 		goto unlock;
 	}
@@ -695,7 +695,7 @@ static int pch_smbus_word_data_read(const struct device *dev,
 	/* Wait for completion from ISR */
 	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
 	if (ret != 0) {
-		LOG_ERR("SMBus Word Data Read timed out");
+		LOG_ERROR("SMBus Word Data Read timed out");
 		ret = -ETIMEDOUT;
 		goto unlock;
 	}
@@ -736,7 +736,7 @@ static int pch_smbus_pcall(const struct device *dev,
 	/* Wait for completion from ISR */
 	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
 	if (ret != 0) {
-		LOG_ERR("SMBus Proc Call timed out");
+		LOG_ERROR("SMBus Proc Call timed out");
 		ret = -ETIMEDOUT;
 		goto unlock;
 	}
@@ -776,7 +776,7 @@ static int pch_smbus_block_write(const struct device *dev, uint16_t periph_addr,
 	/* Wait for completion from ISR */
 	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
 	if (ret != 0) {
-		LOG_ERR("SMBus Block Write timed out");
+		LOG_ERROR("SMBus Block Write timed out");
 		ret = -ETIMEDOUT;
 		goto unlock;
 	}
@@ -810,7 +810,7 @@ static int pch_smbus_block_read(const struct device *dev, uint16_t periph_addr,
 	/* Wait for completion from ISR */
 	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
 	if (ret != 0) {
-		LOG_ERR("SMBus Block Read timed out");
+		LOG_ERROR("SMBus Block Read timed out");
 		ret = -ETIMEDOUT;
 		goto unlock;
 	}
@@ -859,7 +859,7 @@ static int pch_smbus_block_pcall(const struct device *dev,
 	/* Wait for completion from ISR */
 	ret = k_sem_take(&data->completion_sync, K_MSEC(30));
 	if (ret != 0) {
-		LOG_ERR("SMBus Block Process Call timed out");
+		LOG_ERROR("SMBus Block Process Call timed out");
 		ret = -ETIMEDOUT;
 		goto unlock;
 	}
@@ -919,7 +919,7 @@ static void smbus_isr(const struct device *dev)
 
 	sts = pcie_conf_read(config->pcie->bdf, PCIE_CONF_CMDSTAT);
 	if (!(sts & PCIE_CONF_CMDSTAT_INTERRUPT)) {
-		LOG_ERR("Not our interrupt");
+		LOG_ERROR("Not our interrupt");
 		return;
 	}
 

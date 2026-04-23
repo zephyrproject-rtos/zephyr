@@ -263,14 +263,14 @@ static void phy_tja1103_cfg_irq_poll(const struct device *dev)
 
 	if (cfg->gpio_interrupt.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->gpio_interrupt)) {
-			LOG_ERR("Interrupt GPIO device %s is not ready",
-				cfg->gpio_interrupt.port->name);
+			LOG_ERROR("Interrupt GPIO device %s is not ready",
+				  cfg->gpio_interrupt.port->name);
 			return;
 		}
 
 		ret = gpio_pin_configure_dt(&cfg->gpio_interrupt, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure interrupt GPIO, %d", ret);
+			LOG_ERROR("Failed to configure interrupt GPIO, %d", ret);
 			return;
 		}
 
@@ -280,7 +280,7 @@ static void phy_tja1103_cfg_irq_poll(const struct device *dev)
 		/* Add callback structure to global syslist */
 		ret = gpio_add_callback(cfg->gpio_interrupt.port, &data->phy_tja1103_int_callback);
 		if (ret < 0) {
-			LOG_ERR("Failed to add INT callback, %d", ret);
+			LOG_ERROR("Failed to add INT callback, %d", ret);
 			return;
 		}
 
@@ -292,7 +292,7 @@ static void phy_tja1103_cfg_irq_poll(const struct device *dev)
 
 		ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_interrupt, GPIO_INT_EDGE_FALLING);
 		if (ret < 0) {
-			LOG_ERR("Failed to enable INT, %d", ret);
+			LOG_ERROR("Failed to enable INT, %d", ret);
 			return;
 		}
 	}
@@ -322,7 +322,7 @@ static int phy_tja1103_init(const struct device *dev)
 		       TJA1103_AWAIT_RETRY_COUNT * TJA1103_AWAIT_DELAY_POLL_US,
 		       k_sleep(K_USEC(TJA1103_AWAIT_DELAY_POLL_US)));
 	if (ret == 0) {
-		LOG_ERR("Unable to obtain PHY ID for device 0x%x", cfg->phy_addr);
+		LOG_ERROR("Unable to obtain PHY ID for device 0x%x", cfg->phy_addr);
 		return -ENODEV;
 	}
 

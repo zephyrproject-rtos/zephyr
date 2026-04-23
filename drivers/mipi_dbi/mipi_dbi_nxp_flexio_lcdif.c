@@ -379,7 +379,7 @@ static int flexio_lcdif_init(const struct device *dev)
 	uint8_t shifter_end = config->child->res.shifter_count - 1;
 
 	if (!device_is_ready(lcdif_data->dma_tx.dma_dev)) {
-		LOG_ERR("%s device is not ready", lcdif_data->dma_tx.dma_dev->name);
+		LOG_ERROR("%s device is not ready", lcdif_data->dma_tx.dma_dev->name);
 		return -ENODEV;
 	}
 
@@ -398,7 +398,7 @@ static int flexio_lcdif_init(const struct device *dev)
 
 	if (config->flexio_lcd_dev->txShifterEndIndex !=
 	    config->flexio_lcd_dev->txShifterStartIndex + shifter_end) {
-		LOG_ERR("Shifters should be continuous");
+		LOG_ERROR("Shifters should be continuous");
 		return -ENODEV;
 	}
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);

@@ -196,7 +196,7 @@ static int bmi160_emul_io_spi(const struct emul *target, const struct spi_config
 
 	regn = *(uint8_t *)tx->buf;
 	if ((regn & BMI160_REG_READ) && rxd == NULL) {
-		LOG_ERR("Cannot read without rxd");
+		LOG_ERROR("Cannot read without rxd");
 		return -EPERM;
 	}
 
@@ -216,7 +216,7 @@ static int bmi160_emul_io_spi(const struct emul *target, const struct spi_config
 				((uint8_t *)rxd->buf)[i] = reg_read(target, regn + i);
 			}
 		} else {
-			LOG_ERR("Unknown sample write");
+			LOG_ERROR("Unknown sample write");
 			return -EIO;
 		}
 	}
@@ -239,11 +239,11 @@ static int bmi160_emul_transfer_i2c(const struct emul *target, struct i2c_msg *m
 	switch (num_msgs) {
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 		if (msgs->len != 1) {
-			LOG_ERR("Unexpected msg0 length %d", msgs->len);
+			LOG_ERROR("Unexpected msg0 length %d", msgs->len);
 			return -EIO;
 		}
 		data->cur_reg = msgs->buf[0];
@@ -256,13 +256,13 @@ static int bmi160_emul_transfer_i2c(const struct emul *target, struct i2c_msg *m
 			}
 		} else {
 			if (msgs->len != 1) {
-				LOG_ERR("Unexpected msg1 length %d", msgs->len);
+				LOG_ERROR("Unexpected msg1 length %d", msgs->len);
 			}
 			reg_write(target, data->cur_reg, msgs->buf[0]);
 		}
 		break;
 	default:
-		LOG_ERR("Invalid number of messages: %d", num_msgs);
+		LOG_ERROR("Invalid number of messages: %d", num_msgs);
 		return -EIO;
 	}
 

@@ -224,26 +224,26 @@ int lwm2m_create_obj_inst(uint16_t obj_id, uint16_t obj_inst_id,
 	*obj_inst = NULL;
 	obj = get_engine_obj(obj_id);
 	if (!obj) {
-		LOG_ERR("unable to find obj: %u", obj_id);
+		LOG_ERROR("unable to find obj: %u", obj_id);
 		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
 	if (!obj->create_cb) {
-		LOG_ERR("obj %u has no create_cb", obj_id);
+		LOG_ERROR("obj %u has no create_cb", obj_id);
 		k_mutex_unlock(&registry_lock);
 		return -EINVAL;
 	}
 
 	if (obj->instance_count + 1 > obj->max_instance_count) {
-		LOG_ERR("no more instances available for obj %u", obj_id);
+		LOG_ERROR("no more instances available for obj %u", obj_id);
 		k_mutex_unlock(&registry_lock);
 		return -ENOMEM;
 	}
 
 	*obj_inst = obj->create_cb(obj_inst_id);
 	if (!*obj_inst) {
-		LOG_ERR("unable to create obj %u instance %u", obj_id, obj_inst_id);
+		LOG_ERROR("unable to create obj %u instance %u", obj_id, obj_inst_id);
 		/*
 		 * Already checked for instance count total.
 		 * This can only be an error if the object instance exists.
@@ -260,7 +260,7 @@ int lwm2m_create_obj_inst(uint16_t obj_id, uint16_t obj_inst_id,
 	if (obj->user_create_cb) {
 		ret = obj->user_create_cb(obj_inst_id);
 		if (ret < 0) {
-			LOG_ERR("Error in user obj create %u/%u: %d", obj_id, obj_inst_id, ret);
+			LOG_ERROR("Error in user obj create %u/%u: %d", obj_id, obj_inst_id, ret);
 			k_mutex_unlock(&registry_lock);
 			lwm2m_delete_obj_inst(obj_id, obj_inst_id);
 			return ret;
@@ -292,7 +292,7 @@ int lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id)
 	if (obj->user_delete_cb) {
 		ret = obj->user_delete_cb(obj_inst_id);
 		if (ret < 0) {
-			LOG_ERR("Error in user obj delete %u/%u: %d", obj_id, obj_inst_id, ret);
+			LOG_ERROR("Error in user obj delete %u/%u: %d", obj_id, obj_inst_id, ret);
 			/* don't return error */
 		}
 	}
@@ -322,7 +322,7 @@ int lwm2m_create_object_inst(const struct lwm2m_obj_path *path)
 	int ret = 0;
 
 	if (path->level != LWM2M_PATH_LEVEL_OBJECT_INST) {
-		LOG_ERR("path must have 2 parts");
+		LOG_ERROR("path must have 2 parts");
 		return -EINVAL;
 	}
 
@@ -341,7 +341,7 @@ int lwm2m_delete_object_inst(const struct lwm2m_obj_path *path)
 	int ret = 0;
 
 	if (path->level != LWM2M_PATH_LEVEL_OBJECT_INST) {
-		LOG_ERR("path must have 2 parts");
+		LOG_ERROR("path must have 2 parts");
 		return -EINVAL;
 	}
 
@@ -455,7 +455,7 @@ int lwm2m_set_res_buf(const struct lwm2m_obj_path *path, void *buffer_ptr, uint1
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 
 	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
-		LOG_ERR("path must have at least 3 parts");
+		LOG_ERROR("path must have at least 3 parts");
 		return -EINVAL;
 	}
 
@@ -540,7 +540,7 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 	}
 
 	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
-		LOG_ERR("path must have at least 3 parts");
+		LOG_ERROR("path must have at least 3 parts");
 		return -EINVAL;
 	}
 
@@ -561,9 +561,10 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 	}
 
 	if (LWM2M_HAS_RES_FLAG(res_inst, LWM2M_RES_DATA_FLAG_RO)) {
-		LOG_ERR("res instance data pointer is read-only "
-			"[%u/%u/%u/%u:lvl%u]", path->obj_id, path->obj_inst_id, path->res_id,
-			path->res_inst_id, path->level);
+		LOG_ERROR("res instance data pointer is read-only "
+			  "[%u/%u/%u/%u:lvl%u]",
+			  path->obj_id, path->obj_inst_id, path->res_id, path->res_inst_id,
+			  path->level);
 		k_mutex_unlock(&registry_lock);
 		return -EACCES;
 	}
@@ -579,16 +580,15 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 	}
 
 	if (!data_ptr) {
-		LOG_ERR("res instance data pointer is NULL [%u/%u/%u/%u:%u]", path->obj_id,
-			path->obj_inst_id, path->res_id, path->res_inst_id, path->level);
+		LOG_ERROR("res instance data pointer is NULL [%u/%u/%u/%u:%u]", path->obj_id,
+			  path->obj_inst_id, path->res_id, path->res_inst_id, path->level);
 		k_mutex_unlock(&registry_lock);
 		return -EINVAL;
 	}
 
 	ret = lwm2m_check_buf_sizes(obj_field->data_type, len, max_data_len);
 	if (ret) {
-		LOG_ERR("Incorrect buffer length %u for res data length %zu", len,
-			max_data_len);
+		LOG_ERROR("Incorrect buffer length %u for res data length %zu", len, max_data_len);
 		k_mutex_unlock(&registry_lock);
 		return ret;
 	}
@@ -639,8 +639,8 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 
 	case LWM2M_RES_TYPE_TIME:
 		if (!lwm2m_validate_time_resource_lenghts(max_data_len, len)) {
-			LOG_ERR("Time Set: buffer length %u  max data len %zu not supported", len,
-				max_data_len);
+			LOG_ERROR("Time Set: buffer length %u  max data len %zu not supported", len,
+				  max_data_len);
 			k_mutex_unlock(&registry_lock);
 			return -EINVAL;
 		}
@@ -693,7 +693,7 @@ static int lwm2m_engine_set(const struct lwm2m_obj_path *path, const void *value
 		break;
 
 	default:
-		LOG_ERR("unknown obj data_type %d", obj_field->data_type);
+		LOG_ERROR("unknown obj data_type %d", obj_field->data_type);
 		k_mutex_unlock(&registry_lock);
 		return -EINVAL;
 	}
@@ -815,7 +815,7 @@ int lwm2m_get_res_buf(const struct lwm2m_obj_path *path, void **buffer_ptr, uint
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 
 	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
-		LOG_ERR("path must have at least 3 parts");
+		LOG_ERROR("path must have at least 3 parts");
 		return -EINVAL;
 	}
 
@@ -860,7 +860,7 @@ static int lwm2m_engine_get(const struct lwm2m_obj_path *path, void *buf, uint16
 	size_t data_len = 0;
 
 	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
-		LOG_ERR("path must have at least 3 parts");
+		LOG_ERROR("path must have at least 3 parts");
 		return -EINVAL;
 	}
 	LOG_DBG("path:%u/%u/%u/%u, level %u, buf:%p, buflen:%d", path->obj_id, path->obj_inst_id,
@@ -892,8 +892,8 @@ static int lwm2m_engine_get(const struct lwm2m_obj_path *path, void *buf, uint16
 	if (data_ptr && data_len > 0) {
 		ret = lwm2m_check_buf_sizes(obj_field->data_type, data_len, buflen);
 		if (ret) {
-			LOG_ERR("Incorrect resource data length %zu. Buffer length %u", data_len,
-				buflen);
+			LOG_ERROR("Incorrect resource data length %zu. Buffer length %u", data_len,
+				  buflen);
 			k_mutex_unlock(&registry_lock);
 			return ret;
 		}
@@ -914,8 +914,8 @@ static int lwm2m_engine_get(const struct lwm2m_obj_path *path, void *buf, uint16
 			break;
 		case LWM2M_RES_TYPE_TIME:
 			if (!lwm2m_validate_time_resource_lenghts(data_len, buflen)) {
-				LOG_ERR("Time get buffer length %u  data len %zu not supported",
-					buflen, data_len);
+				LOG_ERROR("Time get buffer length %u  data len %zu not supported",
+					  buflen, data_len);
 				k_mutex_unlock(&registry_lock);
 				return -EINVAL;
 			}
@@ -976,7 +976,7 @@ static int lwm2m_engine_get(const struct lwm2m_obj_path *path, void *buf, uint16
 			break;
 
 		default:
-			LOG_ERR("unknown obj data_type %d", obj_field->data_type);
+			LOG_ERROR("unknown obj data_type %d", obj_field->data_type);
 			k_mutex_unlock(&registry_lock);
 			return -EINVAL;
 		}
@@ -1070,7 +1070,7 @@ int lwm2m_get_time(const struct lwm2m_obj_path *path, time_t *buf)
 int lwm2m_get_resource(const struct lwm2m_obj_path *path, struct lwm2m_engine_res **res)
 {
 	if (path->level < LWM2M_PATH_LEVEL_RESOURCE) {
-		LOG_ERR("path must have 3 parts");
+		LOG_ERROR("path must have 3 parts");
 		return -EINVAL;
 	}
 
@@ -1194,7 +1194,7 @@ int lwm2m_create_res_inst(const struct lwm2m_obj_path *path)
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 
 	if (path->level < LWM2M_PATH_LEVEL_RESOURCE_INST) {
-		LOG_ERR("path must have 4 parts");
+		LOG_ERROR("path must have 4 parts");
 		return -EINVAL;
 	}
 	k_mutex_lock(&registry_lock, K_FOREVER);
@@ -1205,13 +1205,13 @@ int lwm2m_create_res_inst(const struct lwm2m_obj_path *path)
 	}
 
 	if (!res) {
-		LOG_ERR("resource %u not found", path->res_id);
+		LOG_ERROR("resource %u not found", path->res_id);
 		k_mutex_unlock(&registry_lock);
 		return -ENOENT;
 	}
 
 	if (res_inst && res_inst->res_inst_id != RES_INSTANCE_NOT_CREATED) {
-		LOG_ERR("res instance %u already exists", path->res_inst_id);
+		LOG_ERROR("res instance %u already exists", path->res_inst_id);
 		k_mutex_unlock(&registry_lock);
 		return -EINVAL;
 	}
@@ -1225,7 +1225,7 @@ int lwm2m_delete_res_inst(const struct lwm2m_obj_path *path)
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 
 	if (path->level < LWM2M_PATH_LEVEL_RESOURCE_INST) {
-		LOG_ERR("path must have 4 parts");
+		LOG_ERROR("path must have 4 parts");
 		return -EINVAL;
 	}
 	k_mutex_lock(&registry_lock, K_FOREVER);
@@ -1296,9 +1296,9 @@ int lwm2m_register_validate_callback(const struct lwm2m_obj_path *path,
 	ARG_UNUSED(path);
 	ARG_UNUSED(cb);
 
-	LOG_ERR("Validation disabled. Set "
-		"CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 to "
-		"enable validation support.");
+	LOG_ERROR("Validation disabled. Set "
+		  "CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 to "
+		  "enable validation support.");
 	return -ENOTSUP;
 #endif /* CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0 */
 }
@@ -1338,7 +1338,7 @@ int lwm2m_register_create_callback(uint16_t obj_id, lwm2m_engine_user_cb_t cb)
 
 	obj = get_engine_obj(obj_id);
 	if (!obj) {
-		LOG_ERR("unable to find obj: %u", obj_id);
+		LOG_ERROR("unable to find obj: %u", obj_id);
 		return -ENOENT;
 	}
 
@@ -1352,7 +1352,7 @@ int lwm2m_register_delete_callback(uint16_t obj_id, lwm2m_engine_user_cb_t cb)
 
 	obj = get_engine_obj(obj_id);
 	if (!obj) {
-		LOG_ERR("unable to find obj: %u", obj_id);
+		LOG_ERROR("unable to find obj: %u", obj_id);
 		return -ENOENT;
 	}
 
@@ -1517,7 +1517,7 @@ static void lwm2m_engine_cache_write(const struct lwm2m_engine_obj_field *obj_fi
 		} else if (len == sizeof(uint32_t)) {
 			elements.time = (time_t) *((uint32_t *)value);
 		} else {
-			LOG_ERR("Not supporting size %d bytes for time", len);
+			LOG_ERROR("Not supporting size %d bytes for time", len);
 			return;
 		}
 		break;
@@ -1564,7 +1564,7 @@ lwm2m_cache_entry_get_by_object(const struct lwm2m_obj_path *obj_path)
 	struct lwm2m_time_series_resource *entry;
 
 	if (obj_path->level < LWM2M_PATH_LEVEL_RESOURCE) {
-		LOG_ERR("Path level wrong for cache %u", obj_path->level);
+		LOG_ERROR("Path level wrong for cache %u", obj_path->level);
 		return NULL;
 	}
 
@@ -1600,7 +1600,7 @@ int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_seri
 	}
 
 	if (!res_inst) {
-		LOG_ERR("res instance %d not found", path->res_inst_id);
+		LOG_ERROR("res instance %d not found", path->res_inst_id);
 		return -ENOENT;
 	}
 
@@ -1631,8 +1631,8 @@ int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_seri
 
 	return 0;
 #else
-	LOG_ERR("LwM2M resource cache is only supported for "
-		"CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT");
+	LOG_ERROR("LwM2M resource cache is only supported for "
+		  "CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT");
 	return -ENOTSUP;
 #endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
 }
@@ -1721,7 +1721,7 @@ bool lwm2m_cache_write(struct lwm2m_time_series_resource *cache_entry,
 
 	if (length != element_size) {
 		ring_buf_put_finish(&cache_entry->rb, 0);
-		LOG_ERR("Allocation failed %u", length);
+		LOG_ERROR("Allocation failed %u", length);
 		return false;
 	}
 
@@ -1749,7 +1749,7 @@ bool lwm2m_cache_read(struct lwm2m_time_series_resource *cache_entry,
 	length = ring_buf_get_claim(&cache_entry->rb, &buf_ptr, element_size);
 
 	if (length != element_size) {
-		LOG_ERR("Cache read fail %u", length);
+		LOG_ERROR("Cache read fail %u", length);
 		ring_buf_get_finish(&cache_entry->rb, 0);
 		return false;
 	}

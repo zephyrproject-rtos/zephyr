@@ -209,7 +209,7 @@ static void iso_send(struct bt_iso_chan *chan)
 
 	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
 	if (buf == NULL) {
-		LOG_ERR("Could not allocate buffer");
+		LOG_ERROR("Could not allocate buffer");
 		k_work_reschedule(&chan_work->send_work, K_USEC(interval));
 		return;
 	}
@@ -219,7 +219,7 @@ static void iso_send(struct bt_iso_chan *chan)
 
 	ret = bt_iso_chan_send(chan, buf, chan_work->seq_num++);
 	if (ret < 0) {
-		LOG_ERR("Unable to send data: %d", ret);
+		LOG_ERROR("Unable to send data: %d", ret);
 		net_buf_unref(buf);
 		k_work_reschedule(&chan_work->send_work, K_USEC(interval));
 		return;
@@ -319,7 +319,7 @@ static void iso_connected(struct bt_iso_chan *chan)
 	chan_work = CONTAINER_OF(chan, struct iso_chan_work, chan);
 	err = bt_iso_chan_get_info(chan, &chan_work->info);
 	if (err != 0) {
-		LOG_ERR("Could get info about chan %p: %d", chan, err);
+		LOG_ERROR("Could get info about chan %p: %d", chan, err);
 	}
 
 	/* If multiple CIS was created, this will be the value of the last
@@ -333,14 +333,14 @@ static void iso_connected(struct bt_iso_chan *chan)
 	if (iso_info.can_recv) {
 		err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
 		if (err != 0) {
-			LOG_ERR("Failed to setup ISO RX data path: %d", err);
+			LOG_ERROR("Failed to setup ISO RX data path: %d", err);
 		}
 	}
 
 	if (iso_info.can_send) {
 		err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
 		if (err != 0) {
-			LOG_ERR("Failed to setup ISO TX data path: %d", err);
+			LOG_ERROR("Failed to setup ISO TX data path: %d", err);
 		}
 	}
 
@@ -378,19 +378,19 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 	err = bt_iso_chan_get_info(chan, &iso_info);
 	if (err != 0) {
-		LOG_ERR("Failed to get ISO info: %d\n", err);
+		LOG_ERROR("Failed to get ISO info: %d\n", err);
 	} else if (iso_info.type == BT_ISO_CHAN_TYPE_CENTRAL) {
 		if (iso_info.can_recv) {
 			err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
 			if (err != 0) {
-				LOG_ERR("Failed to remove ISO RX data path: %d\n", err);
+				LOG_ERROR("Failed to remove ISO RX data path: %d\n", err);
 			}
 		}
 
 		if (iso_info.can_send) {
 			err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 			if (err != 0) {
-				LOG_ERR("Failed to remove ISO TX data path: %d\n", err);
+				LOG_ERROR("Failed to remove ISO TX data path: %d\n", err);
 			}
 		}
 	}
@@ -419,7 +419,7 @@ static int iso_accept(const struct bt_iso_accept_info *info,
 		}
 	}
 
-	LOG_ERR("Could not accept any more CIS");
+	LOG_ERROR("Could not accept any more CIS");
 
 	*chan = NULL;
 
@@ -454,7 +454,7 @@ static int start_scan(void)
 
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err != 0) {
-		LOG_ERR("Scan start failed: %d", err);
+		LOG_ERROR("Scan start failed: %d", err);
 		return err;
 	}
 
@@ -469,7 +469,7 @@ static int stop_scan(void)
 
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		LOG_ERR("Scan stop failed: %d", err);
+		LOG_ERROR("Scan stop failed: %d", err);
 		return err;
 	}
 
@@ -1046,7 +1046,7 @@ static int change_central_settings(void)
 		c = tolower(console_getchar());
 		if (c == 'y') {
 			if (iso_qos.tx == NULL) {
-				LOG_ERR("Cannot disable both TX and RX\n");
+				LOG_ERROR("Cannot disable both TX and RX\n");
 				return -EINVAL;
 			}
 
@@ -1090,34 +1090,34 @@ static int central_create_connection(void)
 
 	err = start_scan();
 	if (err != 0) {
-		LOG_ERR("Could not start scan: %d", err);
+		LOG_ERROR("Could not start scan: %d", err);
 		return err;
 	}
 
 	LOG_INF("Waiting for advertiser");
 	err = k_sem_take(&sem_adv, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("failed to take sem_adv: %d", err);
+		LOG_ERROR("failed to take sem_adv: %d", err);
 		return err;
 	}
 
 	LOG_INF("Stopping scan");
 	err = stop_scan();
 	if (err != 0) {
-		LOG_ERR("Could not stop scan: %d", err);
+		LOG_ERROR("Could not stop scan: %d", err);
 		return err;
 	}
 
 	LOG_INF("Connecting");
 	err = bt_conn_le_create(&adv_addr, BT_CONN_LE_CREATE_CONN, conn_param, &default_conn);
 	if (err != 0) {
-		LOG_ERR("Create connection failed: %d", err);
+		LOG_ERROR("Create connection failed: %d", err);
 		return err;
 	}
 
 	err = k_sem_take(&sem_connected, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("failed to take sem_connected: %d", err);
+		LOG_ERROR("failed to take sem_connected: %d", err);
 		return err;
 	}
 
@@ -1134,7 +1134,7 @@ static int central_create_cig(void)
 
 	err = bt_iso_cig_create(&cig_create_param, &cig);
 	if (err != 0) {
-		LOG_ERR("Failed to create CIG: %d", err);
+		LOG_ERROR("Failed to create CIG: %d", err);
 		return err;
 	}
 
@@ -1157,7 +1157,7 @@ static int central_connect_cis(void)
 
 	err = bt_iso_chan_connect(connect_param, cig_create_param.num_cis);
 	if (err != 0) {
-		LOG_ERR("Failed to connect iso: %d", err);
+		LOG_ERROR("Failed to connect iso: %d", err);
 		return err;
 	}
 	total_iso_conn_count++;
@@ -1165,7 +1165,7 @@ static int central_connect_cis(void)
 	for (int i = 0; i < cig_create_param.num_cis; i++) {
 		err = k_sem_take(&sem_iso_connected, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("failed to take sem_iso_connected: %d", err);
+			LOG_ERROR("failed to take sem_iso_connected: %d", err);
 			return err;
 		}
 	}
@@ -1198,8 +1198,7 @@ static int cleanup(void)
 			if (err == 0) {
 				err = bt_iso_chan_disconnect(&iso_chans[i].chan);
 				if (err != 0) {
-					LOG_ERR("Could not disconnect ISO[%d]: %d",
-						i, err);
+					LOG_ERROR("Could not disconnect ISO[%d]: %d", i, err);
 					break;
 				}
 			} /* else ISO already disconnected */
@@ -1208,13 +1207,13 @@ static int cleanup(void)
 		err = bt_conn_disconnect(default_conn,
 					 BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		if (err != 0) {
-			LOG_ERR("Could not disconnect ACL: %d", err);
+			LOG_ERROR("Could not disconnect ACL: %d", err);
 			return err;
 		}
 
 		err = k_sem_take(&sem_disconnected, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("failed to take sem_disconnected: %d", err);
+			LOG_ERROR("failed to take sem_disconnected: %d", err);
 			return err;
 		}
 	} /* else ACL already disconnected */
@@ -1222,7 +1221,7 @@ static int cleanup(void)
 	if (cig) {
 		err = bt_iso_cig_terminate(cig);
 		if (err != 0) {
-			LOG_ERR("Could not terminate CIG: %d", err);
+			LOG_ERROR("Could not terminate CIG: %d", err);
 			return err;
 		}
 		cig = NULL;
@@ -1246,7 +1245,7 @@ static int run_central(void)
 	if (c == 'y') {
 		err = change_central_settings();
 		if (err != 0) {
-			LOG_ERR("Failed to set parameters: %d", err);
+			LOG_ERROR("Failed to set parameters: %d", err);
 			return err;
 		}
 	}
@@ -1258,19 +1257,19 @@ static int run_central(void)
 	 */
 	err = central_create_cig();
 	if (err != 0) {
-		LOG_ERR("Failed to create CIG: %d", err);
+		LOG_ERROR("Failed to create CIG: %d", err);
 		return err;
 	}
 
 	err = central_create_connection();
 	if (err != 0) {
-		LOG_ERR("Failed to create connection: %d", err);
+		LOG_ERROR("Failed to create connection: %d", err);
 		return err;
 	}
 
 	err = central_connect_cis();
 	if (err != 0) {
-		LOG_ERR("Failed to connect CISes: %d", err);
+		LOG_ERROR("Failed to connect CISes: %d", err);
 		return err;
 	}
 
@@ -1286,7 +1285,7 @@ static int run_central(void)
 
 	err = k_sem_take(&sem_disconnected, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("failed to take sem_disconnected: %d", err);
+		LOG_ERROR("failed to take sem_disconnected: %d", err);
 		return err;
 	}
 
@@ -1298,14 +1297,14 @@ static int run_central(void)
 	for (int i = 0; i < cig_create_param.num_cis; i++) {
 		err = k_sem_take(&sem_iso_disconnected, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("failed to take sem_iso_disconnected: %d", err);
+			LOG_ERROR("failed to take sem_iso_disconnected: %d", err);
 			return err;
 		}
 	}
 
 	err = bt_iso_cig_terminate(cig);
 	if (err != 0) {
-		LOG_ERR("Could not terminate CIG: %d", err);
+		LOG_ERROR("Could not terminate CIG: %d", err);
 		return err;
 	}
 	cig = NULL;
@@ -1329,7 +1328,7 @@ static int run_peripheral(void)
 		LOG_INF("Registering ISO server");
 		err = bt_iso_server_register(&iso_server);
 		if (err != 0) {
-			LOG_ERR("ISO server register failed: %d", err);
+			LOG_ERROR("ISO server register failed: %d", err);
 			return err;
 		}
 		initialized = true;
@@ -1338,20 +1337,20 @@ static int run_peripheral(void)
 	LOG_INF("Starting advertising");
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, sd, ARRAY_SIZE(sd));
 	if (err != 0) {
-		LOG_ERR("Advertising failed to start: %d", err);
+		LOG_ERROR("Advertising failed to start: %d", err);
 		return err;
 	}
 
 	LOG_INF("Waiting for ACL connection");
 	err = k_sem_take(&sem_connected, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("failed to take sem_connected: %d", err);
+		LOG_ERROR("failed to take sem_connected: %d", err);
 		return err;
 	}
 
 	err = bt_le_adv_stop();
 	if (err != 0) {
-		LOG_ERR("Advertising failed to stop: %d", err);
+		LOG_ERROR("Advertising failed to stop: %d", err);
 		return err;
 	}
 
@@ -1365,7 +1364,7 @@ static int run_peripheral(void)
 	for (int i = 0; i < cig_create_param.num_cis; i++) {
 		err = k_sem_take(&sem_iso_connected, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("failed to take sem_iso_connected: %d", err);
+			LOG_ERROR("failed to take sem_iso_connected: %d", err);
 			return err;
 		}
 	}
@@ -1384,14 +1383,14 @@ static int run_peripheral(void)
 	/* Wait for disconnect */
 	err = k_sem_take(&sem_disconnected, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("failed to take sem_disconnected: %d", err);
+		LOG_ERROR("failed to take sem_disconnected: %d", err);
 		return err;
 	}
 
 	for (int i = 0; i < cig_create_param.num_cis; i++) {
 		err = k_sem_take(&sem_iso_disconnected, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("failed to take sem_iso_disconnected: %d", err);
+			LOG_ERROR("failed to take sem_iso_disconnected: %d", err);
 			return err;
 		}
 	}
@@ -1412,7 +1411,7 @@ int main(void)
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		LOG_ERR("Bluetooth init failed: %d", err);
+		LOG_ERROR("Bluetooth init failed: %d", err);
 		return 0;
 	}
 
@@ -1421,7 +1420,7 @@ int main(void)
 
 	err = console_init();
 	if (err != 0) {
-		LOG_ERR("Console init failed: %d", err);
+		LOG_ERROR("Console init failed: %d", err);
 		return 0;
 	}
 
@@ -1463,7 +1462,7 @@ int main(void)
 		if (err != 0) {
 			cleanup_err = cleanup();
 			if (cleanup_err != 0) {
-				LOG_ERR("Could not clean up: %d", err);
+				LOG_ERROR("Could not clean up: %d", err);
 			}
 		}
 

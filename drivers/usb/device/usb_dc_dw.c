@@ -111,7 +111,7 @@ static int usb_dw_init_pinctrl(const struct usb_dw_config *const config)
 
 	ret = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Failed to apply default pinctrl state (%d)", ret);
+		LOG_ERROR("Failed to apply default pinctrl state (%d)", ret);
 	}
 
 	return ret;
@@ -258,8 +258,7 @@ static int usb_dw_reset(void)
 		usb_dw_udelay(1);
 
 		if (++cnt > USB_DW_CORE_RST_TIMEOUT_US) {
-			LOG_ERR("USB reset HANG! AHB Idle GRSTCTL=0x%08x",
-				base->grstctl);
+			LOG_ERROR("USB reset HANG! AHB Idle GRSTCTL=0x%08x", base->grstctl);
 			return -EIO;
 		}
 	}
@@ -491,8 +490,8 @@ static int usb_dw_tx(uint8_t ep, const uint8_t *const data,
 
 	avail_space *= 4U;
 	if (!avail_space) {
-		LOG_ERR("USB IN EP%d no space available, DTXFSTS %x", ep_idx,
-			base->in_ep[ep_idx].dtxfsts);
+		LOG_ERROR("USB IN EP%d no space available, DTXFSTS %x", ep_idx,
+			  base->in_ep[ep_idx].dtxfsts);
 		irq_unlock(key);
 		return -EAGAIN;
 	}
@@ -944,7 +943,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		cfg->ep_type);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		LOG_ERR("invalid endpoint configuration");
+		LOG_ERROR("invalid endpoint configuration");
 		return -1;
 	}
 
@@ -977,7 +976,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 	ep = ep_cfg->ep_addr;
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -992,7 +991,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1011,7 +1010,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1036,7 +1035,7 @@ int usb_dc_ep_halt(const uint8_t ep)
 	volatile uint32_t *p_depctl;
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1067,7 +1066,7 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1095,7 +1094,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1130,7 +1129,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1169,7 +1168,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 	uint32_t cnt;
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1186,7 +1185,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 
 	do {
 		if (++cnt > USB_DW_CORE_RST_TIMEOUT_US) {
-			LOG_ERR("USB TX FIFO flush HANG!");
+			LOG_ERROR("USB TX FIFO flush HANG!");
 			return -EIO;
 		}
 		usb_dw_udelay(1);
@@ -1201,7 +1200,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	int ret;
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1235,25 +1234,25 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	uint32_t i, j, data_len, bytes_to_copy;
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
 	/* Check if OUT ep */
 	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
-		LOG_ERR("Wrong endpoint direction");
+		LOG_ERROR("Wrong endpoint direction");
 		return -EINVAL;
 	}
 
 	/* Allow to read 0 bytes */
 	if (!data && max_data_len) {
-		LOG_ERR("Wrong arguments");
+		LOG_ERROR("Wrong arguments");
 		return -EINVAL;
 	}
 
 	/* Check if ep enabled */
 	if (!usb_dw_ep_is_enabled(ep)) {
-		LOG_ERR("Not enabled endpoint");
+		LOG_ERROR("Not enabled endpoint");
 		return -EINVAL;
 	}
 
@@ -1271,7 +1270,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 
 
 	if (data_len > max_data_len) {
-		LOG_ERR("Not enough room to copy all the rcvd data!");
+		LOG_ERROR("Not enough room to copy all the rcvd data!");
 		bytes_to_copy = max_data_len;
 	} else {
 		bytes_to_copy = data_len;
@@ -1309,13 +1308,13 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
 	/* Check if OUT ep */
 	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
-		LOG_ERR("Wrong endpoint direction");
+		LOG_ERROR("Wrong endpoint direction");
 		return -EINVAL;
 	}
 
@@ -1352,7 +1351,7 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -1375,7 +1374,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 	enum usb_dw_out_ep_idx ep_idx = USB_EP_GET_IDX(ep);
 
 	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
-		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		LOG_ERROR("Not attached / Invalid endpoint: EP 0x%x", ep);
 		return -EINVAL;
 	}
 

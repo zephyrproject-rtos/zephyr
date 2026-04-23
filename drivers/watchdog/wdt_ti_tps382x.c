@@ -23,7 +23,7 @@ static int ti_tps382x_init(const struct device *dev)
 	const struct ti_tps382x_config *config = dev->config;
 
 	if (!gpio_is_ready_dt(&config->wdi_gpio)) {
-		LOG_ERR("WDI gpio not ready");
+		LOG_ERROR("WDI gpio not ready");
 		return -ENODEV;
 	}
 
@@ -53,14 +53,14 @@ static int ti_tps382x_install_timeout(const struct device *dev,
 	const struct ti_tps382x_config *config = dev->config;
 
 	if (cfg->window.max != config->timeout) {
-		LOG_ERR("Upper limit of watchdog timeout must be %d not %u",
-			config->timeout, cfg->window.max);
+		LOG_ERROR("Upper limit of watchdog timeout must be %d not %u", config->timeout,
+			  cfg->window.max);
 		return -EINVAL;
 	} else if (cfg->window.min != 0) {
-		LOG_ERR("Window timeouts not supported");
+		LOG_ERROR("Window timeouts not supported");
 		return -EINVAL;
 	} else if (cfg->callback != NULL) {
-		LOG_ERR("Callbacks not supported");
+		LOG_ERROR("Callbacks not supported");
 		return -EINVAL;
 	}
 

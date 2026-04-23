@@ -28,7 +28,7 @@ int generate_persistent_key(void)
 
 	ret = psa_generate_key(&key_attributes, &key_id);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to generate the key. (%d)", ret);
+		LOG_ERROR("Failed to generate the key. (%d)", ret);
 		return -1;
 	}
 	__ASSERT_NO_MSG(key_id == SAMPLE_KEY_ID);
@@ -36,7 +36,7 @@ int generate_persistent_key(void)
 	/* Purge the key from volatile memory. Has the same affect than resetting the device. */
 	ret = psa_purge_key(SAMPLE_KEY_ID);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to purge the generated key from volatile memory. (%d).", ret);
+		LOG_ERROR("Failed to purge the generated key from volatile memory. (%d).", ret);
 		return -1;
 	}
 
@@ -60,14 +60,14 @@ int use_persistent_key(void)
 	ret = psa_cipher_encrypt(SAMPLE_KEY_ID, SAMPLE_ALG, plaintext, sizeof(plaintext),
 				 ciphertext, sizeof(ciphertext), &ciphertext_len);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to encrypt the plaintext. (%d)", ret);
+		LOG_ERROR("Failed to encrypt the plaintext. (%d)", ret);
 		return -1;
 	}
 
 	ret = psa_cipher_decrypt(SAMPLE_KEY_ID, SAMPLE_ALG, ciphertext, ciphertext_len,
 				 decrypted_text, sizeof(decrypted_text), &decrypted_text_len);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to decrypt the ciphertext. (%d)", ret);
+		LOG_ERROR("Failed to decrypt the ciphertext. (%d)", ret);
 		return -1;
 	}
 	__ASSERT_NO_MSG(decrypted_text_len == sizeof(plaintext));
@@ -77,7 +77,7 @@ int use_persistent_key(void)
 		LOG_HEXDUMP_INF(plaintext, sizeof(plaintext), "Plaintext:");
 		LOG_HEXDUMP_INF(ciphertext, ciphertext_len, "Ciphertext:");
 		LOG_HEXDUMP_INF(decrypted_text, sizeof(decrypted_text), "Decrypted text:");
-		LOG_ERR("The decrypted text doesn't match the plaintext.");
+		LOG_ERROR("The decrypted text doesn't match the plaintext.");
 		return -1;
 	}
 
@@ -92,7 +92,7 @@ static int destroy_persistent_key(void)
 
 	ret = psa_destroy_key(SAMPLE_KEY_ID);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to destroy the key. (%d)", ret);
+		LOG_ERROR("Failed to destroy the key. (%d)", ret);
 		return -1;
 	}
 

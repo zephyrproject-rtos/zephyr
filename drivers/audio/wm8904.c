@@ -161,8 +161,8 @@ static int wm8904_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *cf
 		word_size = 3;
 		break;
 	default:
-		LOG_ERR("Word size %d bits not supported; falling back to 16 bits",
-			cfg->i2s.word_size);
+		LOG_ERROR("Word size %d bits not supported; falling back to 16 bits",
+			  cfg->i2s.word_size);
 		word_size = 0;
 		break;
 	}
@@ -315,7 +315,7 @@ static void wm8904_set_master_clock(const struct device *dev, audio_dai_cfg_t *c
 	LOG_DBG("Codec sysclk: %d", sysclk);
 
 	if ((sysclk / bclk > 48U) || (bclk / sampleRate > 2047U) || (bclk / sampleRate < 8U)) {
-		LOG_ERR("Invalid BCLK clock divider configured.");
+		LOG_ERROR("Invalid BCLK clock divider configured.");
 		return;
 	}
 
@@ -390,7 +390,7 @@ static void wm8904_set_master_clock(const struct device *dev, audio_dai_cfg_t *c
 		audioInterface |= 20U;
 		break;
 	default:
-		LOG_ERR("invalid audio interface for wm8904 %d", bclkDiv);
+		LOG_ERROR("invalid audio interface for wm8904 %d", bclkDiv);
 		return;
 	}
 
@@ -411,7 +411,7 @@ static int wm8904_configure(const struct device *dev, struct audio_codec_cfg *cf
 	const struct wm8904_driver_config *const dev_cfg = DEV_CFG(dev);
 
 	if (cfg->dai_type >= AUDIO_DAI_TYPE_INVALID) {
-		LOG_ERR("dai_type not supported");
+		LOG_ERROR("dai_type not supported");
 		return -EINVAL;
 	}
 
@@ -486,13 +486,13 @@ static int wm8904_configure(const struct device *dev, struct audio_codec_cfg *cf
 		int err = clock_control_on(dev_cfg->mclk_dev, dev_cfg->mclk_name);
 
 		if (err < 0) {
-			LOG_ERR("MCLK clock source enable fail: %d", err);
+			LOG_ERROR("MCLK clock source enable fail: %d", err);
 		}
 
 		err = clock_control_get_rate(dev_cfg->mclk_dev, dev_cfg->mclk_name,
 					     &cfg->mclk_freq);
 		if (err < 0) {
-			LOG_ERR("MCLK clock source freq acquire fail: %d", err);
+			LOG_ERROR("MCLK clock source freq acquire fail: %d", err);
 		}
 	}
 
@@ -590,7 +590,7 @@ static void wm8904_write_reg(const struct device *dev, uint8_t reg, uint16_t val
 	ret = i2c_write(dev_cfg->i2c.bus, data, 3, dev_cfg->i2c.addr);
 
 	if (ret != 0) {
-		LOG_ERR("i2c write to codec error %d", ret);
+		LOG_ERROR("i2c write to codec error %d", ret);
 	}
 
 	LOG_DBG("REG:%02u VAL:%#02x", reg, val);

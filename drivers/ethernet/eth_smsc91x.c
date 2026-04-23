@@ -354,14 +354,14 @@ static int smsc_check(struct smsc_data *sc)
 
 	val = smsc_read_2(sc, BSR);
 	if (FIELD_GET(BSR_IDENTIFY_MASK, val) != BSR_IDENTIFY) {
-		LOG_ERR("Identification value not in BSR");
+		LOG_ERROR("Identification value not in BSR");
 		return -ENODEV;
 	}
 
 	smsc_write_2(sc, BSR, 0);
 	val = smsc_read_2(sc, BSR);
 	if (FIELD_GET(BSR_IDENTIFY_MASK, val) != BSR_IDENTIFY) {
-		LOG_ERR("Identification value not in BSR after write");
+		LOG_ERROR("Identification value not in BSR after write");
 		return -ENODEV;
 	}
 
@@ -369,7 +369,7 @@ static int smsc_check(struct smsc_data *sc)
 	val = smsc_read_2(sc, REV);
 	val = FIELD_GET(REV_CHIP_MASK, val);
 	if (smsc_chip_ids[val] == NULL) {
-		LOG_ERR("Unknown chip revision: %d", val);
+		LOG_ERROR("Unknown chip revision: %d", val);
 		return -ENODEV;
 	}
 
@@ -440,7 +440,7 @@ static void smsc_recv_pkt(struct eth_context *data)
 			pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0,
 							   K_NO_WAIT);
 			if (!pkt) {
-				LOG_ERR("Failed to obtain RX buffer");
+				LOG_ERROR("Failed to obtain RX buffer");
 				goto _mmu_release;
 			}
 
@@ -770,7 +770,7 @@ static void eth_initialize(struct net_if *iface)
 	if (device_is_ready(phy_dev)) {
 		phy_link_callback_set(phy_dev, phy_link_state_changed, (void *)dev);
 	} else {
-		LOG_ERR("PHY device not ready");
+		LOG_ERROR("PHY device not ready");
 	}
 }
 

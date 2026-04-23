@@ -84,7 +84,7 @@ int main(void)
 			LOG_INF("Mode 3: Low + Medium + High");
 			break;
 		default:
-			LOG_ERR("Unknown mode!");
+			LOG_ERROR("Unknown mode!");
 			return -1;
 		}
 

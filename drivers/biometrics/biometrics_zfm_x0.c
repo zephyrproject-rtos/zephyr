@@ -175,7 +175,7 @@ static int zfm_x0_send_packet(const struct device *dev, uint8_t pid, const uint8
 
 	if (k_sem_take(&data->uart_tx_sem, K_MSEC(ZFM_X0_UART_TIMEOUT_MS)) != 0) {
 		uart_irq_tx_disable(cfg->uart_dev);
-		LOG_ERR("UART TX timeout");
+		LOG_ERROR("UART TX timeout");
 		return -ETIMEDOUT;
 	}
 
@@ -200,30 +200,30 @@ static int zfm_x0_recv_packet(const struct device *dev)
 
 	if (k_sem_take(&data->uart_rx_sem, K_MSEC(ZFM_X0_UART_TIMEOUT_MS)) != 0) {
 		uart_irq_rx_disable(cfg->uart_dev);
-		LOG_ERR("UART RX timeout");
+		LOG_ERROR("UART RX timeout");
 		return -ETIMEDOUT;
 	}
 
 	/* Check for RX errors detected in IRQ handler */
 	if (data->rx_error == ZFM_X0_RX_OVERFLOW) {
-		LOG_ERR("RX buffer overflow");
+		LOG_ERROR("RX buffer overflow");
 		return -EOVERFLOW;
 	}
 
 	if (data->rx_error == ZFM_X0_RX_INVALID_LEN) {
-		LOG_ERR("Invalid packet length");
+		LOG_ERROR("Invalid packet length");
 		return -EBADMSG;
 	}
 
 	LOG_HEXDUMP_DBG(data->rx_pkt.buf, data->rx_pkt.len, "RX");
 
 	if (sys_get_be16(&data->rx_pkt.buf[0]) != ZFM_X0_START_CODE) {
-		LOG_ERR("Invalid start code");
+		LOG_ERROR("Invalid start code");
 		return -EBADMSG;
 	}
 
 	if (sys_get_be32(&data->rx_pkt.buf[2]) != cfg->comm_addr) {
-		LOG_ERR("Address mismatch");
+		LOG_ERROR("Address mismatch");
 		return -EBADMSG;
 	}
 
@@ -241,7 +241,7 @@ static int zfm_x0_recv_packet(const struct device *dev)
 	}
 
 	if (recv_checksum != calc_checksum) {
-		LOG_ERR("Checksum mismatch: recv=%04x calc=%04x", recv_checksum, calc_checksum);
+		LOG_ERROR("Checksum mismatch: recv=%04x calc=%04x", recv_checksum, calc_checksum);
 		return -EBADMSG;
 	}
 
@@ -277,7 +277,7 @@ static int zfm_x0_transceive(const struct device *dev, uint8_t cmd, const uint8_
 	}
 
 	if (data->rx_pkt.buf[6] != ZFM_X0_PID_ACK) {
-		LOG_ERR("Expected ACK, got PID %02x", data->rx_pkt.buf[6]);
+		LOG_ERROR("Expected ACK, got PID %02x", data->rx_pkt.buf[6]);
 		return -EBADMSG;
 	}
 
@@ -323,7 +323,7 @@ static int zfm_x0_enroll_capture_blocking(const struct device *dev, uint8_t buff
 
 	ret = zfm_x0_transceive(dev, ZFM_X0_CMD_IMG_2_TZ, &buffer_id, 1, NULL, NULL);
 	if (ret != ZFM_X0_OK) {
-		LOG_ERR("Image conversion failed: %d", ret);
+		LOG_ERROR("Image conversion failed: %d", ret);
 		return zfm_x0_err_to_errno(ret);
 	}
 
@@ -436,7 +436,7 @@ static int zfm_x0_attr_set(const struct device *dev, enum biometric_attribute at
 			data->security_level = val;
 			ret = 0;
 		} else {
-			LOG_ERR("Failed to set security level: %d", ret);
+			LOG_ERROR("Failed to set security level: %d", ret);
 			ret = zfm_x0_err_to_errno(ret);
 		}
 		break;
@@ -610,7 +610,7 @@ static int zfm_x0_enroll_finalize(const struct device *dev)
 	if (ret != ZFM_X0_OK) {
 		data->enroll_state = ZFM_X0_ENROLL_IDLE;
 		k_mutex_unlock(&data->lock);
-		LOG_ERR("Template creation failed: %d", ret);
+		LOG_ERROR("Template creation failed: %d", ret);
 		return zfm_x0_err_to_errno(ret);
 	}
 
@@ -621,7 +621,7 @@ static int zfm_x0_enroll_finalize(const struct device *dev)
 	if (ret != ZFM_X0_OK) {
 		data->enroll_state = ZFM_X0_ENROLL_IDLE;
 		k_mutex_unlock(&data->lock);
-		LOG_ERR("Template storage failed: %d", ret);
+		LOG_ERROR("Template storage failed: %d", ret);
 		return zfm_x0_err_to_errno(ret);
 	}
 
@@ -715,7 +715,7 @@ static int zfm_x0_template_list(const struct device *dev, uint16_t *ids, size_t 
 	ret = zfm_x0_transceive(dev, ZFM_X0_CMD_READ_INDEX, &page, 1, response, &response_len);
 
 	if (ret != ZFM_X0_OK) {
-		LOG_ERR("Failed to read template index: %d", ret);
+		LOG_ERROR("Failed to read template index: %d", ret);
 		k_mutex_unlock(&data->lock);
 		return zfm_x0_err_to_errno(ret);
 	}
@@ -871,7 +871,7 @@ static int zfm_x0_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->uart_dev)) {
-		LOG_ERR("UART device not ready");
+		LOG_ERROR("UART device not ready");
 		return -ENODEV;
 	}
 
@@ -898,14 +898,14 @@ static int zfm_x0_init(const struct device *dev)
 	sys_put_be32(cfg->password, params);
 	ret = zfm_x0_transceive(dev, ZFM_X0_CMD_VERIFY_PWD, params, 4, NULL, NULL);
 	if (ret != ZFM_X0_OK) {
-		LOG_ERR("Password verification failed: %d", ret);
+		LOG_ERROR("Password verification failed: %d", ret);
 		return -EACCES;
 	}
 
 	response_len = sizeof(response);
 	ret = zfm_x0_transceive(dev, ZFM_X0_CMD_READ_PARAM, NULL, 0, response, &response_len);
 	if (ret != ZFM_X0_OK) {
-		LOG_ERR("Failed to read system parameters");
+		LOG_ERROR("Failed to read system parameters");
 		return -EIO;
 	}
 

@@ -42,7 +42,7 @@ static void modbus_serial_tx_on(struct modbus_context *ctx)
 
 		err = uart_tx(cfg->dev, cfg->uart_buf, cfg->uart_buf_ctr, SYS_FOREVER_US);
 		if (err) {
-			LOG_ERR("uart_tx failed with %d", err);
+			LOG_ERROR("uart_tx failed with %d", err);
 		}
 	} else {
 		uart_irq_tx_enable(cfg->dev);
@@ -88,7 +88,7 @@ static void modbus_serial_rx_on(struct modbus_context *ctx)
 		err = uart_rx_enable(cfg->dev, cfg->uart_buf,
 				     sizeof(cfg->uart_buf), cfg->rtu_timeout);
 		if (err) {
-			LOG_ERR("uart_rx_enable failed with %d", err);
+			LOG_ERROR("uart_rx_enable failed with %d", err);
 		}
 	} else {
 		uart_irq_rx_enable(cfg->dev);
@@ -203,7 +203,7 @@ static int modbus_ascii_rx_adu(struct modbus_context *ctx)
 					(cfg->uart_buf_ctr - 5) / 2);
 
 	if (calc_lrc != frame_lrc) {
-		LOG_ERR("Calculated LRC does not match received LRC");
+		LOG_ERROR("Calculated LRC does not match received LRC");
 		return -EIO;
 	}
 
@@ -363,7 +363,7 @@ static void cb_handler_rx(struct modbus_context *ctx)
 		uint8_t c;
 
 		if (uart_fifo_read(cfg->dev, &c, 1) != 1) {
-			LOG_ERR("Failed to read UART");
+			LOG_ERROR("Failed to read UART");
 			return;
 		}
 
@@ -435,7 +435,7 @@ static void uart_cb_handler(const struct device *dev, void *app_data)
 	struct modbus_context *ctx = (struct modbus_context *)app_data;
 
 	if (ctx == NULL) {
-		LOG_ERR("Modbus hardware is not properly initialized");
+		LOG_ERROR("Modbus hardware is not properly initialized");
 		return;
 	}
 
@@ -457,7 +457,7 @@ static void uart_cb_async_handler(const struct device *dev, struct uart_event *e
 	struct modbus_serial_config *cfg;
 
 	if (ctx == NULL) {
-		LOG_ERR("Modbus hardware is not properly initialized");
+		LOG_ERROR("Modbus hardware is not properly initialized");
 		return;
 	}
 
@@ -497,7 +497,7 @@ static void rtu_tmr_handler(struct k_timer *t_id)
 	ctx = (struct modbus_context *)k_timer_user_data_get(t_id);
 
 	if (ctx == NULL) {
-		LOG_ERR("Failed to get Modbus context");
+		LOG_ERROR("Failed to get Modbus context");
 		return;
 	}
 
@@ -577,7 +577,7 @@ static inline int configure_uart(struct modbus_context *ctx,
 	}
 
 	if (uart_configure(cfg->dev, &uart_cfg) != 0) {
-		LOG_ERR("Failed to configure UART");
+		LOG_ERROR("Failed to configure UART");
 		return -EINVAL;
 	}
 
@@ -611,7 +611,7 @@ int modbus_serial_rx_adu(struct modbus_context *ctx)
 		rc = modbus_ascii_rx_adu(ctx);
 		break;
 	default:
-		LOG_ERR("Unsupported MODBUS mode");
+		LOG_ERROR("Unsupported MODBUS mode");
 		return -ENOTSUP;
 	}
 
@@ -657,7 +657,7 @@ int modbus_serial_init(struct modbus_context *ctx,
 	}
 
 	if (!device_is_ready(cfg->dev)) {
-		LOG_ERR("Bus device %s is not ready", cfg->dev->name);
+		LOG_ERROR("Bus device %s is not ready", cfg->dev->name);
 		return -ENODEV;
 	}
 
@@ -668,7 +668,7 @@ int modbus_serial_init(struct modbus_context *ctx,
 	}
 
 	if (param.serial.baud == 0) {
-		LOG_ERR("Baudrate is 0");
+		LOG_ERROR("Baudrate is 0");
 		return -EINVAL;
 	}
 

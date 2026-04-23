@@ -71,13 +71,13 @@ static int sdhi_power_on(const struct device *dev)
 	const struct sdhc_stm32_config *config = dev->config;
 
 	if (!device_is_ready(config->sdhi_on_gpio.port)) {
-		LOG_ERR("Card is not ready");
+		LOG_ERROR("Card is not ready");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&config->sdhi_on_gpio, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
-		LOG_ERR("Card configuration failed, ret:%d", ret);
+		LOG_ERROR("Card configuration failed, ret:%d", ret);
 		return ret;
 	}
 
@@ -89,7 +89,7 @@ static int sdhi_power_on(const struct device *dev)
  * Logs detailed SDIO error types using Zephyr's logging subsystem.
  *
  * This helper function queries the error status of an SDIO operation
- * and reports specific error types using `LOG_ERR()`.
+ * and reports specific error types using `LOG_ERROR()`.
  * In addition to logging, it also resets the `ErrorCode` field
  * of the `SDIO_HandleTypeDef` to `HAL_SDIO_ERROR_NONE`.
  *
@@ -100,39 +100,39 @@ static void sdhc_stm32_log_err_type(SDIO_HandleTypeDef *hsd)
 	uint32_t error_code = HAL_SDIO_GetError(hsd);
 
 	if ((error_code & HAL_SDIO_ERROR_TIMEOUT) != 0U) {
-		LOG_ERR("SDIO Timeout");
+		LOG_ERROR("SDIO Timeout");
 	}
 
 	if ((error_code & HAL_SDIO_ERROR_DATA_TIMEOUT) != 0U) {
-		LOG_ERR("SDIO Data Timeout");
+		LOG_ERROR("SDIO Data Timeout");
 	}
 
 	if ((error_code & HAL_SDIO_ERROR_DATA_CRC_FAIL) != 0U) {
-		LOG_ERR("SDIO Data CRC");
+		LOG_ERROR("SDIO Data CRC");
 	}
 
 	if ((error_code & HAL_SDIO_ERROR_TX_UNDERRUN) != 0U) {
-		LOG_ERR("SDIO FIFO Transmit Underrun");
+		LOG_ERROR("SDIO FIFO Transmit Underrun");
 	}
 
 	if ((error_code & HAL_SDIO_ERROR_RX_OVERRUN) != 0U) {
-		LOG_ERR("SDIO FIFO Receive Overrun");
+		LOG_ERROR("SDIO FIFO Receive Overrun");
 	}
 
 	if ((error_code & HAL_SDIO_ERROR_INVALID_CALLBACK) != 0U) {
-		LOG_ERR("SDIO Invalid Callback");
+		LOG_ERROR("SDIO Invalid Callback");
 	}
 
 	if ((error_code & SDMMC_ERROR_ADDR_MISALIGNED) != 0U) {
-		LOG_ERR("SDIO Misaligned address");
+		LOG_ERROR("SDIO Misaligned address");
 	}
 
 	if ((error_code & SDMMC_ERROR_WRITE_PROT_VIOLATION) != 0U) {
-		LOG_ERR("Attempt to program a write protected block");
+		LOG_ERROR("Attempt to program a write protected block");
 	}
 
 	if ((error_code & SDMMC_ERROR_ILLEGAL_CMD) != 0U) {
-		LOG_ERR("Command is not legal for the card state");
+		LOG_ERROR("Command is not legal for the card state");
 	}
 
 	hsd->ErrorCode = HAL_SDIO_ERROR_NONE;
@@ -171,7 +171,7 @@ static int sdhc_stm32_sd_init(const struct device *dev)
 	hsd->Instance = (MMC_TypeDef *) config->reg_addr;
 
 	if (HAL_SDIO_DeInit(hsd) != HAL_OK) {
-		LOG_ERR("Failed to de-initialize the SDIO device");
+		LOG_ERROR("Failed to de-initialize the SDIO device");
 		return -EIO;
 	}
 
@@ -193,9 +193,9 @@ static int sdhc_stm32_sd_init(const struct device *dev)
 		hsd->Init.BusWide = SDMMC_BUS_WIDE_1B;
 	}
 
-	if (HAL_SDIO_RegisterIdentifyCardCallback(config->hsd,
-						  noop_identify_card_callback) != HAL_OK) {
-		LOG_ERR("Register identify card callback failed");
+	if (HAL_SDIO_RegisterIdentifyCardCallback(config->hsd, noop_identify_card_callback) !=
+	    HAL_OK) {
+		LOG_ERROR("Register identify card callback failed");
 		return -EIO;
 	}
 
@@ -220,7 +220,7 @@ static int sdhc_stm32_activate(const struct device *dev)
 		if (clock_control_configure(clk,
 					    (clock_control_subsys_t)(uintptr_t) &config->pclken[1],
 					    NULL) != 0) {
-			LOG_ERR("Failed to enable SDHC domain clock");
+			LOG_ERROR("Failed to enable SDHC domain clock");
 			return -EIO;
 		}
 	}
@@ -279,7 +279,7 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 	uint32_t reg_addr = (cmd->arg >> SDIO_CMD_ARG_REG_ADDR_SHIFT) & SDIO_CMD_ARG_REG_ADDR_MASK;
 
 	if (data->data == NULL) {
-		LOG_ERR("Invalid NULL data buffer passed to CMD53");
+		LOG_ERROR("Invalid NULL data buffer passed to CMD53");
 		return -EINVAL;
 	}
 
@@ -297,7 +297,7 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 		dev_data->sdio_dma_buf = k_aligned_alloc(CONFIG_SDHC_BUFFER_ALIGNMENT,
 							data->blocks * data->block_size);
 		if (dev_data->sdio_dma_buf == NULL) {
-			LOG_ERR("DMA buffer allocation failed");
+			LOG_ERROR("DMA buffer allocation failed");
 			return -ENOMEM;
 		}
 	}
@@ -362,13 +362,13 @@ static int sdhc_stm32_switch_to_1_8v(const struct device *dev)
 
 	/* Check if host supports 1.8V signaling */
 	if (!data->props.host_caps.vol_180_support) {
-		LOG_ERR("Host does not support 1.8V signaling");
+		LOG_ERROR("Host does not support 1.8V signaling");
 		return -ENOTSUP;
 	}
 
 	res = SDMMC_CmdVoltageSwitch(config->hsd->Instance);
 	if (res != 0) {
-		LOG_ERR("CMD11 failed: %#x", res);
+		LOG_ERROR("CMD11 failed: %#x", res);
 		return -EIO;
 	}
 
@@ -391,7 +391,7 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	}
 
 	if (HAL_SDIO_GetState(config->hsd) != HAL_SDIO_STATE_READY) {
-		LOG_ERR("SDIO Card is busy");
+		LOG_ERROR("SDIO Card is busy");
 		k_mutex_unlock(&dev_data->bus_mutex);
 		return -ETIMEDOUT;
 	}
@@ -487,13 +487,13 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 
 	if ((ios->clock != 0) && (host_io->clock != ios->clock)) {
 		if ((ios->clock > props->f_max) || (ios->clock < props->f_min)) {
-			LOG_ERR("Invalid clock frequency, domain (%u, %u)",
-				props->f_min, props->f_max);
+			LOG_ERROR("Invalid clock frequency, domain (%u, %u)", props->f_min,
+				  props->f_max);
 			res = -EINVAL;
 			goto out;
 		}
 		if (HAL_SDIO_ConfigFrequency(config->hsd, (uint32_t)ios->clock) != HAL_OK) {
-			LOG_ERR("Failed to set clock to %d", ios->clock);
+			LOG_ERROR("Failed to set clock to %d", ios->clock);
 			res = -EIO;
 			goto out;
 		}
@@ -615,7 +615,7 @@ static int sdhc_stm32_reset(const struct device *dev)
 	/* Resetting card */
 	res = HAL_SDIO_CardReset(config->hsd);
 	if (res != HAL_OK) {
-		LOG_ERR("Card reset failed");
+		LOG_ERROR("Card reset failed");
 	}
 
 	k_mutex_unlock(&data->bus_mutex);
@@ -659,7 +659,7 @@ void sdhc_stm32_event_isr(const struct device *dev)
 		icr_clear_flag |= SDMMC_ICR_RXOVERRC;
 	}
 	if (icr_clear_flag) {
-		LOG_ERR("SDMMC interrupt err flag raised: 0x%08X", icr_clear_flag);
+		LOG_ERROR("SDMMC interrupt err flag raised: 0x%08X", icr_clear_flag);
 		config->hsd->Instance->ICR = icr_clear_flag;
 	}
 
@@ -674,33 +674,34 @@ static int sdhc_stm32_init(const struct device *dev)
 
 	if (config->sdhi_on_gpio.port != NULL) {
 		if (sdhi_power_on(dev) != 0) {
-			LOG_ERR("Failed to power card on");
+			LOG_ERROR("Failed to power card on");
 			return -ENODEV;
 		}
 	}
 
 	if (config->cd_gpio.port != NULL) {
 		if (!device_is_ready(config->cd_gpio.port)) {
-			LOG_ERR("Card detect GPIO device not ready");
+			LOG_ERROR("Card detect GPIO device not ready");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&config->cd_gpio, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Couldn't configure card-detect pin; (%d)", ret);
+			LOG_ERROR("Couldn't configure card-detect pin; (%d)", ret);
 			return ret;
 		}
 	}
 
 	ret = sdhc_stm32_activate(dev);
 	if (ret != 0) {
-		LOG_ERR("Clock and GPIO could not be initialized for the SDHC module, err=%d", ret);
+		LOG_ERROR("Clock and GPIO could not be initialized for the SDHC module, err=%d",
+			  ret);
 		return ret;
 	}
 
 	ret = sdhc_stm32_sd_init(dev);
 	if (ret != 0) {
-		LOG_ERR("SDIO Init Failed");
+		LOG_ERROR("SDIO Init Failed");
 		sdhc_stm32_log_err_type(config->hsd);
 		return ret;
 	}
@@ -726,7 +727,7 @@ static int sdhc_stm32_suspend(const struct device *dev)
 	/* Disable device clock. */
 	ret = clock_control_off(clk, (clock_control_subsys_t)(uintptr_t)&cfg->pclken[0]);
 	if (ret < 0) {
-		LOG_ERR("Failed to disable SDHC clock during PM suspend process");
+		LOG_ERROR("Failed to disable SDHC clock during PM suspend process");
 		return ret;
 	}
 

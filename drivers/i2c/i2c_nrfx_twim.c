@@ -106,15 +106,14 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		 */
 		if (concat_next || (msg_buf_used != 0) || !dma_accessible) {
 			if ((msg_buf_used + msgs[i].len) > msg_buf_size) {
-				LOG_ERR("Need to use the internal driver "
-					"buffer but its size is insufficient "
-					"(%u + %u > %u). "
-					"Adjust the zephyr,concat-buf-size or "
-					"zephyr,flash-buf-max-size property "
-					"(the one with greater value) in the "
-					"\"%s\" node.",
-					msg_buf_used, msgs[i].len,
-					msg_buf_size, dev->name);
+				LOG_ERROR("Need to use the internal driver "
+					  "buffer but its size is insufficient "
+					  "(%u + %u > %u). "
+					  "Adjust the zephyr,concat-buf-size or "
+					  "zephyr,flash-buf-max-size property "
+					  "(the one with greater value) in the "
+					  "\"%s\" node.",
+					  msg_buf_used, msgs[i].len, msg_buf_size, dev->name);
 				ret = -ENOSPC;
 				break;
 			}
@@ -147,7 +146,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		}
 
 		if (ret < 0) {
-			LOG_ERR("Failed to prepare buffer: %d", ret);
+			LOG_ERROR("Failed to prepare buffer: %d", ret);
 			return ret;
 		}
 

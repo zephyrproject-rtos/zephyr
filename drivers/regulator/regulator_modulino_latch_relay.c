@@ -31,7 +31,7 @@ static int regulator_modulino_latch_relay_set_enable(const struct device *dev, b
 
 	ret = i2c_write_dt(&config->bus, command_out, sizeof(command_out));
 	if (ret < 0) {
-		LOG_ERR("Failed to set relay state: %d", ret);
+		LOG_ERROR("Failed to set relay state: %d", ret);
 		return ret;
 	}
 	LOG_DBG("Relay state set to: %s", enable ? "ON" : "OFF");
@@ -53,11 +53,11 @@ static int regulator_modulino_latch_relay_init(const struct device *dev)
 	const struct regulator_modulino_latch_relay_config *config = dev->config;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("I2C bus %s is not ready", config->bus.bus->name);
+		LOG_ERROR("I2C bus %s is not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 	if (regulator_modulino_latch_relay_disable(dev) < 0) {
-		LOG_ERR("Failed to initialize relay state");
+		LOG_ERROR("Failed to initialize relay state");
 		return -EIO;
 	}
 	LOG_DBG("Modulino Latch Relay initialized successfully");

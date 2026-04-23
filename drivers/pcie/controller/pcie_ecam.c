@@ -118,7 +118,7 @@ static int pcie_ecam_init(const struct device *dev)
 	if (!data->regions[PCIE_REGION_IO].size &&
 	    !data->regions[PCIE_REGION_MEM].size &&
 	    !data->regions[PCIE_REGION_MEM64].size) {
-		LOG_ERR("No regions defined");
+		LOG_ERROR("No regions defined");
 		return -EINVAL;
 	}
 
@@ -338,7 +338,8 @@ static uint8_t pcie_ecam_msi_device_setup(const struct device *dev, unsigned int
 	 */
 	for (i = 1; i < n_vector; i++) {
 		if (vectors[i].bdf != bdf) {
-			LOG_ERR("Multiple BDFs in a single MSI vector allocation isn't supported");
+			LOG_ERROR(
+				"Multiple BDFs in a single MSI vector allocation isn't supported");
 			return 0;
 		}
 	}

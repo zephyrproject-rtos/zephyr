@@ -151,7 +151,7 @@ static int mbox_xlnx_ipi_send(const struct device *cdev, uint32_t channel,
 
 	/* Validate outbound channel */
 	if (channel != IPI_MB_CHNL_TX) {
-		LOG_ERR("Invalid MBOX Tx channel number: %u", channel);
+		LOG_ERROR("Invalid MBOX Tx channel number: %u", channel);
 		return -EINVAL;
 	}
 
@@ -171,7 +171,8 @@ static int mbox_xlnx_ipi_send(const struct device *cdev, uint32_t channel,
 	/* Data transfer mode: write message and then trigger interrupt */
 	if (msg->size > IPI_MAX_MSG_BYTES) {
 		/* we can only send max this many bytes at a time */
-		LOG_ERR("size: %u is invalid, Max size is %u bytes", msg->size, IPI_MAX_MSG_BYTES);
+		LOG_ERROR("size: %u is invalid, Max size is %u bytes", msg->size,
+			  IPI_MAX_MSG_BYTES);
 		return -EMSGSIZE;
 	}
 
@@ -214,7 +215,7 @@ static int mbox_xlnx_ipi_register_callback(const struct device *cdev, uint32_t c
 
 	/* Validate inbound channel */
 	if (channel != IPI_MB_CHNL_RX) {
-		LOG_ERR("Invalid MBOX Rx channel number: %u", channel);
+		LOG_ERROR("Invalid MBOX Rx channel number: %u", channel);
 		return -EINVAL;
 	}
 
@@ -260,7 +261,7 @@ static int mbox_xlnx_ipi_set_enabled(const struct device *cdev, uint32_t channel
 
 	/* Validate inbound channel */
 	if (channel != IPI_MB_CHNL_RX) {
-		LOG_ERR("Invalid MBOX Rx channel number: %u", channel);
+		LOG_ERROR("Invalid MBOX Rx channel number: %u", channel);
 		return -EINVAL;
 	}
 

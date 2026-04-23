@@ -109,7 +109,7 @@ static int memc_flexspi_w956a8mbya_init(const struct device *dev)
 	uint16_t vendor_id;
 
 	if (!device_is_ready(data->controller)) {
-		LOG_ERR("Controller device not ready");
+		LOG_ERROR("Controller device not ready");
 		return -ENODEV;
 	}
 
@@ -117,14 +117,14 @@ static int memc_flexspi_w956a8mbya_init(const struct device *dev)
 	    (const uint32_t *) memc_flexspi_w956a8mbya_lut,
 	    sizeof(memc_flexspi_w956a8mbya_lut) / MEMC_FLEXSPI_CMD_SIZE,
 	    config->port)) {
-		LOG_ERR("Could not set device configuration");
+		LOG_ERROR("Could not set device configuration");
 		return -EINVAL;
 	}
 
 	memc_flexspi_reset(data->controller);
 
 	if (memc_flexspi_w956a8mbya_get_vendor_id(dev, &vendor_id)) {
-		LOG_ERR("Could not read vendor id");
+		LOG_ERROR("Could not read vendor id");
 		return -EIO;
 	}
 	LOG_DBG("Vendor id: 0x%0x", vendor_id);

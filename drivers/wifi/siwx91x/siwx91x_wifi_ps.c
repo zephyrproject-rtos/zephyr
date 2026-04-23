@@ -46,12 +46,12 @@ int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 	int ret;
 
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
-		LOG_ERR("Wi-Fi not in station mode");
+		LOG_ERROR("Wi-Fi not in station mode");
 		return -EINVAL;
 	}
 
 	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
-		LOG_ERR("Command given in invalid state");
+		LOG_ERROR("Command given in invalid state");
 		return -EINVAL;
 	}
 
@@ -164,18 +164,18 @@ int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_confi
 	__ASSERT(config, "config cannot be NULL");
 
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
-		LOG_ERR("Wi-Fi not in station mode");
+		LOG_ERROR("Wi-Fi not in station mode");
 		return -EINVAL;
 	}
 
 	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
-		LOG_ERR("Command given in invalid state");
+		LOG_ERROR("Command given in invalid state");
 		return -EINVAL;
 	}
 
 	ret = sl_wifi_get_performance_profile_v2(&sl_ps_profile);
 	if (ret) {
-		LOG_ERR("Failed to get power save profile: 0x%x", ret);
+		LOG_ERROR("Failed to get power save profile: 0x%x", ret);
 		return -EIO;
 	}
 
@@ -327,7 +327,7 @@ int siwx91x_set_twt(const struct device *dev, struct wifi_twt_params *params)
 
 	if (sidev->state != WIFI_STATE_DISCONNECTED && sidev->state != WIFI_STATE_INACTIVE &&
 	    sidev->state != WIFI_STATE_COMPLETED) {
-		LOG_ERR("Command given in invalid state");
+		LOG_ERROR("Command given in invalid state");
 		return -EBUSY;
 	}
 

@@ -45,7 +45,7 @@ int lsm6dsvxxx_init_interrupt(const struct device *dev)
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
 	if (!gpio_is_ready_dt(lsm6dsvxxx->drdy_gpio)) {
-		LOG_ERR("Cannot get pointer to drdy_gpio device");
+		LOG_ERROR("Cannot get pointer to drdy_gpio device");
 		return -ENODEV;
 	}
 
@@ -53,7 +53,7 @@ int lsm6dsvxxx_init_interrupt(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(lsm6dsvxxx->drdy_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure gpio");
+		LOG_ERROR("Could not configure gpio");
 		return ret;
 	}
 

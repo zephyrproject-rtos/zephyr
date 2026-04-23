@@ -32,14 +32,14 @@ void mlx90394_async_fetch(struct k_work *work)
 
 	rc = mlx90394_sample_fetch_internal(dev, cfg->channels->chan_type);
 	if (rc != 0) {
-		LOG_ERR("Failed to fetch samples");
+		LOG_ERROR("Failed to fetch samples");
 		rtio_iodev_sqe_err(data->work_ctx.iodev_sqe, rc);
 		return;
 	}
 	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
 	rc = rtio_sqe_rx_buf(data->work_ctx.iodev_sqe, buf_len, buf_len, &buf, &buf_len);
 	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", buf_len);
 		rtio_iodev_sqe_err(data->work_ctx.iodev_sqe, rc);
 		return;
 	}
@@ -103,14 +103,14 @@ void mlx90394_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 
 	rc = mlx90394_trigger_measurement_internal(dev, cfg->channels->chan_type);
 	if (rc != 0) {
-		LOG_ERR("Failed to trigger measurement");
+		LOG_ERROR("Failed to trigger measurement");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}

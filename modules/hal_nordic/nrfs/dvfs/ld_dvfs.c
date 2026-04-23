@@ -112,7 +112,7 @@ __weak void ld_dvfs_secure_downscale_timeout(struct k_timer *timer)
 {
 	ARG_UNUSED(timer);
 
-	LOG_ERR("Downscale timeout expired, reset board.");
+	LOG_ERROR("Downscale timeout expired, reset board.");
 	atomic_set(&increased_power_consumption, 0);
 }
 
@@ -258,7 +258,7 @@ int32_t ld_dvfs_configure_hsfll(enum dvfs_frequency_setting oppoint)
 	nrf_hsfll_trim_t hsfll_trim = {};
 
 	if (oppoint >= DVFS_FREQ_COUNT) {
-		LOG_ERR("Not valid oppoint %d", oppoint);
+		LOG_ERROR("Not valid oppoint %d", oppoint);
 		return -EINVAL;
 	}
 

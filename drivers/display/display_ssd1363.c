@@ -307,19 +307,19 @@ static int ssd1363_write(const struct device *dev, const uint16_t x, const uint1
 	int32_t pixel_count = desc->width * desc->height;
 
 	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is not width");
+		LOG_ERROR("Pitch is not width");
 		return -EINVAL;
 	}
 
 	/* Following the datasheet, in the GDDRAM, two segment are split in one register */
 	buf_len = MIN(desc->buf_size, desc->height * desc->width / 2);
 	if (buf == NULL || buf_len == 0U) {
-		LOG_ERR("Display buffer is not available");
+		LOG_ERROR("Display buffer is not available");
 		return -EINVAL;
 	}
 
 	if ((x & 3) != 0U) {
-		LOG_ERR("Unsupported origin");
+		LOG_ERROR("Unsupported origin");
 		return -EINVAL;
 	}
 
@@ -363,7 +363,7 @@ static int ssd1363_set_pixel_format(const struct device *dev, const enum display
 	if (pf == PIXEL_FORMAT_L_8) {
 		return 0;
 	}
-	LOG_ERR("Unsupported pixel format");
+	LOG_ERROR("Unsupported pixel format");
 	(void)dev;
 	return -ENOTSUP;
 }
@@ -408,20 +408,20 @@ static int ssd1363_init(const struct device *dev)
 	LOG_DBG("Initializing device");
 
 	if (!device_is_ready(config->mipi_dev)) {
-		LOG_ERR("MIPI Device not ready!");
+		LOG_ERROR("MIPI Device not ready!");
 		return -EINVAL;
 	}
 
 	err = mipi_dbi_reset(config->mipi_dev, SSD1363_RESET_DELAY);
 	if (err < 0) {
-		LOG_ERR("Failed to reset device!");
+		LOG_ERROR("Failed to reset device!");
 		return err;
 	}
 	k_msleep(SSD1363_RESET_DELAY);
 
 	err = ssd1363_init_device(dev);
 	if (err < 0) {
-		LOG_ERR("Failed to initialize device! %d", err);
+		LOG_ERROR("Failed to initialize device! %d", err);
 		return err;
 	}
 
@@ -438,13 +438,13 @@ static int ssd1363_init_i2c(const struct device *dev)
 	LOG_DBG("Initializing device");
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C Device not ready!");
+		LOG_ERROR("I2C Device not ready!");
 		return -EINVAL;
 	}
 
 	err = ssd1363_init_device(dev);
 	if (err < 0) {
-		LOG_ERR("Failed to initialize device! %d", err);
+		LOG_ERROR("Failed to initialize device! %d", err);
 		return err;
 	}
 

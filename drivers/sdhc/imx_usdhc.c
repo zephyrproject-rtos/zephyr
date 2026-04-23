@@ -201,7 +201,7 @@ static int imx_usdhc_dat3_pull(const struct usdhc_config *cfg, bool pullup)
 
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_NOPULL);
 	if (ret) {
-		LOG_ERR("No DAT3 floating state defined, but dat3 detect selected");
+		LOG_ERROR("No DAT3 floating state defined, but dat3 detect selected");
 		return ret;
 	}
 #ifdef CONFIG_IMX_USDHC_DAT3_PWR_TOGGLE
@@ -237,14 +237,14 @@ static void imx_usdhc_error_recovery(const struct device *dev)
 	if (status & kUSDHC_CommandInhibitFlag) {
 		/* Reset command line */
 		if (!USDHC_Reset(base, kUSDHC_ResetCommand, 1000U)) {
-			LOG_ERR("Failed to reset command line");
+			LOG_ERROR("Failed to reset command line");
 		}
 	}
 	if (((status & (uint32_t)kUSDHC_DataInhibitFlag) != 0U) ||
 	    (USDHC_GetAdmaErrorStatusFlags(base) != 0U)) {
 		/* Reset data line */
 		if (!USDHC_Reset(base, kUSDHC_ResetData, 1000U)) {
-			LOG_ERR("Failed to reset data line");
+			LOG_ERROR("Failed to reset data line");
 		}
 	}
 }
@@ -456,7 +456,7 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 			USDHC_ConfigStrobeDLL(base, 7U, 4U);
 			USDHC_EnableStrobeDLL(base, true);
 #else
-			LOG_ERR("HS400 not supported for this device");
+			LOG_ERROR("HS400 not supported for this device");
 			return -ENOTSUP;
 #endif
 		case SDHC_TIMING_SDR104:
@@ -628,7 +628,7 @@ static int imx_usdhc_fill_sg_list(struct usdhc_data *dev_data,
 		usg->dataSize = sg->len;
 	}
 
-	LOG_ERR("scatter gather buffer count is not enough");
+	LOG_ERROR("scatter gather buffer count is not enough");
 	return -ENOMEM;
 }
 
@@ -1124,7 +1124,7 @@ static int imx_usdhc_init(const struct device *dev)
 	DEVICE_MMIO_NAMED_MAP(dev, usdhc_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
 	if (!device_is_ready(cfg->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 

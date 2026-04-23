@@ -542,9 +542,8 @@ static int mpu_configure_regions_and_partition(const struct z_arm_mpu_partition
 		}
 		/* Non-empty region. */
 
-		if (do_coherence_check &&
-			(!mpu_partition_is_valid(&regions[i]))) {
-			LOG_ERR("Partition %u: coherence check failed.", i);
+		if (do_coherence_check && (!mpu_partition_is_valid(&regions[i]))) {
+			LOG_ERROR("Partition %u: coherence check failed.", i);
 			return -EINVAL;
 		}
 
@@ -554,10 +553,8 @@ static int mpu_configure_regions_and_partition(const struct z_arm_mpu_partition
 		int u_reg_index =
 			get_region_index(regions[i].start, regions[i].size);
 
-		if ((u_reg_index == -EINVAL) ||
-			(u_reg_index > (reg_index - 1))) {
-			LOG_ERR("Invalid underlying region index %u",
-				u_reg_index);
+		if ((u_reg_index == -EINVAL) || (u_reg_index > (reg_index - 1))) {
+			LOG_ERROR("Invalid underlying region index %u", u_reg_index);
 			return -EINVAL;
 		}
 

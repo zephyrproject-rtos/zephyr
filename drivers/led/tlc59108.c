@@ -61,14 +61,14 @@ static int tlc59108_set_ledout(const struct device *dev, uint32_t led,
 	if (led < 4) {
 		if (i2c_reg_update_byte_dt(&config->i2c, TLC59108_LEDOUT0,
 					   TLC59108_MASK << (led << 1), val << (led << 1))) {
-			LOG_ERR("LED reg 0x%x update failed", TLC59108_LEDOUT0);
+			LOG_ERROR("LED reg 0x%x update failed", TLC59108_LEDOUT0);
 			return -EIO;
 		}
 	} else {
 		if (i2c_reg_update_byte_dt(&config->i2c, TLC59108_LEDOUT1,
 					   TLC59108_MASK << ((led - 4) << 1),
 					   val << ((led - 4) << 1))) {
-			LOG_ERR("LED reg 0x%x update failed", TLC59108_LEDOUT1);
+			LOG_ERROR("LED reg 0x%x update failed", TLC59108_LEDOUT1);
 			return -EIO;
 		}
 	}
@@ -101,7 +101,7 @@ static int tlc59108_led_blink(const struct device *dev, uint32_t led,
 	 */
 	gdc = delay_on * 256U / period;
 	if (i2c_reg_write_byte_dt(&config->i2c, TLC59108_GRPPWM, gdc)) {
-		LOG_ERR("LED reg 0x%x write failed", TLC59108_GRPPWM);
+		LOG_ERROR("LED reg 0x%x write failed", TLC59108_GRPPWM);
 		return -EIO;
 	}
 
@@ -113,14 +113,14 @@ static int tlc59108_led_blink(const struct device *dev, uint32_t led,
 	 */
 	gfrq = (period * 24U / 1000) - 1;
 	if (i2c_reg_write_byte_dt(&config->i2c, TLC59108_GRPFREQ, gfrq)) {
-		LOG_ERR("LED reg 0x%x write failed", TLC59108_GRPFREQ);
+		LOG_ERROR("LED reg 0x%x write failed", TLC59108_GRPFREQ);
 		return -EIO;
 	}
 
 	/* Enable blinking mode */
 	if (i2c_reg_update_byte_dt(&config->i2c, TLC59108_MODE2, TLC59108_MODE2_DMBLNK,
 				   TLC59108_MODE2_DMBLNK)) {
-		LOG_ERR("LED reg 0x%x update failed", TLC59108_MODE2);
+		LOG_ERROR("LED reg 0x%x update failed", TLC59108_MODE2);
 		return -EIO;
 	}
 
@@ -141,7 +141,7 @@ static int tlc59108_led_set_brightness(const struct device *dev, uint32_t led,
 	/* Set the LED brightness value */
 	val = (value * 255U) / LED_BRIGHTNESS_MAX;
 	if (i2c_reg_write_byte_dt(&config->i2c, TLC59108_PWM_BASE + led, val)) {
-		LOG_ERR("LED 0x%x reg write failed", TLC59108_PWM_BASE + led);
+		LOG_ERROR("LED 0x%x reg write failed", TLC59108_PWM_BASE + led);
 		return -EIO;
 	}
 
@@ -174,13 +174,13 @@ static int tlc59108_led_init(const struct device *dev)
 	const struct tlc59108_cfg *config = dev->config;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus device %s is not ready", config->i2c.bus->name);
+		LOG_ERROR("I2C bus device %s is not ready", config->i2c.bus->name);
 		return -ENODEV;
 	}
 
 	/* Wake up from sleep mode */
 	if (i2c_reg_update_byte_dt(&config->i2c, TLC59108_MODE1, TLC59108_MODE1_OSC, 0)) {
-		LOG_ERR("LED reg 0x%x update failed", TLC59108_MODE1);
+		LOG_ERROR("LED reg 0x%x update failed", TLC59108_MODE1);
 		return -EIO;
 	}
 

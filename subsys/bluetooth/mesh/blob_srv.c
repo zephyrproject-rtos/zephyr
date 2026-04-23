@@ -542,7 +542,7 @@ static int handle_xfer_start(const struct bt_mesh_model *mod, struct bt_mesh_msg
 
 	err = io_open(srv);
 	if (err) {
-		LOG_ERR("Couldn't open stream (err: %d)", err);
+		LOG_ERROR("Couldn't open stream (err: %d)", err);
 		status = BT_MESH_BLOB_ERR_INTERNAL;
 		cancel(srv);
 		goto rsp;
@@ -551,7 +551,7 @@ static int handle_xfer_start(const struct bt_mesh_model *mod, struct bt_mesh_msg
 	if (srv->cb && srv->cb->start) {
 		err = srv->cb->start(srv, ctx, &srv->state.xfer);
 		if (err) {
-			LOG_ERR("Couldn't start transfer (err: %d)", err);
+			LOG_ERROR("Couldn't start transfer (err: %d)", err);
 			status = BT_MESH_BLOB_ERR_INTERNAL;
 			cancel(srv);
 			goto rsp;
@@ -739,8 +739,7 @@ static int handle_chunk(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 
 	if (srv->phase != BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_CHUNK ||
 	    idx >= srv->block.chunk_count) {
-		LOG_ERR("Invalid phase or index (%u %u)", srv->phase,
-		       idx);
+		LOG_ERROR("Invalid phase or index (%u %u)", srv->phase, idx);
 		return -EINVAL;
 	}
 
@@ -753,7 +752,7 @@ static int handle_chunk(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	}
 
 	if (chunk.size != expected_size) {
-		LOG_ERR("Unexpected size: %u != %u", expected_size, chunk.size);
+		LOG_ERROR("Unexpected size: %u != %u", expected_size, chunk.size);
 		return -EINVAL;
 	}
 

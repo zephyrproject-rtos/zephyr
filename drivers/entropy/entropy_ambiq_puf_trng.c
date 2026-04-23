@@ -80,14 +80,14 @@ static int entropy_ambiq_trng_init(const struct device *dev)
 	/* Check and Power on OTP if it is not already on. */
 	status = am_hal_pwrctrl_periph_enabled(AM_HAL_PWRCTRL_PERIPH_OTP, &peripheral_enabled);
 	if (status != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("Failed to check OTP peripheral status, error: 0x%x", status);
+		LOG_ERROR("Failed to check OTP peripheral status, error: 0x%x", status);
 		return -EBUSY;
 	}
 
 	if (!peripheral_enabled) {
 		status = am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_OTP);
 		if (status != AM_HAL_STATUS_SUCCESS) {
-			LOG_ERR("Failed to enable OTP peripheral, error: 0x%x", status);
+			LOG_ERROR("Failed to enable OTP peripheral, error: 0x%x", status);
 			return -EBUSY;
 		}
 	}

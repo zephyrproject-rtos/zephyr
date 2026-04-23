@@ -166,7 +166,7 @@ static void usbd_midi2_recv(const struct device *dev, struct net_buf *const buf)
 		ump.data[0] = net_buf_pull_le32(buf);
 		for (size_t i = 1; i < UMP_NUM_WORDS(ump); i++) {
 			if (buf->len < 4) {
-				LOG_ERR("Incomplete UMP");
+				LOG_ERROR("Incomplete UMP");
 				return;
 			}
 			ump.data[i] = net_buf_pull_le32(buf);
@@ -194,7 +194,7 @@ static int usbd_midi_class_request(struct usbd_class_data *const class_data,
 		dev->name, info->ep, buf->len, err);
 
 	if (err && err != -ECONNABORTED) {
-		LOG_ERR("Transfer error %d", err);
+		LOG_ERROR("Transfer error %d", err);
 	}
 	if (USB_EP_DIR_IS_OUT(info->ep)) {
 		usbd_midi2_recv(dev, buf);
@@ -423,7 +423,7 @@ static void usbd_midi_rx_work(struct k_work *work)
 	LOG_DBG("Enqueue Rx...");
 	ret = usbd_ep_enqueue(data->class_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue Rx net_buf -> %d", ret);
+		LOG_ERROR("Failed to enqueue Rx net_buf -> %d", ret);
 		net_buf_unref(buf);
 	}
 }
@@ -436,7 +436,7 @@ static void usbd_midi_tx_work(struct k_work *work)
 
 	buf = usbd_midi_buf_alloc(usbd_midi_get_bulk_in(data->class_data));
 	if (buf == NULL) {
-		LOG_ERR("Unable to allocate Tx net_buf");
+		LOG_ERROR("Unable to allocate Tx net_buf");
 		return;
 	}
 
@@ -445,7 +445,7 @@ static void usbd_midi_tx_work(struct k_work *work)
 
 	ret = usbd_ep_enqueue(data->class_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue Tx net_buf -> %d", ret);
+		LOG_ERROR("Failed to enqueue Tx net_buf -> %d", ret);
 		net_buf_unref(buf);
 	}
 }

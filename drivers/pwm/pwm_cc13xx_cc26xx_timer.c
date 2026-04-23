@@ -74,13 +74,13 @@ static int set_period_and_pulse(const struct pwm_cc13xx_cc26xx_config *config, u
 
 	/* Fail if period is out of range */
 	if ((period > PWM_COUNT_MAX) || (period == 0)) {
-		LOG_ERR("Period (%d) is out of range.", period);
+		LOG_ERROR("Period (%d) is out of range.", period);
 		return -EINVAL;
 	}
 
 	/* Compare to new period and fail if invalid */
 	if (period < (match_value - 1) || (match_value < 0)) {
-		LOG_ERR("Period (%d) is shorter than pulse (%d).", period, pulse);
+		LOG_ERROR("Period (%d) is shorter than pulse (%d).", period, pulse);
 		return -EINVAL;
 	}
 
@@ -201,7 +201,7 @@ static int init_pwm(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("failed to setup PWM pinctrl");
+		LOG_ERROR("failed to setup PWM pinctrl");
 		return ret;
 	}
 

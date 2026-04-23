@@ -53,7 +53,7 @@ int stm32_usb_pwr_enable(void)
 
 	/* Check that power range is 1 or 2 */
 	if (LL_PWR_GetRegulVoltageScaling() < LL_PWR_REGU_VOLTAGE_SCALE2) {
-		LOG_ERR("Wrong Power range to use USB OTG HS");
+		LOG_ERROR("Wrong Power range to use USB OTG HS");
 		err = -EIO;
 		goto fini;
 	}

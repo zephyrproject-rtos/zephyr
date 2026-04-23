@@ -277,7 +277,7 @@ static int i3c_stm32_curr_msg_control_next(const struct device *dev)
 	struct i3c_stm32_msg *curr_msg = &data->curr_msg;
 
 	if (curr_msg->ctrl_msg_idx >= curr_msg->num_msgs) {
-		LOG_ERR("No more messages left");
+		LOG_ERROR("No more messages left");
 		return -EFAULT;
 	}
 
@@ -298,7 +298,7 @@ static int i3c_stm32_curr_msg_status_update_num_xfer(const struct device *dev, s
 	struct i3c_stm32_msg *curr_msg = &data->curr_msg;
 
 	if (curr_msg->status_msg_idx >= curr_msg->num_msgs) {
-		LOG_ERR("No more messages left");
+		LOG_ERROR("No more messages left");
 		return -EFAULT;
 	}
 
@@ -316,7 +316,7 @@ static int i3c_stm32_curr_msg_status_next(const struct device *dev)
 	struct i3c_stm32_msg *curr_msg = &data->curr_msg;
 
 	if (curr_msg->status_msg_idx >= curr_msg->num_msgs) {
-		LOG_ERR("No more messages left");
+		LOG_ERROR("No more messages left");
 		return -EFAULT;
 	}
 
@@ -335,7 +335,7 @@ static int i3c_stm32_curr_msg_xfer_get_buf(const struct device *dev, uint8_t **b
 	struct i3c_stm32_msg *curr_msg = &data->curr_msg;
 
 	if (curr_msg->xfer_msg_idx >= curr_msg->num_msgs) {
-		LOG_ERR("No more messages left");
+		LOG_ERROR("No more messages left");
 		return -EFAULT;
 	}
 
@@ -360,7 +360,7 @@ static bool i3c_stm32_curr_msg_xfer_is_read(const struct device *dev)
 	struct i3c_stm32_msg *curr_msg = &data->curr_msg;
 
 	if (curr_msg->xfer_msg_idx >= curr_msg->num_msgs) {
-		LOG_ERR("No more messages left");
+		LOG_ERROR("No more messages left");
 		return false;
 	}
 
@@ -378,7 +378,7 @@ static int i3c_stm32_curr_msg_xfer_next(const struct device *dev)
 	struct i3c_stm32_msg *curr_msg = &data->curr_msg;
 
 	if (curr_msg->xfer_msg_idx >= curr_msg->num_msgs) {
-		LOG_ERR("No more messages left");
+		LOG_ERROR("No more messages left");
 		return -EFAULT;
 	}
 
@@ -437,9 +437,9 @@ static int i3c_stm32_calc_scll_od_sclh_i2c(const struct device *dev, uint32_t i2
 			if (*sclh_i2c <
 			    DIV_ROUND_UP(STM32_I3C_SCLH_I2C_MIN_FMP_NS * i3c_clock, 1000000000ull) -
 				    1) {
-				LOG_ERR("Cannot find a combination of SCLL_OD and SCLH_I2C at "
-					"current I3C clock "
-					"frequency for FM+ I2C bus");
+				LOG_ERROR("Cannot find a combination of SCLL_OD and SCLH_I2C at "
+					  "current I3C clock "
+					  "frequency for FM+ I2C bus");
 				return -EINVAL;
 			}
 		} else {
@@ -449,11 +449,10 @@ static int i3c_stm32_calc_scll_od_sclh_i2c(const struct device *dev, uint32_t i2
 				   1;
 			*sclh_i2c = DIV_ROUND_UP(i3c_clock, i2c_bus_freq) - *scll_od - 2;
 			if (*sclh_i2c <
-				  (DIV_ROUND_UP(STM32_I3C_SCLH_I2C_MIN_FM_NS * i3c_clock,
-							    1000000000ull) - 1)
-			   ) {
-				LOG_ERR("Cannot find a combination of SCLL_OD and SCLH_I2C at "
-					"current I3C clock frequency for FM I2C bus");
+			    (DIV_ROUND_UP(STM32_I3C_SCLH_I2C_MIN_FM_NS * i3c_clock, 1000000000ull) -
+			     1)) {
+				LOG_ERROR("Cannot find a combination of SCLL_OD and SCLH_I2C at "
+					  "current I3C clock frequency for FM I2C bus");
 				return -EINVAL;
 			}
 		}
@@ -486,7 +485,8 @@ static int i3c_stm32_calc_scll_od_sclh_i2c(const struct device *dev, uint32_t i2
 					    DIV_ROUND_UP(STM32_I3C_SCLH_I2C_MIN_FMP_NS * i3c_clock,
 							 1000000000ull) -
 						    1) {
-						LOG_ERR("Cannot find a combination of SCLL_OD and "
+						LOG_ERROR(
+							"Cannot find a combination of SCLL_OD and "
 							"SCLH_I2C at current I3C clock "
 							"frequency for FM+ I2C bus");
 						return -EINVAL;
@@ -497,7 +497,8 @@ static int i3c_stm32_calc_scll_od_sclh_i2c(const struct device *dev, uint32_t i2
 				    DIV_ROUND_UP(STM32_I3C_SCLH_I2C_MIN_FM_NS * i3c_clock,
 						 1000000000ull) -
 					    1) {
-					LOG_ERR("Cannot find a combination of SCLL_OD and SCLH_I2C "
+					LOG_ERROR(
+						"Cannot find a combination of SCLL_OD and SCLH_I2C "
 						"at current I3C clock "
 						"frequency for FM I2C bus");
 					return -EINVAL;
@@ -525,8 +526,8 @@ static int i3c_stm32_calc_scll_pp_sclh_i3c(uint32_t i3c_bus_freq, uint32_t i3c_c
 	*scll_pp = DIV_ROUND_UP(i3c_clock, i3c_bus_freq) - *sclh_i3c - 2;
 
 	if (*scll_pp < DIV_ROUND_UP(STM32_I3C_SCLL_PP_MIN_NS * i3c_clock, 1000000000ull) - 1) {
-		LOG_ERR("Cannot find a combination of SCLL_PP and SCLH_I3C at current I3C clock "
-			"frequency for specified I3C bus speed");
+		LOG_ERROR("Cannot find a combination of SCLL_PP and SCLH_I3C at current I3C clock "
+			  "frequency for specified I3C bus speed");
 		return -EINVAL;
 	}
 
@@ -550,7 +551,7 @@ static int i3c_stm32_config_clk_wave(const struct device *dev)
 	ret = clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[kern_clk_idx],
 				     &i3c_clock);
 	if (ret < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken[%d])", kern_clk_idx);
+		LOG_ERROR("Failed call clock_control_get_rate(pclken[%d])", kern_clk_idx);
 		return -EIO;
 	}
 
@@ -565,13 +566,13 @@ static int i3c_stm32_config_clk_wave(const struct device *dev)
 
 	ret = i3c_stm32_calc_scll_od_sclh_i2c(dev, i2c_bus_freq, i3c_clock, &scll_od, &sclh_i2c);
 	if (ret != 0) {
-		LOG_ERR("Cannot calculate the timing for TimingReg0, err=%d", ret);
+		LOG_ERROR("Cannot calculate the timing for TimingReg0, err=%d", ret);
 		return ret;
 	}
 
 	ret = i3c_stm32_calc_scll_pp_sclh_i3c(i3c_bus_freq, i3c_clock, &scll_pp, &sclh_i3c);
 	if (ret != 0) {
-		LOG_ERR("Cannot calculate the timing for TimingReg0, err=%d", ret);
+		LOG_ERROR("Cannot calculate the timing for TimingReg0, err=%d", ret);
 		return ret;
 	}
 
@@ -622,7 +623,7 @@ static int i3c_stm32_config_ctrl_bus_char(const struct device *dev)
 
 	if (clock_control_get_rate(clk, (clock_control_subsys_t)&config->pclken[0], &i3c_clock) <
 	    0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
+		LOG_ERROR("Failed call clock_control_get_rate(pclken[0])");
 		return -EIO;
 	}
 
@@ -698,19 +699,20 @@ static int i3c_stm32_configure(const struct device *dev, enum i3c_config_type ty
 
 	ret = i3c_stm32_activate(dev);
 	if (ret != 0) {
-		LOG_ERR("Clock and GPIO could not be initialized for the I3C module, err=%d", ret);
+		LOG_ERROR("Clock and GPIO could not be initialized for the I3C module, err=%d",
+			  ret);
 		return ret;
 	}
 
 	ret = i3c_stm32_config_clk_wave(dev);
 	if (ret != 0) {
-		LOG_ERR("TimigReg0 timing could not be calculated, err=%d", ret);
+		LOG_ERROR("TimigReg0 timing could not be calculated, err=%d", ret);
 		return ret;
 	}
 
 	ret = i3c_stm32_config_ctrl_bus_char(dev);
 	if (ret != 0) {
-		LOG_ERR("TimingReg1 timing could not be calculated, err=%d", ret);
+		LOG_ERROR("TimingReg1 timing could not be calculated, err=%d", ret);
 		return ret;
 	}
 
@@ -808,34 +810,34 @@ static void i3c_stm32_log_err_type(const struct device *dev)
 	I3C_TypeDef *i3c = config->i3c;
 
 	if (LL_I3C_IsActiveFlag_ANACK(i3c)) {
-		LOG_ERR("Address NACK");
+		LOG_ERROR("Address NACK");
 	}
 
 	if (LL_I3C_IsActiveFlag_COVR(i3c)) {
-		LOG_ERR("Control/Status FIFO underrun/overrun");
+		LOG_ERROR("Control/Status FIFO underrun/overrun");
 	}
 
 	if (LL_I3C_IsActiveFlag_DOVR(i3c)) {
-		LOG_ERR("TX/RX FIFO underrun/overrun");
+		LOG_ERROR("TX/RX FIFO underrun/overrun");
 	}
 
 	if (LL_I3C_IsActiveFlag_DNACK(i3c)) {
-		LOG_ERR("Data NACK by target");
+		LOG_ERROR("Data NACK by target");
 	}
 
 	if (LL_I3C_IsActiveFlag_PERR(i3c)) {
 		switch (LL_I3C_GetMessageErrorCode(i3c)) {
 		case LL_I3C_CONTROLLER_ERROR_CE0:
-			LOG_ERR("Illegally formatted CCC detected");
+			LOG_ERROR("Illegally formatted CCC detected");
 			break;
 		case LL_I3C_CONTROLLER_ERROR_CE1:
-			LOG_ERR("Data on bus is not as expected");
+			LOG_ERROR("Data on bus is not as expected");
 			break;
 		case LL_I3C_CONTROLLER_ERROR_CE2:
-			LOG_ERR("No response to broadcast address");
+			LOG_ERROR("No response to broadcast address");
 			break;
 		default:
-			LOG_ERR("Unsupported error detected");
+			LOG_ERROR("Unsupported error detected");
 			break;
 		}
 	}
@@ -1080,12 +1082,12 @@ static int i3c_stm32_dma_msg_control_fifo_config(const struct device *dev)
 	ret = dma_config(data->dma_tc.dma_dev, data->dma_tc.dma_channel, &data->dma_tc.dma_cfg);
 
 	if (ret != 0) {
-		LOG_ERR("Control DMA config error, err=%d", ret);
+		LOG_ERROR("Control DMA config error, err=%d", ret);
 		return -EINVAL;
 	}
 
 	if (dma_start(data->dma_tc.dma_dev, data->dma_tc.dma_channel)) {
-		LOG_ERR("Control DMA start failed");
+		LOG_ERROR("Control DMA start failed");
 		return -EFAULT;
 	}
 
@@ -1103,12 +1105,12 @@ static int i3c_stm32_dma_msg_status_fifo_config(const struct device *dev)
 	ret = dma_config(data->dma_rs.dma_dev, data->dma_rs.dma_channel, &data->dma_rs.dma_cfg);
 
 	if (ret != 0) {
-		LOG_ERR("Status DMA config error, err=%d", ret);
+		LOG_ERROR("Status DMA config error, err=%d", ret);
 		return -EINVAL;
 	}
 
 	if (dma_start(data->dma_rs.dma_dev, data->dma_rs.dma_channel)) {
-		LOG_ERR("Status DMA start failed");
+		LOG_ERROR("Status DMA start failed");
 		return -EFAULT;
 	}
 
@@ -1135,12 +1137,12 @@ static int i3c_stm32_dma_msg_config(const struct device *dev, uint32_t buf_addr,
 	ret = dma_config(dma_stream->dma_dev, dma_stream->dma_channel, &dma_stream->dma_cfg);
 
 	if (ret != 0) {
-		LOG_ERR("TX/RX DMA config error, err=%d", ret);
+		LOG_ERROR("TX/RX DMA config error, err=%d", ret);
 		return -EINVAL;
 	}
 
 	if (dma_start(dma_stream->dma_dev, dma_stream->dma_channel)) {
-		LOG_ERR("TX/RX DMA start failed");
+		LOG_ERROR("TX/RX DMA start failed");
 		return -EFAULT;
 	}
 	return 0;
@@ -1243,14 +1245,14 @@ static int i3c_stm32_i3c_transfer(const struct device *dev, struct i3c_device_de
 	ret = i3c_stm32_curr_msg_init(dev, msgs, NULL, num_msgs, target->dynamic_addr);
 	if (ret != 0) {
 		i3c_stm32_clear_err(dev, false);
-		LOG_ERR("Failed to initialize transfer messages, err=%d", ret);
+		LOG_ERROR("Failed to initialize transfer messages, err=%d", ret);
 		return ret;
 	}
 
 	ret = i3c_stm32_transfer_begin(dev);
 	if (ret != 0) {
 		i3c_stm32_clear_err(dev, false);
-		LOG_ERR("Failed to transfer messages, err=%d", ret);
+		LOG_ERROR("Failed to transfer messages, err=%d", ret);
 		return ret;
 	}
 
@@ -1285,7 +1287,7 @@ static int i3c_stm32_i2c_transfer(const struct device *dev, struct i2c_msg *msgs
 			return -EINVAL;
 		}
 		if (msgs[i].flags & I2C_MSG_ADDR_10_BITS) {
-			LOG_ERR("10-bit addressing mode is not supported");
+			LOG_ERROR("10-bit addressing mode is not supported");
 			return -ENOTSUP;
 		}
 	}
@@ -1298,14 +1300,14 @@ static int i3c_stm32_i2c_transfer(const struct device *dev, struct i2c_msg *msgs
 	ret = i3c_stm32_curr_msg_init(dev, NULL, msgs, num_msgs, addr);
 	if (ret != 0) {
 		i3c_stm32_clear_err(dev, false);
-		LOG_ERR("Failed to initialize transfer messages, err=%d", ret);
+		LOG_ERROR("Failed to initialize transfer messages, err=%d", ret);
 		return ret;
 	}
 
 	ret = i3c_stm32_transfer_begin(dev);
 	if (ret != 0) {
 		i3c_stm32_clear_err(dev, false);
-		LOG_ERR("Failed to transfer messages, err=%d", ret);
+		LOG_ERROR("Failed to transfer messages, err=%d", ret);
 		return ret;
 	}
 
@@ -1333,7 +1335,7 @@ static int i3c_stm32_suspend(const struct device *dev)
 	/* Disable device clock. */
 	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret < 0) {
-		LOG_ERR("failure disabling I3C clock");
+		LOG_ERROR("failure disabling I3C clock");
 		return ret;
 	}
 
@@ -1509,7 +1511,7 @@ static int i3c_stm32_init(const struct device *dev)
 	ret = i3c_stm32_init_dma(dev);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to init I3C DMA, err=%d", ret);
+		LOG_ERROR("Failed to init I3C DMA, err=%d", ret);
 		return ret;
 	}
 #endif
@@ -1528,7 +1530,7 @@ static int i3c_stm32_init(const struct device *dev)
 #endif
 	ret = i3c_addr_slots_init(dev);
 	if (ret != 0) {
-		LOG_ERR("Addr slots init fail, err=%d", ret);
+		LOG_ERROR("Addr slots init fail, err=%d", ret);
 		return ret;
 	}
 
@@ -1541,7 +1543,7 @@ static int i3c_stm32_init(const struct device *dev)
 	    !(config->drv_cfg.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 		ret = i3c_bus_init(dev, &config->drv_cfg.dev_list);
 		if (ret != 0) {
-			LOG_ERR("Failed to do i3c bus init, err=%d", ret);
+			LOG_ERROR("Failed to do i3c bus init, err=%d", ret);
 			return ret;
 		}
 	}
@@ -1602,7 +1604,7 @@ static void i3c_stm32_event_isr_tx(const struct device *dev)
 			/* TODO: figure out what is the correct sequence to exit form this error
 			 * It is expected that a TX overrun error to occur which triggers err isr
 			 */
-			LOG_ERR("No dynamic address could be assigned to target");
+			LOG_ERROR("No dynamic address could be assigned to target");
 
 			return;
 		}
@@ -1825,7 +1827,7 @@ static void i3c_stm32_event_isr(void *arg)
 		data->ibi_target_addr = LL_I3C_GetIBITargetAddr(i3c);
 		if ((data->ibi_payload == 0) && (data->ibi_payload_size == 0) &&
 		    (data->ibi_target_addr == 0)) {
-			LOG_ERR("Invalid Payload\n");
+			LOG_ERROR("Invalid Payload\n");
 		} else {
 			LOG_INF("IBI done, payload received :%d,%d,%d\n", data->ibi_payload,
 				data->ibi_payload_size, data->ibi_target_addr);
@@ -1838,11 +1840,11 @@ static void i3c_stm32_event_isr(void *arg)
 					if (i3c_ibi_work_enqueue_target_irq(
 						    target, (uint8_t *)&data->ibi_payload,
 						    data->ibi_payload_size) != 0) {
-						LOG_ERR("Error enqueue IBI IRQ work");
+						LOG_ERROR("Error enqueue IBI IRQ work");
 					}
 				} else {
-					LOG_ERR("IBI from unknown device addr 0x%x",
-						data->ibi_target_addr);
+					LOG_ERROR("IBI from unknown device addr 0x%x",
+						  data->ibi_target_addr);
 				}
 			}
 		}
@@ -1855,7 +1857,7 @@ static void i3c_stm32_event_isr(void *arg)
 
 		ret = i3c_ibi_work_enqueue_hotjoin(dev);
 		if (ret != 0) {
-			LOG_ERR("IBI Failed to enqueue hotjoin work");
+			LOG_ERROR("IBI Failed to enqueue hotjoin work");
 		}
 	}
 
@@ -1958,13 +1960,13 @@ int i3c_stm32_ibi_enable(const struct device *dev, struct i3c_device_desc *targe
 
 	if (data->ibi.num_addr >= ARRAY_SIZE(data->ibi.addr)) {
 		/* No more free entries in the IBI table */
-		LOG_ERR("%s: no more free space in the IBI table", __func__);
+		LOG_ERROR("%s: no more free space in the IBI table", __func__);
 		return -ENOMEM;
 	}
 
 	for (idx = 0; idx < ARRAY_SIZE(data->ibi.addr); idx++) {
 		if (data->ibi.addr[idx] == target->dynamic_addr) {
-			LOG_ERR("%s: selected target is already in the list", __func__);
+			LOG_ERROR("%s: selected target is already in the list", __func__);
 			return -EINVAL;
 		}
 	}
@@ -1977,7 +1979,7 @@ int i3c_stm32_ibi_enable(const struct device *dev, struct i3c_device_desc *targe
 		}
 
 		if (idx >= ARRAY_SIZE(data->ibi.addr)) {
-			LOG_ERR("Cannot support more IBIs");
+			LOG_ERROR("Cannot support more IBIs");
 			return -ENOTSUP;
 		}
 
@@ -1996,7 +1998,7 @@ int i3c_stm32_ibi_enable(const struct device *dev, struct i3c_device_desc *targe
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, true, &i3c_events);
 	if (ret != 0) {
-		LOG_ERR("Error sending IBI ENEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		LOG_ERROR("Error sending IBI ENEC for 0x%02x (%d)", target->dynamic_addr, ret);
 	}
 
 	/* Set I3C bus devices configuration */
@@ -2030,7 +2032,7 @@ int i3c_stm32_ibi_disable(const struct device *dev, struct i3c_device_desc *targ
 	}
 
 	if (idx == ARRAY_SIZE(data->ibi.addr)) {
-		LOG_ERR("%s: target is not in list of registered addresses", __func__);
+		LOG_ERROR("%s: target is not in list of registered addresses", __func__);
 		return -ENODEV;
 	}
 
@@ -2045,7 +2047,7 @@ int i3c_stm32_ibi_disable(const struct device *dev, struct i3c_device_desc *targ
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, false, &i3c_events);
 	if (ret != 0) {
-		LOG_ERR("Error sending IBI DISEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		LOG_ERROR("Error sending IBI DISEC for 0x%02x (%d)", target->dynamic_addr, ret);
 	}
 
 	/* Set I3C bus devices configuration */

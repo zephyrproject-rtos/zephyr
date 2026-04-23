@@ -49,7 +49,7 @@ static int endpoint_init(const struct device *dev)
 	data->i3c_dev = i3c_device_find(cfg->bus, &cfg->i3c_id);
 
 	if (data->i3c_dev == NULL) {
-		LOG_ERR("Cannot find I3C device descriptor");
+		LOG_ERROR("Cannot find I3C device descriptor");
 		return -ENODEV;
 	}
 

@@ -84,12 +84,12 @@ static int dummy_sensor_init(const struct device *dev)
 	zassert_equal(config->i2c_address, 123);
 
 	if (i2c != NULL) {
-		LOG_ERR("Should be Null for %s device!", config->i2c_name);
+		LOG_ERROR("Should be Null for %s device!", config->i2c_name);
 		return -1;
 	}
 
 	if (dummy_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt!");
+		LOG_ERROR("Failed to initialize interrupt!");
 		return -1;
 	}
 

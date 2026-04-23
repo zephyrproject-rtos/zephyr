@@ -64,7 +64,7 @@ int main(void)
 	LOG_INF("Synchronization using mbox driver");
 	err = mbox_init();
 	if (err < 0) {
-		LOG_ERR("Failed to initialize sync RTC listener (err:%d)", err);
+		LOG_ERROR("Failed to initialize sync RTC listener (err:%d)", err);
 	}
 	return 0;
 }

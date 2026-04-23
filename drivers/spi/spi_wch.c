@@ -63,22 +63,22 @@ static int spi_wch_configure(const struct device *dev, const struct spi_config *
 	}
 
 	if ((config->operation & SPI_HALF_DUPLEX) != 0U) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
 	if ((config->operation & SPI_MODE_LOOP) != 0U) {
-		LOG_ERR("Loop mode not supported");
+		LOG_ERROR("Loop mode not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
-		LOG_ERR("Frame size != 8 bits not supported");
+		LOG_ERROR("Frame size != 8 bits not supported");
 		return -ENOTSUP;
 	}
 

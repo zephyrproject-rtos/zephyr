@@ -58,24 +58,24 @@ static int adc_numaker_channel_setup(const struct device *dev,
 	if (chan_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
 		if ((ADC_ACQ_TIME_UNIT(chan_cfg->acquisition_time) != ADC_ACQ_TIME_TICKS) ||
 		    (ADC_ACQ_TIME_VALUE(chan_cfg->acquisition_time) > 255)) {
-			LOG_ERR("Selected ADC acquisition time is not in 0~255 ticks");
+			LOG_ERROR("Selected ADC acquisition time is not in 0~255 ticks");
 			return -EINVAL;
 		}
 	}
 	data->acq_time = ADC_ACQ_TIME_VALUE(chan_cfg->acquisition_time);
 
 	if (chan_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Not support channel gain");
+		LOG_ERROR("Not support channel gain");
 		return -ENOTSUP;
 	}
 
 	if (chan_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Not support channel reference");
+		LOG_ERROR("Not support channel reference");
 		return -ENOTSUP;
 	}
 
 	if (chan_cfg->channel_id >= cfg->channel_cnt) {
-		LOG_ERR("Invalid channel (%u)", chan_cfg->channel_id);
+		LOG_ERROR("Invalid channel (%u)", chan_cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -246,12 +246,12 @@ static int m_adc_numaker_start_read(const struct device *dev,
 
 	err = m_adc_numaker_validate_buffer_size(dev, sequence);
 	if (err) {
-		LOG_ERR("ADC provided buffer is too small");
+		LOG_ERROR("ADC provided buffer is too small");
 		return err;
 	}
 
 	if (!sequence->resolution) {
-		LOG_ERR("ADC resolution is not valid");
+		LOG_ERROR("ADC resolution is not valid");
 		return -EINVAL;
 	}
 	LOG_DBG("Configure resolution=%d", sequence->resolution);
@@ -318,7 +318,7 @@ static int adc_numaker_init(const struct device *dev)
 
 	/* Validate this module's reset object */
 	if (!device_is_ready(cfg->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 
@@ -346,7 +346,7 @@ static int adc_numaker_init(const struct device *dev)
 
 	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
-		LOG_ERR("Failed to apply pinctrl state");
+		LOG_ERROR("Failed to apply pinctrl state");
 		goto done;
 	}
 

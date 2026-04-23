@@ -664,21 +664,21 @@ static int ov5640_set_fmt_dvp(const struct ov5640_config *cfg)
 	ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(TIMING_TC_REG21_REG), 0x20, 0x00);
 
 	if (ret) {
-		LOG_ERR("Unable to configure REG: %d on DVP", TIMING_TC_REG21_REG);
+		LOG_ERROR("Unable to configure REG: %d on DVP", TIMING_TC_REG21_REG);
 		return ret;
 	}
 
 	ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SYS_RESET02_REG), 0x1C, 0x1C);
 
 	if (ret) {
-		LOG_ERR("Unable to configure REG: %d on DVP", SYS_RESET02_REG);
+		LOG_ERROR("Unable to configure REG: %d on DVP", SYS_RESET02_REG);
 		return ret;
 	}
 
 	ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SYS_CLK_ENABLE02_REG), 0x28, 0x00);
 
 	if (ret) {
-		LOG_ERR("Unable to configure REG: %d on DVP", SYS_CLK_ENABLE02_REG);
+		LOG_ERROR("Unable to configure REG: %d on DVP", SYS_CLK_ENABLE02_REG);
 		return ret;
 	}
 
@@ -724,7 +724,7 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 					    (LOG2CEIL(SCLK_DIV) & 0x03));
 
 	if (ret) {
-		LOG_ERR("Unable to set frame interval");
+		LOG_ERROR("Unable to set frame interval");
 		return ret;
 	}
 
@@ -771,7 +771,7 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	if (i == num_fmts) {
-		LOG_ERR("Unsupported pixel format or resolution");
+		LOG_ERROR("Unsupported pixel format or resolution");
 		return -ENOTSUP;
 	}
 
@@ -787,7 +787,7 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 			ret = video_write_cci_multiregs16(&cfg->i2c, modes[i].res_params,
 							  modes[i].array_size_res_params);
 			if (ret) {
-				LOG_ERR("Unable to set resolution parameters");
+				LOG_ERROR("Unable to set resolution parameters");
 				return ret;
 			}
 
@@ -809,7 +809,7 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	ret = video_write_cci_multiregs16(&cfg->i2c, fmt_params, ARRAY_SIZE(fmt_params));
 	if (ret) {
-		LOG_ERR("Unable to set pixel format");
+		LOG_ERROR("Unable to set pixel format");
 		return ret;
 	}
 
@@ -848,7 +848,7 @@ static int ov5640_set_stream(const struct device *dev, bool enable, enum video_b
 		int ret = video_write_cci_reg(&cfg->i2c, OV5640_REG8(IO_MIPI_CTRL00_REG),
 					      enable ? 0x45 : 0x40);
 		if (ret) {
-			LOG_ERR("Unable to power up / down MIPI PHY");
+			LOG_ERROR("Unable to power up / down MIPI PHY");
 			return ret;
 		}
 	}
@@ -1255,20 +1255,20 @@ static int ov5640_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (cfg->reset_gpio.port != NULL && !gpio_is_ready_dt(&cfg->reset_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
+		LOG_ERROR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
 		return -ENODEV;
 	}
 #endif
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
 	if (cfg->powerdown_gpio.port != NULL && !gpio_is_ready_dt(&cfg->powerdown_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->powerdown_gpio.port->name);
+		LOG_ERROR("%s: device %s is not ready", dev->name, cfg->powerdown_gpio.port->name);
 		return -ENODEV;
 	}
 #endif
@@ -1313,14 +1313,14 @@ static int ov5640_init(const struct device *dev)
 	/* Reset all registers */
 	ret = video_write_cci_reg(&cfg->i2c, OV5640_REG8(SCCB_SYS_CTRL1_REG), 0x11);
 	if (ret) {
-		LOG_ERR("Unable to write to reset all registers");
+		LOG_ERROR("Unable to write to reset all registers");
 		return -EIO;
 	}
 
 	/* Software reset */
 	ret = video_write_cci_reg(&cfg->i2c, OV5640_REG8(SYS_CTRL0_REG), SYS_CTRL0_SW_RST);
 	if (ret) {
-		LOG_ERR("Unable to perform software reset");
+		LOG_ERROR("Unable to perform software reset");
 		return -EIO;
 	}
 
@@ -1330,7 +1330,7 @@ static int ov5640_init(const struct device *dev)
 	ret = video_write_cci_multiregs16(&cfg->i2c, init_params_common,
 					  ARRAY_SIZE(init_params_common));
 	if (ret) {
-		LOG_ERR("Unable to initialize the sensor");
+		LOG_ERROR("Unable to initialize the sensor");
 		return -EIO;
 	}
 
@@ -1339,7 +1339,7 @@ static int ov5640_init(const struct device *dev)
 						  ARRAY_SIZE(init_params_dvp));
 
 		if (ret) {
-			LOG_ERR("Unable to initialize the sensor with DVP parameters");
+			LOG_ERROR("Unable to initialize the sensor with DVP parameters");
 			return -EIO;
 		}
 
@@ -1357,8 +1357,8 @@ static int ov5640_init(const struct device *dev)
 		} else if (cfg->bus_width == 8 && cfg->data_shift == 0) {
 			data_order = BIT(1);
 		} else {
-			LOG_ERR("Invalid DVP config: width=%u shift=%u", cfg->bus_width,
-				cfg->data_shift);
+			LOG_ERROR("Invalid DVP config: width=%u shift=%u", cfg->bus_width,
+				  cfg->data_shift);
 			return -ENOTSUP;
 		}
 
@@ -1366,7 +1366,7 @@ static int ov5640_init(const struct device *dev)
 		ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(DATA_ORDER_REG), BIT(2) | BIT(1),
 					   data_order);
 		if (ret) {
-			LOG_ERR("Unable to set DVP data order");
+			LOG_ERROR("Unable to set DVP data order");
 			return -EIO;
 		}
 	} else {
@@ -1374,7 +1374,7 @@ static int ov5640_init(const struct device *dev)
 		ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(0x4814), 3U << 6,
 					   (uint8_t)(DEFAULT_MIPI_CHANNEL) << 6);
 		if (ret) {
-			LOG_ERR("Unable to set virtual channel");
+			LOG_ERROR("Unable to set virtual channel");
 			return -EIO;
 		}
 	}
@@ -1382,12 +1382,12 @@ static int ov5640_init(const struct device *dev)
 	/* Check sensor chip id */
 	ret = video_read_cci_reg(&cfg->i2c, OV5640_REG16(CHIP_ID_REG), &chip_id);
 	if (ret) {
-		LOG_ERR("Unable to read sensor chip ID, ret = %d", ret);
+		LOG_ERROR("Unable to read sensor chip ID, ret = %d", ret);
 		return -ENODEV;
 	}
 
 	if (chip_id != CHIP_ID_VAL) {
-		LOG_ERR("Wrong chip ID: %04x (expected %04x)", chip_id, CHIP_ID_VAL);
+		LOG_ERROR("Wrong chip ID: %04x (expected %04x)", chip_id, CHIP_ID_VAL);
 		return -ENODEV;
 	}
 
@@ -1404,7 +1404,7 @@ static int ov5640_init(const struct device *dev)
 	}
 	ret = ov5640_set_fmt(dev, &fmt);
 	if (ret) {
-		LOG_ERR("Unable to configure default format");
+		LOG_ERROR("Unable to configure default format");
 		return -EIO;
 	}
 

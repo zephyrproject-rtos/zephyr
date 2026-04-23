@@ -71,7 +71,7 @@ int main(void)
 	i = count;
 
 	do {
-		LOG_ERR("Error message (%d)", i);
+		LOG_ERROR("Error message (%d)", i);
 		LOG_WRN("Warning message (%d)", i);
 		LOG_INF("Info message (%d)", i);
 		LOG_DBG("Debug message (%d)", i);

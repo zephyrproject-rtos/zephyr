@@ -42,7 +42,7 @@ BUILD_ASSERT((ERASE_BLOCK_SIZE % WRITE_BLOCK_SIZE) == 0,
 static uintptr_t validate_and_map_addr(off_t offset, size_t len, bool must_align)
 {
 	if (unlikely(offset < 0 || offset >= MRAM_SIZE || len > MRAM_SIZE - offset)) {
-		LOG_ERR("invalid offset: %ld:%zu", offset, len);
+		LOG_ERROR("invalid offset: %ld:%zu", offset, len);
 		return 0;
 	}
 
@@ -50,7 +50,7 @@ static uintptr_t validate_and_map_addr(off_t offset, size_t len, bool must_align
 
 	if (WRITE_BLOCK_SIZE > 1 && must_align &&
 	    unlikely((addr % WRITE_BLOCK_SIZE) != 0 || (len % WRITE_BLOCK_SIZE) != 0)) {
-		LOG_ERR("invalid alignment: %p:%zu", (void *)addr, len);
+		LOG_ERROR("invalid alignment: %p:%zu", (void *)addr, len);
 		return 0;
 	}
 

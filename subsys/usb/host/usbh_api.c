@@ -19,7 +19,7 @@ int usbh_init(struct usbh_context *uhs_ctx)
 	usbh_host_lock(uhs_ctx);
 
 	if (!device_is_ready(uhs_ctx->dev)) {
-		LOG_ERR("USB host controller is not ready");
+		LOG_ERROR("USB host controller is not ready");
 		ret = -ENODEV;
 		goto init_exit;
 	}
@@ -57,7 +57,7 @@ int usbh_enable(struct usbh_context *uhs_ctx)
 
 	ret = uhc_enable(uhs_ctx->dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable controller");
+		LOG_ERROR("Failed to enable controller");
 		goto enable_exit;
 	}
 
@@ -79,7 +79,7 @@ int usbh_disable(struct usbh_context *uhs_ctx)
 
 	ret = uhc_disable(uhs_ctx->dev);
 	if (ret) {
-		LOG_ERR("Failed to disable USB controller");
+		LOG_ERROR("Failed to disable USB controller");
 	}
 
 	usbh_host_unlock(uhs_ctx);
@@ -95,7 +95,7 @@ int usbh_shutdown(struct usbh_context *const uhs_ctx)
 
 	ret = uhc_shutdown(uhs_ctx->dev);
 	if (ret) {
-		LOG_ERR("Failed to shutdown USB device");
+		LOG_ERROR("Failed to shutdown USB device");
 	}
 
 	usbh_host_unlock(uhs_ctx);

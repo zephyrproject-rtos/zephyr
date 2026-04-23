@@ -71,7 +71,7 @@ static int mcux_scg_k4_get_rate(const struct device *dev, clock_control_subsys_t
 		return 0;
 #endif
 	default:
-		LOG_ERR("Unsupported clock name");
+		LOG_ERROR("Unsupported clock name");
 		return -EINVAL;
 	}
 

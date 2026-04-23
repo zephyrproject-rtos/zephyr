@@ -313,12 +313,12 @@ static int flash_mcux_xspi_erase(const struct device *dev, off_t offset, size_t 
 	int ret = 0;
 
 	if (0 != (offset % SPI_NOR_SECTOR_SIZE)) {
-		LOG_ERR("Invalid offset");
+		LOG_ERROR("Invalid offset");
 		return -EINVAL;
 	}
 
 	if (size % SPI_NOR_SECTOR_SIZE) {
-		LOG_ERR("Invalid size");
+		LOG_ERROR("Invalid size");
 		return -EINVAL;
 	}
 
@@ -450,7 +450,7 @@ static int flash_mcux_xspi_probe(const struct device *dev)
 
 	do {
 		if (flash_dev_config == NULL) {
-			LOG_ERR("Unsupported device: %s", data->dev_name);
+			LOG_ERROR("Unsupported device: %s", data->dev_name);
 			ret = -ENOTSUP;
 			break;
 		}
@@ -489,7 +489,7 @@ static int flash_mcux_xspi_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(xspi_dev)) {
-		LOG_ERR("XSPI device is not ready");
+		LOG_ERROR("XSPI device is not ready");
 		return -ENODEV;
 	}
 

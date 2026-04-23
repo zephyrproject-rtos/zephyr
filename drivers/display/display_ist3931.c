@@ -182,23 +182,23 @@ static int ist3931_init(const struct device *dev)
 	int ret;
 
 	if (ist3931_bus_ready(dev)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 	LOG_INF("I2C device ready");
 
 	if (!gpio_is_ready_dt(&config->reset_gpio)) {
-		LOG_ERR("Reset GPIO device not ready");
+		LOG_ERROR("Reset GPIO device not ready");
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
 	if (ret) {
-		LOG_ERR("Couldn't configure reset pin");
+		LOG_ERROR("Couldn't configure reset pin");
 		return ret;
 	}
 	ret = ist3931_init_device(dev);
 	if (ret) {
-		LOG_ERR("Failed to initialize device!");
+		LOG_ERROR("Failed to initialize device!");
 		return ret;
 	}
 

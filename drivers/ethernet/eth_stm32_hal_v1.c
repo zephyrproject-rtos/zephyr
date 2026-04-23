@@ -70,7 +70,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 
 	total_len = net_pkt_get_len(pkt);
 	if (total_len > (ETH_STM32_TX_BUF_SIZE * ETH_TXBUFNB)) {
-		LOG_ERR("PKT too big");
+		LOG_ERROR("PKT too big");
 		return -EIO;
 	}
 
@@ -88,7 +88,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	hal_ret = HAL_ETH_TransmitFrame(heth, total_len);
 
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_Transmit: failed!");
+		LOG_ERROR("HAL_ETH_Transmit: failed!");
 		return -EIO;
 	}
 
@@ -128,12 +128,12 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 	pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface,
 					   total_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
-		LOG_ERR("Failed to obtain RX buffer");
+		LOG_ERROR("Failed to obtain RX buffer");
 		goto release_desc;
 	}
 
 	if (net_pkt_write(pkt, dma_buffer, total_len)) {
-		LOG_ERR("Failed to append RX buffer to context buffer");
+		LOG_ERROR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		pkt = NULL;
 		goto release_desc;
@@ -183,7 +183,7 @@ int eth_stm32_hal_init(const struct device *dev)
 
 	hal_ret = HAL_ETH_Init(heth);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
+		LOG_ERROR("HAL_ETH_Init failed: %d", hal_ret);
 		return -EIO;
 	}
 
@@ -215,7 +215,7 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 
 	hal_ret = HAL_ETH_ConfigMAC(heth, NULL);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_ConfigMAC: failed: %d", hal_ret);
+		LOG_ERROR("HAL_ETH_ConfigMAC: failed: %d", hal_ret);
 	}
 }
 
@@ -230,7 +230,7 @@ int eth_stm32_hal_start(const struct device *dev)
 	hal_ret = HAL_ETH_Start(heth);
 
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_Start{_IT} failed");
+		LOG_ERROR("HAL_ETH_Start{_IT} failed");
 	}
 
 	return 0;

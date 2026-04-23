@@ -77,19 +77,19 @@ DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(performance_states), DEFINE_MCXN_PSTATE)
 int cpu_freq_pstate_set(const struct pstate *state)
 {
 	if (state == NULL) {
-		LOG_ERR("P-state is NULL");
+		LOG_ERROR("P-state is NULL");
 		return -EINVAL;
 	}
 
 	const struct mcxn_pstate_cfg *cfg = (const struct mcxn_pstate_cfg *)state->config;
 
 	if (cfg == NULL) {
-		LOG_ERR("P-state vendor config is NULL");
+		LOG_ERROR("P-state vendor config is NULL");
 		return -EINVAL;
 	}
 
 	if ((cfg->level == NULL) || (cfg->level->apply == NULL)) {
-		LOG_ERR("Invalid mcxn level entry in P-state config");
+		LOG_ERROR("Invalid mcxn level entry in P-state config");
 		return -ENOTSUP;
 	}
 

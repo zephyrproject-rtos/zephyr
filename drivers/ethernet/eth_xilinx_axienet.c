@@ -142,7 +142,7 @@ static void xilinx_axienet_rx_callback(const struct device *dma, void *user_data
 	}
 
 	if (status < 0) {
-		LOG_ERR("DMA RX error: %d", status);
+		LOG_ERROR("DMA RX error: %d", status);
 		eth_stats_update_errors_rx(data->interface);
 		goto setup_new_transfer;
 	}
@@ -154,16 +154,16 @@ static void xilinx_axienet_rx_callback(const struct device *dma, void *user_data
 					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 
 	if (!pkt) {
-		LOG_ERR("Could not allocate a packet!");
+		LOG_ERROR("Could not allocate a packet!");
 		goto setup_new_transfer;
 	}
 	if (net_pkt_write(pkt, data->rx_buffer[current_descriptor].buffer, packet_size)) {
-		LOG_ERR("Could not write RX buffer into packet!");
+		LOG_ERROR("Could not write RX buffer into packet!");
 		net_pkt_unref(pkt);
 		goto setup_new_transfer;
 	}
 	if (net_recv_data(data->interface, pkt) < 0) {
-		LOG_ERR("Could not receive packet data!");
+		LOG_ERROR("Could not receive packet data!");
 		net_pkt_unref(pkt);
 		goto setup_new_transfer;
 	}
@@ -174,7 +174,7 @@ static void xilinx_axienet_rx_callback(const struct device *dma, void *user_data
 	/* otherwise, the ethernet subsystem would just stop receiving */
 setup_new_transfer:
 	if (setup_dma_rx_transfer(ethdev, ethdev->config, ethdev->data)) {
-		LOG_ERR("Could not set up next RX DMA transfer!");
+		LOG_ERROR("Could not set up next RX DMA transfer!");
 	}
 }
 
@@ -189,7 +189,7 @@ static void xilinx_axienet_tx_callback(const struct device *dev, void *user_data
 	data->tx_completed_buffer_index = next_descriptor;
 
 	if (status < 0) {
-		LOG_ERR("DMA TX error: %d", status);
+		LOG_ERROR("DMA TX error: %d", status);
 		eth_stats_update_errors_tx(data->interface);
 	}
 }
@@ -204,9 +204,9 @@ static int setup_dma_rx_transfer(const struct device *dev,
 	size_t current_descriptor = data->rx_populated_buffer_index;
 
 	if (next_descriptor == data->rx_completed_buffer_index) {
-		LOG_ERR("Cannot start RX via DMA - populated buffer %zu will run into completed"
-			" buffer %zu!",
-			data->rx_populated_buffer_index, data->rx_completed_buffer_index);
+		LOG_ERROR("Cannot start RX via DMA - populated buffer %zu will run into completed"
+			  " buffer %zu!",
+			  data->rx_populated_buffer_index, data->rx_completed_buffer_index);
 		return -ENOSPC;
 	}
 
@@ -235,7 +235,7 @@ static int setup_dma_rx_transfer(const struct device *dev,
 
 		err = dma_config(config->dma, XILINX_AXI_DMA_RX_CHANNEL_NUM, &dma_conf);
 		if (err) {
-			LOG_ERR("DMA config failed: %d", err);
+			LOG_ERROR("DMA config failed: %d", err);
 			return err;
 		}
 
@@ -246,7 +246,7 @@ static int setup_dma_rx_transfer(const struct device *dev,
 				 (uintptr_t)data->rx_buffer[current_descriptor].buffer,
 				 sizeof(data->rx_buffer[current_descriptor].buffer));
 		if (err) {
-			LOG_ERR("DMA reconfigure failed: %d", err);
+			LOG_ERROR("DMA reconfigure failed: %d", err);
 			return err;
 		}
 	}
@@ -276,9 +276,9 @@ static int setup_dma_tx_transfer(const struct device *dev,
 	size_t current_descriptor = data->tx_populated_buffer_index;
 
 	if (next_descriptor == data->tx_completed_buffer_index) {
-		LOG_ERR("Cannot start TX via DMA - populated buffer %zu will run into completed"
-			" buffer %zu!",
-			data->tx_populated_buffer_index, data->tx_completed_buffer_index);
+		LOG_ERROR("Cannot start TX via DMA - populated buffer %zu will run into completed"
+			  " buffer %zu!",
+			  data->tx_populated_buffer_index, data->tx_completed_buffer_index);
 		return -ENOSPC;
 	}
 
@@ -307,7 +307,7 @@ static int setup_dma_tx_transfer(const struct device *dev,
 
 		err = dma_config(config->dma, XILINX_AXI_DMA_TX_CHANNEL_NUM, &dma_conf);
 		if (err) {
-			LOG_ERR("DMA config failed: %d", err);
+			LOG_ERROR("DMA config failed: %d", err);
 			return err;
 		}
 
@@ -318,7 +318,7 @@ static int setup_dma_tx_transfer(const struct device *dev,
 				 (uintptr_t)data->tx_buffer[current_descriptor].buffer, 0x0,
 				 buffer_len);
 		if (err) {
-			LOG_ERR("DMA reconfigure failed: %d", err);
+			LOG_ERROR("DMA reconfigure failed: %d", err);
 			return err;
 		}
 	}
@@ -414,7 +414,7 @@ static int xilinx_axienet_get_config(const struct device *dev, enum ethernet_con
 		}
 		return 0;
 	default:
-		LOG_ERR("Unsupported configuration queried: %u", type);
+		LOG_ERROR("Unsupported configuration queried: %u", type);
 		return -EINVAL;
 	}
 }
@@ -442,7 +442,7 @@ static int xilinx_axienet_set_config(const struct device *dev, enum ethernet_con
 		xilinx_axienet_set_mac_address(dev_config, data);
 		return 0;
 	default:
-		LOG_ERR("Unsupported configuration set: %u", type);
+		LOG_ERROR("Unsupported configuration set: %u", type);
 		return -EINVAL;
 	}
 }
@@ -480,8 +480,8 @@ static void xilinx_axienet_iface_init(struct net_if *iface)
 	err = phy_link_callback_set(config->phy, phy_link_state_changed, iface);
 
 	if (err) {
-		LOG_ERR("Could not set PHY link state changed handler : %d",
-			config->phy ? err : -1);
+		LOG_ERROR("Could not set PHY link state changed handler : %d",
+			  config->phy ? err : -1);
 	}
 
 	LOG_INF("Interface initialized!");
@@ -495,7 +495,7 @@ static int xilinx_axienet_send(const struct device *dev, struct net_pkt *pkt)
 	size_t current_descriptor = data->tx_populated_buffer_index;
 
 	if (net_pkt_read(pkt, data->tx_buffer[current_descriptor].buffer, pkt_len)) {
-		LOG_ERR("Failed to read packet into TX buffer!");
+		LOG_ERROR("Failed to read packet into TX buffer!");
 		return -EIO;
 	}
 	return setup_dma_tx_transfer(dev, config, data, pkt_len);
@@ -564,13 +564,13 @@ static int xilinx_axienet_stop(const struct device *dev)
 	/* Stop the RX DMA channel */
 	err = dma_stop(config->dma, XILINX_AXI_DMA_RX_CHANNEL_NUM);
 	if (err) {
-		LOG_ERR("%s: failed to stop RX DMA: %d", dev->name, err);
+		LOG_ERROR("%s: failed to stop RX DMA: %d", dev->name, err);
 	}
 
 	/* Stop the TX DMA channel */
 	err = dma_stop(config->dma, XILINX_AXI_DMA_TX_CHANNEL_NUM);
 	if (err) {
-		LOG_ERR("%s: failed to stop TX DMA: %d", dev->name, err);
+		LOG_ERROR("%s: failed to stop TX DMA: %d", dev->name, err);
 	}
 
 	/* Disable AXIENET TX */
@@ -599,7 +599,7 @@ static int xilinx_axienet_start(const struct device *dev)
 	for (int i = 0; i < CONFIG_ETH_XILINX_AXIENET_BUFFER_NUM_RX - 1; i++) {
 		err = setup_dma_rx_transfer(dev, config, data);
 		if (err) {
-			LOG_ERR("%s: failed to seed RX DMA transfer %d: %d", dev->name, i, err);
+			LOG_ERROR("%s: failed to seed RX DMA transfer %d: %d", dev->name, i, err);
 			return err;
 		}
 	}

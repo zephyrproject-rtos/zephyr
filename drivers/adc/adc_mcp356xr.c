@@ -317,26 +317,26 @@ static int adc_mcp356xr_irq_init(const struct device *dev)
 	k_sem_init(&(data->irq_occurred), 0, 1);
 
 	if (!gpio_is_ready_dt(&(config->irq))) {
-		LOG_ERR("IRQ GPIO device not ready");
+		LOG_ERROR("IRQ GPIO device not ready");
 		return -ENODEV;
 	}
 
 	gpio_init_callback(&(data->irq_callback_data), adc_mcp356xr_irq, BIT(config->irq.pin));
 	err = gpio_add_callback_dt(&(config->irq), &(data->irq_callback_data));
 	if (err) {
-		LOG_ERR("Failed to add irq callback (err %d)", err);
+		LOG_ERROR("Failed to add irq callback (err %d)", err);
 		return err;
 	}
 
 	err = gpio_pin_configure_dt(&(config->irq), GPIO_INPUT);
 	if (err) {
-		LOG_ERR("Cannot configure IRQ GPIO (err %d)", err);
+		LOG_ERROR("Cannot configure IRQ GPIO (err %d)", err);
 		return err;
 	}
 
 	err = gpio_pin_interrupt_configure_dt(&(config->irq), GPIO_INT_EDGE_TO_ACTIVE);
 	if (err) {
-		LOG_ERR("Failed to enable interrupt on IRQ pin (err %d)", err);
+		LOG_ERROR("Failed to enable interrupt on IRQ pin (err %d)", err);
 		return err;
 	}
 
@@ -404,7 +404,7 @@ static int adc_mcp356xr_transceive(const struct device *dev, uint8_t command_byt
 
 	err = spi_transceive_dt(&(config->spi), &tx, &rx);
 	if (err) {
-		LOG_ERR("SPI error occurred while communicating with ADC (error = %d)", err);
+		LOG_ERROR("SPI error occurred while communicating with ADC (error = %d)", err);
 		return -EIO;
 	}
 
@@ -691,7 +691,7 @@ static inline int adc_mcp356xr_set_gain(struct channel_registers *registers, enu
 			MCP356XR_REGISTER_CONFIG2_GAIN_ANALOG_MUL_16_DIGITAL_MUL_4);
 		break;
 	default:
-		LOG_ERR("Channel gain '%d' is not supported by device", gain);
+		LOG_ERROR("Channel gain '%d' is not supported by device", gain);
 		return -ENOTSUP;
 	}
 
@@ -704,12 +704,12 @@ static inline int adc_mcp356xr_set_inputs(struct channel_registers *registers,
 	__ASSERT_NO_MSG(registers != NULL);
 
 	if (positive_input == MCP356XR_INPUT_RESERVED_DO_NOT_USE) {
-		LOG_ERR("Invalid channel positive input %d", positive_input);
+		LOG_ERROR("Invalid channel positive input %d", positive_input);
 		return -ENOTSUP;
 	}
 
 	if (negative_input == MCP356XR_INPUT_RESERVED_DO_NOT_USE) {
-		LOG_ERR("Invalid channel negative input %d", negative_input);
+		LOG_ERROR("Invalid channel negative input %d", negative_input);
 		return -ENOTSUP;
 	}
 
@@ -725,7 +725,7 @@ static inline int adc_mcp356xr_set_reference(struct channel_registers *registers
 	__ASSERT_NO_MSG(registers != NULL);
 
 	if (reference != ADC_REF_EXTERNAL0 && reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Channel voltage reference '%d' is not supported by device", reference);
+		LOG_ERROR("Channel voltage reference '%d' is not supported by device", reference);
 		return -ENOTSUP;
 	}
 
@@ -748,12 +748,12 @@ static inline int adc_mcp356xr_set_oversampling(const struct device *dev, uint8_
 	const struct adc_mcp356xr_config *config = dev->config;
 
 	if (oversampling < 5) {
-		LOG_ERR("Oversamplings below 2^5 is not supported by device");
+		LOG_ERROR("Oversamplings below 2^5 is not supported by device");
 		return -ENOTSUP;
 	}
 
 	if (oversampling > 14) {
-		LOG_ERR("Oversampling of 2^%d is not supported by device", oversampling);
+		LOG_ERROR("Oversampling of 2^%d is not supported by device", oversampling);
 		return -ENOTSUP;
 	}
 
@@ -777,7 +777,7 @@ static int adc_mcp356xr_reset_after_power_on(const struct device *dev)
 
 	err = adc_mcp356xr_unlock_registers(dev);
 	if (err) {
-		LOG_ERR("Failed to unlock MCP356x registers (error = %d)", err);
+		LOG_ERROR("Failed to unlock MCP356x registers (error = %d)", err);
 		return err;
 	}
 
@@ -788,13 +788,13 @@ static int adc_mcp356xr_reset_after_power_on(const struct device *dev)
 	err = adc_mcp356xr_incremental_write(dev, MCP356XR_REGISTER_ADDRESS_IRQ,
 					     &irq_register_value, 1);
 	if (err) {
-		LOG_ERR("Failed to enable fast commands (error = %d)", err);
+		LOG_ERROR("Failed to enable fast commands (error = %d)", err);
 		return err;
 	}
 
 	err = adc_mcp356xr_reset(dev);
 	if (err) {
-		LOG_ERR("Failed to reset MCP356x (error = %d)", err);
+		LOG_ERROR("Failed to reset MCP356x (error = %d)", err);
 		return err;
 	}
 
@@ -812,7 +812,7 @@ static int adc_mcp356xr_reset_after_power_on(const struct device *dev)
 	err = adc_mcp356xr_incremental_write(dev, MCP356XR_REGISTER_ADDRESS_CONFIG3,
 					     &config3_register_value, 1);
 	if (err) {
-		LOG_ERR("Failed to enable CRC on read communications (error = %d)", err);
+		LOG_ERROR("Failed to enable CRC on read communications (error = %d)", err);
 		return err;
 	}
 #endif
@@ -835,9 +835,9 @@ static inline int adc_mcp356xr_get_status_and_sanitize(const struct device *dev,
 		LOG_WRN("Power cycle reset occurred, attempting to reset the ADC");
 		err = adc_mcp356xr_reset_after_power_on(dev);
 		if (err) {
-			LOG_ERR("Failed to properly reset ADC after a power cycle occurred "
-				"(error = %d)",
-				err);
+			LOG_ERROR("Failed to properly reset ADC after a power cycle occurred "
+				  "(error = %d)",
+				  err);
 			return err;
 		}
 	} else if (err) {
@@ -882,7 +882,7 @@ static int adc_mcp356xr_send_configuration(const struct device *dev, uint8_t cha
 	int err = adc_mcp356xr_incremental_write(dev, MCP356XR_REGISTER_ADDRESS_CONFIG0,
 						 config_buffer, ARRAY_SIZE(config_buffer));
 	if (err) {
-		LOG_ERR("Failed to write configuration (error = %d)", err);
+		LOG_ERROR("Failed to write configuration (error = %d)", err);
 	}
 
 	return err;
@@ -914,23 +914,23 @@ static int adc_mcp356xr_start_read(const struct device *dev, const struct adc_se
 	int err = 0;
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No channel selected");
+		LOG_ERROR("No channel selected");
 		return -EINVAL;
 	}
 
 	if (find_msb_set(sequence->channels) > CONFIG_ADC_MCP356XR_ADC_CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel selection (0x%x)", sequence->channels);
+		LOG_ERROR("Invalid channel selection (0x%x)", sequence->channels);
 		return -EINVAL;
 	}
 
 	if (sequence->resolution != 24) {
-		LOG_ERR("%d bit resolution is not supported", sequence->resolution);
+		LOG_ERROR("%d bit resolution is not supported", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	err = adc_mcp356xr_validate_buffer_size(sequence);
 	if (err) {
-		LOG_ERR("buffer size too small");
+		LOG_ERROR("buffer size too small");
 		return err;
 	}
 
@@ -962,14 +962,14 @@ static int adc_mcp356xr_wait_for_data(const struct device *dev)
 
 		err = adc_mcp356xr_get_status_and_sanitize(dev, &data_ready, &por_occurred, NULL);
 		if (err) {
-			LOG_ERR("An error occurred while attempting to retrieve ADC status "
-				"(error = %d)",
-				err);
+			LOG_ERROR("An error occurred while attempting to retrieve ADC status "
+				  "(error = %d)",
+				  err);
 			return err;
 		}
 
 		if (por_occurred) {
-			LOG_ERR("Power cycle reset occurred: stop waiting for data");
+			LOG_ERROR("Power cycle reset occurred: stop waiting for data");
 			return -ENXIO;
 		}
 
@@ -992,7 +992,7 @@ static int adc_mcp356xr_run_acquisition_sequence(const struct device *dev)
 
 		err = adc_mcp356xr_send_configuration(dev, channel_id);
 		if (err) {
-			LOG_ERR("Failed to configure channel %d (error = %d)", channel_id, err);
+			LOG_ERROR("Failed to configure channel %d (error = %d)", channel_id, err);
 			return err;
 		}
 
@@ -1003,19 +1003,19 @@ static int adc_mcp356xr_run_acquisition_sequence(const struct device *dev)
 
 		err = adc_mcp356xr_start_conversion(dev);
 		if (err) {
-			LOG_ERR("Failed to start conversion (error = %d)", err);
+			LOG_ERROR("Failed to start conversion (error = %d)", err);
 			return err;
 		}
 
 		err = adc_mcp356xr_wait_for_data(dev);
 		if (err) {
-			LOG_ERR("An error occurred while waiting for data (error = %d)", err);
+			LOG_ERROR("An error occurred while waiting for data (error = %d)", err);
 			return err;
 		}
 
 		err = adc_mcp356xr_get_data(dev, &read_value);
 		if (err) {
-			LOG_ERR("Failed to retrieve ADC reading (error = %d)", err);
+			LOG_ERROR("Failed to retrieve ADC reading (error = %d)", err);
 			return err;
 		}
 
@@ -1052,17 +1052,18 @@ static int adc_mcp356xr_channel_setup(const struct device *dev,
 	struct channel_registers registers;
 
 	if (channel_cfg->channel_id >= CONFIG_ADC_MCP356XR_ADC_CHANNEL_COUNT) {
-		LOG_ERR("Channel id '%d' is not supported", channel_cfg->channel_id);
+		LOG_ERROR("Channel id '%d' is not supported", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("unsupported acquisition_time '%d'", channel_cfg->acquisition_time);
+		LOG_ERROR("unsupported acquisition_time '%d'", channel_cfg->acquisition_time);
 		return -ENOTSUP;
 	}
 
 	if (!channel_cfg->differential) {
-		LOG_ERR("Single-ended input is not directly supported. Single-ended configuration "
+		LOG_ERROR(
+			"Single-ended input is not directly supported. Single-ended configuration "
 			"is achieved by setting negative input to MCP356XR_INPUT_AGND or any other "
 			"input connected to ground.");
 		return -ENOTSUP;
@@ -1140,7 +1141,7 @@ static void adc_mcp356xr_acquisition_thread(void *p1, void *p2, void *p3)
 		/* clear any leftover flags and sanitize state */
 		err = adc_mcp356xr_get_status_and_sanitize(dev, NULL, NULL, NULL);
 		if (err) {
-			LOG_ERR("Failed to sanitize ADC state (error = %d)", err);
+			LOG_ERROR("Failed to sanitize ADC state (error = %d)", err);
 			adc_context_complete(&(data->ctx), err);
 			continue;
 		}
@@ -1163,7 +1164,7 @@ static int adc_mcp356xr_init(const struct device *dev)
 	int err = 0;
 
 	if (!spi_is_ready_dt(&(config->spi))) {
-		LOG_ERR("SPI device not ready");
+		LOG_ERROR("SPI device not ready");
 		return -ENODEV;
 	}
 
@@ -1183,7 +1184,7 @@ static int adc_mcp356xr_init(const struct device *dev)
 
 	err = k_mutex_init(&(data->channel_registers_mutex));
 	if (err) {
-		LOG_ERR("Failed to initialize internal mutex");
+		LOG_ERROR("Failed to initialize internal mutex");
 	}
 
 	adc_context_init(&(data->ctx));

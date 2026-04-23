@@ -328,7 +328,7 @@ static int am1805_alarm_get_time(const struct device *dev, uint16_t id, uint16_t
 	const struct am1805_config *config = dev->config;
 
 	if (id != 0U) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
@@ -368,12 +368,12 @@ static int am1805_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	const struct am1805_config *config = dev->config;
 
 	if (id != 0U) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
 	if ((mask & ~(AM1805_RTC_ALARM_TIME_MASK)) != 0U) {
-		LOG_ERR("unsupported alarm field mask 0x%04x", mask);
+		LOG_ERROR("unsupported alarm field mask 0x%04x", mask);
 		return -EINVAL;
 	}
 
@@ -446,7 +446,7 @@ static int am1805_alarm_get_supported_fields(const struct device *dev, uint16_t 
 	ARG_UNUSED(dev);
 
 	if (id != 0U) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
@@ -467,7 +467,7 @@ static int am1805_alarm_set_callback(const struct device *dev, uint16_t id,
 	}
 
 	if (id != 0U) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
@@ -520,13 +520,13 @@ static int am1805_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	if (!i2c_is_ready_dt(&config->int_i2c)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 
 	err = i2c_reg_read_byte_dt(&config->int_i2c, REG_STATUS_ADDR, &reg);
 	if (err != 0) {
-		LOG_ERR("failed to read the status register");
+		LOG_ERROR("failed to read the status register");
 		return -ENODEV;
 	}
 
@@ -536,20 +536,20 @@ static int am1805_init(const struct device *dev)
 	k_sem_init(&data->int_sem, 0, INT_MAX);
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO not ready");
+		LOG_ERROR("GPIO not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (err != 0) {
-		LOG_ERR("failed to configure GPIO (err %d)", err);
+		LOG_ERROR("failed to configure GPIO (err %d)", err);
 		return -ENODEV;
 	}
 
 	err = gpio_pin_interrupt_configure_dt(&config->int_gpio,
 			GPIO_INT_EDGE_TO_INACTIVE);
 	if (err != 0) {
-		LOG_ERR("failed to configure interrupt (err %d)", err);
+		LOG_ERROR("failed to configure interrupt (err %d)", err);
 		return -ENODEV;
 	}
 
@@ -558,7 +558,7 @@ static int am1805_init(const struct device *dev)
 
 	err = gpio_add_callback_dt(&config->int_gpio, &data->am1805_callback);
 	if (err != 0) {
-		LOG_ERR("failed to add GPIO callback (err %d)", err);
+		LOG_ERROR("failed to add GPIO callback (err %d)", err);
 		return -ENODEV;
 	}
 

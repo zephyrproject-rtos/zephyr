@@ -142,9 +142,9 @@ static int i2c_silabs_concat_message(const struct device *dev, struct i2c_msg *m
 	struct i2c_silabs_dev_data *data = dev->data;
 
 	if ((data->concat_buf_used + msg->len) > config->concat_buf_size) {
-		LOG_ERR("Need to use the internal driver buffer but its size is insufficient "
-			"(%u + %u > %u). Adjust the zephyr,concat-buf-size in the \"%s\" node.",
-			data->concat_buf_used, msg->len, config->concat_buf_size, dev->name);
+		LOG_ERROR("Need to use the internal driver buffer but its size is insufficient "
+			  "(%u + %u > %u). Adjust the zephyr,concat-buf-size in the \"%s\" node.",
+			  data->concat_buf_used, msg->len, config->concat_buf_size, dev->name);
 		return -ENOSPC;
 	}
 	if (!(msg->flags & I2C_MSG_READ)) {

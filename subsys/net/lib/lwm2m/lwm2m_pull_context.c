@@ -105,7 +105,7 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 
 	msg = lwm2m_get_message(&context.firmware_ctx);
 	if (!msg) {
-		LOG_ERR("Unable to get a lwm2m message!");
+		LOG_ERROR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
 
@@ -119,7 +119,7 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 
 	ret = lwm2m_init_message(msg);
 	if (ret < 0) {
-		LOG_ERR("Error setting up lwm2m message");
+		LOG_ERROR("Error setting up lwm2m message");
 		goto cleanup;
 	}
 
@@ -131,20 +131,20 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 		cursor = COAP2COAP_PROXY_URI_PATH;
 	} else {
 		ret = -EPROTONOSUPPORT;
-		LOG_ERR("Unsupported schema");
+		LOG_ERROR("Unsupported schema");
 		goto cleanup;
 	}
 
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH, cursor, strlen(cursor));
 	if (ret < 0) {
-		LOG_ERR("Error adding URI_PATH '%s'", cursor);
+		LOG_ERROR("Error adding URI_PATH '%s'", cursor);
 		goto cleanup;
 	}
 #else
 	http_parser_url_init(&parser);
 	ret = http_parser_parse_url(context.uri, strlen(context.uri), 0, &parser);
 	if (ret < 0) {
-		LOG_ERR("Invalid firmware url: %s", context.uri);
+		LOG_ERROR("Invalid firmware url: %s", context.uri);
 		ret = -ENOTSUP;
 		goto cleanup;
 	}
@@ -160,7 +160,7 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 			ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH, cursor,
 							next_slash - cursor);
 			if (ret < 0) {
-				LOG_ERR("Error adding URI_PATH");
+				LOG_ERROR("Error adding URI_PATH");
 				goto cleanup;
 			}
 		}
@@ -174,7 +174,7 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 		/* flush the rest */
 		ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH, cursor, len);
 		if (ret < 0) {
-			LOG_ERR("Error adding URI_PATH");
+			LOG_ERROR("Error adding URI_PATH");
 			goto cleanup;
 		}
 	}
@@ -182,7 +182,7 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 
 	ret = coap_append_block2_option(&msg->cpkt, ctx);
 	if (ret < 0) {
-		LOG_ERR("Unable to add block2 option.");
+		LOG_ERROR("Unable to add block2 option.");
 		goto cleanup;
 	}
 
@@ -190,14 +190,14 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_PROXY_URI, context.uri,
 					strlen(context.uri));
 	if (ret < 0) {
-		LOG_ERR("Error adding PROXY_URI '%s'", context.uri);
+		LOG_ERROR("Error adding PROXY_URI '%s'", context.uri);
 		goto cleanup;
 	}
 #else
 	/* Ask the server to provide a size estimate */
 	ret = coap_append_option_int(&msg->cpkt, COAP_OPTION_SIZE2, 0);
 	if (ret < 0) {
-		LOG_ERR("Unable to add size2 option.");
+		LOG_ERROR("Unable to add size2 option.");
 		goto cleanup;
 	}
 #endif
@@ -205,7 +205,7 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 	/* send request */
 	ret = lwm2m_send_message_async(msg);
 	if (ret < 0) {
-		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
+		LOG_ERROR("Error sending LWM2M packet (err:%d).", ret);
 		goto cleanup;
 	}
 
@@ -242,7 +242,7 @@ static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		ret = lwm2m_send_empty_ack(&context.firmware_ctx,
 					   coap_header_get_id(check_response));
 		if (ret < 0) {
-			LOG_ERR("Error transmitting ACK");
+			LOG_ERROR("Error transmitting ACK");
 			goto error;
 		}
 	}
@@ -250,8 +250,9 @@ static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	/* Check response code from server. Expecting (2.05) */
 	resp_code = coap_header_get_code(check_response);
 	if (resp_code != COAP_RESPONSE_CODE_CONTENT) {
-		LOG_ERR("Unexpected response from server: %d.%d",
-			COAP_RESPONSE_CODE_CLASS(resp_code), COAP_RESPONSE_CODE_DETAIL(resp_code));
+		LOG_ERROR("Unexpected response from server: %d.%d",
+			  COAP_RESPONSE_CODE_CLASS(resp_code),
+			  COAP_RESPONSE_CODE_DETAIL(resp_code));
 		ret = -ENOMSG;
 		goto error;
 	}
@@ -261,7 +262,7 @@ static int do_firmware_transfer_reply_cb(const struct coap_packet *response,
 
 	ret = coap_update_from_block(check_response, &context.block_ctx);
 	if (ret < 0) {
-		LOG_ERR("Error from block update: %d", ret);
+		LOG_ERROR("Error from block update: %d", ret);
 		ret = -EFAULT;
 		goto error;
 	}
@@ -359,8 +360,8 @@ error:
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 {
-	LOG_ERR("TIMEOUT - Too many retry packet attempts! "
-		"Aborting firmware download.");
+	LOG_ERROR("TIMEOUT - Too many retry packet attempts! "
+		  "Aborting firmware download.");
 	context.result_cb(context.obj_inst_id, -ENOMSG);
 	cleanup_context();
 }
@@ -375,7 +376,7 @@ static void firmware_transfer(void)
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
 	if (strlen(server_addr) >= LWM2M_PACKAGE_URI_LEN) {
-		LOG_ERR("Invalid Proxy URI: %s", server_addr);
+		LOG_ERROR("Invalid Proxy URI: %s", server_addr);
 		ret = -ENOTSUP;
 		goto error;
 	}
@@ -389,14 +390,14 @@ static void firmware_transfer(void)
 
 	ret = lwm2m_parse_peerinfo(server_addr, &context.firmware_ctx, context.is_firmware_uri);
 	if (ret < 0) {
-		LOG_ERR("Failed to parse server URI.");
+		LOG_ERROR("Failed to parse server URI.");
 		goto error;
 	}
 
 	lwm2m_engine_context_init(&context.firmware_ctx);
 	ret = lwm2m_socket_start(&context.firmware_ctx);
 	if (ret < 0) {
-		LOG_ERR("Cannot start a firmware-pull connection:%d", ret);
+		LOG_ERROR("Cannot start a firmware-pull connection:%d", ret);
 		goto error;
 	}
 
@@ -428,7 +429,7 @@ int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k
 
 	ret = start_service();
 	if (ret) {
-		LOG_ERR("Failed to start the pull-service");
+		LOG_ERROR("Failed to start the pull-service");
 		return ret;
 	}
 

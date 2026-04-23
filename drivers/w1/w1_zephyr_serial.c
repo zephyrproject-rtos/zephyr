@@ -142,19 +142,19 @@ static int w1_serial_reset_bus(const struct device *dev)
 	data->uart_cfg.baudrate =
 		data->overdrive_active ? cfg->od_reset_baud : W1_SERIAL_STD_RESET_BAUD;
 	if (uart_configure(cfg->uart_dev, &data->uart_cfg) != 0) {
-		LOG_ERR("Failed set baud rate for reset pulse");
+		LOG_ERROR("Failed set baud rate for reset pulse");
 		return -EIO;
 	}
 
 	if (serial_tx_rx(dev, &reset_byte_tx, &reset_byte_rx, 1, reset_timeout) < 0) {
-		LOG_ERR("tx_rx_error reset_present");
+		LOG_ERROR("tx_rx_error reset_present");
 		return -EIO;
 	}
 
 	data->uart_cfg.baudrate =
 		data->overdrive_active ? cfg->od_data_baud : W1_SERIAL_STD_DATA_BAUD;
 	if (uart_configure(cfg->uart_dev, &data->uart_cfg) != 0) {
-		LOG_ERR("Failed set baud rate for data transfer");
+		LOG_ERROR("Failed set baud rate for data transfer");
 		return -EIO;
 	}
 
@@ -227,7 +227,7 @@ static int w1_serial_configure(const struct device *dev, enum w1_settings_type t
 		data->uart_cfg.baudrate =
 			data->overdrive_active ? cfg->od_data_baud : W1_SERIAL_STD_DATA_BAUD;
 		if (uart_configure(cfg->uart_dev, &data->uart_cfg) != 0) {
-			LOG_ERR("Failed set baud rate for data transfer");
+			LOG_ERROR("Failed set baud rate for data transfer");
 			ret = -EIO;
 		}
 		break;
@@ -243,7 +243,7 @@ static int w1_serial_init(const struct device *dev)
 	struct w1_serial_data *data = dev->data;
 
 	if (!device_is_ready(cfg->uart_dev)) {
-		LOG_ERR("Serial device not ready");
+		LOG_ERROR("Serial device not ready");
 		return -ENODEV;
 	}
 
@@ -254,7 +254,7 @@ static int w1_serial_init(const struct device *dev)
 	data->uart_cfg.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
 
 	if (uart_configure(cfg->uart_dev, &data->uart_cfg) != 0) {
-		LOG_ERR("Failed to configure UART");
+		LOG_ERROR("Failed to configure UART");
 		return -EINVAL;
 	}
 

@@ -101,7 +101,7 @@ void platformAlarmMicroInit(void)
 		return;
 	}
 	if (counter_start(alarm_counter) != 0) {
-		LOG_ERR("Failed to start alarm counter");
+		LOG_ERROR("Failed to start alarm counter");
 	}
 
 	memset(&wrap_data, 0, sizeof(wrap_timer_data_t));

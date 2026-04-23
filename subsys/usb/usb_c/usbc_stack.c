@@ -377,7 +377,7 @@ static int usbc_subsys_init(const struct device *dev)
 
 	/* Make sure TCPC is ready */
 	if (!device_is_ready(tcpc)) {
-		LOG_ERR("TCPC NOT READY");
+		LOG_ERROR("TCPC NOT READY");
 		return -ENODEV;
 	}
 

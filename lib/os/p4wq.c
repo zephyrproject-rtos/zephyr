@@ -181,7 +181,7 @@ static int static_init(void)
 				int ret = k_thread_cpu_mask_clear(&pp->threads[i]);
 
 				if (ret < 0) {
-					LOG_ERR("Couldn't clear CPU mask: %d", ret);
+					LOG_ERROR("Couldn't clear CPU mask: %d", ret);
 				}
 			}
 #endif
@@ -202,7 +202,7 @@ void k_p4wq_enable_static_thread(struct k_p4wq *queue, struct k_thread *thread,
 			int ret = k_thread_cpu_mask_enable(thread, i - 1);
 
 			if (ret < 0) {
-				LOG_ERR("Couldn't set CPU mask for %u: %d", i, ret);
+				LOG_ERROR("Couldn't set CPU mask for %u: %d", i, ret);
 			}
 			cpu_mask &= ~BIT(i - 1);
 		}

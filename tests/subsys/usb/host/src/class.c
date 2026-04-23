@@ -83,13 +83,13 @@ static int usbh_foo_probe(struct usbh_class_data *const c_data,
 	}
 
 	if (desc->bDescriptorType != USB_DESC_INTERFACE) {
-		LOG_ERR("Not an interface descriptor");
+		LOG_ERROR("Not an interface descriptor");
 		return -ENOTSUP;
 	}
 
 	if_desc = (const struct usb_if_descriptor *)desc;
 	if (if_desc->bInterfaceClass != USB_BCC_VENDOR) {
-		LOG_ERR("Unexpected class code");
+		LOG_ERROR("Unexpected class code");
 		return -ENOTSUP;
 	}
 

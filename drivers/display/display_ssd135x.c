@@ -182,14 +182,14 @@ static int ssd135x_write(const struct device *dev, const uint16_t x, const uint1
 	uint8_t y_position[] = {y & 0x7F, (y + desc->height - 1) & 0x7F};
 
 	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is not width");
+		LOG_ERROR("Pitch is not width");
 		return -EINVAL;
 	}
 
 	/* Following the datasheet, two segment are split in one register */
 	buf_len = MIN(desc->buf_size, desc->height * desc->width * 2);
 	if (buf == NULL || buf_len == 0U) {
-		LOG_ERR("Display buffer is not available");
+		LOG_ERROR("Display buffer is not available");
 		return -EINVAL;
 	}
 
@@ -250,7 +250,7 @@ static int ssd135x_set_pixel_format(const struct device *dev, const enum display
 	if (pf == PIXEL_FORMAT_RGB_565) {
 		return 0;
 	}
-	LOG_ERR("Unsupported pixel format");
+	LOG_ERROR("Unsupported pixel format");
 	return -ENOTSUP;
 }
 
@@ -299,19 +299,19 @@ static int ssd135x_init(const struct device *dev)
 	LOG_DBG("Initializing device");
 
 	if (!device_is_ready(config->mipi_dev)) {
-		LOG_ERR("MIPI Device not ready!");
+		LOG_ERROR("MIPI Device not ready!");
 		return -EINVAL;
 	}
 
 	err = mipi_dbi_reset(config->mipi_dev, SSD135X_RESET_DELAY);
 	if (err < 0) {
-		LOG_ERR("Failed to reset device!");
+		LOG_ERROR("Failed to reset device!");
 		return err;
 	}
 
 	err = ssd135x_init_device(dev);
 	if (err < 0) {
-		LOG_ERR("Failed to initialize device! %d", err);
+		LOG_ERROR("Failed to initialize device! %d", err);
 		return err;
 	}
 

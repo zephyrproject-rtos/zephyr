@@ -130,7 +130,7 @@ static void dsi_mcux_dma_cb(const struct device *dma_dev,
 	uint32_t int_flags1, int_flags2;
 
 	if (status != 0) {
-		LOG_ERR("SMARTDMA transfer failed");
+		LOG_ERROR("SMARTDMA transfer failed");
 	} else {
 		/* Disable DSI interrupts at transfer completion */
 		DSI_DisableInterrupts(config->base, kDSI_InterruptGroup1ApbTxDone |
@@ -176,7 +176,7 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	ret = dma_config(config->smart_dma, 0, &dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("Could not configure SMARTDMA");
+		LOG_ERROR("Could not configure SMARTDMA");
 		return ret;
 	}
 	/*
@@ -191,7 +191,7 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	/* Trigger DMA engine */
 	ret = dma_start(config->smart_dma, 0);
 	if (ret < 0) {
-		LOG_ERR("Could not start SMARTDMA");
+		LOG_ERROR("Could not start SMARTDMA");
 		return ret;
 	}
 	/* Wait for TX completion */
@@ -283,7 +283,7 @@ static status_t dsi_mcux_dcnano_transfer(const struct device *dev, uint8_t chann
 			break;
 		default:
 			/* MIPI-DSI do not support other format of DBI pixel. */
-			LOG_ERR("Pixel type not supported yet.");
+			LOG_ERROR("Pixel type not supported yet.");
 			return -EIO;
 		}
 
@@ -305,7 +305,7 @@ static status_t dsi_mcux_dcnano_transfer(const struct device *dev, uint8_t chann
 	} else {
 		/* For other DCS commands, the DCNano DBI cannot be used. */
 		if (DSI_TransferBlocking(config->base, dsi_xfer) != kStatus_Success) {
-			LOG_ERR("Transmission failed");
+			LOG_ERROR("Transmission failed");
 			return -EIO;
 		}
 	}
@@ -357,7 +357,7 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	/* Wait for transfer completion */
 	k_sem_take(&data->transfer_sem, K_FOREVER);
 	if (status != kStatus_Success) {
-		LOG_ERR("Transmission failed");
+		LOG_ERROR("Transmission failed");
 		return -EIO;
 	}
 	return xfer.txDataSize;
@@ -427,8 +427,7 @@ static int dsi_mcux_attach(const struct device *dev,
 		}
 		break;
 	default:
-		LOG_ERR("SMARTDMA does not support pixel_format %u",
-			mdev->pixfmt);
+		LOG_ERROR("SMARTDMA does not support pixel_format %u", mdev->pixfmt);
 		return -ENODEV;
 	}
 
@@ -630,7 +629,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 	if (msg->cmd == MIPI_DCS_WRITE_MEMORY_START) {
 #ifdef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 		if (desc == NULL) {
-			LOG_ERR("Descriptor is needed as user data for DCNano DBI.");
+			LOG_ERROR("Descriptor is needed as user data for DCNano DBI.");
 			return -EIO;
 		}
 		/* When NXP DCNano driver is used to send the data, it allows non-contiguous tx
@@ -677,7 +676,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 
 	switch (msg->type) {
 	case MIPI_DSI_DCS_READ:
-		LOG_ERR("DCS Read not yet implemented or used");
+		LOG_ERROR("DCS Read not yet implemented or used");
 		return -ENOTSUP;
 	case MIPI_DSI_DCS_SHORT_WRITE:
 		dsi_xfer.sendDcsCmd = true;
@@ -704,7 +703,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 			 */
 			ret = dsi_mcux_tx_color(dev, channel, msg);
 			if (ret < 0) {
-				LOG_ERR("Transmission failed");
+				LOG_ERROR("Transmission failed");
 				return -EIO;
 			}
 
@@ -740,10 +739,10 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 	case MIPI_DSI_GENERIC_READ_REQUEST_1_PARAM:
 		__fallthrough;
 	case MIPI_DSI_GENERIC_READ_REQUEST_2_PARAM:
-		LOG_ERR("Generic Read not yet implemented or used");
+		LOG_ERROR("Generic Read not yet implemented or used");
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Unsupported message type (%d)", msg->type);
+		LOG_ERROR("Unsupported message type (%d)", msg->type);
 		return -ENOTSUP;
 	}
 
@@ -754,7 +753,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 #endif
 
 	if (status != kStatus_Success) {
-		LOG_ERR("Transmission failed");
+		LOG_ERROR("Transmission failed");
 		return -EIO;
 	}
 

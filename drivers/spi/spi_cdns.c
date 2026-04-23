@@ -422,7 +422,7 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
 	}
 
 	if ((config->operation & SPI_OP_MODE_SLAVE) && !IS_ENABLED(CONFIG_SPI_SLAVE)) {
-		LOG_ERR("Kconfig for enable SPI in slave mode is not enabled");
+		LOG_ERROR("Kconfig for enable SPI in slave mode is not enabled");
 		return -ENOTSUP;
 	}
 
@@ -525,13 +525,13 @@ static void spi_cdns_isr(const struct device *dev)
 	sys_write32(int_status, SPI_REG(dev, SPI_INT_STATUS));
 
 	if ((int_status & SPI_INT_ROF) && spi_context_rx_buf_on(&data->ctx)) {
-		LOG_ERR("%s: rx fifo overflow", dev->name);
+		LOG_ERROR("%s: rx fifo overflow", dev->name);
 		error = -EIO;
 		goto complete;
 	}
 
 	if ((int_status & SPI_INT_TUF) && spi_context_tx_buf_on(&data->ctx)) {
-		LOG_ERR("%s: tx fifo underflow", dev->name);
+		LOG_ERROR("%s: tx fifo underflow", dev->name);
 		error = -EIO;
 		goto complete;
 	}

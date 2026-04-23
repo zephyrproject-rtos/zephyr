@@ -242,7 +242,7 @@ int mdm_sim7080_query_gnss(struct sim7080_gnss_data *data)
 	struct modem_cmd cmds[] = { MODEM_CMD("+CGNSINF: ", on_cmd_cgnsinf, 0U, NULL) };
 
 	if (sim7080_get_state() != SIM7080_STATE_GNSS) {
-		LOG_ERR("GNSS functionality is not enabled!!");
+		LOG_ERROR("GNSS functionality is not enabled!!");
 		return -1;
 	}
 
@@ -305,7 +305,7 @@ int mdm_sim7080_query_xtra_validity(int16_t *diff_h, int16_t *duration_h, struct
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), "AT+CGNSXTRA",
 				 &mdata.sem_response, K_SECONDS(2));
 	if (ret != 0) {
-		LOG_ERR("Failed to query xtra validity");
+		LOG_ERROR("Failed to query xtra validity");
 		goto out;
 	}
 
@@ -334,7 +334,7 @@ static int sim7080_start_gnss_ext(bool xtra)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSPWR=1",
 				 &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
-		LOG_ERR("Failed to power on gnss: %d", ret);
+		LOG_ERROR("Failed to power on gnss: %d", ret);
 		goto out;
 	}
 
@@ -386,7 +386,7 @@ coldstart:
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSCOLD",
 				 &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
-		LOG_ERR("Failed to start gnss: %d", ret);
+		LOG_ERROR("Failed to start gnss: %d", ret);
 		goto out;
 	}
 
@@ -417,7 +417,7 @@ int mdm_sim7080_stop_gnss(void)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CGNSPWR=0",
 				 &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
-		LOG_ERR("Failed to power on gnss: %d", ret);
+		LOG_ERROR("Failed to power on gnss: %d", ret);
 		goto out;
 	}
 
@@ -439,7 +439,7 @@ int mdm_sim7080_download_xtra(uint8_t server_id, const char *f_name)
 	ret = snprintk(buf, sizeof(buf), "AT+HTTPTOFS=\"http://iot%hhu.xtracloud.net/%s\",\"/customer/Xtra3.bin\"",
 		server_id, f_name);
 	if (ret < 0) {
-		LOG_ERR("Failed to format xtra download");
+		LOG_ERROR("Failed to format xtra download");
 		goto out;
 	}
 
@@ -449,19 +449,19 @@ int mdm_sim7080_download_xtra(uint8_t server_id, const char *f_name)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf,
 				 &mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
-		LOG_ERR("Failed to download xtra file");
+		LOG_ERROR("Failed to download xtra file");
 		goto out;
 	}
 
 	/* Wait for HTTP status code */
 	ret = k_sem_take(&mdata.sem_http, K_SECONDS(60));
 	if (ret != 0) {
-		LOG_ERR("Waiting for http completion failed");
+		LOG_ERROR("Waiting for http completion failed");
 		goto out;
 	}
 
 	if (mdata.http_status != 200) {
-		LOG_ERR("HTTP request failed with: %u", mdata.http_status);
+		LOG_ERROR("HTTP request failed with: %u", mdata.http_status);
 		ret = -1;
 	}
 

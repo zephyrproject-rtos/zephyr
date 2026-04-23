@@ -63,7 +63,7 @@ The application can configure the credit-based shaper like this:
 			       iface, &params,
 			       sizeof(struct ethernet_req_params));
 		if (ret) {
-			LOG_ERR("Cannot %s Qav for queue %d for interface %p",
+			LOG_ERROR("Cannot %s Qav for queue %d for interface %p",
 			        enable ? "enable" : "disable",
 			        queue_id, iface);
 		}
@@ -87,7 +87,7 @@ The application can configure the credit-based shaper like this:
 			       iface, &params,
 			       sizeof(struct ethernet_req_params));
 		if (ret) {
-			LOG_ERR("Cannot set Qav delta bandwidth %u for "
+			LOG_ERROR("Cannot set Qav delta bandwidth %u for "
 			        "queue %d for interface %p",
 			        bandwidth, queue_id, iface);
 		}
@@ -99,7 +99,7 @@ The application can configure the credit-based shaper like this:
 			       iface, &params,
 			       sizeof(struct ethernet_req_params));
 		if (ret) {
-			LOG_ERR("Cannot set Qav idle slope %u for "
+			LOG_ERROR("Cannot set Qav idle slope %u for "
 			        "queue %d for interface %p",
 			        idle_slope, queue_id, iface);
 		}

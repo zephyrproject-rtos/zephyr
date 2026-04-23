@@ -191,7 +191,7 @@ static inline int nxp_mrt_set_alarm(const struct device *dev,
 	ARG_UNUSED(chan_id);
 	ARG_UNUSED(alarm_cfg);
 
-	LOG_ERR("MRT does not support alarms");
+	LOG_ERROR("MRT does not support alarms");
 	return -ENOTSUP;
 }
 
@@ -200,7 +200,7 @@ static inline int nxp_mrt_cancel_alarm(const struct device *dev, uint8_t chan_id
 	ARG_UNUSED(dev);
 	ARG_UNUSED(chan_id);
 
-	LOG_ERR("MRT does not support alarms");
+	LOG_ERROR("MRT does not support alarms");
 	return -ENOTSUP;
 }
 
@@ -222,7 +222,7 @@ static int nxp_mrt_init_common(const struct device *dev)
 	int ret = 0;
 
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("Reset device not ready");
+		LOG_ERROR("Reset device not ready");
 		return -ENODEV;
 	}
 

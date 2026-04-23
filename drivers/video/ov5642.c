@@ -548,7 +548,7 @@ static int ov5642_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	ret = video_format_caps_index(fmts, fmt, &i);
 	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution");
+		LOG_ERROR("Unsupported pixel format or resolution");
 		return ret;
 	}
 
@@ -559,7 +559,7 @@ static int ov5642_set_fmt(const struct device *dev, struct video_format *fmt)
 	ret = video_write_cci_multiregs16(&cfg->i2c, modes[i].res_params,
 					  modes[i].array_size_res_params);
 	if (ret < 0) {
-		LOG_ERR("Unable to set resolution parameters");
+		LOG_ERROR("Unable to set resolution parameters");
 		return ret;
 	}
 
@@ -577,7 +577,7 @@ static int ov5642_set_stream(const struct device *dev, bool enable,
 
 	ret = video_write_cci_reg(&cfg->i2c, SYS_CTRL0_CCI, val);
 	if (ret < 0) {
-		LOG_ERR("Failed to %s streaming: %d", enable ? "start" : "stop", ret);
+		LOG_ERROR("Failed to %s streaming: %d", enable ? "start" : "stop", ret);
 		return ret;
 	}
 
@@ -864,7 +864,7 @@ static int ov5642_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
@@ -872,8 +872,8 @@ static int ov5642_init(const struct device *dev)
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)
 	if (cfg->powerdown_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->powerdown_gpio)) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->powerdown_gpio.port->name);
+			LOG_ERROR("%s: device %s is not ready", dev->name,
+				  cfg->powerdown_gpio.port->name);
 			return -ENODEV;
 		}
 
@@ -893,14 +893,14 @@ static int ov5642_init(const struct device *dev)
 	/* Check sensor chip id */
 	ret = video_read_cci_reg(&cfg->i2c, CHIP_ID_CCI, &tmp);
 	if (ret < 0) {
-		LOG_ERR("Unable to read sensor chip ID, ret = %d", ret);
+		LOG_ERROR("Unable to read sensor chip ID, ret = %d", ret);
 		return ret;
 	}
 
 	chip_id = tmp;
 
 	if (chip_id != CHIP_ID_VAL) {
-		LOG_ERR("Wrong chip ID: %04x (expected %04x)", chip_id, CHIP_ID_VAL);
+		LOG_ERROR("Wrong chip ID: %04x (expected %04x)", chip_id, CHIP_ID_VAL);
 		return -ENODEV;
 	}
 
@@ -910,7 +910,7 @@ static int ov5642_init(const struct device *dev)
 	ret = video_write_cci_multiregs16(&cfg->i2c, init_params_common,
 					  ARRAY_SIZE(init_params_common));
 	if (ret < 0) {
-		LOG_ERR("Unable to initialize the sensor");
+		LOG_ERROR("Unable to initialize the sensor");
 		return ret;
 	}
 
@@ -919,11 +919,11 @@ static int ov5642_init(const struct device *dev)
 		ret = video_write_cci_reg(&cfg->i2c, IO_MIPI_CTRL00_CCI,
 					  IO_MIPI_CTRL00_DVP_MODE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure DVP mode");
+			LOG_ERROR("Failed to configure DVP mode");
 			return ret;
 		}
 	} else {
-		LOG_ERR("Bus type %d not supported", cfg->bus_type);
+		LOG_ERROR("Bus type %d not supported", cfg->bus_type);
 		return -ENOTSUP;
 	}
 

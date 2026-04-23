@@ -52,7 +52,7 @@ static int bq40z50_i2c_read(const struct device *dev, uint8_t reg_addr, uint8_t 
 	int ret = i2c_burst_read_dt(&cfg->i2c, reg_addr, value, len);
 
 	if (ret) {
-		LOG_ERR("i2c_burst_read_dt failed for address %d: %d", reg_addr, ret);
+		LOG_ERROR("i2c_burst_read_dt failed for address %d: %d", reg_addr, ret);
 	}
 	return ret;
 }
@@ -63,7 +63,7 @@ static int bq40z50_i2c_write(const struct device *dev, uint8_t reg_addr, uint8_t
 	int ret = i2c_burst_write_dt(&cfg->i2c, reg_addr, value, len);
 
 	if (ret) {
-		LOG_ERR("i2c_burst_write_dt failed for address %d: %d", reg_addr, ret);
+		LOG_ERROR("i2c_burst_write_dt failed for address %d: %d", reg_addr, ret);
 	}
 	return ret;
 }
@@ -102,7 +102,7 @@ static int bq40z50_i2c_write_mfr_blk_access(const struct device *dev, uint16_t c
 	int ret = i2c_transfer_dt(&cfg->i2c, msg, ((value == NULL) ? 3 : 4));
 
 	if (ret) {
-		LOG_ERR("i2c_burst_write_dt returned %d", ret);
+		LOG_ERROR("i2c_burst_write_dt returned %d", ret);
 	}
 	return ret;
 }
@@ -396,7 +396,7 @@ static int bq40z50_init(const struct device *dev)
 	const struct bq40z50_config *cfg = (const struct bq40z50_config *)dev->config;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 

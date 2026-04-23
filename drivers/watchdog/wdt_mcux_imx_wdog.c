@@ -46,7 +46,7 @@ static int mcux_wdog_setup(const struct device *dev, uint8_t options)
 	WDOG_Type *base = get_base_address(dev);
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
@@ -93,7 +93,7 @@ static int mcux_wdog_install_timeout(const struct device *dev,
 	struct mcux_wdog_data *data = dev->data;
 
 	if (data->timeout_valid) {
-		LOG_ERR("No more timeouts can be installed");
+		LOG_ERROR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
@@ -101,7 +101,7 @@ static int mcux_wdog_install_timeout(const struct device *dev,
 	data->wdog_config.interruptTimeValue = 0U;
 
 	if (cfg->window.max < (MSEC_PER_SEC / 2)) {
-		LOG_ERR("Invalid window max, shortest window is 500ms");
+		LOG_ERROR("Invalid window max, shortest window is 500ms");
 		return -EINVAL;
 	}
 
@@ -109,11 +109,11 @@ static int mcux_wdog_install_timeout(const struct device *dev,
 		  WDOG_TMOUT_SEC(cfg->window.max);
 
 	if (cfg->window.min) {
-		LOG_ERR("Invalid window.min, Do not support window model");
+		LOG_ERROR("Invalid window.min, Do not support window model");
 		return -EINVAL;
 	}
 	if (data->wdog_config.timeoutValue > 128) {
-		LOG_ERR("Invalid timeoutValue, valid (0.5s - 128.0s)");
+		LOG_ERROR("Invalid timeoutValue, valid (0.5s - 128.0s)");
 		return -EINVAL;
 	}
 
@@ -129,7 +129,7 @@ static int mcux_wdog_feed(const struct device *dev, int channel_id)
 	WDOG_Type *base = get_base_address(dev);
 
 	if (channel_id != 0) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 

@@ -35,7 +35,7 @@ static inline void da7212_write_reg(const struct device *dev, uint8_t reg, uint8
 	ret = i2c_write(dev_cfg->i2c.bus, data, sizeof(data), dev_cfg->i2c.addr);
 
 	if (ret != 0) {
-		LOG_ERR("i2c write to codec error %d (reg 0x%02x)", ret, reg);
+		LOG_ERROR("i2c write to codec error %d (reg 0x%02x)", ret, reg);
 	}
 
 	LOG_DBG("REG:%02u VAL:%#02x", reg, val);
@@ -51,7 +51,7 @@ static inline void da7212_read_reg(const struct device *dev, uint8_t reg, uint8_
 			&reg, sizeof(reg), val, sizeof(*val));
 
 	if (ret != 0) {
-		LOG_ERR("i2c read from codec error %d (reg 0x%02x)", ret, reg);
+		LOG_ERROR("i2c read from codec error %d (reg 0x%02x)", ret, reg);
 	} else {
 		LOG_DBG("REG:%02u VAL:%#02x", reg, *val);
 	}
@@ -104,7 +104,7 @@ static int da7212_clock_mode_config(const struct device *dev, audio_dai_cfg_t *c
 			val = DIALOG7212_DAI_BCLKS_PER_WCLK_BCLK256;
 			break;
 		default:
-			LOG_ERR("Word size %d not supported", cfg->i2s.word_size);
+			LOG_ERROR("Word size %d not supported", cfg->i2s.word_size);
 			return -EINVAL;
 		}
 
@@ -227,7 +227,7 @@ static int da7212_audio_format_config(const struct device *dev, audio_dai_cfg_t 
 		val = DIALOG7212_DAI_WORD_LENGTH_32B;
 		break;
 	default:
-		LOG_ERR("Word size %d not supported", cfg->i2s.word_size);
+		LOG_ERROR("Word size %d not supported", cfg->i2s.word_size);
 		return -EINVAL;
 	}
 	da7212_update_reg(dev, DIALOG7212_DAI_CTRL,
@@ -517,7 +517,7 @@ static int da7212_configure(const struct device *dev, struct audio_codec_cfg *cf
 	const struct da7212_driver_config *const dev_cfg = DEV_CFG(dev);
 
 	if (cfg->dai_type >= AUDIO_DAI_TYPE_INVALID) {
-		LOG_ERR("dai_type not supported");
+		LOG_ERROR("dai_type not supported");
 		return -EINVAL;
 	}
 
@@ -529,12 +529,12 @@ static int da7212_configure(const struct device *dev, struct audio_codec_cfg *cf
 		int err = clock_control_on(dev_cfg->mclk_dev, dev_cfg->mclk_name);
 
 		if (err < 0) {
-			LOG_ERR("MCLK clock source enable fail: %d", err);
+			LOG_ERROR("MCLK clock source enable fail: %d", err);
 		}
 		err = clock_control_get_rate(dev_cfg->mclk_dev, dev_cfg->mclk_name,
 				&cfg->mclk_freq);
 		if (err < 0) {
-			LOG_ERR("MCLK clock source freq acquire fail: %d", err);
+			LOG_ERROR("MCLK clock source freq acquire fail: %d", err);
 		}
 	}
 

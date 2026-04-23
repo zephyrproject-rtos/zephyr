@@ -308,18 +308,18 @@ static int input_sbus_init(const struct device *dev)
 
 	ret = uart_configure(config->uart_dev, &uart_cfg_sbus);
 	if (ret < 0) {
-		LOG_ERR("Unable to configure UART port: %d", ret);
+		LOG_ERROR("Unable to configure UART port: %d", ret);
 		return ret;
 	}
 
 	ret = uart_irq_callback_user_data_set(config->uart_dev, config->cb, (void *)dev);
 	if (ret < 0) {
 		if (ret == -ENOTSUP) {
-			LOG_ERR("Interrupt-driven UART API support not enabled");
+			LOG_ERROR("Interrupt-driven UART API support not enabled");
 		} else if (ret == -ENOSYS) {
-			LOG_ERR("UART device does not support interrupt-driven API");
+			LOG_ERROR("UART device does not support interrupt-driven API");
 		} else {
-			LOG_ERR("Error setting UART callback: %d", ret);
+			LOG_ERROR("Error setting UART callback: %d", ret);
 		}
 		return ret;
 	}

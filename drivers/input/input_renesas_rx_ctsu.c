@@ -161,7 +161,7 @@ static void process_data(struct k_work *work)
 	ret = RM_TOUCH_DataGet(data->touch_instance.p_ctrl, &data->curr_buttons_data,
 			       data->curr_sliders_position, data->curr_wheels_position);
 	if (ret != FSP_SUCCESS) {
-		LOG_ERR("CTSU: Failed to get data %d", ret);
+		LOG_ERROR("CTSU: Failed to get data %d", ret);
 		return;
 	}
 
@@ -245,7 +245,7 @@ static inline int set_scan_channel(const struct device *dev)
 			data->ctsu_cfg.ctsuchac4 |= (1 << cha_pos);
 			break;
 		default:
-			LOG_ERR("Invalid TS channel");
+			LOG_ERROR("Invalid TS channel");
 			return -EINVAL;
 		}
 	}
@@ -278,14 +278,14 @@ static int input_renesas_rx_ctsu_configure(const struct device *dev,
 	data->work_phase = INITIALIZING;
 	ret = RM_TOUCH_Open(data->touch_instance.p_ctrl, data->touch_instance.p_cfg);
 	if (ret != FSP_SUCCESS) {
-		LOG_ERR("CTSU Open failed");
+		LOG_ERROR("CTSU Open failed");
 		return -EIO;
 	}
 
 	ret = RM_TOUCH_CallbackSet(data->touch_instance.p_ctrl, ctsu_scan_callback, (void *)dev,
 				   NULL);
 	if (ret != FSP_SUCCESS) {
-		LOG_ERR("CTSU Failed to set callback");
+		LOG_ERROR("CTSU Failed to set callback");
 		return -EIO;
 	}
 
@@ -294,7 +294,7 @@ static int input_renesas_rx_ctsu_configure(const struct device *dev,
 	do {
 		ret = RM_TOUCH_ScanStart(data->touch_instance.p_ctrl);
 		if (ret != FSP_SUCCESS) {
-			LOG_ERR("CTSU: Failed to start scan");
+			LOG_ERROR("CTSU: Failed to start scan");
 			return -EIO;
 		}
 		k_sem_take(&data->tune_scan_end, K_FOREVER);
@@ -304,7 +304,7 @@ static int input_renesas_rx_ctsu_configure(const struct device *dev,
 	} while (ret != FSP_SUCCESS && tuning_loop_count < MAX_TUNING_LOOP_COUNT);
 
 	if (tuning_loop_count >= MAX_TUNING_LOOP_COUNT) {
-		LOG_ERR("CTSU: Failed to tune the touch sensor");
+		LOG_ERROR("CTSU: Failed to tune the touch sensor");
 		return -EIO;
 	}
 
@@ -323,7 +323,7 @@ static int input_renesas_rx_ctsu_configure(const struct device *dev,
 	data->work_phase = SCANNING;
 	ret = RM_TOUCH_ScanStart(data->touch_instance.p_ctrl);
 	if (ret != FSP_SUCCESS) {
-		LOG_ERR("CTSU: Failed to start scan");
+		LOG_ERROR("CTSU: Failed to start scan");
 		return -EIO;
 	}
 
@@ -356,7 +356,7 @@ static int renesas_rx_ctsu_init(const struct device *dev)
 
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
-		LOG_ERR("CTSU: Failed to set pinctrl");
+		LOG_ERROR("CTSU: Failed to set pinctrl");
 		return err;
 	}
 
@@ -364,7 +364,7 @@ static int renesas_rx_ctsu_init(const struct device *dev)
 
 	err = set_scan_channel(dev);
 	if (err < 0) {
-		LOG_ERR("CTSU: Failed to set scan channel");
+		LOG_ERROR("CTSU: Failed to set scan channel");
 		return err;
 	}
 

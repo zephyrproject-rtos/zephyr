@@ -57,13 +57,13 @@ static int clk_programmable_get_rate(const struct device *dev,
 		}
 	}
 	if (!parent) {
-		LOG_ERR("find parent clock failed.");
+		LOG_ERROR("find parent clock failed.");
 		return -ENXIO;
 	}
 
 	ret = clock_control_get_rate(parent, NULL, rate);
 	if (ret) {
-		LOG_ERR("get parent clock rate failed.");
+		LOG_ERROR("get parent clock rate failed.");
 		return ret;
 	}
 
@@ -95,11 +95,11 @@ int clk_register_programmable(pmc_registers_t *const pmc,
 
 	prog = &clocks_prog[clocks_prog_idx++];
 	if (clocks_prog_idx > ARRAY_SIZE(clocks_prog)) {
-		LOG_ERR("Array for programmable clock not enough");
+		LOG_ERROR("Array for programmable clock not enough");
 		return -ENOMEM;
 	}
 	if (num_parents > ARRAY_SIZE(prog->parents)) {
-		LOG_ERR("Array for parent clock not enough, at least %d", num_parents);
+		LOG_ERROR("Array for parent clock not enough, at least %d", num_parents);
 		return -ENOMEM;
 	}
 

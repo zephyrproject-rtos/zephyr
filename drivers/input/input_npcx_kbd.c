@@ -78,7 +78,7 @@ static void npcx_kbd_drive_column(const struct device *dev, int col)
 	uint32_t mask;
 
 	if (col >= common->col_size) {
-		LOG_ERR("invalid column: %d", col);
+		LOG_ERROR("invalid column: %d", col);
 		return;
 	}
 
@@ -153,7 +153,7 @@ static int npcx_kbd_init(const struct device *dev)
 	/* Turn on KBSCAN controller device clock */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on KBSCAN clock fail %d", ret);
+		LOG_ERROR("Turn on KBSCAN clock fail %d", ret);
 		return -EIO;
 	}
 
@@ -183,20 +183,20 @@ static int npcx_kbd_init(const struct device *dev)
 	npcx_kbd_drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE);
 
 	if (common->row_size != ROW_SIZE) {
-		LOG_ERR("Unexpected ROW_SIZE: %d != %d", common->row_size, ROW_SIZE);
+		LOG_ERROR("Unexpected ROW_SIZE: %d != %d", common->row_size, ROW_SIZE);
 		return -EINVAL;
 	}
 
 	/* Configure pin-mux for keyboard scan device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("keyboard scan pinctrl setup failed (%d)", ret);
+		LOG_ERROR("keyboard scan pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
 	ret = input_kbd_matrix_common_init(dev);
 	if (ret < 0) {
-		LOG_ERR("keyboard scan common init failed (%d)", ret);
+		LOG_ERROR("keyboard scan common init failed (%d)", ret);
 		return ret;
 	}
 

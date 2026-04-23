@@ -127,7 +127,7 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 #ifdef CONFIG_PCIE_CONTROLLER
 	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
 	if (!dev) {
-		LOG_ERR("Failed to get PCIe root complex");
+		LOG_ERROR("Failed to get PCIe root complex");
 		return false;
 	}
 #endif

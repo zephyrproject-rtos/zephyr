@@ -325,7 +325,7 @@ static void hsm_psicc2_thread(void *arg1, void *arg2, void *arg3)
 				break;
 			}
 		} else {
-			LOG_ERR("Waiting for event failed, code %d", rc);
+			LOG_ERROR("Waiting for event failed, code %d", rc);
 		}
 	}
 }

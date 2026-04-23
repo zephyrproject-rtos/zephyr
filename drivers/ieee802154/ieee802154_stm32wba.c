@@ -141,7 +141,7 @@ static void stm32wba_802154_rx_thread(void *arg1, void *arg2, void *arg3)
 						   NET_AF_UNSPEC, 0, K_FOREVER);
 
 		if (net_pkt_write(pkt, rx_frame->psdu, pkt_len) != 0) {
-			LOG_ERR("Failed to write packet data");
+			LOG_ERROR("Failed to write packet data");
 			net_pkt_unref(pkt);
 		} else {
 			net_pkt_set_ieee802154_lqi(pkt, rx_frame->lqi);
@@ -153,7 +153,7 @@ static void stm32wba_802154_rx_thread(void *arg1, void *arg2, void *arg3)
 #endif /* CONFIG_NET_L2_OPENTHREAD */
 
 			if (net_recv_data(stm32wba_radio->iface, pkt) < 0) {
-				LOG_ERR("Packet dropped by NET stack");
+				LOG_ERROR("Packet dropped by NET stack");
 				net_pkt_unref(pkt);
 			} else {
 				if (LOG_LEVEL >= LOG_LEVEL_DBG) {
@@ -264,7 +264,7 @@ static int stm32wba_802154_configure_extended(enum ieee802154_stm32wba_config_ty
 		break;
 
 	default:
-		LOG_ERR("Unsupported configuration type: %d", type);
+		LOG_ERROR("Unsupported configuration type: %d", type);
 		return -EINVAL;
 	}
 
@@ -319,7 +319,7 @@ static int stm32wba_802154_attr_get_extended(enum ieee802154_stm32wba_attr attr,
 		break;
 
 	default:
-		LOG_ERR("Unsupported attribute: %u", attr);
+		LOG_ERROR("Unsupported attribute: %u", attr);
 		return -ENOENT;
 	}
 
@@ -382,9 +382,9 @@ static int stm32wba_802154_set_channel(const struct device *dev, uint16_t channe
 
 	if (channel < drv_attr.phy_channel_range.from_channel ||
 	    channel > drv_attr.phy_channel_range.to_channel) {
-		LOG_ERR("Invalid channel: %u (valid range: %u to %u)", channel,
-			drv_attr.phy_channel_range.from_channel,
-			drv_attr.phy_channel_range.to_channel);
+		LOG_ERROR("Invalid channel: %u (valid range: %u to %u)", channel,
+			  drv_attr.phy_channel_range.from_channel,
+			  drv_attr.phy_channel_range.to_channel);
 		return channel < drv_attr.phy_channel_range.from_channel ? -ENOTSUP : -EINVAL;
 	}
 
@@ -411,12 +411,12 @@ static int stm32wba_802154_energy_scan_start(const struct device *dev,
 		stm32wba_802154_data.energy_scan_done_cb = done_cb;
 		ret = stm32wba_802154_ral_energy_detection(duration);
 		if (ret != STM32WBA_802154_RAL_ERROR_NONE) {
-			LOG_ERR("Energy detection failed, device is busy");
+			LOG_ERROR("Energy detection failed, device is busy");
 			stm32wba_802154_data.energy_scan_done_cb = NULL;
 			err = -EBUSY;
 		}
 	} else {
-		LOG_ERR("Energy scan already in progress");
+		LOG_ERROR("Energy scan already in progress");
 		err = -EALREADY;
 	}
 
@@ -430,7 +430,7 @@ static int stm32wba_802154_filter(const struct device *dev, bool set,
 	int err = 0;
 
 	if (!set) {
-		LOG_ERR("Filter unset, operation is not supported");
+		LOG_ERROR("Filter unset, operation is not supported");
 		return -ENOTSUP;
 	}
 
@@ -455,7 +455,7 @@ static int stm32wba_802154_filter(const struct device *dev, bool set,
 		break;
 
 	default:
-		LOG_ERR("Unsupported filter type: %u", type);
+		LOG_ERROR("Unsupported filter type: %u", type);
 		err = -ENOTSUP;
 		break;
 	}
@@ -468,8 +468,8 @@ static int stm32wba_802154_set_txpower(const struct device *dev, int16_t dbm)
 	ARG_UNUSED(dev);
 
 	if (!IN_RANGE(dbm, STM32WBA_PWR_MIN, STM32WBA_PWR_MAX)) {
-		LOG_ERR("Invalid TX power: %d dBm (valid range: %d to %d dBm)",
-			dbm, STM32WBA_PWR_MIN, STM32WBA_PWR_MAX);
+		LOG_ERROR("Invalid TX power: %d dBm (valid range: %d to %d dBm)", dbm,
+			  STM32WBA_PWR_MIN, STM32WBA_PWR_MAX);
 		return -EINVAL;
 	}
 
@@ -496,12 +496,12 @@ static int handle_ack(struct stm32wba_802154_data_t *stm32wba_radio)
 	ack_pkt = net_pkt_rx_alloc_with_buffer(stm32wba_radio->iface, ack_len,
 					       NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (ack_pkt == NULL) {
-		LOG_ERR("No free packet available.");
+		LOG_ERROR("No free packet available.");
 		return -ENOMEM;
 	}
 
 	if (net_pkt_write(ack_pkt, stm32wba_radio->ack_frame.psdu, ack_len) < 0) {
-		LOG_ERR("Failed to write to a packet.");
+		LOG_ERROR("Failed to write to a packet.");
 		err = -ENOMEM;
 		goto free_net_ack;
 	}
@@ -561,7 +561,7 @@ static int stm32wba_802154_tx(const struct device *dev,
 	stm32wba_802154_ral_error_t err;
 
 	if (payload_len > IEEE802154_MTU + IEEE802154_FCS_LENGTH) {
-		LOG_ERR("Payload too large: %d", payload_len);
+		LOG_ERROR("Payload too large: %d", payload_len);
 		return -EMSGSIZE;
 	}
 
@@ -587,12 +587,12 @@ static int stm32wba_802154_tx(const struct device *dev,
 		break;
 #endif
 	default:
-		LOG_ERR("TX mode %d not supported", mode);
+		LOG_ERROR("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 
 	if (err != STM32WBA_802154_RAL_ERROR_NONE) {
-		LOG_ERR("Cannot send frame");
+		LOG_ERROR("Cannot send frame");
 		return -EIO;
 	}
 
@@ -654,7 +654,7 @@ static int stm32wba_802154_start(const struct device *dev)
 
 	/* Set the radio in Receive State */
 	if (stm32wba_802154_ral_receive() != STM32WBA_802154_RAL_ERROR_NONE) {
-		LOG_ERR("Failed to enter receive state");
+		LOG_ERROR("Failed to enter receive state");
 		return -EIO;
 	}
 
@@ -673,7 +673,7 @@ static int stm32wba_802154_stop(const struct device *dev)
 
 	/* Set the radio in Sleep state */
 	if (stm32wba_802154_ral_sleep() != STM32WBA_802154_RAL_ERROR_NONE) {
-		LOG_ERR("Error while stopping radio");
+		LOG_ERROR("Error while stopping radio");
 		return -EIO;
 	}
 
@@ -763,12 +763,12 @@ static int stm32wba_802154_set_ack_fpb(const struct ieee802154_config *config)
 		ret = stm32wba_802154_ral_pending_bit_for_ext_addr_set(
 							(const uint8_t *)config->ack_fpb.addr);
 		if (ret != STM32WBA_802154_RAL_ERROR_NONE) {
-			LOG_ERR("Failed to set ACK_FPB for extended address: "
-				"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-				config->ack_fpb.addr[0], config->ack_fpb.addr[1],
-				config->ack_fpb.addr[2], config->ack_fpb.addr[3],
-				config->ack_fpb.addr[4], config->ack_fpb.addr[5],
-				config->ack_fpb.addr[6], config->ack_fpb.addr[7]);
+			LOG_ERROR("Failed to set ACK_FPB for extended address: "
+				  "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+				  config->ack_fpb.addr[0], config->ack_fpb.addr[1],
+				  config->ack_fpb.addr[2], config->ack_fpb.addr[3],
+				  config->ack_fpb.addr[4], config->ack_fpb.addr[5],
+				  config->ack_fpb.addr[6], config->ack_fpb.addr[7]);
 			err = -ENOMEM;
 		} else {
 			LOG_DBG("Set ACK_FPB for extended address: "
@@ -784,9 +784,8 @@ static int stm32wba_802154_set_ack_fpb(const struct ieee802154_config *config)
 
 		ret = stm32wba_802154_ral_pending_bit_for_short_addr_set(short_addr);
 		if (ret != STM32WBA_802154_RAL_ERROR_NONE) {
-			LOG_ERR("Failed to set ACK_FPB for short address: 0x%02X%02X",
-				config->ack_fpb.addr[1],
-				config->ack_fpb.addr[0]);
+			LOG_ERROR("Failed to set ACK_FPB for short address: 0x%02X%02X",
+				  config->ack_fpb.addr[1], config->ack_fpb.addr[0]);
 			err = -ENOMEM;
 		} else {
 			LOG_DBG("Set ACK_FPB for short address: 0x%02X%02X",
@@ -806,12 +805,12 @@ static int stm32wba_802154_clear_ack_fpb(const struct ieee802154_config *config)
 		ret = stm32wba_802154_ral_pending_bit_for_ext_addr_clear(
 						(const uint8_t *)config->ack_fpb.addr);
 		if (ret != STM32WBA_802154_RAL_ERROR_NONE) {
-			LOG_ERR("Failed to clear ACK_FPB for extended address: "
-				"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-				config->ack_fpb.addr[0], config->ack_fpb.addr[1],
-				config->ack_fpb.addr[2], config->ack_fpb.addr[3],
-				config->ack_fpb.addr[4], config->ack_fpb.addr[5],
-				config->ack_fpb.addr[6], config->ack_fpb.addr[7]);
+			LOG_ERROR("Failed to clear ACK_FPB for extended address: "
+				  "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+				  config->ack_fpb.addr[0], config->ack_fpb.addr[1],
+				  config->ack_fpb.addr[2], config->ack_fpb.addr[3],
+				  config->ack_fpb.addr[4], config->ack_fpb.addr[5],
+				  config->ack_fpb.addr[6], config->ack_fpb.addr[7]);
 			err = -ENOENT;
 		} else {
 			LOG_DBG("Clear ACK_FPB for extended address: "
@@ -827,9 +826,8 @@ static int stm32wba_802154_clear_ack_fpb(const struct ieee802154_config *config)
 
 		ret = stm32wba_802154_ral_pending_bit_for_short_addr_clear(short_addr);
 		if (ret != STM32WBA_802154_RAL_ERROR_NONE) {
-			LOG_ERR("Failed to clear ACK_FPB for short address: 0x%02X%02X",
-				config->ack_fpb.addr[1],
-				config->ack_fpb.addr[0]);
+			LOG_ERROR("Failed to clear ACK_FPB for short address: 0x%02X%02X",
+				  config->ack_fpb.addr[1], config->ack_fpb.addr[0]);
 			err = -ENOENT;
 		} else {
 			LOG_DBG("Clear ACK_FPB for short address: 0x%02X%02X",
@@ -960,7 +958,7 @@ static int stm32wba_802154_configure(const struct device *dev,
 					(enum ieee802154_stm32wba_config_type)type,
 					(const struct ieee802154_stm32wba_config *)config);
 #else
-		LOG_ERR("Unsupported configuration type: %d", type);
+		LOG_ERROR("Unsupported configuration type: %d", type);
 		ret = -EINVAL;
 #endif
 	}
@@ -985,7 +983,7 @@ static int stm32wba_802154_attr_get(const struct device *dev,
 	return stm32wba_802154_attr_get_extended((enum ieee802154_stm32wba_attr)attr,
 					  (struct ieee802154_stm32wba_attr_value *)value);
 #else
-	LOG_ERR("Unsupported attribute: %u", attr);
+	LOG_ERROR("Unsupported attribute: %u", attr);
 	return -ENOENT;
 #endif
 }
@@ -1022,7 +1020,7 @@ static void stm32wba_802154_receive_done(uint8_t *p_buffer,
 		return;
 	}
 
-	LOG_ERR("Not enough RX frames allocated for 802.15.4 driver");
+	LOG_ERROR("Not enough RX frames allocated for 802.15.4 driver");
 }
 
 void stm32wba_802154_tx_ack_started(bool ack_fpb, bool ack_seb)

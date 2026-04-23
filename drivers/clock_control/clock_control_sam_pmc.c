@@ -26,7 +26,7 @@ static int atmel_sam_clock_control_on(const struct device *dev,
 	const struct atmel_sam_pmc_config *cfg = (const struct atmel_sam_pmc_config *)sys;
 
 	if (cfg == NULL) {
-		LOG_ERR("The PMC config can not be NULL.");
+		LOG_ERROR("The PMC config can not be NULL.");
 		return -ENXIO;
 	}
 
@@ -37,7 +37,7 @@ static int atmel_sam_clock_control_on(const struct device *dev,
 		soc_pmc_peripheral_enable(cfg->peripheral_id);
 		break;
 	default:
-		LOG_ERR("The PMC clock type is not implemented.");
+		LOG_ERROR("The PMC clock type is not implemented.");
 		return -ENODEV;
 	}
 
@@ -52,7 +52,7 @@ static int atmel_sam_clock_control_off(const struct device *dev,
 	const struct atmel_sam_pmc_config *cfg = (const struct atmel_sam_pmc_config *)sys;
 
 	if (cfg == NULL) {
-		LOG_ERR("The PMC config can not be NULL.");
+		LOG_ERROR("The PMC config can not be NULL.");
 		return -ENXIO;
 	}
 
@@ -63,7 +63,7 @@ static int atmel_sam_clock_control_off(const struct device *dev,
 		soc_pmc_peripheral_disable(cfg->peripheral_id);
 		break;
 	default:
-		LOG_ERR("The PMC clock type is not implemented.");
+		LOG_ERROR("The PMC clock type is not implemented.");
 		return -ENODEV;
 	}
 
@@ -79,7 +79,7 @@ static int atmel_sam_clock_control_get_rate(const struct device *dev,
 	const struct atmel_sam_pmc_config *cfg = (const struct atmel_sam_pmc_config *)sys;
 
 	if (cfg == NULL) {
-		LOG_ERR("The PMC config can not be NULL.");
+		LOG_ERROR("The PMC config can not be NULL.");
 		return -ENXIO;
 	}
 
@@ -90,7 +90,7 @@ static int atmel_sam_clock_control_get_rate(const struct device *dev,
 		*rate = SOC_ATMEL_SAM_MCK_FREQ_HZ;
 		break;
 	default:
-		LOG_ERR("The PMC clock type is not implemented.");
+		LOG_ERROR("The PMC clock type is not implemented.");
 		return -ENODEV;
 	}
 
@@ -109,7 +109,7 @@ atmel_sam_clock_control_get_status(const struct device *dev,
 	enum clock_control_status status;
 
 	if (cfg == NULL) {
-		LOG_ERR("The PMC config can not be NULL.");
+		LOG_ERROR("The PMC config can not be NULL.");
 		return -ENXIO;
 	}
 
@@ -122,7 +122,7 @@ atmel_sam_clock_control_get_status(const struct device *dev,
 		       : CLOCK_CONTROL_STATUS_OFF;
 		break;
 	default:
-		LOG_ERR("The PMC clock type is not implemented.");
+		LOG_ERROR("The PMC clock type is not implemented.");
 		return -ENODEV;
 	}
 

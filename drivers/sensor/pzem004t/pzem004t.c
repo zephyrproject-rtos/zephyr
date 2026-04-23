@@ -31,7 +31,7 @@ static bool custom_fc_handler(const int iface, const struct modbus_adu *rx_adu,
 {
 	/* Validate the received function code */
 	if (rx_adu->fc != PZEM004T_RESET_ENERGY_CUSTOM_FC) {
-		LOG_ERR("Unexpected function code: 0x%02X", rx_adu->fc);
+		LOG_ERROR("Unexpected function code: 0x%02X", rx_adu->fc);
 		*excep_code = MODBUS_EXC_ILLEGAL_FC;
 		return true;
 	}
@@ -46,7 +46,7 @@ static void register_custom_fc(const int iface)
 	int err = modbus_register_user_fc(iface, &modbus_cfg_custom_fc);
 
 	if (err) {
-		LOG_ERR("Failed to register custom function code (err %d)", err);
+		LOG_ERROR("Failed to register custom function code (err %d)", err);
 	} else {
 		LOG_INF("Custom function code 0x42 registered successfully");
 	}
@@ -99,7 +99,7 @@ static int pzem004t_init(const struct device *dev)
 	int iface = modbus_iface_get_by_name(config->modbus_iface_name);
 
 	if (iface < 0) {
-		LOG_ERR("Failed to get Modbus interface: %s", config->modbus_iface_name);
+		LOG_ERROR("Failed to get Modbus interface: %s", config->modbus_iface_name);
 		return -ENODEV;
 	}
 
@@ -107,7 +107,7 @@ static int pzem004t_init(const struct device *dev)
 		int err = modbus_init_client(iface, config->client_param);
 
 		if (err) {
-			LOG_ERR("Modbus RTU client initialization failed (err %d)", err);
+			LOG_ERROR("Modbus RTU client initialization failed (err %d)", err);
 			return err;
 		}
 	}
@@ -131,8 +131,8 @@ static int pzem004t_sample_fetch(const struct device *dev, enum sensor_channel c
 					 MEASUREMENT_REGISTER_TOTAL_LENGTH);
 
 	if (err != 0) {
-		LOG_ERR("Failed to fetch sensor data at address 0x%02x: %d",
-				sensor_data->modbus_address, err);
+		LOG_ERROR("Failed to fetch sensor data at address 0x%02x: %d",
+			  sensor_data->modbus_address, err);
 		return err;
 	}
 
@@ -198,7 +198,7 @@ static int pzem004t_attr_get(const struct device *dev, enum sensor_channel chan,
 
 	if (chan != (enum sensor_channel)SENSOR_CHAN_PZEM004T_POWER_ALARM_THRESHOLD &&
 	    chan != (enum sensor_channel)SENSOR_CHAN_PZEM004T_MODBUS_RTU_ADDRESS) {
-		LOG_ERR("Channel not supported for setting Request");
+		LOG_ERROR("Channel not supported for setting Request");
 		return -ENOTSUP;
 	}
 
@@ -226,7 +226,7 @@ static int pzem004t_attr_get(const struct device *dev, enum sensor_channel chan,
 		break;
 
 	default:
-		LOG_ERR("Unsupported Attribute");
+		LOG_ERROR("Unsupported Attribute");
 		return -ENOTSUP;
 	}
 
@@ -243,14 +243,14 @@ static int pzem004t_attr_set(const struct device *dev, enum sensor_channel chan,
 	    chan != (enum sensor_channel)SENSOR_CHAN_PZEM004T_MODBUS_RTU_ADDRESS &&
 		chan != (enum sensor_channel)SENSOR_CHAN_PZEM004T_ADDRESS_INST_SET &&
 	    chan != (enum sensor_channel)SENSOR_CHAN_PZEM004T_RESET_ENERGY) {
-		LOG_ERR("Channel not supported for setting attribute");
+		LOG_ERROR("Channel not supported for setting attribute");
 		return -ENOTSUP;
 	}
 
 	switch ((uint32_t)attr) {
 	case (enum sensor_attribute)SENSOR_ATTR_PZEM004T_POWER_ALARM_THRESHOLD:
 		if (val->val1 < 0 || val->val1 > PZEM004T_MAX_POWER_ALARM_THRESHOLD) {
-			LOG_ERR("Power alarm threshold out of range");
+			LOG_ERROR("Power alarm threshold out of range");
 			return -EINVAL;
 		}
 
@@ -263,7 +263,7 @@ static int pzem004t_attr_set(const struct device *dev, enum sensor_channel chan,
 
 	case (enum sensor_attribute)SENSOR_ATTR_PZEM004T_MODBUS_RTU_ADDRESS:
 		if (val->val1 < 0 || val->val1 > PZEM004T_MAX_MODBUS_RTU_ADDRESS) {
-			LOG_ERR("Address out of range");
+			LOG_ERROR("Address out of range");
 			return -EINVAL;
 		}
 
@@ -277,7 +277,7 @@ static int pzem004t_attr_set(const struct device *dev, enum sensor_channel chan,
 
 	case (enum sensor_attribute)SENSOR_ATTR_PZEM004T_ADDRESS_INST_SET:
 		if (val->val1 < 0 || val->val1 > PZEM004T_MAX_MODBUS_RTU_ADDRESS) {
-			LOG_ERR("Address out of range");
+			LOG_ERROR("Address out of range");
 			return -EINVAL;
 		}
 
@@ -288,19 +288,19 @@ static int pzem004t_attr_set(const struct device *dev, enum sensor_channel chan,
 	case (enum sensor_attribute)SENSOR_ATTR_PZEM004T_RESET_ENERGY:
 		err = pzem004t_reset_energy(data->iface, data->modbus_address);
 		if (err != 0) {
-			LOG_ERR("Failed to reset energy");
+			LOG_ERROR("Failed to reset energy");
 			return err;
 		}
 		break;
 #else
 	case (enum sensor_attribute)SENSOR_ATTR_PZEM004T_RESET_ENERGY:
-		LOG_ERR("Reset energy is not enabled by default. Enable "
-			"CONFIG_PZEM004T_ENABLE_RESET_ENERGY in prj.conf.");
+		LOG_ERROR("Reset energy is not enabled by default. Enable "
+			  "CONFIG_PZEM004T_ENABLE_RESET_ENERGY in prj.conf.");
 		return -ENOTSUP;
 #endif /* CONFIG_PZEM004T_ENABLE_RESET_ENERGY */
 
 	default:
-		LOG_ERR("Unsupported Attribute");
+		LOG_ERROR("Unsupported Attribute");
 		return -ENOTSUP;
 	}
 

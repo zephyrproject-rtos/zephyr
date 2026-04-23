@@ -121,23 +121,23 @@ static int start_read(const struct device *dev,
 	XMC_VADC_GROUP_CLASS_t group_class = {0};
 
 	if (requested_channels == 0) {
-		LOG_ERR("No channels requested");
+		LOG_ERROR("No channels requested");
 		return -EINVAL;
 	}
 
 	if (requested_channels != configured_channels) {
-		LOG_ERR("Selected channels not configured");
+		LOG_ERROR("Selected channels not configured");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("Oversampling not supported");
+		LOG_ERROR("Oversampling not supported");
 		return -ENOTSUP;
 	}
 
 	ret = adc_xmc4xxx_validate_buffer_size(sequence);
 	if (ret < 0) {
-		LOG_ERR("Invalid sequence buffer size");
+		LOG_ERROR("Invalid sequence buffer size");
 		return ret;
 	}
 
@@ -148,7 +148,7 @@ static int start_read(const struct device *dev,
 	} else if (resolution == 12) {
 		group_class.conversion_mode_standard = XMC_VADC_CONVMODE_12BIT;
 	} else {
-		LOG_ERR("Invalid resolution");
+		LOG_ERROR("Invalid resolution");
 		return -EINVAL;
 	}
 	XMC_VADC_GROUP_InputClassInit(adc_group,  group_class, XMC_VADC_GROUP_CONV_STD, 0);
@@ -197,27 +197,27 @@ static int adc_xmc4xxx_channel_setup(const struct device *dev,
 	XMC_VADC_CHANNEL_CONFIG_t channel_config = {0};
 
 	if (ch_num >= XMC4XXX_CHANNEL_COUNT) {
-		LOG_ERR("Channel %d is not valid", ch_num);
+		LOG_ERROR("Channel %d is not valid", ch_num);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Invalid channel gain");
+		LOG_ERROR("Invalid channel gain");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Invalid channel reference");
+		LOG_ERROR("Invalid channel reference");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Invalid acquisition time");
+		LOG_ERROR("Invalid acquisition time");
 		return -EINVAL;
 	}
 

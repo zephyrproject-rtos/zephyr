@@ -62,7 +62,7 @@ static int32_t st_lis2duxs12_set_range(const struct device *dev, uint8_t range)
 		data->gain = lis2duxs12_from_fs16g_to_mg(1);
 		break;
 	default:
-		LOG_ERR("range %d not supported.", range);
+		LOG_ERROR("range %d not supported.", range);
 		return -EINVAL;
 	}
 
@@ -81,7 +81,7 @@ static int32_t st_lis2duxs12_sample_fetch_accel(const struct device *dev)
 	lis2duxs12_xl_data_t xzy_data = {0};
 
 	if (lis2duxs12_xl_data_get(ctx, &mode, &xzy_data) < 0) {
-		LOG_ERR("Failed to fetch raw data sample");
+		LOG_ERROR("Failed to fetch raw data sample");
 		return -EIO;
 	}
 
@@ -103,7 +103,7 @@ static int32_t st_lis2duxs12_sample_fetch_temp(const struct device *dev)
 	lis2duxs12_outt_data_t temp_data = {0};
 
 	if (lis2duxs12_outt_data_get(ctx, &temp_data) < 0) {
-		LOG_ERR("Failed to fetch raw temperature data sample");
+		LOG_ERROR("Failed to fetch raw temperature data sample");
 		return -EIO;
 	}
 
@@ -125,7 +125,7 @@ static int32_t st_lis2duxs12_rtio_read_accel(const struct device *dev, int16_t *
 	lis2duxs12_xl_data_t xzy_data = {0};
 
 	if (lis2duxs12_xl_data_get(ctx, &mode, &xzy_data) < 0) {
-		LOG_ERR("Failed to fetch raw data sample");
+		LOG_ERROR("Failed to fetch raw data sample");
 		return -EIO;
 	}
 
@@ -145,7 +145,7 @@ static int32_t st_lis2duxs12_rtio_read_temp(const struct device *dev, int16_t *t
 	lis2duxs12_outt_data_t temp_data = {0};
 
 	if (lis2duxs12_outt_data_get(ctx, &temp_data) < 0) {
-		LOG_ERR("Failed to fetch raw temperature data sample");
+		LOG_ERROR("Failed to fetch raw temperature data sample");
 		return -EIO;
 	}
 
@@ -286,7 +286,7 @@ static void st_lis2duxs12_handle_interrupt(const struct device *dev)
 exit:
 	ret = gpio_pin_interrupt_configure_dt(lis2duxs12->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("%s: Not able to configure pin_int", dev->name);
+		LOG_ERROR("%s: Not able to configure pin_int", dev->name);
 	}
 }
 
@@ -354,12 +354,12 @@ int st_lis2duxs12_init(const struct device *dev)
 	/* check chip ID */
 	ret = lis2duxs12_device_id_get(ctx, &chip_id);
 	if (ret < 0) {
-		LOG_ERR("%s: Not able to read dev id", dev->name);
+		LOG_ERROR("%s: Not able to read dev id", dev->name);
 		return ret;
 	}
 
 	if (chip_id != LIS2DUXS12_ID) {
-		LOG_ERR("%s: Invalid chip ID 0x%02x", dev->name, chip_id);
+		LOG_ERROR("%s: Invalid chip ID 0x%02x", dev->name, chip_id);
 		return -EINVAL;
 	}
 
@@ -383,7 +383,7 @@ int st_lis2duxs12_init(const struct device *dev)
 	if (cfg->trig_enabled) {
 		ret = lis2dux12_trigger_init(dev);
 		if (ret < 0) {
-			LOG_ERR("%s: Failed to initialize triggers", dev->name);
+			LOG_ERROR("%s: Failed to initialize triggers", dev->name);
 			return ret;
 		}
 	}
@@ -393,7 +393,7 @@ int st_lis2duxs12_init(const struct device *dev)
 	LOG_DBG("%s: pm: %d, odr: %d", dev->name, cfg->pm, cfg->odr);
 	ret = st_lis2duxs12_set_odr_raw(dev, cfg->odr);
 	if (ret < 0) {
-		LOG_ERR("%s: odr init error (12.5 Hz)", dev->name);
+		LOG_ERROR("%s: odr init error (12.5 Hz)", dev->name);
 		return ret;
 	}
 
@@ -401,7 +401,7 @@ int st_lis2duxs12_init(const struct device *dev)
 	LOG_DBG("%s: range is %d", dev->name, cfg->range);
 	ret = st_lis2duxs12_set_range(dev, cfg->range);
 	if (ret < 0) {
-		LOG_ERR("%s: range init error %d", dev->name, cfg->range);
+		LOG_ERROR("%s: range init error %d", dev->name, cfg->range);
 		return ret;
 	}
 

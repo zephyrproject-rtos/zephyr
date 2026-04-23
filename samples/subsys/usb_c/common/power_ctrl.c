@@ -84,67 +84,67 @@ static int power_ctrl_init(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&cfg->source_en)) {
-		LOG_ERR("Error: Source Enable device %s is not ready", cfg->source_en.port->name);
+		LOG_ERROR("Error: Source Enable device %s is not ready", cfg->source_en.port->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->dcdc_en)) {
-		LOG_ERR("Error: DCDC Enable device %s is not ready", cfg->dcdc_en.port->name);
+		LOG_ERROR("Error: DCDC Enable device %s is not ready", cfg->dcdc_en.port->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->vconn1_en)) {
-		LOG_ERR("Error: VCONN1 Enable device %s is not ready", cfg->vconn1_en.port->name);
+		LOG_ERROR("Error: VCONN1 Enable device %s is not ready", cfg->vconn1_en.port->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->vconn2_en)) {
-		LOG_ERR("Error: VCONN2 Enable device %s is not ready", cfg->vconn2_en.port->name);
+		LOG_ERROR("Error: VCONN2 Enable device %s is not ready", cfg->vconn2_en.port->name);
 		return -ENODEV;
 	}
 
 	if (!pwm_is_ready_dt(&cfg->pwm_ctl)) {
-		LOG_ERR("Error: PWM CTL device is not ready");
+		LOG_ERROR("Error: PWM CTL device is not ready");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->source_en, GPIO_OUTPUT);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure Source Enable device %s pin %d", ret,
-			cfg->source_en.port->name, cfg->source_en.pin);
+		LOG_ERROR("Error %d: failed to configure Source Enable device %s pin %d", ret,
+			  cfg->source_en.port->name, cfg->source_en.pin);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->dcdc_en, GPIO_OUTPUT);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure DCDC Enable device %s pin %d", ret,
-			cfg->dcdc_en.port->name, cfg->dcdc_en.pin);
+		LOG_ERROR("Error %d: failed to configure DCDC Enable device %s pin %d", ret,
+			  cfg->dcdc_en.port->name, cfg->dcdc_en.pin);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->vconn1_en, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure VCONN1 Enable device %s pin %d", ret,
-			cfg->vconn1_en.port->name, cfg->vconn1_en.pin);
+		LOG_ERROR("Error %d: failed to configure VCONN1 Enable device %s pin %d", ret,
+			  cfg->vconn1_en.port->name, cfg->vconn1_en.pin);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->vconn2_en, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure VCONN2 Enable device %s pin %d", ret,
-			cfg->vconn2_en.port->name, cfg->vconn2_en.pin);
+		LOG_ERROR("Error %d: failed to configure VCONN2 Enable device %s pin %d", ret,
+			  cfg->vconn2_en.port->name, cfg->vconn2_en.pin);
 		return ret;
 	}
 
 	ret = gpio_pin_set_dt(&cfg->source_en, 1);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to enable source", ret);
+		LOG_ERROR("Error %d: failed to enable source", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_set_dt(&cfg->dcdc_en, 1);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to enable dcdc converter", ret);
+		LOG_ERROR("Error %d: failed to enable dcdc converter", ret);
 		return ret;
 	}
 
@@ -152,7 +152,7 @@ static int power_ctrl_init(const struct device *dev)
 
 	ret = source_ctrl_set(dev, SOURCE_0V);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to set VBUS to 0V", ret);
+		LOG_ERROR("Error %d: failed to set VBUS to 0V", ret);
 		return ret;
 	}
 

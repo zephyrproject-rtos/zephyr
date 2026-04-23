@@ -47,7 +47,7 @@ static int stepper_ctrl_set_coil_charge(const struct device *dev)
 		ret = gpio_pin_set_dt(&config->control_pins[i],
 				      half_step_lookup_table[data->coil_charge][i]);
 		if (ret < 0) {
-			LOG_ERR("Failed to set control pin %d: %d", i, ret);
+			LOG_ERROR("Failed to set control pin %d: %d", i, ret);
 			return ret;
 		}
 	}
@@ -100,7 +100,7 @@ static void stepper_work_step_handler(const struct device *dev)
 
 	ret = stepper_ctrl_set_coil_charge(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to set coil charge: %d", ret);
+		LOG_ERROR("Failed to set coil charge: %d", ret);
 		return;
 	}
 
@@ -128,7 +128,7 @@ static int h_bridge_stepper_ctrl_move_by(const struct device *dev, int32_t micro
 	int ret;
 
 	if (data->microstep_interval_ns == 0) {
-		LOG_ERR("Step interval not set or invalid step interval set");
+		LOG_ERROR("Step interval not set or invalid step interval set");
 		return -EINVAL;
 	}
 
@@ -144,13 +144,13 @@ static int h_bridge_stepper_ctrl_move_by(const struct device *dev, int32_t micro
 		gpio_stepper_common_update_direction_from_step_count(dev);
 		ret = config->timing_source->update(dev, data->microstep_interval_ns);
 		if (ret < 0) {
-			LOG_ERR("Failed to update timing source: %d", ret);
+			LOG_ERROR("Failed to update timing source: %d", ret);
 			K_SPINLOCK_BREAK;
 		}
 
 		ret = config->timing_source->start(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to start timing source: %d", ret);
+			LOG_ERROR("Failed to start timing source: %d", ret);
 		}
 	}
 
@@ -164,7 +164,7 @@ static int h_bridge_stepper_ctrl_set_microstep_interval(const struct device *dev
 	struct gpio_stepper_common_data *data = dev->data;
 
 	if (microstep_interval_ns == 0) {
-		LOG_ERR("Step interval is invalid.");
+		LOG_ERROR("Step interval is invalid.");
 		return -EINVAL;
 	}
 
@@ -185,7 +185,7 @@ static int h_bridge_stepper_ctrl_run(const struct device *dev,
 	int ret;
 
 	if (data->microstep_interval_ns == 0) {
-		LOG_ERR("Step interval not set or invalid step interval set");
+		LOG_ERROR("Step interval not set or invalid step interval set");
 		return -EINVAL;
 	}
 
@@ -194,13 +194,13 @@ static int h_bridge_stepper_ctrl_run(const struct device *dev,
 		data->direction = direction;
 		ret = config->timing_source->update(dev, data->microstep_interval_ns);
 		if (ret < 0) {
-			LOG_ERR("Failed to update timing source: %d", ret);
+			LOG_ERROR("Failed to update timing source: %d", ret);
 			K_SPINLOCK_BREAK;
 		}
 
 		ret = config->timing_source->start(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to start timing source: %d", ret);
+			LOG_ERROR("Failed to start timing source: %d", ret);
 		}
 	}
 
@@ -229,12 +229,12 @@ static int h_bridge_stepper_init(const struct device *dev)
 	LOG_DBG("Initializing %s h_bridge_stepper with %d pin", dev->name, NUM_CONTROL_PINS);
 	for (uint8_t n_pin = 0; n_pin < NUM_CONTROL_PINS; n_pin++) {
 		if (!gpio_is_ready_dt(&config->control_pins[n_pin])) {
-			LOG_ERR("Control pin %d is not ready", n_pin);
+			LOG_ERROR("Control pin %d is not ready", n_pin);
 			return -ENODEV;
 		}
 		err = gpio_pin_configure_dt(&config->control_pins[n_pin], GPIO_OUTPUT_INACTIVE);
 		if (err < 0) {
-			LOG_ERR("Failed to configure control pin %d: %d", n_pin, err);
+			LOG_ERROR("Failed to configure control pin %d: %d", n_pin, err);
 			return -ENODEV;
 		}
 	}

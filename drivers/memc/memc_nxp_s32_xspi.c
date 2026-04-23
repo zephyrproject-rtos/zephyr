@@ -65,8 +65,7 @@ static int memc_nxp_s32_xspi_init(const struct device *dev)
 
 	status = Xspi_Ip_ControllerInit(data->instance, config->controller_cfg);
 	if (status != STATUS_XSPI_IP_SUCCESS) {
-		LOG_ERR("Failed to initialize XSPI controller %d (%d)",
-			data->instance, status);
+		LOG_ERROR("Failed to initialize XSPI controller %d (%d)", data->instance, status);
 		return -EIO;
 	}
 

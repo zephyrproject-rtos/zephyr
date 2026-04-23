@@ -22,13 +22,13 @@ static int external_sensor_clock_init(void)
 
 	rc = counter_start(external_sensor_clock);
 	if (rc != 0) {
-		LOG_ERR("Failed to start sensor clock counter: %d\n", rc);
+		LOG_ERROR("Failed to start sensor clock counter: %d\n", rc);
 		return rc;
 	}
 
 	freq = counter_get_frequency(external_sensor_clock);
 	if (freq == 0) {
-		LOG_ERR("Sensor clock %s has no fixed frequency\n", external_sensor_clock->name);
+		LOG_ERROR("Sensor clock %s has no fixed frequency\n", external_sensor_clock->name);
 		return -EINVAL;
 	}
 

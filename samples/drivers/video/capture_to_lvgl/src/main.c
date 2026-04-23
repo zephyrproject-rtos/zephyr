@@ -39,13 +39,13 @@ int main(void)
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Device not ready, aborting test");
+		LOG_ERROR("Device not ready, aborting test");
 		return 0;
 	}
 
 	video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 	if (!device_is_ready(video_dev)) {
-		LOG_ERR("%s device is not ready", video_dev->name);
+		LOG_ERROR("%s device is not ready", video_dev->name);
 		return 0;
 	}
 
@@ -54,7 +54,7 @@ int main(void)
 	/* Get capabilities */
 	caps.type = type;
 	if (video_get_caps(video_dev, &caps)) {
-		LOG_ERR("Unable to retrieve video capabilities");
+		LOG_ERROR("Unable to retrieve video capabilities");
 		return 0;
 	}
 
@@ -73,7 +73,7 @@ int main(void)
 	/* Get default/native format */
 	fmt.type = type;
 	if (video_get_format(video_dev, &fmt)) {
-		LOG_ERR("Unable to retrieve video format");
+		LOG_ERROR("Unable to retrieve video format");
 		return 0;
 	}
 
@@ -85,7 +85,7 @@ int main(void)
 	sel.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH;
 	sel.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT;
 	if (video_set_selection(video_dev, &sel)) {
-		LOG_ERR("Unable to set selection crop");
+		LOG_ERROR("Unable to set selection crop");
 		return 0;
 	}
 	LOG_INF("Selection crop set to (%u,%u)/%ux%u",
@@ -104,7 +104,7 @@ int main(void)
 	sel.target = VIDEO_SEL_TGT_CROP;
 	err = video_get_selection(video_dev, &sel);
 	if (err < 0 && err != -ENOSYS) {
-		LOG_ERR("Unable to get selection crop");
+		LOG_ERROR("Unable to get selection crop");
 		return 0;
 	}
 
@@ -116,13 +116,13 @@ int main(void)
 		sel.rect.height = fmt.height;
 		err = video_set_selection(video_dev, &sel);
 		if (err < 0 && err != -ENOSYS) {
-			LOG_ERR("Unable to set selection compose");
+			LOG_ERROR("Unable to set selection compose");
 			return 0;
 		}
 	}
 
 	if (video_set_format(video_dev, &fmt)) {
-		LOG_ERR("Unable to set up video format");
+		LOG_ERROR("Unable to set up video format");
 		return 0;
 	}
 
@@ -135,7 +135,7 @@ int main(void)
 		buffers[i] = video_buffer_aligned_alloc(fmt.size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
 							K_NO_WAIT);
 		if (buffers[i] == NULL) {
-			LOG_ERR("Unable to alloc video buffer");
+			LOG_ERROR("Unable to alloc video buffer");
 			return 0;
 		}
 		buffers[i]->type = type;
@@ -156,13 +156,13 @@ int main(void)
 
 	/* Start video capture */
 	if (video_stream_start(video_dev, type)) {
-		LOG_ERR("Unable to start capture (interface)");
+		LOG_ERROR("Unable to start capture (interface)");
 		return 0;
 	}
 
 	err = display_blanking_off(display_dev);
 	if (err < 0 && err != -ENOSYS) {
-		LOG_ERR("Failed to turn blanking off (error %d)", err);
+		LOG_ERROR("Failed to turn blanking off (error %d)", err);
 		return 0;
 	}
 
@@ -183,7 +183,7 @@ int main(void)
 	while (1) {
 		err = video_dequeue(video_dev, &vbuf, K_FOREVER);
 		if (err) {
-			LOG_ERR("Unable to dequeue video buf");
+			LOG_ERROR("Unable to dequeue video buf");
 			return 0;
 		}
 
@@ -194,7 +194,7 @@ int main(void)
 
 		err = video_enqueue(video_dev, vbuf);
 		if (err) {
-			LOG_ERR("Unable to requeue video buf");
+			LOG_ERROR("Unable to requeue video buf");
 			return 0;
 		}
 	}

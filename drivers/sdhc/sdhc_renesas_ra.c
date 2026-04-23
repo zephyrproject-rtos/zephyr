@@ -349,7 +349,7 @@ static int sdhc_ra_request(const struct device *dev, struct sdhc_command *cmd,
 		/* Verify card is back in transfer state after write */
 		ret = k_sem_take(&priv->sdmmc_event.transfer_sem, K_MSEC(ra_cmd.timeout_ms));
 		if (ret < 0) {
-			LOG_ERR("Can not take sem!");
+			LOG_ERROR("Can not take sem!");
 			goto end;
 		}
 
@@ -377,7 +377,7 @@ static int sdhc_ra_request(const struct device *dev, struct sdhc_command *cmd,
 		/* Verify card is back in transfer state after write */
 		ret = k_sem_take(&priv->sdmmc_event.transfer_sem, K_MSEC(ra_cmd.timeout_ms));
 		if (ret < 0) {
-			LOG_ERR("Can not take sem!");
+			LOG_ERROR("Can not take sem!");
 			goto end;
 		}
 
@@ -480,7 +480,7 @@ static int sdhc_ra_set_io(const struct device *dev, struct sdhc_io *ios)
 
 	if (ios->clock) {
 		if (ios->clock > priv->props.f_max || ios->clock < priv->props.f_min) {
-			LOG_ERR("Proposed clock outside supported host range");
+			LOG_ERROR("Proposed clock outside supported host range");
 			return -EINVAL;
 		}
 
@@ -504,7 +504,7 @@ static int sdhc_ra_set_io(const struct device *dev, struct sdhc_io *ios)
 			case SDHC_TIMING_SDR25:
 				break;
 			default:
-				LOG_ERR("Timing mode not supported for this device");
+				LOG_ERROR("Timing mode not supported for this device");
 				ret = -ENOTSUP;
 				break;
 			}
@@ -569,7 +569,7 @@ static int sdhc_ra_init(const struct device *dev)
 	fsp_err = r_sdhi_hw_cfg(&priv->sdmmc_ctrl);
 	ret = err_fsp2zep(fsp_err);
 	if (ret < 0) {
-		LOG_ERR("failed to init sdmmc media");
+		LOG_ERROR("failed to init sdmmc media");
 		goto end;
 	}
 	priv->bus_width = SDMMC_BUS_WIDTH_1_BIT;

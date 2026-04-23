@@ -409,7 +409,7 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 
 	if ((y_end_idx > (config->height - 1)) ||
 	    (x_end_idx > (config->width - 1))) {
-		LOG_ERR("Position out of bounds");
+		LOG_ERROR("Position out of bounds");
 		return -EINVAL;
 	}
 
@@ -502,7 +502,7 @@ static int uc81xx_set_pixel_format(const struct device *dev,
 		return 0;
 	}
 
-	LOG_ERR("not supported");
+	LOG_ERROR("not supported");
 	return -ENOTSUP;
 }
 
@@ -563,12 +563,12 @@ static int uc81xx_init(const struct device *dev)
 	LOG_DBG("");
 
 	if (!device_is_ready(config->mipi_dev)) {
-		LOG_ERR("MIPI device not ready");
+		LOG_ERROR("MIPI device not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&config->busy_gpio)) {
-		LOG_ERR("Busy GPIO device not ready");
+		LOG_ERROR("Busy GPIO device not ready");
 		return -ENODEV;
 	}
 
@@ -576,7 +576,7 @@ static int uc81xx_init(const struct device *dev)
 
 	if (config->width > config->quirks->max_width ||
 	    config->height > config->quirks->max_height) {
-		LOG_ERR("Display size out of range.");
+		LOG_ERROR("Display size out of range.");
 		return -EINVAL;
 	}
 

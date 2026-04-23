@@ -26,7 +26,7 @@ static int ltc2451_channel_setup(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (channel_cfg->channel_id != 0) {
-		LOG_ERR("Invalid channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("Invalid channel id '%d'", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -44,14 +44,14 @@ static int ltc2451_set_conversion_speed(const struct device *dev, uint8_t conver
 	} else if (conversion_speed == 30) {
 		wr_buf[0] = 1;
 	} else {
-		LOG_ERR("Invalid conversion speed selected");
+		LOG_ERROR("Invalid conversion speed selected");
 		return -EINVAL;
 	}
 
 	err = i2c_write_dt(&config->i2c, wr_buf, sizeof(wr_buf));
 
 	if (err != 0) {
-		LOG_ERR("LTC write failed (err %d)", err);
+		LOG_ERROR("LTC write failed (err %d)", err);
 	}
 
 	return err;
@@ -69,7 +69,7 @@ static int ltc2451_read_latest_conversion(const struct device *dev,
 		value_buf = (uint16_t *)sequence->buffer;
 		value_buf[0] = sys_get_be16(rd_buf);
 	} else {
-		LOG_ERR("LTC read failed (err %d)", err);
+		LOG_ERROR("LTC read failed (err %d)", err);
 	}
 
 	return err;
@@ -80,7 +80,7 @@ static int ltc2451_init(const struct device *dev)
 	const struct ltc2451_config *config = dev->config;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 

@@ -26,7 +26,7 @@ int cpu_load_metric_get(int cpu_id)
 
 	ret = k_thread_runtime_stats_cpu_get(cpu_id, &cpu_query);
 	if (ret) {
-		LOG_ERR("Could not retrieve runtime statistics from scheduler");
+		LOG_ERROR("Could not retrieve runtime statistics from scheduler");
 		return ret;
 	}
 

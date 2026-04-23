@@ -34,7 +34,7 @@ static int lsdir(const char *path)
 	/* Verify fs_opendir() */
 	res = fs_opendir(&dirp, path);
 	if (res) {
-		LOG_ERR("Error opening dir %s [%d]\n", path, res);
+		LOG_ERROR("Error opening dir %s [%d]\n", path, res);
 		return res;
 	}
 
@@ -46,7 +46,7 @@ static int lsdir(const char *path)
 		/* entry.name[0] == 0 means end-of-dir */
 		if (res || entry.name[0] == 0) {
 			if (res < 0) {
-				LOG_ERR("Error reading dir [%d]\n", res);
+				LOG_ERROR("Error reading dir [%d]\n", res);
 			}
 			break;
 		}
@@ -74,27 +74,27 @@ static int littlefs_increase_infile_value(char *fname)
 	fs_file_t_init(&file);
 	rc = fs_open(&file, fname, FS_O_CREATE | FS_O_RDWR);
 	if (rc < 0) {
-		LOG_ERR("FAIL: open %s: %d", fname, rc);
+		LOG_ERROR("FAIL: open %s: %d", fname, rc);
 		return rc;
 	}
 
 	rc = fs_read(&file, &boot_count, sizeof(boot_count));
 	if (rc < 0) {
-		LOG_ERR("FAIL: read %s: [rd:%d]", fname, rc);
+		LOG_ERROR("FAIL: read %s: [rd:%d]", fname, rc);
 		goto out;
 	}
 	LOG_PRINTK("%s read count:%u (bytes: %d)\n", fname, boot_count, rc);
 
 	rc = fs_seek(&file, 0, FS_SEEK_SET);
 	if (rc < 0) {
-		LOG_ERR("FAIL: seek %s: %d", fname, rc);
+		LOG_ERROR("FAIL: seek %s: %d", fname, rc);
 		goto out;
 	}
 
 	boot_count += 1;
 	rc = fs_write(&file, &boot_count, sizeof(boot_count));
 	if (rc < 0) {
-		LOG_ERR("FAIL: write %s: %d", fname, rc);
+		LOG_ERROR("FAIL: write %s: %d", fname, rc);
 		goto out;
 	}
 
@@ -104,7 +104,7 @@ static int littlefs_increase_infile_value(char *fname)
  out:
 	ret = fs_close(&file);
 	if (ret < 0) {
-		LOG_ERR("FAIL: close %s: %d", fname, ret);
+		LOG_ERROR("FAIL: close %s: %d", fname, ret);
 		return ret;
 	}
 
@@ -183,13 +183,13 @@ static int littlefs_binary_file_adj(char *fname)
 
 	rc = fs_open(&file, fname, FS_O_CREATE | FS_O_RDWR);
 	if (rc < 0) {
-		LOG_ERR("FAIL: open %s: %d", fname, rc);
+		LOG_ERROR("FAIL: open %s: %d", fname, rc);
 		return rc;
 	}
 
 	rc = fs_stat(fname, &dirent);
 	if (rc < 0) {
-		LOG_ERR("FAIL: stat %s: %d", fname, rc);
+		LOG_ERROR("FAIL: stat %s: %d", fname, rc);
 		goto out;
 	}
 
@@ -202,8 +202,7 @@ static int littlefs_binary_file_adj(char *fname)
 		rc = fs_read(&file, file_test_pattern,
 			     sizeof(file_test_pattern));
 		if (rc < 0) {
-			LOG_ERR("FAIL: read %s: [rd:%d]",
-				fname, rc);
+			LOG_ERROR("FAIL: read %s: [rd:%d]", fname, rc);
 			goto out;
 		}
 		incr_pattern(file_test_pattern, sizeof(file_test_pattern), 0x1);
@@ -214,19 +213,19 @@ static int littlefs_binary_file_adj(char *fname)
 
 	rc = fs_seek(&file, 0, FS_SEEK_SET);
 	if (rc < 0) {
-		LOG_ERR("FAIL: seek %s: %d", fname, rc);
+		LOG_ERROR("FAIL: seek %s: %d", fname, rc);
 		goto out;
 	}
 
 	rc = fs_write(&file, file_test_pattern, sizeof(file_test_pattern));
 	if (rc < 0) {
-		LOG_ERR("FAIL: write %s: %d", fname, rc);
+		LOG_ERROR("FAIL: write %s: %d", fname, rc);
 	}
 
  out:
 	ret = fs_close(&file);
 	if (ret < 0) {
-		LOG_ERR("FAIL: close %s: %d", fname, ret);
+		LOG_ERROR("FAIL: close %s: %d", fname, ret);
 		return ret;
 	}
 
@@ -241,8 +240,7 @@ static int littlefs_flash_erase(unsigned int id)
 
 	rc = flash_area_open(id, &pfa);
 	if (rc < 0) {
-		LOG_ERR("FAIL: unable to find flash area %u: %d\n",
-			id, rc);
+		LOG_ERROR("FAIL: unable to find flash area %u: %d\n", id, rc);
 		return rc;
 	}
 
@@ -253,7 +251,7 @@ static int littlefs_flash_erase(unsigned int id)
 	/* Optional wipe flash contents */
 	if (IS_ENABLED(CONFIG_APP_WIPE_STORAGE)) {
 		rc = flash_area_flatten(pfa, 0, pfa->fa_size);
-		LOG_ERR("Erasing flash area ... %d", rc);
+		LOG_ERROR("Erasing flash area ... %d", rc);
 	}
 
 	flash_area_close(pfa);

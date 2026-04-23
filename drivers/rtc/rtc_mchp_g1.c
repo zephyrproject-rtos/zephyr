@@ -112,7 +112,7 @@ static inline void rtc_sync_busy(const rtc_registers_t *regs, uint32_t sync_flag
 {
 	if (WAIT_FOR(((regs->MODE2.RTC_SYNCBUSY & sync_flag) == 0), TIMEOUT_REG_SYNC,
 		     k_busy_wait(DELAY_US)) == false) {
-		LOG_ERR("RTC reset timed out");
+		LOG_ERROR("RTC reset timed out");
 	}
 }
 
@@ -201,7 +201,7 @@ static void rtc_set_alarm_mask(rtc_registers_t *regs, uint16_t alarm_id, uint16_
 						  RTC_MODE2_MASK1_SEL(set_mask));
 		rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_MASK1_Msk);
 	} else {
-		LOG_ERR("Invalid alarm_id: %u", alarm_id);
+		LOG_ERROR("Invalid alarm_id: %u", alarm_id);
 	}
 }
 
@@ -216,7 +216,7 @@ static uint16_t rtc_get_alarm_mask(const rtc_registers_t *regs, uint16_t alarm_i
 		get_mask = (uint16_t)regs->MODE2.RTC_MASK1;
 		rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_MASK1_Msk);
 	} else {
-		LOG_ERR("Invalid alarm_id: %u", alarm_id);
+		LOG_ERROR("Invalid alarm_id: %u", alarm_id);
 	}
 
 	return get_mask;
@@ -248,7 +248,7 @@ static void rtc_set_alarm_time(rtc_registers_t *regs, uint16_t alarm_id,
 				   (rtc_set_alarm->minute << RTC_MODE2_CLOCK_MINUTE_Pos) |
 				   (rtc_set_alarm->second << RTC_MODE2_CLOCK_SECOND_Pos));
 	} else {
-		LOG_ERR("Invalid alarm_id: %u", alarm_id);
+		LOG_ERROR("Invalid alarm_id: %u", alarm_id);
 	}
 
 	rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_CLOCKSYNC_Msk);
@@ -267,7 +267,7 @@ static void rtc_get_alarm_time(const rtc_registers_t *regs, uint16_t alarm_id,
 	} else if (alarm_id == RTC_MCHP_ALARM_2) {
 		dataClockCalendar = regs->MODE2.RTC_ALARM1;
 	} else {
-		LOG_ERR("Invalid alarm_id: %u", alarm_id);
+		LOG_ERROR("Invalid alarm_id: %u", alarm_id);
 	}
 	rtc_get_time->hour =
 		(dataClockCalendar & RTC_MODE2_CLOCK_HOUR_Msk) >> RTC_MODE2_CLOCK_HOUR_Pos;
@@ -300,7 +300,7 @@ static void rtc_enable_interrupt(rtc_registers_t *regs, uint16_t alarm_id)
 	} else if (alarm_id == RTC_MCHP_ALARM_2) {
 		alarm_int = RTC_MODE2_INTENSET_ALARM1(1);
 	} else {
-		LOG_ERR("Invalid alarm_id: %u", alarm_id);
+		LOG_ERROR("Invalid alarm_id: %u", alarm_id);
 		return;
 	}
 
@@ -316,7 +316,7 @@ static void rtc_disable_interrupt(rtc_registers_t *regs, uint16_t alarm_id)
 	} else if (alarm_id == RTC_MCHP_ALARM_2) {
 		alarm_int = RTC_MODE2_INTENCLR_ALARM1(1);
 	} else {
-		LOG_ERR("Invalid alarm_id: %u", alarm_id);
+		LOG_ERROR("Invalid alarm_id: %u", alarm_id);
 		return;
 	}
 
@@ -332,7 +332,7 @@ static uint16_t rtc_get_interrupt_flags(const rtc_registers_t *regs, uint16_t *a
 	} else if ((int_status & RTC_MODE2_INTFLAG_ALARM1_Msk) == RTC_MODE2_INTFLAG_ALARM1_Msk) {
 		*alarm_id = RTC_MCHP_ALARM_2;
 	} else {
-		LOG_ERR("Invalid alarm interrupt flag detected");
+		LOG_ERROR("Invalid alarm interrupt flag detected");
 	}
 
 	return int_status;
@@ -449,7 +449,7 @@ static int rtc_get_calibration_value(const rtc_registers_t *regs, uint32_t *cali
 				     uint8_t *corr_sign)
 {
 	if ((calib == NULL) || (corr_sign == NULL)) {
-		LOG_ERR("Invalid argument: calib or corr_sign is NULL");
+		LOG_ERROR("Invalid argument: calib or corr_sign is NULL");
 		return -EINVAL;
 	}
 
@@ -508,7 +508,7 @@ static int rtc_mchp_alarm_is_pending(const struct device *dev, uint16_t alarm_id
 
 	/* Check if the alarm ID is within the valid range */
 	if (alarm_id >= cfg->alarms_count) {
-		LOG_ERR("RTC Alarm id is out of range");
+		LOG_ERROR("RTC Alarm id is out of range");
 		retval = -EINVAL;
 	} else {
 		/* Lock interrupts to ensure setting of callback*/
@@ -542,25 +542,25 @@ static int rtc_mchp_set_alarm_time(const struct device *dev, uint16_t alarm_id, 
 
 	/* Check if the provided alarm mask is valid */
 	if ((alarm_mask & ~supported_mask) != 0) {
-		LOG_ERR("Invalid RTC alarm mask");
+		LOG_ERROR("Invalid RTC alarm mask");
 		return -EINVAL;
 	}
 
 	/* Check if the alarm ID is within the valid range */
 	if (alarm_id >= cfg->alarms_count) {
-		LOG_ERR("RTC Alarm id is out of range");
+		LOG_ERROR("RTC Alarm id is out of range");
 		return -EINVAL;
 	}
 
 	/* Check if the time pointer is provided when the alarm mask is not zero */
 	if ((timeptr == NULL) && (alarm_mask != 0)) {
-		LOG_ERR("No pointer is provided to set RTC alarm");
+		LOG_ERROR("No pointer is provided to set RTC alarm");
 		return -EINVAL;
 	}
 
 	/* Validate the provided RTC time */
 	if ((timeptr != NULL) && (rtc_utils_validate_rtc_time(timeptr, supported_mask) == false)) {
-		LOG_ERR("Invalid RTC time provided");
+		LOG_ERROR("Invalid RTC time provided");
 		return -EINVAL;
 	}
 
@@ -611,13 +611,13 @@ static int rtc_mchp_get_alarm_time(const struct device *dev, uint16_t alarm_id,
 
 	/* Check if the alarm ID is within the valid range */
 	if (alarm_id >= cfg->alarms_count) {
-		LOG_ERR("RTC Alarm id is out of range");
+		LOG_ERROR("RTC Alarm id is out of range");
 		return -EINVAL;
 	}
 
 	/* Check if the time pointer is provided when the alarm mask is not zero */
 	if (timeptr == NULL) {
-		LOG_ERR("No pointer is provided to get RTC alarm");
+		LOG_ERROR("No pointer is provided to get RTC alarm");
 		return -EINVAL;
 	}
 
@@ -653,7 +653,7 @@ static int rtc_mchp_set_alarm_callback(const struct device *dev, uint16_t alarm_
 
 	/* Check if the alarm ID is within the valid range */
 	if (alarm_id >= cfg->alarms_count) {
-		LOG_ERR("RTC Alarm id is out of range");
+		LOG_ERROR("RTC Alarm id is out of range");
 		return -EINVAL;
 	}
 	/* Lock interrupts to ensure setting of callback */
@@ -678,14 +678,14 @@ static int rtc_mchp_set_clock_time(const struct device *dev, const struct rtc_ti
 
 	/* Check if rtc_time structure not null */
 	if (timeptr == NULL) {
-		LOG_ERR("RTC set time failed: time pointer is NULL");
+		LOG_ERROR("RTC set time failed: time pointer is NULL");
 		return -EINVAL;
 
 	} else {
 #ifdef CONFIG_RTC_ALARM
 		/* Validate the provided RTC time parameters */
 		if (rtc_utils_validate_rtc_time(timeptr, RTC_ALARM_SUPPORTED_MASK) == false) {
-			LOG_ERR("RTC time parameters are invalid");
+			LOG_ERROR("RTC time parameters are invalid");
 			return -EINVAL;
 		}
 #endif /* CONFIG_RTC_ALARM */
@@ -755,8 +755,8 @@ static int rtc_mchp_set_calibration(const struct device *dev, int32_t calibratio
 
 	/* Check if correction value out of range */
 	if (abs_correction > RTC_CALIBRATE_PPB_MAX) {
-		LOG_ERR("The RTC calibration %d result in an out of range value %d", calibration,
-			abs_correction);
+		LOG_ERROR("The RTC calibration %d result in an out of range value %d", calibration,
+			  abs_correction);
 		return -EINVAL;
 	}
 
@@ -775,14 +775,14 @@ static int rtc_mchp_get_calibration(const struct device *dev, int32_t *calibrati
 
 	/* Check if the calibration pointer is NULL */
 	if (calibration == NULL) {
-		LOG_ERR("Invalid input: calibration pointer is NULL");
+		LOG_ERROR("Invalid input: calibration pointer is NULL");
 		return -EINVAL;
 	}
 
 	/* Retrieve the correction value from the hardware register */
 	status = rtc_get_calibration_value(cfg->regs, &correction, &correction_sign);
 	if (status < 0) {
-		LOG_ERR("Unable to read RTC calibration value");
+		LOG_ERROR("Unable to read RTC calibration value");
 		return -EINVAL;
 	}
 
@@ -819,14 +819,14 @@ static int rtc_mchp_init(const struct device *dev)
 	/* On Oscillator clock for RTC */
 	ret = clock_control_on(cfg->rtc_clock.clock_dev, cfg->rtc_clock.rtcclk_sys);
 	if ((ret != 0) && (ret != -EALREADY)) {
-		LOG_ERR("Failed to enable the osc32k clock for RTC: %d", ret);
+		LOG_ERROR("Failed to enable the osc32k clock for RTC: %d", ret);
 		return ret;
 	}
 
 	/* On Main clock for RTC */
 	ret = clock_control_on(cfg->rtc_clock.clock_dev, cfg->rtc_clock.mclk_sys);
 	if ((ret != 0) && (ret != -EALREADY)) {
-		LOG_ERR("Failed to enable the MCLK for RTC: %d", ret);
+		LOG_ERROR("Failed to enable the MCLK for RTC: %d", ret);
 		return ret;
 	}
 

@@ -270,7 +270,7 @@ static int notify_new_alert_category(struct bt_conn *conn, uint8_t cat)
 
 	ret = k_mutex_lock(&new_alert_mutex, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("Unable to lock mutex (err: %d)", ret);
+		LOG_ERROR("Unable to lock mutex (err: %d)", ret);
 		return -EAGAIN;
 	}
 
@@ -331,7 +331,7 @@ static int notify_unread_alert_category(struct bt_conn *conn, uint8_t cat)
 
 	ret = k_mutex_lock(&unread_mutex, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("Unable to lock mutex (err: %d)", ret);
+		LOG_ERROR("Unable to lock mutex (err: %d)", ret);
 		return -EAGAIN;
 	}
 

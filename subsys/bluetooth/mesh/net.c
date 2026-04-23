@@ -220,7 +220,7 @@ int bt_mesh_net_create(uint16_t idx, uint8_t flags, const struct bt_mesh_key *ke
 	}
 
 	if (err) {
-		LOG_ERR("Failed creating subnet");
+		LOG_ERROR("Failed creating subnet");
 		return err;
 	}
 
@@ -265,7 +265,7 @@ void bt_mesh_iv_update_test(bool enable)
 bool bt_mesh_iv_update(void)
 {
 	if (!bt_mesh_is_provisioned()) {
-		LOG_ERR("Not yet provisioned");
+		LOG_ERROR("Not yet provisioned");
 		return false;
 	}
 
@@ -284,7 +284,7 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 	/* Check if IV index should to be recovered. */
 	if (iv_index < bt_mesh.iv_index ||
 	    iv_index > bt_mesh.iv_index + 42) {
-		LOG_ERR("IV Index out of sync: 0x%08x != 0x%08x", iv_index, bt_mesh.iv_index);
+		LOG_ERROR("IV Index out of sync: 0x%08x != 0x%08x", iv_index, bt_mesh.iv_index);
 		return false;
 	}
 
@@ -299,7 +299,7 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 	     (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) || !iv_update))) {
 		if (ivi_was_recovered &&
 		    (bt_mesh.ivu_duration < (2 * BT_MESH_IVU_MIN_HOURS))) {
-			LOG_ERR("IV Index Recovery before minimum delay");
+			LOG_ERROR("IV Index Recovery before minimum delay");
 			return false;
 		}
 
@@ -459,10 +459,10 @@ static int net_header_encode(struct bt_mesh_net_tx *tx, uint8_t nid,
 	const bool ctl = (tx->ctx->app_idx == BT_MESH_KEY_UNUSED);
 
 	if (ctl && net_buf_simple_tailroom(buf) < 8) {
-		LOG_ERR("Insufficient MIC space for CTL PDU");
+		LOG_ERROR("Insufficient MIC space for CTL PDU");
 		return -EINVAL;
 	} else if (net_buf_simple_tailroom(buf) < 4) {
-		LOG_ERR("Insufficient MIC space for PDU");
+		LOG_ERROR("Insufficient MIC space for PDU");
 		return -EINVAL;
 	}
 
@@ -747,7 +747,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf, struct bt_mesh_net_rx
 	 * layer nonce includes the IVI.
 	 */
 	if (net_encrypt(&adv->b, cred, BT_MESH_NET_IVI_RX(rx), BT_MESH_NONCE_NETWORK)) {
-		LOG_ERR("Re-encrypting failed");
+		LOG_ERROR("Re-encrypting failed");
 		goto done;
 	}
 
@@ -786,7 +786,7 @@ static void bt_mesh_sbr_check_cb(uint16_t new_net_idx, void *user_data)
 		struct bt_mesh_subnet *subnet = bt_mesh_subnet_find(find_subnet_cb, &new_net_idx);
 
 		if (!subnet) {
-			LOG_ERR("Failed to find subnet 0x%04x", new_net_idx);
+			LOG_ERROR("Failed to find subnet 0x%04x", new_net_idx);
 			return;
 		}
 
@@ -857,7 +857,7 @@ int bt_mesh_net_decode(struct net_buf_simple *in, enum bt_mesh_net_if net_if,
 
 	if (net_if != BT_MESH_NET_IF_PROXY_CFG &&
 	    rx->ctx.recv_dst == BT_MESH_ADDR_UNASSIGNED) {
-		LOG_ERR("Destination address is unassigned; dropping packet");
+		LOG_ERROR("Destination address is unassigned; dropping packet");
 		return -EBADMSG;
 	}
 
@@ -1031,7 +1031,7 @@ static int net_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &net, sizeof(net));
 	if (err) {
-		LOG_ERR("Failed to set \'net\'");
+		LOG_ERROR("Failed to set \'net\'");
 		return err;
 	}
 
@@ -1071,7 +1071,7 @@ static int iv_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &iv, sizeof(iv));
 	if (err) {
-		LOG_ERR("Failed to set \'iv\'");
+		LOG_ERROR("Failed to set \'iv\'");
 		return err;
 	}
 
@@ -1106,7 +1106,7 @@ static int seq_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &seq, sizeof(seq));
 	if (err) {
-		LOG_ERR("Failed to set \'seq\'");
+		LOG_ERROR("Failed to set \'seq\'");
 		return err;
 	}
 
@@ -1174,7 +1174,7 @@ void bt_mesh_net_pending_dev_key_cand_store(void)
 	}
 
 	if (err) {
-		LOG_ERR("Failed to update DevKey candidate value");
+		LOG_ERROR("Failed to update DevKey candidate value");
 	} else {
 		LOG_DBG("Stored DevKey candidate value");
 	}
@@ -1192,7 +1192,7 @@ static void clear_iv(void)
 
 	err = settings_delete("bt/mesh/IV");
 	if (err) {
-		LOG_ERR("Failed to clear IV");
+		LOG_ERROR("Failed to clear IV");
 	} else {
 		LOG_DBG("Cleared IV");
 	}
@@ -1209,7 +1209,7 @@ static void store_pending_iv(void)
 
 	err = settings_save_one("bt/mesh/IV", &iv, sizeof(iv));
 	if (err) {
-		LOG_ERR("Failed to store IV value");
+		LOG_ERROR("Failed to store IV value");
 	} else {
 		LOG_DBG("Stored IV value");
 	}
@@ -1230,7 +1230,7 @@ static void clear_net(void)
 
 	err = settings_delete("bt/mesh/Net");
 	if (err) {
-		LOG_ERR("Failed to clear Network");
+		LOG_ERROR("Failed to clear Network");
 	} else {
 		LOG_DBG("Cleared Network");
 	}
@@ -1249,7 +1249,7 @@ static void store_pending_net(void)
 
 	err = settings_save_one("bt/mesh/Net", &net, sizeof(net));
 	if (err) {
-		LOG_ERR("Failed to store Network value");
+		LOG_ERROR("Failed to store Network value");
 	} else {
 		LOG_DBG("Stored Network value");
 	}
@@ -1274,14 +1274,14 @@ void bt_mesh_net_pending_seq_store(void)
 
 		err = settings_save_one("bt/mesh/Seq", &seq, sizeof(seq));
 		if (err) {
-			LOG_ERR("Failed to stor Seq value");
+			LOG_ERROR("Failed to stor Seq value");
 		} else {
 			LOG_DBG("Stored Seq value");
 		}
 	} else {
 		err = settings_delete("bt/mesh/Seq");
 		if (err) {
-			LOG_ERR("Failed to clear Seq value");
+			LOG_ERROR("Failed to clear Seq value");
 		} else {
 			LOG_DBG("Cleared Seq value");
 		}

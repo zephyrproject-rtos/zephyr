@@ -220,7 +220,7 @@ static struct nvme_prp_list *nvme_prp_list_alloc(void)
 
 	node = sys_dlist_peek_head(&free_prp_list);
 	if (!node) {
-		LOG_ERR("Could not allocate PRP list");
+		LOG_ERROR("Could not allocate PRP list");
 		return NULL;
 	}
 
@@ -255,7 +255,7 @@ struct nvme_request *nvme_cmd_request_alloc(void)
 
 	node = sys_dlist_peek_head(&free_request);
 	if (!node) {
-		LOG_ERR("Could not allocate request");
+		LOG_ERROR("Could not allocate request");
 		return NULL;
 	}
 
@@ -397,7 +397,7 @@ static void nvme_cmd_request_complete(struct nvme_request *request,
 	}
 
 	if (cpl->cid != request->cmd.cdw0.cid) {
-		LOG_ERR("cpl cid != cmd cid");
+		LOG_ERROR("cpl cid != cmd cid");
 	}
 
 	if (retry) {
@@ -457,7 +457,7 @@ static void nvme_cmd_qpair_process_completion(struct nvme_cmd_qpair *qpair)
 			nvme_cmd_request_complete(request, &cpl);
 			qpair->sq_head = cpl.sqhd;
 		} else {
-			LOG_ERR("cpl (cid = %u) does not map to cmd", cpl.cid);
+			LOG_ERROR("cpl (cid = %u) does not map to cmd", cpl.cid);
 		}
 
 		qpair->cq_head++;
@@ -509,7 +509,7 @@ int nvme_cmd_qpair_setup(struct nvme_cmd_qpair *qpair,
 	if (!pcie_msi_vector_connect(nvme_ctrlr_cfg->pcie->bdf,
 				     &ctrlr->vectors[qpair->vector],
 				     nvme_cmd_qpair_msi_handler, qpair, 0)) {
-		LOG_ERR("Failed to connect MSI-X vector %u", qpair->id);
+		LOG_ERROR("Failed to connect MSI-X vector %u", qpair->id);
 		return -EIO;
 	}
 
@@ -606,7 +606,7 @@ static int nvme_cmd_qpair_fill_dptr(struct nvme_cmd_qpair *qpair,
 		int n_prp;
 
 		if (request->payload_size > qpair->ctrlr->max_xfer_size) {
-			LOG_ERR("VADDR request's payload too big");
+			LOG_ERROR("VADDR request's payload too big");
 			return -EINVAL;
 		}
 

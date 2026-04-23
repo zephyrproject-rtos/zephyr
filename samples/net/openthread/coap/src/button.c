@@ -116,21 +116,21 @@ int button_init(const struct gpio_dt_spec *gpio)
 	int ret;
 
 	if (!gpio_is_ready_dt(gpio)) {
-		LOG_ERR("Error: button device %s is not ready\n", gpio->port->name);
+		LOG_ERROR("Error: button device %s is not ready\n", gpio->port->name);
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure %s pin %d\n", ret, gpio->port->name,
-			gpio->pin);
+		LOG_ERROR("Error %d: failed to configure %s pin %d\n", ret, gpio->port->name,
+			  gpio->pin);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure interrupt on %s pin %d\n", ret,
-			gpio->port->name, gpio->pin);
+		LOG_ERROR("Error %d: failed to configure interrupt on %s pin %d\n", ret,
+			  gpio->port->name, gpio->pin);
 		return ret;
 	}
 

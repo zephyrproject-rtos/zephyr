@@ -77,8 +77,8 @@ btp_bap_broadcast_local_source_allocate(uint32_t broadcast_id)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(local_sources); i++) {
 		if (local_sources[i].allocated && local_sources[i].broadcast_id == broadcast_id) {
-			LOG_ERR("Local source already allocated for broadcast id 0x%06X",
-				broadcast_id);
+			LOG_ERROR("Local source already allocated for broadcast id 0x%06X",
+				  broadcast_id);
 
 			return NULL;
 		}
@@ -117,7 +117,7 @@ btp_bap_broadcast_local_source_from_src_id_get(uint32_t source_id)
 		}
 	}
 
-	LOG_ERR("No local source found with source id %u", source_id);
+	LOG_ERROR("No local source found with source id %u", source_id);
 
 	return NULL;
 }
@@ -131,7 +131,7 @@ btp_bap_broadcast_local_source_from_brcst_id_get(uint32_t broadcast_id)
 		}
 	}
 
-	LOG_ERR("No local source found with broadcast id 0x%06X", broadcast_id);
+	LOG_ERROR("No local source found with broadcast id 0x%06X", broadcast_id);
 
 	return NULL;
 }
@@ -205,7 +205,7 @@ static void stream_started(struct bt_bap_stream *stream)
 
 		err = btp_bap_audio_stream_tx_register(&b_stream->audio_stream);
 		if (err != 0) {
-			LOG_ERR("Failed to register stream: %d", err);
+			LOG_ERROR("Failed to register stream: %d", err);
 		}
 	} else {
 		b_stream->bis_synced = true;
@@ -227,7 +227,7 @@ static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 		/* Stop TX */
 		err = btp_bap_audio_stream_tx_unregister(&b_stream->audio_stream);
 		if (err != 0) {
-			LOG_ERR("Failed to unregister stream: %d", err);
+			LOG_ERROR("Failed to unregister stream: %d", err);
 		}
 	} else {
 		b_stream->bis_synced = false;
@@ -918,7 +918,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 
 	broadcaster = remote_broadcaster_find_by_sink(sink);
 	if (broadcaster == NULL) {
-		LOG_ERR("Failed to find broadcaster");
+		LOG_ERROR("Failed to find broadcaster");
 
 		return;
 	}
@@ -928,7 +928,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 
 	ret = bt_bap_base_get_pres_delay(base);
 	if (ret < 0) {
-		LOG_ERR("Failed to get presentation delay: %d", ret);
+		LOG_ERROR("Failed to get presentation delay: %d", ret);
 		return;
 	}
 
@@ -937,7 +937,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 
 	ret = bt_bap_base_foreach_subgroup(base, base_subgroup_cb, &parse_data);
 	if (ret != 0) {
-		LOG_ERR("Failed to parse subgroups: %d", ret);
+		LOG_ERROR("Failed to parse subgroups: %d", ret);
 		return;
 	}
 
@@ -952,7 +952,7 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 	struct btp_bap_broadcast_remote_source *broadcaster = remote_broadcaster_find_by_sink(sink);
 
 	if (broadcaster == NULL) {
-		LOG_ERR("remote_broadcaster_find_by_sink failed, %p", sink);
+		LOG_ERROR("remote_broadcaster_find_by_sink failed, %p", sink);
 
 		return;
 	}
@@ -1152,7 +1152,7 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 
 		broadcaster = remote_broadcaster_alloc();
 		if (broadcaster == NULL) {
-			LOG_ERR("Failed to allocate broadcast source");
+			LOG_ERROR("Failed to allocate broadcast source");
 			return -EINVAL;
 		}
 
@@ -1179,7 +1179,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 	broadcaster = remote_broadcaster_find(&recv_state->addr, recv_state->broadcast_id);
 	if (broadcaster == NULL) {
-		LOG_ERR("Failed to find broadcaster");
+		LOG_ERROR("Failed to find broadcaster");
 
 		return -EINVAL;
 	}
@@ -1203,7 +1203,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 
 	broadcaster = remote_broadcaster_find(&recv_state->addr, recv_state->broadcast_id);
 	if (broadcaster == NULL) {
-		LOG_ERR("Failed to find broadcaster");
+		LOG_ERROR("Failed to find broadcaster");
 
 		return;
 	}
@@ -1242,7 +1242,7 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 	broadcaster = remote_broadcaster_find(&recv_state->addr, recv_state->broadcast_id);
 	if (broadcaster == NULL) {
-		LOG_ERR("Failed to find broadcaster");
+		LOG_ERROR("Failed to find broadcaster");
 
 		return -EINVAL;
 	}
@@ -1414,7 +1414,7 @@ uint8_t btp_bap_broadcast_sink_sync(const void *cmd, uint16_t cmd_len, void *rsp
 		if (broadcaster == NULL) {
 			broadcaster = remote_broadcaster_alloc();
 			if (broadcaster == NULL) {
-				LOG_ERR("Failed to allocate broadcast source");
+				LOG_ERROR("Failed to allocate broadcast source");
 				return BTP_STATUS_FAILED;
 			}
 
@@ -1445,7 +1445,7 @@ uint8_t btp_bap_broadcast_sink_stop(const void *cmd, uint16_t cmd_len, void *rsp
 
 	broadcaster = remote_broadcaster_find(&cp->address, broadcast_id);
 	if (broadcaster == NULL) {
-		LOG_ERR("Failed to find broadcaster");
+		LOG_ERROR("Failed to find broadcaster");
 
 		return BTP_STATUS_FAILED;
 	}
@@ -1480,7 +1480,7 @@ uint8_t btp_bap_broadcast_sink_bis_sync(const void *cmd, uint16_t cmd_len, void 
 
 	broadcaster = remote_broadcaster_find(&cp->address, sys_get_le24(cp->broadcast_id));
 	if (broadcaster == NULL) {
-		LOG_ERR("Failed to find broadcaster");
+		LOG_ERROR("Failed to find broadcaster");
 
 		return BTP_STATUS_FAILED;
 	}

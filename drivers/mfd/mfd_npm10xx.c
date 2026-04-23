@@ -201,7 +201,7 @@ int mfd_npm10xx_hibernate(const struct device *dev, enum mfd_npm10xx_hibernate_m
 	int ret;
 
 	if (!K_TIMEOUT_EQ(time, K_FOREVER)) {
-		LOG_ERR("Timed hibernation not supported yet");
+		LOG_ERROR("Timed hibernation not supported yet");
 		return -ENOTSUP;
 	}
 
@@ -223,7 +223,7 @@ int mfd_npm10xx_hibernate(const struct device *dev, enum mfd_npm10xx_hibernate_m
 		break;
 
 	default:
-		LOG_ERR("Invalid mode requested");
+		LOG_ERROR("Invalid mode requested");
 		return -EINVAL;
 	}
 
@@ -261,7 +261,7 @@ int mfd_npm10xx_standby(const struct device *dev, enum mfd_npm10xx_standby_op op
 					     RESET_TASKS_STANDBYEXIT);
 
 	default:
-		LOG_ERR("Invalid operation requested");
+		LOG_ERROR("Invalid operation requested");
 		return -EINVAL;
 	}
 
@@ -286,19 +286,19 @@ int mfd_npm10xx_manage_callback(const struct device *dev,
 
 	ret = k_mutex_lock(&data->slist_mutex, K_FOREVER);
 	if (ret < 0) {
-		LOG_ERR("Failed to lock mutex");
+		LOG_ERROR("Failed to lock mutex");
 		return ret;
 	}
 
 	if (add) {
 		if (sys_slist_find(&data->user_callbacks, &callback->node, NULL)) {
-			LOG_ERR("Callback already added");
+			LOG_ERROR("Callback already added");
 			ret = -EINVAL;
 			goto unlock_n_return;
 		}
 
 		if (callback->event_mask == 0ULL) {
-			LOG_ERR("Attempt to add a callback handling no events");
+			LOG_ERROR("Attempt to add a callback handling no events");
 			ret = -EINVAL;
 			goto unlock_n_return;
 		}
@@ -326,7 +326,7 @@ int mfd_npm10xx_manage_callback(const struct device *dev,
 
 	} else {
 		if (!sys_slist_find(&data->user_callbacks, &callback->node, &prev)) {
-			LOG_ERR("Callback was not previously added, cannot remove");
+			LOG_ERROR("Callback was not previously added, cannot remove");
 			ret = -EINVAL;
 			goto unlock_n_return;
 		}
@@ -366,7 +366,7 @@ static int mfd_npm10xx_init(const struct device *dev)
 	uint8_t disable_all_buf[EVENTS_REG_NUM] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus is not ready");
+		LOG_ERROR("I2C bus is not ready");
 		return -ENODEV;
 	}
 
@@ -374,12 +374,12 @@ static int mfd_npm10xx_init(const struct device *dev)
 
 	ret = k_mutex_init(&data->slist_mutex);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize mutex");
+		LOG_ERROR("Failed to initialize mutex");
 	}
 
 	if (config->host_int_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->host_int_gpio)) {
-			LOG_ERR("GPIO port used for interrupt input is not ready");
+			LOG_ERROR("GPIO port used for interrupt input is not ready");
 			return -ENODEV;
 		}
 

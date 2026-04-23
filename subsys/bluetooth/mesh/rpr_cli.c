@@ -364,8 +364,8 @@ static void link_timeout(struct k_work *work)
 static int rpr_cli_init(const struct bt_mesh_model *mod)
 {
 	if (mod->rt->elem_idx) {
-		LOG_ERR("Remote provisioning client must be initialized "
-			"on first element");
+		LOG_ERROR("Remote provisioning client must be initialized "
+			  "on first element");
 		return -EINVAL;
 	}
 
@@ -392,7 +392,7 @@ static void pdu_send_start(uint16_t duration, int err, void *cb_data)
 	struct bt_mesh_rpr_cli *cli = cb_data;
 
 	if (err) {
-		LOG_ERR("PDU Send failed: %d", err);
+		LOG_ERROR("PDU Send failed: %d", err);
 
 		link_closed(cli,
 			    BT_MESH_RPR_ERR_LINK_CLOSED_AS_CANNOT_SEND_PDU);
@@ -404,7 +404,7 @@ static void pdu_send_end(int err, void *cb_data)
 	struct bt_mesh_rpr_cli *cli = cb_data;
 
 	if (err) {
-		LOG_ERR("PDU Send failed: %d", err);
+		LOG_ERROR("PDU Send failed: %d", err);
 
 		link_closed(cli,
 			    BT_MESH_RPR_ERR_LINK_CLOSED_AS_CANNOT_SEND_PDU);
@@ -643,12 +643,12 @@ static int send(struct bt_mesh_rpr_cli *cli, struct net_buf_simple *buf,
 	int err;
 
 	if (cli->link.srv.addr == BT_MESH_ADDR_UNASSIGNED) {
-		LOG_ERR("No server");
+		LOG_ERROR("No server");
 		return -ESHUTDOWN;
 	}
 
 	if (net_buf_simple_headroom(buf) < 3) {
-		LOG_ERR("Invalid buffer");
+		LOG_ERROR("Invalid buffer");
 		return -EINVAL;
 	}
 
@@ -656,7 +656,7 @@ static int send(struct bt_mesh_rpr_cli *cli, struct net_buf_simple *buf,
 					  RPR_OP_PDU_OUTBOUND_REPORT,
 					  cli->link.srv.addr, cb_data);
 	if (err) {
-		LOG_ERR("Busy");
+		LOG_ERROR("Busy");
 		return err;
 	}
 
@@ -745,7 +745,7 @@ static void pb_link_close(enum prov_bearer_link_status status)
 
 	err = link_close(bearer.cli, status);
 	if (err) {
-		LOG_ERR("Link close failed (%d)", err);
+		LOG_ERROR("Link close failed (%d)", err);
 	}
 }
 

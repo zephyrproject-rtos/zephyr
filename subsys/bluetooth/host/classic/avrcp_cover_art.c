@@ -151,7 +151,7 @@ static void tg_bip_transport_connected(struct bt_conn *conn, struct bt_bip *bip)
 	err = bt_bip_primary_image_pull_server_register(&tg->bip, &tg->server, cover_art_uuid,
 							&tg_bip_server_cb);
 	if (err != 0) {
-		LOG_ERR("Failed to register BIP server: %d", err);
+		LOG_ERROR("Failed to register BIP server: %d", err);
 		goto failed;
 	}
 
@@ -164,7 +164,7 @@ static void tg_bip_transport_connected(struct bt_conn *conn, struct bt_bip *bip)
 failed:
 	err = bt_avrcp_cover_art_tg_l2cap_disconnect(tg);
 	if (err != 0) {
-		LOG_ERR("Failed to send l2cap disconnect: %d", err);
+		LOG_ERROR("Failed to send l2cap disconnect: %d", err);
 	}
 }
 
@@ -181,7 +181,7 @@ static void tg_bip_transport_disconnected(struct bt_bip *bip)
 
 	err = bt_bip_server_unregister(&tg->server);
 	if (err != 0) {
-		LOG_ERR("Failed to unregister BIP server: %d", err);
+		LOG_ERROR("Failed to unregister BIP server: %d", err);
 	}
 
 	if ((cover_art_tg_cb != NULL) && (cover_art_tg_cb->l2cap_disconnected != NULL)) {
@@ -203,7 +203,7 @@ static int bt_avrcp_tg_cover_art_accept(struct bt_conn *conn, struct bt_bip_l2ca
 
 	avrcp_cover_art_tg[index].tg = bt_avrcp_get_tg(conn, server->server.l2cap.psm);
 	if (avrcp_cover_art_tg[index].tg == NULL) {
-		LOG_ERR("Failed to get AVRCP target for connection");
+		LOG_ERROR("Failed to get AVRCP target for connection");
 		return -ENOTCONN;
 	}
 	avrcp_cover_art_tg[index].bip.ops = &tg_bip_transport_ops;
@@ -229,7 +229,7 @@ int bt_avrcp_tg_cover_art_init(uint16_t *psm)
 	tg_cover_art_server.server.l2cap.psm = 0;
 	err = bt_bip_l2cap_register(&tg_cover_art_server);
 	if (err < 0) {
-		LOG_ERR("Failed to register AVRCP Cover Art BIP transport server %d", err);
+		LOG_ERROR("Failed to register AVRCP Cover Art BIP transport server %d", err);
 		return err;
 	}
 
@@ -242,12 +242,12 @@ int bt_avrcp_tg_cover_art_init(uint16_t *psm)
 int bt_avrcp_cover_art_tg_cb_register(struct bt_avrcp_cover_art_tg_cb *cb)
 {
 	if (cb == NULL) {
-		LOG_ERR("Invalid TG cb");
+		LOG_ERROR("Invalid TG cb");
 		return -EINVAL;
 	}
 
 	if (cover_art_tg_cb != NULL) {
-		LOG_ERR("TG cb has been registered");
+		LOG_ERROR("TG cb has been registered");
 		return -EBUSY;
 	}
 
@@ -259,12 +259,12 @@ int bt_avrcp_cover_art_tg_cb_register(struct bt_avrcp_cover_art_tg_cb *cb)
 int bt_avrcp_cover_art_tg_l2cap_disconnect(struct bt_avrcp_cover_art_tg *cover_art_tg)
 {
 	if (cover_art_tg == NULL) {
-		LOG_ERR("Invalid cover art target");
+		LOG_ERROR("Invalid cover art target");
 		return -EINVAL;
 	}
 
 	if (cover_art_tg->conn == NULL) {
-		LOG_ERR("TG is not connected");
+		LOG_ERROR("TG is not connected");
 		return -ENOTCONN;
 	}
 
@@ -275,7 +275,7 @@ struct net_buf *bt_avrcp_cover_art_tg_create_pdu(struct bt_avrcp_cover_art_tg *t
 						 struct net_buf_pool *pool)
 {
 	if (tg == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return NULL;
 	}
 
@@ -287,18 +287,18 @@ int bt_avrcp_cover_art_tg_connect(struct bt_avrcp_cover_art_tg *tg, uint8_t rsp_
 	int err;
 
 	if (tg == NULL) {
-		LOG_ERR("Invalid cover art target");
+		LOG_ERROR("Invalid cover art target");
 		return -EINVAL;
 	}
 
 	if (tg->conn == NULL) {
-		LOG_ERR("TG is not connected");
+		LOG_ERROR("TG is not connected");
 		return -ENOTCONN;
 	}
 
 	err = bt_bip_connect_rsp(&tg->server, rsp_code, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX connect rsp %d", err);
+		LOG_ERROR("Failed to send OBEX connect rsp %d", err);
 	}
 	return err;
 }
@@ -308,18 +308,18 @@ int bt_avrcp_cover_art_tg_disconnect(struct bt_avrcp_cover_art_tg *tg, uint8_t r
 	int err;
 
 	if (tg == NULL) {
-		LOG_ERR("Invalid cover art target");
+		LOG_ERROR("Invalid cover art target");
 		return -EINVAL;
 	}
 
 	if (tg->conn == NULL) {
-		LOG_ERR("TG is not connected");
+		LOG_ERROR("TG is not connected");
 		return -ENOTCONN;
 	}
 
 	err = bt_bip_disconnect_rsp(&tg->server, rsp_code, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX disconnect rsp %d", err);
+		LOG_ERROR("Failed to send OBEX disconnect rsp %d", err);
 	}
 	return err;
 }
@@ -330,18 +330,18 @@ int bt_avrcp_cover_art_tg_abort(struct bt_avrcp_cover_art_tg *tg, uint8_t rsp_co
 	int err;
 
 	if (tg == NULL) {
-		LOG_ERR("Invalid cover art target");
+		LOG_ERROR("Invalid cover art target");
 		return -EINVAL;
 	}
 
 	if (tg->conn == NULL) {
-		LOG_ERR("TG is not connected");
+		LOG_ERROR("TG is not connected");
 		return -ENOTCONN;
 	}
 
 	err = bt_bip_abort_rsp(&tg->server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX abort rsp %d", err);
+		LOG_ERROR("Failed to send OBEX abort rsp %d", err);
 	}
 	return err;
 }
@@ -352,18 +352,18 @@ int bt_avrcp_cover_art_tg_get_image_properties(struct bt_avrcp_cover_art_tg *tg,
 	int err;
 
 	if (tg == NULL) {
-		LOG_ERR("Invalid cover art target");
+		LOG_ERROR("Invalid cover art target");
 		return -EINVAL;
 	}
 
 	if (tg->conn == NULL) {
-		LOG_ERR("TG is not connected");
+		LOG_ERROR("TG is not connected");
 		return -ENOTCONN;
 	}
 
 	err = bt_bip_get_image_properties_rsp(&tg->server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX get image properties rsp %d", err);
+		LOG_ERROR("Failed to send OBEX get image properties rsp %d", err);
 	}
 	return err;
 }
@@ -374,18 +374,18 @@ int bt_avrcp_cover_art_tg_get_image(struct bt_avrcp_cover_art_tg *tg, uint8_t rs
 	int err;
 
 	if (tg == NULL) {
-		LOG_ERR("Invalid cover art target");
+		LOG_ERROR("Invalid cover art target");
 		return -EINVAL;
 	}
 
 	if (tg->conn == NULL) {
-		LOG_ERR("TG is not connected");
+		LOG_ERROR("TG is not connected");
 		return -ENOTCONN;
 	}
 
 	err = bt_bip_get_image_rsp(&tg->server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX get image rsp %d", err);
+		LOG_ERROR("Failed to send OBEX get image rsp %d", err);
 	}
 	return err;
 }
@@ -396,18 +396,18 @@ int bt_avrcp_cover_art_tg_get_linked_thumbnail(struct bt_avrcp_cover_art_tg *tg,
 	int err;
 
 	if (tg == NULL) {
-		LOG_ERR("Invalid cover art target");
+		LOG_ERROR("Invalid cover art target");
 		return -EINVAL;
 	}
 
 	if (tg->conn == NULL) {
-		LOG_ERR("TG is not connected");
+		LOG_ERROR("TG is not connected");
 		return -ENOTCONN;
 	}
 
 	err = bt_bip_get_linked_thumbnail_rsp(&tg->server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX get linked thumbnail rsp %d", err);
+		LOG_ERROR("Failed to send OBEX get linked thumbnail rsp %d", err);
 	}
 	return err;
 }
@@ -521,13 +521,13 @@ static void ct_bip_transport_connected(struct bt_conn *conn, struct bt_bip *bip)
 
 	err = bt_bip_set_supported_capabilities(&ct->bip, BIT(BT_BIP_SUPP_CAP_GENERIC_IMAGE));
 	if (err != 0) {
-		LOG_ERR("Failed to set supported capabilities: %d", err);
+		LOG_ERROR("Failed to set supported capabilities: %d", err);
 		goto failed;
 	}
 
 	err = bt_bip_set_supported_features(&ct->bip, BIT(BT_BIP_SUPP_FEAT_IMAGE_PULL));
 	if (err != 0) {
-		LOG_ERR("Failed to set supported features: %d", err);
+		LOG_ERROR("Failed to set supported features: %d", err);
 		goto failed;
 	}
 
@@ -535,7 +535,7 @@ static void ct_bip_transport_connected(struct bt_conn *conn, struct bt_bip *bip)
 		    BIT(BT_BIP_SUPP_FUNC_GET_LINKED_THUMBNAIL);
 	err = bt_bip_set_supported_functions(&ct->bip, functions);
 	if (err != 0) {
-		LOG_ERR("Failed to set supported functions: %d", err);
+		LOG_ERROR("Failed to set supported functions: %d", err);
 		goto failed;
 	}
 
@@ -548,7 +548,7 @@ static void ct_bip_transport_connected(struct bt_conn *conn, struct bt_bip *bip)
 failed:
 	err = bt_avrcp_cover_art_ct_l2cap_disconnect(ct);
 	if (err != 0) {
-		LOG_ERR("Failed to send l2cap disconnect: %d", err);
+		LOG_ERROR("Failed to send l2cap disconnect: %d", err);
 	}
 }
 
@@ -575,12 +575,12 @@ static struct bt_bip_transport_ops ct_bip_transport_ops = {
 int bt_avrcp_cover_art_ct_cb_register(struct bt_avrcp_cover_art_ct_cb *cb)
 {
 	if (cb == NULL) {
-		LOG_ERR("Invalid CT cb");
+		LOG_ERROR("Invalid CT cb");
 		return -EINVAL;
 	}
 
 	if (cover_art_ct_cb != NULL) {
-		LOG_ERR("CT cb has been registered");
+		LOG_ERROR("CT cb has been registered");
 		return -EBUSY;
 	}
 
@@ -599,7 +599,7 @@ int bt_avrcp_cover_art_ct_l2cap_connect(struct bt_avrcp_ct *ct,
 	conn = bt_avrcp_ct_get_acl_conn(ct);
 
 	if (conn == NULL) {
-		LOG_ERR("No ACL connect");
+		LOG_ERROR("No ACL connect");
 		return -ENOTCONN;
 	}
 
@@ -608,7 +608,7 @@ int bt_avrcp_cover_art_ct_l2cap_connect(struct bt_avrcp_ct *ct,
 	index = bt_conn_index(conn);
 
 	if (index >= ARRAY_SIZE(avrcp_cover_art_ct)) {
-		LOG_ERR("Conn index out of bounds");
+		LOG_ERROR("Conn index out of bounds");
 		return -EINVAL;
 	}
 
@@ -616,7 +616,7 @@ int bt_avrcp_cover_art_ct_l2cap_connect(struct bt_avrcp_ct *ct,
 
 	err = bt_bip_l2cap_connect(conn, &avrcp_cover_art_ct[index].bip, psm);
 	if (err != 0) {
-		LOG_ERR("Failed to connect AVRCP Cover Art L2CAP channel (err %d)", err);
+		LOG_ERROR("Failed to connect AVRCP Cover Art L2CAP channel (err %d)", err);
 		return err;
 	}
 
@@ -630,12 +630,12 @@ int bt_avrcp_cover_art_ct_l2cap_connect(struct bt_avrcp_ct *ct,
 int bt_avrcp_cover_art_ct_l2cap_disconnect(struct bt_avrcp_cover_art_ct *ct)
 {
 	if (ct == NULL) {
-		LOG_ERR("Invalid cover art controller");
+		LOG_ERROR("Invalid cover art controller");
 		return -EINVAL;
 	}
 
 	if (ct->conn == NULL) {
-		LOG_ERR("CT is not connected");
+		LOG_ERROR("CT is not connected");
 		return -ENOTCONN;
 	}
 
@@ -646,7 +646,7 @@ struct net_buf *bt_avrcp_cover_art_ct_create_pdu(struct bt_avrcp_cover_art_ct *c
 						 struct net_buf_pool *pool)
 {
 	if (ct == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return NULL;
 	}
 
@@ -660,12 +660,12 @@ int bt_avrcp_cover_art_ct_connect(struct bt_avrcp_cover_art_ct *ct)
 	uint8_t val[BT_UUID_SIZE_128];
 
 	if (ct == NULL) {
-		LOG_ERR("Invalid cover art controller");
+		LOG_ERROR("Invalid cover art controller");
 		return -EINVAL;
 	}
 
 	if (ct->conn == NULL) {
-		LOG_ERR("CT is not connected");
+		LOG_ERROR("CT is not connected");
 		return -ENOTCONN;
 	}
 
@@ -677,14 +677,14 @@ int bt_avrcp_cover_art_ct_connect(struct bt_avrcp_cover_art_ct *ct)
 	sys_memcpy_swap(val, cover_art_uuid->val, sizeof(val));
 	err = bt_obex_add_header_target(buf, sizeof(val), val);
 	if (err != 0) {
-		LOG_ERR("Failed to add target header: %d", err);
+		LOG_ERROR("Failed to add target header: %d", err);
 		goto cleanup;
 	}
 
 	err = bt_bip_primary_image_pull_client_connect(&ct->bip, &ct->client, &ct_bip_client_cb,
 						       buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX connect %d", err);
+		LOG_ERROR("Failed to send OBEX connect %d", err);
 		goto cleanup;
 	}
 
@@ -700,18 +700,18 @@ int bt_avrcp_cover_art_ct_disconnect(struct bt_avrcp_cover_art_ct *ct)
 	int err;
 
 	if (ct == NULL) {
-		LOG_ERR("Invalid cover art controller");
+		LOG_ERROR("Invalid cover art controller");
 		return -EINVAL;
 	}
 
 	if (ct->conn == NULL) {
-		LOG_ERR("CT is not connected");
+		LOG_ERROR("CT is not connected");
 		return -ENOTCONN;
 	}
 
 	err = bt_bip_disconnect(&ct->client, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX disconnect %d", err);
+		LOG_ERROR("Failed to send OBEX disconnect %d", err);
 	}
 	return err;
 }
@@ -721,18 +721,18 @@ int bt_avrcp_cover_art_ct_abort(struct bt_avrcp_cover_art_ct *ct, struct net_buf
 	int err;
 
 	if (ct == NULL) {
-		LOG_ERR("Invalid cover art controller");
+		LOG_ERROR("Invalid cover art controller");
 		return -EINVAL;
 	}
 
 	if (ct->conn == NULL) {
-		LOG_ERR("CT is not connected");
+		LOG_ERROR("CT is not connected");
 		return -ENOTCONN;
 	}
 
 	err = bt_bip_abort(&ct->client, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX abort %d", err);
+		LOG_ERROR("Failed to send OBEX abort %d", err);
 	}
 	return err;
 }
@@ -744,18 +744,18 @@ int bt_avrcp_cover_art_ct_get_image_properties(struct bt_avrcp_cover_art_ct *ct,
 	int err;
 
 	if (ct == NULL) {
-		LOG_ERR("Invalid cover art controller");
+		LOG_ERROR("Invalid cover art controller");
 		return -EINVAL;
 	}
 
 	if (ct->conn == NULL) {
-		LOG_ERR("CT is not connected");
+		LOG_ERROR("CT is not connected");
 		return -ENOTCONN;
 	}
 
 	err = bt_bip_get_image_properties(&ct->client, final, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX get image properties %d", err);
+		LOG_ERROR("Failed to send OBEX get image properties %d", err);
 	}
 	return err;
 }
@@ -768,18 +768,18 @@ int bt_avrcp_cover_art_ct_get_image(struct bt_avrcp_cover_art_ct *ct, bool final
 	int err;
 
 	if (ct == NULL) {
-		LOG_ERR("Invalid cover art controller");
+		LOG_ERROR("Invalid cover art controller");
 		return -EINVAL;
 	}
 
 	if (ct->conn == NULL) {
-		LOG_ERR("CT is not connected");
+		LOG_ERROR("CT is not connected");
 		return -ENOTCONN;
 	}
 
 	err = bt_bip_get_image(&ct->client, final, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX get image %d", err);
+		LOG_ERROR("Failed to send OBEX get image %d", err);
 	}
 	return err;
 }
@@ -792,18 +792,18 @@ int bt_avrcp_cover_art_ct_get_linked_thumbnail(struct bt_avrcp_cover_art_ct *ct,
 	int err;
 
 	if (ct == NULL) {
-		LOG_ERR("Invalid cover art controller");
+		LOG_ERROR("Invalid cover art controller");
 		return -EINVAL;
 	}
 
 	if (ct->conn == NULL) {
-		LOG_ERR("CT is not connected");
+		LOG_ERROR("CT is not connected");
 		return -ENOTCONN;
 	}
 
 	err = bt_bip_get_linked_thumbnail(&ct->client, final, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send OBEX get linked thumbnail %d", err);
+		LOG_ERROR("Failed to send OBEX get linked thumbnail %d", err);
 	}
 	return err;
 }

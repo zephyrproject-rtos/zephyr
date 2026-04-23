@@ -49,12 +49,12 @@ static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel,
 	uint8_t duty_cycle;
 
 	if (period_cycles == 0U) {
-		LOG_ERR("Channel can not be set to inactive level");
+		LOG_ERROR("Channel can not be set to inactive level");
 		return -ENOTSUP;
 	}
 
 	if (channel >= config->channel_count) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -ENOTSUP;
 	}
 
@@ -91,7 +91,7 @@ static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel,
 			data->clock_freq);
 
 		if (pwm_freq == 0U) {
-			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
+			LOG_ERROR("Could not set up pwm_freq=%d", pwm_freq);
 			return -EINVAL;
 		}
 
@@ -102,7 +102,7 @@ static int rv32m1_tpm_set_cycles(const struct device *dev, uint32_t channel,
 				      pwm_freq, data->clock_freq);
 
 		if (status != kStatus_Success) {
-			LOG_ERR("Could not set up pwm");
+			LOG_ERROR("Could not set up pwm");
 			return -ENOTSUP;
 		}
 		TPM_StartTimer(config->base, config->tpm_clock_source);
@@ -137,23 +137,23 @@ static int rv32m1_tpm_init(const struct device *dev)
 	int i;
 
 	if (config->channel_count > ARRAY_SIZE(data->channel)) {
-		LOG_ERR("Invalid channel count");
+		LOG_ERROR("Invalid channel count");
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	if (clock_control_on(config->clock_dev, config->clock_subsys)) {
-		LOG_ERR("Could not turn on clock");
+		LOG_ERROR("Could not turn on clock");
 		return -EINVAL;
 	}
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &data->clock_freq)) {
-		LOG_ERR("Could not get clock frequency");
+		LOG_ERROR("Could not get clock frequency");
 		return -EINVAL;
 	}
 

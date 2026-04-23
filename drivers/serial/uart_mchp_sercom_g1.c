@@ -243,7 +243,7 @@ static void uart_wait_sync(sercom_registers_t *regs, bool is_clock_external)
 
 	if (WAIT_FOR(((usart->SERCOM_SYNCBUSY & SERCOM_USART_SYNCBUSY_Msk) == 0), TIMEOUT_VALUE_US,
 		     k_busy_wait(DELAY_US)) == false) {
-		LOG_ERR("Timeout waiting for UART SYNCBUSY clear");
+		LOG_ERROR("Timeout waiting for UART SYNCBUSY clear");
 	}
 }
 

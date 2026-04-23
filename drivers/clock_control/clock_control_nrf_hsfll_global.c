@@ -69,7 +69,7 @@ static int global_hsfll_resolve_spec_to_idx(const struct device *dev,
 	uint32_t req_frequency;
 
 	if (req_spec->accuracy || req_spec->precision) {
-		LOG_ERR("invalid specification of accuracy or precision");
+		LOG_ERROR("invalid specification of accuracy or precision");
 		return -EINVAL;
 	}
 
@@ -85,7 +85,7 @@ static int global_hsfll_resolve_spec_to_idx(const struct device *dev,
 		return i;
 	}
 
-	LOG_ERR("invalid frequency");
+	LOG_ERROR("invalid frequency");
 	return -EINVAL;
 }
 

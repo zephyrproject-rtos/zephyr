@@ -57,12 +57,12 @@ static int dac_samd5x_write_value(const struct device *dev, uint8_t channel, uin
 
 	if (data->resolution[channel] > 12) {
 		if (value >= BIT(16)) {
-			LOG_ERR("value %d out of range", value);
+			LOG_ERROR("value %d out of range", value);
 			return -EINVAL;
 		}
 	} else {
 		if (value >= BIT(12)) {
-			LOG_ERR("value %d out of range", value);
+			LOG_ERROR("value %d out of range", value);
 			return -EINVAL;
 		}
 	}

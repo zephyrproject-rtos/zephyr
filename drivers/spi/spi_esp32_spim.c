@@ -102,7 +102,7 @@ static int spi_esp32_gdma_config(const struct device *dev, uint8_t dir, uint8_t 
 	uint8_t dma_channel = (dir == SPI_DMA_RX) ? cfg->dma_rx_ch : cfg->dma_tx_ch;
 
 	if (dma_channel == 0xFF) {
-		LOG_ERR("DMA channel is not configured in device tree");
+		LOG_ERROR("DMA channel is not configured in device tree");
 		return -EINVAL;
 	}
 
@@ -112,7 +112,7 @@ static int spi_esp32_gdma_config(const struct device *dev, uint8_t dir, uint8_t 
 	}
 
 	if (dma_status.busy) {
-		LOG_ERR("DMA channel %d is busy", dma_channel);
+		LOG_ERROR("DMA channel %d is busy", dma_channel);
 		return -EBUSY;
 	}
 
@@ -130,7 +130,7 @@ static int spi_esp32_gdma_config(const struct device *dev, uint8_t dir, uint8_t 
 
 	err = dma_config(cfg->dma_dev, dma_channel, &dma_cfg);
 	if (err) {
-		LOG_ERR("Error configuring DMA (%d)", err);
+		LOG_ERROR("Error configuring DMA (%d)", err);
 	}
 
 	return err;
@@ -216,7 +216,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 			LOG_DBG("Tx buffer not DMA capable");
 			tx_temp = k_malloc(dma_len_tx);
 			if (!tx_temp) {
-				LOG_ERR("Error allocating temp buffer Tx");
+				LOG_ERROR("Error allocating temp buffer Tx");
 				return -ENOMEM;
 			}
 			memcpy(tx_temp, &ctx->tx_buf[0], dma_len_tx);
@@ -227,7 +227,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 			 */
 			tx_temp = k_calloc(dma_len_rx, sizeof(uint8_t));
 			if (!tx_temp) {
-				LOG_ERR("Error allocating zero buffer for RX-only");
+				LOG_ERROR("Error allocating zero buffer for RX-only");
 				return -ENOMEM;
 			}
 		}
@@ -240,7 +240,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 			LOG_DBG("Rx buffer not DMA capable");
 			rx_temp = k_calloc(((dma_len_rx << 3) + 31) / 8, sizeof(uint8_t));
 			if (!rx_temp) {
-				LOG_ERR("Error allocating temp buffer Rx");
+				LOG_ERROR("Error allocating temp buffer Rx");
 				err = -ENOMEM;
 				goto free;
 			}
@@ -430,7 +430,7 @@ static int spi_esp32_init_dma(const struct device *dev)
 #ifdef SOC_GDMA_SUPPORTED
 	if (cfg->dma_dev) {
 		if (!device_is_ready(cfg->dma_dev)) {
-			LOG_ERR("DMA device is not ready");
+			LOG_ERROR("DMA device is not ready");
 			return -ENODEV;
 		}
 	}
@@ -438,7 +438,7 @@ static int spi_esp32_init_dma(const struct device *dev)
 	data->hal.dma_enabled = false;
 #else
 	if (clock_control_on(cfg->clock_dev, (clock_control_subsys_t)cfg->dma_clk_src)) {
-		LOG_ERR("Could not enable DMA clock");
+		LOG_ERROR("Could not enable DMA clock");
 		return -EIO;
 	}
 	data->hal.dma_enabled = true;
@@ -464,14 +464,14 @@ static int spi_esp32_init(const struct device *dev)
 	}
 
 	if (!device_is_ready(cfg->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	/* Enables SPI peripheral */
 	err = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
 	if (err < 0) {
-		LOG_ERR("Error enabling SPI clock");
+		LOG_ERROR("Error enabling SPI clock");
 		return err;
 	}
 
@@ -484,7 +484,7 @@ static int spi_esp32_init(const struct device *dev)
 	if (cfg->dma_enabled) {
 		err = spi_esp32_init_dma(dev);
 		if (err) {
-			LOG_ERR("Error initializing SPI DMA");
+			LOG_ERROR("Error initializing SPI DMA");
 			return err;
 		}
 	}
@@ -501,14 +501,14 @@ static int spi_esp32_init(const struct device *dev)
 			NULL);
 
 	if (err != 0) {
-		LOG_ERR("could not allocate interrupt (err %d)", err);
+		LOG_ERROR("could not allocate interrupt (err %d)", err);
 		return err;
 	}
 #endif
 
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure SPI pins");
+		LOG_ERROR("Failed to configure SPI pins");
 		return err;
 	}
 
@@ -520,7 +520,7 @@ static int spi_esp32_init(const struct device *dev)
 	err = esp_clk_tree_src_get_freq_hz(
 		cfg->clock_source, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &data->clock_source_hz);
 	if (err) {
-		LOG_ERR("Could not get clock source frequency (%d)", err);
+		LOG_ERROR("Could not get clock source frequency (%d)", err);
 		return err;
 	}
 
@@ -565,17 +565,17 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	ctx->config = spi_cfg;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
 	if (spi_cfg->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback mode is not supported");
+		LOG_ERROR("Loopback mode is not supported");
 		return -ENOTSUP;
 	}
 

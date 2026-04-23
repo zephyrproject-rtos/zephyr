@@ -230,7 +230,7 @@ static int dhcpv4_find_client_id_option(uint8_t *data, size_t datalen,
 	}
 
 	if (optlen > *len) {
-		LOG_ERR("Not enough memory for DHCPv4 client identifier.");
+		LOG_ERROR("Not enough memory for DHCPv4 client identifier.");
 		return -ENOMEM;
 	}
 
@@ -426,8 +426,8 @@ static uint8_t *dhcpv4_encode_dns_server_option(uint8_t *buf, size_t *buflen)
 	}
 
 	if (net_addr_pton(NET_AF_INET, CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS, &dns_address)) {
-		LOG_ERR("Invalid DNS server address: %s",
-			CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS);
+		LOG_ERROR("Invalid DNS server address: %s",
+			  CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS);
 		return NULL;
 	}
 
@@ -655,7 +655,7 @@ static int dhcpv4_send_offer(struct dhcpv4_server_ctx *ctx, struct dhcp_msg *msg
 	buf = dhcpv4_encode_end_option(buf, &buflen);
 
 	if (buf == NULL) {
-		LOG_ERR("Failed to encode %s message", "Offer");
+		LOG_ERROR("Failed to encode %s message", "Offer");
 		return -ENOMEM;
 	}
 
@@ -664,7 +664,7 @@ static int dhcpv4_send_offer(struct dhcpv4_server_ctx *ctx, struct dhcp_msg *msg
 	ret = dhcpv4_send(ctx, NET_DHCPV4_MSG_TYPE_OFFER, reply, reply_len,
 			  msg, addr);
 	if (ret < 0) {
-		LOG_ERR("Failed to send %s message, %d", "Offer", ret);
+		LOG_ERROR("Failed to send %s message, %d", "Offer", ret);
 		return ret;
 	}
 
@@ -700,7 +700,7 @@ static int dhcpv4_send_ack(struct dhcpv4_server_ctx *ctx, struct dhcp_msg *msg,
 	buf = dhcpv4_encode_end_option(buf, &buflen);
 
 	if (buf == NULL) {
-		LOG_ERR("Failed to encode %s message", "ACK");
+		LOG_ERROR("Failed to encode %s message", "ACK");
 		return -ENOMEM;
 	}
 
@@ -709,7 +709,7 @@ static int dhcpv4_send_ack(struct dhcpv4_server_ctx *ctx, struct dhcp_msg *msg,
 	ret = dhcpv4_send(ctx, NET_DHCPV4_MSG_TYPE_ACK, reply, reply_len, msg,
 			  addr);
 	if (ret < 0) {
-		LOG_ERR("Failed to send %s message, %d", "ACK", ret);
+		LOG_ERROR("Failed to send %s message, %d", "ACK", ret);
 		return ret;
 	}
 
@@ -736,7 +736,7 @@ static int dhcpv4_send_nak(struct dhcpv4_server_ctx *ctx, struct dhcp_msg *msg,
 	buf = dhcpv4_encode_end_option(buf, &buflen);
 
 	if (buf == NULL) {
-		LOG_ERR("Failed to encode %s message", "NAK");
+		LOG_ERROR("Failed to encode %s message", "NAK");
 		return -ENOMEM;
 	}
 
@@ -745,7 +745,7 @@ static int dhcpv4_send_nak(struct dhcpv4_server_ctx *ctx, struct dhcp_msg *msg,
 	ret = dhcpv4_send(ctx, NET_DHCPV4_MSG_TYPE_NAK, reply, reply_len, msg,
 			  NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to send %s message, %d", "NAK", ret);
+		LOG_ERROR("Failed to send %s message, %d", "NAK", ret);
 		return ret;
 	}
 
@@ -774,7 +774,7 @@ static int dhcpv4_get_client_id(struct dhcp_msg *msg, uint8_t *options,
 
 	/* No Client Id option or too long to use, fallback to hardware address. */
 	if (msg->hlen > sizeof(msg->chaddr)) {
-		LOG_ERR("Malformed chaddr length.");
+		LOG_ERROR("Malformed chaddr length.");
 		return -EINVAL;
 	}
 
@@ -811,7 +811,7 @@ static int dhcpv4_probe_address(struct dhcpv4_server_ctx *ctx,
 					 (struct net_sockaddr *)&dest_addr,
 					 NULL, ctx);
 	if (ret < 0) {
-		LOG_ERR("Failed to send ICMP probe");
+		LOG_ERROR("Failed to send ICMP probe");
 	}
 
 	return ret;
@@ -1083,7 +1083,7 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 	}
 
 	if (selected == NULL) {
-		LOG_ERR("No free address found in address pool");
+		LOG_ERROR("No free address found in address pool");
 	} else {
 		uint32_t lease_time = dhcpv4_get_lease_time(options, optlen);
 
@@ -1213,7 +1213,7 @@ static void dhcpv4_handle_request(struct dhcpv4_server_ctx *ctx,
 		}
 
 		if (selected == NULL) {
-			LOG_ERR("No valid slot found for DHCPv4 Request");
+			LOG_ERROR("No valid slot found for DHCPv4 Request");
 		} else {
 			uint32_t lease_time = dhcpv4_get_lease_time(options, optlen);
 
@@ -1370,8 +1370,8 @@ static void dhcpv4_handle_decline(struct dhcpv4_server_ctx *ctx,
 		return;
 	}
 
-	LOG_ERR("Received DHCPv4 Decline for %s (address already in use)",
-		net_sprint_ipv4_addr(&requested_ip));
+	LOG_ERROR("Received DHCPv4 Decline for %s (address already in use)",
+		  net_sprint_ipv4_addr(&requested_ip));
 
 	for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {
 		struct dhcpv4_addr_slot *slot = &ctx->addr_pool[i];
@@ -1518,7 +1518,7 @@ static void dhcpv4_process_data(struct dhcpv4_server_ctx *ctx, uint8_t *data,
 	/* Search options for DHCP message type. */
 	ret = dhcpv4_find_message_type_option(data, datalen, &msgtype);
 	if (ret < 0) {
-		LOG_ERR("No message type option");
+		LOG_ERROR("No message type option");
 		return;
 	}
 
@@ -1566,12 +1566,12 @@ static void dhcpv4_server_cb(struct net_socket_service_event *evt)
 	}
 
 	if (ctx == NULL) {
-		LOG_ERR("No DHCPv4 server context found for given FD.");
+		LOG_ERROR("No DHCPv4 server context found for given FD.");
 		return;
 	}
 
 	if (evt->event.revents & ZSOCK_POLLERR) {
-		LOG_ERR("DHCPv4 server poll revents error");
+		LOG_ERROR("DHCPv4 server poll revents error");
 		net_dhcpv4_server_stop(ctx->iface);
 		return;
 	}
@@ -1587,7 +1587,7 @@ static void dhcpv4_server_cb(struct net_socket_service_event *evt)
 			return;
 		}
 
-		LOG_ERR("DHCPv4 server recv error, %d", errno);
+		LOG_ERROR("DHCPv4 server recv error, %d", errno);
 		net_dhcpv4_server_stop(ctx->iface);
 		return;
 	}
@@ -1615,26 +1615,26 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 	}
 
 	if (!net_if_ipv4_addr_mask_cmp(iface, base_addr)) {
-		LOG_ERR("Address pool does not belong to the interface subnet.");
+		LOG_ERROR("Address pool does not belong to the interface subnet.");
 		return -EINVAL;
 	}
 
 	server_addr = net_if_ipv4_select_src_addr(iface, base_addr);
 	if (server_addr == NULL) {
-		LOG_ERR("Failed to obtain a valid server address.");
+		LOG_ERROR("Failed to obtain a valid server address.");
 		return -EINVAL;
 	}
 
 	if ((net_htonl(server_addr->s_addr) >= net_htonl(base_addr->s_addr)) &&
 	    (net_htonl(server_addr->s_addr) <
 	     net_htonl(base_addr->s_addr) + CONFIG_NET_DHCPV4_SERVER_ADDR_COUNT)) {
-		LOG_ERR("Address pool overlaps with server address.");
+		LOG_ERROR("Address pool overlaps with server address.");
 		return -EINVAL;
 	}
 
 	netmask = net_if_ipv4_get_netmask_by_addr(iface, server_addr);
 	if (net_ipv4_is_addr_unspecified(&netmask)) {
-		LOG_ERR("Failed to obtain subnet mask.");
+		LOG_ERROR("Failed to obtain subnet mask.");
 		return -EINVAL;
 	}
 
@@ -1643,7 +1643,7 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 	for (int i = 0; i < ARRAY_SIZE(server_ctx); i++) {
 		if (server_ctx[i].iface != NULL) {
 			if (server_ctx[i].iface == iface) {
-				LOG_ERR("DHCPv4 server instance already running.");
+				LOG_ERROR("DHCPv4 server instance already running.");
 				ret = -EALREADY;
 				goto error;
 			}
@@ -1655,21 +1655,21 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 	}
 
 	if (slot < 0) {
-		LOG_ERR("No free DHCPv4 server instance.");
+		LOG_ERROR("No free DHCPv4 server instance.");
 		ret = -ENOMEM;
 		goto error;
 	}
 
 	ret = net_if_get_name(iface, ifreq.ifr_name, sizeof(ifreq.ifr_name));
 	if (ret < 0) {
-		LOG_ERR("Failed to obtain interface name.");
+		LOG_ERROR("Failed to obtain interface name.");
 		goto error;
 	}
 
 	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
 		ret = -errno;
-		LOG_ERR("Failed to create DHCPv4 server socket, %d", ret);
+		LOG_ERROR("Failed to create DHCPv4 server socket, %d", ret);
 		goto error;
 	}
 
@@ -1677,15 +1677,14 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 			       sizeof(ifreq));
 	if (ret < 0) {
 		ret = -errno;
-		LOG_ERR("Failed to bind DHCPv4 server socket with interface, %d",
-			ret);
+		LOG_ERROR("Failed to bind DHCPv4 server socket with interface, %d", ret);
 		goto error;
 	}
 
 	ret = zsock_bind(sock, (struct net_sockaddr *)&addr, sizeof(addr));
 	if (ret < 0) {
 		ret = -errno;
-		LOG_ERR("Failed to bind DHCPv4 server socket, %d", ret);
+		LOG_ERROR("Failed to bind DHCPv4 server socket, %d", ret);
 		goto error;
 	}
 
@@ -1714,14 +1713,14 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 
 	ret = dhcpv4_server_probing_init(&server_ctx[slot]);
 	if (ret < 0) {
-		LOG_ERR("Failed to register probe handler, %d", ret);
+		LOG_ERROR("Failed to register probe handler, %d", ret);
 		goto cleanup;
 	}
 
 	ret = net_socket_service_register(&dhcpv4_server, fds, ARRAY_SIZE(fds),
 					  NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to register socket service, %d", ret);
+		LOG_ERROR("Failed to register socket service, %d", ret);
 		dhcpv4_server_probing_deinit(&server_ctx[slot]);
 		goto cleanup;
 	}

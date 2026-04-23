@@ -76,7 +76,7 @@ static void spi_xmc4xxx_dma_callback(const struct device *dev_dma, void *arg, ui
 	struct spi_xmc4xxx_data *data = arg;
 
 	if (status != 0) {
-		LOG_ERR("DMA callback error on channel %d.", dma_channel);
+		LOG_ERROR("DMA callback error on channel %d.", dma_channel);
 		data->dma_status_flags |= SPI_XMC4XXX_DMA_ERROR_FLAG;
 	} else {
 		if (dev_dma == data->dma_tx.dev_dma && dma_channel == data->dma_tx.dma_channel) {
@@ -85,7 +85,7 @@ static void spi_xmc4xxx_dma_callback(const struct device *dev_dma, void *arg, ui
 			   dma_channel == data->dma_rx.dma_channel) {
 			data->dma_status_flags |= SPI_XMC4XXX_DMA_RX_DONE_FLAG;
 		} else {
-			LOG_ERR("DMA callback channel %d is not valid.", dma_channel);
+			LOG_ERROR("DMA callback channel %d is not valid.", dma_channel);
 			data->dma_status_flags |= SPI_XMC4XXX_DMA_ERROR_FLAG;
 		}
 	}
@@ -213,17 +213,17 @@ static int spi_xmc4xxx_configure(const struct device *dev, const struct spi_conf
 	ctx->config = spi_cfg;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) != 8) {
-		LOG_ERR("Only 8 bit word size is supported");
+		LOG_ERROR("Only 8 bit word size is supported");
 		return -ENOTSUP;
 	}
 
@@ -342,7 +342,7 @@ static int spi_xmc4xxx_dma_rx_tx_done(struct spi_xmc4xxx_data *data)
 
 		ret = k_sem_take(&data->status_sem, K_MSEC(CONFIG_SPI_XMC4XXX_DMA_TIMEOUT_MSEC));
 		if (ret != 0) {
-			LOG_ERR("Sem take error %d", ret);
+			LOG_ERROR("Sem take error %d", ret);
 			return ret;
 		}
 		if (data->dma_status_flags & SPI_XMC4XXX_DMA_ERROR_FLAG) {
@@ -381,7 +381,7 @@ static int spi_xmc4xxx_transceive_dma(const struct device *dev, const struct spi
 
 	ret = spi_xmc4xxx_configure(dev, spi_cfg);
 	if (ret) {
-		LOG_ERR("SPI config on device %s failed", dev->name);
+		LOG_ERROR("SPI config on device %s failed", dev->name);
 		spi_context_release(ctx, ret);
 		return ret;
 	}

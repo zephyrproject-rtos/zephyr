@@ -24,7 +24,7 @@ int modbus_raw_rx_adu(struct modbus_context *ctx)
 	}
 
 	if (ctx->rx_adu.proto_id != MODBUS_ADU_PROTO_ID) {
-		LOG_ERR("MODBUS protocol not supported");
+		LOG_ERROR("MODBUS protocol not supported");
 		return -ENOTSUP;
 	}
 
@@ -55,12 +55,12 @@ int modbus_raw_submit_rx(const int iface, const struct modbus_adu *adu)
 	ctx = modbus_get_context(iface);
 
 	if (ctx == NULL) {
-		LOG_ERR("Interface not available");
+		LOG_ERROR("Interface not available");
 		return -ENODEV;
 	}
 
 	if (ctx->mode != MODBUS_MODE_RAW) {
-		LOG_ERR("Interface not in RAW mode");
+		LOG_ERROR("Interface not in RAW mode");
 		return -ENOTSUP;
 	}
 
@@ -126,7 +126,7 @@ int modbus_raw_backend_txn(const int iface, struct modbus_adu *adu)
 
 	ctx = modbus_get_context(iface);
 	if (ctx == NULL) {
-		LOG_ERR("Interface %d not available", iface);
+		LOG_ERROR("Interface %d not available", iface);
 		modbus_set_exception(adu, MODBUS_EXC_GW_PATH_UNAVAILABLE);
 		return -ENODEV;
 	}
@@ -137,7 +137,7 @@ int modbus_raw_backend_txn(const int iface, struct modbus_adu *adu)
 	 */
 	if (ctx->client == false ||
 	    (ctx->mode != MODBUS_MODE_RTU && ctx->mode != MODBUS_MODE_ASCII)) {
-		LOG_ERR("Interface %d has wrong configuration", iface);
+		LOG_ERROR("Interface %d has wrong configuration", iface);
 		modbus_set_exception(adu, MODBUS_EXC_GW_PATH_UNAVAILABLE);
 		return -ENOTSUP;
 	}

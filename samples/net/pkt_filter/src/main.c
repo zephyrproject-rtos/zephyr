@@ -130,7 +130,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		count++;
 	}
 
-	LOG_ERR("Too many interfaces %d (max is %d)", count, MAX_INTERFACES);
+	LOG_ERROR("Too many interfaces %d (max is %d)", count, MAX_INTERFACES);
 }
 
 static void init_app(void)
@@ -161,7 +161,7 @@ static void init_app(void)
 	}
 
 	if (found == 0) {
-		LOG_ERR("No interfaces found");
+		LOG_ERROR("No interfaces found");
 		return;
 	}
 

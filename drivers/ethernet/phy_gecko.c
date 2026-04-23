@@ -40,7 +40,7 @@ static int mdio_bus_wait(ETH_TypeDef *eth)
 
 	while (!(eth->NETWORKSTATUS & ETH_NETWORKSTATUS_MANDONE)) {
 		if (retries-- == 0U) {
-			LOG_ERR("timeout");
+			LOG_ERROR("timeout");
 			return -ETIMEDOUT;
 		}
 
@@ -151,7 +151,7 @@ int phy_gecko_init(const struct phy_gecko_dev *phy)
 	/* Verify that the PHY device is responding */
 	phy_id = phy_gecko_id_get(phy);
 	if (phy_id == 0xFFFFFFFF) {
-		LOG_ERR("Unable to detect a valid PHY");
+		LOG_ERROR("Unable to detect a valid PHY");
 		return -1;
 	}
 

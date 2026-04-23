@@ -98,12 +98,12 @@ static int nxp_lpc_mcan_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(nxp_lpc_config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(nxp_lpc_config->reset.dev)) {
-		LOG_ERR("Reset device not ready");
+		LOG_ERROR("Reset device not ready");
 		return -ENODEV;
 	}
 
@@ -119,7 +119,7 @@ static int nxp_lpc_mcan_init(const struct device *dev)
 
 	err = clock_control_on(nxp_lpc_config->clock_dev, nxp_lpc_config->clock_subsys);
 	if (err) {
-		LOG_ERR("failed to enable clock (err %d)", err);
+		LOG_ERROR("failed to enable clock (err %d)", err);
 		return -EINVAL;
 	}
 
@@ -135,7 +135,7 @@ static int nxp_lpc_mcan_init(const struct device *dev)
 
 	err = can_mcan_init(dev);
 	if (err) {
-		LOG_ERR("failed to initialize mcan (err %d)", err);
+		LOG_ERROR("failed to initialize mcan (err %d)", err);
 		return err;
 	}
 

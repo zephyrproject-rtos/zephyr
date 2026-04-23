@@ -123,7 +123,7 @@ static int esp32_wifi_send(const struct device *dev, struct net_pkt *pkt)
 
 out:
 
-	LOG_ERR("Failed to send packet");
+	LOG_ERROR("Failed to send packet");
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	data->stats.errors.tx++;
 #endif
@@ -136,24 +136,24 @@ static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 
 	if (esp32_wifi_iface == NULL) {
 		esp_wifi_internal_free_rx_buffer(eb);
-		LOG_ERR("network interface unavailable");
+		LOG_ERROR("network interface unavailable");
 		return -EIO;
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
-		LOG_ERR("Failed to allocate net buffer");
+		LOG_ERROR("Failed to allocate net buffer");
 		esp_wifi_internal_free_rx_buffer(eb);
 		return -EIO;
 	}
 
 	if (net_pkt_write(pkt, buffer, len) < 0) {
-		LOG_ERR("Failed to write to net buffer");
+		LOG_ERROR("Failed to write to net buffer");
 		goto pkt_unref;
 	}
 
 	if (net_recv_data(esp32_wifi_iface, pkt) < 0) {
-		LOG_ERR("Failed to push received data");
+		LOG_ERROR("Failed to push received data");
 		goto pkt_unref;
 	}
 
@@ -183,7 +183,7 @@ static esp_err_t wifi_esp32_ap_iface_rx(void *buffer, uint16_t len, void *eb)
 
 	if (esp32_wifi_iface_ap == NULL) {
 		esp_wifi_internal_free_rx_buffer(eb);
-		LOG_ERR("network interface unavailable");
+		LOG_ERROR("network interface unavailable");
 		return -EIO;
 	}
 
@@ -191,17 +191,17 @@ static esp_err_t wifi_esp32_ap_iface_rx(void *buffer, uint16_t len, void *eb)
 					   NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		esp_wifi_internal_free_rx_buffer(eb);
-		LOG_ERR("Failed to get net buffer");
+		LOG_ERROR("Failed to get net buffer");
 		return -EIO;
 	}
 
 	if (net_pkt_write(pkt, buffer, len) < 0) {
-		LOG_ERR("Failed to write pkt");
+		LOG_ERROR("Failed to write pkt");
 		goto pkt_unref;
 	}
 
 	if (net_recv_data(esp32_wifi_iface_ap, pkt) < 0) {
-		LOG_ERR("Failed to push received data");
+		LOG_ERROR("Failed to push received data");
 		goto pkt_unref;
 	}
 
@@ -512,7 +512,7 @@ static int esp32_wifi_connect(const struct device *dev,
 
 	ret = esp_wifi_get_mode(&mode);
 	if (ret) {
-		LOG_ERR("Failed to get Wi-Fi mode (%d)", ret);
+		LOG_ERROR("Failed to get Wi-Fi mode (%d)", ret);
 		return -EAGAIN;
 	}
 
@@ -524,17 +524,17 @@ static int esp32_wifi_connect(const struct device *dev,
 	}
 
 	if (ret) {
-		LOG_ERR("Failed to set Wi-Fi mode (%d)", ret);
+		LOG_ERROR("Failed to set Wi-Fi mode (%d)", ret);
 		return -EAGAIN;
 	}
 	ret = esp_wifi_start();
 	if (ret) {
-		LOG_ERR("Failed to start Wi-Fi driver (%d)", ret);
+		LOG_ERROR("Failed to start Wi-Fi driver (%d)", ret);
 		return -EAGAIN;
 	}
 
 	if (data->state != ESP32_STA_STARTED) {
-		LOG_ERR("Wi-Fi not in station mode");
+		LOG_ERROR("Wi-Fi not in station mode");
 		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
 		return -EIO;
 	}
@@ -589,12 +589,12 @@ static int esp32_wifi_connect(const struct device *dev,
 		}
 		break;
 #else
-		LOG_ERR("WPA3 not supported for STA mode. Enable "
-			"CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE");
+		LOG_ERROR("WPA3 not supported for STA mode. Enable "
+			  "CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE");
 		return -EINVAL;
 #endif /* CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE */
 	default:
-		LOG_ERR("Authentication method not supported");
+		LOG_ERROR("Authentication method not supported");
 		return -EIO;
 	}
 
@@ -620,13 +620,13 @@ static int esp32_wifi_connect(const struct device *dev,
 
 	ret = esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
 	if (ret) {
-		LOG_ERR("Failed to set Wi-Fi configuration (%d)", ret);
+		LOG_ERROR("Failed to set Wi-Fi configuration (%d)", ret);
 		return -EINVAL;
 	}
 
 	ret = esp_wifi_connect();
 	if (ret) {
-		LOG_ERR("Failed to connect to Wi-Fi access point (%d)", ret);
+		LOG_ERROR("Failed to connect to Wi-Fi access point (%d)", ret);
 		return -EAGAIN;
 	}
 
@@ -667,21 +667,21 @@ static int esp32_wifi_scan(const struct device *dev, struct wifi_scan_params *pa
 #endif
 
 	if (ret) {
-		LOG_ERR("Failed to set Wi-Fi mode (%d)", ret);
+		LOG_ERROR("Failed to set Wi-Fi mode (%d)", ret);
 		data->scan_cb = NULL;
 		return -EINVAL;
 	}
 
 	ret = esp_wifi_start();
 	if (ret) {
-		LOG_ERR("Failed to start Wi-Fi driver (%d)", ret);
+		LOG_ERROR("Failed to start Wi-Fi driver (%d)", ret);
 		data->scan_cb = NULL;
 		return -EAGAIN;
 	}
 
 	ret = esp_wifi_scan_start(&scan_config, false);
 	if (ret != ESP_OK) {
-		LOG_ERR("Failed to start Wi-Fi scanning (%d)", ret);
+		LOG_ERROR("Failed to start Wi-Fi scanning (%d)", ret);
 		data->scan_cb = NULL;
 		return -EAGAIN;
 	}
@@ -747,12 +747,12 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		}
 		break;
 #else
-		LOG_ERR("WPA3 not supported for AP mode. Enable "
-			"CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT");
+		LOG_ERROR("WPA3 not supported for AP mode. Enable "
+			  "CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT");
 		return -EINVAL;
 #endif
 	default:
-		LOG_ERR("Authentication method not supported");
+		LOG_ERROR("Authentication method not supported");
 		return -EINVAL;
 	}
 
@@ -767,19 +767,19 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		err |= esp_wifi_set_mode(ESP32_WIFI_MODE_AP);
 	}
 	if (err) {
-		LOG_ERR("Failed to set Wi-Fi mode (%d)", err);
+		LOG_ERROR("Failed to set Wi-Fi mode (%d)", err);
 		return -EINVAL;
 	}
 
 	err = esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config);
 	if (err) {
-		LOG_ERR("Failed to set Wi-Fi configuration (%d)", err);
+		LOG_ERROR("Failed to set Wi-Fi configuration (%d)", err);
 		return -EINVAL;
 	}
 
 	err = esp_wifi_start();
 	if (err) {
-		LOG_ERR("Failed to enable Wi-Fi AP mode");
+		LOG_ERROR("Failed to enable Wi-Fi AP mode");
 		return -EAGAIN;
 	}
 
@@ -820,7 +820,7 @@ static int esp32_wifi_ap_disable(const struct device *dev)
 		err = esp_wifi_stop();
 	}
 	if (err) {
-		LOG_ERR("Failed to disable Wi-Fi AP mode: (%d)", err);
+		LOG_ERROR("Failed to disable Wi-Fi AP mode: (%d)", err);
 		return -EAGAIN;
 	}
 
@@ -946,7 +946,7 @@ static int esp32_wifi_set_power_save(const struct device *dev, struct wifi_ps_pa
 	if (params->enabled == WIFI_PS_DISABLED) {
 		rc = esp_wifi_set_ps(WIFI_PS_NONE);
 		if (rc != ESP_OK) {
-			LOG_ERR("Failed to disable power save, error: %d", rc);
+			LOG_ERROR("Failed to disable power save, error: %d", rc);
 			return -EIO;
 		}
 		return 0;
@@ -955,7 +955,7 @@ static int esp32_wifi_set_power_save(const struct device *dev, struct wifi_ps_pa
 	rc = esp_wifi_get_config(ESP_IF_WIFI_STA, &config);
 
 	if (rc != ESP_OK) {
-		LOG_ERR("Failed to get ESP WiFi config, error: %d", rc);
+		LOG_ERROR("Failed to get ESP WiFi config, error: %d", rc);
 		return -EIO;
 	}
 
@@ -963,14 +963,14 @@ static int esp32_wifi_set_power_save(const struct device *dev, struct wifi_ps_pa
 	rc = esp_wifi_set_config(ESP_IF_WIFI_STA, &config);
 
 	if (rc != ESP_OK) {
-		LOG_ERR("Failed to set ESP WiFi config, error: %d", rc);
+		LOG_ERROR("Failed to set ESP WiFi config, error: %d", rc);
 		return -EINVAL;
 	}
 
 	rc = esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
 
 	if (rc != ESP_OK) {
-		LOG_ERR("Failed to set ESP power save max modem mode, error: %d", rc);
+		LOG_ERROR("Failed to set ESP power save max modem mode, error: %d", rc);
 		return -EIO;
 	}
 
@@ -1081,11 +1081,11 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	esp_wifi_set_mode(ESP32_WIFI_MODE_NULL);
 
 	if (ret == ESP_ERR_NO_MEM) {
-		LOG_ERR("Not enough memory to initialize Wi-Fi.");
-		LOG_ERR("Consider increasing CONFIG_HEAP_MEM_POOL_SIZE value.");
+		LOG_ERROR("Not enough memory to initialize Wi-Fi.");
+		LOG_ERROR("Consider increasing CONFIG_HEAP_MEM_POOL_SIZE value.");
 		return -ENOMEM;
 	} else if (ret != ESP_OK) {
-		LOG_ERR("Unable to initialize the Wi-Fi: %d", ret);
+		LOG_ERROR("Unable to initialize the Wi-Fi: %d", ret);
 		return -EIO;
 	}
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
@@ -1105,13 +1105,13 @@ static int esp32_wifi_set_config(const struct device *dev, enum ethernet_config_
 		esp_err_t ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
 
 		if (ret != ESP_OK) {
-			LOG_ERR("Failed to set WiFi mode: %d", ret);
+			LOG_ERROR("Failed to set WiFi mode: %d", ret);
 			return -EIO;
 		}
 
 		ret = esp_wifi_set_mac(ESP_IF_WIFI_STA, config->mac_address.addr);
 		if (ret != ESP_OK) {
-			LOG_ERR("Failed to set MAC address: %d", ret);
+			LOG_ERROR("Failed to set MAC address: %d", ret);
 			return -EIO;
 		}
 

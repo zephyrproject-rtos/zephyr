@@ -399,7 +399,7 @@ struct k_object *k_object_create_dynamic_aligned(size_t align, size_t size)
 	struct k_object *obj = dynamic_object_create(K_OBJ_ANY, align, size);
 
 	if (obj == NULL) {
-		LOG_ERR("could not allocate kernel object, out of memory");
+		LOG_ERROR("could not allocate kernel object, out of memory");
 	}
 
 	return obj;
@@ -411,23 +411,22 @@ static void *z_object_alloc(enum k_objects otype, size_t size)
 	uintptr_t tidx = 0;
 
 	if ((otype <= K_OBJ_ANY) || (otype >= K_OBJ_LAST)) {
-		LOG_ERR("bad object type %d requested", otype);
+		LOG_ERROR("bad object type %d requested", otype);
 		return NULL;
 	}
 
 	switch (otype) {
 	case K_OBJ_THREAD:
 		if (!thread_idx_alloc(&tidx)) {
-			LOG_ERR("out of free thread indexes");
+			LOG_ERROR("out of free thread indexes");
 			return NULL;
 		}
 		break;
 	/* The following are currently not allowed at all */
-	case K_OBJ_FUTEX:			/* Lives in user memory */
-	case K_OBJ_SYS_MUTEX:			/* Lives in user memory */
-	case K_OBJ_NET_SOCKET:			/* Indeterminate size */
-		LOG_ERR("forbidden object type '%s' requested",
-			otype_to_str(otype));
+	case K_OBJ_FUTEX:      /* Lives in user memory */
+	case K_OBJ_SYS_MUTEX:  /* Lives in user memory */
+	case K_OBJ_NET_SOCKET: /* Indeterminate size */
+		LOG_ERROR("forbidden object type '%s' requested", otype_to_str(otype));
 		return NULL;
 	default:
 		/* Remainder within bounds are permitted */
@@ -744,9 +743,8 @@ static int thread_perms_test(struct k_object *ko)
 static void dump_permission_error(struct k_object *ko)
 {
 	int index = thread_index_get(_current);
-	LOG_ERR("thread %p (%d) does not have permission on %s %p",
-		_current, index,
-		otype_to_str(ko->type), ko->name);
+	LOG_ERROR("thread %p (%d) does not have permission on %s %p", _current, index,
+		  otype_to_str(ko->type), ko->name);
 	LOG_HEXDUMP_ERR(ko->perms, sizeof(ko->perms), "permission bitmap");
 }
 
@@ -755,22 +753,21 @@ void k_object_dump_error(int retval, const void *obj, struct k_object *ko,
 {
 	switch (retval) {
 	case -EBADF:
-		LOG_ERR("%p is not a valid %s", obj, otype_to_str(otype));
+		LOG_ERROR("%p is not a valid %s", obj, otype_to_str(otype));
 		if (ko == NULL) {
-			LOG_ERR("address is not a known kernel object");
+			LOG_ERROR("address is not a known kernel object");
 		} else {
-			LOG_ERR("address is actually a %s",
-				otype_to_str(ko->type));
+			LOG_ERROR("address is actually a %s", otype_to_str(ko->type));
 		}
 		break;
 	case -EPERM:
 		dump_permission_error(ko);
 		break;
 	case -EINVAL:
-		LOG_ERR("%p used before initialization", obj);
+		LOG_ERROR("%p used before initialization", obj);
 		break;
 	case -EADDRINUSE:
-		LOG_ERR("%p %s in use", obj, otype_to_str(otype));
+		LOG_ERROR("%p %s in use", obj, otype_to_str(otype));
 		break;
 	default:
 		/* Not handled error */
@@ -922,7 +919,7 @@ void *k_usermode_alloc_from_copy(const void *src, size_t size)
 
 	dst = z_thread_malloc(size);
 	if (dst == NULL) {
-		LOG_ERR("out of thread resource pool memory (%zu)", size);
+		LOG_ERROR("out of thread resource pool memory (%zu)", size);
 		goto out_err;
 	}
 
@@ -969,11 +966,11 @@ char *k_usermode_string_alloc_copy(const char *src, size_t maxlen)
 	}
 	if (actual_len == maxlen) {
 		/* Not NULL terminated */
-		LOG_ERR("string too long %p (%zu)", src, actual_len);
+		LOG_ERROR("string too long %p (%zu)", src, actual_len);
 		goto out;
 	}
 	if (size_add_overflow(actual_len, 1, &actual_len)) {
-		LOG_ERR("overflow");
+		LOG_ERROR("overflow");
 		goto out;
 	}
 
@@ -1002,12 +999,12 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen)
 	}
 	if (actual_len == maxlen) {
 		/* Not NULL terminated */
-		LOG_ERR("string too long %p (%zu)", src, actual_len);
+		LOG_ERROR("string too long %p (%zu)", src, actual_len);
 		ret = EINVAL;
 		goto out;
 	}
 	if (size_add_overflow(actual_len, 1, &actual_len)) {
-		LOG_ERR("overflow");
+		LOG_ERROR("overflow");
 		ret = EINVAL;
 		goto out;
 	}
@@ -1090,7 +1087,7 @@ static uintptr_t handler_bad_syscall(uintptr_t bad_id, uintptr_t arg2,
 	ARG_UNUSED(arg5);
 	ARG_UNUSED(arg6);
 
-	LOG_ERR("Bad system call id %" PRIuPTR " invoked", bad_id);
+	LOG_ERROR("Bad system call id %" PRIuPTR " invoked", bad_id);
 	arch_syscall_oops(ssf);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
@@ -1106,7 +1103,7 @@ static uintptr_t handler_no_syscall(uintptr_t arg1, uintptr_t arg2,
 	ARG_UNUSED(arg5);
 	ARG_UNUSED(arg6);
 
-	LOG_ERR("Unimplemented system call");
+	LOG_ERROR("Unimplemented system call");
 	arch_syscall_oops(ssf);
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }

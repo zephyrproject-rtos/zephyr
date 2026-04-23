@@ -287,7 +287,7 @@ static struct its_cmd_block *its_allocate_entry(struct gicv3_its_data *data)
 	while (its_queue_full(data)) {
 		count--;
 		if (!count) {
-			LOG_ERR("ITS queue not draining");
+			LOG_ERROR("ITS queue not draining");
 			return NULL;
 		}
 		k_busy_wait(1);
@@ -347,8 +347,8 @@ static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *c
 
 		count--;
 		if (!count) {
-			LOG_ERR("ITS queue timeout (rd %lld => %lld => wr %lld)",
-				rd_idx, idx, wr_idx);
+			LOG_ERROR("ITS queue timeout (rd %lld => %lld => wr %lld)", rd_idx, idx,
+				  wr_idx);
 			return -ETIMEDOUT;
 		}
 		k_busy_wait(1);
@@ -507,8 +507,8 @@ static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uin
 	/* The CPU id directly maps as ICID for the current CPU redistributor */
 	ret = its_send_mapti_cmd(data, device_id, event_id, intid, arch_curr_cpu()->id);
 	if (ret) {
-		LOG_ERR("Failed to map eventid %d to intid %d for deviceid %x",
-			event_id, intid, device_id);
+		LOG_ERROR("Failed to map eventid %d to intid %d for deviceid %x", event_id, intid,
+			  device_id);
 		return ret;
 	}
 
@@ -586,7 +586,7 @@ static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id
 	/* size is log2(ites) - 1, equivalent to (fls(ites) - 1) - 1 */
 	ret = its_send_mapd_cmd(data, device_id, fls_z(nr_ites) - 2, (uintptr_t)itt, true);
 	if (ret) {
-		LOG_ERR("Failed to map device id %x ITT table", device_id);
+		LOG_ERROR("Failed to map device id %x ITT table", device_id);
 		return ret;
 	}
 
@@ -605,46 +605,42 @@ static uint32_t gicv3_its_get_msi_addr(const struct device *dev)
 	return cfg->base_addr + GITS_TRANSLATER;
 }
 
-#define ITS_RDIST_MAP(n)									  \
-	{											  \
-		const struct device *const dev = DEVICE_DT_INST_GET(n);				  \
-		struct gicv3_its_data *data;							  \
-		int ret;									  \
-												  \
-		if (dev) {									  \
-			data = (struct gicv3_its_data *) dev->data;				  \
-			ret = its_send_mapc_cmd(data, arch_curr_cpu()->id,			  \
-						gicv3_rdist_get_rdbase(dev, arch_curr_cpu()->id), \
-						true);						  \
-			if (ret) {								  \
-				LOG_ERR("Failed to map CPU%d redistributor",			  \
-					arch_curr_cpu()->id);					  \
-			}									  \
-		}										  \
+#define ITS_RDIST_MAP(n)                                                                           \
+	{                                                                                          \
+		const struct device *const dev = DEVICE_DT_INST_GET(n);                            \
+		struct gicv3_its_data *data;                                                       \
+		int ret;                                                                           \
+                                                                                                   \
+		if (dev) {                                                                         \
+			data = (struct gicv3_its_data *)dev->data;                                 \
+			ret = its_send_mapc_cmd(data, arch_curr_cpu()->id,                         \
+						gicv3_rdist_get_rdbase(dev, arch_curr_cpu()->id),  \
+						true);                                             \
+			if (ret) {                                                                 \
+				LOG_ERROR("Failed to map CPU%d redistributor",                     \
+					  arch_curr_cpu()->id);                                    \
+			}                                                                          \
+		}                                                                                  \
 	}
 
-void its_rdist_map(void)
-{
-	DT_INST_FOREACH_STATUS_OKAY(ITS_RDIST_MAP)
-}
+void its_rdist_map(void){DT_INST_FOREACH_STATUS_OKAY(ITS_RDIST_MAP)}
 
-#define ITS_RDIST_INVALL(n)									\
-	{											\
-		const struct device *const dev = DEVICE_DT_INST_GET(n);				\
-		struct gicv3_its_data *data;							\
-		int ret;									\
-												\
-		if (dev) {									\
-			data = (struct gicv3_its_data *) dev->data;				\
-			ret = its_send_invall_cmd(data, arch_curr_cpu()->id);			\
-			if (ret) {								\
-				LOG_ERR("Failed to sync RDIST LPI cache for CPU%d",		\
-					arch_curr_cpu()->id);					\
-			}									\
-												\
-			its_send_sync_cmd(data,							\
-					  gicv3_rdist_get_rdbase(dev, arch_curr_cpu()->id));	\
-		}										\
+#define ITS_RDIST_INVALL(n)                                                                        \
+	{                                                                                          \
+		const struct device *const dev = DEVICE_DT_INST_GET(n);                            \
+		struct gicv3_its_data *data;                                                       \
+		int ret;                                                                           \
+                                                                                                   \
+		if (dev) {                                                                         \
+			data = (struct gicv3_its_data *)dev->data;                                 \
+			ret = its_send_invall_cmd(data, arch_curr_cpu()->id);                      \
+			if (ret) {                                                                 \
+				LOG_ERROR("Failed to sync RDIST LPI cache for CPU%d",              \
+					  arch_curr_cpu()->id);                                    \
+			}                                                                          \
+                                                                                                   \
+			its_send_sync_cmd(data, gicv3_rdist_get_rdbase(dev, arch_curr_cpu()->id)); \
+		}                                                                                  \
 	}
 
 void its_rdist_invall(void)
@@ -663,13 +659,13 @@ static int gicv3_its_init(const struct device *dev)
 
 	ret = its_force_quiescent(data);
 	if (ret) {
-		LOG_ERR("Failed to quiesce, giving up");
+		LOG_ERROR("Failed to quiesce, giving up");
 		return ret;
 	}
 
 	ret = its_alloc_tables(data);
 	if (ret) {
-		LOG_ERR("Failed to allocate tables, giving up");
+		LOG_ERROR("Failed to allocate tables, giving up");
 		return ret;
 	}
 
@@ -683,7 +679,7 @@ static int gicv3_its_init(const struct device *dev)
 	ret = its_send_mapc_cmd(data, arch_curr_cpu()->id,
 				gicv3_rdist_get_rdbase(dev, arch_curr_cpu()->id), true);
 	if (ret) {
-		LOG_ERR("Failed to map boot CPU redistributor");
+		LOG_ERROR("Failed to map boot CPU redistributor");
 		return ret;
 	}
 

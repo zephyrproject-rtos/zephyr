@@ -44,7 +44,7 @@ void adxl355_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg_355->interrupt_gpio, GPIO_INT_DISABLE);
 	if (ret < 0) {
-		LOG_ERR("Failed to disable interrupt: %d", ret);
+		LOG_ERROR("Failed to disable interrupt: %d", ret);
 		rtio_iodev_sqe_err(iodev_sqe, ret);
 		return;
 	}
@@ -63,7 +63,7 @@ void adxl355_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 							     : ADXL355_INT_MAP_FIFO_FULL_EN1_MSK,
 					 fifo_watermark_irq);
 		if (ret < 0) {
-			LOG_ERR("Failed to update interrupt map: %d", ret);
+			LOG_ERROR("Failed to update interrupt map: %d", ret);
 			rtio_iodev_sqe_err(iodev_sqe, ret);
 			return;
 		}
@@ -71,14 +71,14 @@ void adxl355_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 
 		ret = adxl355_reg_read(dev, ADXL355_STATUS, &status, 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to read status register: %d", ret);
+			LOG_ERROR("Failed to read status register: %d", ret);
 			rtio_iodev_sqe_err(iodev_sqe, ret);
 			return;
 		}
 	}
 	ret = gpio_pin_interrupt_configure_dt(&cfg_355->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable interrupt: %d", ret);
+		LOG_ERROR("Failed to enable interrupt: %d", ret);
 		rtio_iodev_sqe_err(iodev_sqe, ret);
 		return;
 	}
@@ -160,7 +160,7 @@ static void adxl355_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	data->sqe = NULL;
 
 	if (current_sqe == NULL) {
-		LOG_ERR("No pending SQE");
+		LOG_ERROR("No pending SQE");
 		gpio_pin_interrupt_configure_dt(&cfg->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		return;
 	}
@@ -172,7 +172,7 @@ static void adxl355_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	uint32_t buf_len;
 
 	if (rtio_sqe_rx_buf(current_sqe, min_read_size, ideal_read_size, &buf, &buf_len) != 0) {
-		LOG_ERR("Failed to get buffer");
+		LOG_ERROR("Failed to get buffer");
 		rtio_iodev_sqe_err(current_sqe, -ENOMEM);
 		gpio_pin_interrupt_configure_dt(&cfg->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		return;
@@ -210,7 +210,7 @@ static void adxl355_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 		cqe = rtio_cqe_consume(data->rtio_ctx);
 		if (cqe != NULL) {
 			if ((cqe->result < 0) && (res == 0)) {
-				LOG_ERR("Bus error: %d", cqe->result);
+				LOG_ERROR("Bus error: %d", cqe->result);
 				res = cqe->result;
 			}
 			rtio_cqe_release(data->rtio_ctx, cqe);
@@ -300,7 +300,7 @@ static void adxl355_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		cqe = rtio_cqe_consume(data->rtio_ctx);
 		if (cqe != NULL) {
 			if ((cqe->result < 0) && (res == 0)) {
-				LOG_ERR("Bus error: %d", cqe->result);
+				LOG_ERROR("Bus error: %d", cqe->result);
 				res = cqe->result;
 			}
 			rtio_cqe_release(data->rtio_ctx, cqe);
@@ -379,7 +379,7 @@ void adxl355_stream_irq_handler(const struct device *dev)
 	}
 	ret = sensor_clock_get_cycles(&cycles);
 	if (ret != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(data->sqe, ret);
 		return;
 	}

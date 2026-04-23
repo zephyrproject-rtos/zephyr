@@ -1657,7 +1657,7 @@ static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 {
 	/* SSID */
 	if (creds->header.ssid_len > WIFI_SSID_MAX_LEN) {
-		LOG_ERR("SSID string truncated");
+		LOG_ERROR("SSID string truncated");
 		return -EINVAL;
 	}
 
@@ -1677,7 +1677,7 @@ static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 	if (params->security == WIFI_SECURITY_TYPE_EAP_TLS) {
 		if (creds->header.key_passwd_length > 0) {
 			if (creds->header.key_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
-				LOG_ERR("key_passwd string truncated");
+				LOG_ERROR("key_passwd string truncated");
 				return -EINVAL;
 			}
 			memcpy((uint8_t *)params->key_passwd, creds->header.key_passwd,
@@ -1762,7 +1762,7 @@ static int add_network_from_credentials_struct_personal(struct wifi_credentials_
 	ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &cnx_params,
 		       sizeof(struct wifi_connect_req_params));
 	if (ret < 0) {
-		LOG_ERR("Connection request failed (%d)", ret);
+		LOG_ERROR("Connection request failed (%d)", ret);
 
 		ret = -ENOEXEC;
 		goto out;
@@ -1794,8 +1794,8 @@ static void add_stored_network(void *cb_arg, const char *ssid, size_t ssid_len)
 	ret = wifi_credentials_get_by_ssid_personal_struct(ssid, ssid_len, &creds);
 
 	if (ret) {
-		LOG_ERR("Loading WiFi credentials failed for SSID [%.*s], len: %d, err: %d",
-			ssid_len, ssid, ssid_len, ret);
+		LOG_ERROR("Loading WiFi credentials failed for SSID [%.*s], len: %d, err: %d",
+			  ssid_len, ssid, ssid_len, ret);
 		return;
 	}
 

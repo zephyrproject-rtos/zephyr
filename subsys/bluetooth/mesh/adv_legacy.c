@@ -98,7 +98,7 @@ static int bt_data_send(uint8_t num_events, uint16_t adv_int,
 	err = bt_le_adv_start(&param, ad, ad_len, NULL, 0);
 
 	if (err) {
-		LOG_ERR("Advertising failed: err %d", err);
+		LOG_ERROR("Advertising failed: err %d", err);
 		return err;
 	}
 
@@ -114,7 +114,7 @@ static int bt_data_send(uint8_t num_events, uint16_t adv_int,
 
 	err = bt_le_adv_stop();
 	if (err) {
-		LOG_ERR("Stopping advertising failed: err %d", err);
+		LOG_ERROR("Stopping advertising failed: err %d", err);
 		return err;
 	}
 

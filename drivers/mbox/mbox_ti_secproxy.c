@@ -88,16 +88,16 @@ static inline int secproxy_verify_thread(struct secproxy_thread *spt, uint8_t di
 	uint32_t status = sys_read32(spt->rt + RT_THREAD_STATUS);
 
 	if (status & RT_THREAD_STATUS_ERROR_MASK) {
-		LOG_ERR("Thread is corrupted, cannot send data.\n");
+		LOG_ERROR("Thread is corrupted, cannot send data.\n");
 		return -EINVAL;
 	}
 
 	/* Make sure thread is configured for right direction */
 	if (FIELD_GET(SCFG_THREAD_CTRL_DIR_MASK, sys_read32(spt->scfg + SCFG_THREAD_CTRL)) != dir) {
 		if (dir == THREAD_IS_TX) {
-			LOG_ERR("Trying to send data on RX Thread\n");
+			LOG_ERROR("Trying to send data on RX Thread\n");
 		} else {
-			LOG_ERR("Trying to receive data on TX Thread\n");
+			LOG_ERROR("Trying to receive data on TX Thread\n");
 		}
 		return -EINVAL;
 	}
@@ -140,12 +140,12 @@ static void secproxy_mailbox_isr(const struct device *dev, uint32_t channel)
 	struct rx_msg *rx_data = data->user_data[channel];
 
 	if (!rx_data || !rx_data->buf) {
-		LOG_ERR("No buffer provided for channel %d", channel);
+		LOG_ERROR("No buffer provided for channel %d", channel);
 		return;
 	}
 
 	if (rx_data->size < MAILBOX_MBOX_SIZE) {
-		LOG_ERR("Buffer too small for channel %d", channel);
+		LOG_ERROR("Buffer too small for channel %d", channel);
 		return;
 	}
 
@@ -194,17 +194,17 @@ static int secproxy_mailbox_send(const struct device *dev, uint32_t channel,
 	uint32_t status;
 
 	if (msg == NULL || msg->data == NULL) {
-		LOG_ERR("Invalid parameters");
+		LOG_ERROR("Invalid parameters");
 		return -EINVAL;
 	}
 
 	if (msg->size == 0) {
-		LOG_ERR("Empty message not allowed");
+		LOG_ERROR("Empty message not allowed");
 		return -EINVAL;
 	}
 
 	if (channel >= MAILBOX_MAX_CHANNELS) {
-		LOG_ERR("Channel %d exceeds max channels", channel);
+		LOG_ERROR("Channel %d exceeds max channels", channel);
 		return -EINVAL;
 	}
 
@@ -220,7 +220,7 @@ static int secproxy_mailbox_send(const struct device *dev, uint32_t channel,
 	}
 
 	if (msg->size > MAILBOX_MBOX_SIZE) {
-		LOG_ERR("Message size %zu exceeds max size %d", msg->size, MAILBOX_MBOX_SIZE);
+		LOG_ERROR("Message size %zu exceeds max size %d", msg->size, MAILBOX_MBOX_SIZE);
 		k_spin_unlock(&data->lock, key);
 		return -EMSGSIZE;
 	}
@@ -325,7 +325,7 @@ static int secproxy_mailbox_set_enabled(const struct device *dev, uint32_t chann
 	}
 
 	if (cfg->interrupts[channel] < 0) {
-		LOG_ERR("No interrupt configured for channel %d", channel);
+		LOG_ERROR("No interrupt configured for channel %d", channel);
 		return -EINVAL;
 	}
 

@@ -125,7 +125,7 @@ int clk_register_master_div(pmc_registers_t *const pmc, const char *name,
 
 	master = &clocks_master[clocks_master_idx++];
 	if (clocks_master_idx > ARRAY_SIZE(clocks_master)) {
-		LOG_ERR("Array for master clock not enough");
+		LOG_ERROR("Array for master clock not enough");
 		return -ENOMEM;
 	}
 
@@ -165,7 +165,7 @@ static int clk_mck_get_rate(const struct device *dev, clock_control_subsys_t sys
 
 	for (i = 0; ; i++) {
 		if (i >= master->num_parents) {
-			LOG_ERR("clk %s: source %d not found", dev->name, i);
+			LOG_ERROR("clk %s: source %d not found", dev->name, i);
 			return ESRCH;
 		}
 		if (master->mux_table[i] == master->parent) {
@@ -182,7 +182,7 @@ static int clk_mck_get_rate(const struct device *dev, clock_control_subsys_t sys
 
 	retval = clock_control_get_rate(parent, NULL, rate);
 	if (retval) {
-		LOG_ERR("get parent clock rate failed.");
+		LOG_ERROR("get parent clock rate failed.");
 	} else {
 		if (master->div == MASTER_PRES_MAX) {
 			*rate /= 3;
@@ -294,15 +294,15 @@ int clk_register_master(pmc_registers_t *const pmc,
 
 	master = &clocks_master[clocks_master_idx++];
 	if (clocks_master_idx > ARRAY_SIZE(clocks_master)) {
-		LOG_ERR("Array for master clock not enough");
+		LOG_ERROR("Array for master clock not enough");
 		return -ENOMEM;
 	}
 	if (num_parents > ARRAY_SIZE(master->parents)) {
-		LOG_ERR("Array for parent clock not enough");
+		LOG_ERROR("Array for parent clock not enough");
 		return -ENOMEM;
 	}
 	if (num_parents > ARRAY_SIZE(master->mux_table)) {
-		LOG_ERR("Array for mux table not enough");
+		LOG_ERROR("Array for mux table not enough");
 		return -ENOMEM;
 	}
 	memcpy(master->parents, parents, sizeof(struct device *) * num_parents);

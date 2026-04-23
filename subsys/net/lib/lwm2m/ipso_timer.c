@@ -282,8 +282,9 @@ static struct lwm2m_engine_obj_inst *timer_inst_create(uint16_t obj_inst_id)
 	/* Check that there is no other instance with this ID */
 	for (index = 0; index < MAX_INSTANCE_COUNT; index++) {
 		if (inst[index].obj && inst[index].obj_inst_id == obj_inst_id) {
-			LOG_ERR("Can not create instance - "
-				"already existing: %u", obj_inst_id);
+			LOG_ERROR("Can not create instance - "
+				  "already existing: %u",
+				  obj_inst_id);
 			return NULL;
 		}
 
@@ -294,8 +295,7 @@ static struct lwm2m_engine_obj_inst *timer_inst_create(uint16_t obj_inst_id)
 	}
 
 	if (avail < 0) {
-		LOG_ERR("Can not create instance - no more room: %u",
-			obj_inst_id);
+		LOG_ERROR("Can not create instance - no more room: %u", obj_inst_id);
 		return NULL;
 	}
 

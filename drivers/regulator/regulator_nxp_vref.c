@@ -182,20 +182,20 @@ static int regulator_nxp_vref_init(const struct device *dev)
 
 	if (config->clock_dev) {
 		if (!device_is_ready(config->clock_dev)) {
-			LOG_ERR("clock device not ready");
+			LOG_ERROR("clock device not ready");
 			return -ENODEV;
 		}
 
 		ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
 		if (ret && ret != -ENOSYS) {
 			/* Real error occurred */
-			LOG_ERR("Failed to configure clock: %d", ret);
+			LOG_ERROR("Failed to configure clock: %d", ret);
 			return ret;
 		}
 
 		ret = clock_control_on(config->clock_dev, config->clock_subsys);
 		if (ret) {
-			LOG_ERR("Failed to enable clock: %d", ret);
+			LOG_ERROR("Failed to enable clock: %d", ret);
 			return ret;
 		}
 	}

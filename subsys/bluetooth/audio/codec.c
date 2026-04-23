@@ -233,7 +233,8 @@ static int ltv_unset_val(struct net_buf_simple *buf, uint8_t type)
 				data_len_to_move = buf->len - (next_data_start - buf->data);
 				memmove(ltv_start, next_data_start, data_len_to_move);
 
-				LOG_ERR("buf->data %p, ltv_start %p, value_len %u next_data_start "
+				LOG_ERROR(
+					"buf->data %p, ltv_start %p, value_len %u next_data_start "
 					"%p data_len_to_move %u",
 					buf->data, ltv_start, value_len, next_data_start,
 					data_len_to_move);

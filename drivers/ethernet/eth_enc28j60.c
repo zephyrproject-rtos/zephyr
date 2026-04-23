@@ -210,7 +210,7 @@ static void eth_enc28j60_write_mem(const struct device *dev,
 		tx_buf[1].len = MAX_BUFFER_LENGTH;
 
 		if (spi_write_dt(&config->spi, &tx)) {
-			LOG_ERR("%s: Failed to write memory", dev->name);
+			LOG_ERROR("%s: Failed to write memory", dev->name);
 			return;
 		}
 	}
@@ -220,7 +220,7 @@ static void eth_enc28j60_write_mem(const struct device *dev,
 		tx_buf[1].len = num_remaining;
 
 		if (spi_write_dt(&config->spi, &tx)) {
-			LOG_ERR("%s: Failed to write memory", dev->name);
+			LOG_ERROR("%s: Failed to write memory", dev->name);
 		}
 	}
 }
@@ -262,7 +262,7 @@ static void eth_enc28j60_read_mem(const struct device *dev,
 		rx_buf[1].len = MAX_BUFFER_LENGTH;
 
 		if (spi_transceive_dt(&config->spi, &tx, &rx)) {
-			LOG_ERR("%s: Failed to read memory", dev->name);
+			LOG_ERROR("%s: Failed to read memory", dev->name);
 			return;
 		}
 	}
@@ -272,7 +272,7 @@ static void eth_enc28j60_read_mem(const struct device *dev,
 		rx_buf[1].len = num_remaining;
 
 		if (spi_transceive_dt(&config->spi, &tx, &rx)) {
-			LOG_ERR("%s: Failed to read memory", dev->name);
+			LOG_ERROR("%s: Failed to read memory", dev->name);
 		}
 	}
 }
@@ -382,7 +382,7 @@ static int eth_enc28j60_init_buffers(const struct device *dev)
 	do {
 		/* If the CLK isn't ready don't wait forever */
 		if ((k_uptime_get_32() - start_wait) > CONFIG_ETH_ENC28J60_CLKRDY_INIT_WAIT_MS) {
-			LOG_ERR("OST wait timed out");
+			LOG_ERROR("OST wait timed out");
 			return -ETIMEDOUT;
 		}
 		/* wait 10.24 useconds */
@@ -527,7 +527,7 @@ static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 	k_sem_give(&context->tx_rx_sem);
 
 	if (tx_end & ENC28J60_BIT_ESTAT_TXABRT) {
-		LOG_ERR("%s: TX failed!", dev->name);
+		LOG_ERROR("%s: TX failed!", dev->name);
 
 		/* 12.1.3 "TRANSMIT ERROR INTERRUPT FLAG (TXERIF)" states:
 		 *
@@ -560,7 +560,7 @@ static void enc28j60_read_packet(const struct device *dev, uint16_t frm_len)
 	pkt = net_pkt_rx_alloc_with_buffer(get_iface(context), frm_len, NET_AF_UNSPEC, 0,
 					   K_MSEC(CONFIG_ETH_ENC28J60_TIMEOUT));
 	if (!pkt) {
-		LOG_ERR("%s: Could not allocate rx buffer", dev->name);
+		LOG_ERROR("%s: Could not allocate rx buffer", dev->name);
 		eth_stats_update_errors_rx(get_iface(context));
 		return;
 	}
@@ -809,18 +809,18 @@ static int eth_enc28j60_init(const struct device *dev)
 
 	/* SPI config */
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("%s: SPI master port %s not ready", dev->name, config->spi.bus->name);
+		LOG_ERROR("%s: SPI master port %s not ready", dev->name, config->spi.bus->name);
 		return -EINVAL;
 	}
 
 	/* Initialize GPIO */
 	if (!gpio_is_ready_dt(&config->interrupt)) {
-		LOG_ERR("%s: GPIO port %s not ready", dev->name, config->interrupt.port->name);
+		LOG_ERROR("%s: GPIO port %s not ready", dev->name, config->interrupt.port->name);
 		return -EINVAL;
 	}
 
 	if (gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT)) {
-		LOG_ERR("%s: Unable to configure GPIO pin %u", dev->name, config->interrupt.pin);
+		LOG_ERROR("%s: Unable to configure GPIO pin %u", dev->name, config->interrupt.pin);
 		return -EINVAL;
 	}
 
@@ -835,7 +835,7 @@ static int eth_enc28j60_init(const struct device *dev)
 					GPIO_INT_EDGE_TO_ACTIVE);
 
 	if (eth_enc28j60_soft_reset(dev)) {
-		LOG_ERR("%s: Soft-reset failed", dev->name);
+		LOG_ERROR("%s: Soft-reset failed", dev->name);
 		return -EIO;
 	}
 

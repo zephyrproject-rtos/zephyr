@@ -40,7 +40,7 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
 	ARG_UNUSED(esf);
 
 	LOG_PANIC();
-	LOG_ERR("Halting system");
+	LOG_ERROR("Halting system");
 	arch_system_halt(reason);
 	CODE_UNREACHABLE;
 }
@@ -95,8 +95,8 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	/* twister looks for the "ZEPHYR FATAL ERROR" string, don't
 	 * change it without also updating twister
 	 */
-	LOG_ERR(">>> ZEPHYR FATAL ERROR %d: %s on CPU %d", reason,
-		reason_to_str(reason), _current_cpu->id);
+	LOG_ERROR(">>> ZEPHYR FATAL ERROR %d: %s on CPU %d", reason, reason_to_str(reason),
+		  _current_cpu->id);
 
 	/* FIXME: This doesn't seem to work as expected on all arches.
 	 * Need a reliable way to determine whether the fault happened when
@@ -106,12 +106,12 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	 */
 #if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
 	if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
-		LOG_ERR("Fault during interrupt handling\n");
+		LOG_ERROR("Fault during interrupt handling\n");
 	}
 #endif /* CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		LOG_ERR("Current thread: %p (%s)", thread, thread_name_get(thread));
+		LOG_ERROR("Current thread: %p (%s)", thread, thread_name_get(thread));
 	}
 
 	coredump(reason, esf, thread);

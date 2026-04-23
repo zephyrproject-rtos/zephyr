@@ -89,7 +89,7 @@ static int renesas_ra_ipc_send(const struct device *dev, mbox_channel_id_t chann
 	}
 
 	if (!(BIT(channel_id) & config->channel_mask)) {
-		LOG_ERR("Channel %d is not available", channel_id);
+		LOG_ERROR("Channel %d is not available", channel_id);
 		return -EINVAL;
 	}
 
@@ -97,7 +97,7 @@ static int renesas_ra_ipc_send(const struct device *dev, mbox_channel_id_t chann
 	if (msg == NULL) {
 		fsp_err = R_IPC_EventGenerate((ipc_ctrl_t *)(&data->ipc_ctrl), BIT(channel_id));
 		if (fsp_err != FSP_SUCCESS) {
-			LOG_ERR("Failed to send signal on channel %u", channel_id);
+			LOG_ERROR("Failed to send signal on channel %u", channel_id);
 			return -EIO;
 		}
 		return 0;
@@ -107,13 +107,13 @@ static int renesas_ra_ipc_send(const struct device *dev, mbox_channel_id_t chann
 		uint32_t msg_tmp = 0;
 
 		if (msg->size > IPC_MBOX_FIFO_SIZE) {
-			LOG_ERR("Invalid message size: %zu, expected <= %zu", msg->size,
-				IPC_MBOX_FIFO_SIZE);
+			LOG_ERROR("Invalid message size: %zu, expected <= %zu", msg->size,
+				  IPC_MBOX_FIFO_SIZE);
 			return -EMSGSIZE;
 		}
 
 		if (msg->data == NULL && msg->size > 0) {
-			LOG_ERR("Message data is NULL");
+			LOG_ERROR("Message data is NULL");
 			return -EINVAL;
 		}
 
@@ -121,14 +121,14 @@ static int renesas_ra_ipc_send(const struct device *dev, mbox_channel_id_t chann
 
 		fsp_err = R_IPC_MessageSend((ipc_ctrl_t *const)(&data->ipc_ctrl), msg_tmp);
 		if (fsp_err != FSP_SUCCESS) {
-			LOG_ERR("Failed to send message on channel %u", channel_id);
+			LOG_ERROR("Failed to send message on channel %u", channel_id);
 			if (fsp_err == FSP_ERR_OVERFLOW) {
 				return -EBUSY;
 			}
 			return -EIO;
 		}
 	} else {
-		LOG_ERR("Channel %u is valid but unsupported for message transfer", channel_id);
+		LOG_ERROR("Channel %u is valid but unsupported for message transfer", channel_id);
 		return -ENOTSUP;
 	}
 
@@ -146,7 +146,7 @@ static int renesas_ra_ipc_reg_callback(const struct device *dev, mbox_channel_id
 	}
 
 	if (!(BIT(channel_id) & config->channel_mask)) {
-		LOG_ERR("Channel %d is not available", channel_id);
+		LOG_ERROR("Channel %d is not available", channel_id);
 		return -EINVAL;
 	}
 
@@ -184,7 +184,7 @@ static int renesas_ra_ipc_set_enabled(const struct device *dev, mbox_channel_id_
 	}
 
 	if (!(BIT(channel_id) & config->channel_mask)) {
-		LOG_ERR("Channel %d is not available", channel_id);
+		LOG_ERROR("Channel %d is not available", channel_id);
 		return -EINVAL;
 	}
 
@@ -205,7 +205,7 @@ static int renesas_ra_ipc_init(const struct device *dev)
 	fsp_err = R_IPC_Open(&data->ipc_ctrl, &data->fsp_config);
 
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("MBOX initialization failed");
+		LOG_ERROR("MBOX initialization failed");
 		return -EIO;
 	}
 

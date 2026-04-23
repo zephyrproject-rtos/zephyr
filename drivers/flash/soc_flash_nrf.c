@@ -149,8 +149,7 @@ static int flash_nrf_read(const struct device *dev, off_t addr,
 	if (is_regular_addr_valid(addr, len)) {
 		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 	} else if (!within_uicr) {
-		LOG_ERR("invalid address: 0x%08lx:%zu",
-				(unsigned long)addr, len);
+		LOG_ERROR("invalid address: 0x%08lx:%zu", (unsigned long)addr, len);
 		return -EINVAL;
 	}
 
@@ -178,15 +177,13 @@ static int flash_nrf_write(const struct device *dev, off_t addr,
 	if (is_regular_addr_valid(addr, len)) {
 		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 	} else if (!is_uicr_addr_valid(addr, len)) {
-		LOG_ERR("invalid address: 0x%08lx:%zu",
-				(unsigned long)addr, len);
+		LOG_ERROR("invalid address: 0x%08lx:%zu", (unsigned long)addr, len);
 		return -EINVAL;
 	}
 
 #if !defined(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	if (!is_aligned_32(addr) || (len % sizeof(uint32_t))) {
-		LOG_ERR("not word-aligned: 0x%08lx:%zu",
-				(unsigned long)addr, len);
+		LOG_ERROR("not word-aligned: 0x%08lx:%zu", (unsigned long)addr, len);
 		return -EINVAL;
 	}
 #endif
@@ -220,8 +217,7 @@ static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 	if (is_regular_addr_valid(addr, size)) {
 		/* Erase can only be done per page */
 		if (((addr % pg_size) != 0) || ((size % pg_size) != 0)) {
-			LOG_ERR("unaligned address: 0x%08lx:%zu",
-					(unsigned long)addr, size);
+			LOG_ERROR("unaligned address: 0x%08lx:%zu", (unsigned long)addr, size);
 			return -EINVAL;
 		}
 
@@ -232,14 +228,12 @@ static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 #ifdef CONFIG_SOC_FLASH_NRF_UICR
 	} else if (addr != (off_t)NRF_UICR || size != sizeof(*NRF_UICR)) {
-		LOG_ERR("invalid address: 0x%08lx:%zu",
-				(unsigned long)addr, size);
+		LOG_ERROR("invalid address: 0x%08lx:%zu", (unsigned long)addr, size);
 		return -EINVAL;
 	}
 #else
 	} else {
-		LOG_ERR("invalid address: 0x%08lx:%zu",
-				(unsigned long)addr, size);
+		LOG_ERROR("invalid address: 0x%08lx:%zu", (unsigned long)addr, size);
 		return -EINVAL;
 	}
 #endif /* CONFIG_SOC_FLASH_NRF_UICR */

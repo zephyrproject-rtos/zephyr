@@ -272,14 +272,14 @@ static int gpio_silabs_pin_interrupt_configure_em4wu(sl_gpio_t *gpio, enum gpio_
 	int32_t int_no = EM4WU_TO_INT(em4wu_no);
 
 	if (em4wu_no == SL_GPIO_INTERRUPT_UNAVAILABLE) {
-		LOG_ERR("Pin %u is not EM4 wakeup capable", gpio->pin);
+		LOG_ERROR("Pin %u is not EM4 wakeup capable", gpio->pin);
 		return -EINVAL;
 	}
 
 	if (mode != GPIO_INT_MODE_DISABLED) {
 		if (trig == GPIO_INT_TRIG_BOTH) {
-			LOG_ERR("EM4 wakeup interrupt on pin %u can only trigger on one edge",
-				gpio->pin);
+			LOG_ERROR("EM4 wakeup interrupt on pin %u can only trigger on one edge",
+				  gpio->pin);
 			return -ENOTSUP;
 		}
 
@@ -314,7 +314,7 @@ static int gpio_silabs_pin_interrupt_configure(const struct device *dev, gpio_pi
 	trig &= ~GPIO_INT_WAKEUP;
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
-		LOG_ERR("Level interrupt not supported on pin %u", pin);
+		LOG_ERROR("Level interrupt not supported on pin %u", pin);
 		return -ENOTSUP;
 	}
 
@@ -350,7 +350,7 @@ static int gpio_silabs_pin_interrupt_configure(const struct device *dev, gpio_pi
 	int_no = sl_hal_gpio_configure_external_interrupt(&gpio, int_no, flag);
 
 	if (int_no == SL_GPIO_INTERRUPT_UNAVAILABLE) {
-		LOG_ERR("No available interrupt for pin %u", pin);
+		LOG_ERROR("No available interrupt for pin %u", pin);
 		return -EINVAL;
 	}
 

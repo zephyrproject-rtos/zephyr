@@ -67,12 +67,11 @@ extern "C" {
 #define EXTI_LL_INST
 #endif /* CONFIG_SOC_SERIES_STM32MP2X */
 
-
-#define EXTI_LINE_NOT_SUPP_ASSERT(line)			\
-{							\
-	LOG_ERR("Unsupported line number %u", line);	\
-	__ASSERT_NO_MSG(0);				\
-}
+#define EXTI_LINE_NOT_SUPP_ASSERT(line)                                                            \
+	{                                                                                          \
+		LOG_ERROR("Unsupported line number %u", line);                                     \
+		__ASSERT_NO_MSG(0);                                                                \
+	}
 
 #define EXTI_LINE_NOP(line)	\
 {				\

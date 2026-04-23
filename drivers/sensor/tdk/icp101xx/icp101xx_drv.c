@@ -131,12 +131,12 @@ static int icp101xx_attr_set(const struct device *dev, enum sensor_channel chan,
 			    (val->val1 <= ICP101XX_MEAS_ULTRA_LOW_NOISE_P_FIRST)) {
 				data->icp_device.measurement_mode = val->val1;
 			} else {
-				LOG_ERR("Not supported ATTR value");
+				LOG_ERROR("Not supported ATTR value");
 				return -EINVAL;
 			}
 
 		} else {
-			LOG_ERR("Not supported ATTR");
+			LOG_ERROR("Not supported ATTR");
 			return -EINVAL;
 		}
 	};
@@ -222,12 +222,12 @@ static int icp101xx_init(const struct device *dev)
 
 	rc = inv_icp101xx_soft_reset(&data->icp_device);
 	if (rc != 0) {
-		LOG_ERR("Soft reset error %d", rc);
+		LOG_ERROR("Soft reset error %d", rc);
 		return rc;
 	}
 	rc = inv_icp101xx_init(&data->icp_device);
 	if (rc != 0) {
-		LOG_ERR("Init error %d", rc);
+		LOG_ERROR("Init error %d", rc);
 		return rc;
 	}
 	data->icp_device.measurement_mode = cfg->mode;

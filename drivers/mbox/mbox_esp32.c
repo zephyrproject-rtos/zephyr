@@ -130,12 +130,12 @@ static int esp32_mbox_send(const struct device *dev, mbox_channel_id_t channel,
 	uint32_t mtu = dev_data->shm_size;
 
 	if (channel > 0xFFFF) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
 	if (msg != NULL && msg->data != NULL && msg->size > mtu) {
-		LOG_ERR("Message size %d exceeds shared memory region %d", msg->size, mtu);
+		LOG_ERROR("Message size %d exceeds shared memory region %d", msg->size, mtu);
 		return -EMSGSIZE;
 	}
 
@@ -193,7 +193,7 @@ static int esp32_mbox_register_callback(const struct device *dev, mbox_channel_i
 	struct esp32_mbox_data *data = (struct esp32_mbox_data *)dev->data;
 
 	if (!cb) {
-		LOG_ERR("Must provide callback");
+		LOG_ERROR("Must provide callback");
 		return -EINVAL;
 	}
 

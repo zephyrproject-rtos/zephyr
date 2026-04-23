@@ -124,7 +124,7 @@ static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa)
 
 		rc = flash_area_read(fa, addr, data, bytes_to_read);
 		if (rc < 0) {
-			LOG_ERR("Failed to read data from flash area: %d", rc);
+			LOG_ERROR("Failed to read data from flash area: %d", rc);
 			return IMG_MGMT_ERR_FLASH_READ_FAILED;
 		}
 
@@ -156,7 +156,7 @@ static int img_mgmt_flash_check_empty(uint8_t fa_id)
 
 		flash_area_close(fa);
 	} else {
-		LOG_ERR("Failed to open flash area ID %u: %d", fa_id, rc);
+		LOG_ERROR("Failed to open flash area ID %u: %d", fa_id, rc);
 		rc = IMG_MGMT_ERR_FLASH_OPEN_FAILED;
 	}
 
@@ -390,7 +390,7 @@ int img_mgmt_erase_slot(int slot)
 	rc = flash_area_open(area_id, &fa);
 
 	if (rc < 0) {
-		LOG_ERR("Failed to open flash area ID %u: %d", area_id, rc);
+		LOG_ERROR("Failed to open flash area ID %u: %d", area_id, rc);
 		return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
 	}
 
@@ -400,7 +400,7 @@ int img_mgmt_erase_slot(int slot)
 		rc = flash_area_flatten(fa, 0, fa->fa_size);
 
 		if (rc != 0) {
-			LOG_ERR("Failed to erase flash area: %d", rc);
+			LOG_ERROR("Failed to erase flash area: %d", rc);
 			rc = IMG_MGMT_ERR_FLASH_ERASE_FAILED;
 		}
 	} else if (rc == 1) {
@@ -425,7 +425,7 @@ int img_mgmt_write_pending(int slot, bool permanent)
 
 	rc = boot_request_upgrade_multi(img_mgmt_slot_to_image(slot), permanent);
 	if (rc != 0) {
-		LOG_ERR("Failed to write pending flag for slot %d: %d", slot, rc);
+		LOG_ERROR("Failed to write pending flag for slot %d: %d", slot, rc);
 		return IMG_MGMT_ERR_FLASH_WRITE_FAILED;
 	}
 
@@ -438,7 +438,7 @@ int img_mgmt_write_confirmed(void)
 
 	rc = boot_write_img_confirmed();
 	if (rc != 0) {
-		LOG_ERR("Failed to write confirmed flag: %d", rc);
+		LOG_ERROR("Failed to write confirmed flag: %d", rc);
 		return IMG_MGMT_ERR_FLASH_WRITE_FAILED;
 	}
 
@@ -457,7 +457,7 @@ int img_mgmt_read(int slot, unsigned int offset, void *dst, unsigned int num_byt
 
 	rc = flash_area_open(area_id, &fa);
 	if (rc != 0) {
-		LOG_ERR("Failed to open flash area ID %u: %d", area_id, rc);
+		LOG_ERROR("Failed to open flash area ID %u: %d", area_id, rc);
 		return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
 	}
 
@@ -465,7 +465,7 @@ int img_mgmt_read(int slot, unsigned int offset, void *dst, unsigned int num_byt
 	flash_area_close(fa);
 
 	if (rc != 0) {
-		LOG_ERR("Failed to read data from flash: %d", rc);
+		LOG_ERROR("Failed to read data from flash: %d", rc);
 		return IMG_MGMT_ERR_FLASH_READ_FAILED;
 	}
 
@@ -556,7 +556,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 
 	rc = flash_area_open(g_img_mgmt_state.area_id, &fa);
 	if (rc != 0) {
-		LOG_ERR("Can't bind to the flash area (err %d)", rc);
+		LOG_ERROR("Can't bind to the flash area (err %d)", rc);
 		rc = IMG_MGMT_ERR_FLASH_OPEN_FAILED;
 		goto end;
 	}
@@ -573,7 +573,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 		      num_bytes - 1;
 	rc = flash_get_page_info_by_offs(dev, page_offset, &page);
 	if (rc != 0) {
-		LOG_ERR("bad offset (0x%lx)", (long)page_offset);
+		LOG_ERROR("bad offset (0x%lx)", (long)page_offset);
 		rc = IMG_MGMT_ERR_INVALID_PAGE_OFFSET;
 		goto end_fa;
 	}
@@ -582,8 +582,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 	rc = flash_area_flatten(fa, 0, erase_size);
 
 	if (rc != 0) {
-		LOG_ERR("image slot erase of 0x%zx bytes failed (err %d)", erase_size,
-			rc);
+		LOG_ERROR("image slot erase of 0x%zx bytes failed (err %d)", erase_size, rc);
 		rc = IMG_MGMT_ERR_FLASH_ERASE_FAILED;
 		goto end_fa;
 	}
@@ -606,8 +605,8 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 
 		rc = flash_area_flatten(fa, off, erase_size);
 		if (rc != 0) {
-			LOG_ERR("image slot trailer erase of 0x%zx bytes failed (err %d)",
-					erase_size, rc);
+			LOG_ERROR("image slot trailer erase of 0x%zx bytes failed (err %d)",
+				  erase_size, rc);
 			rc = IMG_MGMT_ERR_FLASH_ERASE_FAILED;
 			goto end_fa;
 		}
@@ -743,8 +742,8 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 		rc = flash_area_open(action->area_id, &fa);
 		if (rc) {
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
-				img_mgmt_err_str_flash_open_failed);
-			LOG_ERR("Failed to open flash area ID %u: %d", action->area_id, rc);
+							  img_mgmt_err_str_flash_open_failed);
+			LOG_ERROR("Failed to open flash area ID %u: %d", action->area_id, rc);
 			return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
 		}
 
@@ -775,16 +774,16 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 
 		if (current_img_area < 0) {
 			/* Current slot cannot be determined */
-			LOG_ERR("Failed to determine active slot for image %d: %d", req->image,
-				current_img_area);
+			LOG_ERROR("Failed to determine active slot for image %d: %d", req->image,
+				  current_img_area);
 			return IMG_MGMT_ERR_ACTIVE_SLOT_NOT_KNOWN;
 		}
 
 		rc = flash_area_open(current_img_area, &fa_current);
 		if (rc) {
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
-				img_mgmt_err_str_flash_open_failed);
-			LOG_ERR("Failed to open flash area ID %u: %d", current_img_area, rc);
+							  img_mgmt_err_str_flash_open_failed);
+			LOG_ERROR("Failed to open flash area ID %u: %d", current_img_area, rc);
 			flash_area_close(fa);
 			return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
 		}
@@ -919,7 +918,7 @@ int img_mgmt_erased_val(int slot, uint8_t *erased_val)
 
 	rc = flash_area_open(area_id, &fa);
 	if (rc != 0) {
-		LOG_ERR("Failed to open flash area ID %u: %d", area_id, rc);
+		LOG_ERROR("Failed to open flash area ID %u: %d", area_id, rc);
 		return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
 	}
 

@@ -500,8 +500,8 @@ int adxl362_set_interrupt_mode(const struct device *dev, uint8_t mode)
 	if (mode != ADXL362_MODE_DEFAULT &&
 	    mode != ADXL362_MODE_LINK &&
 	    mode != ADXL362_MODE_LOOP) {
-		    LOG_ERR("Wrong mode");
-		    return -EINVAL;
+		LOG_ERROR("Wrong mode");
+		return -EINVAL;
 	}
 
 	/* Select desired interrupt mode. */
@@ -778,7 +778,7 @@ static int adxl362_init(const struct device *dev)
 	err = adxl362_software_reset(dev);
 
 	if (err) {
-		LOG_ERR("adxl362_software_reset failed, error %d", err);
+		LOG_ERROR("adxl362_software_reset failed, error %d", err);
 		return -ENODEV;
 	}
 
@@ -786,7 +786,7 @@ static int adxl362_init(const struct device *dev)
 
 	(void)adxl362_get_reg(dev, &value, ADXL362_REG_PARTID, 1);
 	if (value != ADXL362_PART_ID) {
-		LOG_ERR("wrong part_id: %d", value);
+		LOG_ERROR("wrong part_id: %d", value);
 		return -ENODEV;
 	}
 
@@ -797,14 +797,14 @@ static int adxl362_init(const struct device *dev)
 #if defined(CONFIG_ADXL362_TRIGGER)
 	if (config->interrupt.port) {
 		if (adxl362_init_interrupt(dev) < 0) {
-			LOG_ERR("Failed to initialize interrupt!");
+			LOG_ERROR("Failed to initialize interrupt!");
 			return -EIO;
 		}
 
 		if (adxl362_interrupt_config(dev,
 					config->int1_config,
 					config->int2_config) < 0) {
-			LOG_ERR("Failed to configure interrupt");
+			LOG_ERROR("Failed to configure interrupt");
 			return -EIO;
 		}
 	}

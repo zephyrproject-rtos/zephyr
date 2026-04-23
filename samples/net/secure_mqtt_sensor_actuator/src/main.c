@@ -87,7 +87,7 @@ int main(void)
 
 	iface = net_if_get_default();
 	if (iface == NULL) {
-		LOG_ERR("No network interface configured");
+		LOG_ERROR("No network interface configured");
 		return -ENETDOWN;
 	}
 
@@ -116,7 +116,7 @@ int main(void)
 
 	rc = app_mqtt_init(&client_ctx);
 	if (rc != 0) {
-		LOG_ERR("MQTT Init failed [%d]", rc);
+		LOG_ERROR("MQTT Init failed [%d]", rc);
 		return rc;
 	}
 

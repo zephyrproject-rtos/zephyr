@@ -720,7 +720,7 @@ static void alarm_worker(struct k_work *work)
 	k_sem_give(&data->lock);
 
 	if (af < 0) {
-		LOG_ERR("failed to read alarm flags");
+		LOG_ERROR("failed to read alarm flags");
 		return;
 	}
 
@@ -1121,7 +1121,7 @@ static int ds3231_init(const struct device *dev)
 
 	data->ds3231 = dev;
 	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		rc = -ENODEV;
 		goto out;
 	}
@@ -1149,7 +1149,7 @@ static int ds3231_init(const struct device *dev)
 
 	if (cfg->isw_gpios.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->isw_gpios)) {
-			LOG_ERR("INTn/SQW GPIO device not ready");
+			LOG_ERROR("INTn/SQW GPIO device not ready");
 			rc = -ENODEV;
 			goto out;
 		}
@@ -1171,8 +1171,7 @@ static int ds3231_init(const struct device *dev)
 			rc = gpio_add_callback(cfg->isw_gpios.port,
 					       &data->isw_callback);
 			if (rc < 0) {
-				LOG_ERR("Failed to configure ISW callback: %d",
-					rc);
+				LOG_ERROR("Failed to configure ISW callback: %d", rc);
 			}
 		}
 	}

@@ -176,7 +176,7 @@ static int infineon_dmac_cfg_desc(const struct device *dev, uint32_t channel,
 		desc_config.triggerType = CY_DMAC_SINGLE_DESCR;
 	} else {
 		/* Future or unsupported direction */
-		LOG_ERR("Unsupported DMA direction: %d", direction);
+		LOG_ERROR("Unsupported DMA direction: %d", direction);
 		return -EINVAL;
 	}
 
@@ -184,9 +184,9 @@ static int infineon_dmac_cfg_desc(const struct device *dev, uint32_t channel,
 	status = Cy_DMAC_Descriptor_Init(config->base, channel, desc_type, &desc_config);
 	if (status != CY_DMAC_SUCCESS) {
 		if (desc_type == CY_DMAC_DESCRIPTOR_PING) {
-			LOG_ERR("Failed to init descriptor PING (status=0x%x)", status);
+			LOG_ERROR("Failed to init descriptor PING (status=0x%x)", status);
 		} else {
-			LOG_ERR("Failed to init descriptor PONG (status=0x%x)", status);
+			LOG_ERROR("Failed to init descriptor PONG (status=0x%x)", status);
 		}
 		return -EIO;
 	}
@@ -219,8 +219,8 @@ static int infineon_dmac_config(const struct device *dev, uint32_t channel, stru
 	}
 
 	if (block_count > CONFIG_INFINEON_DMA_MAX_XFERS) {
-		LOG_ERR("Too many blocks: %u (max: %u)", block_count,
-			CONFIG_INFINEON_DMA_MAX_XFERS);
+		LOG_ERROR("Too many blocks: %u (max: %u)", block_count,
+			  CONFIG_INFINEON_DMA_MAX_XFERS);
 		return -EINVAL;
 	}
 
@@ -254,7 +254,7 @@ static int infineon_dmac_config(const struct device *dev, uint32_t channel, stru
 				     ch->direction, ch->source_data_size, ch->dest_data_size,
 				     ch->cyclic);
 	if (ret != 0) {
-		LOG_ERR("Descriptor initialization fails");
+		LOG_ERROR("Descriptor initialization fails");
 		infineon_dmac_cleanup_channel(dev, channel);
 		return ret;
 	}
@@ -269,7 +269,7 @@ static int infineon_dmac_config(const struct device *dev, uint32_t channel, stru
 	/* Channel Init */
 	status = Cy_DMAC_Channel_Init(config->base, channel, &ch_config);
 	if (status != CY_DMAC_SUCCESS) {
-		LOG_ERR("Descriptor Channel init fails");
+		LOG_ERROR("Descriptor Channel init fails");
 		infineon_dmac_cleanup_channel(dev, channel);
 		return -EIO;
 	}
@@ -277,7 +277,7 @@ static int infineon_dmac_config(const struct device *dev, uint32_t channel, stru
 	/* Trigger setup for sw trigger and peripherals */
 	ret = trigger_connect_setup(channel, cfg);
 	if (ret != 0) {
-		LOG_ERR("Trigger setup fails");
+		LOG_ERROR("Trigger setup fails");
 		infineon_dmac_cleanup_channel(dev, channel);
 		return ret;
 	}
@@ -319,27 +319,27 @@ static void infineon_dmac_isr(const struct device *dev, uint32_t channel)
 		/* In progress */
 		return;
 	case CY_DMAC_SRC_BUS_ERROR:
-		LOG_ERR("DMA error: Source bus error (cause=0x%x)", response);
+		LOG_ERROR("DMA error: Source bus error (cause=0x%x)", response);
 		status = -EIO;
 		break;
 	case CY_DMAC_DST_BUS_ERROR:
-		LOG_ERR("DMA error: Destination bus error (cause=0x%x)", response);
+		LOG_ERROR("DMA error: Destination bus error (cause=0x%x)", response);
 		status = -EIO;
 		break;
 	case CY_DMAC_SRC_MISAL:
-		LOG_ERR("DMA error: Source misaligned (cause=0x%x)", response);
+		LOG_ERROR("DMA error: Source misaligned (cause=0x%x)", response);
 		status = -EIO;
 		break;
 	case CY_DMAC_DST_MISAL:
-		LOG_ERR("DMA error: Destination misaligned (cause=0x%x)", response);
+		LOG_ERROR("DMA error: Destination misaligned (cause=0x%x)", response);
 		status = -EIO;
 		break;
 	case CY_DMAC_INVALID_DESCR:
-		LOG_ERR("DMA error: Invalid descriptor (cause=0x%x)", response);
+		LOG_ERROR("DMA error: Invalid descriptor (cause=0x%x)", response);
 		status = -EIO;
 		break;
 	default:
-		LOG_ERR("DMA unknown interrupt (cause: 0x%x)", response);
+		LOG_ERROR("DMA unknown interrupt (cause: 0x%x)", response);
 		status = -EIO;
 		break;
 	}
@@ -411,7 +411,7 @@ static void infineon_dmac_isr(const struct device *dev, uint32_t channel)
 					infineon_dmac_sw_trigger();
 				}
 			} else {
-				LOG_ERR("Descriptor initialization fails for next block");
+				LOG_ERROR("Descriptor initialization fails for next block");
 				infineon_dmac_cleanup_channel(dev, channel);
 
 				/* error callback for next block configuration */

@@ -59,7 +59,7 @@ static int pd_gpio_pm_action(const struct device *dev,
 
 	/* Validate that blocking API's can be used */
 	if (!k_can_yield()) {
-		LOG_ERR("Blocking actions cannot run in this context");
+		LOG_ERROR("Blocking actions cannot run in this context");
 		return -ENOTSUP;
 	}
 
@@ -113,7 +113,7 @@ static int pd_gpio_init(const struct device *dev)
 	struct pd_gpio_data *data = dev->data;
 
 	if (!gpio_is_ready_dt(&cfg->enable)) {
-		LOG_ERR("GPIO port %s is not ready", cfg->enable.port->name);
+		LOG_ERROR("GPIO port %s is not ready", cfg->enable.port->name);
 		return -ENODEV;
 	}
 	/* We can't know how long the domain has been off for before boot */

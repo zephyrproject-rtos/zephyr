@@ -104,9 +104,9 @@ int bt_testlib_connect(const bt_addr_le_t *peer, struct bt_conn **connp)
 		break;
 	default:
 		if (err < 0) {
-			LOG_ERR("bt_conn_le_create err %d", err);
+			LOG_ERROR("bt_conn_le_create err %d", err);
 		} else {
-			LOG_ERR("conn %u: BT_HCI_ERR_ 0x%02x", conn_index, err);
+			LOG_ERROR("conn %u: BT_HCI_ERR_ 0x%02x", conn_index, err);
 		}
 	}
 

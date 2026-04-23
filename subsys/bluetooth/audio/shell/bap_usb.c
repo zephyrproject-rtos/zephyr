@@ -144,7 +144,7 @@ static void usb_data_request(const struct device *dev)
 
 		cnt++;
 		if ((cnt % 1000) == 0) {
-			LOG_ERR("Failed to send USB audio: %d (%zu)", err, cnt);
+			LOG_ERROR("Failed to send USB audio: %d (%zu)", err, cnt);
 		}
 
 		k_mem_slab_free(&usb_in_buf_pool, pcm_buf);
@@ -539,7 +539,7 @@ static size_t usb_ring_buf_get(int16_t dest[], int16_t src[], size_t idx, size_t
 	size_t new_idx;
 
 	if (idx >= USB_OUT_RING_BUF_SIZE) {
-		LOG_ERR("Invalid idx %zu", idx);
+		LOG_ERROR("Invalid idx %zu", idx);
 
 		return 0;
 	}
@@ -599,21 +599,21 @@ static int bap_usbd_setup_device(struct usbd_context *const bap_usbd)
 
 	err = usbd_add_descriptor(bap_usbd, &bap_usb_lang);
 	if (err != 0) {
-		LOG_ERR("Failed to initialize language descriptor: %d", err);
+		LOG_ERROR("Failed to initialize language descriptor: %d", err);
 
 		return err;
 	}
 
 	err = usbd_add_descriptor(bap_usbd, &bap_usb_mfr);
 	if (err != 0) {
-		LOG_ERR("Failed to initialize manufacturer descriptor: %d", err);
+		LOG_ERROR("Failed to initialize manufacturer descriptor: %d", err);
 
 		return err;
 	}
 
 	err = usbd_add_descriptor(bap_usbd, &bap_usb_product);
 	if (err != 0) {
-		LOG_ERR("Failed to initialize product descriptor: %d", err);
+		LOG_ERROR("Failed to initialize product descriptor: %d", err);
 
 		return err;
 	}
@@ -623,7 +623,7 @@ static int bap_usbd_setup_device(struct usbd_context *const bap_usbd)
 
 		err = usbd_add_descriptor(bap_usbd, &bap_usb_sn);
 		if (err != 0) {
-			LOG_ERR("Failed to initialize serial number descriptor: %d", err);
+			LOG_ERROR("Failed to initialize serial number descriptor: %d", err);
 
 			return err;
 		}
@@ -638,14 +638,14 @@ static int bap_usbd_setup_device(struct usbd_context *const bap_usbd)
 
 		err = usbd_add_configuration(bap_usbd, USBD_SPEED_HS, &bap_usb_hs_config);
 		if (err != 0) {
-			LOG_ERR("Failed to add High-Speed configuration: %d", err);
+			LOG_ERROR("Failed to add High-Speed configuration: %d", err);
 
 			return err;
 		}
 
 		err = usbd_register_all_classes(bap_usbd, USBD_SPEED_HS, class_cfg, NULL);
 		if (err != 0) {
-			LOG_ERR("Failed to add register High-Speed classes: %d", err);
+			LOG_ERROR("Failed to add register High-Speed classes: %d", err);
 
 			return err;
 		}
@@ -653,7 +653,7 @@ static int bap_usbd_setup_device(struct usbd_context *const bap_usbd)
 		err = usbd_device_set_code_triple(bap_usbd, USBD_SPEED_HS, USB_BCC_MISCELLANEOUS,
 						  subclass, protocol);
 		if (err != 0) {
-			LOG_ERR("Failed to set High-Speed code triple: %d", err);
+			LOG_ERROR("Failed to set High-Speed code triple: %d", err);
 
 			return err;
 		}
@@ -663,14 +663,14 @@ static int bap_usbd_setup_device(struct usbd_context *const bap_usbd)
 
 	err = usbd_add_configuration(bap_usbd, USBD_SPEED_FS, &bap_usb_fs_config);
 	if (err != 0) {
-		LOG_ERR("Failed to add Full-Speed configuration: %d", err);
+		LOG_ERROR("Failed to add Full-Speed configuration: %d", err);
 
 		return err;
 	}
 
 	err = usbd_register_all_classes(bap_usbd, USBD_SPEED_FS, class_cfg, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to register Full-Speed classes: %d", err);
+		LOG_ERROR("Failed to register Full-Speed classes: %d", err);
 
 		return err;
 	}
@@ -678,7 +678,7 @@ static int bap_usbd_setup_device(struct usbd_context *const bap_usbd)
 	err = usbd_device_set_code_triple(bap_usbd, USBD_SPEED_FS, USB_BCC_MISCELLANEOUS, subclass,
 					  protocol);
 	if (err != 0) {
-		LOG_ERR("Failed to set Full-Speed code triple: %d", err);
+		LOG_ERROR("Failed to set Full-Speed code triple: %d", err);
 
 		return err;
 	}
@@ -707,7 +707,7 @@ int bap_usb_init(void)
 	int err;
 
 	if (!device_is_ready(uac2_headset)) {
-		LOG_ERR("Cannot get USB Headset Device");
+		LOG_ERROR("Cannot get USB Headset Device");
 		return -EIO;
 	}
 
@@ -715,19 +715,19 @@ int bap_usb_init(void)
 
 	err = bap_usbd_setup_device(&bap_usbd);
 	if (err != 0) {
-		LOG_ERR("Failed to setup USB device: %d", err);
+		LOG_ERROR("Failed to setup USB device: %d", err);
 		return err;
 	}
 
 	err = usbd_init(&bap_usbd);
 	if (err != 0) {
-		LOG_ERR("Failed to initialize device support: %d", err);
+		LOG_ERROR("Failed to initialize device support: %d", err);
 		return err;
 	}
 
 	err = usbd_enable(&bap_usbd);
 	if (err != 0) {
-		LOG_ERR("Failed to enable USBD: %d", err);
+		LOG_ERROR("Failed to enable USBD: %d", err);
 		return err;
 	}
 

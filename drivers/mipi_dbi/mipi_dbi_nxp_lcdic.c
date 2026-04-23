@@ -237,7 +237,7 @@ static void mipi_dbi_lcdic_dma_callback(const struct device *dma_dev,
 	     void *user_data, uint32_t channel, int status)
 {
 	if (status < 0) {
-		LOG_ERR("DMA callback with error %d", status);
+		LOG_ERROR("DMA callback with error %d", status);
 	}
 }
 
@@ -267,7 +267,7 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 	ret = clock_control_set_rate(config->clock_dev, config->clock_subsys,
 			(clock_control_subsys_rate_t)spi_cfg->frequency);
 	if (ret) {
-		LOG_ERR("Invalid clock frequency %d", spi_cfg->frequency);
+		LOG_ERROR("Invalid clock frequency %d", spi_cfg->frequency);
 		return ret;
 	}
 	if (spi_cfg->slave != 0) {
@@ -275,7 +275,7 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) > 8) {
-		LOG_ERR("Unsupported word size");
+		LOG_ERROR("Unsupported word size");
 		return -ENOTSUP;
 	}
 
@@ -300,7 +300,7 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 	/* If using SPI mode, validate that half-duplex was requested */
 	if ((!(reg & LCDIC_CTRL_LCDIC_MD_MASK)) &&
 	    (!(spi_cfg->operation & SPI_HALF_DUPLEX))) {
-		LOG_ERR("LCDIC only supports half duplex operation");
+		LOG_ERROR("LCDIC only supports half duplex operation");
 		return -ENOTSUP;
 	}
 	/* Enable byte swapping if user requested it */
@@ -504,7 +504,7 @@ static int mipi_dbi_lcdic_write_display(const struct device *dev,
 		/* Configure DMA to send data */
 		ret = mipi_dbi_lcdic_start_dma(dev);
 		if (ret) {
-			LOG_ERR("Could not start DMA (%d)", ret);
+			LOG_ERROR("Could not start DMA (%d)", ret);
 			goto release_power_lock;
 		}
 #else
@@ -603,7 +603,7 @@ static int mipi_dbi_lcdic_write_cmd(const struct device *dev,
 			/* Configure DMA to send data */
 			ret = mipi_dbi_lcdic_start_dma(dev);
 			if (ret) {
-				LOG_ERR("Could not start DMA (%d)", ret);
+				LOG_ERROR("Could not start DMA (%d)", ret);
 				goto release_power_lock;
 			}
 		} else /* Data is not aligned */
@@ -711,7 +711,7 @@ static int mipi_dbi_lcdic_configure_te(const struct device *dev,
 
 	/* Check to see if the delay is shorter than we can support */
 	if ((ttew == 0)  && (delay_us != 0)) {
-		LOG_ERR("Timer ratios too large to support this TE delay");
+		LOG_ERROR("Timer ratios too large to support this TE delay");
 		return -ENOTSUP;
 	}
 	reg = base->TE_CTRL;

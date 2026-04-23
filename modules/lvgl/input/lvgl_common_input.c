@@ -59,7 +59,7 @@ static lv_display_t *lvgl_input_get_display(const struct device *dev)
 	for (int i = 0; i < DT_ZEPHYR_DISPLAYS_COUNT; i++) {
 		lv_disp = lv_display_get_next(lv_disp);
 		if (lv_disp == NULL) {
-			LOG_ERR("Could not find LV display objects of all Zephyr displays");
+			LOG_ERROR("Could not find LV display objects of all Zephyr displays");
 			break;
 		}
 		lv_disp_data = (struct lvgl_disp_data *)lv_display_get_user_data(lv_disp);
@@ -68,7 +68,7 @@ static lv_display_t *lvgl_input_get_display(const struct device *dev)
 		}
 	}
 
-	LOG_ERR("LV display corresponding to display device %s not found", disp_dev->name);
+	LOG_ERROR("LV display corresponding to display device %s not found", disp_dev->name);
 	__ASSERT_NO_MSG(false);
 
 	return NULL;

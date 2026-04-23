@@ -105,7 +105,7 @@ int http_server_init(struct http_server_ctx *ctx)
 	fd = zvfs_eventfd(0, 0);
 	if (fd < 0) {
 		fd = -errno;
-		LOG_ERR("eventfd failed (%d)", fd);
+		LOG_ERROR("eventfd failed (%d)", fd);
 		return fd;
 	}
 
@@ -146,7 +146,7 @@ int http_server_init(struct http_server_ctx *ctx)
 			addr.addr4->sin_family = NET_AF_INET;
 			addr.addr4->sin_port = net_htons(*svc->port);
 		} else {
-			LOG_ERR("Neither IPv4 nor IPv6 is enabled");
+			LOG_ERROR("Neither IPv4 nor IPv6 is enabled");
 			failed++;
 			break;
 		}
@@ -166,7 +166,7 @@ int http_server_init(struct http_server_ctx *ctx)
 			fd = zsock_socket(af, NET_SOCK_STREAM, proto);
 		}
 		if (fd < 0) {
-			LOG_ERR("socket: %d", errno);
+			LOG_ERROR("socket: %d", errno);
 			failed++;
 			continue;
 		}
@@ -186,15 +186,21 @@ int http_server_init(struct http_server_ctx *ctx)
 			if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
 					     svc->sec_tag_list,
 					     svc->sec_tag_list_size) < 0) {
-				LOG_ERR("setsockopt: %d", errno);
+				LOG_ERROR("setsockopt: %d", errno);
 				zsock_close(fd);
 				continue;
 			}
 
+			if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, "localhost",
+					     sizeof("localhost")) < 0) {
+				LOG_ERROR("setsockopt: %d", errno);
+				zsock_close(fd);
+				continue;
+			}
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
 			if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST, alpn_list,
 					     sizeof(alpn_list)) < 0) {
-				LOG_ERR("setsockopt: %d", errno);
+				LOG_ERROR("setsockopt: %d", errno);
 				zsock_close(fd);
 				continue;
 			}
@@ -204,13 +210,13 @@ int http_server_init(struct http_server_ctx *ctx)
 
 		if (zsock_setsockopt(fd, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, &(int){1},
 				     sizeof(int)) < 0) {
-			LOG_ERR("setsockopt: %d", errno);
+			LOG_ERROR("setsockopt: %d", errno);
 			zsock_close(fd);
 			continue;
 		}
 
 		if (zsock_bind(fd, addr.addr, len) < 0) {
-			LOG_ERR("bind: %d", errno);
+			LOG_ERROR("bind: %d", errno);
 			failed++;
 			zsock_close(fd);
 			continue;
@@ -220,7 +226,7 @@ int http_server_init(struct http_server_ctx *ctx)
 			/* ephemeral port - read back the port number */
 			len = sizeof(addr_storage);
 			if (zsock_getsockname(fd, addr.addr, &len) < 0) {
-				LOG_ERR("getsockname: %d", errno);
+				LOG_ERROR("getsockname: %d", errno);
 				zsock_close(fd);
 				continue;
 			}
@@ -230,7 +236,7 @@ int http_server_init(struct http_server_ctx *ctx)
 
 		svc->data->num_clients = 0;
 		if (zsock_listen(fd, svc->backlog) < 0) {
-			LOG_ERR("listen: %d", errno);
+			LOG_ERROR("listen: %d", errno);
 			failed++;
 			zsock_close(fd);
 			continue;
@@ -246,7 +252,7 @@ int http_server_init(struct http_server_ctx *ctx)
 	}
 
 	if (failed >= svc_count) {
-		LOG_ERR("All services failed (%d)", failed);
+		LOG_ERROR("All services failed (%d)", failed);
 		/* Close eventfd socket */
 		zsock_close(ctx->fds[0].fd);
 		return -ESRCH;
@@ -627,7 +633,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 				if (ret == -ENETDOWN) {
 					LOG_INF("Network is down");
 				} else {
-					LOG_ERR("Listening socket error, aborting. (%d)", ret);
+					LOG_ERROR("Listening socket error, aborting. (%d)", ret);
 				}
 
 				goto closing;
@@ -711,7 +717,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 				if (ret == -ENOTCONN) {
 					LOG_DBG("Client closed connection while handling request");
 				} else {
-					LOG_ERR("HTTP request handling error (%d)", ret);
+					LOG_ERROR("HTTP request handling error (%d)", ret);
 				}
 				close_client_connection(client);
 			} else if (client->data_len == sizeof(client->buffer)) {
@@ -719,7 +725,7 @@ static int http_server_run(struct http_server_ctx *ctx)
 				 * it means we won't be able to handle this request
 				 * with the current buffer size.
 				 */
-				LOG_ERR("RX buffer too small to handle request");
+				LOG_ERROR("RX buffer too small to handle request");
 				close_client_connection(client);
 			}
 		}
@@ -1010,7 +1016,7 @@ static void http_server_thread(void *p1, void *p2, void *p3)
 		while (server_running) {
 			ret = http_server_init(&server_ctx);
 			if (ret < 0) {
-				LOG_ERR("Failed to initialize HTTP2 server");
+				LOG_ERROR("Failed to initialize HTTP2 server");
 				goto again;
 			}
 

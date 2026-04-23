@@ -69,17 +69,17 @@ static int extract_lc3_config(struct tx_stream *stream)
 			if (LC3_CHECK_SR_HZ(ret)) {
 				lc3_tx->freq_hz = (uint32_t)ret;
 			} else {
-				LOG_ERR("Unsupported sampling frequency for LC3: %d", ret);
+				LOG_ERROR("Unsupported sampling frequency for LC3: %d", ret);
 
 				return ret;
 			}
 		} else {
-			LOG_ERR("Invalid frequency: %d", ret);
+			LOG_ERROR("Invalid frequency: %d", ret);
 
 			return ret;
 		}
 	} else {
-		LOG_ERR("Could not get frequency: %d", ret);
+		LOG_ERROR("Could not get frequency: %d", ret);
 
 		return ret;
 	}
@@ -91,17 +91,17 @@ static int extract_lc3_config(struct tx_stream *stream)
 			if (LC3_CHECK_DT_US(ret)) {
 				lc3_tx->frame_duration_us = (uint32_t)ret;
 			} else {
-				LOG_ERR("Unsupported frame duration for LC3: %d", ret);
+				LOG_ERROR("Unsupported frame duration for LC3: %d", ret);
 
 				return ret;
 			}
 		} else {
-			LOG_ERR("Invalid frame duration: %d", ret);
+			LOG_ERROR("Invalid frame duration: %d", ret);
 
 			return ret;
 		}
 	} else {
-		LOG_ERR("Could not get frame duration: %d", ret);
+		LOG_ERROR("Could not get frame duration: %d", ret);
 
 		return ret;
 	}
@@ -123,7 +123,7 @@ static int extract_lc3_config(struct tx_stream *stream)
 	if (ret >= 0) {
 		lc3_tx->octets_per_frame = (uint16_t)ret;
 	} else {
-		LOG_ERR("Could not get octets per frame: %d", ret);
+		LOG_ERROR("Could not get octets per frame: %d", ret);
 
 		return ret;
 	}
@@ -142,7 +142,7 @@ static bool encode_frame(struct tx_stream *stream, uint8_t index, struct net_buf
 	lc3_ret = lc3_encode(stream->lc3_tx.encoder, LC3_PCM_FORMAT_S16, audio_buf, 1,
 			     octets_per_frame, net_buf_tail(out_buf));
 	if (lc3_ret < 0) {
-		LOG_ERR("LC3 encoder failed - wrong parameters?: %d", lc3_ret);
+		LOG_ERROR("LC3 encoder failed - wrong parameters?: %d", lc3_ret);
 
 		return false;
 	}
@@ -198,7 +198,7 @@ int stream_lc3_init(struct tx_stream *stream)
 				  &stream->lc3_tx.encoder_mem);
 
 	if (stream->lc3_tx.encoder == NULL) {
-		LOG_ERR("Failed to setup LC3 encoder");
+		LOG_ERROR("Failed to setup LC3 encoder");
 
 		memset(&stream->lc3_tx, 0, sizeof(stream->lc3_tx));
 

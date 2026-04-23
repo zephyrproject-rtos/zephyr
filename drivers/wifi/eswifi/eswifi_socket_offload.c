@@ -65,7 +65,7 @@ static int eswifi_socket_connect(void *obj, const struct net_sockaddr *addr,
 	}
 
 	if (addr->sa_family != NET_AF_INET) {
-		LOG_ERR("Only NET_AF_INET is supported!");
+		LOG_ERROR("Only NET_AF_INET is supported!");
 		return -EPFNOSUPPORT;
 	}
 
@@ -249,10 +249,10 @@ static int eswifi_socket_setsockopt(void *obj, int level, int optname,
 			ret = map_credentials(sd, optval, optlen);
 			break;
 		case ZSOCK_TLS_HOSTNAME:
-			LOG_ERR("eswifi offload does not support TLS_HOSTNAME");
+			LOG_ERROR("eswifi offload does not support TLS_HOSTNAME");
 			return -ENOTSUP;
 		case ZSOCK_TLS_PEER_VERIFY:
-			LOG_ERR("eswifi offload does not support TLS_PEER_VERIFY");
+			LOG_ERROR("eswifi offload does not support TLS_PEER_VERIFY");
 			return -ENOTSUP;
 		default:
 			return -EINVAL;
@@ -360,7 +360,7 @@ static ssize_t eswifi_socket_recv(void *obj, void *buf, size_t max_len,
 
 	ret = k_work_reschedule_for_queue(&eswifi->work_q, &socket->read_work, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Rescheduling socket read error");
+		LOG_ERROR("Rescheduling socket read error");
 		errno = -ret;
 		len = -1;
 	}
@@ -522,7 +522,7 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 
 	ret = k_work_reschedule_for_queue(&eswifi->work_q, &socket->read_work, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Rescheduling socket read error");
+		LOG_ERROR("Rescheduling socket read error");
 		errno = -ret;
 		eswifi_unlock(eswifi);
 		return -1;

@@ -120,7 +120,7 @@ static int partition_open(void)
 
 	ret = flash_area_open(FLASH_PARTITION_ID, &backend_ctx.flash_area);
 	if (ret != 0) {
-		LOG_ERR("Error opening flash partition for coredump!");
+		LOG_ERROR("Error opening flash partition for coredump!");
 
 		backend_ctx.flash_area = NULL;
 		k_sem_give(&flash_sem);
@@ -444,7 +444,7 @@ static void coredump_flash_backend_start(void)
 	}
 
 	if (ret != 0) {
-		LOG_ERR("Cannot start coredump!");
+		LOG_ERROR("Cannot start coredump!");
 		backend_ctx.error = ret;
 		partition_close();
 	}
@@ -473,7 +473,7 @@ static void coredump_flash_backend_end(void)
 	/* Flush buffer */
 	ret = stream_flash_buffered_write(&backend_ctx.stream_ctx, stream_flash_buf, 0, true);
 	if (ret != 0) {
-		LOG_ERR("Cannot flush coredump stream (%d)", ret);
+		LOG_ERROR("Cannot flush coredump stream (%d)", ret);
 		backend_ctx.error = ret;
 	}
 
@@ -485,13 +485,12 @@ static void coredump_flash_backend_end(void)
 
 	ret = flash_area_write(backend_ctx.flash_area, 0, (void *)&hdr, sizeof(hdr));
 	if (ret != 0) {
-		LOG_ERR("Cannot write coredump header!");
+		LOG_ERROR("Cannot write coredump header!");
 		backend_ctx.error = ret;
 	}
 
 	if (backend_ctx.error != 0) {
-		LOG_ERR("Error in coredump backend (%d)!",
-			backend_ctx.error);
+		LOG_ERROR("Error in coredump backend (%d)!", backend_ctx.error);
 	}
 
 	partition_close();
@@ -537,7 +536,7 @@ static void coredump_flash_backend_buffer_output(uint8_t *buf, size_t buflen)
 					&backend_ctx.stream_ctx,
 					tmp_buf, copy_sz, false);
 		if (backend_ctx.error != 0) {
-			LOG_ERR("Flash write error: %d", backend_ctx.error);
+			LOG_ERROR("Flash write error: %d", backend_ctx.error);
 			break;
 		}
 

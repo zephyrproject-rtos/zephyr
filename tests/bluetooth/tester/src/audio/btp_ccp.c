@@ -57,7 +57,7 @@ static void tbs_chrc_handles_ev(const struct bt_tbs_instance *tbs_inst)
 	struct btp_ccp_chrc_handles_ev ev;
 
 	if (tbs_inst == NULL) {
-		LOG_ERR("Could not generate event for NULL TBS inst");
+		LOG_ERROR("Could not generate event for NULL TBS inst");
 		return;
 	}
 
@@ -356,7 +356,7 @@ static uint8_t ccp_read_bearer_name(const void *cmd, uint16_t cmd_len, void *rsp
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -377,7 +377,7 @@ static uint8_t ccp_read_bearer_uci(const void *cmd, uint16_t cmd_len, void *rsp,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -398,7 +398,7 @@ static uint8_t ccp_read_bearer_tech(const void *cmd, uint16_t cmd_len, void *rsp
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -418,7 +418,7 @@ static uint8_t ccp_read_uri_list(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -439,7 +439,7 @@ static uint8_t ccp_read_signal_strength(const void *cmd, uint16_t cmd_len, void 
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -460,7 +460,7 @@ static uint8_t ccp_read_signal_interval(const void *cmd, uint16_t cmd_len, void 
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -481,7 +481,7 @@ static uint8_t ccp_read_current_calls(const void *cmd, uint16_t cmd_len, void *r
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -502,7 +502,7 @@ static uint8_t ccp_read_ccid(const void *cmd, uint16_t cmd_len, void *rsp,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -523,7 +523,7 @@ static uint8_t ccp_read_call_uri(const void *cmd, uint16_t cmd_len, void *rsp,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -544,7 +544,7 @@ static uint8_t ccp_read_status_flags(const void *cmd, uint16_t cmd_len, void *rs
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -565,7 +565,7 @@ static uint8_t ccp_read_optional_opcodes(const void *cmd, uint16_t cmd_len, void
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -586,7 +586,7 @@ static uint8_t ccp_read_friendly_name(const void *cmd, uint16_t cmd_len, void *r
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -607,7 +607,7 @@ static uint8_t ccp_read_remote_uri(const void *cmd, uint16_t cmd_len, void *rsp,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -628,7 +628,7 @@ static uint8_t ccp_set_signal_interval(const void *cmd, uint16_t cmd_len, void *
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -648,7 +648,7 @@ static uint8_t ccp_hold_call(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -668,7 +668,7 @@ static uint8_t ccp_retrieve_call(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -689,7 +689,7 @@ static uint8_t ccp_join_calls(const void *cmd, uint16_t cmd_len, void *rsp, uint
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 

@@ -591,7 +591,7 @@ static int renesas_ra_ctsu_init(const struct device *dev)
 		renesas_ra_ctsu_drv_handler, (void *)dev, NULL, NULL,
 		K_PRIO_COOP(CONFIG_INPUT_RENESAS_RA_CTSU_DRV_PRIORITY), K_ESSENTIAL, K_NO_WAIT);
 	if (tid == NULL) {
-		LOG_ERR("thread creation failed");
+		LOG_ERROR("thread creation failed");
 		return -ENODEV;
 	}
 

@@ -222,7 +222,7 @@ static int uart_numaker_init(const struct device *dev)
 
 	/* Same as BSP's SYS_ResetModule(id_rst) */
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 
@@ -236,7 +236,7 @@ static int uart_numaker_init(const struct device *dev)
 	} else if (pData->ucfg.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
 		UART_EnableFlowCtrl(config->uart);
 	} else {
-		LOG_ERR("H/W flow control (%d) not support", pData->ucfg.flow_ctrl);
+		LOG_ERROR("H/W flow control (%d) not support", pData->ucfg.flow_ctrl);
 		return -ENOTSUP;
 	}
 

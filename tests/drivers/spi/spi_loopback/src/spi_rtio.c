@@ -100,7 +100,7 @@ static int spi_complete_multiple(struct rtio_iodev *spi_iodev)
 	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
-		LOG_ERR("Code %d", ret);
+		LOG_ERROR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
 		return ret;
 	}
@@ -108,8 +108,8 @@ static int spi_complete_multiple(struct rtio_iodev *spi_iodev)
 	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
 		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
 		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
+		LOG_ERROR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERROR("                           vs: %s", buffer_print_rx);
 		zassert_false(1, "Buffer contents are different");
 		return -1;
 	}
@@ -117,8 +117,8 @@ static int spi_complete_multiple(struct rtio_iodev *spi_iodev)
 	if (memcmp(buffer2_tx, buffer2_rx, BUF2_SIZE)) {
 		to_display_format(buffer2_tx, BUF2_SIZE, buffer_print_tx2);
 		to_display_format(buffer2_rx, BUF2_SIZE, buffer_print_rx2);
-		LOG_ERR("Buffer 2 contents are different: %s", buffer_print_tx2);
-		LOG_ERR("                             vs: %s", buffer_print_rx2);
+		LOG_ERROR("Buffer 2 contents are different: %s", buffer_print_tx2);
+		LOG_ERROR("                             vs: %s", buffer_print_rx2);
 		zassert_false(1, "Buffer 2 contents are different");
 		return -1;
 	}
@@ -146,7 +146,7 @@ static int spi_complete_loop(struct rtio_iodev *spi_iodev)
 	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
-		LOG_ERR("Code %d", ret);
+		LOG_ERROR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
 		return ret;
 	}
@@ -154,8 +154,8 @@ static int spi_complete_loop(struct rtio_iodev *spi_iodev)
 	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
 		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
 		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
+		LOG_ERROR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERROR("                           vs: %s", buffer_print_rx);
 		zassert_false(1, "Buffer contents are different");
 		return -1;
 	}
@@ -188,7 +188,7 @@ static int spi_null_tx_buf(struct rtio_iodev *spi_iodev)
 	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
-		LOG_ERR("Code %d", ret);
+		LOG_ERROR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
 		return ret;
 	}
@@ -196,8 +196,7 @@ static int spi_null_tx_buf(struct rtio_iodev *spi_iodev)
 
 	if (memcmp(buffer_rx, EXPECTED_NOP_RETURN_BUF, BUF_SIZE)) {
 		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
-		LOG_ERR("Rx Buffer should contain NOP frames but got: %s",
-			buffer_print_rx);
+		LOG_ERROR("Rx Buffer should contain NOP frames but got: %s", buffer_print_rx);
 		zassert_false(1, "Buffer not as expected");
 		return -1;
 	}
@@ -232,7 +231,7 @@ static int spi_rx_half_start(struct rtio_iodev *spi_iodev)
 	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
-		LOG_ERR("Code %d", ret);
+		LOG_ERROR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
 		return -1;
 	}
@@ -240,8 +239,8 @@ static int spi_rx_half_start(struct rtio_iodev *spi_iodev)
 	if (memcmp(buffer_tx, buffer_rx, 8)) {
 		to_display_format(buffer_tx, 8, buffer_print_tx);
 		to_display_format(buffer_rx, 8, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
+		LOG_ERROR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERROR("                           vs: %s", buffer_print_rx);
 		zassert_false(1, "Buffer contents are different");
 		return -1;
 	}
@@ -292,7 +291,7 @@ static int spi_rx_half_end(struct rtio_iodev *spi_iodev)
 	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
-		LOG_ERR("Code %d", ret);
+		LOG_ERROR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
 		return -1;
 	}
@@ -300,8 +299,8 @@ static int spi_rx_half_end(struct rtio_iodev *spi_iodev)
 	if (memcmp(buffer_tx + 8, buffer_rx, 8)) {
 		to_display_format(buffer_tx + 8, 8, buffer_print_tx);
 		to_display_format(buffer_rx, 8, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
+		LOG_ERROR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERROR("                           vs: %s", buffer_print_rx);
 		zassert_false(1, "Buffer contents are different");
 		return -1;
 	}
@@ -364,7 +363,7 @@ static int spi_rx_every_4(struct rtio_iodev *spi_iodev)
 	rtio_cqe_release(&r, cqe);
 
 	if (ret) {
-		LOG_ERR("Code %d", ret);
+		LOG_ERROR("Code %d", ret);
 		zassert_false(ret, "SPI transceive failed");
 		return -1;
 	}
@@ -372,15 +371,15 @@ static int spi_rx_every_4(struct rtio_iodev *spi_iodev)
 	if (memcmp(buffer_tx + 4, buffer_rx, 4)) {
 		to_display_format(buffer_tx + 4, 4, buffer_print_tx);
 		to_display_format(buffer_rx, 4, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
+		LOG_ERROR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERROR("                           vs: %s", buffer_print_rx);
 		zassert_false(1, "Buffer contents are different");
 		return -1;
 	} else if (memcmp(buffer_tx + 12, buffer_rx + 4, 4)) {
 		to_display_format(buffer_tx + 12, 4, buffer_print_tx);
 		to_display_format(buffer_rx + 4, 4, buffer_print_rx);
-		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
-		LOG_ERR("                           vs: %s", buffer_print_rx);
+		LOG_ERROR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERROR("                           vs: %s", buffer_print_rx);
 		zassert_false(1, "Buffer contents are different");
 		return -1;
 	}

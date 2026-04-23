@@ -247,7 +247,7 @@ void smtc_modem_hal_irq_config_radio_irq(callback_t dio_cb, void *context)
 	if (prv_cb_data.dio_cb != NULL) {
 		ret = lbm_driver_remove_dio1_gpio_callback(prv_transceiver_dev, &prv_cb_data.cb);
 		if (ret < 0) {
-			LOG_ERR("Failed to remove DIO1 GPIO callback: %d", ret);
+			LOG_ERROR("Failed to remove DIO1 GPIO callback: %d", ret);
 		}
 	}
 
@@ -257,7 +257,7 @@ void smtc_modem_hal_irq_config_radio_irq(callback_t dio_cb, void *context)
 	ret = lbm_driver_add_dio1_gpio_callback(prv_transceiver_dev, &prv_cb_data.cb,
 						hal_irq_callback);
 	if (ret < 0) {
-		LOG_ERR("Failed to add DIO1 GPIO callback: %d", ret);
+		LOG_ERROR("Failed to add DIO1 GPIO callback: %d", ret);
 	}
 }
 
@@ -455,7 +455,7 @@ void smtc_modem_hal_context_flash_pages_erase(const modem_context_type_t ctx_typ
  */
 void smtc_modem_hal_on_panic(uint8_t *func, uint32_t line, const char *fmt, ...)
 {
-	LOG_ERR("LBM panic: %s:%u", func, line);
+	LOG_ERROR("LBM panic: %s:%u", func, line);
 	k_panic();
 }
 

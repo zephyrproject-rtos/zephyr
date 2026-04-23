@@ -114,7 +114,7 @@ static int mcux_rtc_set_alarm(const struct device *dev, uint8_t chan_id,
 	LOG_DBG("Current time is %d ticks", current);
 
 	if (chan_id != 0U) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -127,7 +127,7 @@ static int mcux_rtc_set_alarm(const struct device *dev, uint8_t chan_id,
 	}
 
 	if (ticks < current) {
-		LOG_ERR("Alarm cannot be earlier than current time");
+		LOG_ERROR("Alarm cannot be earlier than current time");
 		return -EINVAL;
 	}
 
@@ -145,7 +145,7 @@ static int mcux_rtc_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	struct mcux_rtc_data *data = dev->data;
 
 	if (chan_id != 0U) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -163,7 +163,7 @@ static int mcux_rtc_set_top_value(const struct device *dev,
 	struct mcux_rtc_data *data = dev->data;
 
 	if (cfg->ticks != info->max_top_value) {
-		LOG_ERR("Wrap can only be set to 0x%x.", info->max_top_value);
+		LOG_ERROR("Wrap can only be set to 0x%x.", info->max_top_value);
 		return -ENOTSUP;
 	}
 

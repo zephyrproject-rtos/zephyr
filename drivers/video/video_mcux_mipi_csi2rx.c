@@ -60,13 +60,13 @@ static int mipi_csi2rx_update_settings(const struct device *dev)
 
 	ret = video_get_format(config->sensor_dev, &fmt);
 	if (ret) {
-		LOG_ERR("Cannot get sensor_dev pixel format");
+		LOG_ERROR("Cannot get sensor_dev pixel format");
 		return ret;
 	}
 
 	video_get_ctrl(config->sensor_dev, &sensor_rate);
 	if (!IN_RANGE(sensor_rate.val64, 0, MAX_SUPPORTED_PIXEL_RATE)) {
-		LOG_ERR("Sensor pixel rate is not supported %lld", sensor_rate.val64);
+		LOG_ERROR("Sensor pixel rate is not supported %lld", sensor_rate.val64);
 		return -ENOTSUP;
 	}
 
@@ -173,7 +173,7 @@ static int mipi_csi2rx_set_frmival(const struct device *dev, struct video_frmiva
 
 	ret = video_set_frmival(config->sensor_dev, frmival);
 	if (ret) {
-		LOG_ERR("Cannot set sensor_dev frmival");
+		LOG_ERROR("Cannot set sensor_dev frmival");
 		return ret;
 	}
 
@@ -226,13 +226,13 @@ static int mipi_csi2rx_enum_frmival(const struct device *dev, struct video_frmiv
 
 	ret = video_get_frmival(config->sensor_dev, &cur_frmival);
 	if (ret) {
-		LOG_ERR("Cannot get sensor_dev frame rate");
+		LOG_ERROR("Cannot get sensor_dev frame rate");
 		return ret;
 	}
 
 	ret = video_get_format(config->sensor_dev, &cur_fmt);
 	if (ret) {
-		LOG_ERR("Cannot get sensor_dev format");
+		LOG_ERROR("Cannot get sensor_dev format");
 		return ret;
 	}
 

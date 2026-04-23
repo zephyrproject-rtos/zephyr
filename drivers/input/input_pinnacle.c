@@ -499,7 +499,7 @@ static int pinnacle_read_spi(const struct pinnacle_bus *bus, uint8_t address, ui
 
 	rc = spi_transceive_dt(&bus->spi, &tx_set, &rx_set);
 	if (rc) {
-		LOG_ERR("Failed to read from SPI %s", bus->spi.bus->name);
+		LOG_ERROR("Failed to read from SPI %s", bus->spi.bus->name);
 		return rc;
 	}
 
@@ -553,7 +553,7 @@ static int pinnacle_seq_read_spi(const struct pinnacle_bus *bus, uint8_t address
 
 	rc = spi_transceive_dt(&bus->spi, &tx_set, &rx_set);
 	if (rc) {
-		LOG_ERR("Failed to read from SPI %s", bus->spi.bus->name);
+		LOG_ERROR("Failed to read from SPI %s", bus->spi.bus->name);
 		return rc;
 	}
 
@@ -629,7 +629,7 @@ static int pinnacle_sample_fetch(const struct device *dev, union pinnacle_sample
 	}
 
 	if (rc) {
-		LOG_ERR("Failed to read data from SPI device");
+		LOG_ERROR("Failed to read data from SPI device");
 		return rc;
 	}
 
@@ -637,7 +637,7 @@ static int pinnacle_sample_fetch(const struct device *dev, union pinnacle_sample
 
 	rc = pinnacle_write(dev, PINNACLE_REG_STATUS1, 0x00);
 	if (rc) {
-		LOG_ERR("Failed to clear SW_CC and SW_DR");
+		LOG_ERROR("Failed to clear SW_CC and SW_DR");
 		return rc;
 	}
 
@@ -654,7 +654,7 @@ static int pinnacle_handle_interrupt(const struct device *dev)
 
 	rc = pinnacle_sample_fetch(dev, sample);
 	if (rc) {
-		LOG_ERR("Failed to read data packets");
+		LOG_ERROR("Failed to read data packets");
 		return rc;
 	}
 
@@ -717,13 +717,13 @@ int pinnacle_init_interrupt(const struct device *dev)
 
 	rc = gpio_pin_configure_dt(gpio, GPIO_INPUT);
 	if (rc) {
-		LOG_ERR("Failed to configure %s/%d as input", gpio->port->name, gpio->pin);
+		LOG_ERROR("Failed to configure %s/%d as input", gpio->port->name, gpio->pin);
 		return rc;
 	}
 
 	rc = gpio_pin_interrupt_configure_dt(gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (rc) {
-		LOG_ERR("Failed to configured interrupt for %s/%d", gpio->port->name, gpio->pin);
+		LOG_ERROR("Failed to configured interrupt for %s/%d", gpio->port->name, gpio->pin);
 		return rc;
 	}
 
@@ -732,7 +732,7 @@ int pinnacle_init_interrupt(const struct device *dev)
 
 	rc = gpio_add_callback(gpio->port, &drv_data->dr_cb_data);
 	if (rc) {
-		LOG_ERR("Failed to configured interrupt for %s/%d", gpio->port->name, gpio->pin);
+		LOG_ERROR("Failed to configured interrupt for %s/%d", gpio->port->name, gpio->pin);
 		return rc;
 	}
 
@@ -753,19 +753,19 @@ static int pinnacle_init(const struct device *dev)
 
 	rc = pinnacle_read(dev, PINNACLE_REG_FIRMWARE_ID, &value);
 	if (rc) {
-		LOG_ERR("Failed to read FirmwareId");
+		LOG_ERROR("Failed to read FirmwareId");
 		return rc;
 	}
 
 	if (value != PINNACLE_FIRMWARE_ID) {
-		LOG_ERR("Incorrect Firmware ASIC ID %x", value);
+		LOG_ERROR("Incorrect Firmware ASIC ID %x", value);
 		return -ENODEV;
 	}
 
 	/* Clear CC */
 	rc = pinnacle_write(dev, PINNACLE_REG_STATUS1, 0);
 	if (rc < 0) {
-		LOG_ERR("Failed to clear CC from STATUS1 register (%d)", rc);
+		LOG_ERROR("Failed to clear CC from STATUS1 register (%d)", rc);
 		return rc;
 	}
 
@@ -774,7 +774,7 @@ static int pinnacle_init(const struct device *dev)
 	rc = pinnacle_write(dev, PINNACLE_REG_SYS_CONFIG1, PINNACLE_SYS_CONFIG1_RESET);
 
 	if (rc < 0) {
-		LOG_ERR("Failed to write reset to SYS_CONFIG1 (%d)", rc);
+		LOG_ERROR("Failed to write reset to SYS_CONFIG1 (%d)", rc);
 		return rc;
 	}
 
@@ -785,21 +785,21 @@ static int pinnacle_init(const struct device *dev)
 		       PINNACLE_CALIBRATION_AWAIT_DELAY_POLL_US,
 		       k_sleep(K_USEC(PINNACLE_CALIBRATION_AWAIT_DELAY_POLL_US)));
 	if (!ret) {
-		LOG_ERR("Failed to wait for calibration completion");
+		LOG_ERROR("Failed to wait for calibration completion");
 		return -EIO;
 	}
 
 	/* Clear SW_CC after Power on Reset */
 	rc = pinnacle_clear_cmd_complete(dev);
 	if (rc) {
-		LOG_ERR("Failed to clear SW_CC in Status1");
+		LOG_ERROR("Failed to clear SW_CC in Status1");
 		return -EIO;
 	}
 
 	/* Set trackpad sensitivity */
 	rc = pinnacle_set_sensitivity(dev);
 	if (rc) {
-		LOG_ERR("Failed to set sensitivity");
+		LOG_ERROR("Failed to set sensitivity");
 		return -EIO;
 	}
 
@@ -810,7 +810,7 @@ static int pinnacle_init(const struct device *dev)
 
 	rc = pinnacle_write(dev, PINNACLE_REG_SYS_CONFIG1, value);
 	if (rc) {
-		LOG_ERR("Failed to write SysConfig1");
+		LOG_ERROR("Failed to write SysConfig1");
 		return rc;
 	}
 
@@ -833,7 +833,7 @@ static int pinnacle_init(const struct device *dev)
 	}
 	rc = pinnacle_write(dev, PINNACLE_REG_FEED_CONFIG2, value);
 	if (rc) {
-		LOG_ERR("Failed to write FeedConfig2");
+		LOG_ERROR("Failed to write FeedConfig2");
 		return rc;
 	}
 
@@ -853,20 +853,20 @@ static int pinnacle_init(const struct device *dev)
 
 	rc = pinnacle_write(dev, PINNACLE_REG_FEED_CONFIG1, value);
 	if (rc) {
-		LOG_ERR("Failed to enable Feed in FeedConfig1");
+		LOG_ERROR("Failed to enable Feed in FeedConfig1");
 		return rc;
 	}
 
 	/* Configure count of Z-Idle packets */
 	rc = pinnacle_write(dev, PINNACLE_REG_Z_IDLE, config->idle_packets_count);
 	if (rc) {
-		LOG_ERR("Failed to set count of Z-idle packets");
+		LOG_ERROR("Failed to set count of Z-idle packets");
 		return rc;
 	}
 
 	rc = pinnacle_init_interrupt(dev);
 	if (rc) {
-		LOG_ERR("Failed to initialize interrupts");
+		LOG_ERROR("Failed to initialize interrupts");
 		return rc;
 	}
 

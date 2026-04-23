@@ -58,13 +58,13 @@ static int pinctrl_mcux_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	err = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (err) {
-		LOG_ERR("failed to enable clock (err %d)", err);
+		LOG_ERROR("failed to enable clock (err %d)", err);
 		return -EINVAL;
 	}
 

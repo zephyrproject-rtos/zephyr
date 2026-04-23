@@ -183,7 +183,7 @@ static int lmp90xxx_read_reg(const struct device *dev, uint8_t addr,
 	int err;
 
 	if (len == 0) {
-		LOG_ERR("attempt to read 0 bytes from register 0x%02x", addr);
+		LOG_ERROR("attempt to read 0 bytes from register 0x%02x", addr);
 		return -EINVAL;
 	}
 
@@ -256,7 +256,7 @@ static int lmp90xxx_write_reg(const struct device *dev, uint8_t addr,
 	int err;
 
 	if (len == 0) {
-		LOG_ERR("attempt write 0 bytes to register 0x%02x", addr);
+		LOG_ERROR("attempt write 0 bytes to register 0x%02x", addr);
 		return -EINVAL;
 	}
 
@@ -392,34 +392,31 @@ static int lmp90xxx_adc_channel_setup(const struct device *dev,
 		chx_inputcn |= LMP90XXX_VREF_SEL(1);
 		break;
 	default:
-		LOG_ERR("unsupported channel reference type '%d'",
-			channel_cfg->reference);
+		LOG_ERROR("unsupported channel reference type '%d'", channel_cfg->reference);
 		return -ENOTSUP;
 	}
 
 	if (!lmp90xxx_has_channel(dev, channel_cfg->channel_id)) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (!lmp90xxx_has_input(dev, channel_cfg->input_positive)) {
-		LOG_ERR("unsupported positive input '%d'",
-			channel_cfg->input_positive);
+		LOG_ERROR("unsupported positive input '%d'", channel_cfg->input_positive);
 		return -ENOTSUP;
 	}
 	chx_inputcn |= LMP90XXX_VINP(channel_cfg->input_positive);
 
 	if (!lmp90xxx_has_input(dev, channel_cfg->input_negative)) {
-		LOG_ERR("unsupported negative input '%d'",
-			channel_cfg->input_negative);
+		LOG_ERROR("unsupported negative input '%d'", channel_cfg->input_negative);
 		return -ENOTSUP;
 	}
 	chx_inputcn |= LMP90XXX_VINN(channel_cfg->input_negative);
 
 	ret = lmp90xxx_acq_time_to_odr(channel_cfg->acquisition_time);
 	if (ret < 0) {
-		LOG_ERR("unsupported channel acquisition time 0x%02x",
-			channel_cfg->acquisition_time);
+		LOG_ERROR("unsupported channel acquisition time 0x%02x",
+			  channel_cfg->acquisition_time);
 		return -ENOTSUP;
 	}
 	chx_config |= LMP90XXX_ODR_SEL(ret);
@@ -451,7 +448,7 @@ static int lmp90xxx_adc_channel_setup(const struct device *dev,
 		chx_config |= LMP90XXX_GAIN_SEL(7);
 		break;
 	default:
-		LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
+		LOG_ERROR("unsupported channel gain '%d'", channel_cfg->gain);
 		return -ENOTSUP;
 	}
 
@@ -461,7 +458,7 @@ static int lmp90xxx_adc_channel_setup(const struct device *dev,
 	addr = LMP90XXX_REG_CH_INPUTCN(channel_cfg->channel_id);
 	ret = lmp90xxx_write_reg(dev, addr, payload, sizeof(payload));
 	if (ret) {
-		LOG_ERR("failed to configure channel (err %d)", ret);
+		LOG_ERROR("failed to configure channel (err %d)", ret);
 	}
 
 	return ret;
@@ -499,19 +496,19 @@ static int lmp90xxx_adc_start_read(const struct device *dev,
 	int err;
 
 	if (sequence->resolution != config->resolution) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (sequence->channels == 0 ||
 	    !lmp90xxx_has_channel(dev, find_msb_set(sequence->channels) - 1)) {
-		LOG_ERR("unsupported channels in mask: 0x%08x", sequence->channels);
+		LOG_ERROR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
 	err = lmp90xxx_validate_buffer_size(sequence);
 	if (err) {
-		LOG_ERR("buffer size too small");
+		LOG_ERROR("buffer size too small");
 		return err;
 	}
 
@@ -583,14 +580,14 @@ static int lmp90xxx_adc_read_channel(const struct device *dev,
 
 	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_CH_SCAN, ch_scan);
 	if (err) {
-		LOG_ERR("failed to setup scan channels (err %d)", err);
+		LOG_ERROR("failed to setup scan channels (err %d)", err);
 		return err;
 	}
 
 	/* Start scan */
 	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_PWRCN, LMP90XXX_PWRCN(0));
 	if (err) {
-		LOG_ERR("failed to set active mode (err %d)", err);
+		LOG_ERROR("failed to set active mode (err %d)", err);
 		return err;
 	}
 
@@ -607,7 +604,7 @@ static int lmp90xxx_adc_read_channel(const struct device *dev,
 			err = lmp90xxx_read_reg8(dev, LMP90XXX_REG_ADC_DONE,
 						&adc_done);
 			if (err) {
-				LOG_ERR("failed to read done (err %d)", err);
+				LOG_ERROR("failed to read done (err %d)", err);
 				return err;
 			}
 
@@ -629,7 +626,7 @@ static int lmp90xxx_adc_read_channel(const struct device *dev,
 	}
 
 	if (err) {
-		LOG_ERR("failed to read ADC DOUT (err %d)", err);
+		LOG_ERROR("failed to read ADC DOUT (err %d)", err);
 		return err;
 	}
 
@@ -637,8 +634,7 @@ static int lmp90xxx_adc_read_channel(const struct device *dev,
 		uint8_t crc = crc8(buf, 3, 0x31, 0, false) ^ 0xFFU;
 
 		if (buf[3] != crc) {
-			LOG_ERR("CRC mismatch (0x%02x vs. 0x%02x)", buf[3],
-				crc);
+			LOG_ERROR("CRC mismatch (0x%02x vs. 0x%02x)", buf[3], crc);
 			return -EIO;
 		}
 	}
@@ -673,10 +669,11 @@ static void lmp90xxx_acquisition_thread(void *p1, void *p2, void *p3)
 		err = lmp90xxx_write_reg8(data->dev,
 					  LMP90XXX_REG_BGCALCN, bgcalcn);
 		if (err) {
-			LOG_ERR("failed to setup background calibration "
-				"(err %d)", err);
-				adc_context_complete(&data->ctx, err);
-				break;
+			LOG_ERROR("failed to setup background calibration "
+				  "(err %d)",
+				  err);
+			adc_context_complete(&data->ctx, err);
+			break;
 		}
 
 		while (data->channels) {
@@ -945,21 +942,20 @@ static int lmp90xxx_init(const struct device *dev)
 	data->ura = LMP90XXX_INVALID_URA;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
 	err = lmp90xxx_soft_reset(dev);
 	if (err) {
-		LOG_ERR("failed to request soft reset (err %d)", err);
+		LOG_ERROR("failed to request soft reset (err %d)", err);
 		return err;
 	}
 
 	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_SPI_HANDSHAKECN,
 				  LMP90XXX_SDO_DRDYB_DRIVER(0x4));
 	if (err) {
-		LOG_ERR("failed to set SPI handshake control (err %d)",
-			err);
+		LOG_ERROR("failed to set SPI handshake control (err %d)", err);
 		return err;
 	}
 
@@ -967,7 +963,7 @@ static int lmp90xxx_init(const struct device *dev)
 		err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_ADC_AUXCN,
 				LMP90XXX_RTD_CUR_SEL(config->rtd_current));
 		if (err) {
-			LOG_ERR("failed to set RTD current (err %d)", err);
+			LOG_ERROR("failed to set RTD current (err %d)", err);
 			return err;
 		}
 	}
@@ -977,7 +973,7 @@ static int lmp90xxx_init(const struct device *dev)
 					LMP90XXX_EN_CRC(1) |
 					LMP90XXX_DRDYB_AFT_CRC(1));
 		if (err) {
-			LOG_ERR("failed to enable CRC (err %d)", err);
+			LOG_ERROR("failed to enable CRC (err %d)", err);
 			return err;
 		}
 	}
@@ -985,8 +981,7 @@ static int lmp90xxx_init(const struct device *dev)
 	if (LMP90XXX_HAS_DRDYB(config)) {
 		err = gpio_pin_configure_dt(&config->drdyb, GPIO_INPUT);
 		if (err) {
-			LOG_ERR("failed to configure DRDYB GPIO pin (err %d)",
-				err);
+			LOG_ERROR("failed to configure DRDYB GPIO pin (err %d)", err);
 			return -EINVAL;
 		}
 
@@ -995,23 +990,21 @@ static int lmp90xxx_init(const struct device *dev)
 
 		err = gpio_add_callback(config->drdyb.port, &data->drdyb_cb);
 		if (err) {
-			LOG_ERR("failed to add DRDYB callback (err %d)", err);
+			LOG_ERROR("failed to add DRDYB callback (err %d)", err);
 			return -EINVAL;
 		}
 
 		err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_SPI_DRDYBCN,
 					  LMP90XXX_SPI_DRDYB_D6(1));
 		if (err) {
-			LOG_ERR("failed to configure D6 as DRDYB (err %d)",
-				err);
+			LOG_ERROR("failed to configure D6 as DRDYB (err %d)", err);
 			return err;
 		}
 
 		err = gpio_pin_interrupt_configure_dt(&config->drdyb,
 						      GPIO_INT_EDGE_TO_ACTIVE);
 		if (err) {
-			LOG_ERR("failed to configure DRDBY interrupt (err %d)",
-				err);
+			LOG_ERROR("failed to configure DRDBY interrupt (err %d)", err);
 			return -EINVAL;
 		}
 	}
@@ -1027,7 +1020,7 @@ static int lmp90xxx_init(const struct device *dev)
 	/* Put device in stand-by to prepare it for single-shot conversion */
 	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_PWRCN, LMP90XXX_PWRCN(0x3));
 	if (err) {
-		LOG_ERR("failed to request stand-by mode (err %d)", err);
+		LOG_ERROR("failed to request stand-by mode (err %d)", err);
 		return err;
 	}
 

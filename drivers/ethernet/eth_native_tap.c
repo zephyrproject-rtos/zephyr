@@ -377,7 +377,7 @@ static void eth_iface_init(struct net_if *iface)
 
 	if (mac_addr[0] != 0) {
 		if (net_bytes_from_str(ctx->mac_addr, sizeof(ctx->mac_addr), mac_addr) < 0) {
-			LOG_ERR("Invalid MAC address %s", mac_addr);
+			LOG_ERROR("Invalid MAC address %s", mac_addr);
 		}
 	}
 #endif
@@ -407,11 +407,11 @@ static void eth_iface_init(struct net_if *iface)
 				if (net_addr_pton(NET_AF_INET, ipv4_nm_cmd_opt, &netmask) == 0) {
 					net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
 				} else {
-					LOG_ERR("Invalid netmask: %s", ipv4_nm_cmd_opt);
+					LOG_ERROR("Invalid netmask: %s", ipv4_nm_cmd_opt);
 				}
 			}
 		} else {
-			LOG_ERR("Invalid address: %s", ipv4_addr_cmd_opt);
+			LOG_ERROR("Invalid address: %s", ipv4_addr_cmd_opt);
 		}
 	}
 
@@ -419,15 +419,15 @@ static void eth_iface_init(struct net_if *iface)
 		if (net_addr_pton(NET_AF_INET, ipv4_gw_cmd_opt, &addr) == 0) {
 			net_if_ipv4_set_gw(iface, &addr);
 		} else {
-			LOG_ERR("Invalid gateway: %s", ipv4_gw_cmd_opt);
+			LOG_ERROR("Invalid gateway: %s", ipv4_gw_cmd_opt);
 		}
 	}
 #endif
 
 	ctx->dev_fd = eth_iface_create(CONFIG_ETH_NATIVE_TAP_DEV_NAME, ctx->if_name, false);
 	if (ctx->dev_fd < 0) {
-		LOG_ERR("Cannot create %s (%d/%s)", ctx->if_name, ctx->dev_fd,
-			strerror(-ctx->dev_fd));
+		LOG_ERROR("Cannot create %s (%d/%s)", ctx->if_name, ctx->dev_fd,
+			  strerror(-ctx->dev_fd));
 	} else {
 		/* Create a thread that will handle incoming data from host */
 		create_rx_handler(ctx);

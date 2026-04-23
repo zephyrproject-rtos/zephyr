@@ -430,7 +430,7 @@ static void client_error_callback(RF_Handle h, RF_CmdHandle ch,
 {
 	ARG_UNUSED(h);
 	ARG_UNUSED(ch);
-	LOG_ERR("client error: 0x%" PRIx64, e);
+	LOG_ERROR("client error: 0x%" PRIx64, e);
 }
 
 static void client_event_callback(RF_Handle h, RF_ClientEvent event,
@@ -682,7 +682,7 @@ static int ieee802154_cc13xx_cc26xx_subg_tx(const struct device *dev,
 
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
 		/* For backwards compatibility we only log an error but do not bail. */
-		LOG_ERR("TX mode %d not supported - sending directly instead.", mode);
+		LOG_ERROR("TX mode %d not supported - sending directly instead.", mode);
 	}
 
 	if (k_sem_take(&drv_data->lock, K_FOREVER)) {
@@ -949,7 +949,7 @@ static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 		&rf_mode, (RF_RadioSetup *)&ieee802154_cc13xx_subg_radio_div_setup,
 		&rf_params);
 	if (drv_data->rf_handle == NULL) {
-		LOG_ERR("RF_open() failed");
+		LOG_ERROR("RF_open() failed");
 		return -EIO;
 	}
 
@@ -963,7 +963,7 @@ static int ieee802154_cc13xx_cc26xx_subg_init(const struct device *dev)
 	events = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
 			   RF_PriorityNormal, NULL, 0);
 	if (events != RF_EventLastCmdDone || drv_data->cmd_fs.status != DONE_OK) {
-		LOG_ERR("Failed to set frequency: 0x%" PRIx64, events);
+		LOG_ERROR("Failed to set frequency: 0x%" PRIx64, events);
 		return -EIO;
 	}
 

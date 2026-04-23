@@ -158,19 +158,19 @@ static int adv_start(struct bt_mesh_ext_adv *ext_adv,
 	int err;
 
 	if (!ext_adv->instance) {
-		LOG_ERR("Mesh advertiser not enabled");
+		LOG_ERROR("Mesh advertiser not enabled");
 		return -ENODEV;
 	}
 
 	if (atomic_test_and_set_bit(ext_adv->flags, ADV_FLAG_ACTIVE)) {
-		LOG_ERR("Advertiser is busy");
+		LOG_ERROR("Advertiser is busy");
 		return -EBUSY;
 	}
 
 	if (atomic_test_bit(ext_adv->flags, ADV_FLAG_UPDATE_PARAMS)) {
 		err = bt_le_ext_adv_update_param(ext_adv->instance, param);
 		if (err) {
-			LOG_ERR("Failed updating adv params: %d", err);
+			LOG_ERROR("Failed updating adv params: %d", err);
 			atomic_clear_bit(ext_adv->flags, ADV_FLAG_ACTIVE);
 			return err;
 		}
@@ -181,7 +181,7 @@ static int adv_start(struct bt_mesh_ext_adv *ext_adv,
 
 	err = bt_le_ext_adv_set_data(ext_adv->instance, ad, ad_len, sd, sd_len);
 	if (err) {
-		LOG_ERR("Failed setting adv data: %d", err);
+		LOG_ERROR("Failed setting adv data: %d", err);
 		atomic_clear_bit(ext_adv->flags, ADV_FLAG_ACTIVE);
 		return err;
 	}
@@ -190,7 +190,7 @@ static int adv_start(struct bt_mesh_ext_adv *ext_adv,
 
 	err = bt_le_ext_adv_start(ext_adv->instance, start);
 	if (err) {
-		LOG_ERR("Advertising failed: err %d", err);
+		LOG_ERROR("Advertising failed: err %d", err);
 		atomic_clear_bit(ext_adv->flags, ADV_FLAG_ACTIVE);
 	}
 
@@ -253,7 +253,7 @@ static int stop_proxy_adv(struct bt_mesh_ext_adv *ext_adv)
 	if (atomic_test_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
 		err = bt_le_ext_adv_stop(ext_adv->instance);
 		if (err) {
-			LOG_ERR("Failed to stop proxy advertising: %d", err);
+			LOG_ERROR("Failed to stop proxy advertising: %d", err);
 			return err;
 		}
 
@@ -468,7 +468,7 @@ int bt_mesh_adv_terminate(struct bt_mesh_adv *adv)
 
 		err = bt_le_ext_adv_stop(ext_adv->instance);
 		if (err) {
-			LOG_ERR("Failed to stop adv %d", err);
+			LOG_ERROR("Failed to stop adv %d", err);
 			return err;
 		}
 
@@ -572,13 +572,13 @@ int bt_mesh_adv_disable(void)
 
 		err = bt_le_ext_adv_stop(advs[i].instance);
 		if (err) {
-			LOG_ERR("Failed to stop adv %d", err);
+			LOG_ERROR("Failed to stop adv %d", err);
 			return err;
 		}
 
 		err = bt_le_ext_adv_delete(advs[i].instance);
 		if (err) {
-			LOG_ERR("Failed to delete adv %d", err);
+			LOG_ERROR("Failed to delete adv %d", err);
 			return err;
 		}
 

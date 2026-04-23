@@ -65,12 +65,12 @@ static int codec_initialize(const struct device *dev)
 	const struct codec_driver_config *const dev_cfg = dev->config;
 
 	if (!device_is_ready(dev_cfg->bus.bus)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&dev_cfg->reset_gpio)) {
-		LOG_ERR("GPIO device not ready");
+		LOG_ERROR("GPIO device not ready");
 		return -ENODEV;
 	}
 
@@ -84,7 +84,7 @@ static int codec_configure(const struct device *dev,
 	int ret;
 
 	if (cfg->dai_type != AUDIO_DAI_TYPE_I2S) {
-		LOG_ERR("dai_type must be AUDIO_DAI_TYPE_I2S");
+		LOG_ERROR("dai_type must be AUDIO_DAI_TYPE_I2S");
 		return -EINVAL;
 	}
 
@@ -93,7 +93,7 @@ static int codec_configure(const struct device *dev,
 	 */
 	ret = gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure reset GPIO (%d)", ret);
+		LOG_ERROR("Failed to configure reset GPIO (%d)", ret);
 		return ret;
 	}
 
@@ -150,8 +150,7 @@ static int codec_set_property(const struct device *dev,
 {
 	/* individual channel control not currently supported */
 	if (channel != AUDIO_CHANNEL_ALL) {
-		LOG_ERR("channel %u invalid. must be AUDIO_CHANNEL_ALL",
-			channel);
+		LOG_ERROR("channel %u invalid. must be AUDIO_CHANNEL_ALL", channel);
 		return -EINVAL;
 	}
 
@@ -248,8 +247,7 @@ static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 		val |= IF_CTRL_WLEN(IF_CTRL_WLEN_32);
 		break;
 	default:
-		LOG_ERR("Unsupported PCM sample bit width %u",
-				cfg->i2s.word_size);
+		LOG_ERROR("Unsupported PCM sample bit width %u", cfg->i2s.word_size);
 		return -EINVAL;
 	}
 
@@ -312,7 +310,7 @@ static int codec_configure_clocks(const struct device *dev,
 
 	/* check if suitable value was found */
 	if (osr < osr_min) {
-		LOG_ERR("Unable to find suitable mdac and osr values");
+		LOG_ERROR("Unable to find suitable mdac and osr values");
 		return -EINVAL;
 	}
 
@@ -323,9 +321,8 @@ static int codec_configure_clocks(const struct device *dev,
 	if (i2s->options & I2S_OPT_BIT_CLK_CONTROLLER) {
 		bclk_div = osr * mdac / (i2s->word_size * 2U); /* stereo */
 		if ((bclk_div * i2s->word_size * 2) != (osr * mdac)) {
-			LOG_ERR("Unable to generate BCLK %u from MCLK %u",
-				i2s->frame_clk_freq * i2s->word_size * 2U,
-				cfg->mclk_freq);
+			LOG_ERROR("Unable to generate BCLK %u from MCLK %u",
+				  i2s->frame_clk_freq * i2s->word_size * 2U, cfg->mclk_freq);
 			return -EINVAL;
 		}
 		LOG_DBG("I2S Master BCLKDIV: %u", bclk_div);
@@ -449,14 +446,10 @@ static int codec_set_output_volume(const struct device *dev, int vol)
 {
 	uint8_t vol_val;
 	int vol_index;
-	uint8_t vol_array[] = {
-		107, 108, 110, 113, 116, 120, 125, 128, 132, 138, 144
-	};
+	uint8_t vol_array[] = {107, 108, 110, 113, 116, 120, 125, 128, 132, 138, 144};
 
-	if ((vol > CODEC_OUTPUT_VOLUME_MAX) ||
-			(vol < CODEC_OUTPUT_VOLUME_MIN)) {
-		LOG_ERR("Invalid volume %d.%d dB",
-				vol >> 1, ((uint32_t)vol & 1) ? 5 : 0);
+	if ((vol > CODEC_OUTPUT_VOLUME_MAX) || (vol < CODEC_OUTPUT_VOLUME_MIN)) {
+		LOG_ERROR("Invalid volume %d.%d dB", vol >> 1, ((uint32_t)vol & 1) ? 5 : 0);
 		return -EINVAL;
 	}
 

@@ -74,7 +74,7 @@ static int ethos_u_numaker_init(const struct device *dev)
 
 	if (ethosu_init(drv, config->base_addr, NULL, 0, config->secure_enable,
 			config->privilege_enable)) {
-		LOG_ERR("Failed to initialize NPU with ethosu_init().");
+		LOG_ERROR("Failed to initialize NPU with ethosu_init().");
 		return -EINVAL;
 	}
 

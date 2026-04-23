@@ -440,7 +440,7 @@ static int cfg_set(const char *name, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &cfg, sizeof(cfg));
 	if (err) {
-		LOG_ERR("Failed to set \'cfg\'");
+		LOG_ERROR("Failed to set \'cfg\'");
 		return err;
 	}
 
@@ -464,7 +464,7 @@ static void clear_cfg(void)
 
 	err = settings_delete("bt/mesh/Cfg");
 	if (err) {
-		LOG_ERR("Failed to clear configuration (err: %d)", err);
+		LOG_ERROR("Failed to clear configuration (err: %d)", err);
 	} else {
 		LOG_DBG("Cleared configuration");
 	}
@@ -485,7 +485,7 @@ static void store_pending_cfg(void)
 
 	err = settings_save_one("bt/mesh/Cfg", &val, sizeof(val));
 	if (err) {
-		LOG_ERR("Failed to store configuration value");
+		LOG_ERROR("Failed to store configuration value");
 	} else {
 		LOG_DBG("Stored configuration value");
 		LOG_HEXDUMP_DBG(&val, sizeof(val), "raw value");

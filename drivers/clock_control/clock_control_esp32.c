@@ -244,7 +244,7 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 					if (retry_32k_xtal-- > 0) {
 						continue;
 					}
-					LOG_ERR("32 kHz XTAL not found");
+					LOG_ERROR("32 kHz XTAL not found");
 					return -ENODEV;
 				}
 			}
@@ -409,7 +409,7 @@ static int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cf
 #else
 	if (!ret || (new_config.source != cpu_cfg->clk_src)) {
 #endif
-		LOG_ERR("invalid CPU frequency value");
+		LOG_ERROR("invalid CPU frequency value");
 		return -EINVAL;
 	}
 
@@ -515,7 +515,7 @@ static int clock_control_esp32_configure(const struct device *dev, clock_control
 		ret = esp32_cpu_clock_configure(&new_cfg->cpu);
 		break;
 	default:
-		LOG_ERR("Unsupported subsystem %d", (int)sys);
+		LOG_ERROR("Unsupported subsystem %d", (int)sys);
 		return -EINVAL;
 	}
 	return ret;
@@ -531,7 +531,7 @@ static int clock_control_esp32_init(const struct device *dev)
 
 	ret = esp32_cpu_clock_configure(&cfg->cpu);
 	if (ret) {
-		LOG_ERR("Failed to configure CPU clock");
+		LOG_ERROR("Failed to configure CPU clock");
 		return ret;
 	}
 
@@ -539,7 +539,7 @@ static int clock_control_esp32_init(const struct device *dev)
 
 	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src);
 	if (ret) {
-		LOG_ERR("Failed to configure RTC clock");
+		LOG_ERROR("Failed to configure RTC clock");
 		return ret;
 	}
 

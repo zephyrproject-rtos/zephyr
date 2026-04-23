@@ -28,13 +28,13 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && net_if_flag_is_set(iface, NET_IF_IPV6)) {
 		if (net_addr_pton(NET_AF_INET6, ipv6_addr, &addr6)) {
-			LOG_ERR("Invalid address: %s", ipv6_addr);
+			LOG_ERROR("Invalid address: %s", ipv6_addr);
 			return -EINVAL;
 		}
 
 		ifaddr = net_if_ipv6_addr_add(iface, &addr6, NET_ADDR_MANUAL, 0);
 		if (!ifaddr) {
-			LOG_ERR("Cannot add %s to interface %p", ipv6_addr, iface);
+			LOG_ERROR("Cannot add %s to interface %p", ipv6_addr, iface);
 			return -EINVAL;
 		}
 		LOG_INF("IPv6 address: %s", ipv6_addr);
@@ -42,13 +42,13 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_if_flag_is_set(iface, NET_IF_IPV4)) {
 		if (net_addr_pton(NET_AF_INET, ipv4_addr, &addr4)) {
-			LOG_ERR("Invalid address: %s", ipv4_addr);
+			LOG_ERROR("Invalid address: %s", ipv4_addr);
 			return -EINVAL;
 		}
 
 		ifaddr = net_if_ipv4_addr_add(iface, &addr4, NET_ADDR_MANUAL, 0);
 		if (!ifaddr) {
-			LOG_ERR("Cannot add %s to interface %p", ipv4_addr, iface);
+			LOG_ERROR("Cannot add %s to interface %p", ipv4_addr, iface);
 			return -EINVAL;
 		}
 		LOG_INF("IPv4 address: %s", ipv4_addr);
@@ -57,7 +57,7 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 			struct net_in_addr nm;
 
 			if (net_addr_pton(NET_AF_INET, netmask, &nm)) {
-				LOG_ERR("Invalid netmask: %s", netmask);
+				LOG_ERROR("Invalid netmask: %s", netmask);
 				return -EINVAL;
 			}
 

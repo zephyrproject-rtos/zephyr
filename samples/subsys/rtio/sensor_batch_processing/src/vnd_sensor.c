@@ -41,7 +41,7 @@ static int vnd_sensor_iodev_read(const struct device *dev, uint8_t *buf,
 	irq_unlock(key);
 
 	if (buf_len < config->sample_size) {
-		LOG_ERR("%s: Buffer is too small", dev->name);
+		LOG_ERROR("%s: Buffer is too small", dev->name);
 		return -ENOMEM;
 	}
 
@@ -64,12 +64,12 @@ static void vnd_sensor_iodev_execute(const struct device *dev,
 		result = rtio_sqe_rx_buf(iodev_sqe, config->sample_size, config->sample_size, &buf,
 					 &buf_len);
 		if (result != 0) {
-			LOG_ERR("Failed to get RX buffer");
+			LOG_ERROR("Failed to get RX buffer");
 		} else {
 			result = vnd_sensor_iodev_read(dev, buf, buf_len);
 		}
 	} else {
-		LOG_ERR("%s: Invalid op", dev->name);
+		LOG_ERROR("%s: Invalid op", dev->name);
 		result = -EINVAL;
 	}
 
@@ -97,7 +97,7 @@ static void vnd_sensor_handle_int(const struct device *dev)
 
 		vnd_sensor_iodev_execute(dev, iodev_sqe);
 	} else {
-		LOG_ERR("%s: Could not get a msg", dev->name);
+		LOG_ERROR("%s: Could not get a msg", dev->name);
 	}
 }
 

@@ -65,7 +65,7 @@ static int ifx_tcpwm_pwm_init(const struct device *dev)
 	/* Configure the TCPWM to be a PWM */
 	status = Cy_TCPWM_PWM_Init(config->reg_base, config->tcpwm_index, &pwm_config);
 	if (status != CY_TCPWM_SUCCESS) {
-		LOG_ERR("PWM init failed for counter %u: 0x%08x", config->tcpwm_index, status);
+		LOG_ERROR("PWM init failed for counter %u: 0x%08x", config->tcpwm_index, status);
 		return -ENOTSUP;
 	}
 
@@ -138,10 +138,10 @@ static inline int ifx_tcpwm_pwm_validate_cycles(const struct ifx_tcpwm_pwm_confi
 	    ((period_cycles > UINT16_MAX) || (pulse_cycles > UINT16_MAX))) {
 		/* 16-bit resolution */
 		if (period_cycles > UINT16_MAX) {
-			LOG_ERR("Period cycles more than 16-bits (%u)", period_cycles);
+			LOG_ERROR("Period cycles more than 16-bits (%u)", period_cycles);
 		}
 		if (pulse_cycles > UINT16_MAX) {
-			LOG_ERR("Pulse cycles more than 16-bits (%u)", pulse_cycles);
+			LOG_ERROR("Pulse cycles more than 16-bits (%u)", pulse_cycles);
 		}
 		return -EINVAL;
 	}
@@ -160,7 +160,7 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	/* Validate cycles based on resolution */
 	ret = ifx_tcpwm_pwm_validate_cycles(config, period_cycles, pulse_cycles);
 	if (ret != 0) {
-		LOG_ERR("PWM cycles validation failed");
+		LOG_ERROR("PWM cycles validation failed");
 		return -EINVAL;
 	}
 

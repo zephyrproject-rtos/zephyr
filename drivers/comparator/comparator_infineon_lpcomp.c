@@ -79,7 +79,7 @@ static int lpcomp_init_inputs(const struct device *dev)
 	Cy_LPComp_UlpReferenceEnable(base);
 
 	if (cfg->input_pos == CY_LPCOMP_SW_LOCAL_VREF) {
-		LOG_ERR("Local Vref cannot be connected to positive input");
+		LOG_ERROR("Local Vref cannot be connected to positive input");
 		return -EINVAL;
 	}
 	/* Connect the local reference if enabled */
@@ -142,7 +142,7 @@ static int ifx_lpcomp_set_trigger(const struct device *dev, enum comparator_trig
 		intr_type = CY_LPCOMP_INTR_BOTH;
 		break;
 	default:
-		LOG_ERR("Invalid trigger type.");
+		LOG_ERROR("Invalid trigger type.");
 		return -EINVAL;
 	}
 
@@ -253,14 +253,14 @@ static int ifx_lpcomp_init(const struct device *dev)
 	LPCOMP_Type *base;
 
 	if (config == NULL) {
-		LOG_ERR("Invalid channel configuration");
+		LOG_ERROR("Invalid channel configuration");
 		return -EINVAL;
 	}
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	base = (LPCOMP_Type *)DEVICE_MMIO_GET(dev);
 	if (base == NULL) {
-		LOG_ERR("Failed to map LPComp registers");
+		LOG_ERROR("Failed to map LPComp registers");
 		return -EINVAL;
 	}
 
@@ -287,7 +287,7 @@ static int ifx_lpcomp_init(const struct device *dev)
 #error "Unsupported platform. Please define the correct LPCOMP macro for the platform."
 #endif
 	if (lpcomp_status != CY_LPCOMP_SUCCESS) {
-		LOG_ERR("Failed to initialize LPComp");
+		LOG_ERROR("Failed to initialize LPComp");
 		return -EIO;
 	}
 

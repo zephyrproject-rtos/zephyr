@@ -25,8 +25,8 @@ static int tisci_get_rate(const struct device *dev, clock_control_subsys_t sys, 
 
 	ret = tisci_cmd_clk_get_freq(dmsc, req->dev_id, req->clk_id, &temp_rate);
 	if (ret) {
-		LOG_ERR("Failed to get clock freq: dev_id=%u clk_id=%u err=%d", req->dev_id,
-			req->clk_id, ret);
+		LOG_ERROR("Failed to get clock freq: dev_id=%u clk_id=%u err=%d", req->dev_id,
+			  req->clk_id, ret);
 		return ret;
 	}
 
@@ -43,8 +43,8 @@ static int tisci_set_rate(const struct device *dev, void *sys, void *rate)
 
 	ret = tisci_cmd_clk_set_freq(dmsc, req->dev_id, req->clk_id, freq, freq, freq);
 	if (ret) {
-		LOG_ERR("Failed to set clock freq: dev_id=%u clk_id=%u freq=%llu err=%d",
-			req->dev_id, req->clk_id, freq, ret);
+		LOG_ERROR("Failed to set clock freq: dev_id=%u clk_id=%u freq=%llu err=%d",
+			  req->dev_id, req->clk_id, freq, ret);
 	}
 
 	return ret;
@@ -60,8 +60,8 @@ static enum clock_control_status tisci_get_status(const struct device *dev,
 
 	ret = tisci_cmd_clk_is_on(dmsc, req->dev_id, req->clk_id, &req_state, &curr_state);
 	if (ret) {
-		LOG_ERR("Failed to get clock ON status: dev_id=%u clk_id=%u err=%d", req->dev_id,
-			req->clk_id, ret);
+		LOG_ERROR("Failed to get clock ON status: dev_id=%u clk_id=%u err=%d", req->dev_id,
+			  req->clk_id, ret);
 		return CLOCK_CONTROL_STATUS_UNKNOWN;
 	}
 	if (curr_state) {
@@ -75,8 +75,8 @@ static enum clock_control_status tisci_get_status(const struct device *dev,
 
 	ret = tisci_cmd_clk_is_off(dmsc, req->dev_id, req->clk_id, NULL, &curr_state);
 	if (ret) {
-		LOG_ERR("Failed to get clock OFF status: dev_id=%u clk_id=%u err=%d", req->dev_id,
-			req->clk_id, ret);
+		LOG_ERROR("Failed to get clock OFF status: dev_id=%u clk_id=%u err=%d", req->dev_id,
+			  req->clk_id, ret);
 		return CLOCK_CONTROL_STATUS_UNKNOWN;
 	}
 

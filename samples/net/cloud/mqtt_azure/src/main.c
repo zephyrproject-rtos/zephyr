@@ -86,7 +86,7 @@ static int tls_init(void)
 	err = tls_credential_add(APP_CA_CERT_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
 				 ca_certificate, sizeof(ca_certificate));
 	if (err < 0) {
-		LOG_ERR("Failed to register public certificate: %d", err);
+		LOG_ERROR("Failed to register public certificate: %d", err);
 		return err;
 	}
 
@@ -118,7 +118,7 @@ static int wait(int timeout)
 
 	rc = poll(fds, nfds, timeout);
 	if (rc < 0) {
-		LOG_ERR("poll error: %d", errno);
+		LOG_ERROR("poll error: %d", errno);
 		return -errno;
 	}
 
@@ -221,7 +221,7 @@ static void mqtt_event_handler(struct mqtt_client *const client,
 
 	case MQTT_EVT_CONNACK:
 		if (evt->result) {
-			LOG_ERR("MQTT connect failed %d", evt->result);
+			LOG_ERROR("MQTT connect failed %d", evt->result);
 			break;
 		}
 
@@ -238,7 +238,7 @@ static void mqtt_event_handler(struct mqtt_client *const client,
 
 	case MQTT_EVT_PUBACK:
 		if (evt->result) {
-			LOG_ERR("MQTT PUBACK error %d", evt->result);
+			LOG_ERROR("MQTT PUBACK error %d", evt->result);
 			break;
 		}
 
@@ -258,7 +258,7 @@ static void mqtt_event_handler(struct mqtt_client *const client,
 					len >= sizeof(data) - 1 ?
 					sizeof(data) - 1 : len);
 			if (bytes_read < 0 && bytes_read != -EAGAIN) {
-				LOG_ERR("failure to read payload");
+				LOG_ERROR("failure to read payload");
 				break;
 			}
 
@@ -290,7 +290,7 @@ static void subscribe(struct mqtt_client *client)
 
 	err = mqtt_subscribe(client, &subs_list);
 	if (err) {
-		LOG_ERR("Failed on topic %s", devbound_topic);
+		LOG_ERROR("Failed on topic %s", devbound_topic);
 	}
 }
 
@@ -345,7 +345,7 @@ static void publish_timeout(struct k_work *work)
 
 	rc = publish(&client_ctx, MQTT_QOS_1_AT_LEAST_ONCE);
 	if (rc) {
-		LOG_ERR("mqtt_publish ERROR");
+		LOG_ERROR("mqtt_publish ERROR");
 		goto end;
 	}
 
@@ -366,7 +366,7 @@ static int try_to_connect(struct mqtt_client *client)
 
 		rc = mqtt_connect(client);
 		if (rc) {
-			LOG_ERR("mqtt_connect failed %d", rc);
+			LOG_ERROR("mqtt_connect failed %d", rc);
 			continue;
 		}
 
@@ -416,9 +416,9 @@ static int get_mqtt_broker_addrinfo(void)
 			return 0;
 		}
 
-		LOG_ERR("DNS not resolved for %s:%d, retrying",
-			CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME,
-			CONFIG_SAMPLE_CLOUD_AZURE_SERVER_PORT);
+		LOG_ERROR("DNS not resolved for %s:%d, retrying",
+			  CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME,
+			  CONFIG_SAMPLE_CLOUD_AZURE_SERVER_PORT);
 	}
 
 	return rc;

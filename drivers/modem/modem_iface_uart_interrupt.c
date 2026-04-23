@@ -77,7 +77,7 @@ static void modem_iface_uart_isr(const struct device *uart_dev,
 			if (data->hw_flow_control) {
 				uart_irq_rx_disable(ctx->iface.dev);
 			} else {
-				LOG_ERR("Rx buffer doesn't have enough space");
+				LOG_ERROR("Rx buffer doesn't have enough space");
 				modem_iface_uart_flush(&ctx->iface);
 			}
 			break;

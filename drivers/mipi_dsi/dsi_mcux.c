@@ -184,7 +184,7 @@ static int dsi_mcux_attach(const struct device *dev,
 	uint32_t mipi_dsi_dphy_bit_clk_hz =
 		dsi_mcux_best_clock(mipi_dsi_dphy_ref_clk_hz, config->phy_clock);
 	if (mipi_dsi_dphy_bit_clk_hz == 0) {
-		LOG_ERR("DPHY cannot support requested PHY clock");
+		LOG_ERROR("DPHY cannot support requested PHY clock");
 		return -ENOTSUP;
 	}
 	/* Cap clock value to max frequency */
@@ -233,7 +233,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 	switch (msg->type) {
 
 	case MIPI_DSI_DCS_READ:
-		LOG_ERR("DCS Read not yet implemented or used");
+		LOG_ERROR("DCS Read not yet implemented or used");
 		return -ENOTSUP;
 	case MIPI_DSI_DCS_SHORT_WRITE:
 		dsi_xfer.sendDcsCmd = true;
@@ -276,17 +276,17 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 	case MIPI_DSI_GENERIC_READ_REQUEST_1_PARAM:
 		__fallthrough;
 	case MIPI_DSI_GENERIC_READ_REQUEST_2_PARAM:
-		LOG_ERR("Generic Read not yet implemented or used");
+		LOG_ERROR("Generic Read not yet implemented or used");
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Unsupported message type (%d)", msg->type);
+		LOG_ERROR("Unsupported message type (%d)", msg->type);
 		return -ENOTSUP;
 	}
 
 	status = DSI_TransferBlocking(&config->base, &dsi_xfer);
 
 	if (status != kStatus_Success) {
-		LOG_ERR("Transmission failed");
+		LOG_ERROR("Transmission failed");
 		return -EIO;
 	}
 

@@ -106,8 +106,9 @@ static void stream_list_try_add(int sock)
 			ret = net_socket_service_register(&service_stream, sockfd_stream,
 							  ARRAY_SIZE(sockfd_stream), NULL);
 			if (ret < 0) {
-				LOG_ERR("Cannot register socket service handler (%d). "
-					"Attempting to restart service.", ret);
+				LOG_ERROR("Cannot register socket service handler (%d). "
+					  "Attempting to restart service.",
+					  ret);
 				restart_quic_echo_service();
 			}
 
@@ -134,8 +135,9 @@ static void stream_list_remove(int stream)
 			ret = net_socket_service_register(&service_stream, sockfd_stream,
 							  ARRAY_SIZE(sockfd_stream), NULL);
 			if (ret < 0) {
-				LOG_ERR("Cannot register socket service handler (%d). "
-					"Attempting to restart service.", ret);
+				LOG_ERROR("Cannot register socket service handler (%d). "
+					  "Attempting to restart service.",
+					  ret);
 				restart_quic_echo_service();
 			}
 
@@ -174,7 +176,7 @@ static void receive_data(struct net_socket_service_event *pev)
 	if (len <= 0) {
 		if (len < 0) {
 			k_mem_slab_free(&echo_slab, entry);
-			LOG_ERR("recv: %d", -errno);
+			LOG_ERROR("recv: %d", -errno);
 			stream_list_remove(stream);
 		} else {
 			/* FIN received, queue a FIN marker so sender thread
@@ -239,7 +241,7 @@ static void echo_sender_thread(void *p1, void *p2, void *p3)
 				int ret;
 
 				if (errno != EAGAIN && errno != EWOULDBLOCK) {
-					LOG_ERR("send: %d", -errno);
+					LOG_ERROR("send: %d", -errno);
 					break;
 				}
 
@@ -249,7 +251,7 @@ static void echo_sender_thread(void *p1, void *p2, void *p3)
 
 				ret = poll(&pfd, 1, POLL_TIMEOUT_MS);
 				if (ret < 0) {
-					LOG_ERR("poll: %d", -errno);
+					LOG_ERROR("poll: %d", -errno);
 					break;
 				}
 
@@ -261,7 +263,7 @@ static void echo_sender_thread(void *p1, void *p2, void *p3)
 				if (!(pfd.revents & POLLOUT)) {
 					/* Poll returned but not for POLLOUT, check for errors */
 					if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
-						LOG_ERR("poll error: revents=0x%x", pfd.revents);
+						LOG_ERROR("poll error: revents=0x%x", pfd.revents);
 						break;
 					}
 
@@ -303,7 +305,7 @@ static void conn_accept_handler(struct net_socket_service_event *pev)
 			connection_socket = -1;
 			k_mutex_unlock(&lock);
 		} else {
-			LOG_ERR("stream accept: %d", -errno);
+			LOG_ERROR("stream accept: %d", -errno);
 		}
 		return;
 	}
@@ -321,7 +323,7 @@ static void quic_accept_handler(struct net_socket_service_event *pev)
 
 	conn_fd = accept(pev->event.fd, (struct sockaddr *)&client_addr, &client_addr_len);
 	if (conn_fd < 0) {
-		LOG_ERR("accept: %d. Restarting service.", -errno);
+		LOG_ERROR("accept: %d. Restarting service.", -errno);
 		restart_quic_echo_service();
 		return;
 	}
@@ -355,7 +357,7 @@ static int setup_quic_socket(struct sockaddr_in6 *addr)
 			  sec_tag_list, sizeof(sec_tag_list),
 			  (const char **)alpn_list, sizeof(alpn_list));
 	if (sock < 0) {
-		LOG_ERR("socket: %d", -errno);
+		LOG_ERROR("socket: %d", -errno);
 		return -errno;
 	}
 
@@ -371,7 +373,7 @@ static void init_tls_credentials(void)
 				 quic_server_certificate,
 				 sizeof(quic_server_certificate));
 	if (ret < 0 && ret != -EALREADY && ret != -EEXIST) {
-		LOG_ERR("Failed to register public certificate: %d", ret);
+		LOG_ERROR("Failed to register public certificate: %d", ret);
 	}
 
 
@@ -380,7 +382,7 @@ static void init_tls_credentials(void)
 				 quic_server_private_key,
 				 sizeof(quic_server_private_key));
 	if (ret < 0 && ret != -EALREADY && ret != -EEXIST) {
-		LOG_ERR("Failed to register private key: %d", ret);
+		LOG_ERROR("Failed to register private key: %d", ret);
 	}
 }
 
@@ -399,7 +401,7 @@ static int start_quic_echo_service(void)
 
 	connection_sock = setup_quic_socket(&addr);
 	if (connection_sock < 0) {
-		LOG_ERR("Failed to setup QUIC listening socket");
+		LOG_ERROR("Failed to setup QUIC listening socket");
 		return connection_sock;
 	}
 
@@ -407,7 +409,7 @@ static int start_quic_echo_service(void)
 	sockfd_accept = (struct pollfd){ .fd = connection_sock, .events = POLLIN };
 	ret = net_socket_service_register(&service_quic, &sockfd_accept, 1, NULL);
 	if (ret < 0) {
-		LOG_ERR("Cannot register socket service handler (%d)", ret);
+		LOG_ERROR("Cannot register socket service handler (%d)", ret);
 		goto cleanup;
 	}
 

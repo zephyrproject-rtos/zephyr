@@ -261,14 +261,14 @@ static void gt911_pm_state_exit(const struct device *dev, enum pm_state state)
 
 		r = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 		if (r < 0) {
-			LOG_ERR("Could not configure interrupt GPIO pin");
+			LOG_ERROR("Could not configure interrupt GPIO pin");
 			return;
 		}
 
 #ifdef CONFIG_INPUT_GT911_INTERRUPT
 		r = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		if (r < 0) {
-			LOG_ERR("Could not configure interrupt GPIO interrupt.");
+			LOG_ERROR("Could not configure interrupt GPIO interrupt.");
 			return;
 		}
 #endif /* CONFIG_INPUT_GT911_INTERRUPT */
@@ -309,7 +309,7 @@ static int gt911_init(const struct device *dev)
 
 		r = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_ACTIVE);
 		if (r < 0) {
-			LOG_ERR("Could not configure reset GPIO pin");
+			LOG_ERROR("Could not configure reset GPIO pin");
 			return r;
 		}
 	}
@@ -325,7 +325,7 @@ static int gt911_init(const struct device *dev)
 	 */
 	r = gpio_pin_configure_dt(&config->int_gpio, GPIO_OUTPUT_INACTIVE);
 	if (r < 0) {
-		LOG_ERR("Could not configure int GPIO pin");
+		LOG_ERROR("Could not configure int GPIO pin");
 		return r;
 	}
 	/* Delay at least 10 ms after power on before we configure gt911 */
@@ -344,14 +344,14 @@ static int gt911_init(const struct device *dev)
 
 	r = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (r < 0) {
-		LOG_ERR("Could not configure interrupt GPIO pin");
+		LOG_ERROR("Could not configure interrupt GPIO pin");
 		return r;
 	}
 
 #ifdef CONFIG_INPUT_GT911_INTERRUPT
 	r = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (r < 0) {
-		LOG_ERR("Could not configure interrupt GPIO interrupt.");
+		LOG_ERROR("Could not configure interrupt GPIO interrupt.");
 		return r;
 	}
 
@@ -387,7 +387,7 @@ static int gt911_init(const struct device *dev)
 		r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &reg_id, sizeof(reg_id));
 	}
 	if (r < 0) {
-		LOG_ERR("Device did not respond to I2C request");
+		LOG_ERROR("Device did not respond to I2C request");
 		return r;
 	}
 	switch (reg_id) {
@@ -399,7 +399,7 @@ static int gt911_init(const struct device *dev)
 	case GT9271_PRODUCT_ID:
 		break;
 	default:
-		LOG_ERR("Unexpected device id: %08x ", reg_id);
+		LOG_ERROR("Unexpected device id: %08x ", reg_id);
 		return -ENODEV;
 	}
 
@@ -432,7 +432,7 @@ static int gt911_init(const struct device *dev)
 #ifdef CONFIG_INPUT_GT911_INTERRUPT
 	r = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (r < 0) {
-		LOG_ERR("Could not set gpio callback");
+		LOG_ERROR("Could not set gpio callback");
 		return r;
 	}
 #else

@@ -30,12 +30,12 @@ int main(void)
 	uint32_t clk_rate = 0;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("Clock device is not ready");
+		LOG_ERROR("Clock device is not ready");
 		return -EIO;
 	}
 
 	if (!device_is_ready(wdt)) {
-		LOG_ERR("XT WDT device is not ready");
+		LOG_ERROR("XT WDT device is not ready");
 		return -EIO;
 	}
 

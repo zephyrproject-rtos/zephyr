@@ -55,7 +55,7 @@ static int eth_intel_validate_sku(const struct device *dev)
 		break;
 	}
 
-	LOG_ERR("SKU validation failed & pcie_id is %x", pcie_id);
+	LOG_ERROR("SKU validation failed & pcie_id is %x", pcie_id);
 
 	return -EIO;
 }
@@ -72,7 +72,7 @@ static int intel_eth_plat_init(const struct device *dev)
 	}
 
 	if (cfg->pcie->bdf == PCIE_BDF_NONE || !pcie_probe_mbar(cfg->pcie->bdf, 0, &mbar)) {
-		LOG_ERR("Cannot get mbar");
+		LOG_ERROR("Cannot get mbar");
 		return -ENOENT;
 	}
 

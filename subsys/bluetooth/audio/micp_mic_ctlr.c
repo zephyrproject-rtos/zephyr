@@ -240,7 +240,7 @@ static void micp_mic_ctlr_aics_discover_cb(struct bt_aics *inst, int err)
 	struct bt_micp_mic_ctlr_cb *listener, *next;
 
 	if (mic_ctlr == NULL) {
-		LOG_ERR("Could not lookup mic_ctlr from aics");
+		LOG_ERROR("Could not lookup mic_ctlr from aics");
 
 		return;
 	}

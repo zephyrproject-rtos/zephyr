@@ -199,7 +199,7 @@ static int osdp_init(void)
 	/* init OSDP uart device */
 	p->dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_osdp_uart));
 	if (!device_is_ready(p->dev)) {
-		LOG_ERR("UART dev is not ready");
+		LOG_ERROR("UART dev is not ready");
 		k_panic();
 	}
 
@@ -227,7 +227,7 @@ static int osdp_init(void)
 	/* setup OSDP */
 	ctx = osdp_build_ctx(&channel);
 	if (ctx == NULL) {
-		LOG_ERR("OSDP build ctx failed!");
+		LOG_ERROR("OSDP build ctx failed!");
 		k_panic();
 	}
 
@@ -235,12 +235,12 @@ static int osdp_init(void)
 		if (strcmp(OSDP_KEY_STRING, "NONE") != 0) {
 			len = strlen(OSDP_KEY_STRING);
 			if (len != 32) {
-				LOG_ERR("Key string length must be 32");
+				LOG_ERROR("Key string length must be 32");
 				k_panic();
 			}
 			len = hex2bin(OSDP_KEY_STRING, 32, key_buf, 16);
 			if (len != 16) {
-				LOG_ERR("Failed to parse key buffer");
+				LOG_ERROR("Failed to parse key buffer");
 				k_panic();
 			}
 			key = key_buf;
@@ -248,7 +248,7 @@ static int osdp_init(void)
 	}
 
 	if (osdp_setup(ctx, key)) {
-		LOG_ERR("Failed to setup OSDP device!");
+		LOG_ERROR("Failed to setup OSDP device!");
 		k_panic();
 	}
 

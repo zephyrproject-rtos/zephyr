@@ -140,7 +140,7 @@ static int lfclk_resolve_spec_to_idx(const struct device *dev,
 	uint16_t req_accuracy;
 
 	if (req_spec->frequency > dev_config->fixed_frequency) {
-		LOG_ERR("invalid frequency");
+		LOG_ERROR("invalid frequency");
 		return -EINVAL;
 	}
 
@@ -163,7 +163,7 @@ static int lfclk_resolve_spec_to_idx(const struct device *dev,
 		return i;
 	}
 
-	LOG_ERR("invalid accuracy or precision");
+	LOG_ERROR("invalid accuracy or precision");
 	return -EINVAL;
 }
 
@@ -338,7 +338,7 @@ static int lfclk_init(const struct device *dev)
 	} else {
 		ret = lfosc_get_accuracy(&dev_data->max_accuracy);
 		if (ret < 0) {
-			LOG_ERR("LFOSC enabled with invalid accuracy");
+			LOG_ERROR("LFOSC enabled with invalid accuracy");
 			return ret;
 		}
 
@@ -380,14 +380,14 @@ static int lfclk_init(const struct device *dev)
 			break;
 
 		default:
-			LOG_ERR("Unexpected LFOSC mode");
+			LOG_ERROR("Unexpected LFOSC mode");
 			return -EINVAL;
 		}
 
 		dev_data->lfxo_startup_time_us = nrf_bicr_lfosc_startup_time_ms_get(BICR)
 					       * USEC_PER_MSEC;
 		if (dev_data->lfxo_startup_time_us == NRF_BICR_LFOSC_STARTUP_TIME_UNCONFIGURED) {
-			LOG_ERR("BICR LFXO startup time invalid");
+			LOG_ERROR("BICR LFXO startup time invalid");
 			return -ENODEV;
 		}
 	}
@@ -406,7 +406,7 @@ static int lfclk_init(const struct device *dev)
 
 	dev_data->hfxo_startup_time_us = nrf_bicr_hfxo_startup_time_us_get(BICR);
 	if (dev_data->hfxo_startup_time_us == NRF_BICR_HFXO_STARTUP_TIME_UNCONFIGURED) {
-		LOG_ERR("BICR HFXO startup time invalid");
+		LOG_ERROR("BICR HFXO startup time invalid");
 		return -ENODEV;
 	}
 

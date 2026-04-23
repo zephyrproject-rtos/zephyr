@@ -35,7 +35,7 @@ static int dw_dma_init(const struct device *dev)
 	int ret = dw_dma_setup(dev);
 
 	if (ret != 0) {
-		LOG_ERR("failed to initialize DW DMA %s", dev->name);
+		LOG_ERROR("failed to initialize DW DMA %s", dev->name);
 		goto out;
 	}
 

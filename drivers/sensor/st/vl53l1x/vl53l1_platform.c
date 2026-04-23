@@ -37,7 +37,7 @@ VL53L1_Error VL53L1_WriteMulti(VL53L1_Dev_t *pdev, uint16_t reg,
 
 	if (status_int < 0) {
 		status = VL53L1_ERROR_CONTROL_INTERFACE;
-		LOG_ERR("Failed to write");
+		LOG_ERROR("Failed to write");
 	}
 
 	return status;
@@ -55,7 +55,7 @@ VL53L1_Error VL53L1_ReadMulti(VL53L1_Dev_t *pdev, uint16_t reg,
 
 	if (status_int < 0) {
 		status = VL53L1_ERROR_CONTROL_INTERFACE;
-		LOG_ERR("Failed to read");
+		LOG_ERROR("Failed to read");
 		return -EIO;
 	}
 

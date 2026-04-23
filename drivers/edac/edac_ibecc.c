@@ -315,12 +315,12 @@ static int edac_ibecc_init(const struct device *dev)
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU15):
 		break;
 	default:
-		LOG_ERR("PCI Probe failed"); /* LCOV_EXCL_BR_LINE */
+		LOG_ERROR("PCI Probe failed"); /* LCOV_EXCL_BR_LINE */
 		return -ENODEV;
 	}
 
 	if (!ibecc_enabled(bdf)) {
-		LOG_ERR("IBECC is not enabled"); /* LCOV_EXCL_BR_LINE */
+		LOG_ERROR("IBECC is not enabled"); /* LCOV_EXCL_BR_LINE */
 		return -ENODEV;
 	}
 
@@ -329,7 +329,7 @@ static int edac_ibecc_init(const struct device *dev)
 
 	/* Check that MCHBAR is enabled */
 	if ((mchbar & MCHBAR_ENABLE) == 0) {
-		LOG_ERR("MCHBAR is not enabled"); /* LCOV_EXCL_BR_LINE */
+		LOG_ERROR("MCHBAR is not enabled"); /* LCOV_EXCL_BR_LINE */
 		return -ENODEV;
 	}
 

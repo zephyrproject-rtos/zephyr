@@ -188,7 +188,7 @@ static int pi3usb9201_emul_transfer(const struct emul *target, struct i2c_msg *m
 	cfg = data->cfg;
 
 	if (cfg->addr != addr) {
-		LOG_ERR("Address mismatch, expected %02x, got %02x", cfg->addr, addr);
+		LOG_ERROR("Address mismatch, expected %02x, got %02x", cfg->addr, addr);
 		return -EIO;
 	}
 
@@ -201,20 +201,20 @@ static int pi3usb9201_emul_transfer(const struct emul *target, struct i2c_msg *m
 	 */
 	if (num_msgs == 1) {
 		if (!(IS_I2C_MSG_WRITE(msgs[0].flags) && (msgs[0].len == 2))) {
-			LOG_ERR("Unexpected write msgs");
+			LOG_ERROR("Unexpected write msgs");
 			return -EIO;
 		}
 		return pi3usb9201_emul_set_reg(target, msgs[0].buf[0], msgs[0].buf[1]);
 	} else if (num_msgs == 2) {
 		if (!(IS_I2C_MSG_WRITE(msgs[0].flags) && (msgs[0].len == 1) &&
 		      IS_I2C_MSG_READ(msgs[1].flags) && (msgs[1].len == 1))) {
-			LOG_ERR("Unexpected read msgs");
+			LOG_ERROR("Unexpected read msgs");
 			return -EIO;
 		}
 		return pi3usb9201_emul_get_reg(target, msgs[0].buf[0], &(msgs[1].buf[0]));
 	}
 
-	LOG_ERR("Unexpected num_msgs");
+	LOG_ERROR("Unexpected num_msgs");
 	return -EIO;
 }
 
@@ -240,7 +240,7 @@ int pi3usb9201_emul_set_charging_partner(const struct emul *target, enum bc12_ty
 		data->test_client_status = PROPRIETARY_1A_DETECTED;
 		break;
 	default:
-		LOG_ERR("Unsupported partner mode");
+		LOG_ERROR("Unsupported partner mode");
 		return -EINVAL;
 	}
 

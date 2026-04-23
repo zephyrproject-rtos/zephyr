@@ -341,26 +341,26 @@ static int flash_npcx_nor_erase(const struct device *dev, off_t addr, size_t siz
 
 	/* Out of the region of nor flash device? */
 	if (!is_within_region(addr, size, 0, config->flash_size)) {
-		LOG_ERR("Addr %ld, size %d are out of range", addr, size);
+		LOG_ERROR("Addr %ld, size %d are out of range", addr, size);
 		return -EINVAL;
 	}
 
 	/* address must be sector-aligned */
 	if (!SPI_NOR_IS_SECTOR_ALIGNED(addr)) {
-		LOG_ERR("Addr %ld is not sector-aligned", addr);
+		LOG_ERROR("Addr %ld is not sector-aligned", addr);
 		return -EINVAL;
 	}
 
 	/* size must be a multiple of sectors */
 	if ((size % BLOCK_4K_SIZE) != 0) {
-		LOG_ERR("Size %d is not a multiple of sectors", size);
+		LOG_ERROR("Size %d is not a multiple of sectors", size);
 		return -EINVAL;
 	}
 
 	qspi_npcx_fiu_mutex_lock(config->qspi_bus);
 	ret = qspi_npcx_fiu_uma_block(config->qspi_bus, true);
 	if (ret != 0) {
-		LOG_ERR("QSPI UMA block failed");
+		LOG_ERROR("QSPI UMA block failed");
 		goto unlock_nor_erase;
 	}
 
@@ -706,7 +706,7 @@ static int flash_npcx_nor_init(const struct device *dev)
 		/* Read status registers first */
 		ret = flash_npcx_nor_read_status_regs(dev, sts_reg);
 		if (ret != 0) {
-			LOG_ERR("Enable quad access: read reg failed %d!", ret);
+			LOG_ERROR("Enable quad access: read reg failed %d!", ret);
 			return ret;
 		}
 		switch (config->qspi_cfg.qer_type) {
@@ -729,7 +729,7 @@ static int flash_npcx_nor_init(const struct device *dev)
 		sts_reg[qe_idx - 1] |= BIT(qe_bit);
 		ret = flash_npcx_nor_write_status_regs(dev, sts_reg);
 		if (ret != 0) {
-			LOG_ERR("Enable quad access: write reg failed %d!", ret);
+			LOG_ERROR("Enable quad access: write reg failed %d!", ret);
 			return ret;
 		}
 	}
@@ -741,13 +741,13 @@ static int flash_npcx_nor_init(const struct device *dev)
 		if (wr_en) {
 			ret = flash_npcx_uma_cmd_only_locked(dev, SPI_NOR_CMD_WREN);
 			if (ret != 0) {
-				LOG_ERR("Enable 4byte addr: WREN failed %d!", ret);
+				LOG_ERROR("Enable 4byte addr: WREN failed %d!", ret);
 				return ret;
 			}
 		}
 		ret = flash_npcx_uma_cmd_only_locked(dev, SPI_NOR_CMD_4BA);
 		if (ret != 0) {
-			LOG_ERR("Enable 4byte addr: 4BA failed %d!", ret);
+			LOG_ERROR("Enable 4byte addr: 4BA failed %d!", ret);
 			return ret;
 		}
 	}

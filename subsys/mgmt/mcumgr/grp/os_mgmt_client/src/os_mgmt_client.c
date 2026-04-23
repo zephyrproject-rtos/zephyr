@@ -98,7 +98,7 @@ static int echo_res_fn(struct net_buf *nb, void *user_data)
 		};
 
 	if (!nb) {
-		LOG_ERR("Echo command timeout");
+		LOG_ERROR("Echo command timeout");
 		active_client->status = MGMT_ERR_ETIMEOUT;
 		goto end;
 	}

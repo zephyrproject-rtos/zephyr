@@ -60,7 +60,7 @@ static int entropy_wch_init(const struct device *dev)
 	ret = clock_control_on(config->clk_dev, clock_sys);
 
 	if (ret < 0) {
-		LOG_ERR("Could not enable RNG Clock");
+		LOG_ERROR("Could not enable RNG Clock");
 		return ret;
 	}
 

@@ -354,7 +354,7 @@ int bt_keys_store(struct bt_keys *keys)
 	err = bt_settings_store_keys(keys->id, &keys->addr, keys->storage_start,
 				     BT_KEYS_STORAGE_LEN);
 	if (err) {
-		LOG_ERR("Failed to save keys (err %d)", err);
+		LOG_ERROR("Failed to save keys (err %d)", err);
 		return err;
 	}
 
@@ -375,13 +375,13 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	const char *next;
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -EINVAL;
 	}
 
 	len = read_cb(cb_arg, val, sizeof(val));
 	if (len < 0) {
-		LOG_ERR("Failed to read value (err %zd)", len);
+		LOG_ERROR("Failed to read value (err %zd)", len);
 		return -EINVAL;
 	}
 
@@ -389,7 +389,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		LOG_ERR("Unable to decode address %s", name);
+		LOG_ERROR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 
@@ -401,7 +401,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		unsigned long next_id = strtoul(next, NULL, 10);
 
 		if (next_id >= CONFIG_BT_ID_MAX) {
-			LOG_ERR("Invalid local identity %lu", next_id);
+			LOG_ERROR("Invalid local identity %lu", next_id);
 			return -EINVAL;
 		}
 
@@ -422,7 +422,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 	keys = bt_keys_get_addr(id, &addr);
 	if (!keys) {
-		LOG_ERR("Failed to allocate keys for %s", bt_addr_le_str(&addr));
+		LOG_ERROR("Failed to allocate keys for %s", bt_addr_le_str(&addr));
 		return -ENOMEM;
 	}
 	if (len != BT_KEYS_STORAGE_LEN) {
@@ -445,7 +445,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 			LOG_WRN("Keys for %s have no aging counter", bt_addr_le_str(&addr));
 			memcpy(keys->storage_start, val, len);
 		} else {
-			LOG_ERR("Invalid key length %zd != %zu", len, BT_KEYS_STORAGE_LEN);
+			LOG_ERROR("Invalid key length %zd != %zu", len, BT_KEYS_STORAGE_LEN);
 			bt_keys_clear(keys);
 
 			return -EINVAL;
@@ -488,8 +488,8 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	 */
 	if ((keys->cfg_version != STORAGE_CFG_VERSION) ||
 	    (sys_get_le24(keys->cfg_flags) != STORAGE_CFG_FLAGS)) {
-		LOG_ERR("Stored keys for %s do not match current config flags or version",
-			bt_addr_le_str(&addr));
+		LOG_ERROR("Stored keys for %s do not match current config flags or version",
+			  bt_addr_le_str(&addr));
 		bt_keys_clear(keys);
 		return -EINVAL;
 	}

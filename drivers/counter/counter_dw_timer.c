@@ -167,13 +167,13 @@ static int counter_dw_timer_set_top_value(const struct device *timer_dev,
 	k_spinlock_key_t key;
 
 	if (top_cfg == NULL) {
-		LOG_ERR("Invalid top value configuration");
+		LOG_ERROR("Invalid top value configuration");
 		return -EINVAL;
 	}
 
 	/* top value cannot be updated without reset */
 	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
-		LOG_ERR("Updating top value without reset is not supported");
+		LOG_ERROR("Updating top value without reset is not supported");
 		return -ENOTSUP;
 	}
 
@@ -182,7 +182,7 @@ static int counter_dw_timer_set_top_value(const struct device *timer_dev,
 	/* top value cannot be updated if the alarm is active */
 	if (data->alarm_cb) {
 		k_spin_unlock(&data->lock, key);
-		LOG_ERR("Top value cannot be updated, alarm is active!");
+		LOG_ERROR("Top value cannot be updated, alarm is active!");
 		return -EBUSY;
 	}
 
@@ -221,13 +221,13 @@ static int counter_dw_timer_set_alarm(const struct device *timer_dev, uint8_t ch
 	k_spinlock_key_t key;
 
 	if (alarm_cfg == NULL) {
-		LOG_ERR("Invalid alarm configuration");
+		LOG_ERROR("Invalid alarm configuration");
 		return -EINVAL;
 	}
 
 	/* Alarm callback is mandatory */
 	if (!alarm_cfg->callback) {
-		LOG_ERR("Alarm callback function cannot be null");
+		LOG_ERROR("Alarm callback function cannot be null");
 		return -EINVAL;
 	}
 
@@ -235,7 +235,7 @@ static int counter_dw_timer_set_alarm(const struct device *timer_dev, uint8_t ch
 	 * only when the counter reaches 0(downcounter)
 	 */
 	if (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) {
-		LOG_ERR("Absolute alarm is not supported");
+		LOG_ERROR("Absolute alarm is not supported");
 		return -ENOTSUP;
 	}
 
@@ -243,7 +243,7 @@ static int counter_dw_timer_set_alarm(const struct device *timer_dev, uint8_t ch
 
 	/* check if alarm is already active */
 	if (data->alarm_cb != NULL) {
-		LOG_ERR("Alarm is already active\n");
+		LOG_ERROR("Alarm is already active\n");
 		k_spin_unlock(&data->lock, key);
 		return -EBUSY;
 	}
@@ -324,13 +324,13 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 	struct counter_dw_timer_drv_data *const data = DEV_DATA(timer_dev);
 
 	if (!device_is_ready(timer_config->clk_dev)) {
-		LOG_ERR("clock controller device not ready");
+		LOG_ERROR("clock controller device not ready");
 		return -ENODEV;
 	}
 	ret = clock_control_get_rate(timer_config->clk_dev,
 					timer_config->clkid, &data->freq);
 	if (ret != 0) {
-		LOG_ERR("Unable to get clock rate: err:%d", ret);
+		LOG_ERROR("Unable to get clock rate: err:%d", ret);
 		return ret;
 	}
 #endif
@@ -339,13 +339,13 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
 	if (timer_config->reset.dev != NULL) {
 		if (!device_is_ready(timer_config->reset.dev)) {
-			LOG_ERR("Reset controller device not ready");
+			LOG_ERROR("Reset controller device not ready");
 			return -ENODEV;
 		}
 
 		ret = reset_line_toggle(timer_config->reset.dev, timer_config->reset.id);
 		if (ret != 0) {
-			LOG_ERR("Timer reset failed");
+			LOG_ERROR("Timer reset failed");
 			return ret;
 		}
 	}

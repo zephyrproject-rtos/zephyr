@@ -85,7 +85,7 @@ static void input_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		ret = k_msgq_get(&input_msgq, &evt, K_FOREVER);
 		if (ret) {
-			LOG_ERR("k_msgq_get error: %d", ret);
+			LOG_ERROR("k_msgq_get error: %d", ret);
 			continue;
 		}
 

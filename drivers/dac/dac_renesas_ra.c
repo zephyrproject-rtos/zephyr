@@ -34,7 +34,7 @@ static int dac_renesas_ra_write_value(const struct device *dev, uint8_t channel,
 	fsp_err_t fsp_err;
 
 	if (channel != 0) {
-		LOG_ERR("wrong channel id '%hhu'", channel);
+		LOG_ERROR("wrong channel id '%hhu'", channel);
 		return -ENOTSUP;
 	}
 
@@ -56,12 +56,12 @@ static int dac_renesas_ra_channel_setup(const struct device *dev,
 	fsp_err_t fsp_err;
 
 	if (channel_cfg->channel_id != 0) {
-		LOG_ERR("wrong channel id '%hhu'", channel_cfg->channel_id);
+		LOG_ERROR("wrong channel id '%hhu'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->resolution != 12) {
-		LOG_ERR("Resolution not supported");
+		LOG_ERROR("Resolution not supported");
 		return -ENOTSUP;
 	}
 
@@ -79,13 +79,13 @@ static int dac_renesas_ra_channel_setup(const struct device *dev,
 	config_extend->enable_charge_pump = channel_cfg->buffered;
 #else
 	if (channel_cfg->buffered) {
-		LOG_ERR("Requires MOCO clock enabled to support the buffer feature");
+		LOG_ERROR("Requires MOCO clock enabled to support the buffer feature");
 		return -ENOTSUP;
 	}
 #endif
 #else
 	if (channel_cfg->buffered) {
-		LOG_ERR("The MCU doesn't support the buffer feature");
+		LOG_ERROR("The MCU doesn't support the buffer feature");
 		return -ENOTSUP;
 	}
 #endif
@@ -94,7 +94,7 @@ static int dac_renesas_ra_channel_setup(const struct device *dev,
 	config_extend->internal_output_enabled = channel_cfg->internal;
 #else
 	if (channel_cfg->internal) {
-		LOG_ERR("The MCU doesn't support the internal output feature");
+		LOG_ERROR("The MCU doesn't support the internal output feature");
 		return -ENOTSUP;
 	}
 #endif

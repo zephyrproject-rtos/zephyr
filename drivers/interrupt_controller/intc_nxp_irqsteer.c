@@ -549,7 +549,7 @@ static void irqstr_request_l1_irq_unlocked(uint32_t irq,
 		if (disp) {
 			ret = pm_device_runtime_get(disp->dev);
 			if (ret < 0) {
-				LOG_ERR("failed to enable PM resources: %d", ret);
+				LOG_ERROR("failed to enable PM resources: %d", ret);
 				return;
 			}
 		}
@@ -581,7 +581,7 @@ static void irqstr_release_l1_irq_unlocked(uint32_t irq,
 		if (disp) {
 			ret = pm_device_runtime_put(disp->dev);
 			if (ret < 0) {
-				LOG_ERR("failed to disable PM resources: %d", ret);
+				LOG_ERROR("failed to disable PM resources: %d", ret);
 				return;
 			}
 		}

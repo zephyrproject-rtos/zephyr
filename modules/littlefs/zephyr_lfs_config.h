@@ -65,7 +65,7 @@ extern "C"
 #endif
 
 #ifndef LFS_ERROR
-#define LFS_ERROR(fmt, ...) LOG_ERR("%s:%d: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
+#define LFS_ERROR(fmt, ...) LOG_ERROR("%s:%d: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 #endif
 
 /* Runtime assertions */

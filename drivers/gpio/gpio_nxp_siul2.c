@@ -248,7 +248,7 @@ static int nxp_siul2_gpio_config_eirq(const struct device *dev,
 	enum nxp_siul2_eirq_trigger eirq_trigger;
 
 	if (irq_cfg == NULL) {
-		LOG_ERR("external interrupt controller not available or enabled");
+		LOG_ERROR("external interrupt controller not available or enabled");
 		return -ENOTSUP;
 	}
 
@@ -261,7 +261,7 @@ static int nxp_siul2_gpio_config_eirq(const struct device *dev,
 		if (mode == GPIO_INT_MODE_DISABLED) {
 			return 0;
 		}
-		LOG_ERR("pin %d cannot be used for external interrupt", pin);
+		LOG_ERROR("pin %d cannot be used for external interrupt", pin);
 		return -ENOTSUP;
 	}
 
@@ -274,7 +274,7 @@ static int nxp_siul2_gpio_config_eirq(const struct device *dev,
 		}
 		if (nxp_siul2_eirq_set_callback(irq_cfg->ctrl, irq_line, pin,
 					nxp_siul2_gpio_isr, (void *)dev)) {
-			LOG_ERR("pin %d is already in use", pin);
+			LOG_ERROR("pin %d is already in use", pin);
 			return -EBUSY;
 		}
 		nxp_siul2_eirq_enable_interrupt(irq_cfg->ctrl, irq_line, eirq_trigger);
@@ -316,7 +316,7 @@ static int nxp_siul2_gpio_config_wkpu(const struct device *dev,
 	enum wkpu_nxp_s32_trigger wkpu_trigger;
 
 	if (irq_cfg == NULL) {
-		LOG_ERR("WKPU controller not available or enabled");
+		LOG_ERROR("WKPU controller not available or enabled");
 		return -ENOTSUP;
 	}
 
@@ -329,7 +329,7 @@ static int nxp_siul2_gpio_config_wkpu(const struct device *dev,
 		if (mode == GPIO_INT_MODE_DISABLED) {
 			return 0;
 		}
-		LOG_ERR("pin %d cannot be used for external interrupt", pin);
+		LOG_ERROR("pin %d cannot be used for external interrupt", pin);
 		return -ENOTSUP;
 	}
 
@@ -342,7 +342,7 @@ static int nxp_siul2_gpio_config_wkpu(const struct device *dev,
 		}
 		if (wkpu_nxp_s32_set_callback(irq_cfg->ctrl, irq_line, pin,
 					      nxp_siul2_gpio_isr, (void *)dev)) {
-			LOG_ERR("pin %d is already in use", pin);
+			LOG_ERROR("pin %d is already in use", pin);
 			return -EBUSY;
 		}
 		wkpu_nxp_s32_enable_interrupt(irq_cfg->ctrl, irq_line, wkpu_trigger);

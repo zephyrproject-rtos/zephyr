@@ -743,23 +743,23 @@ static int clock_control_bl61x_clock_trim_32M(void)
 
 	err = syscon_read_reg(efuse, EFUSE_RC32M_TRIM_OFFSET, &trim);
 	if (err < 0) {
-		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
+		LOG_ERROR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;
 	}
 	err = syscon_read_reg(efuse, EFUSE_RC32M_TRIM_EP_OFFSET, &trim_ep);
 	if (err < 0) {
-		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
+		LOG_ERROR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;
 	}
 	if (!((trim_ep >> EFUSE_RC32M_TRIM_EP_EN_POS) & 1)) {
-		LOG_ERR("RC32M trim disabled!");
+		LOG_ERROR("RC32M trim disabled!");
 		return -EINVAL;
 	}
 
 	trim = (trim & EFUSE_RC32M_TRIM_MSK) >> EFUSE_RC32M_TRIM_POS;
 
 	if (((trim_ep >> EFUSE_RC32M_TRIM_EP_PARITY_POS) & 1) != (POPCOUNT(trim) & 1)) {
-		LOG_ERR("Bad trim parity");
+		LOG_ERROR("Bad trim parity");
 		return -EINVAL;
 	}
 
@@ -978,11 +978,11 @@ static int clock_control_bl61x_clock_trim_32K(void)
 
 	err = syscon_read_reg(efuse, EFUSE_RC32K_TRIM_OFFSET, &trim);
 	if (err < 0) {
-		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
+		LOG_ERROR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;
 	}
 	if (!((trim >> EFUSE_RC32K_TRIM_EN_POS) & 1)) {
-		LOG_ERR("RC32K trim disabled!");
+		LOG_ERROR("RC32K trim disabled!");
 		return -EINVAL;
 	}
 
@@ -990,7 +990,7 @@ static int clock_control_bl61x_clock_trim_32K(void)
 	trim = (trim & EFUSE_RC32K_TRIM_MSK) >> EFUSE_RC32K_TRIM_POS;
 
 	if (trim_parity != (POPCOUNT(trim) & 1)) {
-		LOG_ERR("Bad trim parity");
+		LOG_ERROR("Bad trim parity");
 		return -EINVAL;
 	}
 

@@ -105,8 +105,8 @@ static int state_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 		}
 
 		if (lwm2m_set_s64(&path, counter) < 0) {
-			LOG_ERR("Failed to increment counter resource %d/%d/%d", path.obj_id,
-				path.obj_inst_id, path.res_id);
+			LOG_ERROR("Failed to increment counter resource %d/%d/%d", path.obj_id,
+				  path.obj_inst_id, path.res_id);
 		}
 	}
 
@@ -121,8 +121,9 @@ static struct lwm2m_engine_obj_inst *button_create(uint16_t obj_inst_id)
 	/* Check that there is no other instance with this ID */
 	for (index = 0; index < ARRAY_SIZE(inst); index++) {
 		if (inst[index].obj && inst[index].obj_inst_id == obj_inst_id) {
-			LOG_ERR("Can not create instance - "
-				"already existing: %u", obj_inst_id);
+			LOG_ERROR("Can not create instance - "
+				  "already existing: %u",
+				  obj_inst_id);
 			return NULL;
 		}
 
@@ -133,8 +134,7 @@ static struct lwm2m_engine_obj_inst *button_create(uint16_t obj_inst_id)
 	}
 
 	if (avail < 0) {
-		LOG_ERR("Can not create instance - no more room: %u",
-			obj_inst_id);
+		LOG_ERROR("Can not create instance - no more room: %u", obj_inst_id);
 		return NULL;
 	}
 

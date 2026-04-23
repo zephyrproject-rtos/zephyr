@@ -107,22 +107,22 @@ static int adc_ra_channel_setup(const struct device *dev, const struct adc_chann
 	uint32_t sample_states = 0;
 
 	if (!((config->channel_available_mask & (1 << channel_cfg->channel_id)) != 0)) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Acquisition time is not valid");
+		LOG_ERROR("Acquisition time is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("unsupported differential mode");
+		LOG_ERROR("unsupported differential mode");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Gain is not valid");
+		LOG_ERROR("Gain is not valid");
 		return -EINVAL;
 	}
 
@@ -201,7 +201,7 @@ static int adc_map_vref(const struct adc_ra_config *cfg, adc_extended_cfg_t *ext
 			extend->adc_vref_control = ADC_VREF_CONTROL_VREFH;
 			return 0;
 		default:
-			LOG_ERR("Reference %d not supported", cfg->reference);
+			LOG_ERROR("Reference %d not supported", cfg->reference);
 			return -ENOTSUP;
 		}
 
@@ -217,12 +217,12 @@ static int adc_map_vref(const struct adc_ra_config *cfg, adc_extended_cfg_t *ext
 			extend->adc_vref_control = ADC_VREF_CONTROL_IVREF_AVSS0;
 			return 0;
 		default:
-			LOG_ERR("Reference %d not supported", cfg->reference);
+			LOG_ERROR("Reference %d not supported", cfg->reference);
 			return -ENOTSUP;
 		}
 
 	default:
-		LOG_ERR("Variant %d not supported", cfg->variant);
+		LOG_ERROR("Variant %d not supported", cfg->variant);
 		return -ENOTSUP;
 	}
 }
@@ -257,23 +257,23 @@ static int adc_ra_start_read(const struct device *dev, const struct adc_sequence
 		uint8_t expected = config->resolution - 1;
 
 		if (sequence->resolution != expected) {
-			LOG_ERR("unsupported resolution %d for single-ended mode, must be %d",
-				sequence->resolution, expected);
+			LOG_ERROR("unsupported resolution %d for single-ended mode, must be %d",
+				  sequence->resolution, expected);
 			return -ENOTSUP;
 		}
 	} else if (sequence->resolution != config->resolution) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if ((sequence->channels & ~config->channel_available_mask) != 0) {
-		LOG_ERR("unsupported channels in mask: 0x%08x", sequence->channels);
+		LOG_ERROR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
 	err = adc_ra_check_buffer_size(dev, sequence);
 	if (err) {
-		LOG_ERR("buffer size too small");
+		LOG_ERROR("buffer size too small");
 		return err;
 	}
 

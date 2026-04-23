@@ -443,7 +443,7 @@ static int instance_init(const struct device *dev)
 
 		rv = nrfx_gpiote_channel_alloc(dev_config->gpiote, gpiote_ch);
 		if (rv != 0) {
-			LOG_ERR("Failed to allocate GPIOTE channel.");
+			LOG_ERROR("Failed to allocate GPIOTE channel.");
 			/* Do not bother with freeing resources allocated
 			 * so far. The application needs to be reconfigured
 			 * anyway.
@@ -458,7 +458,7 @@ static int instance_init(const struct device *dev)
 				nrf_gpiote_out_task_get(*gpiote_ch)),
 			&ppi_handle);
 		if (rv < 0) {
-			LOG_ERR("Failed to allocate PPI channel.");
+			LOG_ERROR("Failed to allocate PPI channel.");
 			/* Do not bother with freeing resources allocated
 			 * so far. The application needs to be reconfigured
 			 * anyway.

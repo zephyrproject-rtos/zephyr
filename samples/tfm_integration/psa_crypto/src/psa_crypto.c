@@ -60,7 +60,7 @@ static psa_status_t crp_get_pub_key(psa_key_id_t key_id,
 		psa_export_public_key(key_id, key, key_buf_size, key_len),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to export public key.");
+		LOG_ERROR("Failed to export public key.");
 		goto err;
 	}
 
@@ -72,7 +72,7 @@ static psa_status_t crp_get_pub_key(psa_key_id_t key_id,
 		psa_purge_key(key_id),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to close persistent key.");
+		LOG_ERROR("Failed to close persistent key.");
 		goto err;
 	}
 
@@ -127,7 +127,7 @@ static psa_status_t crp_imp_key_secp256r1(psa_key_id_t key_id,
 		psa_import_key(&key_attributes, key_data, key_len, &key_id_out),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to import key.");
+		LOG_ERROR("Failed to import key.");
 		goto err;
 	}
 
@@ -136,7 +136,7 @@ static psa_status_t crp_imp_key_secp256r1(psa_key_id_t key_id,
 		psa_purge_key(key_id_out),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to purge key.");
+		LOG_ERROR("Failed to purge key.");
 		goto err;
 	}
 
@@ -151,20 +151,20 @@ static psa_status_t crp_imp_key_secp256r1(psa_key_id_t key_id,
 				       sizeof(data_out), &data_len),
 			__func__);
 		if (status != PSA_SUCCESS) {
-			LOG_ERR("Failed to export key.");
+			LOG_ERROR("Failed to export key.");
 			goto err;
 		}
 
 		/* Check key len. */
 		if (data_len != key_len) {
-			LOG_ERR("Unexpected number of bytes in exported key.");
+			LOG_ERROR("Unexpected number of bytes in exported key.");
 			goto err;
 		}
 
 		/* Verify that the exported private key matches input data. */
 		comp_result = memcmp(data_out, key_data, key_len);
 		if (comp_result != 0) {
-			LOG_ERR("Imported/exported private key mismatch.");
+			LOG_ERROR("Imported/exported private key mismatch.");
 			goto err;
 		}
 
@@ -178,7 +178,7 @@ static psa_status_t crp_imp_key_secp256r1(psa_key_id_t key_id,
 			psa_purge_key(key_id),
 			__func__);
 		if (status != PSA_SUCCESS) {
-			LOG_ERR("Failed to purge key.");
+			LOG_ERROR("Failed to purge key.");
 			goto err;
 		}
 	}
@@ -230,7 +230,7 @@ static psa_status_t crp_gen_key_secp256r1(psa_key_id_t key_id,
 		psa_generate_key(&key_attributes, &key_id_out),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to generate key.");
+		LOG_ERROR("Failed to generate key.");
 		goto err;
 	}
 
@@ -239,7 +239,7 @@ static psa_status_t crp_gen_key_secp256r1(psa_key_id_t key_id,
 		psa_purge_key(key_id_out),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to close persistent key.");
+		LOG_ERROR("Failed to close persistent key.");
 		goto err;
 	}
 
@@ -254,13 +254,13 @@ static psa_status_t crp_gen_key_secp256r1(psa_key_id_t key_id,
 				       sizeof(data_out), &data_len),
 			__func__);
 		if (status != PSA_SUCCESS) {
-			LOG_ERR("Failed to export key.");
+			LOG_ERROR("Failed to export key.");
 			goto err;
 		}
 
 		/* Check key len. */
 		if (data_len != key_len) {
-			LOG_ERR("Unexpected number of bytes in exported key.");
+			LOG_ERROR("Unexpected number of bytes in exported key.");
 			goto err;
 		}
 
@@ -275,7 +275,7 @@ static psa_status_t crp_gen_key_secp256r1(psa_key_id_t key_id,
 			psa_purge_key(key_id),
 			__func__);
 		if (status != PSA_SUCCESS) {
-			LOG_ERR("Failed to purge persistent key.");
+			LOG_ERROR("Failed to purge persistent key.");
 			goto err;
 		}
 	}
@@ -317,7 +317,7 @@ void crp_generate_csr(void)
 
 	status = al_psa_status(psa_crypto_init(), __func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Crypto init failed.");
+		LOG_ERROR("Crypto init failed.");
 		goto err;
 	}
 
@@ -360,7 +360,7 @@ void crp_generate_csr(void)
 				      priv_key_data),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to create persistent key #%d", key_slot);
+		LOG_ERROR("Failed to create persistent key #%d", key_slot);
 		goto err;
 	}
 #else /* !CONFIG_PSA_IMPORT_KEY */
@@ -387,7 +387,7 @@ void crp_generate_csr(void)
 				      PSA_KEY_USAGE_VERIFY_HASH),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to create persistent key #%d", key_slot);
+		LOG_ERROR("Failed to create persistent key #%d", key_slot);
 		goto err;
 	}
 #endif /* CONFIG_PSA_IMPORT_KEY */
@@ -402,7 +402,7 @@ void crp_generate_csr(void)
 
 	status = mbedtls_x509write_csr_set_subject_name(&req, "O=Linaro,CN=Device Certificate");
 	if (status != 0) {
-		LOG_ERR("failed! mbedtls_x509write_csr_set_subject_name returned %d", status);
+		LOG_ERROR("failed! mbedtls_x509write_csr_set_subject_name returned %d", status);
 		goto err;
 	}
 
@@ -414,7 +414,7 @@ void crp_generate_csr(void)
 
 	status = mbedtls_pk_wrap_psa(&pk_key_container, key_slot);
 	if (status != 0) {
-		LOG_ERR("failed! mbedtls_pk_wrap_psa returned -0x%04x", (unsigned int) -status);
+		LOG_ERROR("failed! mbedtls_pk_wrap_psa returned -0x%04x", (unsigned int)-status);
 		goto err;
 	}
 
@@ -428,8 +428,8 @@ void crp_generate_csr(void)
 
 	status = mbedtls_x509write_csr_pem(&req, output_buf, sizeof(output_buf));
 	if (status < 0) {
-		LOG_ERR("failed! mbedtls_x509write_csr_pem returned -0x%04x",
-			(unsigned int) -status);
+		LOG_ERROR("failed! mbedtls_x509write_csr_pem returned -0x%04x",
+			  (unsigned int)-status);
 		goto err;
 	}
 
@@ -451,7 +451,7 @@ void crp_generate_csr(void)
 				     &csr_json, json_encoded_buf, sizeof(json_encoded_buf));
 
 	if (status != 0) {
-		LOG_ERR("failed! json_obj_encode_buf returned 0x%04x", status);
+		LOG_ERROR("failed! json_obj_encode_buf returned 0x%04x", status);
 		goto err;
 	}
 
@@ -468,7 +468,7 @@ void crp_generate_csr(void)
 		psa_purge_key(key_slot),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to purge persistent key.");
+		LOG_ERROR("Failed to purge persistent key.");
 		goto err;
 	}
 
@@ -505,7 +505,7 @@ static psa_status_t crp_hash_payload(uint8_t *msg, size_t msg_len,
 	status = al_psa_status(psa_hash_setup(&hash_handle, alg),
 			       __func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to setup hash op.");
+		LOG_ERROR("Failed to setup hash op.");
 		goto err;
 	}
 
@@ -515,7 +515,7 @@ static psa_status_t crp_hash_payload(uint8_t *msg, size_t msg_len,
 	status = al_psa_status(psa_hash_update(&hash_handle, msg, msg_len),
 			       __func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to update hash.");
+		LOG_ERROR("Failed to update hash.");
 		goto err;
 	}
 
@@ -524,7 +524,7 @@ static psa_status_t crp_hash_payload(uint8_t *msg, size_t msg_len,
 					       hash, hash_buf_size, hash_len),
 			       __func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to finalize hash op.");
+		LOG_ERROR("Failed to finalize hash op.");
 		goto err;
 	}
 
@@ -566,7 +566,7 @@ static psa_status_t crp_sign_hash(psa_key_id_t key_id,
 			      sig, sig_buf_size, sig_len),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to sign hash w/persistent key #%d", key_id);
+		LOG_ERROR("Failed to sign hash w/persistent key #%d", key_id);
 		goto err;
 	}
 
@@ -583,7 +583,7 @@ static psa_status_t crp_sign_hash(psa_key_id_t key_id,
 		psa_purge_key(key_id),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to purge persistent key.");
+		LOG_ERROR("Failed to purge persistent key.");
 		goto err;
 	}
 
@@ -620,7 +620,7 @@ static psa_status_t crp_verify_sign(psa_key_id_t key_id,
 				sig, sig_len),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Signature verification failed!");
+		LOG_ERROR("Signature verification failed!");
 		goto err;
 	}
 
@@ -632,7 +632,7 @@ static psa_status_t crp_verify_sign(psa_key_id_t key_id,
 		psa_purge_key(key_id),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to close persistent key.");
+		LOG_ERROR("Failed to close persistent key.");
 		goto err;
 	}
 
@@ -656,7 +656,7 @@ static psa_status_t crp_dest_key(psa_key_id_t key_id)
 		psa_destroy_key(key_id),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to destroy a persistent key");
+		LOG_ERROR("Failed to destroy a persistent key");
 		goto err;
 	}
 
@@ -703,7 +703,7 @@ void crp_test(void)
 	/* Initialize crypto API. */
 	status = al_psa_status(psa_crypto_init(), __func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Crypto init failed.");
+		LOG_ERROR("Crypto init failed.");
 		return;
 	}
 

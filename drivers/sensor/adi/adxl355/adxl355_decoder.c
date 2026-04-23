@@ -83,7 +83,7 @@ static inline void adxl355_accel_convert_q31(q31_t *out, const uint8_t *buff,
 		sensitivity = SENSOR_G / 64000;
 		break;
 	default:
-		LOG_ERR("Invalid range setting");
+		LOG_ERROR("Invalid range setting");
 		return;
 	}
 	*out = sample * sensitivity;

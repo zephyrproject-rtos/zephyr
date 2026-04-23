@@ -35,7 +35,7 @@ static int scmi_smc_send_message(const struct device *transport, struct scmi_cha
 
 	ret = scmi_shmem_write_message(smc_chan->shmem, msg, use_polling);
 	if (ret < 0) {
-		LOG_ERR("failed to write message to shmem: %d", ret);
+		LOG_ERROR("failed to write message to shmem: %d", ret);
 		return ret;
 	}
 
@@ -44,7 +44,7 @@ static int scmi_smc_send_message(const struct device *transport, struct scmi_cha
 
 	/* Check SMC result */
 	if (res.a0 != 0) {
-		LOG_ERR("SMC call failed: 0x%lx", res.a0);
+		LOG_ERROR("SMC call failed: 0x%lx", res.a0);
 		return -ENOTSUP;
 	}
 

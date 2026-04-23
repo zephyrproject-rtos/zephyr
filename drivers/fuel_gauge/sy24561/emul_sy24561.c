@@ -64,10 +64,10 @@ static int emul_sy24561_reg_read(const struct emul *target, uint8_t reg, uint16_
 		*val = 0xffff;
 		break;
 	case SY24561_REG_MODE:
-		LOG_ERR("Attempt to read write only register 0x%x", reg);
+		LOG_ERROR("Attempt to read write only register 0x%x", reg);
 		return -EINVAL;
 	default:
-		LOG_ERR("Unknown register 0x%x read", reg);
+		LOG_ERROR("Unknown register 0x%x read", reg);
 		return -EIO;
 	}
 	LOG_INF("read 0x%x = 0x%x", reg, *val);
@@ -86,36 +86,36 @@ static int sy24561_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 	switch (num_msgs) {
 	case 1:
 		if (msgs[0].flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 
 		if (msgs[0].len != 3) {
-			LOG_ERR("Unexpected msg0 length %d", msgs->len);
+			LOG_ERROR("Unexpected msg0 length %d", msgs->len);
 			return -EIO;
 		}
 
 		ret = emul_sy24561_reg_write(target, *msgs[0].buf, sys_get_be16(msgs[0].buf + 1));
 		if (ret) {
-			LOG_ERR("emul_sy24561_reg_write returned %d", ret);
+			LOG_ERROR("emul_sy24561_reg_write returned %d", ret);
 		}
 		break;
 	case 2:
 		if (msgs[0].flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 		if (msgs[0].len != 1) {
-			LOG_ERR("Unexpected msg0 length %d", msgs[0].len);
+			LOG_ERROR("Unexpected msg0 length %d", msgs[0].len);
 			return -EIO;
 		}
 
 		if (msgs[1].flags & I2C_MSG_WRITE) {
-			LOG_ERR("Unexpected write");
+			LOG_ERROR("Unexpected write");
 			return -EIO;
 		}
 		if (msgs[1].len != 2) {
-			LOG_ERR("Unexpected msg1 length %d", msgs[1].len);
+			LOG_ERROR("Unexpected msg1 length %d", msgs[1].len);
 			return -EIO;
 		}
 
@@ -123,14 +123,14 @@ static int sy24561_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 
 		ret = emul_sy24561_reg_read(target, *msgs[0].buf, &val);
 		if (ret) {
-			LOG_ERR("emul_sy24561_reg_read returned %d", ret);
+			LOG_ERROR("emul_sy24561_reg_read returned %d", ret);
 			return ret;
 		}
 
 		sys_put_be16(val, msgs[1].buf);
 		break;
 	default:
-		LOG_ERR("Invalid number of messages: %d", num_msgs);
+		LOG_ERROR("Invalid number of messages: %d", num_msgs);
 		return -EIO;
 	}
 

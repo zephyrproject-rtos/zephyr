@@ -85,7 +85,7 @@ static int video_sw_generator_set_fmt(const struct device *dev, struct video_for
 
 	ret = video_format_caps_index(fmts, fmt, &idx);
 	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution");
+		LOG_ERROR("Unsupported pixel format or resolution");
 		return ret;
 	}
 
@@ -151,7 +151,7 @@ static inline int video_sw_generator_get_color_idx(uint16_t w, uint16_t width, b
 static uint16_t video_sw_generator_fill_yuyv(uint8_t *buffer, uint16_t width, bool hflip)
 {
 	if (width % 2 != 0) {
-		LOG_ERR("YUYV pixels always go by pairs");
+		LOG_ERROR("YUYV pixels always go by pairs");
 		return 0;
 	}
 
@@ -238,7 +238,7 @@ static uint16_t video_sw_generator_fill_bayer8(uint8_t *buffer, uint16_t width, 
 	uint8_t *row1 = buffer + width;
 
 	if (width % 2 != 0) {
-		LOG_ERR("Bayer pixels always go by pairs (vertically and horizontally)");
+		LOG_ERROR("Bayer pixels always go by pairs (vertically and horizontally)");
 		return 0;
 	}
 
@@ -262,7 +262,7 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 	uint16_t lines = 0;
 
 	if (vbuf->size < pitch * 2) {
-		LOG_ERR("At least 2 lines needed for bayer formats support");
+		LOG_ERROR("At least 2 lines needed for bayer formats support");
 		return -EINVAL;
 	}
 
@@ -460,7 +460,7 @@ static int video_sw_generator_enum_frmival(const struct device *dev, struct vide
 
 	ret = video_format_caps_index(fmts, fie->format, &idx);
 	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution");
+		LOG_ERROR("Unsupported pixel format or resolution");
 		return ret;
 	}
 

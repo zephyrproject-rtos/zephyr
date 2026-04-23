@@ -41,7 +41,7 @@ static void broadcast_stream_started_cb(struct bt_bap_stream *stream)
 
 	err = cap_initiator_tx_register_stream(cap_stream);
 	if (err != 0) {
-		LOG_ERR("Failed to register %p for TX: %d", stream, err);
+		LOG_ERROR("Failed to register %p for TX: %d", stream, err);
 	}
 }
 
@@ -54,7 +54,7 @@ static void broadcast_stream_stopped_cb(struct bt_bap_stream *stream, uint8_t re
 
 	err = cap_initiator_tx_unregister_stream(cap_stream);
 	if (err != 0) {
-		LOG_ERR("Failed to unregister %p for TX: %d", stream, err);
+		LOG_ERROR("Failed to unregister %p for TX: %d", stream, err);
 	}
 }
 
@@ -76,14 +76,14 @@ static int setup_extended_adv(struct bt_le_ext_adv **adv)
 	/* Create a non-connectable non-scannable advertising set */
 	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_BROADCAST_FAST, NULL, adv);
 	if (err != 0) {
-		LOG_ERR("Unable to create extended advertising set: %d", err);
+		LOG_ERROR("Unable to create extended advertising set: %d", err);
 		return err;
 	}
 
 	/* Set periodic advertising parameters */
 	err = bt_le_per_adv_set_param(*adv, BT_BAP_PER_ADV_PARAM_BROADCAST_FAST);
 	if (err != 0) {
-		LOG_ERR("Failed to set periodic advertising parameters: %d", err);
+		LOG_ERROR("Failed to set periodic advertising parameters: %d", err);
 		return err;
 	}
 
@@ -115,7 +115,7 @@ static int broadcast_create(struct bt_cap_broadcast_source **broadcast_source)
 
 	err = bt_cap_initiator_broadcast_audio_create(&create_param, broadcast_source);
 	if (err != 0) {
-		LOG_ERR("Unable to start broadcast source: %d", err);
+		LOG_ERROR("Unable to start broadcast source: %d", err);
 		return err;
 	}
 
@@ -138,7 +138,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 #else
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	if (err) {
-		LOG_ERR("Unable to generate broadcast ID: %d\n", err);
+		LOG_ERROR("Unable to generate broadcast ID: %d\n", err);
 		return err;
 	}
 #endif /* CONFIG_STATIC_BROADCAST_ID */
@@ -151,14 +151,14 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	ext_ad.data = ad_buf.data;
 	err = bt_le_ext_adv_set_data(adv, &ext_ad, 1, NULL, 0);
 	if (err != 0) {
-		LOG_ERR("Failed to set extended advertising data: %d", err);
+		LOG_ERROR("Failed to set extended advertising data: %d", err);
 		return err;
 	}
 
 	/* Setup periodic advertising data */
 	err = bt_cap_initiator_broadcast_get_base(source, &base_buf);
 	if (err != 0) {
-		LOG_ERR("Failed to get encoded BASE: %d", err);
+		LOG_ERROR("Failed to get encoded BASE: %d", err);
 		return err;
 	}
 
@@ -167,7 +167,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	per_ad.data = base_buf.data;
 	err = bt_le_per_adv_set_data(adv, &per_ad, 1);
 	if (err != 0) {
-		LOG_ERR("Failed to set periodic advertising data: %d", err);
+		LOG_ERROR("Failed to set periodic advertising data: %d", err);
 		return err;
 	}
 
@@ -181,14 +181,14 @@ static int start_extended_adv(struct bt_le_ext_adv *adv)
 	/* Start extended advertising */
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
-		LOG_ERR("Failed to start extended advertising: %d", err);
+		LOG_ERROR("Failed to start extended advertising: %d", err);
 		return err;
 	}
 
 	/* Enable Periodic Advertising */
 	err = bt_le_per_adv_start(adv);
 	if (err != 0) {
-		LOG_ERR("Failed to enable periodic advertising: %d", err);
+		LOG_ERROR("Failed to enable periodic advertising: %d", err);
 		return err;
 	}
 
@@ -202,7 +202,7 @@ static int broadcast_start(struct bt_cap_broadcast_source *broadcast_source,
 
 	err = bt_cap_initiator_broadcast_audio_start(broadcast_source, adv);
 	if (err != 0) {
-		LOG_ERR("Unable to start broadcast source: %d", err);
+		LOG_ERROR("Unable to start broadcast source: %d", err);
 		return err;
 	}
 

@@ -417,7 +417,7 @@ otError otPlatBleGapAdvSetData(otInstance *aInstance, uint8_t *aAdvertisementDat
 	ARG_UNUSED(aInstance);
 
 	if (aAdvertisementLen > OT_TCAT_ADVERTISEMENT_MAX_LEN || aAdvertisementData == NULL) {
-		LOG_ERR("Invalid TCAT Advertisement parameters advlen: %d", aAdvertisementLen);
+		LOG_ERROR("Invalid TCAT Advertisement parameters advlen: %d", aAdvertisementLen);
 		return OT_ERROR_INVALID_ARGS;
 	}
 
@@ -434,7 +434,7 @@ otError otPlatBleGapAdvUpdateData(otInstance *aInstance, uint8_t *aAdvertisement
 	int err;
 
 	if (aAdvertisementLen > OT_TCAT_ADVERTISEMENT_MAX_LEN || aAdvertisementData == NULL) {
-		LOG_ERR("Invalid TCAT Advertisement parameters advlen: %d", aAdvertisementLen);
+		LOG_ERROR("Invalid TCAT Advertisement parameters advlen: %d", aAdvertisementLen);
 		return OT_ERROR_INVALID_ARGS;
 	}
 

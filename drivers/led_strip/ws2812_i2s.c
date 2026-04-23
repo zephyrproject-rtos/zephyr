@@ -95,19 +95,19 @@ static int ws2812_strip_update(const struct ws2812_i2s_cfg *cfg, void *mem_block
 	ret = i2s_write(cfg->dev, mem_block, cfg->tx_buf_bytes);
 	if (ret < 0) {
 		k_mem_slab_free(cfg->mem_slab, mem_block);
-		LOG_ERR("Failed to write data: %d", ret);
+		LOG_ERROR("Failed to write data: %d", ret);
 		return ret;
 	}
 
 	ret = i2s_trigger(cfg->dev, I2S_DIR_TX, I2S_TRIGGER_START);
 	if (ret < 0) {
-		LOG_ERR("Failed to trigger command %d on TX: %d", I2S_TRIGGER_START, ret);
+		LOG_ERROR("Failed to trigger command %d on TX: %d", I2S_TRIGGER_START, ret);
 		return ret;
 	}
 
 	ret = i2s_trigger(cfg->dev, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
 	if (ret < 0) {
-		LOG_ERR("Failed to trigger command %d on TX: %d", I2S_TRIGGER_DRAIN, ret);
+		LOG_ERROR("Failed to trigger command %d on TX: %d", I2S_TRIGGER_DRAIN, ret);
 		return ret;
 	}
 
@@ -128,7 +128,7 @@ static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pix
 
 	ret = k_mem_slab_alloc(cfg->mem_slab, &mem_block, K_SECONDS(10));
 	if (ret < 0) {
-		LOG_ERR("Unable to allocate mem slab for TX (err %d)", ret);
+		LOG_ERROR("Unable to allocate mem slab for TX (err %d)", ret);
 		return -ENOMEM;
 	}
 
@@ -175,7 +175,7 @@ static int ws2812_strip_update_channels(const struct device *dev, uint8_t *chann
 
 	ret = k_mem_slab_alloc(cfg->mem_slab, &mem_block, K_SECONDS(10));
 	if (ret < 0) {
-		LOG_ERR("Unable to allocate mem slab for TX (err %d)", ret);
+		LOG_ERROR("Unable to allocate mem slab for TX (err %d)", ret);
 		return -ENOMEM;
 	}
 	/*
@@ -222,7 +222,7 @@ static int ws2812_i2s_init(const struct device *dev)
 
 	ret = i2s_configure(cfg->dev, I2S_DIR_TX, &config);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure I2S device: %d\n", ret);
+		LOG_ERROR("Failed to configure I2S device: %d\n", ret);
 		return ret;
 	}
 
@@ -234,9 +234,9 @@ static int ws2812_i2s_init(const struct device *dev)
 		case LED_COLOR_ID_BLUE:
 			break;
 		default:
-			LOG_ERR("%s: invalid channel to color mapping."
-				"Check the color-mapping DT property",
-				dev->name);
+			LOG_ERROR("%s: invalid channel to color mapping."
+				  "Check the color-mapping DT property",
+				  dev->name);
 			return -EINVAL;
 		}
 	}

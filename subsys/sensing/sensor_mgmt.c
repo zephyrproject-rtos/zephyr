@@ -94,7 +94,7 @@ static int set_arbitrate_interval(struct sensing_sensor *sensor, uint32_t interv
 	ret = sensor_attr_set(sensor->dev, config->chan,
 			SENSOR_ATTR_SAMPLING_FREQUENCY, &odr);
 	if (ret) {
-		LOG_ERR("%s set attr freq failed:%d", sensor->dev->name, ret);
+		LOG_ERROR("%s set attr freq failed:%d", sensor->dev->name, ret);
 		return ret;
 	}
 
@@ -374,7 +374,7 @@ int close_sensor(struct sensing_connection **conn)
 	struct sensing_connection *tmp_conn = *conn;
 
 	if (tmp_conn == NULL) {
-		LOG_ERR("connection should not be NULL");
+		LOG_ERROR("connection should not be NULL");
 		return -EINVAL;
 	}
 
@@ -396,14 +396,14 @@ int sensing_register_callback(struct sensing_connection *conn,
 			      struct sensing_callback_list *cb_list)
 {
 	if (conn == NULL) {
-		LOG_ERR("register sensing callback list, connection not be NULL");
+		LOG_ERROR("register sensing callback list, connection not be NULL");
 		return -ENODEV;
 	}
 
 	__ASSERT(!conn->sink, "only connection to application could register sensing callback");
 
 	if (cb_list == NULL) {
-		LOG_ERR("callback should not be NULL");
+		LOG_ERROR("callback should not be NULL");
 		return -ENODEV;
 	}
 	conn->callback_list = cb_list;
@@ -418,8 +418,8 @@ int set_interval(struct sensing_connection *conn, uint32_t interval)
 	LOG_INF("set interval, sensor:%s, interval:%u(us)", conn->source->dev->name, interval);
 
 	if (interval > 0 && interval < conn->source->info->minimal_interval) {
-		LOG_ERR("interval:%d(us) should no less than min interval:%d(us)",
-					interval, conn->source->info->minimal_interval);
+		LOG_ERROR("interval:%d(us) should no less than min interval:%d(us)", interval,
+			  conn->source->info->minimal_interval);
 		return -EINVAL;
 	}
 
@@ -455,7 +455,7 @@ int set_sensitivity(struct sensing_connection *conn, int8_t index, uint32_t sens
 		sensitivity, conn->source->sensitivity_count);
 
 	if (index < SENSING_SENSITIVITY_INDEX_ALL || index >= conn->source->sensitivity_count) {
-		LOG_ERR("sensor:%s sensitivity index:%d invalid", conn->source->dev->name, index);
+		LOG_ERROR("sensor:%s sensitivity index:%d invalid", conn->source->dev->name, index);
 		return -EINVAL;
 	}
 
@@ -479,7 +479,7 @@ int get_sensitivity(struct sensing_connection *conn, int8_t index, uint32_t *sen
 	*sensitivity = UINT32_MAX;
 
 	if (index < SENSING_SENSITIVITY_INDEX_ALL || index >= conn->source->sensitivity_count) {
-		LOG_ERR("sensor:%s sensitivity index:%d invalid", conn->source->dev->name, index);
+		LOG_ERROR("sensor:%s sensitivity index:%d invalid", conn->source->dev->name, index);
 		return -EINVAL;
 	}
 
@@ -487,8 +487,8 @@ int get_sensitivity(struct sensing_connection *conn, int8_t index, uint32_t *sen
 		/* each sensitivity index value should be same for global sensitivity */
 		for (i = 1; i < conn->source->sensitivity_count; i++) {
 			if (conn->sensitivity[i] != conn->sensitivity[0]) {
-				LOG_ERR("sensitivity[%d]:%d should be same as sensitivity:%d",
-					i, conn->sensitivity[i], conn->sensitivity[0]);
+				LOG_ERROR("sensitivity[%d]:%d should be same as sensitivity:%d", i,
+					  conn->sensitivity[i], conn->sensitivity[0]);
 				return -EINVAL;
 			}
 		}
@@ -507,7 +507,7 @@ int get_sensitivity(struct sensing_connection *conn, int8_t index, uint32_t *sen
 int sensing_get_sensors(int *sensor_nums, const struct sensing_sensor_info **info)
 {
 	if (info == NULL) {
-		LOG_ERR("sensing_sensor_info should not be NULL");
+		LOG_ERROR("sensing_sensor_info should not be NULL");
 		return -ENODEV;
 	}
 

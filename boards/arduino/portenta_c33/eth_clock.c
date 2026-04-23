@@ -18,13 +18,13 @@ static int eth_clock_enable(void)
 	const struct device *eth_clk_dev = DEVICE_DT_GET(DT_NODELABEL(eth_clock));
 
 	if (!device_is_ready(eth_clk_dev)) {
-		LOG_ERR("Invalid eth_clock device");
+		LOG_ERROR("Invalid eth_clock device");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(eth_clk_dev, (clock_control_subsys_t)0);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable Ethernet clock, error %d", ret);
+		LOG_ERROR("Failed to enable Ethernet clock, error %d", ret);
 		return ret;
 	}
 

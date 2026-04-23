@@ -84,7 +84,7 @@ The following is an example of a very simple response handling function:
                         LOG_INF("Last packet received");
                 }
         } else {
-                LOG_ERR("Error in sending request %d", data->result_code);
+                LOG_ERROR("Error in sending request %d", data->result_code);
         }
     }
 

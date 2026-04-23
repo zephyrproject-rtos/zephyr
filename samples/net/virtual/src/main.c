@@ -238,15 +238,14 @@ static int setup_iface(struct net_if *iface,
 	    net_if_flag_is_set(iface, NET_IF_IPV6)) {
 
 		if (net_addr_pton(NET_AF_INET6, ipv6_addr, &addr6)) {
-			LOG_ERR("Invalid address: %s", ipv6_addr);
+			LOG_ERROR("Invalid address: %s", ipv6_addr);
 			return -EINVAL;
 		}
 
 		ifaddr = net_if_ipv6_addr_add(iface, &addr6,
 					      NET_ADDR_MANUAL, 0);
 		if (!ifaddr) {
-			LOG_ERR("Cannot add %s to interface %p",
-				ipv6_addr, iface);
+			LOG_ERROR("Cannot add %s to interface %p", ipv6_addr, iface);
 			return -EINVAL;
 		}
 
@@ -257,8 +256,7 @@ static int setup_iface(struct net_if *iface,
 		params.family = NET_AF_INET6;
 
 		if (net_addr_pton(NET_AF_INET6, peer6addr, &addr6)) {
-			LOG_ERR("Cannot parse peer %s address %s to tunnel",
-				"IPv6", peer6addr);
+			LOG_ERROR("Cannot parse peer %s address %s to tunnel", "IPv6", peer6addr);
 		} else {
 			net_ipaddr_copy(&params.peer6addr, &addr6);
 
@@ -266,11 +264,9 @@ static int setup_iface(struct net_if *iface,
 				NET_REQUEST_VIRTUAL_INTERFACE_SET_PEER_ADDRESS,
 				iface, &params, sizeof(params));
 			if (ret < 0 && ret != -ENOTSUP) {
-				LOG_ERR("Cannot set peer %s address %s to "
-					"interface %d (%d)",
-					"IPv6", peer6addr,
-					net_if_get_by_iface(iface),
-					ret);
+				LOG_ERROR("Cannot set peer %s address %s to "
+					  "interface %d (%d)",
+					  "IPv6", peer6addr, net_if_get_by_iface(iface), ret);
 			}
 		}
 
@@ -279,8 +275,8 @@ static int setup_iface(struct net_if *iface,
 		ret = net_mgmt(NET_REQUEST_VIRTUAL_INTERFACE_SET_MTU,
 			       iface, &params, sizeof(params));
 		if (ret < 0 && ret != -ENOTSUP) {
-			LOG_ERR("Cannot set interface %d MTU to %d (%d)",
-				net_if_get_by_iface(iface), params.mtu, ret);
+			LOG_ERROR("Cannot set interface %d MTU to %d (%d)",
+				  net_if_get_by_iface(iface), params.mtu, ret);
 		}
 	}
 
@@ -289,15 +285,14 @@ try_ipv4:
 	    net_if_flag_is_set(iface, NET_IF_IPV4)) {
 
 		if (net_addr_pton(NET_AF_INET, ipv4_addr, &addr4)) {
-			LOG_ERR("Invalid address: %s", ipv4_addr);
+			LOG_ERROR("Invalid address: %s", ipv4_addr);
 			return -EINVAL;
 		}
 
 		ifaddr = net_if_ipv4_addr_add(iface, &addr4,
 					      NET_ADDR_MANUAL, 0);
 		if (!ifaddr) {
-			LOG_ERR("Cannot add %s to interface %p",
-				ipv4_addr, iface);
+			LOG_ERROR("Cannot add %s to interface %p", ipv4_addr, iface);
 			return -EINVAL;
 		}
 
@@ -305,7 +300,7 @@ try_ipv4:
 			struct net_in_addr nm;
 
 			if (net_addr_pton(NET_AF_INET, netmask, &nm)) {
-				LOG_ERR("Invalid netmask: %s", netmask);
+				LOG_ERROR("Invalid netmask: %s", netmask);
 				return -EINVAL;
 			}
 
@@ -319,8 +314,7 @@ try_ipv4:
 		params.family = NET_AF_INET;
 
 		if (net_addr_pton(NET_AF_INET, peer4addr, &addr4)) {
-			LOG_ERR("Cannot parse peer %s address %s to tunnel",
-				"IPv4", peer4addr);
+			LOG_ERROR("Cannot parse peer %s address %s to tunnel", "IPv4", peer4addr);
 		} else {
 			net_ipaddr_copy(&params.peer4addr, &addr4);
 
@@ -328,11 +322,9 @@ try_ipv4:
 				NET_REQUEST_VIRTUAL_INTERFACE_SET_PEER_ADDRESS,
 				iface, &params, sizeof(params));
 			if (ret < 0 && ret != -ENOTSUP) {
-				LOG_ERR("Cannot set peer %s address %s to "
-					"interface %d (%d)",
-					"IPv4", peer4addr,
-					net_if_get_by_iface(iface),
-					ret);
+				LOG_ERROR("Cannot set peer %s address %s to "
+					  "interface %d (%d)",
+					  "IPv4", peer4addr, net_if_get_by_iface(iface), ret);
 			}
 		}
 
@@ -342,8 +334,8 @@ try_ipv4:
 			       iface, &params,
 			       sizeof(struct virtual_interface_req_params));
 		if (ret < 0 && ret != -ENOTSUP) {
-			LOG_ERR("Cannot set interface %d MTU to %d (%d)",
-				net_if_get_by_iface(iface), params.mtu, ret);
+			LOG_ERROR("Cannot set interface %d MTU to %d (%d)",
+				  net_if_get_by_iface(iface), params.mtu, ret);
 		}
 	}
 
@@ -397,7 +389,7 @@ int main(void)
 			  NULL, NULL,
 			  CONFIG_NET_SAMPLE_IFACE3_MY_IPV4_NETMASK);
 	if (ret < 0) {
-		LOG_ERR("Cannot set IP address to test interface");
+		LOG_ERROR("Cannot set IP address to test interface");
 	}
 
 	if (ud.ethernet) {
@@ -407,7 +399,7 @@ int main(void)
 				  NULL, NULL,
 				  CONFIG_NET_CONFIG_MY_IPV4_NETMASK);
 		if (ret < 0) {
-			LOG_ERR("Cannot set IP address to Ethernet interface");
+			LOG_ERROR("Cannot set IP address to Ethernet interface");
 		}
 	}
 
@@ -418,7 +410,7 @@ int main(void)
 			  CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
 			  CONFIG_NET_SAMPLE_IFACE2_MY_IPV4_NETMASK);
 	if (ret < 0) {
-		LOG_ERR("Cannot set IP address to IPIP tunnel");
+		LOG_ERROR("Cannot set IP address to IPIP tunnel");
 	}
 
 	/* This sample application does nothing itself. You can use

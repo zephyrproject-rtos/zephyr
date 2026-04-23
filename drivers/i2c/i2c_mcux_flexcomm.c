@@ -257,12 +257,12 @@ static int mcux_flexcomm_recover_bus(const struct device *dev)
 	I2C_Type *base = config->base;
 
 	if (!gpio_is_ready_dt(&config->scl)) {
-		LOG_ERR("SCL GPIO device not ready");
+		LOG_ERROR("SCL GPIO device not ready");
 		return -EIO;
 	}
 
 	if (!gpio_is_ready_dt(&config->sda)) {
-		LOG_ERR("SDA GPIO device not ready");
+		LOG_ERROR("SDA GPIO device not ready");
 		return -EIO;
 	}
 
@@ -277,13 +277,13 @@ static int mcux_flexcomm_recover_bus(const struct device *dev)
 
 	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
 	if (error != 0) {
-		LOG_ERR("failed to configure SCL GPIO (err %d)", error);
+		LOG_ERROR("failed to configure SCL GPIO (err %d)", error);
 		goto restore;
 	}
 
 	error = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
 	if (error != 0) {
-		LOG_ERR("failed to configure SDA GPIO (err %d)", error);
+		LOG_ERROR("failed to configure SDA GPIO (err %d)", error);
 		goto restore;
 	}
 
@@ -292,13 +292,13 @@ static int mcux_flexcomm_recover_bus(const struct device *dev)
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
 	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
 	if (error != 0) {
-		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+		LOG_ERROR("failed to configure I2C bitbang (err %d)", error);
 		goto restore;
 	}
 
 	error = i2c_bitbang_recover_bus(&bitbang_ctx);
 	if (error != 0) {
-		LOG_ERR("failed to recover bus (err %d)", error);
+		LOG_ERROR("failed to recover bus (err %d)", error);
 		goto restore;
 	}
 
@@ -400,7 +400,7 @@ static void i2c_target_transfer_callback(I2C_Type *base,
 
 	target = mcux_flexcomm_find_target_by_address(data, address);
 	if (!target) {
-		LOG_ERR("No target found for address: 0x%x", address);
+		LOG_ERROR("No target found for address: 0x%x", address);
 		return;
 	}
 
@@ -580,7 +580,7 @@ static int mcux_flexcomm_init_common(const struct device *dev)
 	int error;
 
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("Reset device not ready");
+		LOG_ERROR("Reset device not ready");
 		return -ENODEV;
 	}
 
@@ -595,7 +595,7 @@ static int mcux_flexcomm_init_common(const struct device *dev)
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 

@@ -50,7 +50,7 @@ static void prov_send_fail_msg(uint8_t err)
 	net_buf_simple_add_u8(&buf, err);
 
 	if (bt_mesh_prov_send(&buf, NULL)) {
-		LOG_ERR("Failed to send Provisioning Failed message");
+		LOG_ERROR("Failed to send Provisioning Failed message");
 	}
 }
 
@@ -129,7 +129,7 @@ static void prov_invite(const uint8_t *data)
 	memcpy(bt_mesh_prov_link.conf_inputs.capabilities, &buf.data[1], PDU_LEN_CAPABILITIES);
 
 	if (bt_mesh_prov_send(&buf, NULL)) {
-		LOG_ERR("Failed to send capabilities");
+		LOG_ERROR("Failed to send capabilities");
 		return;
 	}
 
@@ -151,7 +151,7 @@ static void prov_start(const uint8_t *data)
 		data[0] == BT_MESH_PROV_AUTH_CMAC_AES128_AES_CCM) {
 		bt_mesh_prov_link.algorithm = data[0];
 	} else {
-		LOG_ERR("Unknown algorithm 0x%02x", data[0]);
+		LOG_ERROR("Unknown algorithm 0x%02x", data[0]);
 		prov_fail(PROV_ERR_NVAL_FMT);
 		return;
 	}
@@ -161,7 +161,7 @@ static void prov_start(const uint8_t *data)
 	if (data[1] > PUB_KEY_OOB ||
 	    (data[1] == PUB_KEY_OOB &&
 	     (!IS_ENABLED(CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY) || !bt_mesh_prov->public_key_be))) {
-		LOG_ERR("Invalid public key type: 0x%02x", data[1]);
+		LOG_ERROR("Invalid public key type: 0x%02x", data[1]);
 		prov_fail(PROV_ERR_NVAL_FMT);
 		return;
 	}
@@ -183,8 +183,9 @@ static void prov_start(const uint8_t *data)
 	}
 
 	if (bt_mesh_prov_auth(false, data[2], data[3], data[4]) < 0) {
-		LOG_ERR("Invalid authentication method: 0x%02x; "
-			"action: 0x%02x; size: 0x%02x", data[2], data[3], data[4]);
+		LOG_ERROR("Invalid authentication method: 0x%02x; "
+			  "action: 0x%02x; size: 0x%02x",
+			  data[2], data[3], data[4]);
 		prov_fail(PROV_ERR_NVAL_FMT);
 		return;
 	}
@@ -218,7 +219,7 @@ static void send_confirm(void)
 
 	if (bt_mesh_prov_conf_salt(bt_mesh_prov_link.algorithm, inputs,
 				   bt_mesh_prov_link.conf_salt)) {
-		LOG_ERR("Unable to generate confirmation salt");
+		LOG_ERROR("Unable to generate confirmation salt");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -234,8 +235,8 @@ static void send_confirm(void)
 	}
 
 	if (bt_mesh_prov_conf_key(bt_mesh_prov_link.algorithm, conf_key_input,
-			bt_mesh_prov_link.conf_salt, bt_mesh_prov_link.conf_key)) {
-		LOG_ERR("Unable to generate confirmation key");
+				  bt_mesh_prov_link.conf_salt, bt_mesh_prov_link.conf_key)) {
+		LOG_ERROR("Unable to generate confirmation key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -243,7 +244,7 @@ static void send_confirm(void)
 	LOG_DBG("ConfirmationKey: %s", bt_hex(bt_mesh_prov_link.conf_key, auth_size));
 
 	if (bt_rand(bt_mesh_prov_link.rand, auth_size)) {
-		LOG_ERR("Unable to generate random number");
+		LOG_ERROR("Unable to generate random number");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -253,15 +254,15 @@ static void send_confirm(void)
 	bt_mesh_prov_buf_init(&cfm, PROV_CONFIRM);
 
 	if (bt_mesh_prov_conf(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_key,
-			bt_mesh_prov_link.rand, bt_mesh_prov_link.auth,
-			net_buf_simple_add(&cfm, auth_size))) {
-		LOG_ERR("Unable to generate confirmation value");
+			      bt_mesh_prov_link.rand, bt_mesh_prov_link.auth,
+			      net_buf_simple_add(&cfm, auth_size))) {
+		LOG_ERROR("Unable to generate confirmation value");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
 	if (bt_mesh_prov_send(&cfm, NULL)) {
-		LOG_ERR("Failed to send Provisioning Confirm");
+		LOG_ERROR("Failed to send Provisioning Confirm");
 		return;
 	}
 
@@ -275,7 +276,7 @@ static void send_input_complete(void)
 
 	bt_mesh_prov_buf_init(&buf, PROV_INPUT_COMPLETE);
 	if (bt_mesh_prov_send(&buf, NULL)) {
-		LOG_ERR("Failed to send Provisioning Input Complete");
+		LOG_ERROR("Failed to send Provisioning Input Complete");
 	}
 	bt_mesh_prov_link.expect = PROV_CONFIRM;
 }
@@ -307,7 +308,7 @@ static void send_pub_key(void)
 
 	key = bt_mesh_pub_key_get();
 	if (!key) {
-		LOG_ERR("No public key available");
+		LOG_ERROR("No public key available");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -320,7 +321,7 @@ static void send_pub_key(void)
 	memcpy(bt_mesh_prov_link.conf_inputs.pub_key_device, &buf.data[1], PDU_LEN_PUB_KEY);
 
 	if (bt_mesh_prov_send(&buf, public_key_sent)) {
-		LOG_ERR("Failed to send Public Key");
+		LOG_ERROR("Failed to send Public Key");
 		return;
 	}
 
@@ -342,7 +343,7 @@ static void prov_dh_key_gen(void)
 	}
 
 	if (bt_mesh_dhkey_gen(remote_pub_key, remote_priv_key, bt_mesh_prov_link.dhkey)) {
-		LOG_ERR("Failed to generate DHKey");
+		LOG_ERROR("Failed to generate DHKey");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -373,14 +374,14 @@ static void prov_pub_key(const uint8_t *data)
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY) &&
 	    atomic_test_bit(bt_mesh_prov_link.flags, OOB_PUB_KEY)) {
 		if (!bt_mesh_prov->public_key_be || !bt_mesh_prov->private_key_be) {
-			LOG_ERR("Public or private key is not ready");
+			LOG_ERROR("Public or private key is not ready");
 			prov_fail(PROV_ERR_UNEXP_ERR);
 			return;
 		}
 
 		if (!memcmp(bt_mesh_prov->public_key_be,
 			    bt_mesh_prov_link.conf_inputs.pub_key_provisioner, PDU_LEN_PUB_KEY)) {
-			LOG_ERR("Public keys are identical");
+			LOG_ERROR("Public keys are identical");
 			prov_fail(PROV_ERR_NVAL_FMT);
 			return;
 		}
@@ -410,7 +411,7 @@ static void send_random(void)
 	net_buf_simple_add_mem(&rnd, bt_mesh_prov_link.rand, bt_mesh_prov_auth_size_get());
 
 	if (bt_mesh_prov_send(&rnd, NULL)) {
-		LOG_ERR("Failed to send Provisioning Random");
+		LOG_ERROR("Failed to send Provisioning Random");
 		return;
 	}
 
@@ -424,29 +425,29 @@ static void prov_random(const uint8_t *data)
 
 	LOG_DBG("Remote Random: %s", bt_hex(data, rand_size));
 	if (!memcmp(data, bt_mesh_prov_link.rand, rand_size)) {
-		LOG_ERR("Random value is identical to ours, rejecting.");
+		LOG_ERROR("Random value is identical to ours, rejecting.");
 		prov_fail(PROV_ERR_CFM_FAILED);
 		return;
 	}
 
-	if (bt_mesh_prov_conf(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_key,
-		data, bt_mesh_prov_link.auth, conf_verify)) {
-		LOG_ERR("Unable to calculate confirmation verification");
+	if (bt_mesh_prov_conf(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_key, data,
+			      bt_mesh_prov_link.auth, conf_verify)) {
+		LOG_ERROR("Unable to calculate confirmation verification");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
 	if (memcmp(conf_verify, bt_mesh_prov_link.conf, rand_size)) {
-		LOG_ERR("Invalid confirmation value");
+		LOG_ERROR("Invalid confirmation value");
 		LOG_DBG("Received:   %s", bt_hex(bt_mesh_prov_link.conf, rand_size));
 		LOG_DBG("Calculated: %s",  bt_hex(conf_verify, rand_size));
 		prov_fail(PROV_ERR_CFM_FAILED);
 		return;
 	}
 
-	if (bt_mesh_prov_salt(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_salt,
-		data, bt_mesh_prov_link.rand, bt_mesh_prov_link.prov_salt)) {
-		LOG_ERR("Failed to generate provisioning salt");
+	if (bt_mesh_prov_salt(bt_mesh_prov_link.algorithm, bt_mesh_prov_link.conf_salt, data,
+			      bt_mesh_prov_link.rand, bt_mesh_prov_link.prov_salt)) {
+		LOG_ERROR("Failed to generate provisioning salt");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -495,12 +496,12 @@ static bool refresh_is_valid(const uint8_t *netkey, uint16_t net_idx,
 	bool valid_addr;
 
 	if (iv_index != bt_mesh.iv_index) {
-		LOG_ERR("Invalid IV index");
+		LOG_ERROR("Invalid IV index");
 		return false;
 	}
 
 	if (!sub || bt_mesh_key_compare(netkey, &sub->keys[SUBNET_KEY_TX_IDX(sub)].net)) {
-		LOG_ERR("Invalid netkey");
+		LOG_ERROR("Invalid netkey");
 		return false;
 	}
 
@@ -512,7 +513,7 @@ static bool refresh_is_valid(const uint8_t *netkey, uint16_t net_idx,
 	}
 
 	if (!valid_addr) {
-		LOG_ERR("Invalid address");
+		LOG_ERROR("Invalid address");
 	}
 
 	return valid_addr;
@@ -536,7 +537,7 @@ static void prov_data(const uint8_t *data)
 	err = bt_mesh_session_key(bt_mesh_prov_link.dhkey,
 				  bt_mesh_prov_link.prov_salt, &session_key);
 	if (err) {
-		LOG_ERR("Unable to generate session key");
+		LOG_ERROR("Unable to generate session key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
@@ -544,7 +545,7 @@ static void prov_data(const uint8_t *data)
 	err = bt_mesh_prov_nonce(bt_mesh_prov_link.dhkey,
 				 bt_mesh_prov_link.prov_salt, nonce);
 	if (err) {
-		LOG_ERR("Unable to generate session nonce");
+		LOG_ERROR("Unable to generate session nonce");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		goto session_key_destructor;
 	}
@@ -553,7 +554,7 @@ static void prov_data(const uint8_t *data)
 
 	err = bt_mesh_prov_decrypt(&session_key, nonce, data, pdu);
 	if (err) {
-		LOG_ERR("Unable to decrypt provisioning data");
+		LOG_ERROR("Unable to decrypt provisioning data");
 		prov_fail(PROV_ERR_DECRYPT);
 		goto session_key_destructor;
 	}
@@ -561,7 +562,7 @@ static void prov_data(const uint8_t *data)
 	err = bt_mesh_dev_key(bt_mesh_prov_link.dhkey,
 			      bt_mesh_prov_link.prov_salt, dev_key);
 	if (err) {
-		LOG_ERR("Unable to generate device key");
+		LOG_ERROR("Unable to generate device key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		goto session_key_destructor;
 	}
@@ -583,7 +584,7 @@ static void prov_data(const uint8_t *data)
 
 	bt_mesh_prov_buf_init(&msg, PROV_COMPLETE);
 	if (bt_mesh_prov_send(&msg, NULL)) {
-		LOG_ERR("Failed to send Provisioning Complete");
+		LOG_ERROR("Failed to send Provisioning Complete");
 		goto session_key_destructor;
 	}
 
@@ -606,7 +607,7 @@ static void prov_data(const uint8_t *data)
 
 	err = bt_mesh_provision(pdu, net_idx, flags, iv_index, bt_mesh_prov_link.addr, dev_key);
 	if (err) {
-		LOG_ERR("Failed to provision (err %d)", err);
+		LOG_ERROR("Failed to provision (err %d)", err);
 		goto session_key_destructor;
 	}
 

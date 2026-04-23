@@ -39,12 +39,12 @@ static int max22017_channel_setup(const struct device *dev,
 	struct max22017_data *data = parent->data;
 
 	if (chan > config->nchannels - 1) {
-		LOG_ERR("Unsupported channel %d", chan);
+		LOG_ERROR("Unsupported channel %d", chan);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->resolution != config->resolution) {
-		LOG_ERR("Unsupported resolution %d", chan);
+		LOG_ERROR("Unsupported resolution %d", chan);
 		return -ENOTSUP;
 	}
 
@@ -101,12 +101,12 @@ static int max22017_write_value(const struct device *dev, uint8_t channel, uint3
 	struct max22017_data *data = parent->data;
 
 	if (channel > config->nchannels - 1) {
-		LOG_ERR("unsupported channel %d", channel);
+		LOG_ERROR("unsupported channel %d", channel);
 		return -ENOTSUP;
 	}
 
 	if (value >= (1 << config->resolution)) {
-		LOG_ERR("Value %d out of range", value);
+		LOG_ERROR("Value %d out of range", value);
 		return -EINVAL;
 	}
 
@@ -158,7 +158,7 @@ static int max22017_init(const struct device *dev)
 	struct max22017_data *data = config->parent->data;
 
 	if (!device_is_ready(config->parent)) {
-		LOG_ERR("parent adi_max22017 MFD device '%s' not ready", config->parent->name);
+		LOG_ERROR("parent adi_max22017 MFD device '%s' not ready", config->parent->name);
 		return -EINVAL;
 	}
 
@@ -193,7 +193,7 @@ static int max22017_init(const struct device *dev)
 	if (config->gpio_ldac.port) {
 		ret = gpio_pin_configure_dt(&config->gpio_ldac, GPIO_OUTPUT_ACTIVE);
 		if (ret) {
-			LOG_ERR("failed to initialize GPIO ldac pin");
+			LOG_ERROR("failed to initialize GPIO ldac pin");
 			goto fail;
 		}
 	}
@@ -201,7 +201,7 @@ static int max22017_init(const struct device *dev)
 	if (config->gpio_busy.port) {
 		ret = gpio_pin_configure_dt(&config->gpio_busy, GPIO_INPUT);
 		if (ret) {
-			LOG_ERR("failed to initialize GPIO busy pin");
+			LOG_ERROR("failed to initialize GPIO busy pin");
 			goto fail;
 		}
 	}

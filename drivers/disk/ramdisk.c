@@ -49,8 +49,8 @@ static int disk_ram_access_read(struct disk_info *disk, uint8_t *buff,
 	uint32_t last_sector = sector + count;
 
 	if (last_sector < sector || last_sector > config->sector_count) {
-		LOG_ERR("Sector %" PRIu32 " is outside the range %zu",
-			last_sector, config->sector_count);
+		LOG_ERROR("Sector %" PRIu32 " is outside the range %zu", last_sector,
+			  config->sector_count);
 		return -EIO;
 	}
 
@@ -67,8 +67,8 @@ static int disk_ram_access_write(struct disk_info *disk, const uint8_t *buff,
 	uint32_t last_sector = sector + count;
 
 	if (last_sector < sector || last_sector > config->sector_count) {
-		LOG_ERR("Sector %" PRIu32 " is outside the range %zu",
-			last_sector, config->sector_count);
+		LOG_ERROR("Sector %" PRIu32 " is outside the range %zu", last_sector,
+			  config->sector_count);
 		return -EIO;
 	}
 
@@ -85,8 +85,8 @@ static int disk_ram_access_erase(struct disk_info *disk, uint32_t sector,
 	uint32_t last_sector = sector + count;
 
 	if (last_sector < sector || last_sector > config->sector_count) {
-		LOG_ERR("Sector %" PRIu32 " is outside the range %zu",
-			last_sector, config->sector_count);
+		LOG_ERROR("Sector %" PRIu32 " is outside the range %zu", last_sector,
+			  config->sector_count);
 		return -EINVAL;
 	}
 

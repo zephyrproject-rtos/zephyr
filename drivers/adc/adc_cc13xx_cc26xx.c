@@ -160,7 +160,7 @@ static int adc_cc13xx_cc26xx_channel_setup(const struct device *dev,
 	uint8_t i;
 
 	if (ch > MAX_CHAN_ID) {
-		LOG_ERR("Channel 0x%X is not supported, max 0x%X", ch, MAX_CHAN_ID);
+		LOG_ERROR("Channel 0x%X is not supported, max 0x%X", ch, MAX_CHAN_ID);
 		return -EINVAL;
 	}
 
@@ -189,18 +189,18 @@ static int adc_cc13xx_cc26xx_channel_setup(const struct device *dev,
 			data->sample_time = adc_cc13xx_sample_times[i].reg_value;
 		}
 		if (i >= ARRAY_SIZE(adc_cc13xx_sample_times)) {
-			LOG_ERR("Acquisition time is not valid");
+			LOG_ERROR("Acquisition time is not valid");
 			return -EINVAL;
 		}
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Gain is not valid");
+		LOG_ERROR("Gain is not valid");
 		return -EINVAL;
 	}
 
@@ -209,7 +209,7 @@ static int adc_cc13xx_cc26xx_channel_setup(const struct device *dev,
 	} else if (channel_cfg->reference == ADC_REF_VDD_1) {
 		data->ref_source = AUXADC_REF_VDDS_REL;
 	} else {
-		LOG_ERR("Reference is not valid");
+		LOG_ERROR("Reference is not valid");
 		return -EINVAL;
 	}
 
@@ -230,8 +230,7 @@ static int cc13xx_cc26xx_read(const struct device *dev,
 	size_t exp_size;
 
 	if (sequence->resolution != 12) {
-		LOG_ERR("Only 12 Resolution is supported, but %d got",
-			sequence->resolution);
+		LOG_ERROR("Only 12 Resolution is supported, but %d got", sequence->resolution);
 		return -EINVAL;
 	}
 
@@ -241,8 +240,8 @@ static int cc13xx_cc26xx_read(const struct device *dev,
 	}
 
 	if (sequence->buffer_size < exp_size) {
-		LOG_ERR("Required buffer size is %u, but %u got",
-			exp_size, sequence->buffer_size);
+		LOG_ERROR("Required buffer size is %u, but %u got", exp_size,
+			  sequence->buffer_size);
 		return -ENOMEM;
 	}
 

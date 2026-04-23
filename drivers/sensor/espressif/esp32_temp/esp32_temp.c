@@ -32,7 +32,7 @@ static int esp32_temp_sample_fetch(const struct device *dev, enum sensor_channel
 	int rc = 0;
 
 	if (temperature_sensor_get_celsius(data->temp_sensor_handle, &data->temp_out) != ESP_OK) {
-		LOG_ERR("Temperature read error!");
+		LOG_ERROR("Temperature read error!");
 		rc = -EFAULT;
 	}
 

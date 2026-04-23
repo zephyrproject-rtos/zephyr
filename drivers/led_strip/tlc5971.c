@@ -284,18 +284,18 @@ static int tlc5971_init(const struct device *dev)
 	struct tlc5971_data *data = dev->data;
 
 	if (!spi_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("%s: SPI device %s not ready", dev->name, cfg->bus.bus->name);
+		LOG_ERROR("%s: SPI device %s not ready", dev->name, cfg->bus.bus->name);
 		return -ENODEV;
 	}
 
 	if ((cfg->num_pixels % TLC5971_PIXELS_PER_DEVICE) != 0) {
-		LOG_ERR("%s: chain length must be multiple of 4", dev->name);
+		LOG_ERROR("%s: chain length must be multiple of 4", dev->name);
 		return -EINVAL;
 	}
 
 	if (cfg->num_colors != TLC5971_NUMBER_OF_COLORS) {
-		LOG_ERR("%s: the tlc5971 only supports %i colors", dev->name,
-			TLC5971_NUMBER_OF_COLORS);
+		LOG_ERROR("%s: the tlc5971 only supports %i colors", dev->name,
+			  TLC5971_NUMBER_OF_COLORS);
 		return -EINVAL;
 	}
 
@@ -306,7 +306,7 @@ static int tlc5971_init(const struct device *dev)
 		case LED_COLOR_ID_BLUE:
 			break;
 		default:
-			LOG_ERR("%s: invalid color mapping", dev->name);
+			LOG_ERROR("%s: invalid color mapping", dev->name);
 			return -EINVAL;
 		}
 	}

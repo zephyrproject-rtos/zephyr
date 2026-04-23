@@ -76,7 +76,7 @@ static int8_t spi_rw(uint8_t *mosi, uint8_t *miso, uint16_t size)
 	};
 
 	if (spi_transceive_dt(&winc1500_config.spi, &tx, &rx)) {
-		LOG_ERR("spi_transceive fail");
+		LOG_ERROR("spi_transceive fail");
 		return M2M_ERR_BUS_FAIL;
 	}
 
@@ -110,7 +110,7 @@ int8_t nm_bus_init(void *pvinit)
 #elif defined CONF_WINC_USE_SPI
 	/* setup SPI device */
 	if (!spi_is_ready_dt(&winc1500_config.spi)) {
-		LOG_ERR("spi device binding");
+		LOG_ERROR("spi device binding");
 		return -ENODEV;
 	}
 

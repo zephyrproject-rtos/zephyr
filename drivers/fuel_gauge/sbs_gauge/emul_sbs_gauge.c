@@ -180,7 +180,7 @@ static int emul_sbs_gauge_reg_read(const struct emul *target, int reg, int *val)
 		*val = 1;
 		break;
 	default:
-		LOG_ERR("Unknown register 0x%x read", reg);
+		LOG_ERROR("Unknown register 0x%x read", reg);
 		return -EIO;
 	}
 	LOG_INF("read 0x%x = 0x%x", reg, *val);
@@ -213,7 +213,7 @@ static int emul_sbs_gauge_buffer_read(const struct emul *target, int reg, char *
 		memcpy(dev_chem->device_chemistry, chem, dev_chem->device_chemistry_length);
 		break;
 	default:
-		LOG_ERR("Unknown register 0x%x read", reg);
+		LOG_ERROR("Unknown register 0x%x read", reg);
 		return -EIO;
 	}
 
@@ -238,11 +238,11 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 	switch (num_msgs) {
 	case 1:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected single-message read");
+			LOG_ERROR("Unexpected single-message read");
 			return -EIO;
 		}
 		if (msgs->len != 3) {
-			LOG_ERR("Unexpected msg0 length %d", msgs->len);
+			LOG_ERROR("Unexpected msg0 length %d", msgs->len);
 			return -EIO;
 		}
 		reg = msgs->buf[0];
@@ -253,11 +253,11 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 		break;
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 		if (msgs->len != 1) {
-			LOG_ERR("Unexpected msg0 length %d", msgs->len);
+			LOG_ERROR("Unexpected msg0 length %d", msgs->len);
 			return -EIO;
 		}
 		reg = msgs->buf[0];
@@ -282,13 +282,13 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 				rc = emul_sbs_gauge_buffer_read(target, reg, (char *)msgs->buf);
 				break;
 			default:
-				LOG_ERR("Unexpected msg1 length %d", msgs->len);
+				LOG_ERROR("Unexpected msg1 length %d", msgs->len);
 				return -EIO;
 			}
 		} else {
 			/* We write a word (2 bytes by the SBS spec) */
 			if (msgs->len != 2) {
-				LOG_ERR("Unexpected msg1 length %d", msgs->len);
+				LOG_ERROR("Unexpected msg1 length %d", msgs->len);
 			}
 			value = sys_get_le16(msgs->buf);
 
@@ -296,7 +296,7 @@ static int sbs_gauge_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 		}
 		break;
 	default:
-		LOG_ERR("Invalid number of messages: %d", num_msgs);
+		LOG_ERROR("Invalid number of messages: %d", num_msgs);
 		return -EIO;
 	}
 

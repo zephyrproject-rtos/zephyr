@@ -173,8 +173,7 @@ static inline size_t push_x_param(const struct device *dev,
 		return 2;
 	}
 
-	LOG_ERR("Unsupported pp_width_bits %u",
-		config->quirks->pp_width_bits);
+	LOG_ERROR("Unsupported pp_width_bits %u", config->quirks->pp_width_bits);
 	return 0;
 }
 
@@ -193,8 +192,7 @@ static inline size_t push_y_param(const struct device *dev,
 		return 2;
 	}
 
-	LOG_ERR("Unsupported pp_height_bitsa %u",
-		config->quirks->pp_height_bits);
+	LOG_ERROR("Unsupported pp_height_bitsa %u", config->quirks->pp_height_bits);
 	return 0;
 }
 
@@ -317,54 +315,55 @@ static int ssd16xx_set_window(const struct device *dev,
 			   config->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 
 	if (desc->pitch < desc->width) {
-		LOG_ERR("Pitch is smaller than width");
+		LOG_ERROR("Pitch is smaller than width");
 		return -EINVAL;
 	}
 
 	if (desc->pitch > desc->width) {
-		LOG_ERR("Unsupported mode");
+		LOG_ERROR("Unsupported mode");
 		return -ENOTSUP;
 	}
 
 	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
 	    data->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
 		if ((y + desc->height) > panel_h) {
-			LOG_ERR("Buffer out of bounds (height)");
+			LOG_ERROR("Buffer out of bounds (height)");
 			return -EINVAL;
 		}
 
 		if ((x + desc->width) > config->width) {
-			LOG_ERR("Buffer out of bounds (width)");
+			LOG_ERROR("Buffer out of bounds (width)");
 			return -EINVAL;
 		}
 
 		if ((desc->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
-			LOG_ERR("Buffer height not multiple of %d", EPD_PANEL_NUMOF_ROWS_PER_PAGE);
+			LOG_ERROR("Buffer height not multiple of %d",
+				  EPD_PANEL_NUMOF_ROWS_PER_PAGE);
 			return -EINVAL;
 		}
 
 		if ((y % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0U) {
-			LOG_ERR("Y coordinate not multiple of %d", EPD_PANEL_NUMOF_ROWS_PER_PAGE);
+			LOG_ERROR("Y coordinate not multiple of %d", EPD_PANEL_NUMOF_ROWS_PER_PAGE);
 			return -EINVAL;
 		}
 	} else {
 		if ((y + desc->height) > config->width) {
-			LOG_ERR("Buffer out of bounds (height)");
+			LOG_ERROR("Buffer out of bounds (height)");
 			return -EINVAL;
 		}
 
 		if ((x + desc->width) > panel_h) {
-			LOG_ERR("Buffer out of bounds (width)");
+			LOG_ERROR("Buffer out of bounds (width)");
 			return -EINVAL;
 		}
 
 		if ((desc->width % SSD16XX_PIXELS_PER_BYTE) != 0U) {
-			LOG_ERR("Buffer width not multiple of %d", SSD16XX_PIXELS_PER_BYTE);
+			LOG_ERROR("Buffer width not multiple of %d", SSD16XX_PIXELS_PER_BYTE);
 			return -EINVAL;
 		}
 
 		if ((x % SSD16XX_PIXELS_PER_BYTE) != 0U) {
-			LOG_ERR("X coordinate not multiple of %d", SSD16XX_PIXELS_PER_BYTE);
+			LOG_ERROR("X coordinate not multiple of %d", SSD16XX_PIXELS_PER_BYTE);
 			return -EINVAL;
 		}
 	}
@@ -426,7 +425,7 @@ static int ssd16xx_write(const struct device *dev, const uint16_t x,
 	int err;
 
 	if (buf == NULL || buf_len == 0U) {
-		LOG_ERR("Display buffer is not available");
+		LOG_ERROR("Display buffer is not available");
 		return -EINVAL;
 	}
 
@@ -520,7 +519,7 @@ int ssd16xx_read_ram(const struct device *dev, enum ssd16xx_ram ram_type,
 	}
 
 	if (buf == NULL || buf_len == 0U) {
-		LOG_ERR("Display buffer is not available");
+		LOG_ERROR("Display buffer is not available");
 		return -EINVAL;
 	}
 
@@ -581,7 +580,7 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 		return 0;
 	}
 
-	LOG_ERR("not supported");
+	LOG_ERROR("not supported");
 	return -ENOTSUP;
 }
 
@@ -919,7 +918,7 @@ static int ssd16xx_init(const struct device *dev)
 	LOG_DBG("");
 
 	if (!device_is_ready(config->mipi_dev)) {
-		LOG_ERR("MIPI Device not ready");
+		LOG_ERROR("MIPI Device not ready");
 		return -ENODEV;
 	}
 
@@ -927,19 +926,19 @@ static int ssd16xx_init(const struct device *dev)
 		(config->dbi_config.config.operation & SPI_HALF_DUPLEX) != 0;
 
 	if (!gpio_is_ready_dt(&config->busy_gpio)) {
-		LOG_ERR("Busy GPIO device not ready");
+		LOG_ERROR("Busy GPIO device not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->busy_gpio, GPIO_INPUT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure busy GPIO");
+		LOG_ERROR("Failed to configure busy GPIO");
 		return err;
 	}
 
 	if (config->width > config->quirks->max_width ||
 	    config->height > config->quirks->max_height) {
-		LOG_ERR("Display size out of range.");
+		LOG_ERROR("Display size out of range.");
 		return -EINVAL;
 	}
 

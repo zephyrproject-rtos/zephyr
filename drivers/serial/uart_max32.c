@@ -569,13 +569,13 @@ static void uart_max32_async_tx_callback(const struct device *dma_dev, void *use
 		ret = uart_max32_tx_dma_load(dev, tx->cache[tx->cache_id],
 					     MIN(tx->len, CONFIG_UART_TX_CACHE_LEN));
 		if (ret < 0) {
-			LOG_ERR("Error configuring Tx DMA (%d)", ret);
+			LOG_ERROR("Error configuring Tx DMA (%d)", ret);
 			return;
 		}
 
 		ret = dma_start(config->tx_dma.dev, config->tx_dma.channel);
 		if (ret < 0) {
-			LOG_ERR("Error starting Tx DMA (%d)", ret);
+			LOG_ERROR("Error starting Tx DMA (%d)", ret);
 			return;
 		}
 
@@ -651,14 +651,14 @@ static int api_tx(const struct device *dev, const uint8_t *buf, size_t len, int3
 	unsigned int key = irq_lock();
 
 	if (config->tx_dma.channel == 0xFF) {
-		LOG_ERR("Tx DMA channel is not configured");
+		LOG_ERROR("Tx DMA channel is not configured");
 		ret = -ENOTSUP;
 		goto unlock;
 	}
 
 	ret = dma_get_status(config->tx_dma.dev, config->tx_dma.channel, &dma_stat);
 	if (ret < 0 || dma_stat.busy) {
-		LOG_ERR("DMA Tx %s", ret < 0 ? "error" : "busy");
+		LOG_ERROR("DMA Tx %s", ret < 0 ? "error" : "busy");
 		irq_unlock(key);
 		return ret < 0 ? ret : -EBUSY;
 	}
@@ -679,13 +679,13 @@ static int api_tx(const struct device *dev, const uint8_t *buf, size_t len, int3
 	ret = uart_max32_tx_dma_load(dev, use_cache ? data->async.tx.cache[0] : ((uint8_t *)buf),
 				     len);
 	if (ret < 0) {
-		LOG_ERR("Error configuring Tx DMA (%d)", ret);
+		LOG_ERROR("Error configuring Tx DMA (%d)", ret);
 		goto unlock;
 	}
 
 	ret = dma_start(config->tx_dma.dev, config->tx_dma.channel);
 	if (ret < 0) {
-		LOG_ERR("Error starting Tx DMA (%d)", ret);
+		LOG_ERROR("Error starting Tx DMA (%d)", ret);
 		goto unlock;
 	}
 
@@ -767,7 +767,7 @@ static int api_rx_disable(const struct device *dev)
 
 	ret = dma_stop(config->rx_dma.dev, config->rx_dma.channel);
 	if (ret) {
-		LOG_ERR("Error stopping Rx DMA (%d)", ret);
+		LOG_ERROR("Error stopping Rx DMA (%d)", ret);
 		irq_unlock(key);
 		return ret;
 	}
@@ -886,14 +886,14 @@ static int api_rx_enable(const struct device *dev, uint8_t *buf, size_t len, int
 	unsigned int key = irq_lock();
 
 	if (config->rx_dma.channel == 0xFF) {
-		LOG_ERR("Rx DMA channel is not configured");
+		LOG_ERROR("Rx DMA channel is not configured");
 		irq_unlock(key);
 		return -ENOTSUP;
 	}
 
 	ret = dma_get_status(config->rx_dma.dev, config->rx_dma.channel, &dma_stat);
 	if (ret < 0 || dma_stat.busy) {
-		LOG_ERR("DMA Rx %s", ret < 0 ? "error" : "busy");
+		LOG_ERROR("DMA Rx %s", ret < 0 ? "error" : "busy");
 		irq_unlock(key);
 		return ret < 0 ? ret : -EBUSY;
 	}
@@ -915,14 +915,14 @@ static int api_rx_enable(const struct device *dev, uint8_t *buf, size_t len, int
 
 	ret = dma_config(config->rx_dma.dev, config->rx_dma.channel, &dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("Error configuring Rx DMA (%d)", ret);
+		LOG_ERROR("Error configuring Rx DMA (%d)", ret);
 		irq_unlock(key);
 		return ret;
 	}
 
 	ret = dma_start(config->rx_dma.dev, config->rx_dma.channel);
 	if (ret < 0) {
-		LOG_ERR("Error starting Rx DMA (%d)", ret);
+		LOG_ERROR("Error starting Rx DMA (%d)", ret);
 		irq_unlock(key);
 		return ret;
 	}
@@ -1009,7 +1009,7 @@ static int uart_max32_pm_resume(const struct device *dev)
 
 	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
 	if (ret != 0) {
-		LOG_ERR("Cannot enable UART clock");
+		LOG_ERROR("Cannot enable UART clock");
 		return ret;
 	}
 
@@ -1021,7 +1021,7 @@ static int uart_max32_pm_resume(const struct device *dev)
 	if (MXC_UART_GetRXThreshold(cfg->regs) == 0) {
 		ret = Wrap_MXC_UART_SetClockSource(cfg->regs, cfg->perclk.clk_src);
 		if (ret != 0) {
-			LOG_ERR("Cannot set UART clock source");
+			LOG_ERROR("Cannot set UART clock source");
 			return ret;
 		}
 
@@ -1065,7 +1065,7 @@ static int uart_max32_pm_suspend(const struct max32_uart_config *const cfg)
 	/* Disable clock */
 	ret = clock_control_off(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
 	if (ret != 0) {
-		LOG_ERR("cannot disable UART clock");
+		LOG_ERROR("cannot disable UART clock");
 	}
 
 	return ret;
@@ -1110,7 +1110,7 @@ static int uart_max32_init(const struct device *dev)
 	struct max32_uart_data *data = dev->data;
 
 	if (!device_is_ready(cfg->clock)) {
-		LOG_ERR("Clock control device not ready");
+		LOG_ERROR("Clock control device not ready");
 		return -ENODEV;
 	}
 

@@ -251,8 +251,8 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 	for (i = 0; i < DEV_CFG(dev)->dma_channels; i++) {
 		if (DEV_CHANNEL_DATA(dev, i)->busy) {
 			hw_channel = dma_mcux_edma_add_channel_gap(dev, i);
-			LOG_ERR("channel %d error status is 0x%x", hw_channel,
-					EDMA_GetErrorStatusFlags(DEV_BASE(dev)));
+			LOG_ERROR("channel %d error status is 0x%x", hw_channel,
+				  EDMA_GetErrorStatusFlags(DEV_BASE(dev)));
 			EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, i));
 			EDMA_ClearChannelStatusFlags(DEV_BASE(dev), hw_channel, 0xFFFFFFFF);
 			DEV_CHANNEL_DATA(dev, i)->busy = false;
@@ -416,7 +416,7 @@ static int dma_mcux_edma_configure_sg_loop(const struct device *dev,
 
 	if (block_config != NULL && data->transfer_settings.empty_tcds == 0) {
 		/* User input more blocks than TCD number, return error */
-		LOG_ERR("Too much request blocks,increase TCD buffer size!");
+		LOG_ERROR("Too much request blocks,increase TCD buffer size!");
 		ret = -ENOBUFS;
 	}
 	/* Push the 1st TCD into HW */
@@ -453,8 +453,7 @@ static int dma_mcux_edma_configure_sg_dynamic(const struct device *dev,
 			EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
 
 		if (submit_status != kStatus_Success) {
-			LOG_ERR("Error submitting EDMA Transfer: 0x%x",
-				submit_status);
+			LOG_ERROR("Error submitting EDMA Transfer: 0x%x", submit_status);
 			ret = -EFAULT;
 		}
 		block_config = block_config->next_block;
@@ -488,7 +487,7 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 	const status_t submit_status = EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
 
 	if (submit_status != kStatus_Success) {
-		LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
+		LOG_ERROR("Error submitting EDMA Transfer: 0x%x", submit_status);
 		ret = -EFAULT;
 	}
 
@@ -555,12 +554,12 @@ static inline int dma_mcux_edma_validate_cfg(const struct device *dev,
 	edma_transfer_type_t *type = &data->transfer_settings.transfer_type;
 
 	if (slot >= DEV_CFG(dev)->dma_requests) {
-		LOG_ERR("source number is out of scope %d", slot);
+		LOG_ERROR("source number is out of scope %d", slot);
 		return -ENOTSUP;
 	}
 
 	if (channel >= DEV_CFG(dev)->dma_channels) {
-		LOG_ERR("out of DMA channel %d", channel);
+		LOG_ERROR("out of DMA channel %d", channel);
 		return -EINVAL;
 	}
 	LOG_DBG("channel is %d", channel);
@@ -568,18 +567,18 @@ static inline int dma_mcux_edma_validate_cfg(const struct device *dev,
 	data->transfer_settings.valid = false;
 
 	if (!data_size_valid(config->source_data_size)) {
-		LOG_ERR("Source unit size error, %d", config->source_data_size);
+		LOG_ERROR("Source unit size error, %d", config->source_data_size);
 		return -EINVAL;
 	}
 
 	if (!data_size_valid(config->dest_data_size)) {
-		LOG_ERR("Dest unit size error, %d", config->dest_data_size);
+		LOG_ERROR("Dest unit size error, %d", config->dest_data_size);
 		return -EINVAL;
 	}
 
 	if (block_config->source_gather_en || block_config->dest_scatter_en) {
 		if (config->block_count > CONFIG_DMA_TCD_QUEUE_SIZE) {
-			LOG_ERR("please config DMA_TCD_QUEUE_SIZE as %d", config->block_count);
+			LOG_ERROR("please config DMA_TCD_QUEUE_SIZE as %d", config->block_count);
 			return -EINVAL;
 		}
 	}
@@ -598,7 +597,7 @@ static inline int dma_mcux_edma_validate_cfg(const struct device *dev,
 		*type = kEDMA_PeripheralToPeripheral;
 		break;
 	default:
-		LOG_ERR("not support transfer direction");
+		LOG_ERROR("not support transfer direction");
 		return -EINVAL;
 	}
 
@@ -792,7 +791,7 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 	hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 
 	if (data->transfer_settings.empty_tcds == 0) {
-		LOG_ERR("TCD list is full in loop mode.");
+		LOG_ERROR("TCD list is full in loop mode.");
 		return -ENOBUFS;
 	}
 
@@ -893,7 +892,7 @@ static int edma_reload_dynamic(const struct device *dev, uint32_t channel,
 	 * can be active at once.
 	 */
 	if (data->busy && data->edma_handle.tcdPool == NULL) {
-		LOG_ERR("EDMA busy. Wait until the transfer completes before reloading.");
+		LOG_ERROR("EDMA busy. Wait until the transfer completes before reloading.");
 		return -EBUSY;
 	}
 
@@ -907,7 +906,7 @@ static int edma_reload_dynamic(const struct device *dev, uint32_t channel,
 		EDMA_SubmitTransfer(DEV_EDMA_HANDLE(dev, channel), &(data->transferConfig));
 
 	if (submit_status != kStatus_Success) {
-		LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
+		LOG_ERROR("Error submitting EDMA Transfer: 0x%x", submit_status);
 		return -EFAULT;
 	}
 
@@ -924,7 +923,7 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 	const unsigned int key = irq_lock();
 
 	if (!data->transfer_settings.valid) {
-		LOG_ERR("Invalid EDMA settings on initial config. Configure DMA before reload.");
+		LOG_ERROR("Invalid EDMA settings on initial config. Configure DMA before reload.");
 		ret = -EFAULT;
 		goto cleanup;
 	}

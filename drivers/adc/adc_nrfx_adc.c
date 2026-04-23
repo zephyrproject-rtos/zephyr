@@ -55,12 +55,12 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Selected ADC acquisition time is not valid");
+		LOG_ERROR("Selected ADC acquisition time is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -EINVAL;
 	}
 
@@ -75,7 +75,7 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		config->scaling = NRF_ADC_CONFIG_SCALING_INPUT_FULL_SCALE;
 		break;
 	default:
-		LOG_ERR("Selected ADC gain is not valid");
+		LOG_ERROR("Selected ADC gain is not valid");
 		return -EINVAL;
 	}
 
@@ -101,7 +101,7 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		config->extref    = NRF_ADC_CONFIG_EXTREFSEL_AREF1;
 		break;
 	default:
-		LOG_ERR("Selected ADC reference is not valid");
+		LOG_ERROR("Selected ADC reference is not valid");
 		return -EINVAL;
 	}
 
@@ -141,8 +141,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-				sequence->buffer_size, needed_buffer_size);
+		LOG_ERROR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			  needed_buffer_size);
 		return -ENOMEM;
 	}
 
@@ -162,14 +162,13 @@ static int start_read(const struct device *dev,
 	 * a non-existing one is selected).
 	 */
 	if (!selected_channels ||
-	    (selected_channels &
-			~BIT_MASK(CONFIG_ADC_NRFX_ADC_CHANNEL_COUNT))) {
-		LOG_ERR("Invalid selection of channels");
+	    (selected_channels & ~BIT_MASK(CONFIG_ADC_NRFX_ADC_CHANNEL_COUNT))) {
+		LOG_ERROR("Invalid selection of channels");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling != 0U) {
-		LOG_ERR("Oversampling is not supported");
+		LOG_ERROR("Oversampling is not supported");
 		return -EINVAL;
 	}
 
@@ -184,8 +183,7 @@ static int start_read(const struct device *dev,
 		nrf_resolution = NRF_ADC_CONFIG_RES_10BIT;
 		break;
 	default:
-		LOG_ERR("ADC resolution value %d is not valid",
-			    sequence->resolution);
+		LOG_ERROR("ADC resolution value %d is not valid", sequence->resolution);
 		return -EINVAL;
 	}
 
@@ -268,8 +266,7 @@ static int init_adc(const struct device *dev)
 	int result = nrfx_adc_init(&config, event_handler);
 
 	if (result != 0) {
-		LOG_ERR("Failed to initialize device: %s",
-			    dev->name);
+		LOG_ERROR("Failed to initialize device: %s", dev->name);
 		return result;
 	}
 

@@ -56,7 +56,7 @@ static int emul_bq40z70_buffer_read(int reg, uint8_t *buf, size_t len)
 		break;
 
 	default:
-		LOG_ERR("Buffer Read for reg 0x%x is not supported", reg);
+		LOG_ERROR("Buffer Read for reg 0x%x is not supported", reg);
 		return -EIO;
 	}
 
@@ -65,7 +65,7 @@ static int emul_bq40z70_buffer_read(int reg, uint8_t *buf, size_t len)
 
 static int emul_bq40z50_write(const struct emul *target, uint8_t *buf, size_t len)
 {
-	LOG_ERR("Write operation is not currently supported");
+	LOG_ERROR("Write operation is not currently supported");
 	return -EIO;
 }
 
@@ -155,7 +155,7 @@ static int emul_bq40z50_reg_read(const struct emul *target, int reg, uint16_t *v
 		break;
 
 	default:
-		LOG_ERR("Unknown register 0x%x read", reg);
+		LOG_ERROR("Unknown register 0x%x read", reg);
 		return -EIO;
 	}
 
@@ -181,8 +181,8 @@ static int emul_bq40z50_read(const struct emul *target, int reg, uint8_t *buf, s
 		case BQ40Z50_DEVICENAME:
 			return emul_bq40z70_buffer_read(reg, buf, len);
 		default:
-			LOG_ERR(" Buffer read only supported for string registers (i.e. "
-				"manufacturer_name, device_chemistry, and device name)");
+			LOG_ERROR(" Buffer read only supported for string registers (i.e. "
+				  "manufacturer_name, device_chemistry, and device name)");
 			return -EIO;
 		}
 	}
@@ -200,7 +200,7 @@ static int bq40z50_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 	__ASSERT_NO_MSG(msgs && num_msgs);
 
 	if (addr != cfg->i2c_addr) {
-		LOG_ERR("I2C address (0x%2x) is not supported.", addr);
+		LOG_ERROR("I2C address (0x%2x) is not supported.", addr);
 		return -EIO;
 	}
 
@@ -208,18 +208,18 @@ static int bq40z50_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 	switch (num_msgs) {
 	case 1:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 
 		return emul_bq40z50_write(target, msgs->buf, msgs->len);
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 		if (msgs->len != 1) {
-			LOG_ERR("Unexpected addr length %d", msgs->len);
+			LOG_ERROR("Unexpected addr length %d", msgs->len);
 			return -EIO;
 		}
 		reg = msgs->buf[0];
@@ -232,12 +232,12 @@ static int bq40z50_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 				return rc;
 			}
 		} else {
-			LOG_ERR("Second message must be an I2C read");
+			LOG_ERROR("Second message must be an I2C read");
 			return -EIO;
 		}
 		return rc;
 	default:
-		LOG_ERR("Invalid number of messages: %d", num_msgs);
+		LOG_ERROR("Invalid number of messages: %d", num_msgs);
 		return -EIO;
 	}
 

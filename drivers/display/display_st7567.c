@@ -157,7 +157,7 @@ static int st7567_reset_dbi(const struct device *dev)
 
 	err = mipi_dbi_reset(config->bus.dbi.mipi_dev, ST7567_RESET_DELAY);
 	if (err < 0) {
-		LOG_ERR("Failed to reset device!");
+		LOG_ERROR("Failed to reset device!");
 	}
 
 	return err;
@@ -329,23 +329,23 @@ static int st7567_write(const struct device *dev, const uint16_t x, const uint16
 	size_t buf_len;
 
 	if (desc->pitch < desc->width) {
-		LOG_ERR("Pitch is smaller than width");
+		LOG_ERROR("Pitch is smaller than width");
 		return -EINVAL;
 	}
 
 	buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
 	if (buf == NULL || buf_len == 0U) {
-		LOG_ERR("Display buffer is not available");
+		LOG_ERROR("Display buffer is not available");
 		return -EINVAL;
 	}
 
 	if (desc->pitch > desc->width) {
-		LOG_ERR("Unsupported mode");
+		LOG_ERROR("Unsupported mode");
 		return -EINVAL;
 	}
 
 	if ((y & 0x7) != 0U) {
-		LOG_ERR("Y coordinate must be aligned on page boundary");
+		LOG_ERROR("Y coordinate must be aligned on page boundary");
 		return -EINVAL;
 	}
 
@@ -436,7 +436,7 @@ static int st7567_clear(const struct device *dev)
 		for (int x = 0; x < config->width; x++) {
 			ret = st7567_write_default(dev, x, y, &buf, 1);
 			if (ret < 0) {
-				LOG_ERR("Error clearing display");
+				LOG_ERROR("Error clearing display");
 				return ret;
 			}
 		}
@@ -502,12 +502,12 @@ static int st7567_init(const struct device *dev)
 	const struct st7567_config *config = dev->config;
 
 	if (!st7567_bus_ready(dev)) {
-		LOG_ERR("Bus device %s not ready!", config->bus_name(dev));
+		LOG_ERROR("Bus device %s not ready!", config->bus_name(dev));
 		return -EINVAL;
 	}
 
 	if (st7567_init_device(dev)) {
-		LOG_ERR("Failed to initialize device!");
+		LOG_ERROR("Failed to initialize device!");
 		return -EIO;
 	}
 

@@ -195,31 +195,31 @@ int sim7080_handle_ca_tls(struct modem_socket *sock)
 	struct sim7080_socket_data *sock_data = sock->data;
 
 	if (strlen(sock_data->root_ca_dtls) == 0) {
-		LOG_ERR("No root certificate given");
+		LOG_ERROR("No root certificate given");
 		return -EINVAL;
 	}
 
 	if (sock_data->peer_verify && strlen(sock_data->client_cert) == 0) {
-		LOG_ERR("No client certificate given");
+		LOG_ERROR("No client certificate given");
 		return -EINVAL;
 	}
 
 	int ret = sim7080_sock_set_ssl_version(sock, proto);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to set ssl version");
+		LOG_ERROR("Failed to set ssl version");
 		return ret;
 	}
 
 	ret = sim7080_sock_set_ssl(sock, true);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable ssl for socket");
+		LOG_ERROR("Failed to enable ssl for socket");
 		return ret;
 	}
 
 	ret = sim7080_sock_set_ssl_context(sock);
 	if (ret != 0) {
-		LOG_ERR("Failed to set ssl context");
+		LOG_ERROR("Failed to set ssl context");
 		return ret;
 	}
 
@@ -227,7 +227,7 @@ int sim7080_handle_ca_tls(struct modem_socket *sock)
 	if (sock->ip_proto == NET_IPPROTO_DTLS_1_0 || sock->ip_proto == NET_IPPROTO_DTLS_1_2) {
 		ret = sim7080_sock_set_ssl_proto(sock, SIM7080_TLS_PROTO_DTLS);
 		if (ret != 0) {
-			LOG_ERR("Failed to set DTLS protocol");
+			LOG_ERROR("Failed to set DTLS protocol");
 			return ret;
 		}
 
@@ -238,13 +238,13 @@ int sim7080_handle_ca_tls(struct modem_socket *sock)
 	/* Perform TLS sequence */
 	ret = sim7080_sock_set_ssl_proto(sock, SIM7080_TLS_PROTO_TLS);
 	if (ret != 0) {
-		LOG_ERR("Failed to set TLS protocol");
+		LOG_ERROR("Failed to set TLS protocol");
 		return ret;
 	}
 
 	ret = sim7080_sock_set_tls_cert(sock, SIM7080_CERT_TYPE_ROOT_CA, sock_data->root_ca_dtls);
 	if (ret != 0) {
-		LOG_ERR("Failed to set root certificate name");
+		LOG_ERROR("Failed to set root certificate name");
 		return ret;
 	}
 
@@ -268,28 +268,28 @@ static int sim7080_fs_upload(const char *name, sim7080_tls_cert_read_func read_f
 	char send_buf[sizeof("AT+CFSWFILE=#,,#,######,######") + MDM_SSL_CERT_NAME_MAX_LEN] = {0};
 
 	if (strlen(name) > MDM_SSL_CERT_NAME_MAX_LEN) {
-		LOG_ERR("Cert Name too long");
+		LOG_ERROR("Cert Name too long");
 		return -EINVAL;
 	}
 
 	int ret = snprintk(send_buf, sizeof(send_buf), "AT+CFSWFILE=3,%s,0,%u,%u", name, len,
 			   timeout);
 	if (ret < 0) {
-		LOG_ERR("Could not format cert name");
+		LOG_ERROR("Could not format cert name");
 		return ret;
 	}
 
 	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler, NULL, 0U, send_buf, NULL,
 				    K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to send write command");
+		LOG_ERROR("Failed to send write command");
 		return ret;
 	}
 
 	/* Wait for the DOWNLOAD urc */
 	ret = k_sem_take(&mdata.fs_sem, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("No DOWNLOAD received");
+		LOG_ERROR("No DOWNLOAD received");
 		return ret;
 	}
 
@@ -307,7 +307,7 @@ static int sim7080_fs_upload(const char *name, sim7080_tls_cert_read_func read_f
 		int n = read_func(mdata.tls_cert_buf, to_write, written);
 
 		if (n < 0) {
-			LOG_ERR("Read function returned error");
+			LOG_ERROR("Read function returned error");
 			return ret;
 		}
 
@@ -324,12 +324,12 @@ static int sim7080_fs_upload(const char *name, sim7080_tls_cert_read_func read_f
 	/* Wait for the OK */
 	ret = k_sem_take(&mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("No status received");
+		LOG_ERROR("No status received");
 		return ret;
 	}
 
 	if (modem_cmd_handler_get_error(&mdata.cmd_handler_data) != 0) {
-		LOG_ERR("Upload failed with error");
+		LOG_ERROR("Upload failed with error");
 		return ret;
 	}
 
@@ -372,13 +372,13 @@ int mdm_sim7080_import_root_ca(const char *cert_name, sim7080_tls_cert_read_func
 	int ret = sim7080_fs_init();
 
 	if (ret != 0) {
-		LOG_ERR("Failed to init file system");
+		LOG_ERROR("Failed to init file system");
 		return ret;
 	}
 
 	ret = sim7080_fs_upload(cert_name, read_func, cert_len, 10000);
 	if (ret != 0) {
-		LOG_ERR("Root CA upload failed");
+		LOG_ERROR("Root CA upload failed");
 		(void)sim7080_fs_close();
 		return ret;
 	}
@@ -393,7 +393,7 @@ int mdm_sim7080_import_root_ca(const char *cert_name, sim7080_tls_cert_read_func
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, send_buf, &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Root CA conversion failed");
+		LOG_ERROR("Root CA conversion failed");
 		(void)sim7080_fs_delete(cert_name);
 		(void)sim7080_fs_close();
 		return ret;
@@ -401,14 +401,14 @@ int mdm_sim7080_import_root_ca(const char *cert_name, sim7080_tls_cert_read_func
 
 	ret = sim7080_fs_delete(cert_name);
 	if (ret != 0) {
-		LOG_ERR("Failed to delete root ca file");
+		LOG_ERROR("Failed to delete root ca file");
 		(void)sim7080_fs_close();
 		return ret;
 	}
 
 	ret = sim7080_fs_close();
 	if (ret != 0) {
-		LOG_ERR("Failed to close file system");
+		LOG_ERROR("Failed to close file system");
 		return ret;
 	}
 
@@ -431,20 +431,20 @@ int mdm_sim7080_import_client_cert(const char *cert_name, sim7080_tls_cert_read_
 	int ret = sim7080_fs_init();
 
 	if (ret != 0) {
-		LOG_ERR("Failed to init file system");
+		LOG_ERROR("Failed to init file system");
 		return ret;
 	}
 
 	ret = sim7080_fs_upload(cert_name, cert_read_func, cert_len, 10000);
 	if (ret != 0) {
-		LOG_ERR("Client cert upload failed");
+		LOG_ERROR("Client cert upload failed");
 		(void)sim7080_fs_close();
 		return ret;
 	}
 
 	ret = sim7080_fs_upload(key_name, key_read_func, key_len, 10000);
 	if (ret != 0) {
-		LOG_ERR("Client key upload failed");
+		LOG_ERROR("Client key upload failed");
 		(void)sim7080_fs_close();
 		return ret;
 	}
@@ -466,7 +466,7 @@ int mdm_sim7080_import_client_cert(const char *cert_name, sim7080_tls_cert_read_
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, send_buf, &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Client certificate conversion failed");
+		LOG_ERROR("Client certificate conversion failed");
 		(void)sim7080_fs_delete(cert_name);
 		(void)sim7080_fs_close();
 		return ret;
@@ -474,21 +474,21 @@ int mdm_sim7080_import_client_cert(const char *cert_name, sim7080_tls_cert_read_
 
 	ret = sim7080_fs_delete(cert_name);
 	if (ret != 0) {
-		LOG_ERR("Failed to delete client certificate file");
+		LOG_ERROR("Failed to delete client certificate file");
 		(void)sim7080_fs_close();
 		return ret;
 	}
 
 	ret = sim7080_fs_delete(key_name);
 	if (ret != 0) {
-		LOG_ERR("Failed to delete client key file");
+		LOG_ERROR("Failed to delete client key file");
 		(void)sim7080_fs_close();
 		return ret;
 	}
 
 	ret = sim7080_fs_close();
 	if (ret != 0) {
-		LOG_ERR("Failed to close file system");
+		LOG_ERROR("Failed to close file system");
 		return ret;
 	}
 
@@ -507,13 +507,13 @@ int mdm_sim7080_import_dtls_psk(const char *psk_name, sim7080_tls_cert_read_func
 	int ret = sim7080_fs_init();
 
 	if (ret != 0) {
-		LOG_ERR("Failed to init file system");
+		LOG_ERROR("Failed to init file system");
 		return ret;
 	}
 
 	ret = sim7080_fs_upload(psk_name, read_func, psk_len, 10000);
 	if (ret != 0) {
-		LOG_ERR("PSK upload failed");
+		LOG_ERROR("PSK upload failed");
 		(void)sim7080_fs_close();
 		return ret;
 	}
@@ -528,7 +528,7 @@ int mdm_sim7080_import_dtls_psk(const char *psk_name, sim7080_tls_cert_read_func
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, send_buf, &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("PSK conversion failed");
+		LOG_ERROR("PSK conversion failed");
 		(void)sim7080_fs_delete(psk_name);
 		(void)sim7080_fs_close();
 		return ret;
@@ -536,14 +536,14 @@ int mdm_sim7080_import_dtls_psk(const char *psk_name, sim7080_tls_cert_read_func
 
 	ret = sim7080_fs_delete(psk_name);
 	if (ret != 0) {
-		LOG_ERR("Failed to delete psk file");
+		LOG_ERROR("Failed to delete psk file");
 		(void)sim7080_fs_close();
 		return ret;
 	}
 
 	ret = sim7080_fs_close();
 	if (ret != 0) {
-		LOG_ERR("Failed to close file system");
+		LOG_ERROR("Failed to close file system");
 		return ret;
 	}
 
@@ -555,27 +555,27 @@ int mdm_sim7080_configure_tls_certs(int fd, const char *root_ca, const char *cli
 	struct modem_socket *sock = modem_socket_from_fd(&mdata.socket_config, fd);
 
 	if (!sock) {
-		LOG_ERR("No socket allocated with fd %d", fd);
+		LOG_ERROR("No socket allocated with fd %d", fd);
 		return -ENOENT;
 	}
 
 	if (sock->type != NET_SOCK_STREAM) {
-		LOG_ERR("Cannot configure tls certs for non tcp sockets");
+		LOG_ERROR("Cannot configure tls certs for non tcp sockets");
 		return -EINVAL;
 	}
 
 	if (root_ca == NULL) {
-		LOG_ERR("No root ca name provided");
+		LOG_ERROR("No root ca name provided");
 		return -EINVAL;
 	}
 
 	if (strlen(root_ca) > MDM_SSL_CERT_NAME_MAX_LEN) {
-		LOG_ERR("Root ca name exceeds maximum length");
+		LOG_ERROR("Root ca name exceeds maximum length");
 		return -EINVAL;
 	}
 
 	if (client_cert && strlen(client_cert) > MDM_SSL_CERT_NAME_MAX_LEN) {
-		LOG_ERR("Client cert name exceeds maximum length");
+		LOG_ERROR("Client cert name exceeds maximum length");
 		return -EINVAL;
 	}
 
@@ -598,22 +598,22 @@ int mdm_sim7080_configure_dtls_psktable(int fd, const char *psktable)
 	struct modem_socket *sock = modem_socket_from_fd(&mdata.socket_config, fd);
 
 	if (!sock) {
-		LOG_ERR("No socket allocated with fd %d", fd);
+		LOG_ERROR("No socket allocated with fd %d", fd);
 		return -ENOENT;
 	}
 
 	if (sock->type != NET_SOCK_DGRAM) {
-		LOG_ERR("Cannot configure tls certs for non tcp sockets");
+		LOG_ERROR("Cannot configure tls certs for non tcp sockets");
 		return -EINVAL;
 	}
 
 	if (psktable == NULL) {
-		LOG_ERR("No root ca name provided");
+		LOG_ERROR("No root ca name provided");
 		return -EINVAL;
 	}
 
 	if (strlen(psktable) > MDM_SSL_CERT_NAME_MAX_LEN) {
-		LOG_ERR("Root ca name exceeds maximum length");
+		LOG_ERROR("Root ca name exceeds maximum length");
 		return -EINVAL;
 	}
 

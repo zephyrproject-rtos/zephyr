@@ -174,7 +174,7 @@ static int rx8130ce_get_time(const struct device *dev, struct rtc_time *timeptr)
 	k_sem_take(&data->lock, K_FOREVER);
 	rc = i2c_burst_read_dt(&cfg->i2c, TIME, (uint8_t *)&rtc_time, sizeof(rtc_time));
 	if (rc != 0) {
-		LOG_ERR("Failed to read time");
+		LOG_ERROR("Failed to read time");
 		goto error;
 	}
 	timeptr->tm_sec = bcd2bin(rtc_time.second & RX8130CE_SECONDS_MASK);
@@ -212,7 +212,7 @@ static int rx8130ce_set_time(const struct device *dev, const struct rtc_time *ti
 
 	rc = i2c_burst_write_dt(&cfg->i2c, TIME, (uint8_t *)&rtc_time, sizeof(rtc_time));
 	if (rc != 0) {
-		LOG_ERR("Failed to write time");
+		LOG_ERROR("Failed to write time");
 		goto error;
 	}
 	LOG_DBG("set time: year = %d, mon = %d, mday = %d, hour = %d, min = %d, sec = %d",
@@ -242,7 +242,7 @@ static void rx8130ce_irq_work_handler(struct k_work *work)
 	k_sem_take(&data->lock, K_FOREVER);
 	rc = i2c_burst_read_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to read flag register");
+		LOG_ERROR("Failed to read flag register");
 		goto exit;
 	}
 #ifdef CONFIG_RTC_ALARM
@@ -263,7 +263,7 @@ static void rx8130ce_irq_work_handler(struct k_work *work)
 	data->reg.flag &= ~(FLAG_AF | FLAG_UF);
 	rc = i2c_burst_write_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to clear alarm flag");
+		LOG_ERROR("Failed to clear alarm flag");
 		goto exit;
 	}
 exit:
@@ -299,12 +299,12 @@ static int rx8130ce_alarm_get_supported_fields(const struct device *dev, uint16_
 	const struct rx8130ce_config *cfg = dev->config;
 
 	if (cfg->irq.port == NULL) {
-		LOG_ERR("IRQ not configured");
+		LOG_ERROR("IRQ not configured");
 		return -ENOTSUP;
 	}
 
 	if (id != 0U) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
@@ -322,12 +322,12 @@ static int rx8130ce_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	const struct rx8130ce_config *cfg = dev->config;
 
 	if (id != 0U) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
 	if ((mask & ~(RX8130CE_ALARM_MASK)) != 0U) {
-		LOG_ERR("unsupported alarm field mask 0x%04x", mask);
+		LOG_ERROR("unsupported alarm field mask 0x%04x", mask);
 		return -EINVAL;
 	}
 
@@ -335,7 +335,7 @@ static int rx8130ce_alarm_set_time(const struct device *dev, uint16_t id, uint16
 
 	rc = i2c_burst_read_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to read control registers");
+		LOG_ERROR("Failed to read control registers");
 		goto error;
 	}
 	/* Prevent alarm interrupts inadvertently while entering settings/time */
@@ -345,7 +345,7 @@ static int rx8130ce_alarm_set_time(const struct device *dev, uint16_t id, uint16
 		rc = i2c_burst_write_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg,
 			  sizeof(data->reg));
 		if (rc != 0) {
-			LOG_ERR("Failed to write time");
+			LOG_ERROR("Failed to write time");
 			goto error;
 		}
 	}
@@ -373,14 +373,14 @@ static int rx8130ce_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	/* Write alarm time */
 	rc = i2c_burst_write_dt(&cfg->i2c, ALARM, (uint8_t *)&alarm_time, sizeof(alarm_time));
 	if (rc != 0) {
-		LOG_ERR("Failed to write alarm time");
+		LOG_ERROR("Failed to write alarm time");
 		goto error;
 	}
 
 	/* Enable alarm */
 	rc = i2c_burst_write_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to write control registers");
+		LOG_ERROR("Failed to write control registers");
 		goto error;
 	}
 error:
@@ -398,7 +398,7 @@ static int rx8130ce_alarm_get_time(const struct device *dev, uint16_t id, uint16
 	const struct rx8130ce_config *cfg = dev->config;
 
 	if (id != 0U) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
@@ -407,13 +407,13 @@ static int rx8130ce_alarm_get_time(const struct device *dev, uint16_t id, uint16
 	memset(timeptr, 0x00, sizeof(*timeptr));
 	rc = i2c_burst_read_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to read control registers");
+		LOG_ERROR("Failed to read control registers");
 		goto error;
 	}
 
 	rc = i2c_burst_read_dt(&cfg->i2c, ALARM, (uint8_t *)&alarm_time, sizeof(alarm_time));
 	if (rc != 0) {
-		LOG_ERR("Failed to read alarm time");
+		LOG_ERROR("Failed to read alarm time");
 		goto error;
 	}
 
@@ -448,14 +448,14 @@ static int rx8130ce_alarm_is_pending(const struct device *dev, uint16_t id)
 	const struct rx8130ce_config *cfg = dev->config;
 
 	if (id != 0U) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
 	rc = i2c_burst_read_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to read control registers");
+		LOG_ERROR("Failed to read control registers");
 		goto error;
 	}
 
@@ -473,18 +473,18 @@ static int rx8130ce_alarm_set_callback(const struct device *dev, uint16_t id,
 	const struct rx8130ce_config *cfg = dev->config;
 
 	if (id != 0U) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 	if (cfg->irq.port == NULL) {
-		LOG_ERR("IRQ not configured");
+		LOG_ERROR("IRQ not configured");
 		return -ENOTSUP;
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
 	rc = i2c_burst_read_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to read control registers");
+		LOG_ERROR("Failed to read control registers");
 		goto exit;
 	}
 	if (callback == NULL) {
@@ -496,7 +496,7 @@ static int rx8130ce_alarm_set_callback(const struct device *dev, uint16_t id,
 #endif
 			rc = gpio_pin_interrupt_configure_dt(&cfg->irq, GPIO_INT_DISABLE);
 			if (rc != 0) {
-				LOG_ERR("Failed to disable interrupt");
+				LOG_ERROR("Failed to disable interrupt");
 				goto exit;
 			}
 #ifdef CONFIG_RTC_UPDATE
@@ -510,13 +510,13 @@ static int rx8130ce_alarm_set_callback(const struct device *dev, uint16_t id,
 		data->alarm_user_data = user_data;
 		rc = gpio_pin_interrupt_configure_dt(&cfg->irq, GPIO_INT_EDGE_TO_ACTIVE);
 		if (rc != 0) {
-			LOG_ERR("Failed to configure interrupt");
+			LOG_ERROR("Failed to configure interrupt");
 			goto exit;
 		}
 	}
 	rc = i2c_burst_write_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to write control registers");
+		LOG_ERROR("Failed to write control registers");
 		goto exit;
 	}
 exit:
@@ -534,14 +534,14 @@ static int rx8130ce_update_set_callback(const struct device *dev, rtc_update_cal
 	struct rx8130ce_data *data = dev->data;
 
 	if (cfg->irq.port == NULL) {
-		LOG_ERR("IRQ not configured");
+		LOG_ERROR("IRQ not configured");
 		return -ENOTSUP;
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
 	rc = i2c_burst_read_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to read control registers");
+		LOG_ERROR("Failed to read control registers");
 		goto exit;
 	}
 	if (callback == NULL) {
@@ -554,7 +554,7 @@ static int rx8130ce_update_set_callback(const struct device *dev, rtc_update_cal
 		#endif
 			rc = gpio_pin_interrupt_configure_dt(&cfg->irq, GPIO_INT_DISABLE);
 			if (rc != 0) {
-				LOG_ERR("Failed to disable interrupt");
+				LOG_ERROR("Failed to disable interrupt");
 				goto exit;
 			}
 		#ifdef CONFIG_RTC_ALARM
@@ -566,13 +566,13 @@ static int rx8130ce_update_set_callback(const struct device *dev, rtc_update_cal
 		data->update_user_data = user_data;
 		rc = gpio_pin_interrupt_configure_dt(&cfg->irq, GPIO_INT_EDGE_TO_ACTIVE);
 		if (rc != 0) {
-			LOG_ERR("Failed to configure interrupt");
+			LOG_ERROR("Failed to configure interrupt");
 			goto exit;
 		}
 	}
 	rc = i2c_burst_write_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to write control registers");
+		LOG_ERROR("Failed to write control registers");
 		goto exit;
 	}
 exit:
@@ -591,7 +591,7 @@ static int rx8130ce_set_calibration(const struct device *dev, int32_t freq_ppb)
 	uint8_t offset = 0;
 
 	if (freq_ppb < DIGITAL_OFFSET_MIN || freq_ppb > DIGITAL_OFFSET_MAX) {
-		LOG_ERR("Invalid calibration value: %d", freq_ppb);
+		LOG_ERROR("Invalid calibration value: %d", freq_ppb);
 		return -EINVAL;
 	}
 
@@ -609,7 +609,7 @@ static int rx8130ce_set_calibration(const struct device *dev, int32_t freq_ppb)
 
 	rc = i2c_burst_write_dt(&cfg->i2c, OFFSET, &offset, sizeof(offset));
 	if (rc != 0) {
-		LOG_ERR("Failed to write calibration value");
+		LOG_ERROR("Failed to write calibration value");
 		goto exit;
 	}
 exit:
@@ -628,7 +628,7 @@ static int rx8130ce_get_calibration(const struct device *dev, int32_t *freq_ppb)
 	k_sem_take(&data->lock, K_FOREVER);
 	rc = i2c_burst_read_dt(&cfg->i2c, OFFSET, &offset, sizeof(offset));
 	if (rc != 0) {
-		LOG_ERR("Failed to read calibration value");
+		LOG_ERROR("Failed to read calibration value");
 		goto exit;
 	}
 	/* Explanation see section 17 of the datasheet */
@@ -658,14 +658,14 @@ static int rx8130ce_init(const struct device *dev)
 	data->dev = dev;
 	k_sem_init(&data->lock, 1, 1);
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 
 	/* read all control registers */
 	rc = i2c_burst_read_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to read control registers");
+		LOG_ERROR("Failed to read control registers");
 		return rc;
 	}
 	data->reg.flag = 0x00;
@@ -688,7 +688,7 @@ static int rx8130ce_init(const struct device *dev)
 		data->reg.extension &= ~(EXT_FSEL1 | EXT_FSEL0);
 		break;
 	default:
-		LOG_ERR("Invalid clockout frequency option: %d", cfg->clockout_frequency);
+		LOG_ERROR("Invalid clockout frequency option: %d", cfg->clockout_frequency);
 		return -EINVAL;
 	}
 
@@ -700,7 +700,7 @@ static int rx8130ce_init(const struct device *dev)
 		rc = i2c_burst_write_dt(&cfg->i2c, CTRL1,
 			  (uint8_t *)&data->reg.ctrl1, sizeof(data->reg.ctrl1));
 		if (rc != 0) {
-			LOG_ERR("Failed to write ctrl1 register");
+			LOG_ERROR("Failed to write ctrl1 register");
 			return rc;
 		}
 	}
@@ -728,14 +728,14 @@ static int rx8130ce_init(const struct device *dev)
 		gpio_init_callback(&data->irq_cb, rx8130ce_irq, BIT(cfg->irq.pin));
 		rc = gpio_add_callback_dt(&cfg->irq, &data->irq_cb);
 		if (rc != 0) {
-			LOG_ERR("Failed to add callback");
+			LOG_ERROR("Failed to add callback");
 			return rc;
 		}
 	}
 #endif /* CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE */
 	rc = i2c_burst_write_dt(&cfg->i2c, EXTENSION, (uint8_t *)&data->reg, sizeof(data->reg));
 	if (rc != 0) {
-		LOG_ERR("Failed to write control registers");
+		LOG_ERROR("Failed to write control registers");
 		return rc;
 	}
 	return 0;

@@ -166,7 +166,7 @@ int flash_gd32_write_range(off_t offset, const void *data, size_t len)
 	if (FMC_STAT & gd32_fmc_v3_WRITE_ERR) {
 		ret = -EIO;
 		FMC_STAT |= gd32_fmc_v3_WRITE_ERR;
-		LOG_ERR("FMC programming failed");
+		LOG_ERROR("FMC programming failed");
 	}
 
 expired_out:
@@ -202,7 +202,7 @@ static int gd32_fmc_v3_sector_erase(uint8_t sector)
 	if (FMC_STAT & gd32_fmc_v3_ERASE_ERR) {
 		ret = -EIO;
 		FMC_STAT |= gd32_fmc_v3_ERASE_ERR;
-		LOG_ERR("FMC sector %u erase failed", sector);
+		LOG_ERROR("FMC sector %u erase failed", sector);
 	}
 
 expired_out:

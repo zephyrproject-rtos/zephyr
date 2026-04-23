@@ -156,19 +156,19 @@ static int ina230_init_trigger(const struct device *dev)
 
 		ret = ina230_trigger_mode_init(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to init trigger mode\n");
+			LOG_ERROR("Failed to init trigger mode\n");
 			return ret;
 		}
 
 		ret = ina2xx_reg_write(bus, INA230_REG_ALERT, config->alert_limit);
 		if (ret < 0) {
-			LOG_ERR("Failed to write alert register!");
+			LOG_ERROR("Failed to write alert register!");
 			return ret;
 		}
 
 		ret = ina2xx_reg_write(bus, INA230_REG_MASK, config->mask);
 		if (ret < 0) {
-			LOG_ERR("Failed to write mask register!");
+			LOG_ERROR("Failed to write mask register!");
 			return ret;
 		}
 	}

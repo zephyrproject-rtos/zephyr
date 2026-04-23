@@ -192,7 +192,7 @@ static int flash_wait_status(const struct device *dev, enum m1ksts2 state)
 {
 	/* Waiting for M1K-READ to complete */
 	if (WAIT_FOR(!IS_BIT_SET(sys_read8(SMFI_M1KSTS2), state), INT_MAX, NULL) == false) {
-		LOG_ERR("%s: Timeout waiting for status", __func__);
+		LOG_ERROR("%s: Timeout waiting for status", __func__);
 
 		return -ETIMEDOUT;
 	}
@@ -324,7 +324,7 @@ static int m1k_flash_sel_access(const struct device *dev, enum flash_it51xxx_ex_
 		/* Set the pin to FSPI alternate function. */
 		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
-			LOG_ERR("%s: Failed to configure FSPI pins", dev->name);
+			LOG_ERROR("%s: Failed to configure FSPI pins", dev->name);
 			return ret;
 		}
 
@@ -392,8 +392,8 @@ static int flash_it51xxx_read(const struct device *dev, off_t offset, void *dst_
 	}
 
 	if (!is_valid_range(offset, len)) {
-		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", FLASH_SIZE,
-			offset, len);
+		LOG_ERROR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", FLASH_SIZE,
+			  offset, len);
 		return -EINVAL;
 	}
 
@@ -407,7 +407,7 @@ static int flash_it51xxx_read(const struct device *dev, off_t offset, void *dst_
 
 		ret = m1k_flash_read(dev, offset, dst, read_len);
 		if (ret != 0) {
-			LOG_ERR("%s: failed at offset=%#lx", __func__, offset);
+			LOG_ERROR("%s: failed at offset=%#lx", __func__, offset);
 			break;
 		}
 
@@ -442,8 +442,8 @@ static int flash_it51xxx_write(const struct device *dev, off_t offset, const voi
 	}
 
 	if (!is_valid_range(offset, len)) {
-		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", FLASH_SIZE,
-			offset, len);
+		LOG_ERROR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", FLASH_SIZE,
+			  offset, len);
 		return -EINVAL;
 	}
 
@@ -454,7 +454,7 @@ static int flash_it51xxx_write(const struct device *dev, off_t offset, const voi
 
 		ret = m1k_flash_write(dev, offset, src, write_len);
 		if (ret != 0) {
-			LOG_ERR("%s: failed at offset=%#lx", __func__, offset);
+			LOG_ERROR("%s: failed at offset=%#lx", __func__, offset);
 			break;
 		}
 
@@ -485,15 +485,15 @@ static int flash_it51xxx_erase(const struct device *dev, off_t offset, size_t le
 	}
 
 	if (!is_valid_range(offset, len)) {
-		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", FLASH_SIZE,
-			offset, len);
+		LOG_ERROR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", FLASH_SIZE,
+			  offset, len);
 		return -EINVAL;
 	}
 
 	/* Check that the offset and length are multiples of the erase block size */
 	if ((offset % FLASH_ERASE_BLK_SZ) || (len % FLASH_ERASE_BLK_SZ)) {
-		LOG_ERR("Erase range is not a multiple of the block size. offset=%#lx, len=%u",
-			offset, len);
+		LOG_ERROR("Erase range is not a multiple of the block size. offset=%#lx, len=%u",
+			  offset, len);
 		return -EINVAL;
 	}
 
@@ -502,7 +502,7 @@ static int flash_it51xxx_erase(const struct device *dev, off_t offset, size_t le
 	while (len > 0) {
 		ret = m1k_flash_erase(dev, offset, len);
 		if (ret != 0) {
-			LOG_ERR("%s: failed at offset=%#lx", __func__, offset);
+			LOG_ERROR("%s: failed at offset=%#lx", __func__, offset);
 			break;
 		}
 

@@ -497,7 +497,7 @@ static int ads1x4s0x_read_register(const struct device *dev,
 	int result = spi_transceive_dt(&config->bus, &tx, &rx);
 
 	if (result != 0) {
-		LOG_ERR("%s: spi_transceive failed with error %i", dev->name, result);
+		LOG_ERROR("%s: spi_transceive failed with error %i", dev->name, result);
 		return result;
 	}
 
@@ -530,7 +530,7 @@ static int ads1x4s0x_write_register(const struct device *dev,
 	int result = spi_write_dt(&config->bus, &tx);
 
 	if (result != 0) {
-		LOG_ERR("%s: spi_write failed with error %i", dev->name, result);
+		LOG_ERROR("%s: spi_write failed with error %i", dev->name, result);
 		return result;
 	}
 
@@ -578,7 +578,7 @@ static int ads1x4s0x_write_multiple_registers(const struct device *dev,
 	int result = spi_write_dt(&config->bus, &tx);
 
 	if (result != 0) {
-		LOG_ERR("%s: spi_write failed with error %i", dev->name, result);
+		LOG_ERROR("%s: spi_write failed with error %i", dev->name, result);
 		return result;
 	}
 
@@ -604,7 +604,7 @@ static int ads1x4s0x_send_command(const struct device *dev, enum ads1x4s0x_comma
 	int result = spi_write_dt(&config->bus, &tx);
 
 	if (result != 0) {
-		LOG_ERR("%s: spi_write failed with error %i", dev->name, result);
+		LOG_ERROR("%s: spi_write failed with error %i", dev->name, result);
 		return result;
 	}
 
@@ -638,7 +638,7 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 	ADS1X4S0X_REGISTER_IDACMUX_SET_DEFAULTS(idac_mux);
 
 	if (channel_cfg->channel_id != 0) {
-		LOG_ERR("%s: only one channel is supported", dev->name);
+		LOG_ERROR("%s: only one channel is supported", dev->name);
 		return -EINVAL;
 	}
 
@@ -649,8 +649,8 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 	 */
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT &&
 	    acquisition_time_unit != ADC_ACQ_TIME_TICKS) {
-		LOG_ERR("%s: invalid acquisition time %i", dev->name,
-			channel_cfg->acquisition_time);
+		LOG_ERROR("%s: invalid acquisition time %i", dev->name,
+			  channel_cfg->acquisition_time);
 		return -EINVAL;
 	}
 
@@ -688,7 +688,7 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 		ADS1X4S0X_REGISTER_REF_REFSEL_SET(reference_control, 0b01);
 		break;
 	default:
-		LOG_ERR("%s: reference %i is not supported", dev->name, channel_cfg->reference);
+		LOG_ERROR("%s: reference %i is not supported", dev->name, channel_cfg->reference);
 		return -EINVAL;
 	}
 
@@ -698,21 +698,21 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 			dev->name, channel_cfg->input_positive, channel_cfg->input_negative);
 		if (channel_cfg->input_positive >= config->channels &&
 		    channel_cfg->input_positive != ADS1X4S0X_INPUT_SELECTION_AINCOM) {
-			LOG_ERR("%s: positive channel input %i is invalid", dev->name,
-				channel_cfg->input_positive);
+			LOG_ERROR("%s: positive channel input %i is invalid", dev->name,
+				  channel_cfg->input_positive);
 			return -EINVAL;
 		}
 
 		if (channel_cfg->input_negative >= config->channels &&
 		    channel_cfg->input_negative != ADS1X4S0X_INPUT_SELECTION_AINCOM) {
-			LOG_ERR("%s: negative channel input %i is invalid", dev->name,
-				channel_cfg->input_negative);
+			LOG_ERROR("%s: negative channel input %i is invalid", dev->name,
+				  channel_cfg->input_negative);
 			return -EINVAL;
 		}
 
 		if (channel_cfg->input_positive == channel_cfg->input_negative) {
-			LOG_ERR("%s: negative and positive channel inputs must be different",
-				dev->name);
+			LOG_ERROR("%s: negative and positive channel inputs must be different",
+				  dev->name);
 			return -EINVAL;
 		}
 
@@ -725,8 +725,8 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 			dev->name, channel_cfg->input_positive);
 		if (channel_cfg->input_positive >= config->channels &&
 		    channel_cfg->input_positive != ADS1X4S0X_INPUT_SELECTION_AINCOM) {
-			LOG_ERR("%s: channel input %i is invalid", dev->name,
-				channel_cfg->input_positive);
+			LOG_ERROR("%s: channel input %i is invalid", dev->name,
+				  channel_cfg->input_positive);
 			return -EINVAL;
 		}
 
@@ -763,7 +763,7 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 		ADS1X4S0X_REGISTER_PGA_GAIN_SET(gain, 0b111);
 		break;
 	default:
-		LOG_ERR("%s: gain value %i not supported", dev->name, channel_cfg->gain);
+		LOG_ERROR("%s: gain value %i not supported", dev->name, channel_cfg->gain);
 		return -EINVAL;
 	}
 
@@ -804,7 +804,7 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 		ADS1X4S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b1001);
 		break;
 	default:
-		LOG_ERR("%s: IDAC magnitude %i not supported", dev->name, config->idac_current);
+		LOG_ERROR("%s: IDAC magnitude %i not supported", dev->name, config->idac_current);
 		return -EINVAL;
 	}
 
@@ -812,14 +812,14 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 		LOG_DBG("%s: current source pin set to %i and %i", dev->name,
 			channel_cfg->current_source_pin[0], channel_cfg->current_source_pin[1]);
 		if (channel_cfg->current_source_pin[0] > 0b1111) {
-			LOG_ERR("%s: invalid selection %i for I1MUX", dev->name,
-				channel_cfg->current_source_pin[0]);
+			LOG_ERROR("%s: invalid selection %i for I1MUX", dev->name,
+				  channel_cfg->current_source_pin[0]);
 			return -EINVAL;
 		}
 
 		if (channel_cfg->current_source_pin[1] > 0b1111) {
-			LOG_ERR("%s: invalid selection %i for I2MUX", dev->name,
-				channel_cfg->current_source_pin[1]);
+			LOG_ERROR("%s: invalid selection %i for I2MUX", dev->name,
+				  channel_cfg->current_source_pin[1]);
 			return -EINVAL;
 		}
 
@@ -844,7 +844,8 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 			}
 
 			if (pin_selections[i] == pin_selections[j]) {
-				LOG_ERR("%s: pins for inputs and current sources must be different",
+				LOG_ERROR(
+					"%s: pins for inputs and current sources must be different",
 					dev->name);
 				return -EINVAL;
 			}
@@ -855,8 +856,8 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 
 	if ((channel_cfg->vbias_pins &
 	     ~GENMASK(ADS1X4S0X_VBIAS_PIN_MAX, ADS1X4S0X_VBIAS_PIN_MIN)) != 0) {
-		LOG_ERR("%s: invalid VBIAS pin selection 0x%08X", dev->name,
-			channel_cfg->vbias_pins);
+		LOG_ERROR("%s: invalid VBIAS pin selection 0x%08X", dev->name,
+			  channel_cfg->vbias_pins);
 		return -EINVAL;
 	}
 
@@ -883,7 +884,7 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 						    ARRAY_SIZE(values));
 
 	if (result != 0) {
-		LOG_ERR("%s: unable to configure registers", dev->name);
+		LOG_ERROR("%s: unable to configure registers", dev->name);
 		return result;
 	}
 
@@ -915,17 +916,17 @@ static int ads1x4s0x_validate_sequence(const struct device *dev,
 	const struct ads1x4s0x_config *config = dev->config;
 
 	if (sequence->resolution != config->resolution) {
-		LOG_ERR("%s: invalid resolution", dev->name);
+		LOG_ERROR("%s: invalid resolution", dev->name);
 		return -EINVAL;
 	}
 
 	if (sequence->channels != BIT(0)) {
-		LOG_ERR("%s: invalid channel", dev->name);
+		LOG_ERROR("%s: invalid channel", dev->name);
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("%s: oversampling is not supported", dev->name);
+		LOG_ERROR("%s: oversampling is not supported", dev->name);
 		return -EINVAL;
 	}
 
@@ -958,7 +959,7 @@ static int ads1x4s0x_adc_start_read(const struct device *dev, const struct adc_s
 	result = ads1x4s0x_validate_sequence(dev, sequence);
 
 	if (result != 0) {
-		LOG_ERR("%s: sequence validation failed", dev->name);
+		LOG_ERROR("%s: sequence validation failed", dev->name);
 		return result;
 	}
 
@@ -981,14 +982,14 @@ static int ads1x4s0x_send_start_read(const struct device *dev)
 	if (config->gpio_start_sync.port == 0) {
 		result = ads1x4s0x_send_command(dev, ADS1X4S0X_COMMAND_START);
 		if (result != 0) {
-			LOG_ERR("%s: unable to send START/SYNC command", dev->name);
+			LOG_ERROR("%s: unable to send START/SYNC command", dev->name);
 			return result;
 		}
 	} else {
 		result = gpio_pin_set_dt(&config->gpio_start_sync, 1);
 
 		if (result != 0) {
-			LOG_ERR("%s: unable to start ADC operation", dev->name);
+			LOG_ERROR("%s: unable to start ADC operation", dev->name);
 			return result;
 		}
 
@@ -998,7 +999,7 @@ static int ads1x4s0x_send_start_read(const struct device *dev)
 		result = gpio_pin_set_dt(&config->gpio_start_sync, 0);
 
 		if (result != 0) {
-			LOG_ERR("%s: unable to start ADC operation", dev->name);
+			LOG_ERROR("%s: unable to start ADC operation", dev->name);
 			return result;
 		}
 	}
@@ -1041,7 +1042,7 @@ static int ads1x4s0x_read_sample_16(const struct device *dev, int16_t *buffer)
 	int result = spi_transceive_dt(&config->bus, &tx, &rx);
 
 	if (result != 0) {
-		LOG_ERR("%s: spi_transceive failed with error %i", dev->name, result);
+		LOG_ERROR("%s: spi_transceive failed with error %i", dev->name, result);
 		return result;
 	}
 
@@ -1080,7 +1081,7 @@ static int ads1x4s0x_read_sample_24(const struct device *dev, int32_t *buffer)
 	int result = spi_transceive_dt(&config->bus, &tx, &rx);
 
 	if (result != 0) {
-		LOG_ERR("%s: spi_transceive failed with error %i", dev->name, result);
+		LOG_ERROR("%s: spi_transceive failed with error %i", dev->name, result);
 		return result;
 	}
 
@@ -1105,14 +1106,14 @@ static int ads1x4s0x_adc_perform_read(const struct device *dev)
 
 	result = ads1x4s0x_send_start_read(dev);
 	if (result != 0) {
-		LOG_ERR("%s: unable to start ADC conversion", dev->name);
+		LOG_ERROR("%s: unable to start ADC conversion", dev->name);
 		adc_context_complete(&data->ctx, result);
 		return result;
 	}
 
 	result = ads1x4s0x_wait_data_ready(dev);
 	if (result != 0) {
-		LOG_ERR("%s: waiting for data to be ready failed", dev->name);
+		LOG_ERROR("%s: waiting for data to be ready failed", dev->name);
 		adc_context_complete(&data->ctx, result);
 		return result;
 	}
@@ -1143,7 +1144,7 @@ static int ads1x4s0x_adc_perform_read(const struct device *dev)
 	}
 #endif
 
-	LOG_ERR("%s: reading sample failed", dev->name);
+	LOG_ERROR("%s: reading sample failed", dev->name);
 	adc_context_complete(&data->ctx, result);
 	return result;
 }
@@ -1244,7 +1245,7 @@ int ads1x4s0x_gpio_set_output(const struct device *dev, uint8_t pin, bool initia
 	int result = 0;
 
 	if (pin > ADS1X4S0X_GPIO_MAX) {
-		LOG_ERR("%s: invalid pin %i", dev->name, pin);
+		LOG_ERROR("%s: invalid pin %i", dev->name, pin);
 		return -EINVAL;
 	}
 
@@ -1272,7 +1273,7 @@ int ads1x4s0x_gpio_set_input(const struct device *dev, uint8_t pin)
 	int result = 0;
 
 	if (pin > ADS1X4S0X_GPIO_MAX) {
-		LOG_ERR("%s: invalid pin %i", dev->name, pin);
+		LOG_ERROR("%s: invalid pin %i", dev->name, pin);
 		return -EINVAL;
 	}
 
@@ -1295,7 +1296,7 @@ int ads1x4s0x_gpio_deconfigure(const struct device *dev, uint8_t pin)
 	int result = 0;
 
 	if (pin > ADS1X4S0X_GPIO_MAX) {
-		LOG_ERR("%s: invalid pin %i", dev->name, pin);
+		LOG_ERROR("%s: invalid pin %i", dev->name, pin);
 		return -EINVAL;
 	}
 
@@ -1318,17 +1319,17 @@ int ads1x4s0x_gpio_set_pin_value(const struct device *dev, uint8_t pin, bool val
 	int result = 0;
 
 	if (pin > ADS1X4S0X_GPIO_MAX) {
-		LOG_ERR("%s: invalid pin %i", dev->name, pin);
+		LOG_ERROR("%s: invalid pin %i", dev->name, pin);
 		return -EINVAL;
 	}
 
 	k_mutex_lock(&data->gpio_lock, K_FOREVER);
 
 	if ((BIT(pin) & data->gpio_enabled) == 0) {
-		LOG_ERR("%s: gpio pin %i not configured", dev->name, pin);
+		LOG_ERROR("%s: gpio pin %i not configured", dev->name, pin);
 		result = -EINVAL;
 	} else if ((BIT(pin) & data->gpio_direction) != 0) {
-		LOG_ERR("%s: gpio pin %i not configured as output", dev->name, pin);
+		LOG_ERROR("%s: gpio pin %i not configured as output", dev->name, pin);
 		result = -EINVAL;
 	} else {
 		data->gpio_value |= BIT(pin);
@@ -1348,17 +1349,17 @@ int ads1x4s0x_gpio_get_pin_value(const struct device *dev, uint8_t pin, bool *va
 	uint8_t gpio_dat;
 
 	if (pin > ADS1X4S0X_GPIO_MAX) {
-		LOG_ERR("%s: invalid pin %i", dev->name, pin);
+		LOG_ERROR("%s: invalid pin %i", dev->name, pin);
 		return -EINVAL;
 	}
 
 	k_mutex_lock(&data->gpio_lock, K_FOREVER);
 
 	if ((BIT(pin) & data->gpio_enabled) == 0) {
-		LOG_ERR("%s: gpio pin %i not configured", dev->name, pin);
+		LOG_ERROR("%s: gpio pin %i not configured", dev->name, pin);
 		result = -EINVAL;
 	} else if ((BIT(pin) & data->gpio_direction) == 0) {
-		LOG_ERR("%s: gpio pin %i not configured as input", dev->name, pin);
+		LOG_ERROR("%s: gpio pin %i not configured as input", dev->name, pin);
 		result = -EINVAL;
 	} else {
 		result = ads1x4s0x_read_register(dev, ADS1X4S0X_REGISTER_GPIODAT, &gpio_dat);
@@ -1441,14 +1442,14 @@ static int ads1x4s0x_init(const struct device *dev)
 #endif /* CONFIG_ADC_ADS1X4S0X_GPIO */
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("%s: SPI device is not ready", dev->name);
+		LOG_ERROR("%s: SPI device is not ready", dev->name);
 		return -ENODEV;
 	}
 
 	if (config->gpio_reset.port != NULL) {
 		result = gpio_pin_configure_dt(&config->gpio_reset, GPIO_OUTPUT_ACTIVE);
 		if (result != 0) {
-			LOG_ERR("%s: failed to initialize GPIO for reset", dev->name);
+			LOG_ERROR("%s: failed to initialize GPIO for reset", dev->name);
 			return result;
 		}
 	}
@@ -1456,20 +1457,20 @@ static int ads1x4s0x_init(const struct device *dev)
 	if (config->gpio_start_sync.port != NULL) {
 		result = gpio_pin_configure_dt(&config->gpio_start_sync, GPIO_OUTPUT_INACTIVE);
 		if (result != 0) {
-			LOG_ERR("%s: failed to initialize GPIO for start/sync", dev->name);
+			LOG_ERROR("%s: failed to initialize GPIO for start/sync", dev->name);
 			return result;
 		}
 	}
 
 	result = gpio_pin_configure_dt(&config->gpio_data_ready, GPIO_INPUT);
 	if (result != 0) {
-		LOG_ERR("%s: failed to initialize GPIO for data ready", dev->name);
+		LOG_ERROR("%s: failed to initialize GPIO for data ready", dev->name);
 		return result;
 	}
 
 	result = gpio_pin_interrupt_configure_dt(&config->gpio_data_ready, GPIO_INT_EDGE_TO_ACTIVE);
 	if (result != 0) {
-		LOG_ERR("%s: failed to configure data ready interrupt", dev->name);
+		LOG_ERROR("%s: failed to configure data ready interrupt", dev->name);
 		return -EIO;
 	}
 
@@ -1477,7 +1478,7 @@ static int ads1x4s0x_init(const struct device *dev)
 			   BIT(config->gpio_data_ready.pin));
 	result = gpio_add_callback(config->gpio_data_ready.port, &data->callback_data_ready);
 	if (result != 0) {
-		LOG_ERR("%s: failed to add data ready callback", dev->name);
+		LOG_ERROR("%s: failed to add data ready callback", dev->name);
 		return -EIO;
 	}
 
@@ -1494,7 +1495,7 @@ static int ads1x4s0x_init(const struct device *dev)
 	if (config->gpio_reset.port == NULL) {
 		result = ads1x4s0x_send_command(dev, ADS1X4S0X_COMMAND_RESET);
 		if (result != 0) {
-			LOG_ERR("%s: unable to send RESET command", dev->name);
+			LOG_ERROR("%s: unable to send RESET command", dev->name);
 			return result;
 		}
 	} else {
@@ -1506,12 +1507,12 @@ static int ads1x4s0x_init(const struct device *dev)
 
 	result = ads1x4s0x_read_register(dev, ADS1X4S0X_REGISTER_STATUS, &status);
 	if (result != 0) {
-		LOG_ERR("%s: unable to read status register", dev->name);
+		LOG_ERROR("%s: unable to read status register", dev->name);
 		return result;
 	}
 
 	if (ADS1X4S0X_REGISTER_STATUS_NOT_RDY_GET(status) == 0x01) {
-		LOG_ERR("%s: ADS114 is not yet ready", dev->name);
+		LOG_ERROR("%s: ADS114 is not yet ready", dev->name);
 		return -EBUSY;
 	}
 
@@ -1523,7 +1524,7 @@ static int ads1x4s0x_init(const struct device *dev)
 
 	result = ads1x4s0x_write_register(dev, ADS1X4S0X_REGISTER_REF, reference_control);
 	if (result != 0) {
-		LOG_ERR("%s: unable to set default reference control values", dev->name);
+		LOG_ERROR("%s: unable to set default reference control values", dev->name);
 		return result;
 	}
 
@@ -1532,13 +1533,13 @@ static int ads1x4s0x_init(const struct device *dev)
 	 */
 	result = ads1x4s0x_read_register(dev, ADS1X4S0X_REGISTER_REF, &reference_control_read);
 	if (result != 0) {
-		LOG_ERR("%s: unable to read reference control values", dev->name);
+		LOG_ERROR("%s: unable to read reference control values", dev->name);
 		return result;
 	}
 
 	if (reference_control != reference_control_read) {
-		LOG_ERR("%s: reference control register is incorrect: 0x%02X", dev->name,
-			reference_control_read);
+		LOG_ERROR("%s: reference control register is incorrect: 0x%02X", dev->name,
+			  reference_control_read);
 		return -EIO;
 	}
 
@@ -1550,7 +1551,7 @@ static int ads1x4s0x_init(const struct device *dev)
 	result = ads1x4s0x_gpio_write_config(dev);
 
 	if (result != 0) {
-		LOG_ERR("%s: unable to configure defaults for GPIOs", dev->name);
+		LOG_ERROR("%s: unable to configure defaults for GPIOs", dev->name);
 		return result;
 	}
 #endif

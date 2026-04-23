@@ -579,7 +579,7 @@ static int can_rcar_start(const struct device *dev)
 	if (config->common.phy != NULL) {
 		ret = can_transceiver_enable(config->common.phy, data->common.mode);
 		if (ret != 0) {
-			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			LOG_ERROR("failed to enable CAN transceiver (err %d)", ret);
 			return ret;
 		}
 	}
@@ -590,7 +590,7 @@ static int can_rcar_start(const struct device *dev)
 
 	ret = can_rcar_enter_operation_mode(config);
 	if (ret != 0) {
-		LOG_ERR("failed to enter operation mode (err %d)", ret);
+		LOG_ERROR("failed to enter operation mode (err %d)", ret);
 
 		if (config->common.phy != NULL) {
 			/* Attempt to disable the CAN transceiver in case of error */
@@ -619,7 +619,7 @@ static int can_rcar_stop(const struct device *dev)
 
 	ret = can_rcar_enter_halt_mode(config);
 	if (ret != 0) {
-		LOG_ERR("failed to enter halt mode (err %d)", ret);
+		LOG_ERROR("failed to enter halt mode (err %d)", ret);
 		k_mutex_unlock(&data->inst_mutex);
 		return ret;
 	}
@@ -631,7 +631,7 @@ static int can_rcar_stop(const struct device *dev)
 	if (config->common.phy != NULL) {
 		ret = can_transceiver_disable(config->common.phy);
 		if (ret != 0) {
-			LOG_ERR("failed to disable CAN transceiver (err %d)", ret);
+			LOG_ERROR("failed to disable CAN transceiver (err %d)", ret);
 			return ret;
 		}
 	}
@@ -661,7 +661,7 @@ static int can_rcar_set_mode(const struct device *dev, can_mode_t mode)
 	}
 
 	if ((mode & ~(supported)) != 0) {
-		LOG_ERR("Unsupported mode: 0x%08x", mode);
+		LOG_ERROR("Unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
 
@@ -673,7 +673,7 @@ static int can_rcar_set_mode(const struct device *dev, can_mode_t mode)
 
 	if ((mode & (CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) ==
 	    (CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) {
-		LOG_ERR("Combination of loopback and listenonly modes not supported");
+		LOG_ERROR("Combination of loopback and listenonly modes not supported");
 		ret = -ENOTSUP;
 		goto unlock;
 	} else if ((mode & CAN_MODE_LOOPBACK) != 0) {
@@ -886,13 +886,12 @@ static int can_rcar_send(const struct device *dev, const struct can_frame *frame
 		, (frame->flags & CAN_FRAME_RTR) != 0 ? "yes" : "no");
 
 	if (frame->dlc > CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)",
-			frame->dlc, CAN_MAX_DLC);
+		LOG_ERROR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;
 	}
 
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 
@@ -977,7 +976,7 @@ static int can_rcar_add_rx_filter(const struct device *dev, can_rx_callback_t cb
 	int filter_id;
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
-		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		LOG_ERROR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
@@ -992,7 +991,7 @@ static void can_rcar_remove_rx_filter(const struct device *dev, int filter_id)
 	struct can_rcar_data *data = dev->data;
 
 	if (filter_id < 0 || filter_id >= CONFIG_CAN_RCAR_MAX_FILTERS) {
-		LOG_ERR("filter ID %d out of bounds", filter_id);
+		LOG_ERROR("filter ID %d out of bounds", filter_id);
 		return;
 	}
 
@@ -1024,12 +1023,12 @@ static int can_rcar_init(const struct device *dev)
 	data->common.state_change_cb_user_data = NULL;
 
 	if (config->common.phy != NULL && !device_is_ready(config->common.phy)) {
-		LOG_ERR("CAN transceiver not ready");
+		LOG_ERROR("CAN transceiver not ready");
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -1073,7 +1072,7 @@ static int can_rcar_init(const struct device *dev)
 	ret = can_calc_timing(dev, &timing, config->common.bitrate,
 			      config->common.sample_point);
 	if (ret == -EINVAL) {
-		LOG_ERR("Can't find timing for given param");
+		LOG_ERROR("Can't find timing for given param");
 		return -EIO;
 	}
 

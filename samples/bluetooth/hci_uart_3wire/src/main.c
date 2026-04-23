@@ -168,7 +168,7 @@ static int h5_unslip_byte(uint8_t *byte)
 		*byte = SLIP_ESC;
 		break;
 	default:
-		LOG_ERR("Invalid escape byte %x\n", *byte);
+		LOG_ERROR("Invalid escape byte %x\n", *byte);
 		return -EIO;
 	}
 
@@ -202,8 +202,8 @@ static void process_unack(void)
 	}
 
 	if (next_seq != h5.rx_ack) {
-		LOG_ERR("Wrong sequence: rx_ack %u tx_seq %u next_seq %u", h5.rx_ack, h5.tx_seq,
-			next_seq);
+		LOG_ERROR("Wrong sequence: rx_ack %u tx_seq %u next_seq %u", h5.rx_ack, h5.tx_seq,
+			  next_seq);
 	}
 
 	LOG_DBG("Need to remove %u packet from the queue", number_removed);
@@ -212,7 +212,7 @@ static void process_unack(void)
 		struct net_buf *buf = k_fifo_get(&h5.unack_queue, K_NO_WAIT);
 
 		if (!buf) {
-			LOG_ERR("Unack queue is empty");
+			LOG_ERROR("Unack queue is empty");
 			break;
 		}
 
@@ -501,7 +501,7 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 				h5.rx_state = PAYLOAD;
 				break;
 			default:
-				LOG_ERR("Wrong packet type %u", type);
+				LOG_ERROR("Wrong packet type %u", type);
 				h5.rx_state = END;
 				break;
 			}
@@ -523,8 +523,8 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 
 			buf_tailroom = net_buf_tailroom(h5.rx_buf);
 			if (buf_tailroom < sizeof(byte)) {
-				LOG_ERR("Not enough space in buffer %zu/%zu", sizeof(byte),
-					buf_tailroom);
+				LOG_ERROR("Not enough space in buffer %zu/%zu", sizeof(byte),
+					  buf_tailroom);
 				h5_reset_rx();
 				break;
 			}
@@ -537,7 +537,7 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 			break;
 		case END:
 			if (byte != SLIP_DELIMITER) {
-				LOG_ERR("Missing ending SLIP_DELIMITER");
+				LOG_ERROR("Missing ending SLIP_DELIMITER");
 				h5_reset_rx();
 				break;
 			}
@@ -548,10 +548,9 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 			 * when parsing packet header but we need to receive
 			 * full packet anyway to clear UART.
 			 */
-			if (H5_HDR_RELIABLE(hdr) &&
-			    H5_HDR_SEQ(hdr) != h5.tx_ack) {
-				LOG_ERR("Seq expected %u got %u. Drop packet", h5.tx_ack,
-					H5_HDR_SEQ(hdr));
+			if (H5_HDR_RELIABLE(hdr) && H5_HDR_SEQ(hdr) != h5.tx_ack) {
+				LOG_ERROR("Seq expected %u got %u. Drop packet", h5.tx_ack,
+					  H5_HDR_SEQ(hdr));
 				h5_reset_rx();
 				break;
 			}
@@ -607,7 +606,7 @@ static void process_events(struct k_poll_event *ev, int count)
 				/* Pass buffer to the stack */
 				err = bt_send(buf);
 				if (err) {
-					LOG_ERR("Unable to send (err %d)", err);
+					LOG_ERROR("Unable to send (err %d)", err);
 					net_buf_unref(buf);
 				}
 			} else if (ev->tag == 2) {
@@ -733,7 +732,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 			h5.link_state = ACTIVE;
 		} else {
-			LOG_ERR("Not handled yet %x %x", buf->data[0], buf->data[1]);
+			LOG_ERROR("Not handled yet %x %x", buf->data[0], buf->data[1]);
 		}
 
 		net_buf_unref(buf);
@@ -750,7 +749,7 @@ static int hci_uart_init(void)
 	LOG_DBG("");
 
 	if (!device_is_ready(h5_dev)) {
-		LOG_ERR("HCI UART %s is not ready", h5_dev->name);
+		LOG_ERROR("HCI UART %s is not ready", h5_dev->name);
 		return -EINVAL;
 	}
 
@@ -810,7 +809,7 @@ int main(void)
 		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		err = h5_queue(buf);
 		if (err) {
-			LOG_ERR("Failed to send");
+			LOG_ERROR("Failed to send");
 		}
 	}
 

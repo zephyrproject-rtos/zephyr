@@ -12,7 +12,7 @@
 #define LOG_MODULE_REGISTER(x, y)
 
 #define LOG_INF(fmt, args...) printf("I: " fmt "\n", ##args)
-#define LOG_ERR(fmt, args...) printf("E: " fmt "\n", ##args)
+#define LOG_ERROR(fmt, args...) printf("E: " fmt "\n", ##args)
 #define LOG_DBG(fmt, args...) printf("D: " fmt "\n", ##args)
 
 #endif

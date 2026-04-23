@@ -36,7 +36,7 @@ void _mwmutex_create(_lock_t *mutex_ptr)
 #endif /* CONFIG_USERSPACE */
 
 	if (alloc_fail) {
-		LOG_ERR("MWDT lock allocation failed");
+		LOG_ERROR("MWDT lock allocation failed");
 		k_panic();
 	}
 

@@ -94,7 +94,8 @@ static void enable_mdio_bus(const struct mdio_xilinx_axienet_config *config,
 					 K_MSEC(XILINX_AXIENET_MDIO_INTERRUPT_TIMEOUT_MS));
 
 			if (err != 0) {
-				LOG_ERR("Could not enable MDIO bus: %d (%s)", err, strerror(-err));
+				LOG_ERROR("Could not enable MDIO bus: %d (%s)", err,
+					  strerror(-err));
 			}
 		}
 
@@ -104,7 +105,7 @@ static void enable_mdio_bus(const struct mdio_xilinx_axienet_config *config,
 			LOG_DBG("Waiting for bus enable flag");
 			k_busy_wait(1);
 			if (count++ > 1000) {
-				LOG_ERR("MDIO bus enable timeout");
+				LOG_ERROR("MDIO bus enable timeout");
 				return;
 			}
 		}
@@ -121,7 +122,7 @@ static void mdio_xilinx_axienet_bus_enable(const struct device *dev)
 	uint16_t clock_divider, clock_divider_full;
 
 	if (!config->clock_frequency_hz) {
-		LOG_ERR("No clock frequency specified for ethernet device!");
+		LOG_ERROR("No clock frequency specified for ethernet device!");
 		return;
 	}
 
@@ -131,7 +132,7 @@ static void mdio_xilinx_axienet_bus_enable(const struct device *dev)
 	clock_divider = clock_divider_full & XILINX_AXIENET_MDIO_SETUP_REG_MDIO_CLOCK_DIVIDER_MASK;
 
 	if (clock_divider != clock_divider_full) {
-		LOG_ERR("Clock divider overflow!");
+		LOG_ERROR("Clock divider overflow!");
 		/* maximum divider value - lowest MDIO frequency we can achieve */
 		clock_divider = XILINX_AXIENET_MDIO_SETUP_REG_MDIO_CLOCK_DIVIDER_MASK;
 	}
@@ -158,14 +159,14 @@ static int mdio_xilinx_axienet_read(const struct device *dev, uint8_t prtad, uin
 	int count = 0;
 
 	if (k_is_in_isr()) {
-		LOG_ERR("Called MDIO read in ISR!");
+		LOG_ERROR("Called MDIO read in ISR!");
 		return -EWOULDBLOCK;
 	}
 
 	enable_mdio_bus(config, dev_data);
 
 	if (!dev_data->bus_enabled) {
-		LOG_ERR("Bus needs to be enabled!");
+		LOG_ERROR("Bus needs to be enabled!");
 		return -EIO;
 	}
 
@@ -195,7 +196,7 @@ static int mdio_xilinx_axienet_read(const struct device *dev, uint8_t prtad, uin
 		LOG_DBG("Transfer is not yet ready!");
 		k_busy_wait(1);
 		if (count++ > 1000) {
-			LOG_ERR("MDIO read timeout");
+			LOG_ERROR("MDIO read timeout");
 			return -ETIMEDOUT;
 		}
 	}
@@ -220,14 +221,14 @@ static int mdio_xilinx_axienet_write(const struct device *dev, uint8_t prtad, ui
 	int count = 0;
 
 	if (k_is_in_isr()) {
-		LOG_ERR("Called MDIO write in ISR!");
+		LOG_ERROR("Called MDIO write in ISR!");
 		return -EWOULDBLOCK;
 	}
 
 	enable_mdio_bus(config, dev_data);
 
 	if (!dev_data->bus_enabled) {
-		LOG_ERR("Bus needs to be enabled!");
+		LOG_ERROR("Bus needs to be enabled!");
 		return -EIO;
 	}
 
@@ -257,7 +258,7 @@ static int mdio_xilinx_axienet_write(const struct device *dev, uint8_t prtad, ui
 		LOG_DBG("IRQ from MDIO received but transfer is not yet ready!");
 		k_busy_wait(1);
 		if (count++ > 1000) {
-			LOG_ERR("MDIO write timeout");
+			LOG_ERROR("MDIO write timeout");
 			return -ETIMEDOUT;
 		}
 	}
@@ -296,7 +297,7 @@ static int xilinx_axienet_mdio_probe(const struct device *dev)
 		err = k_sem_init(&data->irq_sema, 0, K_SEM_MAX_LIMIT);
 
 		if (err != 0) {
-			LOG_ERR("Could not init semaphore: error %d (%s)", err, strerror(-err));
+			LOG_ERROR("Could not init semaphore: error %d (%s)", err, strerror(-err));
 			return err;
 		}
 	}

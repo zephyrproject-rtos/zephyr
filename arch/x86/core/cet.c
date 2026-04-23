@@ -36,7 +36,7 @@ int arch_thread_hw_shadow_stack_attach(k_tid_t thread,
 {
 	/* Can't attach to NULL */
 	if (stack == NULL) {
-		LOG_ERR("Can't set NULL shadow stack for thread %p\n", thread);
+		LOG_ERROR("Can't set NULL shadow stack for thread %p\n", thread);
 		return -EINVAL;
 	}
 
@@ -55,7 +55,7 @@ int arch_thread_hw_shadow_stack_attach(k_tid_t thread,
 			return 0;
 		}
 #endif
-		LOG_ERR("Shadow stack already set up for thread %p\n", thread);
+		LOG_ERROR("Shadow stack already set up for thread %p\n", thread);
 		return -EINVAL;
 	}
 
@@ -98,8 +98,9 @@ void z_x86_ibt_enable(void)
 #ifdef CONFIG_X86_CET_VERIFY_KERNEL_SHADOW_STACK
 void z_x86_cet_shadow_stack_panic(k_tid_t *thread)
 {
-	LOG_ERR("Shadow stack enabled, but outgoing thread [%p] struct "
-		"missing shadow stack pointer", thread);
+	LOG_ERROR("Shadow stack enabled, but outgoing thread [%p] struct "
+		  "missing shadow stack pointer",
+		  thread);
 
 	k_panic();
 }

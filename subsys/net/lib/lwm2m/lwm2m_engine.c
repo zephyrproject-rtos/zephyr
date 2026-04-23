@@ -147,7 +147,7 @@ int lwm2m_open_socket(struct lwm2m_ctx *client_ctx)
 		}
 
 		if (client_ctx->sock_fd < 0) {
-			LOG_ERR("Failed to create socket: %d", errno);
+			LOG_ERROR("Failed to create socket: %d", errno);
 			return -errno;
 		}
 
@@ -165,7 +165,7 @@ int lwm2m_close_socket(struct lwm2m_ctx *client_ctx)
 		int ret = zsock_close(client_ctx->sock_fd);
 
 		if (ret) {
-			LOG_ERR("Failed to close socket: %d", errno);
+			LOG_ERROR("Failed to close socket: %d", errno);
 			ret = -errno;
 			return ret;
 		}
@@ -380,7 +380,7 @@ static int64_t retransmit_request(struct lwm2m_ctx *client_ctx, const int64_t ti
 		if (remaining < timestamp) {
 			msg = find_msg(p, NULL);
 			if (!msg) {
-				LOG_ERR("pending has no valid LwM2M message!");
+				LOG_ERROR("pending has no valid LwM2M message!");
 				coap_pending_clear(p);
 				continue;
 			}
@@ -713,7 +713,7 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 			return -errno;
 		}
 
-		LOG_ERR("Error reading response: %d", errno);
+		LOG_ERROR("Error reading response: %d", errno);
 		if (client_ctx->fault_cb != NULL) {
 			client_ctx->fault_cb(errno);
 		}
@@ -721,7 +721,7 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 	}
 
 	if (len == 0) {
-		LOG_ERR("Zero length recv");
+		LOG_ERROR("Zero length recv");
 		return 0;
 	}
 
@@ -747,7 +747,7 @@ static int socket_send_message(struct lwm2m_ctx *ctx)
 
 	msg = SYS_SLIST_CONTAINER(msg_node, msg, node);
 	if (!msg || !msg->ctx) {
-		LOG_ERR("LwM2M message is invalid.");
+		LOG_ERROR("LwM2M message is invalid.");
 		return -EINVAL;
 	}
 
@@ -760,7 +760,7 @@ static int socket_send_message(struct lwm2m_ctx *ctx)
 	rc = zsock_send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
 
 	if (rc < 0) {
-		LOG_ERR("Failed to send packet, err %d", errno);
+		LOG_ERROR("Failed to send packet, err %d", errno);
 		rc = -errno;
 	} else {
 		engine_update_tx_time();
@@ -813,7 +813,7 @@ static void socket_loop(void *p1, void *p2, void *p3)
 			if (rc == 0) {
 				rd_client_paused = true;
 			} else {
-				LOG_ERR("Could not pause RD client");
+				LOG_ERROR("Could not pause RD client");
 			}
 
 			suspend_engine_thread = false;
@@ -824,7 +824,7 @@ static void socket_loop(void *p1, void *p2, void *p3)
 			if (rd_client_paused) {
 				rc = lwm2m_rd_client_resume();
 				if (rc < 0) {
-					LOG_ERR("Could not resume RD client");
+					LOG_ERROR("Could not resume RD client");
 				}
 			}
 		}
@@ -872,7 +872,7 @@ static void socket_loop(void *p1, void *p2, void *p3)
 
 		rc = zsock_poll(sock_fds, MAX_POLL_FD, timeout);
 		if (rc < 0) {
-			LOG_ERR("Error in poll:%d", errno);
+			LOG_ERROR("Error in poll:%d", errno);
 			errno = 0;
 			k_msleep(ENGINE_SLEEP_MS);
 			continue;
@@ -894,7 +894,7 @@ static void socket_loop(void *p1, void *p2, void *p3)
 			}
 
 			if (revents & (ZSOCK_POLLERR | ZSOCK_POLLNVAL | ZSOCK_POLLHUP)) {
-				LOG_ERR("Poll reported a socket error, %02x.", revents);
+				LOG_ERROR("Poll reported a socket error, %02x.", revents);
 				if (sock_ctx[i] != NULL && sock_ctx[i]->fault_cb != NULL) {
 					sock_ctx[i]->fault_cb(EIO);
 				}
@@ -917,7 +917,7 @@ static void socket_loop(void *p1, void *p2, void *p3)
 				/* Drop packets that cannot be send, CoAP layer handles retry */
 				/* Other fatal errors should trigger a recovery */
 				if (rc < 0 && rc != -EAGAIN) {
-					LOG_ERR("send() reported a socket error, %d", -rc);
+					LOG_ERROR("send() reported a socket error, %d", -rc);
 					if (sock_ctx[i] != NULL && sock_ctx[i]->fault_cb != NULL) {
 						sock_ctx[i]->fault_cb(-rc);
 					}
@@ -962,13 +962,13 @@ static int load_tls_type(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 	ret = lwm2m_get_res_buf(&LWM2M_OBJ(0, client_ctx->sec_obj_inst, res_id), &cred, &max_len,
 				&cred_len, NULL);
 	if (ret < 0) {
-		LOG_ERR("Unable to get resource data for %d/%d/%d", 0,  client_ctx->sec_obj_inst,
-			res_id);
+		LOG_ERROR("Unable to get resource data for %d/%d/%d", 0, client_ctx->sec_obj_inst,
+			  res_id);
 		return ret;
 	}
 
 	if (cred_len == 0) {
-		LOG_ERR("Credential data is empty");
+		LOG_ERROR("Credential data is empty");
 		return -EINVAL;
 	}
 
@@ -977,7 +977,7 @@ static int load_tls_type(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 	 */
 	if (is_pem(cred, cred_len)) {
 		if (cred_len >= max_len) {
-			LOG_ERR("No space for string terminator, cannot handle PEM");
+			LOG_ERROR("No space for string terminator, cannot handle PEM");
 			return -EINVAL;
 		}
 		((uint8_t *) cred)[cred_len] = 0;
@@ -986,8 +986,8 @@ static int load_tls_type(struct lwm2m_ctx *client_ctx, uint16_t res_id,
 
 	ret = tls_credential_add(client_ctx->tls_tag, type, cred, cred_len);
 	if (ret < 0) {
-		LOG_ERR("Error setting cred tag %d type %d: Error %d", client_ctx->tls_tag, type,
-			ret);
+		LOG_ERROR("Error setting cred tag %d type %d: Error %d", client_ctx->tls_tag, type,
+			  ret);
 	}
 
 	return ret;
@@ -1084,7 +1084,7 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 				       tls_tag_list, sizeof(tls_tag_list));
 		if (ret < 0) {
 			ret = -errno;
-			LOG_ERR("Failed to set TLS_SEC_TAG_LIST option: %d", ret);
+			LOG_ERROR("Failed to set TLS_SEC_TAG_LIST option: %d", ret);
 			return ret;
 		}
 
@@ -1095,7 +1095,7 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 					       &session_cache, sizeof(session_cache));
 			if (ret < 0) {
 				ret = -errno;
-				LOG_ERR("Failed to set TLS_SESSION_CACHE option: %d", errno);
+				LOG_ERROR("Failed to set TLS_SESSION_CACHE option: %d", errno);
 				return ret;
 			}
 		}
@@ -1107,7 +1107,7 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 					       &cid, sizeof(cid));
 			if (ret) {
 				ret = -errno;
-				LOG_ERR("Failed to enable TLS_DTLS_CID: %d", ret);
+				LOG_ERROR("Failed to enable TLS_DTLS_CID: %d", ret);
 				/* Not fatal, continue. */
 			}
 		}
@@ -1127,7 +1127,7 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 			ctx->desthostname[ctx->desthostnamelen] = tmp;
 			if (ret < 0) {
 				ret = -errno;
-				LOG_ERR("Failed to set TLS_HOSTNAME option: %d", ret);
+				LOG_ERROR("Failed to set TLS_HOSTNAME option: %d", ret);
 				return ret;
 			}
 
@@ -1136,7 +1136,7 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 			ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_PEER_VERIFY,
 					       &verify, sizeof(verify));
 			if (ret) {
-				LOG_ERR("Failed to set TLS_PEER_VERIFY");
+				LOG_ERROR("Failed to set TLS_PEER_VERIFY");
 			}
 
 		} else {
@@ -1146,7 +1146,7 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 			ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_PEER_VERIFY,
 					       &verify, sizeof(verify));
 			if (ret) {
-				LOG_ERR("Failed to set TLS_PEER_VERIFY");
+				LOG_ERROR("Failed to set TLS_PEER_VERIFY");
 			}
 		}
 
@@ -1156,7 +1156,7 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 					       ZSOCK_TLS_CIPHERSUITE_LIST,
 					       cipher_list_psk, sizeof(cipher_list_psk));
 			if (ret) {
-				LOG_ERR("Failed to set TLS_CIPHERSUITE_LIST");
+				LOG_ERROR("Failed to set TLS_CIPHERSUITE_LIST");
 			}
 			break;
 		case LWM2M_SECURITY_CERT:
@@ -1164,8 +1164,8 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 					       ZSOCK_TLS_CIPHERSUITE_LIST,
 					       cipher_list_cert, sizeof(cipher_list_cert));
 			if (ret) {
-				LOG_ERR("Failed to set TLS_CIPHERSUITE_LIST (rc %d, errno %d)", ret,
-					errno);
+				LOG_ERROR("Failed to set TLS_CIPHERSUITE_LIST (rc %d, errno %d)",
+					  ret, errno);
 			}
 			break;
 		default:
@@ -1226,20 +1226,20 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 
 	if (zsock_connect(client_ctx->sock_fd, &client_ctx->remote_addr, addr_len) < 0) {
 		ret = -errno;
-		LOG_ERR("Cannot connect UDP (%d)", ret);
+		LOG_ERROR("Cannot connect UDP (%d)", ret);
 		goto error;
 	}
 
 	flags = zsock_fcntl(client_ctx->sock_fd, ZVFS_F_GETFL, 0);
 	if (flags == -1) {
 		ret = -errno;
-		LOG_ERR("zsock_fcntl(ZVFS_F_GETFL) failed (%d)", ret);
+		LOG_ERROR("zsock_fcntl(ZVFS_F_GETFL) failed (%d)", ret);
 		goto error;
 	}
 	ret = zsock_fcntl(client_ctx->sock_fd, ZVFS_F_SETFL, flags | ZVFS_O_NONBLOCK);
 	if (ret == -1) {
 		ret = -errno;
-		LOG_ERR("zsock_fcntl(ZVFS_F_SETFL) failed (%d)", ret);
+		LOG_ERROR("zsock_fcntl(ZVFS_F_SETFL) failed (%d)", ret);
 		goto error;
 	}
 
@@ -1367,7 +1367,7 @@ static int lwm2m_engine_init(void)
 		if (efd == -1) {
 			int err = errno;
 
-			LOG_ERR("Error; eventfd() returned %d", err);
+			LOG_ERROR("Error; eventfd() returned %d", err);
 			return -err;
 		}
 		/* Last poll-handle is reserved for control eventfd */
@@ -1385,7 +1385,7 @@ static int lwm2m_engine_init(void)
 		int ret = init->f();
 
 		if (ret) {
-			LOG_ERR("Init function %p returned %d", init, ret);
+			LOG_ERROR("Init function %p returned %d", init, ret);
 		}
 	}
 

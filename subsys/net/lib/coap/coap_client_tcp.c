@@ -104,11 +104,11 @@ static int receive_tcp(struct coap_client_tcp *client, int flags)
 			}
 			goto parse;
 		}
-		LOG_ERR("Error receiving: %d", -errno);
+		LOG_ERROR("Error receiving: %d", -errno);
 		return -errno;
 	}
 	if (received == 0) {
-		LOG_ERR("Connection closed");
+		LOG_ERROR("Connection closed");
 		return -ECONNRESET;
 	}
 
@@ -127,7 +127,7 @@ parse:
 	tkl = buf[0] & 0x0F;
 
 	if (tkl > COAP_TOKEN_MAX_LEN) {
-		LOG_ERR("[RX/TCP] Invalid token length: %d", tkl);
+		LOG_ERROR("[RX/TCP] Invalid token length: %d", tkl);
 		client->recv_offset = 0;
 		return -EINVAL;
 	}
@@ -168,7 +168,7 @@ parse:
 	total_expected = header_size + 1 + tkl + opt_payload_len;
 
 	if (total_expected > sizeof(client->recv_buf)) {
-		LOG_ERR("Packet too large: %zu > %zu", total_expected, sizeof(client->recv_buf));
+		LOG_ERROR("Packet too large: %zu > %zu", total_expected, sizeof(client->recv_buf));
 		client->recv_offset = 0;
 		return -EMSGSIZE;
 	}
@@ -328,7 +328,7 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 				   MAX_COAP_TCP_MSG_LEN, tkl,
 				   internal_req->request_token, req->method);
 	if (ret < 0) {
-		LOG_ERR("Failed to init CoAP TCP message: %d", ret);
+		LOG_ERROR("Failed to init CoAP TCP message: %d", ret);
 		return ret;
 	}
 
@@ -336,7 +336,7 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 	if (req->path[0] != '\0') {
 		ret = coap_packet_set_path(&internal_req->request, req->path);
 		if (ret < 0) {
-			LOG_ERR("Failed to parse path: %d", ret);
+			LOG_ERROR("Failed to parse path: %d", ret);
 			return ret;
 		}
 	}
@@ -346,7 +346,7 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 		ret = coap_append_option_int(&internal_req->request,
 					     COAP_OPTION_CONTENT_FORMAT, req->fmt);
 		if (ret < 0) {
-			LOG_ERR("Failed to append content format option");
+			LOG_ERROR("Failed to append content format option");
 			return ret;
 		}
 	}
@@ -358,7 +358,7 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 		ret = coap_tcp_append_block2_option(&internal_req->request,
 						    &internal_req->recv_blk_ctx);
 		if (ret < 0) {
-			LOG_ERR("Failed to append block2 option");
+			LOG_ERROR("Failed to append block2 option");
 			return ret;
 		}
 	}
@@ -372,7 +372,7 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 		ret = coap_packet_append_option(&internal_req->request, req->options[i].code,
 						req->options[i].value, req->options[i].len);
 		if (ret < 0) {
-			LOG_ERR("Failed to append option %d", req->options[i].code);
+			LOG_ERROR("Failed to append option %d", req->options[i].code);
 			return ret;
 		}
 	}
@@ -394,7 +394,7 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 			ret = req->payload_cb(cb_offset, &payload_ptr, &cb_len, &last_block,
 					      req->user_data);
 			if (ret < 0) {
-				LOG_ERR("Payload callback failed: %d", ret);
+				LOG_ERROR("Payload callback failed: %d", ret);
 				return ret;
 			}
 			total_len = cb_len;
@@ -425,7 +425,7 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 			ret = coap_append_block1_option(&internal_req->request,
 							&internal_req->send_blk_ctx);
 			if (ret < 0) {
-				LOG_ERR("Failed to append block1 option");
+				LOG_ERROR("Failed to append block1 option");
 				return ret;
 			}
 
@@ -434,7 +434,7 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 							internal_req->request_tag,
 							COAP_TOKEN_MAX_LEN);
 			if (ret < 0) {
-				LOG_ERR("Failed to append request tag option");
+				LOG_ERROR("Failed to append request tag option");
 				return ret;
 			}
 		} else if (total_len > CONFIG_COAP_CLIENT_MESSAGE_SIZE) {
@@ -444,7 +444,7 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 
 		ret = coap_packet_append_payload_marker(&internal_req->request);
 		if (ret < 0) {
-			LOG_ERR("Failed to append payload marker");
+			LOG_ERROR("Failed to append payload marker");
 			return ret;
 		}
 
@@ -479,7 +479,7 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 		ret = coap_packet_append_payload(&internal_req->request, payload_ptr + offset,
 						 payload_len);
 		if (ret < 0) {
-			LOG_ERR("Failed to append payload");
+			LOG_ERROR("Failed to append payload");
 			return ret;
 		}
 
@@ -523,7 +523,7 @@ int coap_client_tcp_req(struct coap_client_tcp *client,
 
 	ret = coap_client_tcp_init_request(client, req, internal_req);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize CoAP request");
+		LOG_ERROR("Failed to initialize CoAP request");
 		goto release;
 	}
 
@@ -531,7 +531,7 @@ int coap_client_tcp_req(struct coap_client_tcp *client,
 		ret = coap_packet_append_option(&internal_req->request, COAP_OPTION_ECHO,
 						client->echo_option.value, client->echo_option.len);
 		if (ret < 0) {
-			LOG_ERR("Failed to append echo option");
+			LOG_ERROR("Failed to append echo option");
 			goto release;
 		}
 		client->send_echo = false;
@@ -539,13 +539,13 @@ int coap_client_tcp_req(struct coap_client_tcp *client,
 
 	ret = coap_tcp_packet_update_len(&internal_req->request);
 	if (ret < 0) {
-		LOG_ERR("Failed to update packet length");
+		LOG_ERROR("Failed to update packet length");
 		goto release;
 	}
 
 	ret = coap_client_tcp_schedule_poll(client, req, internal_req);
 	if (ret < 0) {
-		LOG_ERR("Failed to schedule polling");
+		LOG_ERROR("Failed to schedule polling");
 		goto release;
 	}
 
@@ -563,7 +563,7 @@ int coap_client_tcp_req(struct coap_client_tcp *client,
 
 release:
 	if (ret < 0) {
-		LOG_ERR("Failed to send request: %d", ret);
+		LOG_ERROR("Failed to send request: %d", ret);
 		reset_internal_request(internal_req);
 	} else {
 		ret = 0;
@@ -791,7 +791,7 @@ static int recv_response_tcp(struct coap_client_tcp *client, struct coap_packet 
 
 	ret = coap_tcp_packet_parse(response, client->recv_buf, total_len, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Invalid data received");
+		LOG_ERROR("Invalid data received");
 		return ret;
 	}
 
@@ -947,7 +947,7 @@ static int handle_response_tcp(struct coap_client_tcp *client, const struct coap
 			ret = coap_client_tcp_init_request(client, &internal_req->coap_request,
 							   internal_req);
 			if (ret < 0) {
-				LOG_ERR("Error creating CoAP request");
+				LOG_ERROR("Error creating CoAP request");
 				goto fail;
 			}
 
@@ -955,20 +955,20 @@ static int handle_response_tcp(struct coap_client_tcp *client, const struct coap
 							client->echo_option.value,
 							client->echo_option.len);
 			if (ret < 0) {
-				LOG_ERR("Failed to append echo option");
+				LOG_ERROR("Failed to append echo option");
 				goto fail;
 			}
 
 			ret = coap_tcp_packet_update_len(&internal_req->request);
 			if (ret < 0) {
-				LOG_ERR("Failed to update packet length");
+				LOG_ERROR("Failed to update packet length");
 				goto fail;
 			}
 
 			ret = send_request_tcp(client->fd, internal_req->request.data,
 					       internal_req->request.offset, 0);
 			if (ret < 0) {
-				LOG_ERR("Error sending CoAP request");
+				LOG_ERROR("Error sending CoAP request");
 				goto fail;
 			}
 			return 1;
@@ -997,7 +997,7 @@ static int handle_response_tcp(struct coap_client_tcp *client, const struct coap
 
 		if (GET_BLOCK_SIZE(block_option) == COAP_BLOCK_BERT) {
 			if (payload_len > CONFIG_COAP_CLIENT_MESSAGE_SIZE) {
-				LOG_ERR("BERT payload %u exceeds max size", payload_len);
+				LOG_ERROR("BERT payload %u exceeds max size", payload_len);
 				ret = -EMSGSIZE;
 				goto fail;
 			}
@@ -1012,7 +1012,7 @@ static int handle_response_tcp(struct coap_client_tcp *client, const struct coap
 
 		ret = coap_tcp_update_from_block(response, &internal_req->recv_blk_ctx);
 		if (ret < 0) {
-			LOG_ERR("Error updating block context");
+			LOG_ERROR("Error updating block context");
 		}
 		coap_tcp_next_block(response, &internal_req->recv_blk_ctx);
 	} else {
@@ -1055,7 +1055,7 @@ static int handle_response_tcp(struct coap_client_tcp *client, const struct coap
 		ret = coap_client_tcp_init_request(client, &internal_req->coap_request,
 						   internal_req);
 		if (ret < 0) {
-			LOG_ERR("Error creating a CoAP request");
+			LOG_ERROR("Error creating a CoAP request");
 			goto fail;
 		}
 
@@ -1070,7 +1070,7 @@ static int handle_response_tcp(struct coap_client_tcp *client, const struct coap
 		ret = send_request_tcp(client->fd, internal_req->request.data,
 				       internal_req->request.offset, 0);
 		if (ret < 0) {
-			LOG_ERR("Error sending a CoAP request");
+			LOG_ERROR("Error sending a CoAP request");
 			goto fail;
 		}
 		return 1;
@@ -1144,7 +1144,7 @@ static void coap_client_tcp_recv(void *coap_cl, void *a, void *b)
 	while (true) {
 		ret = handle_poll();
 		if (ret < 0) {
-			LOG_ERR("Error in poll");
+			LOG_ERROR("Error in poll");
 			goto idle;
 		}
 
@@ -1271,7 +1271,7 @@ struct coap_client_tcp_option coap_client_tcp_option_initial_block2(struct coap_
 bool coap_client_tcp_has_ongoing_exchange(struct coap_client_tcp *client)
 {
 	if (client == NULL) {
-		LOG_ERR("Invalid (NULL) client");
+		LOG_ERROR("Invalid (NULL) client");
 		return false;
 	}
 

@@ -307,7 +307,7 @@ static int ots_init(void)
 	/* Initialize OTS instance. */
 	err = bt_ots_init(ots, &ots_init);
 	if (err) {
-		LOG_ERR("Failed to init OTS (err:%d)\n", err);
+		LOG_ERROR("Failed to init OTS (err:%d)\n", err);
 		return err;
 	}
 

@@ -52,7 +52,7 @@ static int setup_dtls(void)
 				 ca_certificate,
 				 sizeof(ca_certificate));
 	if (err < 0) {
-		LOG_ERR("Failed to register CA certificate: %d", err);
+		LOG_ERROR("Failed to register CA certificate: %d", err);
 		return err;
 	}
 #endif /* defined(CONFIG_NET_SAMPLE_CERTS_WITH_SC) */
@@ -62,7 +62,7 @@ static int setup_dtls(void)
 				 server_certificate,
 				 sizeof(server_certificate));
 	if (err < 0) {
-		LOG_ERR("Failed to register public certificate: %d", err);
+		LOG_ERROR("Failed to register public certificate: %d", err);
 		return err;
 	}
 
@@ -70,7 +70,7 @@ static int setup_dtls(void)
 				 TLS_CREDENTIAL_PRIVATE_KEY,
 				 private_key, sizeof(private_key));
 	if (err < 0) {
-		LOG_ERR("Failed to register private key: %d", err);
+		LOG_ERROR("Failed to register private key: %d", err);
 		return err;
 	}
 
@@ -80,7 +80,7 @@ static int setup_dtls(void)
 				 psk,
 				 sizeof(psk));
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK: %d", err);
+		LOG_ERROR("Failed to register PSK: %d", err);
 		return err;
 	}
 
@@ -89,7 +89,7 @@ static int setup_dtls(void)
 				 psk_id,
 				 sizeof(psk_id) - 1);
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK ID: %d", err);
+		LOG_ERROR("Failed to register PSK ID: %d", err);
 		return err;
 	}
 
@@ -120,22 +120,19 @@ static int join_coap_multicast_group(uint16_t port)
 
 	iface = net_if_get_default();
 	if (!iface) {
-		LOG_ERR("Could not get the default interface");
+		LOG_ERROR("Could not get the default interface");
 		return -ENOENT;
 	}
 
 #if defined(CONFIG_NET_CONFIG_SETTINGS)
-	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_CONFIG_MY_IPV6_ADDR,
-			  &my_addr) < 0) {
-		LOG_ERR("Invalid IPv6 address %s",
-			CONFIG_NET_CONFIG_MY_IPV6_ADDR);
+	if (net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &my_addr) < 0) {
+		LOG_ERROR("Invalid IPv6 address %s", CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 	}
 #endif
 
 	ifaddr = net_if_ipv6_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		LOG_ERR("Could not add unicast address to interface");
+		LOG_ERROR("Could not add unicast address to interface");
 		return -EINVAL;
 	}
 
@@ -143,8 +140,8 @@ static int join_coap_multicast_group(uint16_t port)
 
 	ret = net_ipv6_mld_join(iface, &mcast_addr.sin6_addr);
 	if (ret < 0) {
-		LOG_ERR("Cannot join %s IPv6 multicast group (%d)",
-			net_sprint_ipv6_addr(&mcast_addr.sin6_addr), ret);
+		LOG_ERROR("Cannot join %s IPv6 multicast group (%d)",
+			  net_sprint_ipv6_addr(&mcast_addr.sin6_addr), ret);
 		return ret;
 	}
 
@@ -161,14 +158,14 @@ int main(void)
 
 	ret = setup_dtls();
 	if (ret < 0) {
-		LOG_ERR("Failed to setup DTLS (%d)", ret);
+		LOG_ERROR("Failed to setup DTLS (%d)", ret);
 		return ret;
 	}
 
 #if !defined(CONFIG_NET_SAMPLE_COAPS_SERVICE) && defined(CONFIG_NET_IPV6)
 	ret = join_coap_multicast_group(coap_port);
 	if (ret < 0) {
-		LOG_ERR("Failed to join CoAP all-nodes multicast (%d)", ret);
+		LOG_ERROR("Failed to join CoAP all-nodes multicast (%d)", ret);
 		return ret;
 	}
 #endif
@@ -177,7 +174,7 @@ int main(void)
 	/* CoAP secure server has to be started manually after DTLS setup */
 	ret = coap_service_start(&coap_server);
 	if (ret < 0) {
-		LOG_ERR("Failed to start CoAP secure server (%d)", ret);
+		LOG_ERROR("Failed to start CoAP secure server (%d)", ret);
 		return ret;
 	}
 #endif

@@ -60,7 +60,7 @@ static int sdhc_cdns_request(const struct device *dev,
 	struct sdmmc_cmd cdns_sdmmc_cmd;
 
 	if (cmd == NULL) {
-		LOG_ERR("Wrong CMD parameter");
+		LOG_ERROR("Wrong CMD parameter");
 		return -EINVAL;
 	}
 
@@ -74,7 +74,7 @@ static int sdhc_cdns_request(const struct device *dev,
 		ret = cdns_sdmmc_ops->prepare(data->block_addr, (uintptr_t)data->data,
 				data);
 		if (ret != 0) {
-			LOG_ERR("DMA Prepare failed");
+			LOG_ERROR("DMA Prepare failed");
 			return -EINVAL;
 		}
 	}
@@ -86,7 +86,7 @@ static int sdhc_cdns_request(const struct device *dev,
 			cmd->opcode == SD_READ_MULTIPLE_BLOCK) {
 
 			if (data == NULL) {
-				LOG_ERR("Invalid data parameter");
+				LOG_ERROR("Invalid data parameter");
 				return -ENODATA;
 			}
 			ret = cdns_sdmmc_ops->cache_invd(data->block_addr, (uintptr_t)data->data,
@@ -150,7 +150,7 @@ static int sdhc_cdns_init(const struct device *dev)
 	/* clock setting */
 	if (sdhc_config->clk_rate == 0U) {
 		if (!device_is_ready(sdhc_config->cdns_clk_dev)) {
-			LOG_ERR("Clock controller device is not ready");
+			LOG_ERROR("Clock controller device is not ready");
 			return -EINVAL;
 		}
 
@@ -176,28 +176,28 @@ static int sdhc_cdns_init(const struct device *dev)
 		if (!device_is_ready(sdhc_config->reset_sdmmc.dev) ||
 			!device_is_ready(sdhc_config->reset_sdmmcocp.dev) ||
 			!device_is_ready(sdhc_config->reset_softphy.dev)) {
-			LOG_ERR("Reset device not found");
+			LOG_ERROR("Reset device not found");
 			return -ENODEV;
 		}
 
 		ret = reset_line_toggle(sdhc_config->reset_softphy.dev,
 			sdhc_config->reset_softphy.id);
 		if (ret != 0) {
-			LOG_ERR("Softphy Reset failed");
+			LOG_ERROR("Softphy Reset failed");
 			return ret;
 		}
 
 		ret = reset_line_toggle(sdhc_config->reset_sdmmc.dev,
 			sdhc_config->reset_sdmmc.id);
 		if (ret != 0) {
-			LOG_ERR("sdmmc Reset failed");
+			LOG_ERROR("sdmmc Reset failed");
 			return ret;
 		}
 
 		ret = reset_line_toggle(sdhc_config->reset_sdmmcocp.dev,
 			sdhc_config->reset_sdmmcocp.id);
 		if (ret != 0) {
-			LOG_ERR("sdmmcocp Reset failed");
+			LOG_ERROR("sdmmcocp Reset failed");
 			return ret;
 		}
 	}
@@ -207,14 +207,14 @@ static int sdhc_cdns_init(const struct device *dev)
 
 	ret = sdhc_cdns_reset(dev);
 	if (ret != 0U) {
-		LOG_ERR("Card reset failed");
+		LOG_ERROR("Card reset failed");
 		return ret;
 	}
 
 	/* Init operation called for register initialisation */
 	ret = cdns_sdmmc_ops->init();
 	if (ret != 0U) {
-		LOG_ERR("Card initialization failed");
+		LOG_ERROR("Card initialization failed");
 		return ret;
 	}
 

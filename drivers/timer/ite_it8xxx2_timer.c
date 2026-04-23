@@ -350,13 +350,13 @@ static int timer_init(enum ext_timer_idx ext_timer,
 		} else if (clock_source_sel == EXT_PSR_EC_CLK) {
 			hw_cnt = MS_TO_COUNT(EC_FREQ, ms);
 		} else {
-			LOG_ERR("Timer %d clock source error !", ext_timer);
+			LOG_ERROR("Timer %d clock source error !", ext_timer);
 			return -1;
 		}
 	}
 
 	if (hw_cnt == 0) {
-		LOG_ERR("Timer %d count shouldn't be 0 !", ext_timer);
+		LOG_ERROR("Timer %d count shouldn't be 0 !", ext_timer);
 		return -1;
 	}
 
@@ -417,7 +417,7 @@ static int sys_clock_driver_init(void)
 			 FREE_RUN_TIMER_IRQ, FREE_RUN_TIMER_FLAG,
 			 EXT_WITH_TIMER_INT, EXT_START_TIMER);
 	if (ret < 0) {
-		LOG_ERR("Init free run timer failed");
+		LOG_ERROR("Init free run timer failed");
 		return ret;
 	}
 
@@ -437,7 +437,7 @@ static int sys_clock_driver_init(void)
 				 EXT_START_TIMER);
 	}
 	if (ret < 0) {
-		LOG_ERR("Init event timer failed");
+		LOG_ERROR("Init event timer failed");
 		return ret;
 	}
 
@@ -451,7 +451,7 @@ static int sys_clock_driver_init(void)
 				 BUSY_WAIT_H_TIMER_IRQ, BUSY_WAIT_H_TIMER_FLAG,
 				 EXT_WITHOUT_TIMER_INT, EXT_START_TIMER);
 		if (ret < 0) {
-			LOG_ERR("Init busy wait high timer failed");
+			LOG_ERROR("Init busy wait high timer failed");
 			return ret;
 		}
 
@@ -469,7 +469,7 @@ static int sys_clock_driver_init(void)
 				 BUSY_WAIT_L_TIMER_IRQ, BUSY_WAIT_L_TIMER_FLAG,
 				 EXT_WITHOUT_TIMER_INT, EXT_START_TIMER);
 		if (ret < 0) {
-			LOG_ERR("Init busy wait low timer failed");
+			LOG_ERROR("Init busy wait low timer failed");
 			return ret;
 		}
 	}

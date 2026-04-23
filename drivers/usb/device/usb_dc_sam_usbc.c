@@ -315,7 +315,7 @@ static void usb_dc_ep_isr_sta(uint8_t ep_idx)
 
 	if (sr & USBC_UESTA0_RAMACERI) {
 		regs->UESTACLR[ep_idx] = USBC_UESTA0CLR_RAMACERIC;
-		LOG_ERR("ISR: EP%d RAM Access Error", ep_idx);
+		LOG_ERROR("ISR: EP%d RAM Access Error", ep_idx);
 	}
 }
 
@@ -841,13 +841,13 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -EINVAL;
 	}
 
 	if (ep_idx == 0U) {
 		if (cfg->ep_type != USB_DC_EP_CONTROL) {
-			LOG_ERR("pre-selected as control endpoint");
+			LOG_ERROR("pre-selected as control endpoint");
 			return -EINVAL;
 		}
 	} else if (ep_idx & BIT(0)) {
@@ -864,7 +864,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 
 	if (cfg->ep_mps < 1 || cfg->ep_mps > 1024 ||
 	    (cfg->ep_type == USB_DC_EP_CONTROL && cfg->ep_mps > 64)) {
-		LOG_ERR("invalid endpoint size");
+		LOG_ERROR("invalid endpoint size");
 		return -EINVAL;
 	}
 	return 0;
@@ -881,7 +881,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	}
 
 	if (!usb_dc_is_attached()) {
-		LOG_ERR("device not attached");
+		LOG_ERROR("device not attached");
 		return -ENODEV;
 	}
 
@@ -956,7 +956,7 @@ int usb_dc_ep_set_stall(uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("wrong endpoint index/address");
+		LOG_ERROR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -983,7 +983,7 @@ int usb_dc_ep_clear_stall(uint8_t ep)
 	uint32_t key;
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("wrong endpoint index/address");
+		LOG_ERROR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -1010,7 +1010,7 @@ int usb_dc_ep_is_stalled(uint8_t ep, uint8_t *stalled)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("wrong endpoint index/address");
+		LOG_ERROR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -1035,12 +1035,12 @@ int usb_dc_ep_enable(uint8_t ep)
 	uint32_t key;
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("wrong endpoint index/address");
+		LOG_ERROR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
 	if (!dev_data.ep_data[ep_idx].is_configured) {
-		LOG_ERR("endpoint not configured");
+		LOG_ERROR("endpoint not configured");
 		return -ENODEV;
 	}
 
@@ -1065,7 +1065,7 @@ int usb_dc_ep_disable(uint8_t ep)
 	uint32_t key;
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("wrong endpoint index/address");
+		LOG_ERROR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -1089,12 +1089,12 @@ int usb_dc_ep_flush(uint8_t ep)
 	uint32_t key;
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("wrong endpoint index/address");
+		LOG_ERROR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
 	if (!usb_dc_ep_is_enabled(ep_idx)) {
-		LOG_ERR("endpoint not enabled");
+		LOG_ERROR("endpoint not enabled");
 		return -ENODEV;
 	}
 
@@ -1123,7 +1123,7 @@ int usb_dc_ep_set_callback(uint8_t ep, const usb_dc_ep_callback cb)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("wrong endpoint index/address");
+		LOG_ERROR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -1214,7 +1214,7 @@ static int usb_dc_ep_write_stp(uint8_t ep_bank, const uint8_t *data,
 		 */
 		usb_dc_ctrl_send_zlp_in();
 	} else {
-		LOG_ERR("Invalid STP state %d on IN phase", epctrl_fsm);
+		LOG_ERROR("Invalid STP state %d on IN phase", epctrl_fsm);
 		return -EPERM;
 	}
 	return 0;
@@ -1228,17 +1228,17 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *data,
 	uint32_t packet_len;
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("wrong endpoint index/address");
+		LOG_ERROR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
 	if (!usb_dc_ep_is_enabled(ep_idx)) {
-		LOG_ERR("endpoint not enabled");
+		LOG_ERROR("endpoint not enabled");
 		return -ENODEV;
 	}
 
 	if (USB_EP_DIR_IS_OUT(ep)) {
-		LOG_ERR("wrong endpoint direction");
+		LOG_ERROR("wrong endpoint direction");
 		return -EINVAL;
 	}
 
@@ -1329,7 +1329,7 @@ static int usb_dc_ep_read_ex_stp(uint32_t take, uint32_t wLength)
 			irq_unlock(key);
 		}
 	} else {
-		LOG_ERR("Invalid STP state %d on OUT phase", epctrl_fsm);
+		LOG_ERROR("Invalid STP state %d on OUT phase", epctrl_fsm);
 		return -EPERM;
 	}
 	return 0;
@@ -1347,17 +1347,17 @@ int usb_dc_ep_read_ex(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	int rc = 0;
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("wrong endpoint index/address");
+		LOG_ERROR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
 	if (!usb_dc_ep_is_enabled(ep_idx)) {
-		LOG_ERR("endpoint not enabled");
+		LOG_ERROR("endpoint not enabled");
 		return -ENODEV;
 	}
 
 	if (USB_EP_DIR_IS_IN(ep)) {
-		LOG_ERR("wrong endpoint direction");
+		LOG_ERROR("wrong endpoint direction");
 		return -EINVAL;
 	}
 
@@ -1418,17 +1418,17 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx == 0 || ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("wrong endpoint index/address");
+		LOG_ERROR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
 	if (!usb_dc_ep_is_enabled(ep_idx)) {
-		LOG_ERR("endpoint not enabled");
+		LOG_ERROR("endpoint not enabled");
 		return -ENODEV;
 	}
 
 	if (USB_EP_DIR_IS_IN(ep)) {
-		LOG_ERR("wrong endpoint direction");
+		LOG_ERROR("wrong endpoint direction");
 		return -EINVAL;
 	}
 
@@ -1453,7 +1453,7 @@ int usb_dc_ep_mps(uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("wrong endpoint index/address");
+		LOG_ERROR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 

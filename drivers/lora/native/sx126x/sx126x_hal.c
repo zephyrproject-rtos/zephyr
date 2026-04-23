@@ -32,14 +32,14 @@ int sx126x_hal_reset(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->reset)) {
-		LOG_ERR("Reset GPIO not ready");
+		LOG_ERROR("Reset GPIO not ready");
 		return -ENODEV;
 	}
 
 	/* Pull reset low */
 	ret = gpio_pin_set_dt(&config->reset, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to assert reset: %d", ret);
+		LOG_ERROR("Failed to assert reset: %d", ret);
 		return ret;
 	}
 
@@ -48,7 +48,7 @@ int sx126x_hal_reset(const struct device *dev)
 	/* Release reset */
 	ret = gpio_pin_set_dt(&config->reset, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to release reset: %d", ret);
+		LOG_ERROR("Failed to release reset: %d", ret);
 		return ret;
 	}
 
@@ -119,40 +119,40 @@ int sx126x_hal_init(const struct device *dev)
 
 	/* Check SPI bus */
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERROR("SPI bus not ready");
 		return -ENODEV;
 	}
 
 	/* Configure reset GPIO */
 	if (!gpio_is_ready_dt(&config->reset)) {
-		LOG_ERR("Reset GPIO not ready");
+		LOG_ERROR("Reset GPIO not ready");
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure reset GPIO: %d", ret);
+		LOG_ERROR("Failed to configure reset GPIO: %d", ret);
 		return ret;
 	}
 
 	/* Configure busy GPIO */
 	if (!gpio_is_ready_dt(&config->busy)) {
-		LOG_ERR("Busy GPIO not ready");
+		LOG_ERROR("Busy GPIO not ready");
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->busy, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure busy GPIO: %d", ret);
+		LOG_ERROR("Failed to configure busy GPIO: %d", ret);
 		return ret;
 	}
 
 	/* Configure DIO1 GPIO with interrupt */
 	if (!gpio_is_ready_dt(&config->dio1)) {
-		LOG_ERR("DIO1 GPIO not ready");
+		LOG_ERROR("DIO1 GPIO not ready");
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->dio1, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure DIO1 GPIO: %d", ret);
+		LOG_ERROR("Failed to configure DIO1 GPIO: %d", ret);
 		return ret;
 	}
 
@@ -160,7 +160,7 @@ int sx126x_hal_init(const struct device *dev)
 	gpio_init_callback(&data->dio1_cb, dio1_isr, BIT(config->dio1.pin));
 	ret = gpio_add_callback(config->dio1.port, &data->dio1_cb);
 	if (ret < 0) {
-		LOG_ERR("Failed to add DIO1 callback: %d", ret);
+		LOG_ERROR("Failed to add DIO1 callback: %d", ret);
 		return ret;
 	}
 

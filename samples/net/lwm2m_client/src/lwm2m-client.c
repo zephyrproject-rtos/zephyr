@@ -216,7 +216,7 @@ static int lwm2m_setup(void)
 
 		err = lwm2m_set_bulk(humidity_items, ARRAY_SIZE(humidity_items));
 		if (err) {
-			LOG_ERR("Failed to set HUMIDITY SENSOR resources");
+			LOG_ERROR("Failed to set HUMIDITY SENSOR resources");
 			return err;
 		}
 	}
@@ -226,7 +226,7 @@ static int lwm2m_setup(void)
 	err = lwm2m_set_bulk(temp_sensor_items, ARRAY_SIZE(temp_sensor_items));
 
 	if (err) {
-		LOG_ERR("Failed to set TEMP SENSOR resources");
+		LOG_ERROR("Failed to set TEMP SENSOR resources");
 		return err;
 	}
 
@@ -303,7 +303,7 @@ static void rd_client_event(struct lwm2m_ctx *client,
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR:
-		LOG_ERR("LwM2M engine reported a network error.");
+		LOG_ERROR("LwM2M engine reported a network error.");
 		lwm2m_rd_client_stop(client, rd_client_event, true);
 		break;
 
@@ -474,7 +474,7 @@ static void connectivity_event_handler(struct net_mgmt_event_callback *cb,
 				       struct net_if *iface)
 {
 	if (event == NET_EVENT_CONN_IF_FATAL_ERROR) {
-		LOG_ERR("Fatal error received from the connectivity layer");
+		LOG_ERROR("Fatal error received from the connectivity layer");
 		return;
 	}
 }
@@ -493,7 +493,7 @@ int main(void)
 		struct net_if *iface = net_if_get_default();
 
 		if (!iface) {
-			LOG_ERR("No network interface found!");
+			LOG_ERROR("No network interface found!");
 			return -ENODEV;
 		}
 
@@ -509,7 +509,7 @@ int main(void)
 		ret = net_if_up(iface);
 
 		if (ret < 0 && ret != -EALREADY) {
-			LOG_ERR("net_if_up, error: %d", ret);
+			LOG_ERROR("net_if_up, error: %d", ret);
 			return ret;
 		}
 
@@ -521,7 +521,7 @@ int main(void)
 
 	ret = lwm2m_setup();
 	if (ret < 0) {
-		LOG_ERR("Cannot setup LWM2M fields (%d)", ret);
+		LOG_ERROR("Cannot setup LWM2M fields (%d)", ret);
 		return 0;
 	}
 

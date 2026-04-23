@@ -98,14 +98,14 @@ static int npcx_sha_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fin
 		sha_type = NCL_SHA_TYPE_2_512;
 		break;
 	default:
-		LOG_ERR("Unexpected algo: %d", npcx_session->algo);
+		LOG_ERROR("Unexpected algo: %d", npcx_session->algo);
 		return -ENOTSUP;
 	}
 
 	if (!ctx->started) {
 		ret = NPCX_NCL_SHA->start(npcx_ctx->handle, sha_type);
 		if (ret != NCL_STATUS_OK) {
-			LOG_ERR("Could not compute the hash, err:%d", ret);
+			LOG_ERROR("Could not compute the hash, err:%d", ret);
 			return -EINVAL;
 		}
 		ctx->started = true;
@@ -114,7 +114,7 @@ static int npcx_sha_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fin
 	if (pkt->in_len != 0) {
 		ret = NPCX_NCL_SHA->update(npcx_ctx->handle, pkt->in_buf, pkt->in_len);
 		if (ret != NCL_STATUS_OK) {
-			LOG_ERR("Could not update the hash, err:%d", ret);
+			LOG_ERROR("Could not update the hash, err:%d", ret);
 			ctx->started = false;
 			return -EINVAL;
 		}
@@ -124,7 +124,7 @@ static int npcx_sha_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fin
 		ctx->started = false;
 		ret = NPCX_NCL_SHA->finish(npcx_ctx->handle, pkt->out_buf);
 		if (ret != NCL_STATUS_OK) {
-			LOG_ERR("Could not compute the hash, err:%d", ret);
+			LOG_ERROR("Could not compute the hash, err:%d", ret);
 			return -EINVAL;
 		}
 	}
@@ -139,19 +139,19 @@ static int npcx_hash_session_setup(const struct device *dev, struct hash_ctx *ct
 	struct npcx_sha_context *npcx_ctx;
 
 	if (ctx->flags & ~(NPCX_HASH_CAPS_SUPPORT)) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -ENOTSUP;
 	}
 
 	if ((algo != CRYPTO_HASH_ALGO_SHA256) && (algo != CRYPTO_HASH_ALGO_SHA384) &&
 	    (algo != CRYPTO_HASH_ALGO_SHA512)) {
-		LOG_ERR("Unsupported algo: %d", algo);
+		LOG_ERROR("Unsupported algo: %d", algo);
 		return -ENOTSUP;
 	}
 
 	ctx_idx = npcx_get_unused_session_index();
 	if (ctx_idx < 0) {
-		LOG_ERR("No free session for now");
+		LOG_ERROR("No free session for now");
 		return -ENOSPC;
 	}
 
@@ -194,8 +194,8 @@ static int npcx_hash_init(const struct device *dev)
 
 	handle_size_required = NPCX_NCL_SHA->get_context_size();
 	if (handle_size_required != NPCX_SHA256_HANDLE_SIZE) {
-		LOG_ERR("Pre-alloc buf size doesn't match required buf size (%d)",
-			handle_size_required);
+		LOG_ERROR("Pre-alloc buf size doesn't match required buf size (%d)",
+			  handle_size_required);
 		return -ENOSR;
 	}
 

@@ -269,7 +269,7 @@ static int i2c_ambiq_ios_pm_action(const struct device *dev, enum pm_device_acti
 
 	err = am_hal_ios_power_ctrl(data->i2c_ios_handle, status, true);
 	if (err != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("am_hal_ios_power_ctrl failed: %d", err);
+		LOG_ERROR("am_hal_ios_power_ctrl failed: %d", err);
 		return -EPERM;
 	} else {
 		return 0;
@@ -406,13 +406,13 @@ static int i2c_ambiq_ios_init(const struct device *dev)
 	uint32_t ret = am_hal_ios_initialize(config->inst_idx, &data->i2c_ios_handle);
 
 	if (ret != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("Failed to initialize i2c target\n");
+		LOG_ERROR("Failed to initialize i2c target\n");
 		return -EBUSY;
 	}
 
 	ret = am_hal_ios_power_ctrl(data->i2c_ios_handle, AM_HAL_SYSCTRL_WAKE, false);
 	if (ret != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("Failed to power up i2c target\n");
+		LOG_ERROR("Failed to power up i2c target\n");
 		am_hal_ios_uninitialize(data->i2c_ios_handle);
 		return -ENXIO;
 	}

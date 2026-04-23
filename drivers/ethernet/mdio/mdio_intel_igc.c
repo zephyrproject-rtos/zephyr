@@ -48,7 +48,7 @@ static int intel_igc_mdio(const struct device *dev, uint32_t command)
 	/* Wait for the read or write transaction to complete */
 	if (!WAIT_FOR((sys_read32(mdic) & INTEL_IGC_MDIC_READY),
 		      CONFIG_MDIO_INTEL_BUSY_CHECK_TIMEOUT, k_usleep(1))) {
-		LOG_ERR("MDIC operation timed out");
+		LOG_ERROR("MDIC operation timed out");
 		k_mutex_unlock(&data->mutex);
 		return -ETIMEDOUT;
 	}

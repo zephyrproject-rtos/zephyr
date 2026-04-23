@@ -179,7 +179,7 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 		if (clock_control_configure(clock,
 					    (clock_control_subsys_t)&priv->pclken[1],
 					    NULL) != 0) {
-			LOG_ERR("Failed to enable SDMMC domain clock");
+			LOG_ERROR("Failed to enable SDMMC domain clock");
 			return -EIO;
 		}
 	}
@@ -188,19 +188,19 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 		uint32_t sdmmc_clock_rate;
 
 		if (DT_INST_NUM_CLOCKS(0) <= 1) {
-			LOG_ERR("No domain clock provided on SDMMC DT node!");
+			LOG_ERROR("No domain clock provided on SDMMC DT node!");
 			return -ENOTSUP;
 		}
 
 		if (clock_control_get_rate(clock,
 					   (clock_control_subsys_t)&priv->pclken[1],
 					   &sdmmc_clock_rate) != 0) {
-			LOG_ERR("Failed to get SDMMC domain clock rate");
+			LOG_ERROR("Failed to get SDMMC domain clock rate");
 			return -EIO;
 		}
 
 		if (sdmmc_clock_rate != MHZ(48)) {
-			LOG_ERR("SDMMC Clock is not 48MHz (%d)", sdmmc_clock_rate);
+			LOG_ERROR("SDMMC Clock is not 48MHz (%d)", sdmmc_clock_rate);
 			return -ENOTSUP;
 		}
 	}
@@ -228,8 +228,7 @@ static void stm32_sdmmc_dma_cb(const struct device *dev, void *arg,
 	DMA_HandleTypeDef *hdma = arg;
 
 	if (status != 0) {
-		LOG_ERR("DMA callback error with channel %d.", channel);
-
+		LOG_ERROR("DMA callback error with channel %d.", channel);
 	}
 
 	HAL_DMA_IRQHandler(hdma);
@@ -240,7 +239,7 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 	int ret;
 
 	if (!device_is_ready(dma->dev)) {
-		LOG_ERR("Failed to get dma dev");
+		LOG_ERROR("Failed to get dma dev");
 		return -ENODEV;
 	}
 
@@ -251,7 +250,7 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 	 */
 	ret = dma_config(dma->dev, dma->channel, &dma->cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to config");
+		LOG_ERROR("Failed to config");
 		return ret;
 	}
 
@@ -295,7 +294,7 @@ static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
 #if STM32_SDMMC_USE_DMA_SHARED
 	err = stm32_sdmmc_configure_dma(&priv->dma_txrx_handle, &priv->dma_txrx);
 	if (err) {
-		LOG_ERR("failed to init shared DMA");
+		LOG_ERROR("failed to init shared DMA");
 		return err;
 	}
 	__HAL_LINKDMA(&priv->hsd, hdmatx, priv->dma_txrx_handle);
@@ -303,7 +302,7 @@ static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
 #else
 	err = stm32_sdmmc_configure_dma(&priv->dma_tx_handle, &priv->dma_tx);
 	if (err) {
-		LOG_ERR("failed to init tx dma");
+		LOG_ERROR("failed to init tx dma");
 		return err;
 	}
 	__HAL_LINKDMA(&priv->hsd, hdmatx, priv->dma_tx_handle);
@@ -313,7 +312,7 @@ static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
 
 	err = stm32_sdmmc_configure_dma(&priv->dma_rx_handle, &priv->dma_rx);
 	if (err) {
-		LOG_ERR("failed to init rx dma");
+		LOG_ERROR("failed to init rx dma");
 		return err;
 	}
 	__HAL_LINKDMA(&priv->hsd, hdmarx, priv->dma_rx_handle);
@@ -409,20 +408,20 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 #if STM32_SDMMC_USE_DMA
 	err = stm32_sdmmc_dma_init(priv);
 	if (err) {
-		LOG_ERR("DMA init failed");
+		LOG_ERROR("DMA init failed");
 		goto error;
 	}
 #endif
 
 	err = stm32_sdmmc_clock_enable(priv);
 	if (err) {
-		LOG_ERR("failed to init clocks");
+		LOG_ERROR("failed to init clocks");
 		goto error;
 	}
 
 	err = reset_line_toggle_dt(&priv->reset);
 	if (err) {
-		LOG_ERR("failed to reset peripheral");
+		LOG_ERROR("failed to reset peripheral");
 		goto error;
 	}
 
@@ -432,7 +431,7 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 	hal_ret = HAL_SD_Init(&priv->hsd);
 #endif
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("failed to init stm32_sdmmc (ErrorCode 0x%X)", priv->hsd.ErrorCode);
+		LOG_ERROR("failed to init stm32_sdmmc (ErrorCode 0x%X)", priv->hsd.ErrorCode);
 		err = -EIO;
 		goto error;
 	}
@@ -445,8 +444,8 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 		hal_ret = HAL_SD_ConfigWideBusOperation(&priv->hsd, priv->hsd.Init.BusWide);
 #endif
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("failed to configure wide bus operation (ErrorCode 0x%X)",
-				priv->hsd.ErrorCode);
+			LOG_ERROR("failed to configure wide bus operation (ErrorCode 0x%X)",
+				  priv->hsd.ErrorCode);
 			err = -EIO;
 			goto error;
 		}
@@ -475,7 +474,7 @@ static int stm32_sdmmc_access_deinit(struct stm32_sdmmc_priv *priv)
 
 	err = stm32_sdmmc_dma_deinit(priv);
 	if (err) {
-		LOG_ERR("DMA deinit failed");
+		LOG_ERROR("DMA deinit failed");
 		return err;
 	}
 #endif
@@ -487,7 +486,7 @@ static int stm32_sdmmc_access_deinit(struct stm32_sdmmc_priv *priv)
 	stm32_sdmmc_clock_disable(priv);
 #endif
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("failed to deinit stm32_sdmmc (ErrorCode 0x%X)", priv->hsd.ErrorCode);
+		LOG_ERROR("failed to deinit stm32_sdmmc (ErrorCode 0x%X)", priv->hsd.ErrorCode);
 		return -EIO;
 	}
 
@@ -541,7 +540,7 @@ static int stm32_sdmmc_read_blocks(HandleTypeDef *hsd, uint8_t *data_buf,
 #endif /* STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma)) */
 
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("sd read block failed %d", hal_ret);
+		LOG_ERROR("sd read block failed %d", hal_ret);
 		return -EIO;
 	}
 
@@ -601,7 +600,7 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 #endif
 
 	if (priv->status != DISK_STATUS_OK) {
-		LOG_ERR("sd read error %d", priv->status);
+		LOG_ERROR("sd read error %d", priv->status);
 		err = -EIO;
 		goto end;
 	}
@@ -640,7 +639,7 @@ static int stm32_sdmmc_write_blocks(HandleTypeDef *hsd,
 #endif /* STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma)) */
 
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("sd write block failed %d", hal_ret);
+		LOG_ERROR("sd write block failed %d", hal_ret);
 		return -EIO;
 	}
 
@@ -680,14 +679,14 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 
 #if STM32_SDMMC_USE_DMA_SHARED
 	if (HAL_DMA_DeInit(&priv->dma_txrx_handle) != HAL_OK) {
-		LOG_ERR("DMA deinit error");
-		err  = -EIO;
+		LOG_ERROR("DMA deinit error");
+		err = -EIO;
 		goto end;
 	}
 #endif
 
 	if (priv->status != DISK_STATUS_OK) {
-		LOG_ERR("sd write error %d", priv->status);
+		LOG_ERROR("sd write error %d", priv->status);
 		err = -EIO;
 		goto end;
 	}
@@ -715,7 +714,7 @@ static int stm32_sdmmc_access_erase(struct disk_info *disk, uint32_t sector, uin
 	err = HAL_SD_Erase(&priv->hsd, sector, sector + count);
 #endif
 	if (err != HAL_OK) {
-		LOG_ERR("sdmmc erase block failed %d", err);
+		LOG_ERROR("sdmmc erase block failed %d", err);
 		err = -EIO;
 		goto end;
 	}
@@ -939,7 +938,7 @@ static int disk_stm32_sdmmc_init(const struct device *dev)
 	struct stm32_sdmmc_priv *priv = dev->data;
 
 	if (!device_is_ready(priv->reset.dev)) {
-		LOG_ERR("reset control device not ready");
+		LOG_ERROR("reset control device not ready");
 		return -ENODEV;
 	}
 

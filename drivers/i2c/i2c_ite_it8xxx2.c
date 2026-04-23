@@ -142,25 +142,26 @@ static int i2c_parsing_return_value(const struct device *dev)
 
 	if (data->err == ETIMEDOUT) {
 		/* Connection timed out */
-		LOG_ERR("I2C ch%d Address:0x%X Transaction time out.",
-			config->port, data->addr_16bit);
+		LOG_ERROR("I2C ch%d Address:0x%X Transaction time out.", config->port,
+			  data->addr_16bit);
 	} else {
 		/* Host error bits message*/
 		if (data->err & HOSTA_TMOE) {
-			LOG_ERR("I2C ch%d Address:0x%X Time-out error: hardware time-out error.",
-				config->port, data->addr_16bit);
+			LOG_ERROR("I2C ch%d Address:0x%X Time-out error: hardware time-out error.",
+				  config->port, data->addr_16bit);
 		}
 		if (data->err & HOSTA_NACK) {
 			LOG_DBG("I2C ch%d Address:0x%X NACK error: device does not response ACK.",
 				config->port, data->addr_16bit);
 		}
 		if (data->err & HOSTA_FAIL) {
-			LOG_ERR("I2C ch%d Address:0x%X Fail: a processing transmission is killed.",
+			LOG_ERROR(
+				"I2C ch%d Address:0x%X Fail: a processing transmission is killed.",
 				config->port, data->addr_16bit);
 		}
 		if (data->err & HOSTA_BSER) {
-			LOG_ERR("I2C ch%d Address:0x%X BUS error: SMBus has lost arbitration.",
-				config->port, data->addr_16bit);
+			LOG_ERROR("I2C ch%d Address:0x%X BUS error: SMBus has lost arbitration.",
+				  config->port, data->addr_16bit);
 		}
 	}
 
@@ -302,7 +303,7 @@ static int i2c_it8xxx2_get_config(const struct device *dev,
 	uint32_t speed;
 
 	if (!data->bus_freq) {
-		LOG_ERR("The bus frequency is not initially configured.");
+		LOG_ERROR("The bus frequency is not initially configured.");
 		return -EIO;
 	}
 
@@ -476,7 +477,7 @@ int __soc_ram_code i2c_tran_fifo_w2r_change_direction(const struct device *dev)
 	uint8_t *base = config->base;
 
 	if (++data->active_msg_index >= data->num_msgs) {
-		LOG_ERR("Current message index is error.");
+		LOG_ERROR("Current message index is error.");
 		data->err = EINVAL;
 		/* W/C */
 		IT8XXX2_SMB_HOSTA(base) = HOSTA_ALL_WC_BIT;
@@ -1031,8 +1032,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 			data->err = ETIMEDOUT;
 			/* reset i2c port */
 			i2c_reset(dev);
-			LOG_ERR("I2C ch%d:0x%X reset cause %d",
-				config->port, data->addr_16bit, I2C_RC_TIMEOUT);
+			LOG_ERROR("I2C ch%d:0x%X reset cause %d", config->port, data->addr_16bit,
+				  I2C_RC_TIMEOUT);
 			/* If this message is sent fail, drop the transaction. */
 			break;
 		}
@@ -1176,14 +1177,14 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	data->i2ccs = I2C_CH_NORMAL;
 
 	if (error) {
-		LOG_ERR("i2c: failure initializing");
+		LOG_ERROR("i2c: failure initializing");
 		return error;
 	}
 
 	/* Set the pin to I2C alternate function. */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure I2C pins");
+		LOG_ERROR("Failed to configure I2C pins");
 		return status;
 	}
 
@@ -1236,20 +1237,19 @@ static int i2c_it8xxx2_recover_bus(const struct device *dev)
 
 	ret = i2c_bitbang_recover_bus(&data->bitbang);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to recover bus (err %d)", dev->name, ret);
+		LOG_ERROR("%s: Failed to recover bus (err %d)", dev->name, ret);
 	}
 
 	/* Set GPIO back to I2C alternate function of SCL */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure I2C pins");
+		LOG_ERROR("Failed to configure I2C pins");
 		return status;
 	}
 
 	/* reset i2c port */
 	i2c_reset(dev);
-	LOG_ERR("I2C ch%d reset cause %d", config->port,
-		I2C_RC_NO_IDLE_FOR_START);
+	LOG_ERROR("I2C ch%d reset cause %d", config->port, I2C_RC_NO_IDLE_FOR_START);
 
 	return 0;
 }

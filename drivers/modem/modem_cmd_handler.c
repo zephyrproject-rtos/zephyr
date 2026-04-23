@@ -368,9 +368,9 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 					      data->match_buf_len - 1,
 					      data->rx_buf, 0, len);
 		if ((data->match_buf_len - 1) < match_len) {
-			LOG_ERR("Match buffer size (%zu) is too small for "
-				"incoming command size: %zu!  Truncating!",
-				data->match_buf_len - 1, match_len);
+			LOG_ERROR("Match buffer size (%zu) is too small for "
+				  "incoming command size: %zu!  Truncating!",
+				  data->match_buf_len - 1, match_len);
 		}
 
 #if defined(CONFIG_MODEM_CONTEXT_VERBOSE_DEBUG)
@@ -389,8 +389,8 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 				k_sem_give(&data->sem_parse_lock);
 				break;
 			} else if (ret < 0) {
-				LOG_ERR("process cmd [%s] (len:%zu, ret:%d)",
-					cmd->cmd, match_len, ret);
+				LOG_ERROR("process cmd [%s] (len:%zu, ret:%d)", cmd->cmd, match_len,
+					  ret);
 			}
 
 			/*
@@ -611,8 +611,7 @@ int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 		k_sleep(K_MSEC(50));
 
 		if (ret < 0) {
-			LOG_ERR("command %s ret:%d",
-				cmds[i].send_cmd, ret);
+			LOG_ERROR("command %s ret:%d", cmds[i].send_cmd, ret);
 			break;
 		}
 	}
@@ -646,8 +645,7 @@ int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
 		k_sleep(K_MSEC(50));
 
 		if (ret < 0) {
-			LOG_ERR("command %s ret:%d",
-				cmds[i].send_cmd, ret);
+			LOG_ERROR("command %s ret:%d", cmds[i].send_cmd, ret);
 			break;
 		}
 	}

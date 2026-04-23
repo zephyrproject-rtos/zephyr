@@ -533,7 +533,7 @@ static inline void max32_i3c_request_emit_stop(struct max32_i3c_data *data, mxc_
 				LOG_WRN("Timeout on emit stop, retrying");
 				continue;
 			}
-			LOG_ERR("Error waiting on stop");
+			LOG_ERROR("Error waiting on stop");
 			return;
 		}
 
@@ -730,7 +730,7 @@ static int max32_i3c_do_one_xfer_read(mxc_i3c_regs_t *regs, uint8_t *buf, uint8_
 			}
 
 			if (ret == -ETIMEDOUT) {
-				LOG_ERR("Timeout error");
+				LOG_ERROR("Timeout error");
 			}
 
 			goto one_xfer_read_out;
@@ -833,7 +833,7 @@ static int max32_i3c_do_one_xfer(mxc_i3c_regs_t *regs, struct max32_i3c_data *da
 		 */
 		ret = max32_i3c_status_wait_timeout(regs, MXC_F_I3C_CONT_STATUS_DONE, 10000);
 		if (ret != 0) {
-			LOG_ERR("%s: timed out addr 0x%02x, buf_sz %u", __func__, addr, buf_sz);
+			LOG_ERROR("%s: timed out addr 0x%02x, buf_sz %u", __func__, addr, buf_sz);
 			emit_stop = true;
 
 			goto out_one_xfer;
@@ -841,7 +841,7 @@ static int max32_i3c_do_one_xfer(mxc_i3c_regs_t *regs, struct max32_i3c_data *da
 	}
 
 	if (max32_i3c_has_error(regs)) {
-		LOG_ERR("HAS ERR\n");
+		LOG_ERROR("HAS ERR\n");
 		ret = -EIO;
 	}
 
@@ -919,8 +919,8 @@ static int max32_i3c_transfer(const struct device *dev, struct i3c_device_desc *
 					goto out_xfer_i3c_stop_unlock;
 				}
 				if (ret < 0) {
-					LOG_ERR("emit start of broadcast addr failed, error (%d)",
-						ret);
+					LOG_ERROR("emit start of broadcast addr failed, error (%d)",
+						  ret);
 					goto out_xfer_i3c_stop_unlock;
 				}
 				break;
@@ -931,7 +931,7 @@ static int max32_i3c_transfer(const struct device *dev, struct i3c_device_desc *
 		ret = max32_i3c_do_one_xfer(regs, data, target->dynamic_addr, false, msgs[i].buf,
 					    msgs[i].len, is_read, emit_start, emit_stop, no_ending);
 		if (ret < 0) {
-			LOG_ERR("Xfer failed %d\n", ret);
+			LOG_ERROR("Xfer failed %d\n", ret);
 			goto out_xfer_i3c_stop_unlock;
 		}
 
@@ -997,7 +997,7 @@ static int max32_i3c_do_daa(const struct device *dev)
 		/* Loop to grab data from devices (Provisioned ID, BCR and DCR) */
 		do {
 			if (max32_i3c_has_error(regs)) {
-				LOG_ERR("DAA recv error");
+				LOG_ERROR("DAA recv error");
 
 				ret = -EIO;
 
@@ -1136,8 +1136,8 @@ static int max32_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pa
 	/* Emit START */
 	ret = max32_i3c_request_emit_start(regs, I3C_BROADCAST_ADDR, false, false, 0);
 	if (ret < 0) {
-		LOG_ERR("CCC[0x%02x] %s START error (%d)", payload->ccc.id,
-			i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct", ret);
+		LOG_ERROR("CCC[0x%02x] %s START error (%d)", payload->ccc.id,
+			  i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct", ret);
 
 		goto out_ccc_stop;
 	}
@@ -1147,8 +1147,8 @@ static int max32_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pa
 	max32_i3c_errwarn_clear_all_nowait(regs);
 	ret = max32_i3c_do_one_xfer_write(regs, &payload->ccc.id, 1, payload->ccc.data_len > 0);
 	if (ret < 0) {
-		LOG_ERR("CCC[0x%02x] %s command error (%d)", payload->ccc.id,
-			i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct", ret);
+		LOG_ERROR("CCC[0x%02x] %s command error (%d)", payload->ccc.id,
+			  i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct", ret);
 
 		goto out_ccc_stop;
 	}
@@ -1160,9 +1160,9 @@ static int max32_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pa
 		ret = max32_i3c_do_one_xfer_write(regs, payload->ccc.data, payload->ccc.data_len,
 						  false);
 		if (ret < 0) {
-			LOG_ERR("CCC[0x%02x] %s command payload error (%d)", payload->ccc.id,
-				i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct",
-				ret);
+			LOG_ERROR("CCC[0x%02x] %s command payload error (%d)", payload->ccc.id,
+				  i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct",
+				  ret);
 
 			goto out_ccc_stop;
 		}
@@ -1193,8 +1193,8 @@ static int max32_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pa
 						    tgt_payload->data, tgt_payload->data_len,
 						    is_read, emit_start, false, false);
 			if (ret < 0) {
-				LOG_ERR("CCC[0x%02x] target payload error (%d)", payload->ccc.id,
-					ret);
+				LOG_ERROR("CCC[0x%02x] target payload error (%d)", payload->ccc.id,
+					  ret);
 
 				goto out_ccc_stop;
 			}
@@ -1272,7 +1272,7 @@ static void max32_i3c_ibi_work(struct k_work *work)
 	case MXC_V_I3C_CONT_STATUS_IBITYPE_CONT_REQ:
 		if (max32_i3c_status_wait_timeout(regs, MXC_F_I3C_CONT_STATUS_DONE, 1000) ==
 		    -ETIMEDOUT) {
-			LOG_ERR("Timeout waiting for COMPLETE");
+			LOG_ERROR("Timeout waiting for COMPLETE");
 
 			max32_i3c_request_emit_stop(data, regs);
 
@@ -1292,14 +1292,14 @@ static void max32_i3c_ibi_work(struct k_work *work)
 			if (ret >= 0) {
 				payload_sz = (size_t)ret;
 			} else {
-				LOG_ERR("Error reading IBI payload");
+				LOG_ERROR("Error reading IBI payload");
 
 				max32_i3c_request_emit_stop(data, regs);
 
 				goto out_ibi_work;
 			}
 		} else {
-			LOG_ERR("IBI from unknown device addr 0x%x", ibiaddr);
+			LOG_ERROR("IBI from unknown device addr 0x%x", ibiaddr);
 			/* NACK IBI coming from unknown device */
 			max32_i3c_ibi_respond_nack(regs);
 		}
@@ -1330,7 +1330,7 @@ static void max32_i3c_ibi_work(struct k_work *work)
 	case MXC_V_I3C_CONT_STATUS_IBITYPE_IBI:
 		if ((target != NULL) &&
 		    (i3c_ibi_work_enqueue_target_irq(target, &payload[0], payload_sz) != 0)) {
-			LOG_ERR("Error enqueue IBI IRQ work");
+			LOG_ERROR("Error enqueue IBI IRQ work");
 		}
 
 		/* Finishing the IBI transaction */
@@ -1338,7 +1338,7 @@ static void max32_i3c_ibi_work(struct k_work *work)
 		break;
 	case MXC_V_I3C_CONT_STATUS_IBITYPE_HOTJOIN_REQ:
 		if (i3c_ibi_work_enqueue_hotjoin(dev) != 0) {
-			LOG_ERR("Error enqueue IBI HJ work");
+			LOG_ERROR("Error enqueue IBI HJ work");
 		}
 		break;
 	case MXC_V_I3C_CONT_STATUS_IBITYPE_CONT_REQ:
@@ -1439,13 +1439,13 @@ int max32_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc *targe
 		 *    in the register. So all addresses must have the same MSB.
 		 */
 		if (has_mandatory_byte != data->ibi.has_mandatory_byte) {
-			LOG_ERR("New IBI does not have same mandatory byte requirement"
-				" as previous IBI");
+			LOG_ERROR("New IBI does not have same mandatory byte requirement"
+				  " as previous IBI");
 			ret = -EINVAL;
 			goto out;
 		}
 		if (msb != data->ibi.msb) {
-			LOG_ERR("New IBI does not have same msb as previous IBI");
+			LOG_ERROR("New IBI does not have same msb as previous IBI");
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1457,7 +1457,7 @@ int max32_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc *targe
 			}
 		}
 		if (idx >= ARRAY_SIZE(data->ibi.addr)) {
-			LOG_ERR("Cannot support more IBIs");
+			LOG_ERROR("Cannot support more IBIs");
 			ret = -ENOTSUP;
 			goto out;
 		}
@@ -1481,7 +1481,7 @@ int max32_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc *targe
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, true, &i3c_events);
 	if (ret != 0) {
-		LOG_ERR("Error sending IBI ENEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		LOG_ERROR("Error sending IBI ENEC for 0x%02x (%d)", target->dynamic_addr, ret);
 	}
 
 out:
@@ -1532,7 +1532,7 @@ int max32_i3c_ibi_disable(const struct device *dev, struct i3c_device_desc *targ
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, false, &i3c_events);
 	if (ret != 0) {
-		LOG_ERR("Error sending IBI DISEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		LOG_ERROR("Error sending IBI DISEC for 0x%02x (%d)", target->dynamic_addr, ret);
 	}
 
 	max32_i3c_ibi_rules_setup(data, regs);
@@ -1581,7 +1581,7 @@ static void max32_i3c_isr(const struct device *dev)
 		 */
 		err = i3c_ibi_work_enqueue_cb(dev, max32_i3c_ibi_work);
 		if (err) {
-			LOG_ERR("Error enqueuing ibi work, err %d", err);
+			LOG_ERROR("Error enqueuing ibi work, err %d", err);
 			regs->cont_inten = MXC_F_I3C_CONT_INTEN_TARG_START;
 		}
 	}
@@ -1733,7 +1733,7 @@ static int max32_i3c_init(const struct device *dev)
 	    !(cfg->common.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 		ret = i3c_bus_init(dev, &cfg->common.dev_list);
 		if (ret) {
-			LOG_ERR("Failed to do i3c bus init, err=%d", ret);
+			LOG_ERROR("Failed to do i3c bus init, err=%d", ret);
 		}
 	}
 

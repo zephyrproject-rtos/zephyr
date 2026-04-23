@@ -36,7 +36,7 @@ static int bbram_rts5912_read(const struct device *dev, size_t offset, size_t si
 	size_t start_offset, bytes_to_read;
 
 	if (size < 1 || offset + size > config->size) {
-		LOG_ERR("Invalid params");
+		LOG_ERROR("Invalid params");
 		return -EFAULT;
 	}
 
@@ -63,7 +63,7 @@ static int bbram_rts5912_write(const struct device *dev, size_t offset, size_t s
 	size_t start_offset, bytes_to_write;
 
 	if (size < 1 || offset + size > config->size) {
-		LOG_ERR("Invalid params");
+		LOG_ERROR("Invalid params");
 		return -EFAULT;
 	}
 

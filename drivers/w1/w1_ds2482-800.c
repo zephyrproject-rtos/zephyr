@@ -45,7 +45,7 @@ static int ds2482_init(const struct device *dev)
 
 	ret = ds2482_84_reset_device(&config->i2c_spec);
 	if (ret < 0) {
-		LOG_ERR("Device reset failed: %d", ret);
+		LOG_ERROR("Device reset failed: %d", ret);
 		return ret;
 	}
 

@@ -436,14 +436,14 @@ static int spi_max32_transceive(const struct device *dev)
 		ret = spi_max32_rx_dma_setup(dev, data->req.rxData, data->req.rxLen,
 					     data->req.rxLen >> dfs_shift, dfs_shift);
 		if (ret < 0) {
-			LOG_ERR("RX DMA setup failed: %d", ret);
+			LOG_ERROR("RX DMA setup failed: %d", ret);
 			goto dma_rtio_exit;
 		}
 
 		ret = spi_max32_tx_dma_setup(dev, data->req.txData, data->req.txLen,
 					     data->req.txLen >> dfs_shift, dfs_shift);
 		if (ret < 0) {
-			LOG_ERR("TX DMA setup failed: %d", ret);
+			LOG_ERROR("TX DMA setup failed: %d", ret);
 			goto dma_rtio_exit;
 		}
 
@@ -578,7 +578,7 @@ static void spi_max32_dma_callback(const struct device *dev, void *arg, uint32_t
 	const struct max32_spi_config *config = spi_dev->config;
 
 	if (status < 0) {
-		LOG_ERR("DMA callback error for channel %u: %d", channel, status);
+		LOG_ERROR("DMA callback error for channel %u: %d", channel, status);
 #ifndef CONFIG_SPI_MAX32_RTIO
 #ifdef CONFIG_SPI_ASYNC
 		if (data->ctx.asynchronous) {
@@ -621,7 +621,7 @@ static void spi_max32_dma_callback(const struct device *dev, void *arg, uint32_t
 		}
 		break;
 	default:
-		LOG_ERR("DMA callback with unexpected RTIO op %d", sqe->op);
+		LOG_ERROR("DMA callback with unexpected RTIO op %d", sqe->op);
 		break;
 	}
 #else
@@ -681,7 +681,7 @@ static int spi_max32_tx_dma_load(const struct device *dev, const uint8_t *buf, u
 
 	ret = dma_config(config->tx_dma.dev, config->tx_dma.channel, &dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("Error configuring Tx DMA (%d)", ret);
+		LOG_ERROR("Error configuring Tx DMA (%d)", ret);
 	}
 
 	return dma_start(config->tx_dma.dev, config->tx_dma.channel);
@@ -734,7 +734,7 @@ static int spi_max32_rx_dma_load(const struct device *dev, const uint8_t *buf, u
 	}
 	ret = dma_config(config->rx_dma.dev, config->rx_dma.channel, &dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("Error configuring Rx DMA (%d)", ret);
+		LOG_ERROR("Error configuring Rx DMA (%d)", ret);
 	}
 
 	return dma_start(config->rx_dma.dev, config->rx_dma.channel);

@@ -837,7 +837,7 @@ static int shi_npcx_enable(const struct device *dev)
 
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on SHI clock fail %d", ret);
+		LOG_ERROR("Turn on SHI clock fail %d", ret);
 		return ret;
 	}
 
@@ -847,7 +847,7 @@ static int shi_npcx_enable(const struct device *dev)
 	/* Configure pin control for SHI */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Pinctrl apply DEFAULT fail (%d)", ret);
+		LOG_ERROR("Pinctrl apply DEFAULT fail (%d)", ret);
 		return ret;
 	}
 
@@ -878,13 +878,13 @@ static int shi_npcx_disable(const struct device *dev)
 	/* Configure pin control back to GPIO */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 	if (ret < 0) {
-		LOG_ERR("Pinctrl apply SLEEP fail (%d)", ret);
+		LOG_ERROR("Pinctrl apply SLEEP fail (%d)", ret);
 		return ret;
 	}
 
 	ret = clock_control_off(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn off SHI clock fail %d", ret);
+		LOG_ERROR("Turn off SHI clock fail %d", ret);
 		return ret;
 	}
 
@@ -924,7 +924,7 @@ static int shi_npcx_init_registers(const struct device *dev)
 	/* Turn on shi device clock first */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on SHI clock fail %d", ret);
+		LOG_ERROR("Turn on SHI clock fail %d", ret);
 		return ret;
 	}
 

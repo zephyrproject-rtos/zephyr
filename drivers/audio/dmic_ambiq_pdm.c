@@ -92,7 +92,7 @@ static int dmic_ambiq_pdm_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Fail to config PDM pins\n");
+		LOG_ERROR("Fail to config PDM pins\n");
 		return ret;
 	}
 
@@ -113,18 +113,18 @@ static int dmic_ambiq_pdm_configure(const struct device *dev, struct dmic_cfg *d
 	struct pcm_stream_cfg *stream = &dev_config->streams[0];
 
 	if (data->dmic_state == DMIC_STATE_ACTIVE) {
-		LOG_ERR("Cannot configure device while it is active");
+		LOG_ERROR("Cannot configure device while it is active");
 		return -EBUSY;
 	}
 
 	if (channel->req_num_streams != 1 || channel->req_num_chan > 2 ||
 	    channel->req_num_chan < 1 || channel->req_chan_map_hi != channel->act_chan_map_hi) {
-		LOG_ERR("Requested configuration is not supported");
+		LOG_ERROR("Requested configuration is not supported");
 		return -EINVAL;
 	}
 
 	if ((stream->pcm_width != 16) && (stream->pcm_width != 24)) {
-		LOG_ERR("Only 16-bit or 24-bit samples are supported");
+		LOG_ERROR("Only 16-bit or 24-bit samples are supported");
 		return -EINVAL;
 	}
 
@@ -226,7 +226,7 @@ static int dmic_ambiq_pdm_trigger(const struct device *dev, enum dmic_trigger cm
 		break;
 
 	default:
-		LOG_ERR("Invalid command: %d", cmd);
+		LOG_ERROR("Invalid command: %d", cmd);
 		return -EINVAL;
 	}
 
@@ -242,7 +242,7 @@ static int dmic_ambiq_pdm_read(const struct device *dev, uint8_t stream, void **
 	ARG_UNUSED(stream);
 
 	if (data->dmic_state != DMIC_STATE_ACTIVE) {
-		LOG_ERR("Device is not activated");
+		LOG_ERROR("Device is not activated");
 		return -EIO;
 	}
 
@@ -311,7 +311,7 @@ static int dmic_ambiq_pdm_pm_action(const struct device *dev, enum pm_device_act
 	ret = am_hal_pdm_power_control(data->pdm_handler, status, true);
 
 	if (ret != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("am_hal_pdm_power_control failed: %d", ret);
+		LOG_ERROR("am_hal_pdm_power_control failed: %d", ret);
 		return -EPERM;
 	} else {
 		return 0;

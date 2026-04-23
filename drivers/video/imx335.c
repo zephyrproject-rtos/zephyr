@@ -372,7 +372,7 @@ static int imx335_set_stream(const struct device *dev, bool enable, enum video_b
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_STANDBY,
 				  enable ? IMX335_STANDBY_OPERATING : IMX335_STANDBY_STANDBY);
 	if (ret < 0) {
-		LOG_ERR("Failed to set standby register\n");
+		LOG_ERROR("Failed to set standby register\n");
 		return ret;
 	}
 
@@ -506,13 +506,13 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 	size_t fmt_idx;
 
 	if (drv_data->enabled) {
-		LOG_ERR("Cannot set format while the stream is running");
+		LOG_ERROR("Cannot set format while the stream is running");
 		return -EBUSY;
 	}
 
 	ret = video_format_caps_index(imx335_fmts, fmt, &fmt_idx);
 	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution");
+		LOG_ERROR("Unsupported pixel format or resolution");
 		return ret;
 	}
 
@@ -522,7 +522,7 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 		ret = video_write_cci_multiregs(&cfg->i2c, imx335_bin_none,
 						ARRAY_SIZE(imx335_bin_none));
 		if (ret < 0) {
-			LOG_ERR("Failed to disable binning");
+			LOG_ERROR("Failed to disable binning");
 			return ret;
 		}
 
@@ -535,7 +535,7 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 		ret = video_write_cci_multiregs(&cfg->i2c, imx335_bin_2x2,
 						ARRAY_SIZE(imx335_bin_2x2));
 		if (ret < 0) {
-			LOG_ERR("Failed to enable binning");
+			LOG_ERROR("Failed to enable binning");
 			return ret;
 		}
 
@@ -546,7 +546,7 @@ static int imx335_set_fmt(const struct device *dev, struct video_format *fmt)
 		ctrls->exposure.val = MIN(ctrls->exposure.range.max, ctrls->exposure.val);
 		ret = imx335_set_ctrl_exposure(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to update exposure while enabling binning");
+			LOG_ERROR("Failed to update exposure while enabling binning");
 			return ret;
 		}
 	}
@@ -632,7 +632,7 @@ static int imx335_set_input_clk(const struct device *dev, uint32_t rate)
 						ARRAY_SIZE(imx335_inck_6mhz));
 		break;
 	default:
-		LOG_ERR("Unsupported inck freq (%d)\n", rate);
+		LOG_ERROR("Unsupported inck freq (%d)\n", rate);
 		ret = -EINVAL;
 	}
 
@@ -683,15 +683,15 @@ static int imx335_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (cfg->reset_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->reset_gpio.port->name);
+			LOG_ERROR("%s: device %s is not ready", dev->name,
+				  cfg->reset_gpio.port->name);
 			return -ENODEV;
 		}
 
@@ -713,7 +713,7 @@ static int imx335_init(const struct device *dev)
 	ret = video_write_cci_multiregs(&cfg->i2c, imx335_init_params,
 					ARRAY_SIZE(imx335_init_params));
 	if (ret < 0) {
-		LOG_ERR("Unable to initialize the sensor");
+		LOG_ERROR("Unable to initialize the sensor");
 		return ret;
 	}
 
@@ -721,13 +721,13 @@ static int imx335_init(const struct device *dev)
 	ret = video_write_cci_multiregs16(&cfg->i2c, imx335_fixed_regs,
 					  ARRAY_SIZE(imx335_fixed_regs));
 	if (ret < 0) {
-		LOG_ERR("Unable to initialize the sensor");
+		LOG_ERROR("Unable to initialize the sensor");
 		return ret;
 	}
 
 	ret = imx335_set_fmt(dev, &drv_data->fmt);
 	if (ret < 0) {
-		LOG_ERR("Unable to apply format");
+		LOG_ERROR("Unable to apply format");
 		return ret;
 	}
 
@@ -735,13 +735,13 @@ static int imx335_init(const struct device *dev)
 	ret = video_write_cci_multiregs(&cfg->i2c, imx335_mode_2l_10b,
 					ARRAY_SIZE(imx335_mode_2l_10b));
 	if (ret < 0) {
-		LOG_ERR("Unable to initialize the sensor");
+		LOG_ERROR("Unable to initialize the sensor");
 		return ret;
 	}
 
 	ret = imx335_set_input_clk(dev, cfg->input_clk);
 	if (ret < 0) {
-		LOG_ERR("Unable to configure INCK");
+		LOG_ERROR("Unable to configure INCK");
 		return ret;
 	}
 

@@ -99,27 +99,27 @@ static int adc_nxp_s32_channel_setup(const struct device *dev,
 	struct adc_nxp_s32_data *data = dev->data;
 
 	if (channel_cfg->channel_id >= data->num_channels) {
-		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
+		LOG_ERROR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Unsupported channel acquisition time");
+		LOG_ERROR("Unsupported channel acquisition time");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Unsupported channel gain %d", channel_cfg->gain);
+		LOG_ERROR("Unsupported channel gain %d", channel_cfg->gain);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Unsupported channel reference");
+		LOG_ERROR("Unsupported channel reference");
 		return -ENOTSUP;
 	}
 
@@ -170,7 +170,7 @@ static int adc_nxp_s32_set_averaging(const struct device *dev, uint8_t oversampl
 		avg_sel = ADC_SAR_IP_AVG_32_CONV;
 		break;
 	default:
-		LOG_ERR("Unsupported oversampling value");
+		LOG_ERROR("Unsupported oversampling value");
 		return -ENOTSUP;
 	}
 	Adc_Sar_Ip_SetAveraging(config->instance, avg_en, avg_sel);
@@ -199,7 +199,7 @@ static int adc_nxp_s32_set_resolution(const struct device *dev, uint8_t adc_reso
 		resolution = ADC_SAR_IP_RESOLUTION_14;
 		break;
 	default:
-		LOG_ERR("Unsupported resolution");
+		LOG_ERROR("Unsupported resolution");
 		return -ENOTSUP;
 	}
 	Adc_Sar_Ip_SetResolution(config->instance, resolution);
@@ -218,13 +218,13 @@ static int adc_nxp_s32_start_read_async(const struct device *dev,
 	uint8_t channel;
 
 	if (find_msb_set(sequence->channels) > data->num_channels) {
-		LOG_ERR("Channels out of bit map");
+		LOG_ERROR("Channels out of bit map");
 		return -EINVAL;
 	}
 
 	error = adc_nxp_s32_validate_buffer_size(dev, sequence);
 	if (error) {
-		LOG_ERR("Buffer size isn't enough");
+		LOG_ERROR("Buffer size isn't enough");
 		return -EINVAL;
 	}
 
@@ -235,7 +235,7 @@ static int adc_nxp_s32_start_read_async(const struct device *dev,
 	}
 #else
 	if (sequence->oversampling) {
-		LOG_ERR("Oversampling can't be changed");
+		LOG_ERROR("Oversampling can't be changed");
 		return -ENOTSUP;
 	}
 #endif
@@ -247,7 +247,7 @@ static int adc_nxp_s32_start_read_async(const struct device *dev,
 	}
 #else
 	if (sequence->resolution != ADC_SAR_IP_MAX_RESOLUTION) {
-		LOG_ERR("Resolution can't be changed");
+		LOG_ERROR("Resolution can't be changed");
 		return -ENOTSUP;
 	}
 #endif
@@ -256,11 +256,11 @@ static int adc_nxp_s32_start_read_async(const struct device *dev,
 #if FEATURE_ADC_HAS_CALIBRATION
 		error = Adc_Sar_Ip_DoCalibration(config->instance);
 		if (error) {
-			LOG_ERR("Error during calibration");
+			LOG_ERROR("Error during calibration");
 			return -EIO;
 		}
 #else
-		LOG_ERR("Unsupported calibration");
+		LOG_ERROR("Unsupported calibration");
 		return -ENOTSUP;
 #endif
 	}

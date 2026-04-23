@@ -119,14 +119,12 @@ static int dmic_mcux_enable_dma(struct mcux_dmic_drv_data *drv_data, bool enable
 		if (enable) {
 			ret = dma_start(pdm_channel->dma, pdm_channel->dma_chan);
 			if (ret < 0) {
-				LOG_ERR("Could not start DMA for HW channel %d",
-					hw_chan);
+				LOG_ERROR("Could not start DMA for HW channel %d", hw_chan);
 				return ret;
 			}
 		} else {
 			if (dma_stop(pdm_channel->dma, pdm_channel->dma_chan)) {
-				LOG_ERR("Error stopping DMA for HW channel %d",
-					hw_chan);
+				LOG_ERROR("Error stopping DMA for HW channel %d", hw_chan);
 				ret = -EIO;
 			}
 		}
@@ -161,7 +159,7 @@ static void dmic_mcux_reload_dma(struct mcux_dmic_drv_data *drv_data,
 		ret = dma_reload(pdm_channel->dma, pdm_channel->dma_chan,
 				 src, dst, dma_buf_size);
 		if (ret < 0) {
-			LOG_ERR("Could not reload DMIC HW channel %d", hw_chan);
+			LOG_ERROR("Could not reload DMIC HW channel %d", hw_chan);
 			return;
 		}
 	}
@@ -212,7 +210,7 @@ static void dmic_mcux_dma_cb(const struct device *dev, void *user_data,
 
 	if (status < 0) {
 		/* DMA has failed, free allocated blocks */
-		LOG_ERR("DMA reports error");
+		LOG_ERROR("DMA reports error");
 		dmic_mcux_enable_dma(drv_data, false);
 		dmic_mcux_activate_channels(drv_data, false);
 		/* Free all allocated DMA buffers */
@@ -232,7 +230,7 @@ static void dmic_mcux_dma_cb(const struct device *dev, void *user_data,
 		 * leave the current buffer in place to be overwritten
 		 * by the DMA.
 		 */
-		LOG_ERR("Could not allocate RX buffer. Dropping RX data");
+		LOG_ERROR("Could not allocate RX buffer. Dropping RX data");
 		drv_data->dmic_state = DMIC_STATE_ERROR;
 		/* Reload DMA */
 		dmic_mcux_reload_dma(drv_data, done_buffer);
@@ -255,7 +253,7 @@ static void dmic_mcux_dma_cb(const struct device *dev, void *user_data,
 		 * the current buffer data and leave the current buffer
 		 * in place to be overwritten by the DMA
 		 */
-		LOG_ERR("RX queue overflow, dropping RX buffer data");
+		LOG_ERROR("RX queue overflow, dropping RX buffer data");
 		drv_data->dmic_state = DMIC_STATE_ERROR;
 		/* Reload DMA */
 		dmic_mcux_reload_dma(drv_data, done_buffer);
@@ -349,7 +347,7 @@ static int dmic_mcux_setup_dma(const struct device *dev)
 		/* Set configuration for hw_chan_0 */
 		ret = dma_config(pdm_channel->dma, pdm_channel->dma_chan, &dma_cfg);
 		if (ret < 0) {
-			LOG_ERR("Could not configure DMIC channel %d", hw_chan);
+			LOG_ERROR("Could not configure DMIC channel %d", hw_chan);
 			return ret;
 		}
 		/* First channel is configured. Do not install callbacks for
@@ -420,7 +418,7 @@ static int dmic_mcux_configure(const struct device *dev,
 	int ret;
 
 	if (drv_data->dmic_state == DMIC_STATE_ACTIVE) {
-		LOG_ERR("Cannot configure device while it is active");
+		LOG_ERROR("Cannot configure device while it is active");
 		return -EBUSY;
 	}
 
@@ -433,7 +431,7 @@ static int dmic_mcux_configure(const struct device *dev,
 	 * requesting more
 	 */
 	if (channel->req_num_chan > FSL_FEATURE_DMIC_CHANNEL_NUM) {
-		LOG_ERR("DMIC only supports 8 channels or less");
+		LOG_ERROR("DMIC only supports 8 channels or less");
 		return -ENOTSUP;
 	}
 
@@ -449,7 +447,7 @@ static int dmic_mcux_configure(const struct device *dev,
 	if (drv_data->dmic_state == DMIC_STATE_UNINIT) {
 		ret = mcux_dmic_init(dev);
 		if (ret < 0) {
-			LOG_ERR("Could not reinit DMIC");
+			LOG_ERROR("Could not reinit DMIC");
 			return ret;
 		}
 	}
@@ -463,7 +461,7 @@ static int dmic_mcux_configure(const struct device *dev,
 	 * bit samples.
 	 */
 	if (stream->pcm_width != 16) {
-		LOG_ERR("Only 16 bit samples are supported");
+		LOG_ERROR("Only 16 bit samples are supported");
 		return -ENOTSUP;
 	}
 
@@ -557,7 +555,7 @@ static int dmic_mcux_start(const struct device *dev)
 		ret = k_mem_slab_alloc(drv_data->mem_slab,
 				       &drv_data->dma_bufs[i], K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("failed to allocate buffer");
+			LOG_ERROR("failed to allocate buffer");
 			return -ENOBUFS;
 		}
 	}
@@ -605,11 +603,11 @@ static int dmic_mcux_trigger(const struct device *dev,
 	case DMIC_TRIGGER_START:
 		if ((drv_data->dmic_state != DMIC_STATE_CONFIGURED) &&
 		    (drv_data->dmic_state != DMIC_STATE_ACTIVE)) {
-			LOG_ERR("Device is not configured");
+			LOG_ERROR("Device is not configured");
 			return -EIO;
 		} else if (drv_data->dmic_state != DMIC_STATE_ACTIVE) {
 			if (dmic_mcux_start(dev) < 0) {
-				LOG_ERR("Could not start DMIC");
+				LOG_ERROR("Could not start DMIC");
 				return -EIO;
 			}
 			drv_data->dmic_state = DMIC_STATE_ACTIVE;
@@ -621,7 +619,7 @@ static int dmic_mcux_trigger(const struct device *dev,
 		drv_data->dmic_state = DMIC_STATE_UNINIT;
 		break;
 	default:
-		LOG_ERR("Invalid command: %d", cmd);
+		LOG_ERROR("Invalid command: %d", cmd);
 		return -EINVAL;
 	}
 	return 0;
@@ -637,14 +635,14 @@ static int dmic_mcux_read(const struct device *dev,
 	ARG_UNUSED(stream);
 
 	if (drv_data->dmic_state == DMIC_STATE_ERROR) {
-		LOG_ERR("Device reports an error, please reset and reconfigure it");
+		LOG_ERROR("Device reports an error, please reset and reconfigure it");
 		return -EIO;
 	}
 
 	if ((drv_data->dmic_state != DMIC_STATE_CONFIGURED) &&
 	    (drv_data->dmic_state != DMIC_STATE_ACTIVE) &&
 	    (drv_data->dmic_state != DMIC_STATE_PAUSED)) {
-		LOG_ERR("Device state is not valid for read");
+		LOG_ERROR("Device state is not valid for read");
 		return -EIO;
 	}
 

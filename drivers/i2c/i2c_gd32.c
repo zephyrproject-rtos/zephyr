@@ -291,19 +291,19 @@ static void i2c_gd32_error_isr(const struct device *dev)
 static void i2c_gd32_log_err(struct i2c_gd32_data *data)
 {
 	if (data->errs & I2C_GD32_ERR_BERR) {
-		LOG_ERR("Bus error");
+		LOG_ERROR("Bus error");
 	}
 
 	if (data->errs & I2C_GD32_ERR_LARB) {
-		LOG_ERR("Arbitration lost");
+		LOG_ERROR("Arbitration lost");
 	}
 
 	if (data->errs & I2C_GD32_ERR_AERR) {
-		LOG_ERR("No ACK received");
+		LOG_ERROR("No ACK received");
 	}
 
 	if (data->errs & I2C_GD32_ERR_BUSY) {
-		LOG_ERR("I2C bus busy");
+		LOG_ERROR("I2C bus busy");
 	}
 }
 
@@ -507,8 +507,7 @@ static int i2c_gd32_configure(const struct device *dev,
 	/* i2c clock frequency, us */
 	freq = pclk1 / 1000000U;
 	if (freq > I2CCLK_MAX) {
-		LOG_ERR("I2C max clock freq %u, current is %u\n",
-			I2CCLK_MAX, freq);
+		LOG_ERROR("I2C max clock freq %u, current is %u\n", I2CCLK_MAX, freq);
 		err = -ENOTSUP;
 		goto error;
 	}
@@ -545,8 +544,8 @@ static int i2c_gd32_configure(const struct device *dev,
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
 		if (freq < I2CCLK_MIN) {
-			LOG_ERR("I2C standard-mode min clock freq %u, current is %u\n",
-				I2CCLK_MIN, freq);
+			LOG_ERROR("I2C standard-mode min clock freq %u, current is %u\n",
+				  I2CCLK_MIN, freq);
 			err = -ENOTSUP;
 			goto error;
 		}
@@ -571,8 +570,8 @@ static int i2c_gd32_configure(const struct device *dev,
 		break;
 	case I2C_SPEED_FAST:
 		if (freq < I2CCLK_FM_MIN) {
-			LOG_ERR("I2C fast-mode min clock freq %u, current is %u\n",
-				I2CCLK_FM_MIN, freq);
+			LOG_ERROR("I2C fast-mode min clock freq %u, current is %u\n", I2CCLK_FM_MIN,
+				  freq);
 			err = -ENOTSUP;
 			goto error;
 		}
@@ -602,8 +601,8 @@ static int i2c_gd32_configure(const struct device *dev,
 #ifdef I2C_FMPCFG
 	case I2C_SPEED_FAST_PLUS:
 		if (freq < I2CCLK_FM_PLUS_MIN) {
-			LOG_ERR("I2C fast-mode plus min clock freq %u, current is %u\n",
-				I2CCLK_FM_PLUS_MIN, freq);
+			LOG_ERROR("I2C fast-mode plus min clock freq %u, current is %u\n",
+				  I2CCLK_FM_PLUS_MIN, freq);
 			err = -ENOTSUP;
 			goto error;
 		}

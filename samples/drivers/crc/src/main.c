@@ -71,7 +71,7 @@ int main(void)
 	int ret;
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("Device is not ready");
+		LOG_ERROR("Device is not ready");
 		return -ENODEV;
 	}
 
@@ -84,19 +84,19 @@ int main(void)
 
 	ret = crc_begin(dev, &ctx);
 	if (ret != 0) {
-		LOG_ERR("Failed to begin %s: %d", CRC_SAMPLE_NAME, ret);
+		LOG_ERROR("Failed to begin %s: %d", CRC_SAMPLE_NAME, ret);
 		return ret;
 	}
 
 	ret = crc_update(dev, &ctx, data, sizeof(data));
 	if (ret != 0) {
-		LOG_ERR("Failed to update %s: %d", CRC_SAMPLE_NAME, ret);
+		LOG_ERROR("Failed to update %s: %d", CRC_SAMPLE_NAME, ret);
 		return ret;
 	}
 
 	ret = crc_finish(dev, &ctx);
 	if (ret != 0) {
-		LOG_ERR("Failed to finish %s: %d", CRC_SAMPLE_NAME, ret);
+		LOG_ERROR("Failed to finish %s: %d", CRC_SAMPLE_NAME, ret);
 		return ret;
 	}
 
@@ -104,8 +104,8 @@ int main(void)
 
 	ret = crc_verify(&ctx, CRC_SAMPLE_EXPECTED);
 	if (ret != 0) {
-		LOG_ERR("%s verification failed (expected 0x%08x): %d", CRC_SAMPLE_NAME,
-			CRC_SAMPLE_EXPECTED, ret);
+		LOG_ERROR("%s verification failed (expected 0x%08x): %d", CRC_SAMPLE_NAME,
+			  CRC_SAMPLE_EXPECTED, ret);
 		return ret;
 	}
 	LOG_INF("%s verification succeeded (expected 0x%08x)", CRC_SAMPLE_NAME,

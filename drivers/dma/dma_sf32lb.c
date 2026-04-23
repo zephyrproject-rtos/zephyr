@@ -126,57 +126,57 @@ static int check_dma_config(uint32_t channel, struct dma_config *config_dma,
 			    const struct dma_sf32lb_config *config)
 {
 	if (channel >= config->n_channels) {
-		LOG_ERR("Invalid channel (%" PRIu32 ", max %" PRIu32 ")", channel,
-			config->n_channels);
+		LOG_ERROR("Invalid channel (%" PRIu32 ", max %" PRIu32 ")", channel,
+			  config->n_channels);
 		return -EINVAL;
 	}
 
 	if (config_dma->block_count != 1U) {
-		LOG_ERR("Chained block transfer not supported (%" PRIu32 ", max 1)",
-			config_dma->block_count);
+		LOG_ERROR("Chained block transfer not supported (%" PRIu32 ", max 1)",
+			  config_dma->block_count);
 		return -ENOTSUP;
 	}
 
 	if (config_dma->head_block->block_size > DMAC_MAX_LEN) {
-		LOG_ERR("Block size exceeds maximum (%" PRIu32 ", max %lu)",
-			config_dma->head_block->block_size, DMAC_MAX_LEN);
+		LOG_ERROR("Block size exceeds maximum (%" PRIu32 ", max %lu)",
+			  config_dma->head_block->block_size, DMAC_MAX_LEN);
 		return -EINVAL;
 	}
 
 	if (config_dma->dma_slot >= config->n_requests) {
-		LOG_ERR("Invalid DMA slot (%" PRIu32 ", max %" PRIu32 ")", config_dma->dma_slot,
-			config->n_requests);
+		LOG_ERROR("Invalid DMA slot (%" PRIu32 ", max %" PRIu32 ")", config_dma->dma_slot,
+			  config->n_requests);
 		return -EINVAL;
 	}
 
 	if (config_dma->channel_priority > DMAC_MAX_PL) {
-		LOG_ERR("Invalid channel priority (%" PRIu32 ", max %" PRIu32 ")",
-			config_dma->channel_priority, DMAC_MAX_PL);
+		LOG_ERROR("Invalid channel priority (%" PRIu32 ", max %" PRIu32 ")",
+			  config_dma->channel_priority, DMAC_MAX_PL);
 		return -EINVAL;
 	}
 
 	if ((config_dma->head_block->source_addr_adj == DMA_ADDR_ADJ_DECREMENT) |
 	    (config_dma->head_block->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT)) {
-		LOG_ERR("Address decrement not supported");
+		LOG_ERROR("Address decrement not supported");
 		return -ENOTSUP;
 	}
 
 	if ((config_dma->source_data_size != 1U) && (config_dma->source_data_size != 2U) &&
 	    (config_dma->source_data_size != 4U)) {
-		LOG_ERR("Invalid source data size (%" PRIu32 ", must be 1, 2, or 4)",
-			config_dma->source_data_size);
+		LOG_ERROR("Invalid source data size (%" PRIu32 ", must be 1, 2, or 4)",
+			  config_dma->source_data_size);
 		return -EINVAL;
 	}
 
 	if ((config_dma->dest_data_size != 1U) && (config_dma->dest_data_size != 2U) &&
 	    (config_dma->dest_data_size != 4U)) {
-		LOG_ERR("Invalid destination data size (%" PRIu32 ", must be 1, 2, or 4)",
-			config_dma->dest_data_size);
+		LOG_ERROR("Invalid destination data size (%" PRIu32 ", must be 1, 2, or 4)",
+			  config_dma->dest_data_size);
 		return -EINVAL;
 	}
 
 	if (config_dma->dest_data_size != config_dma->source_data_size) {
-		LOG_ERR("Destination and source sizes not equal");
+		LOG_ERROR("Destination and source sizes not equal");
 		return -EINVAL;
 	}
 
@@ -202,7 +202,7 @@ static int dma_sf32lb_config(const struct device *dev, uint32_t channel,
 	/* configure transfer parameters */
 	ccrx = sys_read32(config->dmac + DMAC_CCRX(channel));
 	if ((ccrx & DMAC_CCR1_EN) != 0U) {
-		LOG_ERR("Configuration not possible with DMA enabled");
+		LOG_ERROR("Configuration not possible with DMA enabled");
 		return -EIO;
 	}
 
@@ -301,19 +301,19 @@ static int dma_sf32lb_reload(const struct device *dev, uint32_t channel, uint32_
 	uint32_t cm0arx;
 
 	if (channel >= config->n_channels) {
-		LOG_ERR("Invalid channel (%" PRIu32 ", max %" PRIu32 ")", channel,
-			config->n_channels);
+		LOG_ERROR("Invalid channel (%" PRIu32 ", max %" PRIu32 ")", channel,
+			  config->n_channels);
 		return -EINVAL;
 	}
 
 	if (size > DMAC_MAX_LEN) {
-		LOG_ERR("Block size exceeds maximum (%" PRIu32 ", max %lu)", size, DMAC_MAX_LEN);
+		LOG_ERROR("Block size exceeds maximum (%" PRIu32 ", max %lu)", size, DMAC_MAX_LEN);
 		return -EINVAL;
 	}
 
 	ccrx = sys_read32(config->dmac + DMAC_CCRX(channel));
 	if ((ccrx & DMAC_CCR1_EN) != 0U) {
-		LOG_ERR("Channel %" PRIu32 " is busy", channel);
+		LOG_ERROR("Channel %" PRIu32 " is busy", channel);
 		return -EBUSY;
 	}
 
@@ -355,14 +355,14 @@ static int dma_sf32lb_start(const struct device *dev, uint32_t channel)
 	uint32_t ccrx;
 
 	if (channel >= config->n_channels) {
-		LOG_ERR("Invalid channel (%" PRIu32 ", max %" PRIu32 ")", channel,
-			config->n_channels);
+		LOG_ERROR("Invalid channel (%" PRIu32 ", max %" PRIu32 ")", channel,
+			  config->n_channels);
 		return -EINVAL;
 	}
 
 	ccrx = sys_read32(config->dmac + DMAC_CCRX(channel));
 	if ((ccrx & DMAC_CCR1_EN) != 0U) {
-		LOG_ERR("start not possible with DMA enabled");
+		LOG_ERROR("start not possible with DMA enabled");
 		return -EIO;
 	}
 
@@ -387,8 +387,8 @@ static int dma_sf32lb_stop(const struct device *dev, uint32_t channel)
 	uint32_t ccrx;
 
 	if (channel >= config->n_channels) {
-		LOG_ERR("Invalid channel (%" PRIu32 ", max %" PRIu32 ")", channel,
-			config->n_channels);
+		LOG_ERROR("Invalid channel (%" PRIu32 ", max %" PRIu32 ")", channel,
+			  config->n_channels);
 		return -EINVAL;
 	}
 
@@ -409,8 +409,8 @@ static int dma_sf32lb_get_status(const struct device *dev, uint32_t channel,
 	struct dma_sf32lb_data *data = dev->data;
 
 	if (channel >= config->n_channels) {
-		LOG_ERR("Invalid channel (%" PRIu32 ", max %" PRIu32 ")", channel,
-			config->n_channels);
+		LOG_ERROR("Invalid channel (%" PRIu32 ", max %" PRIu32 ")", channel,
+			  config->n_channels);
 		return -EINVAL;
 	}
 

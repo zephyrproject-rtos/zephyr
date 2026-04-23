@@ -64,7 +64,7 @@ static struct osdp_cmd *cp_cmd_alloc(struct osdp_pd *pd)
 	struct osdp_cmd *cmd = NULL;
 
 	if (k_mem_slab_alloc(&pd->cmd.slab, (void **)&cmd, K_MSEC(100))) {
-		LOG_ERR("Memory allocation time-out");
+		LOG_ERROR("Memory allocation time-out");
 		return NULL;
 	}
 	return cmd;
@@ -117,7 +117,7 @@ int osdp_extract_address(int *address)
 static inline bool check_buf_len(int need, int have)
 {
 	if (need > have) {
-		LOG_ERR("OOM at build command: need:%d have:%d", need, have);
+		LOG_ERROR("OOM at build command: need:%d have:%d", need, have);
 		return false;
 	}
 	return true;
@@ -266,7 +266,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case CMD_KEYSET:
 		if (!sc_is_active(pd)) {
-			LOG_ERR("Cannot perform KEYSET without SC!");
+			LOG_ERROR("Cannot perform KEYSET without SC!");
 			return OSDP_CP_ERR_GENERIC;
 		}
 		if (!check_buf_len(CMD_KEYSET_LEN, max_len)) {
@@ -274,7 +274,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		}
 		cmd = (struct osdp_cmd *)pd->ephemeral_data;
 		if (cmd->keyset.length != 16) {
-			LOG_ERR("Invalid key length");
+			LOG_ERROR("Invalid key length");
 			return OSDP_CP_ERR_GENERIC;
 		}
 		buf[len++] = pd->cmd_id;
@@ -285,7 +285,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		} else if (cmd->keyset.type == 0) {  /* master_key */
 			osdp_compute_scbk(pd, cmd->keyset.data, buf + len);
 		} else {
-			LOG_ERR("Unknown key type (%d)", cmd->keyset.type);
+			LOG_ERROR("Unknown key type (%d)", cmd->keyset.type);
 			return OSDP_CP_ERR_GENERIC;
 		}
 		len += 16;
@@ -295,7 +295,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			return OSDP_CP_ERR_GENERIC;
 		}
 		if (smb == NULL) {
-			LOG_ERR("Invalid secure message block!");
+			LOG_ERROR("Invalid secure message block!");
 			return -1;
 		}
 		smb[0] = 3;       /* length */
@@ -310,7 +310,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 			return OSDP_CP_ERR_GENERIC;
 		}
 		if (smb == NULL) {
-			LOG_ERR("Invalid secure message block!");
+			LOG_ERROR("Invalid secure message block!");
 			return -1;
 		}
 		osdp_compute_cp_cryptogram(pd);
@@ -323,7 +323,7 @@ static int cp_build_command(struct osdp_pd *pd, uint8_t *buf, int max_len)
 		break;
 #endif /* CONFIG_OSDP_SC_ENABLED */
 	default:
-		LOG_ERR("Unknown/Unsupported CMD(%02x)", pd->cmd_id);
+		LOG_ERROR("Unknown/Unsupported CMD(%02x)", pd->cmd_id);
 		return OSDP_CP_ERR_GENERIC;
 	}
 
@@ -390,7 +390,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		break;
 	case REPLY_PDCAP:
 		if ((len % REPLY_PDCAP_ENTITY_LEN) != 0) {
-			LOG_ERR("PDCAP response length is not a multiple of 3");
+			LOG_ERROR("PDCAP response length is not a multiple of 3");
 			return OSDP_CP_ERR_GENERIC;
 		}
 		while (pos < len) {
@@ -512,7 +512,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 #ifdef CONFIG_OSDP_SC_ENABLED
 	case REPLY_CCRYPT:
 		if (sc_is_active(pd) || pd->cmd_id != CMD_CHLNG) {
-			LOG_ERR("Out of order REPLY_CCRYPT; has PD gone rogue?");
+			LOG_ERROR("Out of order REPLY_CCRYPT; has PD gone rogue?");
 			break;
 		}
 		if (len != REPLY_CCRYPT_DATA_LEN) {
@@ -524,14 +524,14 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		pos += 32;
 		osdp_compute_session_keys(pd);
 		if (osdp_verify_pd_cryptogram(pd) != 0) {
-			LOG_ERR("Failed to verify PD cryptogram");
+			LOG_ERROR("Failed to verify PD cryptogram");
 			return OSDP_CP_ERR_GENERIC;
 		}
 		ret = OSDP_CP_ERR_NONE;
 		break;
 	case REPLY_RMAC_I:
 		if (sc_is_active(pd) || pd->cmd_id != CMD_SCRYPT) {
-			LOG_ERR("Out of order REPLY_RMAC_I; has PD gone rogue?");
+			LOG_ERROR("Out of order REPLY_RMAC_I; has PD gone rogue?");
 			break;
 		}
 		if (len != REPLY_RMAC_I_DATA_LEN) {
@@ -549,8 +549,8 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 	}
 
 	if (ret != OSDP_CP_ERR_NONE) {
-		LOG_ERR("Failed to decode response: REPLY(%02x) for CMD(%02x)",
-			pd->cmd_id, pd->reply_id);
+		LOG_ERROR("Failed to decode response: REPLY(%02x) for CMD(%02x)", pd->cmd_id,
+			  pd->reply_id);
 	}
 
 	if (pd->cmd_id != CMD_POLL) {
@@ -599,8 +599,7 @@ static int cp_send_command(struct osdp_pd *pd)
 
 	ret = pd->channel.send(pd->channel.data, pd->rx_buf, pd->rx_buf_len);
 	if (ret != pd->rx_buf_len) {
-		LOG_ERR("Channel send for %d bytes failed! ret: %d",
-			pd->rx_buf_len, ret);
+		LOG_ERROR("Channel send for %d bytes failed! ret: %d", pd->rx_buf_len, ret);
 		return OSDP_CP_ERR_GENERIC;
 	}
 
@@ -741,13 +740,12 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		/* fall-thru */
 	case OSDP_CP_PHY_STATE_SEND_CMD:
 		if (cp_build_packet(pd)) {
-			LOG_ERR("Failed to build packet for CMD(%d)",
-				pd->cmd_id);
+			LOG_ERROR("Failed to build packet for CMD(%d)", pd->cmd_id);
 			ret = OSDP_CP_ERR_GENERIC;
 			break;
 		}
 		if (cp_send_command(pd)) {
-			LOG_ERR("Failed to send CMD(%d)", pd->cmd_id);
+			LOG_ERROR("Failed to send CMD(%d)", pd->cmd_id);
 			pd->phy_state = OSDP_CP_PHY_STATE_ERR;
 			ret = OSDP_CP_ERR_GENERIC;
 			break;
@@ -777,8 +775,7 @@ static int cp_phy_state_update(struct osdp_pd *pd)
 		if (rc == OSDP_CP_ERR_GENERIC || rc == OSDP_CP_ERR_UNKNOWN ||
 		    osdp_millis_since(pd->phy_tstamp) > OSDP_RESP_TOUT_MS) {
 			if (rc != OSDP_CP_ERR_GENERIC) {
-				LOG_ERR("Response timeout for CMD(%02x)",
-					pd->cmd_id);
+				LOG_ERROR("Response timeout for CMD(%02x)", pd->cmd_id);
 			}
 			pd->rx_buf_len = 0;
 			if (pd->channel.flush) {
@@ -881,8 +878,8 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_PDID) {
-			LOG_ERR("Unexpected REPLY(%02x) for cmd "
-				STRINGIFY(CMD_ID), pd->reply_id);
+			LOG_ERROR("Unexpected REPLY(%02x) for cmd " STRINGIFY(CMD_ID),
+									      pd->reply_id);
 			cp_set_offline(pd);
 			break;
 		}
@@ -893,8 +890,8 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_PDCAP) {
-			LOG_ERR("Unexpected REPLY(%02x) for cmd "
-				STRINGIFY(CMD_CAP), pd->reply_id);
+			LOG_ERROR("Unexpected REPLY(%02x) for cmd " STRINGIFY(CMD_CAP),
+									      pd->reply_id);
 			cp_set_offline(pd);
 			break;
 		}
@@ -932,7 +929,7 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_CCRYPT) {
-			LOG_ERR("CHLNG failed. Online without SC");
+			LOG_ERROR("CHLNG failed. Online without SC");
 			pd->sc_tstamp = osdp_millis_now();
 			osdp_phy_state_reset(pd);
 			cp_set_online(pd);
@@ -945,7 +942,7 @@ static int state_update(struct osdp_pd *pd)
 			break;
 		}
 		if (pd->reply_id != REPLY_RMAC_I) {
-			LOG_ERR("SCRYPT failed. Online without SC");
+			LOG_ERROR("SCRYPT failed. Online without SC");
 			osdp_phy_state_reset(pd);
 			pd->sc_tstamp = osdp_millis_now();
 			cp_set_online(pd);
@@ -1063,7 +1060,7 @@ int osdp_setup(struct osdp *ctx, uint8_t *key)
 
 #ifdef CONFIG_OSDP_SC_ENABLED
 	if (key == NULL) {
-		LOG_ERR("Master key cannot be null");
+		LOG_ERROR("Master key cannot be null");
 		return -1;
 	}
 	memcpy(ctx->sc_master_key, key, 16);
@@ -1088,7 +1085,7 @@ int osdp_cp_send_command(int pd, struct osdp_cmd *cmd)
 	int cmd_id;
 
 	if (pd < 0 || pd >= NUM_PD(ctx)) {
-		LOG_ERR("Invalid PD number");
+		LOG_ERROR("Invalid PD number");
 		return -1;
 	}
 	if (osdp_to_pd(ctx, pd)->state != OSDP_CP_STATE_ONLINE) {
@@ -1117,7 +1114,7 @@ int osdp_cp_send_command(int pd, struct osdp_cmd *cmd)
 		return osdp_cp_send_command_keyset(&cmd->keyset);
 #endif
 	default:
-		LOG_ERR("Invalid CMD_ID:%d", cmd->id);
+		LOG_ERROR("Invalid CMD_ID:%d", cmd->id);
 		return -1;
 	}
 

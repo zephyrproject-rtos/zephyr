@@ -94,9 +94,8 @@ static int app_add_format(uint32_t pixfmt, uint32_t width, uint32_t height, bool
 	/* Set the format to get the size */
 	ret = video_set_compose_format(uvc_src_dev, &fmt);
 	if (ret != 0) {
-		LOG_ERR("Could not set the format of %s to %s %ux%u (size %u)",
-			video_dev->name, VIDEO_FOURCC_TO_STR(fmt.pixelformat),
-			fmt.width, fmt.height, fmt.size);
+		LOG_ERROR("Could not set the format of %s to %s %ux%u (size %u)", video_dev->name,
+			  VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height, fmt.size);
 		return ret;
 	}
 
@@ -217,13 +216,13 @@ static int app_init_videoenc(const struct device *const dev)
 	int ret;
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("video encoder %s failed to initialize", dev->name);
+		LOG_ERROR("video encoder %s failed to initialize", dev->name);
 		return -ENODEV;
 	}
 
 	ret = video_get_caps(dev, &videoenc_out_caps);
 	if (ret != 0) {
-		LOG_ERR("Unable to retrieve video encoder output capabilities");
+		LOG_ERROR("Unable to retrieve video encoder output capabilities");
 		return ret;
 	}
 
@@ -258,7 +257,7 @@ static int app_configure_videoenc(const struct device *const dev,
 	fmt.pixelformat = sink_pixelformat;
 	ret = video_set_compose_format(dev, &fmt);
 	if (ret != 0) {
-		LOG_ERR("Could not set the %s encoder input format", dev->name);
+		LOG_ERROR("Could not set the %s encoder input format", dev->name);
 		return ret;
 	}
 
@@ -266,7 +265,7 @@ static int app_configure_videoenc(const struct device *const dev,
 	fmt.pixelformat = source_pixelformat;
 	ret = video_set_compose_format(dev, &fmt);
 	if (ret != 0) {
-		LOG_ERR("Could not set the %s encoder output format", dev->name);
+		LOG_ERROR("Could not set the %s encoder output format", dev->name);
 		return ret;
 	}
 
@@ -276,7 +275,7 @@ static int app_configure_videoenc(const struct device *const dev,
 		buf = video_buffer_aligned_alloc(fmt.size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
 						 K_NO_WAIT);
 		if (buf == NULL) {
-			LOG_ERR("Could not allocate the encoder output buffer");
+			LOG_ERROR("Could not allocate the encoder output buffer");
 			return -ENOMEM;
 		}
 
@@ -284,7 +283,7 @@ static int app_configure_videoenc(const struct device *const dev,
 
 		ret = video_enqueue(dev, buf);
 		if (ret != 0) {
-			LOG_ERR("Could not enqueue video buffer");
+			LOG_ERROR("Could not enqueue video buffer");
 			return ret;
 		}
 	}
@@ -298,13 +297,13 @@ static int app_start_videoenc(const struct device *const dev)
 
 	ret = video_stream_start(dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret != 0) {
-		LOG_ERR("Failed to start %s output", dev->name);
+		LOG_ERROR("Failed to start %s output", dev->name);
 		return ret;
 	}
 
 	ret = video_stream_start(dev, VIDEO_BUF_TYPE_INPUT);
 	if (ret != 0) {
-		LOG_ERR("Failed to start %s input", dev->name);
+		LOG_ERROR("Failed to start %s input", dev->name);
 		return ret;
 	}
 
@@ -325,13 +324,13 @@ int main(void)
 	int ret;
 
 	if (!device_is_ready(video_dev)) {
-		LOG_ERR("video source %s failed to initialize", video_dev->name);
+		LOG_ERROR("video source %s failed to initialize", video_dev->name);
 		return -ENODEV;
 	}
 
 	ret = video_get_caps(video_dev, &video_caps);
 	if (ret != 0) {
-		LOG_ERR("Unable to retrieve video capabilities");
+		LOG_ERROR("Unable to retrieve video capabilities");
 		return 0;
 	}
 
@@ -380,7 +379,7 @@ int main(void)
 			break;
 		}
 		if (ret != -EAGAIN) {
-			LOG_ERR("Failed to get the video format");
+			LOG_ERROR("Failed to get the video format");
 			return ret;
 		}
 
@@ -389,7 +388,7 @@ int main(void)
 
 	ret = video_get_frmival(uvc_dev, &frmival);
 	if (ret != 0) {
-		LOG_ERR("Failed to get the video frame interval");
+		LOG_ERROR("Failed to get the video frame interval");
 		return ret;
 	}
 
@@ -421,9 +420,8 @@ int main(void)
 
 	ret = video_set_compose_format(video_dev, &fmt);
 	if (ret != 0) {
-		LOG_ERR("Could not set the format of %s to %s %ux%u (size %u)",
-			video_dev->name, VIDEO_FOURCC_TO_STR(fmt.pixelformat),
-			fmt.width, fmt.height, fmt.size);
+		LOG_ERROR("Could not set the format of %s to %s %ux%u (size %u)", video_dev->name,
+			  VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height, fmt.size);
 	}
 
 	/*
@@ -442,7 +440,7 @@ int main(void)
 		vbuf = video_buffer_aligned_alloc(fmt.size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
 						  K_NO_WAIT);
 		if (vbuf == NULL) {
-			LOG_ERR("Could not allocate the video buffer");
+			LOG_ERROR("Could not allocate the video buffer");
 			return -ENOMEM;
 		}
 
@@ -450,7 +448,7 @@ int main(void)
 
 		ret = video_enqueue(video_dev, vbuf);
 		if (ret != 0) {
-			LOG_ERR("Could not enqueue video buffer");
+			LOG_ERROR("Could not enqueue video buffer");
 			return ret;
 		}
 	}
@@ -468,7 +466,7 @@ int main(void)
 
 	ret = video_set_signal(uvc_dev, &sig);
 	if (ret != 0) {
-		LOG_ERR("Failed to setup the signal on %s input endpoint", uvc_dev->name);
+		LOG_ERROR("Failed to setup the signal on %s input endpoint", uvc_dev->name);
 		return ret;
 	}
 
@@ -483,14 +481,14 @@ int main(void)
 
 	ret = video_stream_start(video_dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret != 0) {
-		LOG_ERR("Failed to start %s", video_dev->name);
+		LOG_ERROR("Failed to start %s", video_dev->name);
 		return ret;
 	}
 
 	while (true) {
 		ret = k_poll(evt, ARRAY_SIZE(evt), timeout);
 		if (ret != 0 && ret != -EAGAIN) {
-			LOG_ERR("Poll exited with status %d", ret);
+			LOG_ERROR("Poll exited with status %d", ret);
 			return ret;
 		}
 
@@ -499,8 +497,8 @@ int main(void)
 						    VIDEO_BUF_TYPE_OUTPUT, VIDEO_BUF_TYPE_INPUT,
 						    K_NO_WAIT);
 			if (ret != 0 && ret != -EAGAIN) {
-				LOG_ERR("Failed to transfer from %s to %s",
-					video_dev->name, uvc_src_dev->name);
+				LOG_ERROR("Failed to transfer from %s to %s", video_dev->name,
+					  uvc_src_dev->name);
 				return ret;
 			}
 		}
@@ -509,8 +507,8 @@ int main(void)
 					    VIDEO_BUF_TYPE_OUTPUT, VIDEO_BUF_TYPE_INPUT,
 					    K_NO_WAIT);
 		if (ret != 0 && ret != -EAGAIN) {
-			LOG_ERR("Failed to transfer from %s to %s",
-				uvc_src_dev->name, uvc_dev->name);
+			LOG_ERROR("Failed to transfer from %s to %s", uvc_src_dev->name,
+				  uvc_dev->name);
 			return ret;
 		}
 
@@ -519,8 +517,8 @@ int main(void)
 						    VIDEO_BUF_TYPE_INPUT, VIDEO_BUF_TYPE_OUTPUT,
 						    K_NO_WAIT);
 			if (ret != 0 && ret != -EAGAIN) {
-				LOG_ERR("Failed to transfer from %s to %s",
-					uvc_src_dev->name, video_dev->name);
+				LOG_ERROR("Failed to transfer from %s to %s", uvc_src_dev->name,
+					  video_dev->name);
 				return ret;
 			}
 		}
@@ -529,8 +527,8 @@ int main(void)
 					    VIDEO_BUF_TYPE_INPUT, VIDEO_BUF_TYPE_OUTPUT,
 					    K_NO_WAIT);
 		if (ret != 0 && ret != -EAGAIN) {
-			LOG_ERR("Failed to transfer from %s to %s",
-				uvc_dev->name, uvc_src_dev->name);
+			LOG_ERROR("Failed to transfer from %s to %s", uvc_dev->name,
+				  uvc_src_dev->name);
 			return ret;
 		}
 

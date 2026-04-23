@@ -122,7 +122,7 @@ static int16_t lookup_index_by_handle(struct bap_broadcast_assistant_instance *i
 		}
 	}
 
-	LOG_ERR("Unknown handle 0x%04x", handle);
+	LOG_ERROR("Unknown handle 0x%04x", handle);
 
 	return -1;
 }

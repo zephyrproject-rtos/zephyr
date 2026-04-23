@@ -179,13 +179,13 @@ static bool avdtp_media_chan_valid(struct bt_avdtp_sep *sep)
 	if (((sep->chan.state != BT_L2CAP_DISCONNECTED) ||
 	     (sep->chan.chan.conn != NULL)) &&
 	    (sep->state != AVDTP_IDLE)) {
-		LOG_ERR("Media chan is disconnected, but sep state is %u", sep->state);
+		LOG_ERROR("Media chan is disconnected, but sep state is %u", sep->state);
 	}
 
 	if (((sep->chan.state != BT_L2CAP_DISCONNECTED) ||
 	     (sep->chan.chan.conn != NULL)) &&
 	    (sep->state == AVDTP_IDLE)) {
-		LOG_ERR("Sep state is IDLE, but stream chan is not disconnected");
+		LOG_ERROR("Sep state is IDLE, but stream chan is not disconnected");
 	}
 
 	return false;
@@ -263,7 +263,7 @@ void bt_avdtp_media_l2cap_connected(struct bt_l2cap_chan *chan)
 	struct bt_avdtp_sep *sep = CONTAINER_OF(chan, struct bt_avdtp_sep, chan.chan);
 
 	if (!chan) {
-		LOG_ERR("Invalid AVDTP chan");
+		LOG_ERROR("Invalid AVDTP chan");
 		return;
 	}
 
@@ -368,7 +368,7 @@ static struct net_buf *avdtp_create_pdu(uint8_t msg_type, uint8_t sig_id, uint8_
 
 	buf = bt_l2cap_create_pdu(&avdtp_pool, 0);
 	if (!buf) {
-		LOG_ERR("Error: No Buff available");
+		LOG_ERROR("Error: No Buff available");
 		return NULL;
 	}
 
@@ -420,7 +420,7 @@ static void avdtp_tx_single(struct bt_avdtp *session, struct net_buf *buf)
 	err = bt_l2cap_br_chan_send_cb(&session->br_chan.chan, buf, avdtp_tx_cb, NULL);
 
 	if (err != 0) {
-		LOG_ERR("Failed to send l2cap: err=%d", err);
+		LOG_ERROR("Failed to send l2cap: err=%d", err);
 		net_buf_unref(buf);
 	}
 }
@@ -479,7 +479,7 @@ static void avdtp_tx_multi(struct bt_avdtp *session, struct net_buf *buf,
 			__ASSERT_NO_MSG(mtu >= sizeof(*start_hdr));
 			len = mtu - sizeof(*start_hdr);
 			if (len >= buf->len) {
-				LOG_ERR("The start packet can send all data");
+				LOG_ERROR("The start packet can send all data");
 				avdtp_tx_rel_buf(buf, frag);
 				return;
 			}
@@ -499,11 +499,11 @@ static void avdtp_tx_multi(struct bt_avdtp *session, struct net_buf *buf,
 			__ASSERT_NO_MSG(mtu >= sizeof(*cont_hdr));
 			len = mtu - sizeof(*cont_hdr);
 			if (pkt_type == BT_AVDTP_PACKET_TYPE_CONTINUE && len >= buf->len) {
-				LOG_ERR("The continue packet can send all data");
+				LOG_ERROR("The continue packet can send all data");
 				avdtp_tx_rel_buf(buf, frag);
 				return;
 			} else if (pkt_type == BT_AVDTP_PACKET_TYPE_END && len < buf->len) {
-				LOG_ERR("The end packet can't send all data");
+				LOG_ERROR("The end packet can't send all data");
 				avdtp_tx_rel_buf(buf, frag);
 				return;
 			}
@@ -515,7 +515,7 @@ static void avdtp_tx_multi(struct bt_avdtp *session, struct net_buf *buf,
 		LOG_DBG("Sending fragment %d: len=%d", user_data->current_frag, frag->len);
 		err = bt_l2cap_br_chan_send_cb(&session->br_chan.chan, frag, avdtp_tx_cb, NULL);
 		if (err != 0) {
-			LOG_ERR("Failed to send fragment: err=%d", err);
+			LOG_ERROR("Failed to send fragment: err=%d", err);
 			avdtp_tx_rel_buf(buf, frag);
 			return;
 		}
@@ -1761,7 +1761,7 @@ void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 	struct bt_avdtp *session;
 
 	if (!chan) {
-		LOG_ERR("Invalid AVDTP chan");
+		LOG_ERROR("Invalid AVDTP chan");
 		return;
 	}
 
@@ -1922,7 +1922,7 @@ static int bt_avdtp_l2cap_frags_recv(struct bt_avdtp *session, struct net_buf *b
 		uint32_t start_len;
 
 		if (buf->len < sizeof(*start_hdr)) {
-			LOG_ERR("Recvd Wrong AVDTP Header");
+			LOG_ERROR("Recvd Wrong AVDTP Header");
 			return 0;
 		}
 
@@ -1930,7 +1930,7 @@ static int bt_avdtp_l2cap_frags_recv(struct bt_avdtp *session, struct net_buf *b
 		start_hdr = net_buf_pull_mem(buf, sizeof(*start_hdr));
 
 		if (session->reasm_buf != NULL) {
-			LOG_ERR("get start packet during reassembly");
+			LOG_ERROR("get start packet during reassembly");
 			net_buf_unref(session->reasm_buf);
 			session->reasm_buf = NULL;
 		}
@@ -1944,14 +1944,14 @@ static int bt_avdtp_l2cap_frags_recv(struct bt_avdtp *session, struct net_buf *b
 		session->num_of_signal_pkts = start_hdr->num_of_signal_pkts;
 
 		if (session->num_of_signal_pkts < 2) {
-			LOG_ERR("Unexpected number of signal packets: %d",
-				session->num_of_signal_pkts);
+			LOG_ERROR("Unexpected number of signal packets: %d",
+				  session->num_of_signal_pkts);
 			return avdtp_rel_and_return(session);
 		}
 
 		session->reasm_buf = net_buf_alloc(&avdtp_pool, K_FOREVER);
 		if (session->reasm_buf == NULL) {
-			LOG_ERR("fail to alloc reasm buf");
+			LOG_ERROR("fail to alloc reasm buf");
 			return 0;
 		}
 
@@ -1968,7 +1968,7 @@ static int bt_avdtp_l2cap_frags_recv(struct bt_avdtp *session, struct net_buf *b
 		total_len = sizeof(*single_hdr) + (start_len - sizeof(*start_hdr)) +
 			    (start_len - sizeof(*cont_hdr)) * (session->num_of_signal_pkts - 2) + 1;
 		if (total_len > net_buf_tailroom(sdu_buf)) {
-			LOG_ERR("Not enough buffer space");
+			LOG_ERROR("Not enough buffer space");
 			return avdtp_rel_and_return(session);
 		}
 
@@ -1994,12 +1994,12 @@ static int bt_avdtp_l2cap_frags_recv(struct bt_avdtp *session, struct net_buf *b
 	/* continue packet or end packet */
 	sdu_buf = session->reasm_buf;
 	if (sdu_buf == NULL) {
-		LOG_ERR("Discard unexpected continue or end packet");
+		LOG_ERROR("Discard unexpected continue or end packet");
 		return 0;
 	}
 
 	if (buf->len < sizeof(*cont_hdr)) {
-		LOG_ERR("Recvd Wrong AVDTP Header");
+		LOG_ERROR("Recvd Wrong AVDTP Header");
 		return 0;
 	}
 	cont_hdr = net_buf_pull_mem(buf, sizeof(*cont_hdr));
@@ -2009,19 +2009,19 @@ static int bt_avdtp_l2cap_frags_recv(struct bt_avdtp *session, struct net_buf *b
 	/* compare message type with start packet */
 	if (AVDTP_MSG_GET(cont_hdr->hdr) != AVDTP_MSG_GET(single_hdr->hdr) ||
 	    AVDTP_TID_GET(cont_hdr->hdr) != AVDTP_TID_GET(single_hdr->hdr)) {
-		LOG_ERR("Recvd Wrong msg type or transaction label");
+		LOG_ERROR("Recvd Wrong msg type or transaction label");
 		return avdtp_rel_and_return(session);
 	}
 
 	if (session->num_of_signal_pkts == 0) {
-		LOG_ERR("num_of_signal_pkts is already 0");
+		LOG_ERROR("num_of_signal_pkts is already 0");
 		return avdtp_rel_and_return(session);
 	}
 
 	if (buf->len < net_buf_tailroom(sdu_buf)) {
 		net_buf_add_mem(sdu_buf, buf->data, buf->len);
 	} else {
-		LOG_ERR("Not enough buffer space");
+		LOG_ERROR("Not enough buffer space");
 		return avdtp_rel_and_return(session);
 	}
 
@@ -2031,7 +2031,7 @@ static int bt_avdtp_l2cap_frags_recv(struct bt_avdtp *session, struct net_buf *b
 			/* all frags are received */
 			*finish = true;
 		} else {
-			LOG_ERR("Unexpected packet end");
+			LOG_ERROR("Unexpected packet end");
 			return avdtp_rel_and_return(session);
 		}
 	}
@@ -2051,14 +2051,14 @@ static int avdtp_rel_and_rej(struct bt_avdtp *session, uint8_t sigid, uint8_t ti
 
 	rsp_buf = avdtp_create_pdu(BT_AVDTP_GEN_REJECT, sigid, tid);
 	if (!rsp_buf) {
-		LOG_ERR("Error: No Buff available");
+		LOG_ERROR("Error: No Buff available");
 		return 0;
 	}
 
 	err = bt_l2cap_chan_send(&session->br_chan.chan, rsp_buf);
 	if (err < 0) {
 		net_buf_unref(rsp_buf);
-		LOG_ERR("Error:L2CAP send fail - result = %d", err);
+		LOG_ERROR("Error:L2CAP send fail - result = %d", err);
 	}
 
 	return 0;
@@ -2073,7 +2073,7 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	uint8_t hdr;
 
 	if (buf->len < sizeof(hdr)) {
-		LOG_ERR("Recvd Wrong AVDTP Header");
+		LOG_ERROR("Recvd Wrong AVDTP Header");
 		return -EINVAL;
 	}
 
@@ -2102,7 +2102,7 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		}
 
 		if (buf->len < sizeof(*single_hdr)) {
-			LOG_ERR("Recvd Wrong AVDTP Header");
+			LOG_ERROR("Recvd Wrong AVDTP Header");
 			return -EINVAL;
 		}
 	}
@@ -2188,7 +2188,7 @@ int bt_avdtp_disconnect(struct bt_avdtp *session)
 
 		err = avdtp_media_disconnect(sep);
 		if (err != 0) {
-			LOG_ERR("fail to disconnect media connection");
+			LOG_ERROR("fail to disconnect media connection");
 			return err;
 		}
 
@@ -2282,7 +2282,7 @@ int bt_avdtp_register_sep(uint8_t media_type, uint8_t sep_type, struct bt_avdtp_
 	k_sem_take(&avdtp_sem_lock, K_FOREVER);
 	if (sys_slist_find(&seps, &sep->_node, NULL)) {
 		k_sem_give(&avdtp_sem_lock);
-		LOG_ERR("Endpoint is already registered");
+		LOG_ERROR("Endpoint is already registered");
 		return -EEXIST;
 	}
 
@@ -2323,7 +2323,7 @@ void bt_avdtp_init(void)
 	/* Register AVDTP PSM with L2CAP */
 	err = bt_l2cap_br_server_register(&avdtp_l2cap);
 	if ((err < 0) && (err != -EEXIST)) {
-		LOG_ERR("AVDTP L2CAP Registration failed %d", err);
+		LOG_ERROR("AVDTP L2CAP Registration failed %d", err);
 		return;
 	}
 
@@ -2343,7 +2343,7 @@ int bt_avdtp_discover(struct bt_avdtp *session, struct bt_avdtp_discover_params 
 
 	buf = avdtp_create_pdu(BT_AVDTP_CMD, BT_AVDTP_DISCOVER, avdtp_get_tid(session));
 	if (!buf) {
-		LOG_ERR("Error: No Buff available");
+		LOG_ERROR("Error: No Buff available");
 		return -ENOMEM;
 	}
 
@@ -2383,7 +2383,7 @@ int bt_avdtp_get_capabilities(struct bt_avdtp *session,
 	buf = avdtp_create_pdu(BT_AVDTP_CMD, param->get_all_caps ? BT_AVDTP_GET_ALL_CAPABILITIES :
 			       BT_AVDTP_GET_CAPABILITIES, avdtp_get_tid(session));
 	if (!buf) {
-		LOG_ERR("Error: No Buff available");
+		LOG_ERROR("Error: No Buff available");
 		return -ENOMEM;
 	}
 
@@ -2502,7 +2502,7 @@ static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd
 
 	buf = avdtp_create_pdu(BT_AVDTP_CMD, cmd, avdtp_get_tid(session));
 	if (!buf) {
-		LOG_ERR("Error: No Buff available");
+		LOG_ERROR("Error: No Buff available");
 		return -ENOMEM;
 	}
 
@@ -2605,7 +2605,7 @@ static int bt_avdtp_ctrl(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *
 
 	buf = avdtp_create_pdu(BT_AVDTP_CMD, ctrl, avdtp_get_tid(session));
 	if (!buf) {
-		LOG_ERR("Error: No Buff available");
+		LOG_ERROR("Error: No Buff available");
 		return -ENOMEM;
 	}
 
@@ -2670,7 +2670,7 @@ int bt_avdtp_delay_report(struct bt_avdtp *session, struct bt_avdtp_delay_report
 	}
 
 	if (param->sep->sep_info.tsep != BT_AVDTP_SINK) {
-		LOG_ERR("Delay report is only supported for sink endpoint");
+		LOG_ERROR("Delay report is only supported for sink endpoint");
 		return -ENOTSUP;
 	}
 
@@ -2681,7 +2681,7 @@ int bt_avdtp_delay_report(struct bt_avdtp *session, struct bt_avdtp_delay_report
 
 	buf = avdtp_create_pdu(BT_AVDTP_CMD, BT_AVDTP_DELAYREPORT, avdtp_get_tid(session));
 	if (!buf) {
-		LOG_ERR("Error: No Buff available");
+		LOG_ERROR("Error: No Buff available");
 		return -ENOMEM;
 	}
 
@@ -2702,7 +2702,7 @@ int bt_avdtp_send_media_data(struct bt_avdtp_sep *sep, struct net_buf *buf)
 
 	err = bt_l2cap_chan_send(&sep->chan.chan, buf);
 	if (err < 0) {
-		LOG_ERR("Error:L2CAP send fail - err = %d", err);
+		LOG_ERROR("Error:L2CAP send fail - err = %d", err);
 		return err;
 	}
 

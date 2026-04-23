@@ -320,7 +320,7 @@ static int gpio_nct38xx_pin_interrupt_configure(const struct device *dev, gpio_p
 			new_rise = mask;
 			new_fall = mask;
 		} else {
-			LOG_ERR("Invalid interrupt trigger type %d", trig);
+			LOG_ERROR("Invalid interrupt trigger type %d", trig);
 			return -EINVAL;
 		}
 	} else {
@@ -348,7 +348,7 @@ static int gpio_nct38xx_pin_interrupt_configure(const struct device *dev, gpio_p
 		} else if (trig == GPIO_INT_TRIG_HIGH) {
 			new_reg = mask;
 		} else {
-			LOG_ERR("Invalid interrupt trigger type %d", trig);
+			LOG_ERROR("Invalid interrupt trigger type %d", trig);
 			ret = -EINVAL;
 			goto done;
 		}
@@ -499,7 +499,7 @@ static int gpio_nct38xx_port_init(const struct device *dev)
 	struct gpio_nct38xx_port_data *const data = dev->data;
 
 	if (!device_is_ready(config->mfd)) {
-		LOG_ERR("%s is not ready", config->mfd->name);
+		LOG_ERROR("%s is not ready", config->mfd->name);
 		return -ENODEV;
 	}
 

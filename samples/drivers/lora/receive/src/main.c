@@ -49,7 +49,7 @@ int main(void)
 	int8_t snr;
 
 	if (!device_is_ready(lora_dev)) {
-		LOG_ERR("%s Device not ready", lora_dev->name);
+		LOG_ERROR("%s Device not ready", lora_dev->name);
 		return 0;
 	}
 
@@ -65,7 +65,7 @@ int main(void)
 
 	ret = lora_config(lora_dev, &config);
 	if (ret < 0) {
-		LOG_ERR("LoRa config failed");
+		LOG_ERROR("LoRa config failed");
 		return 0;
 	}
 
@@ -76,7 +76,7 @@ int main(void)
 		len = lora_recv(lora_dev, data, MAX_DATA_LEN, K_FOREVER,
 				&rssi, &snr);
 		if (len < 0) {
-			LOG_ERR("LoRa receive failed");
+			LOG_ERROR("LoRa receive failed");
 			return 0;
 		}
 

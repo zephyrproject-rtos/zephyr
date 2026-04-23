@@ -76,7 +76,7 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 	} else {
 		/* We must use partial framebuffer copy */
 		if (CONFIG_MCUX_DCNANO_LCDIF_FB_NUM == 0)  {
-			LOG_ERR("Partial display refresh requires driver framebuffers");
+			LOG_ERROR("Partial display refresh requires driver framebuffers");
 			return -ENOTSUP;
 		} else if (data->active_fb != data->fb[data->next_idx]) {
 			/*

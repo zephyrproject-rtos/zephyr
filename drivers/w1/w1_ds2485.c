@@ -59,13 +59,12 @@ int ds2485_w1_script_cmd(const struct device *dev, int w1_delay_us, uint8_t w1_c
 
 	ret = i2c_transfer_dt(&cfg->i2c_spec, rx_msg, 2);
 	if (ret < 0) {
-		LOG_ERR("scripts_cmd fail: ret: %x", ret);
+		LOG_ERROR("scripts_cmd fail: ret: %x", ret);
 		return ret;
 	}
 
 	if ((rx_bytes[0] != (rx_len + 2)) || (rx_bytes[2] != w1_cmd)) {
-		LOG_ERR("scripts_cmd fail: response: %x,%x:",
-			rx_bytes[0], rx_bytes[2]);
+		LOG_ERROR("scripts_cmd fail: response: %x,%x:", rx_bytes[0], rx_bytes[2]);
 		return -EIO;
 	}
 
@@ -77,7 +76,7 @@ static int w1_ds2485_init(const struct device *dev)
 	const struct w1_ds2477_85_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->i2c_spec.bus)) {
-		LOG_ERR("%s is not ready", cfg->i2c_spec.bus->name);
+		LOG_ERROR("%s is not ready", cfg->i2c_spec.bus->name);
 		return -ENODEV;
 	}
 

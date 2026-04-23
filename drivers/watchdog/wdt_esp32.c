@@ -138,7 +138,7 @@ static int wdt_esp32_install_timeout(const struct device *dev,
 		break;
 
 	default:
-		LOG_ERR("Unsupported watchdog config flag");
+		LOG_ERROR("Unsupported watchdog config flag");
 		return -EINVAL;
 	}
 
@@ -152,7 +152,7 @@ static int wdt_esp32_init(const struct device *dev)
 	int ret, flags;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -166,7 +166,7 @@ static int wdt_esp32_init(const struct device *dev)
 			     NULL);
 
 	if (ret != 0) {
-		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		LOG_ERROR("could not allocate interrupt (err %d)", ret);
 		return ret;
 	}
 

@@ -471,7 +471,7 @@ static int flash_wait_till_ready(const struct device *dev)
 		timeout--;
 	} while (timeout > 0);
 
-	LOG_ERR("Flash wait timed out");
+	LOG_ERROR("Flash wait timed out");
 	return -ETIMEDOUT;
 }
 
@@ -669,7 +669,7 @@ static int flash_rts5912_erase(const struct device *dev, off_t offset, size_t le
 	for (; len > 0; len -= FLASH_ERASE_BLK_SZ) {
 		ret = flash_erase_sector(dev, offset);
 		if (ret < 0) {
-			LOG_ERR("erase @0x%08lx fail", offset);
+			LOG_ERROR("erase @0x%08lx fail", offset);
 		}
 		offset += FLASH_ERASE_BLK_SZ;
 	}

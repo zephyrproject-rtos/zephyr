@@ -54,13 +54,13 @@ static inline int usbhs_init_vreg_and_clock(const struct device *dev)
 
 	err = regulator_set_callback(vregusb_dev, vregusb_event_cb, dev);
 	if (err) {
-		LOG_ERR("Failed to set regulator callback");
+		LOG_ERROR("Failed to set regulator callback");
 		return err;
 	}
 
 	err = regulator_enable(vregusb_dev);
 	if (err) {
-		LOG_ERR("Failed to enable regulator");
+		LOG_ERROR("Failed to enable regulator");
 		return err;
 	}
 
@@ -91,7 +91,7 @@ static inline int usbhs_enable_core(const struct device *dev)
 	sys_notify_init_spinwait(&pclk24m_cli.notify);
 	err = onoff_request(pclk24m_mgr, &pclk24m_cli);
 	if (err < 0) {
-		LOG_ERR("Failed to start PCLK24M %d", err);
+		LOG_ERROR("Failed to start PCLK24M %d", err);
 		return err;
 	}
 
@@ -137,7 +137,7 @@ static inline int usbhs_disable_core(const struct device *dev)
 	/* Release PCLK24M using clock control driver */
 	err = onoff_cancel_or_release(pclk24m_mgr, &pclk24m_cli);
 	if (err < 0) {
-		LOG_ERR("Failed to stop PCLK24M %d", err);
+		LOG_ERROR("Failed to stop PCLK24M %d", err);
 		return err;
 	}
 

@@ -70,7 +70,7 @@ static int iis2dlpc_set_odr(const struct device *dev, uint16_t odr)
 
 	val = IIS2DLPC_ODR_TO_REG(odr);
 	if (val > IIS2DLPC_XL_ODR_1k6Hz) {
-		LOG_ERR("ODR too high");
+		LOG_ERROR("ODR too high");
 		return -ENOTSUP;
 	}
 
@@ -146,8 +146,7 @@ static int iis2dlpc_set_slope_th(const struct device *dev, uint16_t th)
 
 	err = iis2dlpc_wkup_threshold_set(ctx, th & 0x3F);
 	if (err) {
-		LOG_ERR("Could not set WK_THS to 0x%02X, error %d",
-			th & 0x3F, err);
+		LOG_ERROR("Could not set WK_THS to 0x%02X, error %d", th & 0x3F, err);
 		return err;
 	}
 	return 0;
@@ -162,15 +161,13 @@ static int iis2dlpc_set_slope_dur(const struct device *dev, uint16_t dur)
 	val = (dur & 0x0F);
 	err = iis2dlpc_act_sleep_dur_set(ctx, val);
 	if (err) {
-		LOG_ERR("Could not set SLEEP_DUR to 0x%02X, error %d",
-			val, err);
+		LOG_ERROR("Could not set SLEEP_DUR to 0x%02X, error %d", val, err);
 		return err;
 	}
 	val = ((dur >> 5) & 0x03);
 	err = iis2dlpc_wkup_dur_set(ctx, val);
 	if (err) {
-		LOG_ERR("Could not set WAKE_DUR to 0x%02X, error %d",
-			val, err);
+		LOG_ERROR("Could not set WAKE_DUR to 0x%02X, error %d", val, err);
 		return err;
 	}
 	return 0;
@@ -293,7 +290,7 @@ static int iis2dlpc_init(const struct device *dev)
 	}
 
 	if (wai != IIS2DLPC_ID) {
-		LOG_ERR("Invalid chip ID");
+		LOG_ERROR("Invalid chip ID");
 		return -EINVAL;
 	}
 
@@ -316,51 +313,51 @@ static int iis2dlpc_init(const struct device *dev)
 
 	/* set default odr to 12.5Hz acc */
 	if (iis2dlpc_set_odr(dev, 12) < 0) {
-		LOG_ERR("odr init error (12.5 Hz)");
+		LOG_ERROR("odr init error (12.5 Hz)");
 		return -EIO;
 	}
 
 	LOG_INF("range is %d", cfg->range);
 	if (iis2dlpc_set_range(dev, IIS2DLPC_FS_TO_REG(cfg->range)) < 0) {
-		LOG_ERR("range init error %d", cfg->range);
+		LOG_ERROR("range init error %d", cfg->range);
 		return -EIO;
 	}
 
 #ifdef CONFIG_IIS2DLPC_TRIGGER
 	if (iis2dlpc_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupts");
+		LOG_ERROR("Failed to initialize interrupts");
 		return -EIO;
 	}
 
 #ifdef CONFIG_IIS2DLPC_TAP
 	LOG_INF("TAP: tap mode is %d", cfg->tap_mode);
 	if (iis2dlpc_tap_mode_set(ctx, cfg->tap_mode) < 0) {
-		LOG_ERR("Failed to select tap trigger mode");
+		LOG_ERROR("Failed to select tap trigger mode");
 		return -EIO;
 	}
 
 	LOG_INF("TAP: ths_x is %02x", cfg->tap_threshold[0]);
 	if (iis2dlpc_tap_threshold_x_set(ctx, cfg->tap_threshold[0]) < 0) {
-		LOG_ERR("Failed to set tap X axis threshold");
+		LOG_ERROR("Failed to set tap X axis threshold");
 		return -EIO;
 	}
 
 	LOG_INF("TAP: ths_y is %02x", cfg->tap_threshold[1]);
 	if (iis2dlpc_tap_threshold_y_set(ctx, cfg->tap_threshold[1]) < 0) {
-		LOG_ERR("Failed to set tap Y axis threshold");
+		LOG_ERROR("Failed to set tap Y axis threshold");
 		return -EIO;
 	}
 
 	LOG_INF("TAP: ths_z is %02x", cfg->tap_threshold[2]);
 	if (iis2dlpc_tap_threshold_z_set(ctx, cfg->tap_threshold[2]) < 0) {
-		LOG_ERR("Failed to set tap Z axis threshold");
+		LOG_ERROR("Failed to set tap Z axis threshold");
 		return -EIO;
 	}
 
 	if (cfg->tap_threshold[0] > 0) {
 		LOG_INF("TAP: tap_x enabled");
 		if (iis2dlpc_tap_detection_on_x_set(ctx, 1) < 0) {
-			LOG_ERR("Failed to set tap detection on X axis");
+			LOG_ERROR("Failed to set tap detection on X axis");
 			return -EIO;
 		}
 	}
@@ -368,7 +365,7 @@ static int iis2dlpc_init(const struct device *dev)
 	if (cfg->tap_threshold[1] > 0) {
 		LOG_INF("TAP: tap_y enabled");
 		if (iis2dlpc_tap_detection_on_y_set(ctx, 1) < 0) {
-			LOG_ERR("Failed to set tap detection on Y axis");
+			LOG_ERROR("Failed to set tap detection on Y axis");
 			return -EIO;
 		}
 	}
@@ -376,26 +373,26 @@ static int iis2dlpc_init(const struct device *dev)
 	if (cfg->tap_threshold[2] > 0) {
 		LOG_INF("TAP: tap_z enabled");
 		if (iis2dlpc_tap_detection_on_z_set(ctx, 1) < 0) {
-			LOG_ERR("Failed to set tap detection on Z axis");
+			LOG_ERROR("Failed to set tap detection on Z axis");
 			return -EIO;
 		}
 	}
 
 	LOG_INF("TAP: shock is %02x", cfg->tap_shock);
 	if (iis2dlpc_tap_shock_set(ctx, cfg->tap_shock) < 0) {
-		LOG_ERR("Failed to set tap shock duration");
+		LOG_ERROR("Failed to set tap shock duration");
 		return -EIO;
 	}
 
 	LOG_INF("TAP: latency is %02x", cfg->tap_latency);
 	if (iis2dlpc_tap_dur_set(ctx, cfg->tap_latency) < 0) {
-		LOG_ERR("Failed to set tap latency");
+		LOG_ERROR("Failed to set tap latency");
 		return -EIO;
 	}
 
 	LOG_INF("TAP: quiet time is %02x", cfg->tap_quiet);
 	if (iis2dlpc_tap_quiet_set(ctx, cfg->tap_quiet) < 0) {
-		LOG_ERR("Failed to set tap quiet time");
+		LOG_ERROR("Failed to set tap quiet time");
 		return -EIO;
 	}
 #endif /* CONFIG_IIS2DLPC_TAP */

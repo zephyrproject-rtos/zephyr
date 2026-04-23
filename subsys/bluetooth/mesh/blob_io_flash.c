@@ -43,8 +43,8 @@ static int test_flash_area(uint8_t area_id)
 
 	if ((flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT) &&
 	    CONFIG_BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX % align) {
-		LOG_ERR("CONFIG_BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX must be set to a\n"
-			"multiple of the write block size for the flash deviced used.");
+		LOG_ERROR("CONFIG_BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX must be set to a\n"
+			  "multiple of the write block size for the flash deviced used.");
 		return -EINVAL;
 	}
 

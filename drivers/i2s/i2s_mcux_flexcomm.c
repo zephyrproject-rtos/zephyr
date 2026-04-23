@@ -86,12 +86,12 @@ static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
 	}
 
 	if (fsl_cfg->dataLength < 4 || fsl_cfg->dataLength > 32) {
-		LOG_ERR("Unsupported data length");
+		LOG_ERROR("Unsupported data length");
 		return -EINVAL;
 	}
 
 	if (fsl_cfg->frameLength < 4 || fsl_cfg->frameLength > 2048) {
-		LOG_ERR("Unsupported frame length");
+		LOG_ERROR("Unsupported frame length");
 		return -EINVAL;
 	}
 
@@ -131,7 +131,7 @@ static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
 		fsl_cfg->wsPol = true;
 		break;
 	default:
-		LOG_ERR("Unsupported I2S data format");
+		LOG_ERROR("Unsupported I2S data format");
 		return -EINVAL;
 	}
 
@@ -160,7 +160,7 @@ static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
 		fsl_cfg->wsPol = !fsl_cfg->wsPol;
 		break;
 	default:
-		LOG_ERR("Unsupported clocks polarity");
+		LOG_ERROR("Unsupported clocks polarity");
 		return -EINVAL;
 	}
 
@@ -203,13 +203,12 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 	} else if (dir == I2S_DIR_BOTH) {
 		return -ENOSYS;
 	} else {
-		LOG_ERR("Either RX or TX direction must be selected");
+		LOG_ERROR("Either RX or TX direction must be selected");
 		return -EINVAL;
 	}
 
-	if (stream->state != I2S_STATE_NOT_READY &&
-	    stream->state != I2S_STATE_READY) {
-		LOG_ERR("invalid state");
+	if (stream->state != I2S_STATE_NOT_READY && stream->state != I2S_STATE_READY) {
+		LOG_ERROR("invalid state");
 		return -EINVAL;
 	}
 
@@ -231,7 +230,7 @@ static int i2s_mcux_configure(const struct device *dev, enum i2s_dir dir,
 	}
 
 	if (!device_is_ready(cfg->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -492,7 +491,7 @@ static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 		/* transmission complete. free the buffer */
 		k_mem_slab_free(stream->cfg.mem_slab, queue_entry.mem_block);
 	} else {
-		LOG_ERR("no buffer in output queue for channel %u", channel);
+		LOG_ERROR("no buffer in output queue for channel %u", channel);
 	}
 
 	/* Received a STOP trigger, terminate TX immediately */
@@ -571,8 +570,8 @@ static void i2s_mcux_dma_rx_callback(const struct device *dma_dev, void *arg,
 		/* put buffer to output queue */
 		ret = k_msgq_put(&stream->out_queue, &queue_entry.mem_block, K_NO_WAIT);
 		if (ret != 0) {
-			LOG_ERR("buffer %p -> out_queue %p err %d", queue_entry.mem_block,
-				&stream->out_queue, ret);
+			LOG_ERROR("buffer %p -> out_queue %p err %d", queue_entry.mem_block,
+				  &stream->out_queue, ret);
 			i2s_mcux_rx_stream_disable(dev, false);
 			stream->state = I2S_STATE_ERROR;
 		}
@@ -581,8 +580,8 @@ static void i2s_mcux_dma_rx_callback(const struct device *dma_dev, void *arg,
 			ret = k_mem_slab_alloc(stream->cfg.mem_slab,
 					       &queue_entry.mem_block, K_NO_WAIT);
 			if (ret != 0) {
-				LOG_ERR("buffer alloc from slab %p err %d",
-					stream->cfg.mem_slab, ret);
+				LOG_ERROR("buffer alloc from slab %p err %d", stream->cfg.mem_slab,
+					  ret);
 				i2s_mcux_rx_stream_disable(dev, false);
 				stream->state = I2S_STATE_ERROR;
 			} else {
@@ -596,8 +595,8 @@ static void i2s_mcux_dma_rx_callback(const struct device *dma_dev, void *arg,
 				/* put buffer in input queue */
 				ret = k_msgq_put(&stream->in_queue, &queue_entry, K_NO_WAIT);
 				if (ret != 0) {
-					LOG_ERR("buffer %p -> in_queue %p err %d",
-					queue_entry.mem_block, &stream->in_queue, ret);
+					LOG_ERROR("buffer %p -> in_queue %p err %d",
+						  queue_entry.mem_block, &stream->in_queue, ret);
 				}
 				dma_start(stream->dev_dma, stream->channel);
 			}
@@ -628,7 +627,7 @@ static int i2s_mcux_tx_stream_start(const struct device *dev)
 		/* retrieve buffer from input queue */
 		ret = k_msgq_get(&stream->in_queue, &queue_entry[i], K_NO_WAIT);
 		if (ret != 0) {
-			LOG_ERR("No buffer in input queue to start transmission");
+			LOG_ERROR("No buffer in input queue to start transmission");
 			return ret;
 		}
 	}
@@ -642,7 +641,7 @@ static int i2s_mcux_tx_stream_start(const struct device *dev)
 		/* put buffer in output queue */
 		ret = k_msgq_put(&stream->out_queue, &queue_entry[i].mem_block, K_NO_WAIT);
 		if (ret != 0) {
-			LOG_ERR("failed to put buffer in output queue");
+			LOG_ERROR("failed to put buffer in output queue");
 			return ret;
 		}
 	}
@@ -652,7 +651,7 @@ static int i2s_mcux_tx_stream_start(const struct device *dev)
 
 	ret = dma_start(stream->dev_dma, stream->channel);
 	if (ret < 0) {
-		LOG_ERR("dma_start failed (%d)", ret);
+		LOG_ERROR("dma_start failed (%d)", ret);
 		return ret;
 	}
 
@@ -687,7 +686,7 @@ static int i2s_mcux_rx_stream_start(const struct device *dev)
 							K_NO_WAIT);
 		queue_entry[i].size = stream->cfg.block_size;
 		if (ret != 0) {
-			LOG_ERR("buffer alloc from mem_slab failed (%d)", ret);
+			LOG_ERROR("buffer alloc from mem_slab failed (%d)", ret);
 			return ret;
 		}
 	}
@@ -698,7 +697,7 @@ static int i2s_mcux_rx_stream_start(const struct device *dev)
 	for (int i = 0; i < NUM_DMA_BLOCKS; i++) {
 		ret = k_msgq_put(&stream->in_queue, &queue_entry[i], K_NO_WAIT);
 		if (ret != 0) {
-			LOG_ERR("failed to put buffer in input queue");
+			LOG_ERROR("failed to put buffer in input queue");
 			return ret;
 		}
 	}
@@ -708,7 +707,7 @@ static int i2s_mcux_rx_stream_start(const struct device *dev)
 
 	ret = dma_start(stream->dev_dma, stream->channel);
 	if (ret < 0) {
-		LOG_ERR("Failed to start DMA Ch%d (%d)", stream->channel, ret);
+		LOG_ERROR("Failed to start DMA Ch%d (%d)", stream->channel, ret);
 		return ret;
 	}
 
@@ -733,7 +732,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir,
 	} else if (dir == I2S_DIR_BOTH) {
 		return -ENOSYS;
 	} else {
-		LOG_ERR("Either RX or TX direction must be selected");
+		LOG_ERROR("Either RX or TX direction must be selected");
 		return -EINVAL;
 	}
 
@@ -742,8 +741,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir,
 	switch (cmd) {
 	case I2S_TRIGGER_START:
 		if (stream->state != I2S_STATE_READY) {
-			LOG_ERR("START trigger: invalid state %d",
-				    stream->state);
+			LOG_ERROR("START trigger: invalid state %d", stream->state);
 			ret = -EIO;
 			break;
 		}
@@ -755,7 +753,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir,
 		}
 
 		if (ret < 0) {
-			LOG_ERR("START trigger failed %d", ret);
+			LOG_ERROR("START trigger failed %d", ret);
 			break;
 		}
 
@@ -765,7 +763,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir,
 
 	case I2S_TRIGGER_STOP:
 		if (stream->state != I2S_STATE_RUNNING) {
-			LOG_ERR("STOP trigger: invalid state %d", stream->state);
+			LOG_ERROR("STOP trigger: invalid state %d", stream->state);
 			ret = -EIO;
 			break;
 		}
@@ -775,7 +773,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir,
 
 	case I2S_TRIGGER_DRAIN:
 		if (stream->state != I2S_STATE_RUNNING) {
-			LOG_ERR("DRAIN trigger: invalid state %d", stream->state);
+			LOG_ERROR("DRAIN trigger: invalid state %d", stream->state);
 			ret = -EIO;
 			break;
 		}
@@ -784,7 +782,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir,
 
 	case I2S_TRIGGER_DROP:
 		if (stream->state == I2S_STATE_NOT_READY) {
-			LOG_ERR("DROP trigger: invalid state %d", stream->state);
+			LOG_ERROR("DROP trigger: invalid state %d", stream->state);
 			ret = -EIO;
 			break;
 		}
@@ -798,7 +796,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir,
 
 	case I2S_TRIGGER_PREPARE:
 		if (stream->state != I2S_STATE_ERROR) {
-			LOG_ERR("PREPARE trigger: invalid state %d", stream->state);
+			LOG_ERROR("PREPARE trigger: invalid state %d", stream->state);
 			ret = -EIO;
 			break;
 		}
@@ -811,7 +809,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir,
 		break;
 
 	default:
-		LOG_ERR("Unsupported trigger command");
+		LOG_ERROR("Unsupported trigger command");
 		ret = -EINVAL;
 	}
 
@@ -829,7 +827,7 @@ static int i2s_mcux_read(const struct device *dev, void **mem_block,
 	int ret = 0;
 
 	if (stream->state == I2S_STATE_NOT_READY) {
-		LOG_ERR("invalid state %d", stream->state);
+		LOG_ERROR("invalid state %d", stream->state);
 		return -EIO;
 	}
 
@@ -860,9 +858,8 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block,
 		.size = size,
 	};
 
-	if (stream->state != I2S_STATE_RUNNING &&
-		stream->state != I2S_STATE_READY) {
-		LOG_ERR("invalid state (%d)", stream->state);
+	if (stream->state != I2S_STATE_RUNNING && stream->state != I2S_STATE_READY) {
+		LOG_ERROR("invalid state (%d)", stream->state);
 		return -EIO;
 	}
 
@@ -870,7 +867,7 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block,
 			 SYS_TIMEOUT_MS(stream->cfg.timeout));
 
 	if (ret) {
-		LOG_ERR("k_msgq_put failed %d", ret);
+		LOG_ERROR("k_msgq_put failed %d", ret);
 		return ret;
 	}
 
@@ -933,14 +930,14 @@ static int i2s_mcux_init_common(const struct device *dev)
 
 	if (data->tx.dev_dma != NULL) {
 		if (!device_is_ready(data->tx.dev_dma)) {
-			LOG_ERR("%s device not ready", data->tx.dev_dma->name);
+			LOG_ERROR("%s device not ready", data->tx.dev_dma->name);
 			return -ENODEV;
 		}
 	}
 
 	if (data->rx.dev_dma != NULL) {
 		if (!device_is_ready(data->rx.dev_dma)) {
-			LOG_ERR("%s device not ready", data->rx.dev_dma->name);
+			LOG_ERROR("%s device not ready", data->rx.dev_dma->name);
 			return -ENODEV;
 		}
 	}

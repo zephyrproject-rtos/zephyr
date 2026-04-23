@@ -334,7 +334,7 @@ static int clock_check_subsys(union clock_mchp_subsys subsys)
 			break;
 
 		default:
-			LOG_ERR("Unsupported SUBSYS_TYPE");
+			LOG_ERROR("Unsupported SUBSYS_TYPE");
 		}
 
 		/* Check if the specified id is valid. */
@@ -374,7 +374,7 @@ __IO uint32_t *get_mclkbus_mask_reg(mclk_registers_t *mclk_regs, uint32_t bus)
 		reg32 = &mclk_regs->MCLK_APBDMASK;
 		break;
 	default:
-		LOG_ERR("Unsupported mclkbus");
+		LOG_ERROR("Unsupported mclkbus");
 		break;
 	}
 
@@ -1962,7 +1962,7 @@ void clock_xosc_init(const struct device *dev, struct clock_xosc_init *xosc_init
 						: OSCCTRL_STATUS_XOSCRDY1_Msk;
 		if (WAIT_FOR(((oscctrl_regs->OSCCTRL_STATUS & rdy_mask) != 0), TIMEOUT_XOSC_RDY,
 			     NULL) == false) {
-			LOG_ERR("XOSC[%d] ready timed out", inst);
+			LOG_ERROR("XOSC[%d] ready timed out", inst);
 			return;
 		}
 
@@ -2034,14 +2034,14 @@ void clock_dfll_init(const struct device *dev, struct clock_dfll_init *dfll_init
 		oscctrl_regs->OSCCTRL_DFLLCTRLB = val8;
 		if (WAIT_FOR((oscctrl_regs->OSCCTRL_DFLLSYNC == 0), TIMEOUT_REG_SYNC, NULL) ==
 		    false) {
-			LOG_ERR("DFLLSYNC timeout on writing OSCCTRL_DFLLCTRLB");
+			LOG_ERROR("DFLLSYNC timeout on writing OSCCTRL_DFLLCTRLB");
 			return;
 		}
 
 		oscctrl_regs->OSCCTRL_DFLLMUL = val32;
 		if (WAIT_FOR((oscctrl_regs->OSCCTRL_DFLLSYNC == 0), TIMEOUT_REG_SYNC, NULL) ==
 		    false) {
-			LOG_ERR("DFLLSYNC timeout on writing OSCCTRL_DFLLMUL");
+			LOG_ERROR("DFLLSYNC timeout on writing OSCCTRL_DFLLMUL");
 			return;
 		}
 	}
@@ -2061,13 +2061,13 @@ void clock_dfll_init(const struct device *dev, struct clock_dfll_init *dfll_init
 
 	oscctrl_regs->OSCCTRL_DFLLCTRLA = val8;
 	if (WAIT_FOR((oscctrl_regs->OSCCTRL_DFLLSYNC == 0), TIMEOUT_REG_SYNC, NULL) == false) {
-		LOG_ERR("DFLLSYNC timeout on writing OSCCTRL_DFLLCTRLA");
+		LOG_ERROR("DFLLSYNC timeout on writing OSCCTRL_DFLLCTRLA");
 		return;
 	}
 	if (dfll_init->enable != 0) {
 		if (WAIT_FOR(((oscctrl_regs->OSCCTRL_STATUS & OSCCTRL_STATUS_DFLLRDY_Msk) != 0),
 			     TIMEOUT_DFLL_RDY, NULL) == false) {
-			LOG_ERR("DFLL ready timed out");
+			LOG_ERROR("DFLL ready timed out");
 			return;
 		}
 
@@ -2109,7 +2109,7 @@ void clock_fdpll_init(const struct device *dev, struct clock_fdpll_init *fdpll_i
 			(GCLK_PCHCTRL_GEN(src) | GCLK_PCHCTRL_CHEN_Msk);
 		if (WAIT_FOR(((gclk_regs->GCLK_PCHCTRL[inst + 1] & GCLK_PCHCTRL_CHEN_Msk) != 0),
 			     TIMEOUT_REG_SYNC, NULL) == false) {
-			LOG_ERR("timeout on writing GCLK_PCHCTRL_CHEN_Msk");
+			LOG_ERROR("timeout on writing GCLK_PCHCTRL_CHEN_Msk");
 			return;
 		}
 	}
@@ -2135,7 +2135,7 @@ void clock_fdpll_init(const struct device *dev, struct clock_fdpll_init *fdpll_i
 	oscctrl_regs->DPLL[inst].OSCCTRL_DPLLRATIO = val32;
 	if (WAIT_FOR((oscctrl_regs->DPLL[inst].OSCCTRL_DPLLSYNCBUSY == 0), TIMEOUT_REG_SYNC,
 		     NULL) == false) {
-		LOG_ERR("DPLLSYNCBUSY timeout on writing OSCCTRL_DPLLRATIO");
+		LOG_ERROR("DPLLSYNCBUSY timeout on writing OSCCTRL_DPLLRATIO");
 		return;
 	}
 
@@ -2155,14 +2155,14 @@ void clock_fdpll_init(const struct device *dev, struct clock_fdpll_init *fdpll_i
 	oscctrl_regs->DPLL[inst].OSCCTRL_DPLLCTRLA = val8;
 	if (WAIT_FOR((oscctrl_regs->DPLL[inst].OSCCTRL_DPLLSYNCBUSY == 0), TIMEOUT_REG_SYNC,
 		     NULL) == false) {
-		LOG_ERR("DPLLSYNCBUSY timeout on writing OSCCTRL_DPLLCTRLA");
+		LOG_ERROR("DPLLSYNCBUSY timeout on writing OSCCTRL_DPLLCTRLA");
 		return;
 	}
 	if (fdpll_init->enable != 0) {
 		mask = OSCCTRL_DPLLSTATUS_LOCK_Msk | OSCCTRL_DPLLSTATUS_CLKRDY_Msk;
 		if (WAIT_FOR(((oscctrl_regs->DPLL[inst].OSCCTRL_DPLLSTATUS & mask) == mask),
 			     TIMEOUT_FDPLL_LOCK_RDY, NULL) == false) {
-			LOG_ERR("DPLL[%d] lock/ready timed out", inst);
+			LOG_ERROR("DPLL[%d] lock/ready timed out", inst);
 			return;
 		}
 
@@ -2238,7 +2238,7 @@ void clock_xosc32k_init(const struct device *dev, struct clock_xosc32k_init *xos
 			if (WAIT_FOR(((osc32kctrl_regs->OSC32KCTRL_STATUS &
 				       OSC32KCTRL_STATUS_XOSC32KRDY_Msk) != 0),
 				     TIMEOUT_OSC32KCTRL_RDY, NULL) == false) {
-				LOG_ERR("OSC32KCTRL ready timed out");
+				LOG_ERROR("OSC32KCTRL ready timed out");
 				return;
 			}
 
@@ -2299,7 +2299,7 @@ void clock_gclkgen_init(const struct device *dev, struct clock_gclkgen_init *gcl
 
 	config->gclk_regs->GCLK_GENCTRL[inst] = val;
 	if (WAIT_FOR((config->gclk_regs->GCLK_SYNCBUSY == 0), TIMEOUT_REG_SYNC, NULL) == false) {
-		LOG_ERR("GCLK_SYNCBUSY timeout on writing GCLK_GENCTRL[%d]", inst);
+		LOG_ERROR("GCLK_SYNCBUSY timeout on writing GCLK_GENCTRL[%d]", inst);
 		return;
 	}
 
@@ -2511,7 +2511,7 @@ static int clock_mchp_init(const struct device *dev)
 
 	config->gclk_regs->GCLK_CTRLA = GCLK_CTRLA_SWRST(1);
 	if (WAIT_FOR((config->gclk_regs->GCLK_SYNCBUSY == 0), TIMEOUT_REG_SYNC, NULL) == false) {
-		LOG_ERR("GCLK_SYNCBUSY timeout on writing GCLK_CTRLA");
+		LOG_ERROR("GCLK_SYNCBUSY timeout on writing GCLK_CTRLA");
 		return -ETIMEDOUT;
 	}
 

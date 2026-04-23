@@ -42,8 +42,7 @@ static int init_backend_iface(void)
 
 	backend = modbus_iface_get_by_name(bend_name);
 	if (backend < 0) {
-		LOG_ERR("Failed to get iface index for %s",
-			bend_name);
+		LOG_ERROR("Failed to get iface index for %s", bend_name);
 		return -ENODEV;
 	}
 
@@ -102,14 +101,14 @@ int main(void)
 	static int counter;
 
 	if (init_backend_iface()) {
-		LOG_ERR("Modbus initialization failed");
+		LOG_ERROR("Modbus initialization failed");
 		return 0;
 	}
 
 	serv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if (serv < 0) {
-		LOG_ERR("error: socket: %d", errno);
+		LOG_ERROR("error: socket: %d", errno);
 		return 0;
 	}
 
@@ -118,12 +117,12 @@ int main(void)
 	bind_addr.sin_port = htons(MODBUS_TCP_PORT);
 
 	if (bind(serv, (struct sockaddr *)&bind_addr, sizeof(bind_addr)) < 0) {
-		LOG_ERR("error: bind: %d", errno);
+		LOG_ERROR("error: bind: %d", errno);
 		return 0;
 	}
 
 	if (listen(serv, 5) < 0) {
-		LOG_ERR("error: listen: %d", errno);
+		LOG_ERROR("error: listen: %d", errno);
 		return 0;
 	}
 
@@ -140,7 +139,7 @@ int main(void)
 				&client_addr_len);
 
 		if (client < 0) {
-			LOG_ERR("error: accept: %d", errno);
+			LOG_ERROR("error: accept: %d", errno);
 			continue;
 		}
 

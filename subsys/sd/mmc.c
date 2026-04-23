@@ -141,7 +141,7 @@ int mmc_card_init(struct sd_card *card)
 	/* CMD3 */
 	ret = mmc_set_rca(card);
 	if (ret) {
-		LOG_ERR("Failed on sending RCA to card");
+		LOG_ERROR("Failed on sending RCA to card");
 		return ret;
 	}
 
@@ -222,7 +222,7 @@ static int mmc_send_op_cond(struct sd_card *card, int ocr)
 	}
 	if (retries >= CONFIG_SD_OCR_RETRY_COUNT) {
 		/* OCR timed out */
-		LOG_ERR("Card never left busy state");
+		LOG_ERROR("Card never left busy state");
 		return -ETIMEDOUT;
 	}
 	LOG_DBG("MMC responded to CMD1 after %d attempts", retries);
@@ -298,7 +298,7 @@ static int mmc_read_csd(struct sd_card *card, struct sd_csd *card_csd)
 
 	mmc_decode_csd(card_csd, cmd.response);
 	if (card_csd->csd_structure < 2) {
-		LOG_ERR("Legacy MMC cards are not supported.");
+		LOG_ERROR("Legacy MMC cards are not supported.");
 		return -ENOTSUP;
 	}
 
@@ -367,7 +367,7 @@ static inline int mmc_set_max_freq(struct sd_card *card, struct sd_csd *card_csd
 
 	ret = sdhc_set_io(card->sdhc, &card->bus_io);
 	if (ret) {
-		LOG_ERR("Error seetting initial clock frequency");
+		LOG_ERROR("Error seetting initial clock frequency");
 		return ret;
 	}
 
@@ -397,14 +397,14 @@ static int mmc_set_bus_width(struct sd_card *card)
 	ret = sdhc_request(card->sdhc, &cmd, NULL);
 	sdmmc_wait_ready(card);
 	if (ret) {
-		LOG_ERR("Setting card data bus width failed: %d", ret);
+		LOG_ERROR("Setting card data bus width failed: %d", ret);
 		return ret;
 	}
 
 	/* Set host controller bus width */
 	ret = sdhc_set_io(card->sdhc, &card->bus_io);
 	if (ret) {
-		LOG_ERR("Setting SDHC data bus width failed: %d", ret);
+		LOG_ERROR("Setting SDHC data bus width failed: %d", ret);
 		return ret;
 	}
 
@@ -511,7 +511,7 @@ static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
 	if (card->card_speed == MMC_HS200_TIMING) {
 		ret = sdhc_execute_tuning(card->sdhc);
 		if (ret) {
-			LOG_ERR("MMC Tuning failed: %d", ret);
+			LOG_ERROR("MMC Tuning failed: %d", ret);
 			return ret;
 		}
 	}
@@ -523,7 +523,7 @@ static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
 		/* Switch back to regular HS timing */
 		ret = mmc_set_hs_timing(card);
 		if (ret) {
-			LOG_ERR("Switching MMC back to HS from HS200 during HS400 init failed.");
+			LOG_ERROR("Switching MMC back to HS from HS200 during HS400 init failed.");
 			return ret;
 		}
 		/* Set bus width to DDR 8 bit */
@@ -534,7 +534,7 @@ static int mmc_set_timing(struct sd_card *card, struct mmc_ext_csd *ext)
 		ret = sdhc_request(card->sdhc, &cmd, NULL);
 		sdmmc_wait_ready(card);
 		if (ret) {
-			LOG_ERR("Setting DDR data bus width failed during HS400 init: %d", ret);
+			LOG_ERROR("Setting DDR data bus width failed during HS400 init: %d", ret);
 			return ret;
 		}
 		/* Set card timing mode to HS400 */
@@ -580,7 +580,7 @@ static int mmc_read_ext_csd(struct sd_card *card, struct mmc_ext_csd *card_ext_c
 
 	ret = sdhc_request(card->sdhc, &cmd, &data);
 	if (ret) {
-		LOG_ERR("CMD8 (send_ext_csd) failed: %d", ret);
+		LOG_ERROR("CMD8 (send_ext_csd) failed: %d", ret);
 		return ret;
 	}
 

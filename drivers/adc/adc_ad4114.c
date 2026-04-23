@@ -122,7 +122,7 @@ static int ad4114_write_reg(const struct device *dev, enum ad4114_reg reg_addr, 
 	buffer_tx[0] = AD4114_CMD_WRITE | reg_addr;
 
 	if (reg_size > 4) {
-		LOG_ERR("Invalid size, max data write size is 4");
+		LOG_ERROR("Invalid size, max data write size is 4");
 		return -ENOMEM;
 	}
 	/* Fill the data */
@@ -132,7 +132,7 @@ static int ad4114_write_reg(const struct device *dev, enum ad4114_reg reg_addr, 
 
 	ret = spi_write_dt(&config->spi, &tx);
 	if (ret != 0) {
-		LOG_ERR("%s: error writing register 0x%X (%d)", dev->name, reg_addr, ret);
+		LOG_ERROR("%s: error writing register 0x%X (%d)", dev->name, reg_addr, ret);
 		return ret;
 	}
 
@@ -167,7 +167,7 @@ static int ad4114_read_reg(const struct device *dev, enum ad4114_reg reg_addr, u
 
 	ret = spi_transceive_dt(&config->spi, &tx, &rx);
 	if (ret != 0) {
-		LOG_ERR("%s: error reading register 0x%X (%d)", dev->name, reg_addr, ret);
+		LOG_ERROR("%s: error reading register 0x%X (%d)", dev->name, reg_addr, ret);
 		return ret;
 	}
 
@@ -224,7 +224,7 @@ static int adc_ad4114_start_read(const struct device *dev, const struct adc_sequ
 
 	ret = adc_ad4114x_validate_buffer_size(dev, sequence);
 	if (ret < 0) {
-		LOG_ERR("insufficient buffer size");
+		LOG_ERROR("insufficient buffer size");
 		return ret;
 	}
 
@@ -324,7 +324,7 @@ static int adc_ad4114_channel_setup(const struct device *dev,
 	 * tree setup
 	 */
 	if (channel_cfg->channel_id >= AD4114_CHAN_NUMBER) {
-		LOG_ERR("invalid channel id %d", channel_cfg->channel_id);
+		LOG_ERROR("invalid channel id %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 	return 0;
@@ -364,14 +364,14 @@ static int adc_ad4114_init(const struct device *dev)
 	adc_context_init(&data->ctx);
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("spi bus %s not ready", config->spi.bus->name);
+		LOG_ERROR("spi bus %s not ready", config->spi.bus->name);
 		return -ENODEV;
 	}
 
 	ad4114_read_reg(dev, AD4114_ID_REG, id, 2);
 	/* Check that this is the expected ID : 0x30DX, where x is don’t care */
 	if ((((id[0] << 8) | id[1]) & 0xFFF0) != 0x30D0) {
-		LOG_ERR("Read wrong ID register 0x%X 0x%X", id[0], id[1]);
+		LOG_ERROR("Read wrong ID register 0x%X 0x%X", id[0], id[1]);
 		return -EIO;
 	}
 

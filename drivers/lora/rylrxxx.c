@@ -143,12 +143,12 @@ static void on_err(struct modem_chat *chat, char **argv, uint16_t argc, void *us
 
 	if (argc != 2) {
 		driver_data->handler_error = -EBADMSG;
-		LOG_ERR("malformed error message from radio");
+		LOG_ERROR("malformed error message from radio");
 		return;
 	}
 
 	radio_err = atoi(argv[1]);
-	LOG_ERR("error from rylr: %d", radio_err);
+	LOG_ERROR("error from rylr: %d", radio_err);
 }
 
 static void on_rx(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
@@ -176,7 +176,7 @@ static void on_rx(struct modem_chat *chat, char **argv, uint16_t argc, void *use
 	} else {
 		err = k_msgq_put(&driver_data->rx_msgq, &msg, K_NO_WAIT);
 		if (err != 0) {
-			LOG_ERR("error adding message to queue: %d", err);
+			LOG_ERROR("error adding message to queue: %d", err);
 			driver_data->handler_error = err;
 		}
 	}
@@ -247,12 +247,12 @@ static int rylr_send_cmd_buffer(const struct device *dev)
 
 	err = modem_chat_run_script(&data->chat, &data->dynamic_script);
 	if (err != 0) {
-		LOG_ERR("could not send cmd: %s. err: %d", data->cmd_buffer, err);
+		LOG_ERROR("could not send cmd: %s. err: %d", data->cmd_buffer, err);
 		return err;
 	}
 	err = k_sem_take(&data->script_sem, K_MSEC(CONFIG_RYLRXXX_RADIO_CMD_RESPONSE_TIMEOUT_MS));
 	if (err) {
-		LOG_ERR("error waiting for response: %d", err);
+		LOG_ERROR("error waiting for response: %d", err);
 		return err;
 	}
 	return data->handler_error;
@@ -263,7 +263,7 @@ static int rylr_set_rf_band(const struct device *dev, uint32_t frequency)
 	struct rylr_data *data = dev->data;
 
 	if (sprintf(data->cmd_buffer, RYLR_CMD_BAND_FORMAT, frequency) != RYLR_CMD_BAND_LENGTH) {
-		LOG_ERR("could not create frequency string");
+		LOG_ERROR("could not create frequency string");
 		return -EINVAL;
 	}
 
@@ -278,24 +278,24 @@ static int rylr_set_rf_parameters(const struct device *dev, uint32_t datarate, u
 	size_t cmd_len;
 
 	if (datarate < 7 || datarate > 12) {
-		LOG_ERR("datarate/spread factor must be between 7 and 12 inclusive");
+		LOG_ERROR("datarate/spread factor must be between 7 and 12 inclusive");
 		return -EINVAL;
 	}
 
 	if (coding_rate < 1 || coding_rate > 4) {
-		LOG_ERR("coding rate must be between 1 and 4 inclusive");
+		LOG_ERROR("coding rate must be between 1 and 4 inclusive");
 		return -EINVAL;
 	}
 
 	if (preamble_length < 4 || preamble_length > 7) {
-		LOG_ERR("preamble length must be between 4 and 7 inclusive");
+		LOG_ERROR("preamble length must be between 4 and 7 inclusive");
 		return -EINVAL;
 	}
 
 	cmd_len = sprintf(data->cmd_buffer, RYLR_CMD_RF_SETTINGS_FORMAT, datarate,
 			  rylr_get_bandwidth_index(bandwidth), coding_rate, preamble_length);
 	if (cmd_len != RYLR_CMD_RF_SETTINGS_LEN(datarate)) {
-		LOG_ERR("could not create rf settings string");
+		LOG_ERROR("could not create rf settings string");
 		return -EINVAL;
 	}
 
@@ -309,13 +309,13 @@ static int rylr_set_power(const struct device *dev, uint32_t power)
 	size_t cmd_len;
 
 	if (power > 15) {
-		LOG_ERR("power cannot be greater than 15");
+		LOG_ERROR("power cannot be greater than 15");
 		return -EINVAL;
 	}
 
 	cmd_len = RYLR_CMD_POWER_LEN(power);
 	if (sprintf(data->cmd_buffer, RYLR_CMD_POWER_FORMAT, power) != cmd_len) {
-		LOG_ERR("could not create power string");
+		LOG_ERROR("could not create power string");
 		return -EINVAL;
 	}
 
@@ -330,32 +330,32 @@ static int rylr_config(const struct device *dev, struct lora_modem_config *confi
 
 	err = k_sem_take(&data->operation_sem, K_NO_WAIT);
 	if (err != 0) {
-		LOG_ERR("error taking operation semaphore: %d", err);
+		LOG_ERROR("error taking operation semaphore: %d", err);
 		return err;
 	}
 
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
-		LOG_ERR("pending async operation");
+		LOG_ERROR("pending async operation");
 		err = -EBUSY;
 		goto exit;
 	}
 
 	err = rylr_set_rf_band(dev, config->frequency);
 	if (err != 0) {
-		LOG_ERR("could not send frequency cmd: %d", err);
+		LOG_ERROR("could not send frequency cmd: %d", err);
 		goto exit;
 	}
 
 	err = rylr_set_rf_parameters(dev, config->datarate, config->bandwidth, config->coding_rate,
 				     config->preamble_len);
 	if (err != 0) {
-		LOG_ERR("could not send rf params cmd: %d", err);
+		LOG_ERROR("could not send rf params cmd: %d", err);
 		goto exit;
 	}
 
 	err = rylr_set_power(dev, config->tx_power);
 	if (err != 0) {
-		LOG_ERR("could not send power cmd: %d", err);
+		LOG_ERROR("could not send power cmd: %d", err);
 		goto exit;
 	}
 
@@ -374,25 +374,25 @@ int rylr_send(const struct device *dev, uint8_t *payload, uint32_t payload_len)
 
 	err = k_sem_take(&data->operation_sem, K_NO_WAIT);
 	if (err != 0) {
-		LOG_ERR("error taking operation semaphore: %d", err);
+		LOG_ERROR("error taking operation semaphore: %d", err);
 		return err;
 	}
 
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
-		LOG_ERR("pending async operation");
+		LOG_ERROR("pending async operation");
 		err = -EBUSY;
 		goto exit;
 	}
 
 	if (!data->is_tx) {
-		LOG_ERR("radio not configured in tx mode");
+		LOG_ERROR("radio not configured in tx mode");
 		err = -EOPNOTSUPP;
 		goto exit;
 	}
 
 	/* snprintf requires an extra byte for the terminating NULL */
 	if (cmd_len > (CONFIG_LORA_RYLRXX_CMD_BUF_SIZE - 1)) {
-		LOG_ERR("payload too long");
+		LOG_ERROR("payload too long");
 		err = -EINVAL;
 		goto exit;
 	}
@@ -402,7 +402,7 @@ int rylr_send(const struct device *dev, uint8_t *payload, uint32_t payload_len)
 	data->curr_cmd_len = cmd_len;
 	err = rylr_send_cmd_buffer(dev);
 	if (err != 0) {
-		LOG_ERR("error sending data: %d", err);
+		LOG_ERROR("error sending data: %d", err);
 		goto exit;
 	}
 
@@ -420,12 +420,12 @@ int rylr_send_async(const struct device *dev, uint8_t *payload, uint32_t payload
 
 	err = k_sem_take(&data->operation_sem, K_NO_WAIT);
 	if (err != 0) {
-		LOG_ERR("error taking operation sem: %d", err);
+		LOG_ERROR("error taking operation sem: %d", err);
 		return err;
 	}
 
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
-		LOG_ERR("pending async operation");
+		LOG_ERROR("pending async operation");
 		err = -EBUSY;
 		goto bail;
 	}
@@ -433,7 +433,7 @@ int rylr_send_async(const struct device *dev, uint8_t *payload, uint32_t payload
 	RYLR_SET_TX_PENDING(data->pending_async_flags);
 
 	if (!data->is_tx) {
-		LOG_ERR("radio not configured in tx mode");
+		LOG_ERROR("radio not configured in tx mode");
 		err = -EOPNOTSUPP;
 		goto bail;
 	}
@@ -441,13 +441,13 @@ int rylr_send_async(const struct device *dev, uint8_t *payload, uint32_t payload
 	cmd_len = RYLR_CMD_SEND_LENGTH(payload_len);
 	/* snprintf requires an extra byte for the terminating NULL */
 	if (cmd_len > (CONFIG_LORA_RYLRXX_CMD_BUF_SIZE - 1)) {
-		LOG_ERR("payload too long");
+		LOG_ERROR("payload too long");
 		err = -EINVAL;
 		goto bail;
 	}
 
 	if (async == NULL) {
-		LOG_ERR("async signal cannot be null");
+		LOG_ERROR("async signal cannot be null");
 		err = -EINVAL;
 		goto bail;
 	}
@@ -476,36 +476,36 @@ int rylr_recv(const struct device *dev, uint8_t *ret_msg, uint8_t size, k_timeou
 
 	ret = k_sem_take(&data->operation_sem, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("error taking operation semaphore: %d", ret);
+		LOG_ERROR("error taking operation semaphore: %d", ret);
 		return ret;
 	}
 
 	if (data->is_tx) {
-		LOG_ERR("radio is configured for tx");
+		LOG_ERROR("radio is configured for tx");
 		ret = -EOPNOTSUPP;
 		goto exit;
 	}
 
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
-		LOG_ERR("pending async operation");
+		LOG_ERROR("pending async operation");
 		ret = -EBUSY;
 		goto exit;
 	}
 
 	ret = k_msgq_get(&data->rx_msgq, &msg, timeout);
 	if (ret != 0) {
-		LOG_ERR("error getting msg from queue: %d", ret);
+		LOG_ERROR("error getting msg from queue: %d", ret);
 		goto exit;
 	}
 
 	ret = data->handler_error;
 	if (ret != 0) {
-		LOG_ERR("error in recv cb: %d", ret);
+		LOG_ERROR("error in recv cb: %d", ret);
 		goto exit;
 	}
 
 	if (msg.length > size) {
-		LOG_ERR("buf len of %u too small for message len of %u", size, msg.length);
+		LOG_ERROR("buf len of %u too small for message len of %u", size, msg.length);
 		ret = -ENOBUFS;
 		goto exit;
 	}
@@ -527,7 +527,7 @@ int rylr_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
 
 	err = k_sem_take(&data->operation_sem, K_NO_WAIT);
 	if (err != 0) {
-		LOG_ERR("error taking operation semaphore: %d", err);
+		LOG_ERROR("error taking operation semaphore: %d", err);
 		return err;
 	}
 
@@ -537,7 +537,7 @@ int rylr_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
 	}
 
 	if (data->is_tx) {
-		LOG_ERR("radio is configured for tx");
+		LOG_ERROR("radio is configured for tx");
 		err = -EOPNOTSUPP;
 		goto bail;
 	}
@@ -545,7 +545,7 @@ int rylr_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
 	data->async_rx_cb = cb;
 	data->async_user_data = user_data;
 	if (RYLR_IS_ASYNC_OP_PENDING(data->pending_async_flags)) {
-		LOG_ERR("pending async operation");
+		LOG_ERROR("pending async operation");
 		err = -EBUSY;
 		goto bail;
 	}
@@ -579,7 +579,7 @@ static int rylr_init(const struct device *dev)
 
 	err = gpio_pin_configure_dt(&config->reset, config->reset.dt_flags);
 	if (err != 0) {
-		LOG_ERR("error configuring reset gpio: %d", err);
+		LOG_ERROR("error configuring reset gpio: %d", err);
 		return err;
 	}
 
@@ -588,12 +588,12 @@ static int rylr_init(const struct device *dev)
 
 	err = k_sem_init(&data->script_sem, 0, 1);
 	if (err != 0) {
-		LOG_ERR("error initializing response semaphore. err=%d", err);
+		LOG_ERROR("error initializing response semaphore. err=%d", err);
 	}
 
 	err = k_sem_init(&data->operation_sem, 1, 1);
 	if (err != 0) {
-		LOG_ERR("error initializing operation semaphore. err=%d", err);
+		LOG_ERROR("error initializing operation semaphore. err=%d", err);
 	}
 
 	const struct modem_backend_uart_config uart_backend_config = {
@@ -622,25 +622,25 @@ static int rylr_init(const struct device *dev)
 
 	err = modem_chat_init(&data->chat, &chat_config);
 	if (err != 0) {
-		LOG_ERR("error initializing chat %d", err);
+		LOG_ERROR("error initializing chat %d", err);
 		return err;
 	}
 
 	err = modem_chat_attach(&data->chat, data->uart_pipe);
 	if (err != 0) {
-		LOG_ERR("error attaching chat %d", err);
+		LOG_ERROR("error attaching chat %d", err);
 		return err;
 	}
 
 	err = modem_pipe_open(data->uart_pipe, K_SECONDS(10));
 	if (err != 0) {
-		LOG_ERR("error opening uart pipe %d", err);
+		LOG_ERROR("error opening uart pipe %d", err);
 		return err;
 	}
 
 	err = gpio_pin_set_dt(&config->reset, 1);
 	if (err != 0) {
-		LOG_ERR("error setting reset line: %d", err);
+		LOG_ERROR("error setting reset line: %d", err);
 		return err;
 	}
 
@@ -648,7 +648,7 @@ static int rylr_init(const struct device *dev)
 
 	err = gpio_pin_set_dt(&config->reset, 0);
 	if (err != 0) {
-		LOG_ERR("error unsetting reset line: %d", err);
+		LOG_ERROR("error unsetting reset line: %d", err);
 		return err;
 	}
 
@@ -656,13 +656,13 @@ static int rylr_init(const struct device *dev)
 
 	err = modem_chat_run_script(&data->chat, &ping_script);
 	if (err != 0) {
-		LOG_ERR("error pinging radio: %d", err);
+		LOG_ERROR("error pinging radio: %d", err);
 		return err;
 	}
 
 	err = k_sem_take(&data->script_sem, K_MSEC(CONFIG_RYLRXXX_RADIO_CMD_RESPONSE_TIMEOUT_MS));
 	if (err != 0) {
-		LOG_ERR("error waiting for ping response from radio %d", err);
+		LOG_ERROR("error waiting for ping response from radio %d", err);
 		return err;
 	}
 

@@ -666,7 +666,7 @@ static int bt_l2cap_br_update_req_seq(struct bt_l2cap_br_chan *br_chan, uint16_t
 	if (bt_l2cap_br_check_req_seq_valid(br_chan, req_seq)) {
 		err = bt_l2cap_br_update_req_seq_direct(br_chan, req_seq, rej);
 	} else {
-		LOG_ERR("Invalid req seq %d received on %p", req_seq, br_chan);
+		LOG_ERROR("Invalid req seq %d received on %p", req_seq, br_chan);
 		/* The L2CAP entity shall close the channel as a consequence
 		 * of an ReqSeq Sequence error.
 		 */
@@ -1169,7 +1169,7 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 		CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
 
 	if (br_chan->_pdu_buf && bt_buf_has_view(br_chan->_pdu_buf)) {
-		LOG_ERR("already have view on %p", br_chan->_pdu_buf);
+		LOG_ERROR("already have view on %p", br_chan->_pdu_buf);
 		return NULL;
 	}
 
@@ -1369,8 +1369,8 @@ send_i_frame:
 			}
 
 			if (net_buf_tailroom(send_buf) < actual_pdu_len) {
-				LOG_ERR("Tailroom of the buffer cannot be filled %zu / %zu",
-					net_buf_tailroom(send_buf), actual_pdu_len);
+				LOG_ERROR("Tailroom of the buffer cannot be filled %zu / %zu",
+					  net_buf_tailroom(send_buf), actual_pdu_len);
 				__ASSERT(false, "Tailroom of the buffer cannot be filled %zu / %zu",
 					 net_buf_tailroom(send_buf), actual_pdu_len);
 				net_buf_unref(send_buf);
@@ -1572,7 +1572,7 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 	struct net_buf *q_pdu = CONTAINER_OF(tx_pdu, struct net_buf, node);
 
 	if (bt_buf_has_view(q_pdu)) {
-		LOG_ERR("already have view on %p", q_pdu);
+		LOG_ERROR("already have view on %p", q_pdu);
 		return NULL;
 	}
 
@@ -1622,7 +1622,7 @@ static struct net_buf *l2cap_br_create_pdu(struct net_buf_pool *pool, k_timeout_
 	}
 
 	if (buf == NULL) {
-		LOG_ERR("Fail to allocate buffer");
+		LOG_ERROR("Fail to allocate buffer");
 		return NULL;
 	}
 
@@ -1654,7 +1654,7 @@ static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
 
 	buf = l2cap_br_create_pdu(&br_sig_pool, K_FOREVER);
 	if (buf == NULL) {
-		LOG_ERR("Fail to send info req");
+		LOG_ERROR("Fail to send info req");
 		/* Consider disconnect ACL here. */
 		return;
 	}
@@ -1719,7 +1719,7 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	if (buf->len < sizeof(*rsp)) {
-		LOG_ERR("Too small info rsp packet size");
+		LOG_ERROR("Too small info rsp packet size");
 		err = -EINVAL;
 		goto done;
 	}
@@ -1743,7 +1743,7 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	switch (type) {
 	case BT_L2CAP_INFO_FEAT_MASK:
 		if (buf->len < sizeof(uint32_t)) {
-			LOG_ERR("Invalid remote info feat mask");
+			LOG_ERROR("Invalid remote info feat mask");
 			err = -EINVAL;
 			break;
 		}
@@ -1758,7 +1758,7 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		return 0;
 	case BT_L2CAP_INFO_FIXED_CHAN:
 		if (buf->len < sizeof(uint8_t)) {
-			LOG_ERR("Invalid remote info fixed chan");
+			LOG_ERROR("Invalid remote info fixed chan");
 			err = -EINVAL;
 			break;
 		}
@@ -1787,7 +1787,7 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 			struct bt_l2cap_chan *connless_chan;
 
 			if (buf->len < sizeof(uint16_t)) {
-				LOG_ERR("Invalid remote info connectionless MTU");
+				LOG_ERROR("Invalid remote info connectionless MTU");
 				err = -EINVAL;
 				break;
 			}
@@ -1837,13 +1837,13 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	uint16_t type;
 
 	if (buf->len < sizeof(*req)) {
-		LOG_ERR("Too small info req packet size");
+		LOG_ERROR("Too small info req packet size");
 		return -EINVAL;
 	}
 
 	rsp_buf = l2cap_br_create_pdu(&br_sig_pool, L2CAP_BR_INFO_TIMEOUT);
 	if (rsp_buf == NULL) {
-		LOG_ERR("Fail to response info req");
+		LOG_ERROR("Fail to response info req");
 		return -ENOBUFS;
 	}
 
@@ -2123,7 +2123,7 @@ static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_c
 		    (((br_chan_sig->info_feat_mask & L2CAP_FEAT_FC_MASK) == 0) ||
 		     ((L2CAP_EXTENDED_FEAT_MASK & L2CAP_FEAT_FC_MASK) == 0))) {
 			if (!br_chan->rx.optional) {
-				LOG_ERR("Invalid mode %u", br_chan->rx.mode);
+				LOG_ERROR("Invalid mode %u", br_chan->rx.mode);
 				return -ENOTSUP;
 			}
 
@@ -2136,7 +2136,7 @@ static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_c
 		    (((br_chan_sig->info_feat_mask & L2CAP_FEAT_RET_MASK) == 0) ||
 		     ((L2CAP_EXTENDED_FEAT_MASK & L2CAP_FEAT_RET_MASK) == 0))) {
 			if (!br_chan->rx.optional) {
-				LOG_ERR("Invalid mode %u", br_chan->rx.mode);
+				LOG_ERROR("Invalid mode %u", br_chan->rx.mode);
 				return -ENOTSUP;
 			}
 
@@ -2159,7 +2159,7 @@ static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_c
 		if (((br_chan_sig->info_feat_mask & L2CAP_FEAT_ENH_RET_MASK) == 0) ||
 		    ((L2CAP_EXTENDED_FEAT_MASK & L2CAP_FEAT_ENH_RET_MASK) == 0)) {
 			if (!br_chan->rx.optional) {
-				LOG_ERR("Invalid mode %u", br_chan->rx.mode);
+				LOG_ERROR("Invalid mode %u", br_chan->rx.mode);
 				return -ENOTSUP;
 			}
 
@@ -2172,7 +2172,7 @@ static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_c
 		if (((br_chan_sig->info_feat_mask & L2CAP_FEAT_STREAM_MASK) == 0) ||
 		    ((L2CAP_EXTENDED_FEAT_MASK & L2CAP_FEAT_STREAM_MASK) == 0)) {
 			if (!br_chan->rx.optional) {
-				LOG_ERR("Invalid mode %u", br_chan->rx.mode);
+				LOG_ERROR("Invalid mode %u", br_chan->rx.mode);
 				return -ENOTSUP;
 			}
 
@@ -2584,7 +2584,7 @@ void bt_l2cap_br_chan_set_state_debug(struct bt_l2cap_chan *chan,
 		}
 		break;
 	default:
-		LOG_ERR("%s()%d: unknown (%u) state was set", func, line, state);
+		LOG_ERROR("%s()%d: unknown (%u) state was set", func, line, state);
 		return;
 	}
 
@@ -2655,7 +2655,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	struct bt_l2cap_br_chan *br_chan;
 
 	if (buf->len < sizeof(*req)) {
-		LOG_ERR("Too small L2CAP conn req packet size");
+		LOG_ERROR("Too small L2CAP conn req packet size");
 		return;
 	}
 
@@ -2779,7 +2779,7 @@ static uint16_t l2cap_br_conf_rsp_opt_mtu(struct bt_l2cap_chan *chan, struct net
 
 	/* Core 4.2 [Vol 3, Part A, 5.1] MTU payload length */
 	if (len != sizeof(*opt_mtu)) {
-		LOG_ERR("Proposed MTU length %zu invalid", len);
+		LOG_ERROR("Proposed MTU length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -2818,7 +2818,7 @@ static uint16_t l2cap_br_conf_rsp_opt_flush_timeout(struct bt_l2cap_chan *chan, 
 	struct bt_l2cap_conf_opt_flush_timeout *opt_to;
 
 	if (len != sizeof(*opt_to)) {
-		LOG_ERR("qos frame length %zu invalid", len);
+		LOG_ERROR("qos frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -2831,7 +2831,7 @@ static uint16_t l2cap_br_conf_rsp_opt_flush_timeout(struct bt_l2cap_chan *chan, 
 
 	if (opt_to->timeout == 0) {
 		/* 0 is illegal value */
-		LOG_ERR("Flush timeout cannot be 0");
+		LOG_ERROR("Flush timeout cannot be 0");
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -2869,7 +2869,7 @@ static uint16_t l2cap_br_conf_rsp_opt_qos(struct bt_l2cap_chan *chan, struct net
 	}
 
 	if (len != sizeof(*opt_qos)) {
-		LOG_ERR("qos frame length %zu invalid", len);
+		LOG_ERROR("qos frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -2910,7 +2910,7 @@ static uint16_t l2cap_br_conf_rsp_opt_ret_fc(struct bt_l2cap_chan *chan, struct 
 	bool accept = true;
 
 	if (len != sizeof(*opt_ret_fc)) {
-		LOG_ERR("ret_fc frame length %zu invalid", len);
+		LOG_ERROR("ret_fc frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3018,7 +3018,7 @@ static uint16_t l2cap_br_conf_rsp_opt_fcs(struct bt_l2cap_chan *chan, struct net
 	struct bt_l2cap_br_chan *br_chan;
 
 	if (len != sizeof(*opt_fcs)) {
-		LOG_ERR("fcs frame length %zu invalid", len);
+		LOG_ERROR("fcs frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3028,7 +3028,7 @@ static uint16_t l2cap_br_conf_rsp_opt_fcs(struct bt_l2cap_chan *chan, struct net
 	LOG_DBG("FCS type %u", opt_fcs->type);
 
 	if ((opt_fcs->type != BT_L2CAP_FCS_TYPE_NO) && (opt_fcs->type != BT_L2CAP_FCS_TYPE_16BIT)) {
-		LOG_ERR("fcs type %u invalid", opt_fcs->type);
+		LOG_ERROR("fcs type %u invalid", opt_fcs->type);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3042,7 +3042,7 @@ static uint16_t l2cap_br_conf_rsp_opt_fcs(struct bt_l2cap_chan *chan, struct net
 	case BT_L2CAP_BR_LINK_MODE_RET:
 		__fallthrough;
 	case BT_L2CAP_BR_LINK_MODE_FC:
-		LOG_ERR("fcs opt is mandatory in mode %u", br_chan->rx.mode);
+		LOG_ERROR("fcs opt is mandatory in mode %u", br_chan->rx.mode);
 		if (opt_fcs->type != BT_L2CAP_BR_FCS_16BIT) {
 			result = BT_L2CAP_CONF_UNACCEPT;
 			opt_fcs->type = BT_L2CAP_BR_FCS_16BIT;
@@ -3057,7 +3057,7 @@ static uint16_t l2cap_br_conf_rsp_opt_fcs(struct bt_l2cap_chan *chan, struct net
 		break;
 	default:
 		/* Should not have been here */
-		LOG_ERR("Unknown mode %u", br_chan->rx.mode);
+		LOG_ERROR("Unknown mode %u", br_chan->rx.mode);
 		break;
 	}
 
@@ -3076,7 +3076,7 @@ static uint16_t l2cap_br_conf_rsp_opt_ext_flow_spec(struct bt_l2cap_chan *chan, 
 	struct bt_l2cap_br_chan *br_chan;
 
 	if (len != sizeof(*ext_flow_spec)) {
-		LOG_ERR("fcs frame length %zu invalid", len);
+		LOG_ERROR("fcs frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3112,7 +3112,7 @@ static uint16_t l2cap_br_conf_rsp_opt_ext_win_size(struct bt_l2cap_chan *chan, s
 	uint16_t win_size;
 
 	if (len != sizeof(*opt_ext_win_size)) {
-		LOG_ERR("fcs frame length %zu invalid", len);
+		LOG_ERROR("fcs frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3155,7 +3155,7 @@ static uint16_t l2cap_br_conf_rsp_opt_ext_win_size(struct bt_l2cap_chan *chan, s
 		break;
 	default:
 		/* Should not have been here */
-		LOG_ERR("Unknown mode %u", br_chan->rx.mode);
+		LOG_ERROR("Unknown mode %u", br_chan->rx.mode);
 		break;
 	}
 
@@ -3181,7 +3181,7 @@ static int l2cap_br_conf_rsp_opt_check(struct bt_l2cap_chan *chan, uint16_t opt_
 		opt_len -= sizeof(*opt);
 
 		if (opt_len < opt->len) {
-			LOG_ERR("Received too short option data");
+			LOG_ERROR("Received too short option data");
 			return -EINVAL;
 		}
 
@@ -3273,7 +3273,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_mtu(struct bt_l2cap_chan *chan, s
 
 	/* Core 4.2 [Vol 3, Part A, 5.1] MTU payload length */
 	if (len != sizeof(*opt_mtu)) {
-		LOG_ERR("Proposed MTU length %zu invalid", len);
+		LOG_ERROR("Proposed MTU length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3311,7 +3311,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_flush_timeout(struct bt_l2cap_cha
 	struct bt_l2cap_conf_opt_flush_timeout *opt_to;
 
 	if (len != sizeof(*opt_to)) {
-		LOG_ERR("qos frame length %zu invalid", len);
+		LOG_ERROR("qos frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3348,7 +3348,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_qos(struct bt_l2cap_chan *chan, s
 	}
 
 	if (len != sizeof(*opt_qos)) {
-		LOG_ERR("qos frame length %zu invalid", len);
+		LOG_ERROR("qos frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3370,7 +3370,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_ret_fc(struct bt_l2cap_chan *chan
 	struct bt_l2cap_br_chan *br_chan;
 
 	if (len != sizeof(*opt_ret_fc)) {
-		LOG_ERR("ret_fc frame length %zu invalid", len);
+		LOG_ERROR("ret_fc frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3458,7 +3458,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_fcs(struct bt_l2cap_chan *chan, s
 	struct bt_l2cap_br_chan *br_chan;
 
 	if (len != sizeof(*opt_fcs)) {
-		LOG_ERR("fcs frame length %zu invalid", len);
+		LOG_ERROR("fcs frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3468,7 +3468,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_fcs(struct bt_l2cap_chan *chan, s
 	LOG_DBG("FCS type %u", opt_fcs->type);
 
 	if ((opt_fcs->type != BT_L2CAP_FCS_TYPE_NO) && (opt_fcs->type != BT_L2CAP_FCS_TYPE_16BIT)) {
-		LOG_ERR("fcs type %u invalid", opt_fcs->type);
+		LOG_ERROR("fcs type %u invalid", opt_fcs->type);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3481,7 +3481,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_fcs(struct bt_l2cap_chan *chan, s
 	case BT_L2CAP_BR_LINK_MODE_RET:
 		__fallthrough;
 	case BT_L2CAP_BR_LINK_MODE_FC:
-		LOG_ERR("fcs opt is mandatory in mode %u", br_chan->rx.mode);
+		LOG_ERROR("fcs opt is mandatory in mode %u", br_chan->rx.mode);
 		br_chan->rx.fcs = BT_L2CAP_BR_FCS_16BIT;
 		break;
 	case BT_L2CAP_BR_LINK_MODE_ERET:
@@ -3491,7 +3491,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_fcs(struct bt_l2cap_chan *chan, s
 		break;
 	default:
 		/* Should not have been here */
-		LOG_ERR("Unknown mode %u", br_chan->rx.mode);
+		LOG_ERROR("Unknown mode %u", br_chan->rx.mode);
 		break;
 	}
 
@@ -3506,7 +3506,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_ext_flow_spec(struct bt_l2cap_cha
 	struct bt_l2cap_conf_opt_ext_flow_spec *ext_flow_spec;
 
 	if (len != sizeof(*ext_flow_spec)) {
-		LOG_ERR("fcs frame length %zu invalid", len);
+		LOG_ERROR("fcs frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3530,7 +3530,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_ext_win_size(struct bt_l2cap_chan
 	uint16_t win_size;
 
 	if (len != sizeof(*opt_ext_win_size)) {
-		LOG_ERR("fcs frame length %zu invalid", len);
+		LOG_ERROR("fcs frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3563,7 +3563,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_ext_win_size(struct bt_l2cap_chan
 		break;
 	default:
 		/* Should not have been here */
-		LOG_ERR("Unknown mode %u", br_chan->rx.mode);
+		LOG_ERROR("Unknown mode %u", br_chan->rx.mode);
 		break;
 	}
 
@@ -3589,7 +3589,7 @@ static int l2cap_br_conf_rsp_unaccept_opt(struct bt_l2cap_chan *chan, uint16_t o
 		opt_len -= sizeof(*opt);
 
 		if (opt_len < opt->len) {
-			LOG_ERR("Received too short option data");
+			LOG_ERROR("Received too short option data");
 			return -EINVAL;
 		}
 
@@ -3676,7 +3676,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	int err;
 
 	if (buf->len < sizeof(*rsp)) {
-		LOG_ERR("Too small L2CAP conf rsp packet size");
+		LOG_ERROR("Too small L2CAP conf rsp packet size");
 		return;
 	}
 
@@ -3691,7 +3691,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 
 	chan = bt_l2cap_br_lookup_rx_cid(conn, scid);
 	if (!chan) {
-		LOG_ERR("channel mismatch!");
+		LOG_ERROR("channel mismatch!");
 		return;
 	}
 
@@ -3868,7 +3868,7 @@ static void l2cap_br_send_reject(struct bt_conn *conn, uint8_t ident, uint16_t r
 
 	buf = l2cap_br_create_pdu(&br_sig_pool, K_FOREVER);
 	if (buf == NULL) {
-		LOG_ERR("Fail to send reject packet");
+		LOG_ERROR("Fail to send reject packet");
 		/* Consider disconnect ACL here. */
 		return;
 	}
@@ -3900,7 +3900,7 @@ static uint16_t l2cap_br_conf_opt_mtu(struct bt_l2cap_chan *chan, struct net_buf
 
 	/* Core 4.2 [Vol 3, Part A, 5.1] MTU payload length */
 	if (len != sizeof(*opt_mtu)) {
-		LOG_ERR("tx MTU length %zu invalid", len);
+		LOG_ERROR("tx MTU length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3929,7 +3929,7 @@ static uint16_t l2cap_br_conf_opt_flush_timeout(struct bt_l2cap_chan *chan, stru
 	struct bt_l2cap_conf_opt_flush_timeout *opt_to;
 
 	if (len != sizeof(*opt_to)) {
-		LOG_ERR("qos frame length %zu invalid", len);
+		LOG_ERROR("qos frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3942,7 +3942,7 @@ static uint16_t l2cap_br_conf_opt_flush_timeout(struct bt_l2cap_chan *chan, stru
 
 	if (opt_to->timeout == 0) {
 		/* 0 is illegal value */
-		LOG_ERR("Flush timeout cannot be 0");
+		LOG_ERROR("Flush timeout cannot be 0");
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -3980,7 +3980,7 @@ static uint16_t l2cap_br_conf_opt_qos(struct bt_l2cap_chan *chan, struct net_buf
 	}
 
 	if (len != sizeof(*opt_qos)) {
-		LOG_ERR("qos frame length %zu invalid", len);
+		LOG_ERROR("qos frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -4024,7 +4024,7 @@ static uint16_t l2cap_br_conf_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_
 	uint8_t mode;
 
 	if (len != sizeof(*opt_ret_fc)) {
-		LOG_ERR("ret_fc frame length %zu invalid", len);
+		LOG_ERROR("ret_fc frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -4266,7 +4266,7 @@ static uint16_t l2cap_br_conf_opt_fcs(struct bt_l2cap_chan *chan, struct net_buf
 	}
 
 	if (len != sizeof(*opt_fcs)) {
-		LOG_ERR("fcs frame length %zu invalid", len);
+		LOG_ERROR("fcs frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -4276,7 +4276,7 @@ static uint16_t l2cap_br_conf_opt_fcs(struct bt_l2cap_chan *chan, struct net_buf
 	LOG_DBG("FCS type %u", opt_fcs->type);
 
 	if ((opt_fcs->type != BT_L2CAP_FCS_TYPE_NO) && (opt_fcs->type != BT_L2CAP_FCS_TYPE_16BIT)) {
-		LOG_ERR("fcs type %u invalid", opt_fcs->type);
+		LOG_ERROR("fcs type %u invalid", opt_fcs->type);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -4290,7 +4290,7 @@ static uint16_t l2cap_br_conf_opt_fcs(struct bt_l2cap_chan *chan, struct net_buf
 	case BT_L2CAP_BR_LINK_MODE_RET:
 		__fallthrough;
 	case BT_L2CAP_BR_LINK_MODE_FC:
-		LOG_ERR("fcs opt is mandatory in mode %u", br_chan->tx.mode);
+		LOG_ERROR("fcs opt is mandatory in mode %u", br_chan->tx.mode);
 		if (opt_fcs->type != BT_L2CAP_BR_FCS_16BIT) {
 			result = BT_L2CAP_CONF_UNACCEPT;
 			opt_fcs->type = BT_L2CAP_BR_FCS_16BIT;
@@ -4306,7 +4306,7 @@ static uint16_t l2cap_br_conf_opt_fcs(struct bt_l2cap_chan *chan, struct net_buf
 		break;
 	default:
 		/* Should not have been here */
-		LOG_ERR("Unknown mode %u", br_chan->tx.mode);
+		LOG_ERROR("Unknown mode %u", br_chan->tx.mode);
 		break;
 	}
 
@@ -4339,7 +4339,7 @@ static uint16_t l2cap_br_conf_opt_ext_flow_spec(struct bt_l2cap_chan *chan, stru
 	}
 
 	if (len != sizeof(*ext_flow_spec)) {
-		LOG_ERR("fcs frame length %zu invalid", len);
+		LOG_ERROR("fcs frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -4392,7 +4392,7 @@ static uint16_t l2cap_br_conf_opt_ext_win_size(struct bt_l2cap_chan *chan, struc
 	}
 
 	if (len != sizeof(*opt_ext_win_size)) {
-		LOG_ERR("fcs frame length %zu invalid", len);
+		LOG_ERROR("fcs frame length %zu invalid", len);
 		result = BT_L2CAP_CONF_REJECT;
 		goto done;
 	}
@@ -4438,7 +4438,7 @@ static uint16_t l2cap_br_conf_opt_ext_win_size(struct bt_l2cap_chan *chan, struc
 		break;
 	default:
 		/* Should not have been here */
-		LOG_ERR("Unknown mode %u", br_chan->tx.mode);
+		LOG_ERROR("Unknown mode %u", br_chan->tx.mode);
 		break;
 	}
 
@@ -4460,7 +4460,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	struct net_buf *rsp_buf;
 
 	if (buf->len < sizeof(*req)) {
-		LOG_ERR("Too small L2CAP conf req packet size");
+		LOG_ERROR("Too small L2CAP conf req packet size");
 		return;
 	}
 
@@ -4473,7 +4473,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 
 	chan = bt_l2cap_br_lookup_rx_cid(conn, dcid);
 	if (!chan) {
-		LOG_ERR("rx channel mismatch!");
+		LOG_ERROR("rx channel mismatch!");
 		struct bt_l2cap_cmd_reject_cid_data data = {
 			.scid = req->dcid,
 			.dcid = 0,
@@ -4520,7 +4520,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 
 		/* make sure opt object can get safe dereference in iteration */
 		if (opt_len < opt->len) {
-			LOG_ERR("Received too short option data");
+			LOG_ERROR("Received too short option data");
 			result = BT_L2CAP_CONF_REJECT;
 			break;
 		}
@@ -4675,7 +4675,7 @@ static void l2cap_br_disconn_req(struct bt_l2cap_br *l2cap, uint8_t ident, struc
 	uint16_t scid, dcid;
 
 	if (buf->len < sizeof(*req)) {
-		LOG_ERR("Too small disconn req packet size");
+		LOG_ERROR("Too small disconn req packet size");
 		return;
 	}
 
@@ -4786,7 +4786,7 @@ static void l2cap_br_disconn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struc
 	uint16_t dcid, scid;
 
 	if (buf->len < sizeof(*rsp)) {
-		LOG_ERR("Too small disconn rsp packet size");
+		LOG_ERROR("Too small disconn rsp packet size");
 		return;
 	}
 
@@ -4920,7 +4920,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct n
 	struct bt_l2cap_br_chan *br_chan;
 
 	if (buf->len < sizeof(*rsp)) {
-		LOG_ERR("Too small L2CAP conn rsp packet size");
+		LOG_ERROR("Too small L2CAP conn rsp packet size");
 		return;
 	}
 
@@ -4933,7 +4933,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct n
 
 	chan = bt_l2cap_br_lookup_rx_cid(conn, scid);
 	if (!chan) {
-		LOG_ERR("No scid 0x%04x channel found", scid);
+		LOG_ERROR("No scid 0x%04x channel found", scid);
 		return;
 	}
 
@@ -4993,7 +4993,7 @@ int bt_l2cap_br_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt
 	}
 
 	if (buf->len > br_chan->tx.mtu) {
-		LOG_ERR("attempt to send %u bytes on %u MTU chan", buf->len, br_chan->tx.mtu);
+		LOG_ERROR("attempt to send %u bytes on %u MTU chan", buf->len, br_chan->tx.mtu);
 		return -EMSGSIZE;
 	}
 
@@ -5129,7 +5129,7 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	while (buf->len > 0) {
 		if (buf->len < sizeof(*hdr)) {
-			LOG_ERR("Too small L2CAP signaling PDU");
+			LOG_ERROR("Too small L2CAP signaling PDU");
 			goto reject;
 		}
 
@@ -5139,12 +5139,12 @@ static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		LOG_DBG("Signaling code 0x%02x ident %u len %u", hdr->code, hdr->ident, len);
 
 		if (buf->len < len) {
-			LOG_ERR("L2CAP length is short (%u < %u)", buf->len, len);
+			LOG_ERROR("L2CAP length is short (%u < %u)", buf->len, len);
 			goto reject;
 		}
 
 		if (!hdr->ident) {
-			LOG_ERR("Invalid ident value in L2CAP PDU");
+			LOG_ERROR("Invalid ident value in L2CAP PDU");
 			(void)net_buf_pull_mem(buf, len);
 			continue;
 		}
@@ -5718,7 +5718,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 
 	if ((sar == BT_L2CAP_CONTROL_SAR_UNSEG) || (sar == BT_L2CAP_CONTROL_SAR_START)) {
 		if (br_chan->_sdu) {
-			LOG_ERR("Last SDU is not done");
+			LOG_ERROR("Last SDU is not done");
 			net_buf_unref(br_chan->_sdu);
 			br_chan->_sdu = NULL;
 			bt_l2cap_chan_disconnect(&br_chan->chan);
@@ -5739,7 +5739,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 	}
 
 	if (!br_chan->_sdu) {
-		LOG_ERR("Insufficient memory for SDU");
+		LOG_ERROR("Insufficient memory for SDU");
 		if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_FC) ||
 		    (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_STREAM)) {
 			return -ENOBUFS;
@@ -5749,7 +5749,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 	}
 
 	if ((br_chan->_sdu->len + seg->len) > br_chan->_sdu_len) {
-		LOG_ERR("SDU length mismatch");
+		LOG_ERROR("SDU length mismatch");
 		net_buf_unref(br_chan->_sdu);
 		br_chan->_sdu = NULL;
 		bt_l2cap_chan_disconnect(&br_chan->chan);
@@ -5760,7 +5760,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 	len = net_buf_append_bytes(br_chan->_sdu, seg->len, seg->data, K_NO_WAIT,
 				   l2cap_br_alloc_frag, br_chan);
 	if (len != seg->len) {
-		LOG_ERR("Unable to store SDU");
+		LOG_ERROR("Unable to store SDU");
 		net_buf_unref(br_chan->_sdu);
 		br_chan->_sdu = NULL;
 		bt_l2cap_chan_disconnect(&br_chan->chan);
@@ -5771,7 +5771,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 
 	if ((sar == BT_L2CAP_CONTROL_SAR_UNSEG) || (sar == BT_L2CAP_CONTROL_SAR_END)) {
 		if (br_chan->_sdu->len < br_chan->_sdu_len) {
-			LOG_ERR("SDU length mismatch");
+			LOG_ERROR("SDU length mismatch");
 			net_buf_unref(br_chan->_sdu);
 			br_chan->_sdu = NULL;
 			bt_l2cap_chan_disconnect(&br_chan->chan);
@@ -5788,7 +5788,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 		err = br_chan->chan.ops->recv(&br_chan->chan, buf);
 		if (err < 0) {
 			if (err != -EINPROGRESS) {
-				LOG_ERR("err %d", err);
+				LOG_ERROR("err %d", err);
 				bt_l2cap_chan_disconnect(&br_chan->chan);
 				net_buf_unref(buf);
 				return -ESHUTDOWN;
@@ -5999,7 +5999,7 @@ valid_frame:
 	err = br_chan->chan.ops->recv(&br_chan->chan, buf);
 	if (err < 0) {
 		if (err != -EINPROGRESS) {
-			LOG_ERR("err %d", err);
+			LOG_ERROR("err %d", err);
 			bt_l2cap_chan_disconnect(&br_chan->chan);
 		}
 		goto done;
@@ -6144,7 +6144,7 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 	uint16_t cid;
 
 	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Too small L2CAP PDU received");
+		LOG_ERROR("Too small L2CAP PDU received");
 		net_buf_unref(buf);
 		return;
 	}
@@ -6252,7 +6252,7 @@ static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		return 0;
 	}
 
-	LOG_ERR("No available L2CAP context for conn %p", conn);
+	LOG_ERROR("No available L2CAP context for conn %p", conn);
 
 	return -ENOMEM;
 }
@@ -6334,7 +6334,7 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
 	}
 
 	if (buf->len >= (L2CAP_BR_MIN_MTU - sizeof(*hdr))) {
-		LOG_ERR("attempt to send %u bytes on %u MTU chan", buf->len, L2CAP_BR_MIN_MTU);
+		LOG_ERROR("attempt to send %u bytes on %u MTU chan", buf->len, L2CAP_BR_MIN_MTU);
 		return -EMSGSIZE;
 	}
 
@@ -6342,18 +6342,18 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
 		/* Call `net_buf_reserve(buf, BT_L2CAP_BR_ECHO_REQ_RESERVE)`
 		 * when allocating buffers intended for bt_l2cap_br_echo_req().
 		 */
-		LOG_ERR("Not enough headroom in buf %p", buf);
+		LOG_ERROR("Not enough headroom in buf %p", buf);
 		return -EINVAL;
 	}
 
 	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
 	if (chan == NULL) {
-		LOG_ERR("Signaling Channel %u not found", BT_L2CAP_CID_BR_SIG);
+		LOG_ERROR("Signaling Channel %u not found", BT_L2CAP_CID_BR_SIG);
 		return -ENOTCONN;
 	}
 
 	if (BR_CHAN(chan)->ident) {
-		LOG_ERR("Waiting for ECHO RSP");
+		LOG_ERROR("Waiting for ECHO RSP");
 		return -EBUSY;
 	}
 
@@ -6391,7 +6391,7 @@ int bt_l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_bu
 	}
 
 	if (buf->len >= (L2CAP_BR_MIN_MTU - sizeof(*hdr))) {
-		LOG_ERR("attempt to send %u bytes on %u MTU chan", buf->len, L2CAP_BR_MIN_MTU);
+		LOG_ERROR("attempt to send %u bytes on %u MTU chan", buf->len, L2CAP_BR_MIN_MTU);
 		return -EMSGSIZE;
 	}
 
@@ -6399,13 +6399,13 @@ int bt_l2cap_br_echo_rsp(struct bt_conn *conn, uint8_t identifier, struct net_bu
 		/* Call `net_buf_reserve(buf, BT_L2CAP_BR_ECHO_RSP_RESERVE)`
 		 * when allocating buffers intended for bt_l2cap_br_echo_rsp().
 		 */
-		LOG_ERR("Not enough headroom in buf %p", buf);
+		LOG_ERROR("Not enough headroom in buf %p", buf);
 		return -EINVAL;
 	}
 
 	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SIG);
 	if (chan == NULL) {
-		LOG_ERR("Signaling Channel %u not found", BT_L2CAP_CID_BR_SIG);
+		LOG_ERROR("Signaling Channel %u not found", BT_L2CAP_CID_BR_SIG);
 		return -ENOTCONN;
 	}
 
@@ -6429,18 +6429,18 @@ int bt_l2cap_br_connless_register(struct bt_l2cap_br_connless_cb *cb)
 	}
 
 	if (cb->recv == NULL) {
-		LOG_ERR("Recv callback should not be NULL");
+		LOG_ERROR("Recv callback should not be NULL");
 		return -EINVAL;
 	}
 
 	/* PSM must be odd and lsb of upper byte must be 0 */
 	if ((cb->psm != 0) && (cb->psm & 0x0101) != 0x0001) {
-		LOG_ERR("PSM must be odd and lsb of upper byte must be 0");
+		LOG_ERROR("PSM must be odd and lsb of upper byte must be 0");
 		return -EINVAL;
 	}
 
 	if (cb->sec_level > BT_SECURITY_L4) {
-		LOG_ERR("Invalid security level %u", cb->sec_level);
+		LOG_ERROR("Invalid security level %u", cb->sec_level);
 		return -EINVAL;
 	}
 
@@ -6487,13 +6487,13 @@ int bt_l2cap_br_connless_send(struct bt_conn *conn, uint16_t psm, struct net_buf
 	uint16_t mtu;
 
 	if ((conn == NULL) || (buf == NULL)) {
-		LOG_ERR("Invalid parameters");
+		LOG_ERROR("Invalid parameters");
 		return -EINVAL;
 	}
 
 	/* PSM must be odd and lsb of upper byte must be 0 */
 	if ((psm & 0x0101) != 0x0001) {
-		LOG_ERR("Invalid PSM");
+		LOG_ERROR("Invalid PSM");
 		return -EINVAL;
 	}
 
@@ -6508,25 +6508,25 @@ int bt_l2cap_br_connless_send(struct bt_conn *conn, uint16_t psm, struct net_buf
 		/* Call `net_buf_reserve(buf, BT_L2CAP_CONNLESS_RESERVE)`
 		 * when allocating buffers intended for bt_l2cap_br_connless_send().
 		 */
-		LOG_ERR("Not enough headroom in buf %p", buf);
+		LOG_ERROR("Not enough headroom in buf %p", buf);
 		return -EINVAL;
 	}
 
 	remote_features = bt_l2cap_br_get_remote_features(conn);
 	if ((remote_features & L2CAP_FEAT_CONNLESS_MASK) == 0) {
-		LOG_ERR("Remote device does not support connectionless reception");
+		LOG_ERROR("Remote device does not support connectionless reception");
 		return -ENOTSUP;
 	}
 
 	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_CONNLESS);
 	if (chan == NULL) {
-		LOG_ERR("Connectionless data channel %u not found", BT_L2CAP_CID_CONNLESS);
+		LOG_ERROR("Connectionless data channel %u not found", BT_L2CAP_CID_CONNLESS);
 		return -ENOTCONN;
 	}
 
 	mtu = BR_CHAN(chan)->tx.mtu - sizeof(psm);
 	if (buf->len > mtu) {
-		LOG_ERR("attempt to send %u bytes on %u MTU chan", buf->len, mtu);
+		LOG_ERROR("attempt to send %u bytes on %u MTU chan", buf->len, mtu);
 		return -EMSGSIZE;
 	}
 
@@ -6554,7 +6554,7 @@ static int l2cap_br_conless_recv(struct bt_l2cap_chan *chan, struct net_buf *buf
 	struct bt_l2cap_br_connless_cb *cb;
 
 	if (buf->len < sizeof(psm)) {
-		LOG_ERR("Invalid buffer length for connless receive");
+		LOG_ERROR("Invalid buffer length for connless receive");
 		return -EINVAL;
 	}
 

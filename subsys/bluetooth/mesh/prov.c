@@ -49,7 +49,7 @@ int bt_mesh_prov_reset_state(void)
 
 	err = bt_mesh_pub_key_gen();
 	if (err) {
-		LOG_ERR("Failed to generate public key (%d)", err);
+		LOG_ERROR("Failed to generate public key (%d)", err);
 		return err;
 	}
 	return 0;
@@ -432,7 +432,7 @@ static void prov_recv(const struct prov_bearer *bearer, void *cb_data,
 	LOG_DBG("type 0x%02x len %u", type, buf->len);
 
 	if (type >= ARRAY_SIZE(bt_mesh_prov_link.role->op)) {
-		LOG_ERR("Unknown provisioning PDU type 0x%02x", type);
+		LOG_ERROR("Unknown provisioning PDU type 0x%02x", type);
 		bt_mesh_prov_link.role->error(PROV_ERR_NVAL_PDU);
 		return;
 	}
@@ -452,7 +452,7 @@ static void prov_recv(const struct prov_bearer *bearer, void *cb_data,
 	}
 
 	if (buf->len != expected) {
-		LOG_ERR("Invalid length %u for type 0x%02x", buf->len, type);
+		LOG_ERROR("Invalid length %u for type 0x%02x", buf->len, type);
 		bt_mesh_prov_link.role->error(PROV_ERR_NVAL_FMT);
 		return;
 	}
@@ -536,7 +536,7 @@ void bt_mesh_prov_reset(void)
 int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 {
 	if (!prov_info) {
-		LOG_ERR("No provisioning context provided");
+		LOG_ERROR("No provisioning context provided");
 		return -EINVAL;
 	}
 

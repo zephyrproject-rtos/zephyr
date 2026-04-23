@@ -87,7 +87,7 @@ static int regulator_mspm0_vref_set_voltage(const struct device *dev, int32_t mi
 	} else if (min_uv <= VREF_1_4V && max_uv >= VREF_1_4V) {
 		volt_set = VREF_1_4V;
 	} else {
-		LOG_ERR("Invalid voltage range !!");
+		LOG_ERROR("Invalid voltage range !!");
 		return -EINVAL;
 	}
 
@@ -195,7 +195,7 @@ static int regulator_mspm0_vref_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->vref_pin, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Pinctrl apply state Failed");
+		LOG_ERROR("Pinctrl apply state Failed");
 		return ret;
 	}
 
@@ -207,7 +207,7 @@ static int regulator_mspm0_vref_init(const struct device *dev)
 
 	ret = regulator_common_init(dev, false);
 	if (ret) {
-		LOG_ERR("Regulator common init Failed");
+		LOG_ERROR("Regulator common init Failed");
 		return ret;
 	}
 

@@ -177,7 +177,7 @@ static int phy_mc_vsc8541_reset(const struct device *dev)
 #if CONFIG_PHY_VERIFY_DEVICE_IDENTIFICATION
 	/* confirm phy organizationally unique identifier, if enabled */
 	if (phy_mc_vsc8541_verify_phy_id(dev) < 0) {
-		LOG_ERR("failed to verify phy id");
+		LOG_ERROR("failed to verify phy id");
 		return -EINVAL;
 	}
 #endif
@@ -204,7 +204,7 @@ static int phy_mc_vsc8541_reset(const struct device *dev)
 			return ret;
 		}
 		if (count++ > 1000) {
-			LOG_ERR("phy reset timed out");
+			LOG_ERROR("phy reset timed out");
 			return -ETIMEDOUT;
 		}
 	} while ((reg & MII_BMCR_RESET) != 0U);
@@ -306,7 +306,7 @@ static int phy_mc_vsc8541_init(const struct device *dev)
 	/* Reset PHY */
 	ret = phy_mc_vsc8541_reset(dev);
 	if (ret < 0) {
-		LOG_ERR("initialize failed");
+		LOG_ERROR("initialize failed");
 		return ret;
 	}
 

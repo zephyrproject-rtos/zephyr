@@ -36,7 +36,7 @@ static int max31790_init(const struct device *dev)
 	uint8_t reg_value;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 
@@ -63,7 +63,7 @@ static int max31790_init(const struct device *dev)
 	}
 
 	if ((reg_value & MAX37190_GLOBALCONFIGURATION_STANDBY_BIT) != 0) {
-		LOG_ERR("PWM controller is still in standby");
+		LOG_ERROR("PWM controller is still in standby");
 		return -ENODEV;
 	}
 

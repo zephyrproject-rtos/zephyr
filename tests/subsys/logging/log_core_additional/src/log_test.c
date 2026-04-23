@@ -289,7 +289,7 @@ ZTEST(test_log_core_additional, test_log_early_logging)
 
 		LOG_INF("log info before backend active");
 		LOG_WRN("log warn before backend active");
-		LOG_ERR("log error before backend active");
+		LOG_ERROR("log error before backend active");
 
 		TC_PRINT("Activate backend with context\n");
 		memset(&backend1_cb, 0, sizeof(backend1_cb));
@@ -324,7 +324,7 @@ ZTEST(test_log_core_additional, test_log_severity)
 
 	LOG_INF("info message");
 	LOG_WRN("warning message");
-	LOG_ERR("error message");
+	LOG_ERROR("error message");
 	backend1_cb.total_logs = 3;
 
 	while (log_test_process()) {
@@ -436,7 +436,7 @@ ZTEST(test_log_core_additional, test_log_thread)
 
 	LOG_INF("log info to log thread");
 	LOG_WRN("log warning to log thread");
-	LOG_ERR("log error to log thread");
+	LOG_ERROR("log error to log thread");
 
 	zassert_true(log_data_pending());
 
@@ -468,7 +468,7 @@ ZTEST(test_log_core_additional, test_log_thread_trigger)
 
 	LOG_INF("log info to log thread");
 	LOG_WRN("log warning to log thread");
-	LOG_ERR("log error to log thread");
+	LOG_ERROR("log error to log thread");
 
 	zassert_true(log_data_pending());
 

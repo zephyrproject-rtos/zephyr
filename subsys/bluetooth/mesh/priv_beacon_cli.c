@@ -137,7 +137,7 @@ const struct bt_mesh_model_op bt_mesh_priv_beacon_cli_op[] = {
 static int priv_beacon_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
-		LOG_ERR("Private Beacon Client only allowed in primary element");
+		LOG_ERROR("Private Beacon Client only allowed in primary element");
 		return -EINVAL;
 	}
 

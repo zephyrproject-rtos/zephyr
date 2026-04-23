@@ -127,7 +127,7 @@ static void *uac2_get_recv_buf(const struct device *dev, uint8_t terminal,
 		__ASSERT_NO_MSG(size <= MAX_BLOCK_SIZE);
 
 		if (!ctx->headphones_enabled) {
-			LOG_ERR("Buffer request on disabled terminal");
+			LOG_ERROR("Buffer request on disabled terminal");
 			return NULL;
 		}
 

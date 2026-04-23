@@ -33,13 +33,13 @@ static int scmi_mbox_send_message(const struct device *transport,
 
 	ret = scmi_shmem_write_message(mbox_chan->shmem, msg, use_polling);
 	if (ret < 0) {
-		LOG_ERR("failed to write message to shmem: %d", ret);
+		LOG_ERROR("failed to write message to shmem: %d", ret);
 		return ret;
 	}
 
 	ret = mbox_send_dt(&mbox_chan->tx, NULL);
 	if (ret < 0) {
-		LOG_ERR("failed to ring doorbell: %d", ret);
+		LOG_ERROR("failed to ring doorbell: %d", ret);
 		return ret;
 	}
 
@@ -88,13 +88,13 @@ static int scmi_mbox_setup_chan(const struct device *transport,
 
 	ret = mbox_register_callback_dt(tx_reply, scmi_mbox_cb, chan);
 	if (ret < 0) {
-		LOG_ERR("failed to register tx reply cb");
+		LOG_ERROR("failed to register tx reply cb");
 		return ret;
 	}
 
 	ret = mbox_set_enabled_dt(tx_reply, true);
 	if (ret < 0) {
-		LOG_ERR("failed to enable tx reply dbell");
+		LOG_ERROR("failed to enable tx reply dbell");
 	}
 
 	return 0;

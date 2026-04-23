@@ -81,7 +81,7 @@ static int auxdisplay_itron_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(config->uart)) {
-		LOG_ERR("UART device not ready");
+		LOG_ERROR("UART device not ready");
 		return -ENODEV;
 	}
 
@@ -90,7 +90,7 @@ static int auxdisplay_itron_init(const struct device *dev)
 		rc = gpio_pin_configure_dt(&config->busy_gpio, GPIO_INPUT);
 
 		if (rc < 0) {
-			LOG_ERR("Configuration of text display busy GPIO failed: %d", rc);
+			LOG_ERROR("Configuration of text display busy GPIO failed: %d", rc);
 			return rc;
 		}
 
@@ -104,7 +104,7 @@ static int auxdisplay_itron_init(const struct device *dev)
 		rc = gpio_add_callback(config->busy_gpio.port, &data->busy_wait_callback);
 
 		if (rc != 0) {
-			LOG_ERR("Configuration of busy interrupt failed: %d", rc);
+			LOG_ERROR("Configuration of busy interrupt failed: %d", rc);
 			return rc;
 		}
 #endif
@@ -114,7 +114,7 @@ static int auxdisplay_itron_init(const struct device *dev)
 	if (config->reset_gpio.port) {
 		rc = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
 		if (rc < 0) {
-			LOG_ERR("Configuration of text display reset GPIO failed");
+			LOG_ERROR("Configuration of text display reset GPIO failed");
 			return rc;
 		}
 	}
@@ -338,7 +338,7 @@ static int send_cmd(const struct device *dev, const uint8_t *command, uint8_t le
 	rc = gpio_pin_interrupt_configure_dt(&config->busy_gpio, GPIO_INT_EDGE_TO_INACTIVE);
 
 	if (rc != 0) {
-		LOG_ERR("Failed to enable busy interrupt: %d", rc);
+		LOG_ERROR("Failed to enable busy interrupt: %d", rc);
 		goto end;
 	}
 #endif

@@ -88,7 +88,7 @@ static void target_failed(struct bt_mesh_dfu_cli *cli,
 {
 	target->status = status;
 
-	LOG_ERR("Target 0x%04x failed: %u", target->blob.addr, status);
+	LOG_ERROR("Target 0x%04x failed: %u", target->blob.addr, status);
 
 	/* Invalidate blob status to prevent the target from being included in
 	 * future sending:
@@ -207,7 +207,7 @@ static void blob_caps(struct bt_mesh_blob_cli *b,
 
 	err = bt_mesh_blob_cli_send(b, b->inputs, &cli->xfer.blob, cli->xfer.io);
 	if (err) {
-		LOG_ERR("Starting BLOB xfer failed: %d", err);
+		LOG_ERROR("Starting BLOB xfer failed: %d", err);
 		dfu_failed(cli, BT_MESH_DFU_ERR_BLOB_XFER_BUSY);
 	}
 }
@@ -265,7 +265,7 @@ static void blob_end(struct bt_mesh_blob_cli *b,
 	}
 
 	if (cli->xfer.state != STATE_TRANSFER) {
-		LOG_ERR("Blob failed in invalid state %u", cli->xfer.state);
+		LOG_ERROR("Blob failed in invalid state %u", cli->xfer.state);
 		return;
 	}
 
@@ -313,7 +313,7 @@ static int tx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 
 	err = bt_mesh_model_send(mod, ctx, buf, cb, cli);
 	if (err) {
-		LOG_ERR("Send err: %d", err);
+		LOG_ERROR("Send err: %d", err);
 		if (cb) {
 			cb->end(err, cli);
 		}
@@ -501,20 +501,20 @@ static void transfer(struct bt_mesh_blob_cli *b)
 		cli->xfer.flags ^= FLAG_RESUME;
 		err = bt_mesh_blob_cli_resume(b);
 		if (err) {
-			LOG_ERR("Resuming BLOB xfer failed: %d", err);
+			LOG_ERROR("Resuming BLOB xfer failed: %d", err);
 			dfu_failed(cli, BT_MESH_DFU_ERR_BLOB_XFER_BUSY);
 		}
 	} else if (cli->xfer.flags & FLAG_SKIP_CAPS_GET) {
 		cli->xfer.flags ^= FLAG_SKIP_CAPS_GET;
 		err = bt_mesh_blob_cli_send(b, b->inputs, &cli->xfer.blob, cli->xfer.io);
 		if (err) {
-			LOG_ERR("Starting BLOB xfer failed: %d", err);
+			LOG_ERROR("Starting BLOB xfer failed: %d", err);
 			dfu_failed(cli, BT_MESH_DFU_ERR_BLOB_XFER_BUSY);
 		}
 	} else {
 		err = bt_mesh_blob_cli_caps_get(&cli->blob, cli->blob.inputs);
 		if (err) {
-			LOG_ERR("Failed starting blob xfer: %d", err);
+			LOG_ERROR("Failed starting blob xfer: %d", err);
 			dfu_failed(cli, BT_MESH_DFU_ERR_BLOB_XFER_BUSY);
 		}
 	}
@@ -971,7 +971,7 @@ static int dfu_cli_init(const struct bt_mesh_model *mod)
 		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_BLOB_CLI);
 
 	if (blob_cli == NULL) {
-		LOG_ERR("Missing BLOB Cli.");
+		LOG_ERROR("Missing BLOB Cli.");
 		return -EINVAL;
 	}
 

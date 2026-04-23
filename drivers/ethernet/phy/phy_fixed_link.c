@@ -63,7 +63,7 @@ static int phy_mii_fixed_init(const struct device *dev)
 		/* Issue a hard reset */
 		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure RST pin (%d)", ret);
+			LOG_ERROR("Failed to configure RST pin (%d)", ret);
 			return ret;
 		}
 
@@ -72,7 +72,7 @@ static int phy_mii_fixed_init(const struct device *dev)
 
 		ret = gpio_pin_set_dt(&cfg->reset_gpio, 0);
 		if (ret < 0) {
-			LOG_ERR("Failed to de-assert RST pin (%d)", ret);
+			LOG_ERROR("Failed to de-assert RST pin (%d)", ret);
 			return ret;
 		}
 

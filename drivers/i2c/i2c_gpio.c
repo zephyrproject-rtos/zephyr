@@ -115,7 +115,7 @@ static int i2c_gpio_get_config(const struct device *dev, uint32_t *config)
 
 	rc = i2c_bitbang_get_config(&context->bitbang, config);
 	if (rc < 0) {
-		LOG_ERR("I2C controller not configured: %d", rc);
+		LOG_ERROR("I2C controller not configured: %d", rc);
 	}
 
 	k_mutex_unlock(&context->mutex);
@@ -171,7 +171,7 @@ static int i2c_gpio_init(const struct device *dev)
 	int err;
 
 	if (!gpio_is_ready_dt(&config->scl_gpio)) {
-		LOG_ERR("SCL GPIO device not ready");
+		LOG_ERROR("SCL GPIO device not ready");
 		return -ENODEV;
 	}
 
@@ -184,12 +184,12 @@ static int i2c_gpio_init(const struct device *dev)
 	err = gpio_pin_configure_dt(&config->scl_gpio, GPIO_OUTPUT_HIGH);
 #endif
 	if (err) {
-		LOG_ERR("failed to configure SCL GPIO pin (err %d)", err);
+		LOG_ERROR("failed to configure SCL GPIO pin (err %d)", err);
 		return err;
 	}
 
 	if (!gpio_is_ready_dt(&config->sda_gpio)) {
-		LOG_ERR("SDA GPIO device not ready");
+		LOG_ERROR("SDA GPIO device not ready");
 		return -ENODEV;
 	}
 
@@ -200,7 +200,7 @@ static int i2c_gpio_init(const struct device *dev)
 					    GPIO_OUTPUT_HIGH);
 	}
 	if (err) {
-		LOG_ERR("failed to configure SDA GPIO pin (err %d)", err);
+		LOG_ERROR("failed to configure SDA GPIO pin (err %d)", err);
 		return err;
 	}
 
@@ -210,13 +210,13 @@ static int i2c_gpio_init(const struct device *dev)
 	err = i2c_bitbang_configure(&context->bitbang,
 				    I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (err) {
-		LOG_ERR("failed to configure I2C bitbang (err %d)", err);
+		LOG_ERROR("failed to configure I2C bitbang (err %d)", err);
 		return err;
 	}
 
 	err = k_mutex_init(&context->mutex);
 	if (err) {
-		LOG_ERR("Failed to create the i2c lock mutex : %d", err);
+		LOG_ERROR("Failed to create the i2c lock mutex : %d", err);
 		return err;
 	}
 

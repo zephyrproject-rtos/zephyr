@@ -68,7 +68,7 @@ void sim7080_rssi_query_work(struct k_work *work)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), send_cmd,
 				 &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT+CSQ ret:%d", ret);
+		LOG_ERROR("AT+CSQ ret:%d", ret);
 	}
 
 	if (work) {
@@ -118,7 +118,7 @@ int sim7080_pdp_activate(void)
 					   ARRAY_SIZE(band_setup_cmds), &mdata.sem_response,
 					   MDM_REGISTRATION_TIMEOUT);
 	if (ret != 0) {
-		LOG_ERR("Failed to send band setup commands");
+		LOG_ERROR("Failed to send band setup commands");
 		goto error;
 	}
 
@@ -133,7 +133,7 @@ int sim7080_pdp_activate(void)
 	}
 
 	if (mdata.mdm_rssi >= 0 || mdata.mdm_rssi <= -1000) {
-		LOG_ERR("No valid RSSI reached");
+		LOG_ERROR("No valid RSSI reached");
 		ret = -ENETUNREACH;
 		goto error;
 	}
@@ -144,7 +144,7 @@ int sim7080_pdp_activate(void)
 				 ARRAY_SIZE(cgatt_cmd), "AT+CGATT?", &mdata.sem_response,
 				 MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to query cgatt");
+		LOG_ERROR("Failed to query cgatt");
 		goto error;
 	}
 
@@ -155,7 +155,7 @@ int sim7080_pdp_activate(void)
 					 ARRAY_SIZE(cgatt_cmd), "AT+CGATT?", &mdata.sem_response,
 					 MDM_CMD_TIMEOUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to query cgatt");
+			LOG_ERROR("Failed to query cgatt");
 			goto error;
 		}
 
@@ -164,7 +164,7 @@ int sim7080_pdp_activate(void)
 
 	if ((mdata.status_flags & SIM7080_STATUS_FLAG_CPIN_READY) == 0 ||
 		(mdata.status_flags & SIM7080_STATUS_FLAG_ATTACHED) == 0) {
-		LOG_ERR("Fatal: Modem is not attached to GPRS network");
+		LOG_ERROR("Fatal: Modem is not attached to GPRS network");
 		ret = -ENETUNREACH;
 		goto error;
 	}
@@ -177,7 +177,7 @@ int sim7080_pdp_activate(void)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), buf,
 				 &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to query registration");
+		LOG_ERROR("Failed to query registration");
 		goto error;
 	}
 
@@ -189,7 +189,7 @@ int sim7080_pdp_activate(void)
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), buf,
 					 &mdata.sem_response, MDM_CMD_TIMEOUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to query registration");
+			LOG_ERROR("Failed to query registration");
 			goto error;
 		}
 	}
@@ -204,7 +204,7 @@ int sim7080_pdp_activate(void)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, "AT+CNCFG=0,0",
 				&mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure pdp context!");
+		LOG_ERROR("Could not configure pdp context!");
 		goto error;
 	}
 
@@ -214,14 +214,14 @@ int sim7080_pdp_activate(void)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, "AT+CNACT=0,1",
 				 &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Could not activate PDP context.");
+		LOG_ERROR("Could not activate PDP context.");
 		goto error;
 	}
 
 	k_sem_reset(&mdata.pdp_sem);
 	ret = k_sem_take(&mdata.pdp_sem, MDM_PDP_TIMEOUT);
 	if (ret < 0 || (mdata.status_flags & SIM7080_STATUS_FLAG_PDP_ACTIVE) == 0) {
-		LOG_ERR("Failed to activate PDP context.");
+		LOG_ERROR("Failed to activate PDP context.");
 		ret = -ENETUNREACH;
 		goto error;
 	}
@@ -248,14 +248,14 @@ int sim7080_pdp_deactivate(void)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, "AT+CNACT=0,0",
 				 &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Could not deactivate PDP context.");
+		LOG_ERROR("Could not deactivate PDP context.");
 		goto out;
 	}
 
 	k_sem_reset(&mdata.pdp_sem);
 	ret = k_sem_take(&mdata.pdp_sem, MDM_PDP_TIMEOUT);
 	if (ret < 0 || (mdata.status_flags & SIM7080_STATUS_FLAG_PDP_ACTIVE) != 0) {
-		LOG_ERR("PDP response timed out");
+		LOG_ERROR("PDP response timed out");
 		ret = -EIO;
 	}
 

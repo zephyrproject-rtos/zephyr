@@ -535,7 +535,7 @@ static int put_float(struct lwm2m_output_context *out,
 
 	ret = lwm2m_float_to_b64(value, b64, sizeof(b64));
 	if (ret < 0) {
-		LOG_ERR("float32 conversion error: %d", ret);
+		LOG_ERROR("float32 conversion error: %d", ret);
 		return ret;
 	}
 
@@ -592,7 +592,7 @@ static int get_number(struct lwm2m_input_context *in, int64_t *value,
 	}
 
 	if (tlv.length > max_len) {
-		LOG_ERR("invalid length: %u", tlv.length);
+		LOG_ERROR("invalid length: %u", tlv.length);
 		return -ENOMEM;
 	}
 
@@ -615,7 +615,7 @@ static int get_number(struct lwm2m_input_context *in, int64_t *value,
 		*value = (int64_t)sys_get_be64(temp);
 		break;
 	default:
-		LOG_ERR("invalid length: %u", tlv.length);
+		LOG_ERROR("invalid length: %u", tlv.length);
 		return -EBADMSG;
 	}
 
@@ -694,7 +694,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 	}
 
 	if (tlv.length != 4U && tlv.length != 8U) {
-		LOG_ERR("Invalid float length: %d", tlv.length);
+		LOG_ERROR("Invalid float length: %d", tlv.length);
 		return -EBADMSG;
 	}
 
@@ -712,8 +712,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 	}
 
 	if (ret < 0) {
-		LOG_ERR("binary%s conversion error: %d",
-			tlv.length == 4U ? "32" : "64", ret);
+		LOG_ERROR("binary%s conversion error: %d", tlv.length == 4U ? "32" : "64", ret);
 		return ret;
 	}
 
@@ -946,8 +945,8 @@ static int lwm2m_multi_resource_tlv_parse(struct lwm2m_message *msg,
 	while (pos < multi_resource_tlv->length &&
 	       (len2 = oma_tlv_get(&tlv_resource_instance, &msg->in, true))) {
 		if (tlv_resource_instance.type != OMA_TLV_TYPE_RESOURCE_INSTANCE) {
-			LOG_ERR("Multi resource id not supported %u %d", tlv_resource_instance.id,
-				tlv_resource_instance.length);
+			LOG_ERROR("Multi resource id not supported %u %d", tlv_resource_instance.id,
+				  tlv_resource_instance.length);
 			return -ENOTSUP;
 		}
 

@@ -146,7 +146,7 @@ static int mipi_dbi_bitbang_write_helper(const struct device *dev,
 		break;
 
 	default:
-		LOG_ERR("MIPI DBI mode %u is not supported.", dbi_config->mode);
+		LOG_ERROR("MIPI DBI mode %u is not supported.", dbi_config->mode);
 		ret = -ENOTSUP;
 	}
 
@@ -271,7 +271,7 @@ static int mipi_dbi_bitbang_init(const struct device *dev)
 
 	return ret;
 fail:
-	LOG_ERR("Failed to configure %s GPIO pin.", failed_pin);
+	LOG_ERROR("Failed to configure %s GPIO pin.", failed_pin);
 	return ret;
 }
 

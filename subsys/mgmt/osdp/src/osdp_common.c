@@ -65,7 +65,7 @@ void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 
 	dev = device_get_binding(CONFIG_OSDP_CRYPTO_DRV_NAME);
 	if (dev == NULL) {
-		LOG_ERR("Failed to get crypto dev binding!");
+		LOG_ERROR("Failed to get crypto dev binding!");
 		return;
 	}
 
@@ -74,22 +74,22 @@ void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 					 CRYPTO_CIPHER_ALGO_AES,
 					 CRYPTO_CIPHER_MODE_CBC,
 					 CRYPTO_CIPHER_OP_ENCRYPT)) {
-			LOG_ERR("Failed at cipher_begin_session");
+			LOG_ERROR("Failed at cipher_begin_session");
 			return;
 		}
 		if (cipher_cbc_op(&ctx, &encrypt, iv)) {
-			LOG_ERR("CBC ENCRYPT - Failed");
+			LOG_ERROR("CBC ENCRYPT - Failed");
 		}
 	} else {
 		if (cipher_begin_session(dev, &ctx,
 					 CRYPTO_CIPHER_ALGO_AES,
 					 CRYPTO_CIPHER_MODE_ECB,
 					 CRYPTO_CIPHER_OP_ENCRYPT)) {
-			LOG_ERR("Failed at cipher_begin_session");
+			LOG_ERROR("Failed at cipher_begin_session");
 			return;
 		}
 		if (cipher_block_op(&ctx, &encrypt)) {
-			LOG_ERR("ECB ENCRYPT - Failed");
+			LOG_ERROR("ECB ENCRYPT - Failed");
 		}
 	}
 	cipher_free_session(dev, &ctx);
@@ -112,7 +112,7 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 
 	dev = device_get_binding(CONFIG_OSDP_CRYPTO_DRV_NAME);
 	if (dev == NULL) {
-		LOG_ERR("Failed to get crypto dev binding!");
+		LOG_ERROR("Failed to get crypto dev binding!");
 		return;
 	}
 
@@ -121,22 +121,22 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 					 CRYPTO_CIPHER_ALGO_AES,
 					 CRYPTO_CIPHER_MODE_CBC,
 					 CRYPTO_CIPHER_OP_DECRYPT)) {
-			LOG_ERR("Failed at cipher_begin_session");
+			LOG_ERROR("Failed at cipher_begin_session");
 			return;
 		}
 		if (cipher_cbc_op(&ctx, &decrypt, iv)) {
-			LOG_ERR("CBC DECRYPT - Failed");
+			LOG_ERROR("CBC DECRYPT - Failed");
 		}
 	} else {
 		if (cipher_begin_session(dev, &ctx,
 					 CRYPTO_CIPHER_ALGO_AES,
 					 CRYPTO_CIPHER_MODE_ECB,
 					 CRYPTO_CIPHER_OP_DECRYPT)) {
-			LOG_ERR("Failed at cipher_begin_session");
+			LOG_ERROR("Failed at cipher_begin_session");
 			return;
 		}
 		if (cipher_block_op(&ctx, &decrypt)) {
-			LOG_ERR("ECB DECRYPT - Failed");
+			LOG_ERROR("ECB DECRYPT - Failed");
 		}
 	}
 	cipher_free_session(dev, &ctx);

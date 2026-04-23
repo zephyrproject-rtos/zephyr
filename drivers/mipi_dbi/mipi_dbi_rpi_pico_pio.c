@@ -421,7 +421,7 @@ static int mipi_dbi_pico_pio_write_helper(const struct device *dev,
 		break;
 
 	default:
-		LOG_ERR("MIPI DBI mode %u is not supported.", dbi_config->mode);
+		LOG_ERROR("MIPI DBI mode %u is not supported.", dbi_config->mode);
 		ret = -ENOTSUP;
 	}
 
@@ -471,14 +471,14 @@ static int mipi_dbi_pico_pio_init(const struct device *dev)
 
 	if (!gpio_is_ready_dt(&config->cmd_data) || !gpio_is_ready_dt(&config->cs) ||
 	    !gpio_is_ready_dt(&config->reset) || !gpio_is_ready_dt(&config->wr)) {
-		LOG_ERR("GPIO pin(s) not ready");
+		LOG_ERROR("GPIO pin(s) not ready");
 		ret = -EIO;
 		return ret;
 	}
 
 	ret = mipi_dbi_pio_configure(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure PIOs");
+		LOG_ERROR("Failed to configure PIOs");
 		return ret;
 	}
 
@@ -507,7 +507,7 @@ static int mipi_dbi_pico_pio_init(const struct device *dev)
 
 	return ret;
 fail:
-	LOG_ERR("Failed to configure %s GPIO pin.", failed_pin);
+	LOG_ERROR("Failed to configure %s GPIO pin.", failed_pin);
 	return ret;
 }
 

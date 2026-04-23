@@ -153,7 +153,7 @@ static uint8_t check_legacy_extended_call(uint16_t opcode, uint8_t *buffer_out)
 	if (IN_RANGE(opcode, BT_HCI_OP_LE_SET_ADV_PARAM, BT_HCI_OP_LE_CREATE_CONN)) {
 		if (extended_cmd_issued) {
 			allowed = false; /* Error */
-			LOG_ERR("Extended not allowed");
+			LOG_ERROR("Extended not allowed");
 		} else {
 			legacy_cmd_issued = true;
 			allowed = true; /* OK */
@@ -162,7 +162,7 @@ static uint8_t check_legacy_extended_call(uint16_t opcode, uint8_t *buffer_out)
 		   (opcode <= BT_HCI_OP_LE_READ_PER_ADV_LIST_SIZE)) {
 		if (legacy_cmd_issued) {
 			allowed = false; /* Error */
-			LOG_ERR("Legacy not allowed");
+			LOG_ERROR("Legacy not allowed");
 		} else {
 			extended_cmd_issued = true;
 			allowed = true; /* OK */
@@ -212,7 +212,7 @@ static uint16_t process_command(uint8_t *buffer, uint16_t buffer_in_length, uint
 	op_code = hdr->opcode;
 	ret_val = check_legacy_extended_call(op_code, buffer_out);
 	if (ret_val != 0) {
-		LOG_ERR("ret_val: %d", ret_val);
+		LOG_ERROR("ret_val: %d", ret_val);
 		return ret_val;
 	}
 
@@ -265,7 +265,7 @@ void send_event(uint8_t *buffer_out, uint16_t buffer_out_length, int8_t overflow
 		LOG_DBG("New event %p len %u type %u", buf, buf->len, buf->data[0]);
 		hci->recv(dev, buf);
 	} else {
-		LOG_ERR("Buf is null");
+		LOG_ERROR("Buf is null");
 	}
 }
 
@@ -407,7 +407,7 @@ static struct net_buf *get_rx(uint8_t *msg)
 
 		len = sizeof(struct bt_hci_evt_hdr) + msg[EVT_HEADER_SIZE];
 		if (len > net_buf_tailroom(buf)) {
-			LOG_ERR("Event too long: %d", len);
+			LOG_ERROR("Event too long: %d", len);
 			net_buf_unref(buf);
 			return NULL;
 		}
@@ -420,7 +420,7 @@ static struct net_buf *get_rx(uint8_t *msg)
 		memcpy(&acl_hdr, &msg[1], sizeof(acl_hdr));
 		len = sizeof(acl_hdr) + sys_le16_to_cpu(acl_hdr.len);
 		if (len > net_buf_tailroom(buf)) {
-			LOG_ERR("ACL too long: %d", len);
+			LOG_ERROR("ACL too long: %d", len);
 			net_buf_unref(buf);
 			return NULL;
 		}
@@ -434,18 +434,18 @@ static struct net_buf *get_rx(uint8_t *msg)
 			memcpy(&iso_hdr, &msg[1], sizeof(iso_hdr));
 			len = sizeof(iso_hdr) + sys_le16_to_cpu(iso_hdr.len);
 		} else {
-			LOG_ERR("No available ISO buffers!");
+			LOG_ERROR("No available ISO buffers!");
 			return NULL;
 		}
 		if (len > net_buf_tailroom(buf)) {
-			LOG_ERR("ISO too long: %d", len);
+			LOG_ERROR("ISO too long: %d", len);
 			net_buf_unref(buf);
 			return NULL;
 		}
 		net_buf_add_mem(buf, &msg[1], len);
 		break;
 	default:
-		LOG_ERR("Unknown BT buf type %d", msg[0]);
+		LOG_ERROR("Unknown BT buf type %d", msg[0]);
 		return NULL;
 	}
 
@@ -498,7 +498,7 @@ static int bt_hci_stm32wb0_send(const struct device *dev, struct net_buf *buf)
 		send_event(buffer_out_mem, 0, 0);
 		break;
 	default:
-		LOG_ERR("Unsupported type");
+		LOG_ERROR("Unsupported type");
 		return -EINVAL;
 	}
 	net_buf_unref(buf);
@@ -551,7 +551,7 @@ static int bt_hci_stm32wb0_open(const struct device *dev, bt_hci_recv_t recv)
 	HAL_PKA_Init(&hpka);
 	HW_PKA_Init();
 	if (BLE_STACK_Init(&BLE_STACK_InitParams)) {
-		LOG_ERR("BLE Init Failed....");
+		LOG_ERROR("BLE Init Failed....");
 		return -EIO;
 	}
 

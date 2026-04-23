@@ -369,16 +369,17 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  * @note This is an internal API. Do not use unless you are extending
  *       functionality in the Zephyr tree.
  */
-#define K_SYSCALL_VERIFY_MSG(expr, fmt, ...) ({ \
-	bool expr_copy = !(expr); \
-	if (expr_copy) { \
-		TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_SHADOW) \
-		LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL); \
-		TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_SHADOW) \
-		LOG_ERR("syscall %s failed check: " fmt, \
-			__func__, ##__VA_ARGS__); \
-	} \
-	expr_copy; })
+#define K_SYSCALL_VERIFY_MSG(expr, fmt, ...)                                                       \
+	({                                                                                         \
+		bool expr_copy = !(expr);                                                          \
+		if (expr_copy) {                                                                   \
+			TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_SHADOW)                        \
+			LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);                           \
+			TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_SHADOW)                         \
+			LOG_ERROR("syscall %s failed check: " fmt, __func__, ##__VA_ARGS__);       \
+		}                                                                                  \
+		expr_copy;                                                                         \
+	})
 
 /**
  * @brief Runtime expression check for system call arguments

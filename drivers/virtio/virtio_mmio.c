@@ -173,9 +173,9 @@ static int virtio_mmio_set_virtqueue(const struct device *dev, uint16_t virtqueu
 	uint16_t max_queue_size = virtio_mmio_read32(dev, VIRTIO_MMIO_QUEUE_SIZE_MAX);
 
 	if (max_queue_size < virtqueue->num) {
-		LOG_ERR("%s doesn't support queue %d bigger than %d, tried to set "
-			"one with size %d",
-			dev->name, virtqueue_n, max_queue_size, virtqueue->num);
+		LOG_ERROR("%s doesn't support queue %d bigger than %d, tried to set "
+			  "one with size %d",
+			  dev->name, virtqueue_n, max_queue_size, virtqueue->num);
 		return -EINVAL;
 	}
 
@@ -205,7 +205,7 @@ static int virtio_mmio_set_virtqueues(const struct device *dev, uint16_t queue_c
 
 	data->virtqueues = k_malloc(queue_count * sizeof(struct virtq));
 	if (!data->virtqueues) {
-		LOG_ERR("failed to allocate virtqueue array");
+		LOG_ERROR("failed to allocate virtqueue array");
 		return -ENOMEM;
 	}
 	data->virtqueue_count = queue_count;
@@ -278,21 +278,21 @@ static int virtio_mmio_init_common(const struct device *dev)
 	const uint32_t magic = virtio_mmio_read32(dev, VIRTIO_MMIO_MAGIC_VALUE);
 
 	if (magic != VIRTIO_MMIO_MAGIC) {
-		LOG_ERR("Invalid magic value %x", magic);
+		LOG_ERROR("Invalid magic value %x", magic);
 		return -EINVAL;
 	}
 
 	const uint32_t version = virtio_mmio_read32(dev, VIRTIO_MMIO_VERSION);
 
 	if (version != VIRTIO_MMIO_SUPPORTED_VERSION) {
-		LOG_ERR("Invalid version %x", version);
+		LOG_ERROR("Invalid version %x", version);
 		return -EINVAL;
 	}
 
 	const uint32_t dev_id = virtio_mmio_read32(dev, VIRTIO_MMIO_DEVICE_ID);
 
 	if (dev_id == VIRTIO_MMIO_INVALID_DEVICE_ID) {
-		LOG_ERR("Invalid device id %x", dev_id);
+		LOG_ERROR("Invalid device id %x", dev_id);
 		return -EINVAL;
 	}
 

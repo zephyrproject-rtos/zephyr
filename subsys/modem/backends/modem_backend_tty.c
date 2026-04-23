@@ -32,7 +32,7 @@ static void modem_backend_tty_routine(void *p1, void *p2, void *p3)
 		int ret = modem_backend_tty_poll_bottom(backend->tty_fd);
 
 		if (ret < 0) {
-			LOG_ERR("Poll operation failed");
+			LOG_ERROR("Poll operation failed");
 			break;
 		}
 

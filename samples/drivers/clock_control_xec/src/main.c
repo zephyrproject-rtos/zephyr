@@ -208,7 +208,7 @@ int main(void)
 	LOG_INF("XEC Clock control driver sample");
 
 	if (!device_is_ready(clkdev)) {
-		LOG_ERR("XEC clock control driver is not ready!");
+		LOG_ERROR("XEC clock control driver is not ready!");
 		return 0;
 	}
 
@@ -228,7 +228,7 @@ int main(void)
 		rate = 0U;
 		rc = clock_control_get_rate(clkdev, sys, &rate);
 		if (rc) {
-			LOG_ERR("API error: %d", rc);
+			LOG_ERROR("API error: %d", rc);
 		} else {
 			LOG_INF("rate = %u", rate);
 		}

@@ -136,7 +136,7 @@ static int qdec_s32_initialize(const struct device *dev)
 	pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 
 	if (Trgmux_Ip_Init(config->trgmux_config)) {
-		LOG_ERR("Could not initialize Trgmux");
+		LOG_ERROR("Could not initialize Trgmux");
 		return -EINVAL;
 	}
 
@@ -145,7 +145,7 @@ static int qdec_s32_initialize(const struct device *dev)
 		config->trgmux_config->paxLogicTrigger[0]->Output);
 
 	if (Lcu_Ip_Init(config->lcu_config)) {
-		LOG_ERR("Could not initialize Lcu");
+		LOG_ERROR("Could not initialize Lcu");
 		return -EINVAL;
 	}
 

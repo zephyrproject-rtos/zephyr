@@ -108,7 +108,7 @@ static void controller_rx_cb(uint8_t pkt_type, uint16_t src_id, uint8_t *param, 
 
 		buf = bflb_evt_alloc(BT_HCI_EVT_CMD_COMPLETE, sizeof(*cc) + param_len);
 		if (buf == NULL) {
-			LOG_ERR("No buf for cmd complete");
+			LOG_ERROR("No buf for cmd complete");
 			return;
 		}
 
@@ -126,7 +126,7 @@ static void controller_rx_cb(uint8_t pkt_type, uint16_t src_id, uint8_t *param, 
 
 		buf = bflb_evt_alloc(BT_HCI_EVT_CMD_STATUS, sizeof(*cs));
 		if (buf == NULL) {
-			LOG_ERR("No buf for cmd status");
+			LOG_ERROR("No buf for cmd status");
 			return;
 		}
 
@@ -269,7 +269,7 @@ static int bt_bflb_send(const struct device *dev, struct net_buf *buf)
 
 	ret = bt_onchiphci_send(pkt_type, dest_id, &pkt);
 	if (ret != 0) {
-		LOG_ERR("bt_onchiphci_send failed: %d", ret);
+		LOG_ERROR("bt_onchiphci_send failed: %d", ret);
 		ret = (ret < 0) ? ret : -EIO;
 	}
 
@@ -309,7 +309,7 @@ static int bt_bflb_open(const struct device *dev, bt_hci_recv_t recv)
 
 	hci_ret = bt_onchiphci_interface_init(controller_rx_cb);
 	if (hci_ret != 0) {
-		LOG_ERR("bt_onchiphci_interface_init failed: %u", hci_ret);
+		LOG_ERROR("bt_onchiphci_interface_init failed: %u", hci_ret);
 		bflb_controller_deinit();
 		return -EIO;
 	}

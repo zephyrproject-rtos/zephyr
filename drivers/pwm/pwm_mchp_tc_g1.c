@@ -103,8 +103,8 @@ static uint32_t tc_get_prescale_val(uint32_t prescaler)
 		break;
 	default:
 		prescaler_val = TC_CTRLA_PRESCALER_DIV1;
-		LOG_ERR("Unsupported prescaler specified in dts. Initialising with default "
-			"prescaler of DIV1");
+		LOG_ERROR("Unsupported prescaler specified in dts. Initialising with default "
+			  "prescaler of DIV1");
 		break;
 	}
 
@@ -132,26 +132,26 @@ static void tc_sync_wait(const void *pwm_reg, const uint32_t max_bit_width)
 	case BIT_MODE_8:
 		if ((WAIT_FOR((0 == (PWM_MODE8(pwm_reg)->TC_SYNCBUSY)), TIMEOUT_VALUE_US,
 			      k_busy_wait(DELAY_US))) == false) {
-			LOG_ERR("TC_SYNCBUSY8 reset timed out");
+			LOG_ERROR("TC_SYNCBUSY8 reset timed out");
 		}
 		break;
 
 	case BIT_MODE_16:
 		if ((WAIT_FOR((0 == (PWM_MODE16(pwm_reg)->TC_SYNCBUSY)), TIMEOUT_VALUE_US,
 			      k_busy_wait(DELAY_US))) == false) {
-			LOG_ERR("TC_SYNCBUSY16 reset timed out");
+			LOG_ERROR("TC_SYNCBUSY16 reset timed out");
 		}
 		break;
 
 	case BIT_MODE_32:
 		if ((WAIT_FOR((0 == (PWM_MODE32(pwm_reg)->TC_SYNCBUSY)), TIMEOUT_VALUE_US,
 			      k_busy_wait(DELAY_US))) == false) {
-			LOG_ERR("TC_SYNCBUSY32 reset timed out");
+			LOG_ERROR("TC_SYNCBUSY32 reset timed out");
 		}
 		break;
 
 	default:
-		LOG_ERR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
 		break;
 	}
 }
@@ -167,7 +167,7 @@ static int tc_reset_regs(const void *pwm_reg, const uint32_t max_bit_width)
 	bool slave_mode = check_slave_status(pwm_reg);
 
 	if (slave_mode == true) {
-		LOG_ERR("tc is in slave mode");
+		LOG_ERROR("tc is in slave mode");
 		return -EBUSY;
 	}
 
@@ -185,7 +185,7 @@ static int tc_reset_regs(const void *pwm_reg, const uint32_t max_bit_width)
 		break;
 
 	default:
-		LOG_ERR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
 		return -ENOTSUP;
 	}
 	LOG_DBG("%s invoked %d", __func__, max_bit_width);
@@ -205,7 +205,7 @@ static int32_t tc_enable(const void *pwm_reg, const uint32_t max_bit_width, bool
 	bool slave_mode = check_slave_status(pwm_reg);
 
 	if (slave_mode == true) {
-		LOG_ERR("tc is in slave mode");
+		LOG_ERROR("tc is in slave mode");
 		return -EBUSY;
 	}
 
@@ -236,7 +236,7 @@ static int32_t tc_enable(const void *pwm_reg, const uint32_t max_bit_width, bool
 		break;
 
 	default:
-		LOG_ERR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
 		return -ENOTSUP;
 	}
 	tc_sync_wait(pwm_reg, max_bit_width);
@@ -256,7 +256,7 @@ static int32_t tc_set_mode(const void *pwm_reg, const uint32_t max_bit_width)
 	bool slave_mode = check_slave_status(pwm_reg);
 
 	if (slave_mode == true) {
-		LOG_ERR("tc is in slave mode");
+		LOG_ERROR("tc is in slave mode");
 		return -EBUSY;
 	}
 
@@ -284,7 +284,7 @@ static int32_t tc_set_mode(const void *pwm_reg, const uint32_t max_bit_width)
 		break;
 
 	default:
-		LOG_ERR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
 		return -ENOTSUP;
 	}
 	tc_sync_wait(pwm_reg, max_bit_width);
@@ -309,7 +309,7 @@ static int32_t tc_set_pulse_buf(const void *pwm_reg, uint32_t max_bit_width, uin
 	bool slave_mode = check_slave_status(pwm_reg);
 
 	if (slave_mode == true) {
-		LOG_ERR("tc is in slave mode");
+		LOG_ERROR("tc is in slave mode");
 		return -EBUSY;
 	}
 
@@ -330,7 +330,7 @@ static int32_t tc_set_pulse_buf(const void *pwm_reg, uint32_t max_bit_width, uin
 		break;
 
 	default:
-		LOG_ERR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
 		return -ENOTSUP;
 	}
 
@@ -349,7 +349,7 @@ static int32_t tc_set_period(const void *pwm_reg, const uint32_t max_bit_width,
 	bool slave_mode = check_slave_status(pwm_reg);
 
 	if (slave_mode == true) {
-		LOG_ERR("tc is in slave mode");
+		LOG_ERROR("tc is in slave mode");
 		return -EBUSY;
 	}
 
@@ -367,7 +367,7 @@ static int32_t tc_set_period(const void *pwm_reg, const uint32_t max_bit_width,
 		break;
 
 	default:
-		LOG_ERR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
 		return -ENOTSUP;
 	}
 	tc_sync_wait(pwm_reg, max_bit_width);
@@ -387,7 +387,7 @@ static int32_t tc_set_period_buf(const void *pwm_reg, const uint32_t max_bit_wid
 	bool slave_mode = check_slave_status(pwm_reg);
 
 	if (slave_mode == true) {
-		LOG_ERR("tc is in slave mode");
+		LOG_ERROR("tc is in slave mode");
 		return -EBUSY;
 	}
 
@@ -405,7 +405,7 @@ static int32_t tc_set_period_buf(const void *pwm_reg, const uint32_t max_bit_wid
 		break;
 
 	default:
-		LOG_ERR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
 		return -ENOTSUP;
 	}
 	LOG_DBG("period %d bit:  set to %x", max_bit_width, period);
@@ -426,7 +426,7 @@ static int32_t tc_set_invert(const void *pwm_reg, const uint32_t max_bit_width, 
 	bool slave_mode = check_slave_status(pwm_reg);
 
 	if (slave_mode == true) {
-		LOG_ERR("tc is in slave mode");
+		LOG_ERROR("tc is in slave mode");
 		return -EBUSY;
 	}
 	uint32_t invert_mask = BIT(channel + TC_DRVCTRL_INVEN0_Pos);
@@ -460,7 +460,7 @@ static int32_t tc_set_invert(const void *pwm_reg, const uint32_t max_bit_width, 
 	default:
 		tc_enable(pwm_reg, max_bit_width, true);
 		tc_sync_wait(pwm_reg, max_bit_width);
-		LOG_ERR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
 		return -ENOTSUP;
 	}
 	tc_enable(pwm_reg, max_bit_width, true);
@@ -496,7 +496,7 @@ static bool tc_get_invert_status(const void *pwm_reg, const uint32_t max_bit_wid
 		break;
 
 	default:
-		LOG_ERR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
 		break;
 	}
 
@@ -516,7 +516,7 @@ static int32_t tc_set_prescaler(const void *pwm_reg, const uint32_t max_bit_widt
 	bool slave_mode = check_slave_status(pwm_reg);
 
 	if (slave_mode == true) {
-		LOG_ERR("tc is in slave mode");
+		LOG_ERROR("tc is in slave mode");
 		return -EBUSY;
 	}
 	prescaler = tc_get_prescale_val(prescaler);
@@ -543,7 +543,7 @@ static int32_t tc_set_prescaler(const void *pwm_reg, const uint32_t max_bit_widt
 		break;
 
 	default:
-		LOG_ERR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
 		return -ENOTSUP;
 	}
 	tc_sync_wait(pwm_reg, max_bit_width);
@@ -566,7 +566,7 @@ static int32_t tc_set_wave_type(const void *pwm_reg, const uint32_t max_bit_widt
 	bool slave_mode = check_slave_status(pwm_reg);
 
 	if (slave_mode == true) {
-		LOG_ERR("tc is in slave mode");
+		LOG_ERROR("tc is in slave mode");
 		return -EBUSY;
 	}
 
@@ -584,7 +584,7 @@ static int32_t tc_set_wave_type(const void *pwm_reg, const uint32_t max_bit_widt
 		break;
 
 	default:
-		LOG_ERR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported PWM mode %d", __func__, max_bit_width);
 		return -ENOTSUP;
 	}
 	tc_sync_wait(pwm_reg, max_bit_width);
@@ -660,29 +660,29 @@ static int pwm_mchp_set_cycles(const struct device *pwm_dev, uint32_t channel, u
 	if ((invert_flag_set == true) && (not_inverted == true)) {
 		ret_val = tc_set_invert(pwm_reg, max_bit_width, channel);
 		if (ret_val < 0) {
-			LOG_ERR("PWM peripheral busy");
+			LOG_ERROR("PWM peripheral busy");
 			return -EBUSY;
 		}
 	}
 
 	if (channel >= mchp_pwm_cfg->channels) {
-		LOG_ERR("channel %d is invalid", channel);
+		LOG_ERROR("channel %d is invalid", channel);
 		return -EINVAL;
 	}
 
 	if ((period > top) || (pulse > top)) {
-		LOG_ERR("period or pulse is out of range");
+		LOG_ERROR("period or pulse is out of range");
 		return -EINVAL;
 	}
 
 	ret_val = tc_set_pulse_buf(pwm_reg, max_bit_width, channel, pulse);
 	if (ret_val < 0) {
-		LOG_ERR("PWM peripheral busy");
+		LOG_ERROR("PWM peripheral busy");
 		return -EBUSY;
 	}
 	ret_val = tc_set_period_buf(pwm_reg, max_bit_width, period);
 	if (ret_val < 0) {
-		LOG_ERR("PWM peripheral busy");
+		LOG_ERROR("PWM peripheral busy");
 		return -EBUSY;
 	}
 	k_mutex_unlock(&mchp_pwm_data->lock);
@@ -699,7 +699,7 @@ static int pwm_mchp_get_cycles_per_sec(const struct device *pwm_dev, uint32_t ch
 	int ret_val;
 
 	if (channel >= (mchp_pwm_cfg->channels)) {
-		LOG_ERR("channel %d is invalid", channel);
+		LOG_ERROR("channel %d is invalid", channel);
 		return -EINVAL;
 	}
 	k_mutex_lock(&mchp_pwm_data->lock, MCHP_PWM_LOCK_TIMEOUT);
@@ -707,7 +707,7 @@ static int pwm_mchp_get_cycles_per_sec(const struct device *pwm_dev, uint32_t ch
 	ret_val = clock_control_get_rate(mchp_pwm_cfg->pwm_clock.clock_dev,
 					 mchp_pwm_cfg->pwm_clock.host_gclk, &periph_clk_freq);
 	if (ret_val < 0) {
-		LOG_ERR("clock get rate failed");
+		LOG_ERROR("clock get rate failed");
 		return ret_val;
 	}
 
@@ -729,13 +729,13 @@ static int pwm_mchp_init(const struct device *pwm_dev)
 	ret_val = clock_control_on(mchp_pwm_cfg->pwm_clock.clock_dev,
 				   mchp_pwm_cfg->pwm_clock.host_gclk);
 	if ((ret_val < 0) && (ret_val != -EALREADY)) {
-		LOG_ERR("Failed to enable the host_gclk for PWM: %d", ret_val);
+		LOG_ERROR("Failed to enable the host_gclk for PWM: %d", ret_val);
 		return ret_val;
 	}
 	ret_val = clock_control_on(mchp_pwm_cfg->pwm_clock.clock_dev,
 				   mchp_pwm_cfg->pwm_clock.host_mclk);
 	if ((ret_val < 0) && (ret_val != -EALREADY)) {
-		LOG_ERR("Failed to enable the host_mclk for PWM: %d", ret_val);
+		LOG_ERROR("Failed to enable the host_mclk for PWM: %d", ret_val);
 		return ret_val;
 	}
 	/* If the mode is 32 bit the turn on the clock of the client peripheral as well.
@@ -749,18 +749,18 @@ static int pwm_mchp_init(const struct device *pwm_dev)
 			ret_val = clock_control_on(mchp_pwm_cfg->pwm_clock.clock_dev,
 						   (mchp_pwm_cfg->pwm_clock.client_mclk));
 			if ((ret_val < 0) && (ret_val != -EALREADY)) {
-				LOG_ERR("Failed to enable the client_mclk: %d", ret_val);
+				LOG_ERROR("Failed to enable the client_mclk: %d", ret_val);
 				return ret_val;
 			}
 		} else {
-			LOG_ERR("Peripheral does not support 32 bit mode");
+			LOG_ERROR("Peripheral does not support 32 bit mode");
 			return -ENOTSUP;
 		}
 	}
 
 	ret_val = pinctrl_apply_state(mchp_pwm_cfg->pinctrl_config, PINCTRL_STATE_DEFAULT);
 	if (ret_val < 0) {
-		LOG_ERR("pincontrol apply state failed: %d", ret_val);
+		LOG_ERROR("pincontrol apply state failed: %d", ret_val);
 		return ret_val;
 	}
 	ret_val = tc_init(mchp_pwm_cfg);

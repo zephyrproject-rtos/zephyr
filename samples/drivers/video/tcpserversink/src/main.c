@@ -52,14 +52,14 @@ int configure_encoder(void)
 
 	encoder_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_videoenc));
 	if (!device_is_ready(encoder_dev)) {
-		LOG_ERR("%s: encoder video device not ready.", encoder_dev->name);
+		LOG_ERROR("%s: encoder video device not ready.", encoder_dev->name);
 		return -1;
 	}
 
 	/* Get capabilities */
 	caps.type = VIDEO_BUF_TYPE_OUTPUT;
 	if (video_get_caps(encoder_dev, &caps)) {
-		LOG_ERR("Unable to retrieve video capabilities");
+		LOG_ERROR("Unable to retrieve video capabilities");
 		return -1;
 	}
 
@@ -76,7 +76,7 @@ int configure_encoder(void)
 
 	caps.type = VIDEO_BUF_TYPE_INPUT;
 	if (video_get_caps(encoder_dev, &caps)) {
-		LOG_ERR("Unable to retrieve video capabilities");
+		LOG_ERROR("Unable to retrieve video capabilities");
 		return -1;
 	}
 
@@ -94,7 +94,7 @@ int configure_encoder(void)
 	/* Get default/native format */
 	fmt.type = VIDEO_BUF_TYPE_OUTPUT;
 	if (video_get_format(encoder_dev, &fmt)) {
-		LOG_ERR("Unable to retrieve video format");
+		LOG_ERROR("Unable to retrieve video format");
 		return -1;
 	}
 
@@ -119,26 +119,26 @@ int configure_encoder(void)
 
 	fmt.type = VIDEO_BUF_TYPE_OUTPUT;
 	if (video_set_format(encoder_dev, &fmt)) {
-		LOG_ERR("Unable to set format");
+		LOG_ERROR("Unable to set format");
 		return -1;
 	}
 
 	/* Alloc output buffer */
 	size = fmt.size;
 	if (size == 0) {
-		LOG_ERR("Encoder driver must set format size");
+		LOG_ERROR("Encoder driver must set format size");
 		return -1;
 	}
 
 	buffer = video_buffer_aligned_alloc(size, CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_NO_WAIT);
 	if (buffer == NULL) {
-		LOG_ERR("Unable to alloc compressed video buffer size=%d", size);
+		LOG_ERROR("Unable to alloc compressed video buffer size=%d", size);
 		return -1;
 	}
 
 	buffer->type = VIDEO_BUF_TYPE_OUTPUT;
 	if (video_enqueue(encoder_dev, buffer)) {
-		LOG_ERR("Unable to enqueue encoder output buf");
+		LOG_ERROR("Unable to enqueue encoder output buf");
 		return -1;
 	}
 
@@ -152,17 +152,17 @@ int configure_encoder(void)
 
 	fmt.type = VIDEO_BUF_TYPE_INPUT;
 	if (video_set_format(encoder_dev, &fmt)) {
-		LOG_ERR("Unable to set input format");
+		LOG_ERROR("Unable to set input format");
 		return -1;
 	}
 
 	/* Start video encoder */
 	if (video_stream_start(encoder_dev, VIDEO_BUF_TYPE_INPUT)) {
-		LOG_ERR("Unable to start video encoder (input)");
+		LOG_ERROR("Unable to start video encoder (input)");
 		return -1;
 	}
 	if (video_stream_start(encoder_dev, VIDEO_BUF_TYPE_OUTPUT)) {
-		LOG_ERR("Unable to start video encoder (output)");
+		LOG_ERROR("Unable to start video encoder (output)");
 		return -1;
 	}
 
@@ -176,20 +176,20 @@ int encode_frame(struct video_buffer *in, struct video_buffer **out)
 	in->type = VIDEO_BUF_TYPE_INPUT;
 	ret = video_enqueue(encoder_dev, in);
 	if (ret) {
-		LOG_ERR("Unable to enqueue encoder input buf");
+		LOG_ERROR("Unable to enqueue encoder input buf");
 		return ret;
 	}
 
 	(*out)->type = VIDEO_BUF_TYPE_OUTPUT;
 	ret = video_dequeue(encoder_dev, out, K_FOREVER);
 	if (ret) {
-		LOG_ERR("Unable to dequeue encoder output buf");
+		LOG_ERROR("Unable to dequeue encoder output buf");
 		return ret;
 	}
 
 	ret = video_dequeue(encoder_dev, &in, K_FOREVER);
 	if (ret) {
-		LOG_ERR("Unable to dequeue encoder input buf");
+		LOG_ERROR("Unable to dequeue encoder input buf");
 		return ret;
 	}
 
@@ -199,11 +199,11 @@ int encode_frame(struct video_buffer *in, struct video_buffer **out)
 void stop_encoder(void)
 {
 	if (video_stream_stop(encoder_dev, VIDEO_BUF_TYPE_OUTPUT)) {
-		LOG_ERR("Unable to stop encoder (output)");
+		LOG_ERROR("Unable to stop encoder (output)");
 	}
 
 	if (video_stream_stop(encoder_dev, VIDEO_BUF_TYPE_INPUT)) {
-		LOG_ERR("Unable to stop encoder (input)");
+		LOG_ERROR("Unable to stop encoder (input)");
 	}
 }
 #endif
@@ -241,7 +241,7 @@ int main(void)
 
 	video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 	if (!device_is_ready(video_dev)) {
-		LOG_ERR("%s: video device not ready.", video_dev->name);
+		LOG_ERROR("%s: video device not ready.", video_dev->name);
 		return 0;
 	}
 
@@ -252,20 +252,20 @@ int main(void)
 
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0) {
-		LOG_ERR("Failed to create TCP socket: %d", errno);
+		LOG_ERROR("Failed to create TCP socket: %d", errno);
 		return 0;
 	}
 
 	ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
 	if (ret < 0) {
-		LOG_ERR("Failed to bind TCP socket: %d", errno);
+		LOG_ERROR("Failed to bind TCP socket: %d", errno);
 		close(sock);
 		return 0;
 	}
 
 	ret = listen(sock, MAX_CLIENT_QUEUE);
 	if (ret < 0) {
-		LOG_ERR("Failed to listen on TCP socket: %d", errno);
+		LOG_ERROR("Failed to listen on TCP socket: %d", errno);
 		close(sock);
 		return 0;
 	}
@@ -273,7 +273,7 @@ int main(void)
 	/* Get capabilities */
 	caps.type = type;
 	if (video_get_caps(video_dev, &caps)) {
-		LOG_ERR("Unable to retrieve video capabilities");
+		LOG_ERROR("Unable to retrieve video capabilities");
 		return 0;
 	}
 
@@ -290,7 +290,7 @@ int main(void)
 	/* Get default/native format */
 	fmt.type = type;
 	if (video_get_format(video_dev, &fmt)) {
-		LOG_ERR("Unable to retrieve video format");
+		LOG_ERROR("Unable to retrieve video format");
 		return 0;
 	}
 
@@ -305,7 +305,7 @@ int main(void)
 	sel.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH;
 	sel.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT;
 	if (video_set_selection(video_dev, &sel)) {
-		LOG_ERR("Unable to set selection crop");
+		LOG_ERROR("Unable to set selection crop");
 		return 0;
 	}
 	LOG_INF("Selection crop set to (%u,%u)/%ux%u", sel.rect.left, sel.rect.top, sel.rect.width,
@@ -328,7 +328,7 @@ int main(void)
 	sel.target = VIDEO_SEL_TGT_CROP;
 	err = video_get_selection(video_dev, &sel);
 	if (err < 0 && err != -ENOSYS) {
-		LOG_ERR("Unable to get selection crop");
+		LOG_ERROR("Unable to get selection crop");
 		return 0;
 	}
 
@@ -340,7 +340,7 @@ int main(void)
 		sel.rect.height = fmt.height;
 		err = video_set_selection(video_dev, &sel);
 		if (err < 0 && err != -ENOSYS) {
-			LOG_ERR("Unable to set selection compose");
+			LOG_ERROR("Unable to set selection compose");
 			return 0;
 		}
 	}
@@ -354,7 +354,7 @@ int main(void)
 		fmt.height);
 
 	if (video_set_format(video_dev, &fmt)) {
-		LOG_ERR("Unable to set format");
+		LOG_ERROR("Unable to set format");
 		return 0;
 	}
 
@@ -414,7 +414,7 @@ int main(void)
 		buffers[i] = video_buffer_aligned_alloc(fmt.size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
 							K_NO_WAIT);
 		if (buffers[i] == NULL) {
-			LOG_ERR("Unable to alloc video buffer");
+			LOG_ERROR("Unable to alloc video buffer");
 			return 0;
 		}
 		buffers[i]->type = type;
@@ -428,7 +428,7 @@ int main(void)
 
 		client = accept(sock, (struct sockaddr *)&client_addr, &client_addr_len);
 		if (client < 0) {
-			LOG_ERR("Failed to accept: %d", errno);
+			LOG_ERROR("Failed to accept: %d", errno);
 			return 0;
 		}
 
@@ -436,7 +436,7 @@ int main(void)
 
 #if DT_HAS_CHOSEN(zephyr_videoenc)
 		if (configure_encoder()) {
-			LOG_ERR("Unable to configure video encoder");
+			LOG_ERROR("Unable to configure video encoder");
 			return 0;
 		}
 #endif
@@ -445,14 +445,14 @@ int main(void)
 		for (i = 0; i < ARRAY_SIZE(buffers); i++) {
 			ret = video_enqueue(video_dev, buffers[i]);
 			if (ret) {
-				LOG_ERR("Unable to enqueue video buf");
+				LOG_ERROR("Unable to enqueue video buf");
 				return 0;
 			}
 		}
 
 		/* Start video capture */
 		if (video_stream_start(video_dev, type)) {
-			LOG_ERR("Unable to start video");
+			LOG_ERROR("Unable to start video");
 			return 0;
 		}
 
@@ -464,7 +464,7 @@ int main(void)
 		do {
 			ret = video_dequeue(video_dev, &vbuf, K_FOREVER);
 			if (ret) {
-				LOG_ERR("Unable to dequeue video buf");
+				LOG_ERROR("Unable to dequeue video buf");
 				return 0;
 			}
 
@@ -474,7 +474,7 @@ int main(void)
 			vbuf->type = VIDEO_BUF_TYPE_INPUT;
 			ret = video_enqueue(video_dev, vbuf);
 			if (ret) {
-				LOG_ERR("Unable to enqueue video buf");
+				LOG_ERROR("Unable to enqueue video buf");
 				return 0;
 			}
 
@@ -487,7 +487,7 @@ int main(void)
 			vbuf_out->type = VIDEO_BUF_TYPE_OUTPUT;
 			ret = video_enqueue(encoder_dev, vbuf_out);
 			if (ret) {
-				LOG_ERR("Unable to enqueue encoder output buf");
+				LOG_ERROR("Unable to enqueue encoder output buf");
 				return 0;
 			}
 
@@ -500,13 +500,13 @@ int main(void)
 			vbuf->type = VIDEO_BUF_TYPE_INPUT;
 			ret = video_enqueue(video_dev, vbuf);
 			if (ret) {
-				LOG_ERR("Unable to enqueue video buf");
+				LOG_ERROR("Unable to enqueue video buf");
 				return 0;
 			}
 #endif
 			if (disconnected) {
 				/* client disconnected */
-				LOG_ERR("TCP: Client disconnected %d", ret);
+				LOG_ERROR("TCP: Client disconnected %d", ret);
 				close(client);
 			}
 
@@ -514,7 +514,7 @@ int main(void)
 
 		/* stop capture */
 		if (video_stream_stop(video_dev, type)) {
-			LOG_ERR("Unable to stop video");
+			LOG_ERROR("Unable to stop video");
 			return 0;
 		}
 

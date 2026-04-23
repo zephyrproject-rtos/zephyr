@@ -71,7 +71,7 @@ int set_socketoptions(struct lwm2m_ctx *ctx)
 				       sizeof(cid));
 		if (ret) {
 			ret = -errno;
-			LOG_ERR("Failed to enable TLS_DTLS_CID: %d", ret);
+			LOG_ERROR("Failed to enable TLS_DTLS_CID: %d", ret);
 		}
 
 		/* Allow DTLS handshake to timeout much faster.
@@ -191,7 +191,7 @@ static void rd_client_event(struct lwm2m_ctx *client,
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR:
-		LOG_ERR("LwM2M engine reported a network error.");
+		LOG_ERROR("LwM2M engine reported a network error.");
 		lwm2m_rd_client_stop(client, rd_client_event, true);
 		break;
 

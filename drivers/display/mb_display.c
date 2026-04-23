@@ -99,7 +99,7 @@ static int update_content(struct mb_display *disp, const struct mb_image *img)
 	}
 
 	if (ret < 0) {
-		LOG_ERR("Write to display controller failed");
+		LOG_ERROR("Write to display controller failed");
 		return ret;
 	}
 
@@ -117,7 +117,7 @@ static int start_image(struct mb_display *disp, const struct mb_image *img)
 
 	ret = display_blanking_off(disp->lm_dev);
 	if (ret < 0) {
-		LOG_ERR("Set blanking off failed");
+		LOG_ERROR("Set blanking off failed");
 		return ret;
 	}
 
@@ -136,7 +136,7 @@ static int reset_display(struct mb_display *disp)
 
 	ret = display_blanking_on(disp->lm_dev);
 	if (ret < 0) {
-		LOG_ERR("Set blanking on failed");
+		LOG_ERROR("Set blanking on failed");
 	}
 
 	return ret;
@@ -370,7 +370,7 @@ static int mb_display_init(struct mb_display *disp)
 	display_get_capabilities(disp->lm_dev, &caps);
 	if (caps.x_resolution != MB_DISP_XRES ||
 	    caps.y_resolution != MB_DISP_YRES) {
-		LOG_ERR("Not supported display resolution");
+		LOG_ERROR("Not supported display resolution");
 		return -ENOTSUP;
 	}
 
@@ -380,7 +380,7 @@ static int mb_display_init(struct mb_display *disp)
 
 	ret = display_set_brightness(disp->lm_dev, 0xFF);
 	if (ret < 0) {
-		LOG_ERR("Failed to set brightness");
+		LOG_ERROR("Failed to set brightness");
 		return ret;
 	}
 
@@ -401,7 +401,7 @@ static int mb_display_init_on_boot(void)
 
 	display.lm_dev = DEVICE_DT_GET_ONE(nordic_nrf_led_matrix);
 	if (!device_is_ready(display.lm_dev)) {
-		LOG_ERR("Display controller device not ready");
+		LOG_ERROR("Display controller device not ready");
 		return -ENODEV;
 	}
 

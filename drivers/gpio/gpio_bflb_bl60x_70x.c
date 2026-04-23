@@ -240,7 +240,7 @@ static int gpio_bflb_config(const struct device *dev, gpio_pin_t pin,
 	cfg_address = cfg->base_reg + GLB_GPIO_CFG_OFFSET(pin);
 	if (pin >= GPIO_BFLB_BL70X_PSRAM_START && pin <= GPIO_BFLB_BL70X_PSRAM_END) {
 		if ((flags & GPIO_INPUT) != 0) {
-			LOG_ERR("BL70x pins 23 to 28 are not capable of input");
+			LOG_ERROR("BL70x pins 23 to 28 are not capable of input");
 			return -EINVAL;
 		}
 		if (sys_read32(GLB_BASE + GLB_GPIO_USE_PSRAM__IO_OFFSET)

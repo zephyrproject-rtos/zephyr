@@ -311,7 +311,7 @@ static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
 
 	wrote = ring_buf_put(dev_data->rx_ringbuf, dev_data->rx_buf, size);
 	if (wrote < size) {
-		LOG_ERR("Ring buffer full, drop %zd bytes", size - wrote);
+		LOG_ERROR("Ring buffer full, drop %zd bytes", size - wrote);
 	}
 
 	dev_data->rx_ready = true;

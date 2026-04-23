@@ -410,8 +410,8 @@ static int ext2_mount(struct fs_mount_t *mountp)
 	}
 
 	if (fs->block_size % fs->write_size != 0) {
-		LOG_ERR("Blocks size isn't multiple of sector size. (bsz: %d, ssz: %d)",
-				fs->block_size, fs->write_size);
+		LOG_ERROR("Blocks size isn't multiple of sector size. (bsz: %d, ssz: %d)",
+			  fs->block_size, fs->write_size);
 		ret = -ENOTSUP;
 		goto err;
 	}
@@ -459,7 +459,7 @@ static int ext2_mkfs(uintptr_t dev_id, void *vcfg, int flags)
 
 	ret = ext2_init_storage(&fs, (const void *)dev_id, flags);
 	if (ret < 0) {
-		LOG_ERR("Initialization of %ld device failed (%d)", dev_id, ret);
+		LOG_ERROR("Initialization of %ld device failed (%d)", dev_id, ret);
 		goto out;
 	}
 
@@ -470,7 +470,7 @@ static int ext2_mkfs(uintptr_t dev_id, void *vcfg, int flags)
 	LOG_INF("Formatting the storage device");
 	ret = ext2_format(fs, cfg);
 	if (ret < 0) {
-		LOG_ERR("Format of %ld device failed (%d)", dev_id, ret);
+		LOG_ERROR("Format of %ld device failed (%d)", dev_id, ret);
 	}
 
 out:
@@ -672,7 +672,7 @@ static void automount_if_enabled(struct fs_mount_t *mountp)
 
 	ret = fs_mount(mountp);
 	if (ret < 0) {
-		LOG_ERR("Error mounting filesystem: at %s: %d", mountp->mnt_point, ret);
+		LOG_ERROR("Error mounting filesystem: at %s: %d", mountp->mnt_point, ret);
 	} else {
 		LOG_DBG("EXT2 Filesystem \"%s\" initialized", mountp->mnt_point);
 	}

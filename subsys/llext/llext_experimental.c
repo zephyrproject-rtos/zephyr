@@ -57,7 +57,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 	int ret;
 
 	if (!map) {
-		LOG_ERR("cannot allocate list of maps of %zu", sizeof(*map) * n_ext);
+		LOG_ERROR("cannot allocate list of maps of %zu", sizeof(*map) * n_ext);
 		return -ENOMEM;
 	}
 
@@ -71,8 +71,8 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 		/* Need to allocate individually, because that's how they're freed */
 		map[n_map] = llext_alloc_metadata(sizeof(**map) * ext[n_map]->sect_cnt);
 		if (!map[n_map]) {
-			LOG_ERR("cannot allocate section map of %zu",
-				sizeof(**map) * ext[n_map]->sect_cnt);
+			LOG_ERROR("cannot allocate section map of %zu",
+				  sizeof(**map) * ext[n_map]->sect_cnt);
 			ret = -ENOMEM;
 			goto free_map;
 		}
@@ -88,8 +88,8 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 
 	if (n_exp_tab) {
 		if (!exp_tab) {
-			LOG_ERR("cannot allocate list of exported symbol tables of %zu",
-				sizeof(*exp_tab) * n_exp_tab);
+			LOG_ERROR("cannot allocate list of exported symbol tables of %zu",
+				  sizeof(*exp_tab) * n_exp_tab);
 			ret = -ENOMEM;
 			goto free_map;
 		}
@@ -101,8 +101,8 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 
 				exp_tab[j] = llext_alloc_metadata(size);
 				if (!exp_tab[j]) {
-					LOG_ERR("cannot allocate exported symbol table of %zu",
-						size);
+					LOG_ERROR("cannot allocate exported symbol table of %zu",
+						  size);
 					ret = -ENOMEM;
 					goto free_sym;
 				}
@@ -117,7 +117,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 	for (i = 0, j = 0; i < n_ext; i++) {
 		next = llext_alloc_metadata(sizeof(*next));
 		if (!next) {
-			LOG_ERR("cannot allocate LLEXT of %zu", sizeof(*next));
+			LOG_ERROR("cannot allocate LLEXT of %zu", sizeof(*next));
 			ret = -ENOMEM;
 			goto free_llext;
 		}
@@ -150,7 +150,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 		for (j = 0; next->dependency[j] && j < ARRAY_SIZE(next->dependency); j++) {
 			if (next->dependency[j] < first || next->dependency[j] >= last) {
 				/* Inconsistency detected */
-				LOG_ERR("dependency out of range");
+				LOG_ERROR("dependency out of range");
 				ret = -EINVAL;
 				goto free_locked;
 			}
@@ -158,7 +158,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 			next->dependency[j] = llext_by_name(next->dependency[j]->name);
 			if (!next->dependency[j]) {
 				/* Bug in the algorithm */
-				LOG_ERR("dependency not found");
+				LOG_ERROR("dependency not found");
 				ret = -EFAULT;
 				goto free_locked;
 			}

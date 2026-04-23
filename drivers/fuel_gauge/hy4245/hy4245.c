@@ -45,7 +45,7 @@ static int hy4245_read16(const struct device *dev, uint8_t cmd, uint16_t *val)
 
 	ret = i2c_burst_read_dt(&cfg->i2c, cmd, buffer, sizeof(buffer));
 	if (ret != 0) {
-		LOG_ERR("Unable to read register, error %d", ret);
+		LOG_ERROR("Unable to read register, error %d", ret);
 		return ret;
 	}
 
@@ -125,20 +125,20 @@ static int hy4245_init(const struct device *dev)
 	cfg = dev->config;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
 	ret = i2c_write_read_dt(&cfg->i2c, cmd, sizeof(cmd),
 				&chip_id, sizeof(chip_id));
 	if (ret != 0) {
-		LOG_ERR("Unable to read register, error %d", ret);
+		LOG_ERROR("Unable to read register, error %d", ret);
 		return ret;
 	}
 
 	chip_id = sys_get_le16((const uint8_t *)&chip_id);
 	if (chip_id != HY4245_CHIPID) {
-		LOG_ERR("unknown chip id %x", chip_id);
+		LOG_ERROR("unknown chip id %x", chip_id);
 		return -ENODEV;
 	}
 

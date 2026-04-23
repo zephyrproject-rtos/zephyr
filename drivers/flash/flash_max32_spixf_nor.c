@@ -172,7 +172,7 @@ static int qspi_send_req(const struct device *dev, struct flash_max32_spixf_nor_
 	r = MXC_SPIXF_TransactionAsync(&req->req);
 
 	if (r < 0) {
-		LOG_ERR("Failed to send QSPI request (%d)", r);
+		LOG_ERROR("Failed to send QSPI request (%d)", r);
 		return -EIO;
 	}
 
@@ -197,7 +197,7 @@ static int qspi_read_access(const struct device *dev, uint8_t cmd, uint8_t *data
 
 	ret = qspi_send_req(dev, &req);
 	if (ret < 0) {
-		LOG_ERR("Failed to send read command (%d)", ret);
+		LOG_ERROR("Failed to send read command (%d)", ret);
 		return ret;
 	}
 
@@ -212,7 +212,7 @@ static int qspi_read_access(const struct device *dev, uint8_t cmd, uint8_t *data
 
 	ret = qspi_send_req(dev, &req);
 	if (ret < 0) {
-		LOG_ERR("Failed to read data (%d)", ret);
+		LOG_ERROR("Failed to read data (%d)", ret);
 	}
 
 	return ret;
@@ -303,7 +303,7 @@ static int qspi_read_jedec_id_priv(const struct device *dev, uint8_t *id)
 
 	ret = qspi_read_access(dev, JESD216_CMD_READ_ID, id, JESD216_READ_ID_LEN, dummy_cycles);
 	if (ret < 0) {
-		LOG_ERR("Failed to read ID (%d)", ret);
+		LOG_ERROR("Failed to read ID (%d)", ret);
 		return ret;
 	}
 
@@ -395,7 +395,7 @@ static int qspi_read_sfdp_priv(const struct device *dev, off_t addr, void *data,
 
 	ret = qspi_send_req(dev, &req);
 	if (ret < 0) {
-		LOG_ERR("Failed to send the read SFDP command (%d)", ret);
+		LOG_ERROR("Failed to send the read SFDP command (%d)", ret);
 		return ret;
 	}
 
@@ -411,7 +411,7 @@ static int qspi_read_sfdp_priv(const struct device *dev, off_t addr, void *data,
 
 	ret = qspi_send_req(dev, &req);
 	if (ret < 0) {
-		LOG_ERR("Failed to read SFDP data (%d)", ret);
+		LOG_ERROR("Failed to read SFDP data (%d)", ret);
 	}
 
 	return ret;
@@ -492,13 +492,13 @@ static int flash_max32_spixf_clear_read_cache(const struct device *dev)
 	/* Read two pages to flush the cache */
 	ret = flash_max32_spixf_nor_read(dev, 0, &read_data, 1);
 	if (ret) {
-		LOG_ERR("Failed to read first page to clear the read cache (%d)", ret);
+		LOG_ERROR("Failed to read first page to clear the read cache (%d)", ret);
 		return ret;
 	}
 
 	ret = flash_max32_spixf_nor_read(dev, dev_data->page_size, &read_data, 1);
 	if (ret) {
-		LOG_ERR("Failed to read second page to clear the read cache (%d)", ret);
+		LOG_ERROR("Failed to read second page to clear the read cache (%d)", ret);
 		return ret;
 	}
 
@@ -568,7 +568,7 @@ static int flash_max32_spixf_nor_write(const struct device *dev, off_t addr, con
 
 		ret = qspi_send_req(dev, &req);
 		if (ret < 0) {
-			LOG_ERR("Failed to send command byte (%d)", ret);
+			LOG_ERROR("Failed to send command byte (%d)", ret);
 			break;
 		}
 
@@ -578,7 +578,7 @@ static int flash_max32_spixf_nor_write(const struct device *dev, off_t addr, con
 
 		ret = qspi_send_req(dev, &req);
 		if (ret < 0) {
-			LOG_ERR("Failed to send write address (%d)", ret);
+			LOG_ERROR("Failed to send write address (%d)", ret);
 			break;
 		}
 
@@ -589,7 +589,7 @@ static int flash_max32_spixf_nor_write(const struct device *dev, off_t addr, con
 
 		ret = qspi_send_req(dev, &req);
 		if (ret < 0) {
-			LOG_ERR("Failed to send write data (%d)", ret);
+			LOG_ERROR("Failed to send write data (%d)", ret);
 			break;
 		}
 
@@ -652,7 +652,7 @@ static int flash_max32_spixf_nor_erase(const struct device *dev, off_t addr, siz
 
 			ret = qspi_send_req(dev, &req);
 			if (ret < 0) {
-				LOG_ERR("Failed to do a chip erase (%d)", ret);
+				LOG_ERROR("Failed to do a chip erase (%d)", ret);
 				break;
 			}
 			size -= dev_cfg->flash_size;
@@ -680,13 +680,13 @@ static int flash_max32_spixf_nor_erase(const struct device *dev, off_t addr, siz
 				payload[0] = bet->cmd;
 				ret = qspi_send_req(dev, &req);
 				if (ret < 0) {
-					LOG_ERR("Failed to do a erase (%d)", ret);
+					LOG_ERROR("Failed to do a erase (%d)", ret);
 					break;
 				}
 				addr += BIT(bet->exp);
 				size -= BIT(bet->exp);
 			} else {
-				LOG_ERR("Can't erase %zu at 0x%lx", size, (long)addr);
+				LOG_ERROR("Can't erase %zu at 0x%lx", size, (long)addr);
 				ret = -EINVAL;
 			}
 		}
@@ -932,7 +932,7 @@ static int qspi_program_quad_io(const struct device *dev)
 	}
 
 	if ((reg & qe_bit) == 0U) {
-		LOG_ERR("Status Register %u [0x%02x] not set", qe_reg_num, reg);
+		LOG_ERROR("Status Register %u [0x%02x] not set", qe_reg_num, reg);
 		return -EIO;
 	}
 
@@ -950,7 +950,7 @@ static int spi_nor_process_bfp(const struct device *dev, const struct jesd216_pa
 	int rc;
 
 	if (flash_size != dev_cfg->flash_size) {
-		LOG_ERR("Unexpected flash size: %u", flash_size);
+		LOG_ERROR("Unexpected flash size: %u", flash_size);
 		return -EINVAL;
 	}
 
@@ -990,7 +990,7 @@ static int spi_nor_process_bfp(const struct device *dev, const struct jesd216_pa
 					data->flag_access_32bit = true;
 					LOG_INF("Flash - address mode: 4B");
 				} else {
-					LOG_ERR("Unable to enter 4B mode: %d\n", rc);
+					LOG_ERROR("Unable to enter 4B mode: %d\n", rc);
 					return rc;
 				}
 			}
@@ -1033,7 +1033,7 @@ static int spi_nor_process_bfp(const struct device *dev, const struct jesd216_pa
 
 		/* don't continue when there is no supported mode */
 		if (data->mode == MAX32_QSPI_UNKNOWN_MODE) {
-			LOG_ERR("No supported flash read mode found");
+			LOG_ERROR("No supported flash read mode found");
 			return -ENOTSUP;
 		}
 
@@ -1054,7 +1054,7 @@ static int spi_nor_process_bfp(const struct device *dev, const struct jesd216_pa
 		/* enable QE */
 		rc = qspi_program_quad_io(dev);
 		if (rc < 0) {
-			LOG_ERR("Failed to enable Quad mode: %d", rc);
+			LOG_ERROR("Failed to enable Quad mode: %d", rc);
 			return rc;
 		}
 
@@ -1093,14 +1093,14 @@ static int flash_max32_spixf_nor_send_reset(const struct device *dev)
 
 	ret = qspi_send_req(dev, &req);
 	if (ret != 0) {
-		LOG_ERR("%d: Failed to send RESET_EN", ret);
+		LOG_ERROR("%d: Failed to send RESET_EN", ret);
 		return ret;
 	}
 
 	cmd = SPI_NOR_CMD_RESET_MEM;
 	ret = qspi_send_req(dev, &req);
 	if (ret != 0) {
-		LOG_ERR("%d: Failed to send RESET_MEM", ret);
+		LOG_ERROR("%d: Failed to send RESET_MEM", ret);
 		return ret;
 	}
 
@@ -1119,14 +1119,14 @@ static int flash_max32_spixf_nor_check_jedec_id(const struct device *dev)
 
 	ret = qspi_read_jedec_id_priv(dev, id);
 	if (ret < 0) {
-		LOG_ERR("Failed to read the JEDEC ID (%d)", ret);
+		LOG_ERROR("Failed to read the JEDEC ID (%d)", ret);
 		return ret;
 	}
 
 	if (memcmp(dev_cfg->jedec_id, id, MIN(DT_INST_PROP_LEN(0, jedec_id), SPI_NOR_MAX_ID_LEN)) !=
 	    0) {
-		LOG_ERR("JEDEC id [%02x %02x %02x] expect [%02x %02x %02x]", id[0], id[1], id[2],
-			dev_cfg->jedec_id[0], dev_cfg->jedec_id[1], dev_cfg->jedec_id[2]);
+		LOG_ERROR("JEDEC id [%02x %02x %02x] expect [%02x %02x %02x]", id[0], id[1], id[2],
+			  dev_cfg->jedec_id[0], dev_cfg->jedec_id[1], dev_cfg->jedec_id[2]);
 		return -EINVAL;
 	}
 
@@ -1155,14 +1155,14 @@ static int flash_max32_spixf_nor_fetch_jesd216_details(const struct device *dev)
 
 	ret = qspi_read_sfdp_priv(dev, 0, u.raw, sizeof(u.raw));
 	if (ret != 0) {
-		LOG_ERR("SFDP read failed: %d", ret);
+		LOG_ERROR("SFDP read failed: %d", ret);
 		return ret;
 	}
 
 	uint32_t magic = jesd216_sfdp_magic(hp);
 
 	if (magic != JESD216_SFDP_MAGIC) {
-		LOG_ERR("SFDP magic %08x invalid", magic);
+		LOG_ERROR("SFDP magic %08x invalid", magic);
 		return -EINVAL;
 	}
 
@@ -1193,7 +1193,7 @@ static int flash_max32_spixf_nor_fetch_jesd216_details(const struct device *dev)
 			}
 
 			if (ret != 0) {
-				LOG_ERR("SFDP BFP failed: %d", ret);
+				LOG_ERROR("SFDP BFP failed: %d", ret);
 				break;
 			}
 		}
@@ -1238,7 +1238,7 @@ static int flash_max32_spixf_nor_init(const struct device *dev)
 	/* Signals configuration */
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("SPIXF pinctrl setup failed (%d)", ret);
+		LOG_ERROR("SPIXF pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
@@ -1252,7 +1252,7 @@ static int flash_max32_spixf_nor_init(const struct device *dev)
 			ret = clock_control_on(dev_cfg->clock,
 					       (clock_control_subsys_t)&dev_cfg->perclkens[i]);
 			if (ret != 0) {
-				LOG_ERR("cannot enable GPIO clock");
+				LOG_ERROR("cannot enable GPIO clock");
 				return ret;
 			}
 		}
@@ -1260,7 +1260,7 @@ static int flash_max32_spixf_nor_init(const struct device *dev)
 
 	ret = MXC_SPIXF_Init(SPI_NOR_CMD_2READ, dev_cfg->max_frequency);
 	if (ret < 0) {
-		LOG_ERR("Failed to init the SPIXF peripheral (%d)", ret);
+		LOG_ERROR("Failed to init the SPIXF peripheral (%d)", ret);
 		return ret;
 	}
 
@@ -1296,7 +1296,7 @@ static int flash_max32_spixf_nor_init(const struct device *dev)
 #if defined(CONFIG_FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME)
 	ret = setup_pages_layout(dev);
 	if (ret != 0) {
-		LOG_ERR("layout setup failed: %d", ret);
+		LOG_ERROR("layout setup failed: %d", ret);
 		return -ENODEV;
 	}
 #else
@@ -1307,7 +1307,7 @@ static int flash_max32_spixf_nor_init(const struct device *dev)
 
 	ret = qspi_write_unprotect(dev);
 	if (ret != 0) {
-		LOG_ERR("write unprotect failed: %d", ret);
+		LOG_ERROR("write unprotect failed: %d", ret);
 		return -ENODEV;
 	}
 

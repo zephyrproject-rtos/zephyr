@@ -102,7 +102,7 @@ static int vrt_xfer_control(const struct device *dev,
 					xfer->udev->addr, USB_CONTROL_EP_OUT,
 					xfer->setup_pkt, sizeof(xfer->setup_pkt));
 		if (uvb_pkt == NULL) {
-			LOG_ERR("Failed to allocate UVB packet");
+			LOG_ERROR("Failed to allocate UVB packet");
 			return -ENOMEM;
 		}
 
@@ -125,7 +125,7 @@ static int vrt_xfer_control(const struct device *dev,
 					xfer->udev->addr, xfer->ep,
 					data, length);
 		if (uvb_pkt == NULL) {
-			LOG_ERR("Failed to allocate UVB packet");
+			LOG_ERROR("Failed to allocate UVB packet");
 			return -ENOMEM;
 		}
 
@@ -148,7 +148,7 @@ static int vrt_xfer_control(const struct device *dev,
 					xfer->udev->addr, ep,
 					NULL, 0);
 		if (uvb_pkt == NULL) {
-			LOG_ERR("Failed to allocate UVB packet");
+			LOG_ERROR("Failed to allocate UVB packet");
 			return -ENOMEM;
 		}
 
@@ -180,7 +180,7 @@ static int vrt_xfer_bulk(const struct device *dev,
 	uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA, xfer->udev->addr, xfer->ep,
 				data, length);
 	if (uvb_pkt == NULL) {
-		LOG_ERR("Failed to allocate UVB packet");
+		LOG_ERROR("Failed to allocate UVB packet");
 		return -ENOMEM;
 	}
 
@@ -325,8 +325,7 @@ static void vrt_hrslt_success(const struct device *dev,
 			length = MIN(net_buf_tailroom(buf), pkt->length);
 			net_buf_add(buf, length);
 			if (pkt->length > xfer->mps) {
-				LOG_ERR("Ambiguous packet with the length %zu",
-					pkt->length);
+				LOG_ERROR("Ambiguous packet with the length %zu", pkt->length);
 			}
 
 			LOG_DBG("IN chunk %zu out of %zu", length, net_buf_tailroom(buf));
@@ -367,7 +366,7 @@ static int vrt_handle_reply(const struct device *dev,
 	int ret = 0;
 
 	if (xfer == NULL) {
-		LOG_ERR("No transfers to handle");
+		LOG_ERROR("No transfers to handle");
 		ret = -ENODATA;
 		goto handle_reply_err;
 	}
@@ -500,7 +499,7 @@ static void uhc_vrt_uvb_cb(const void *const vrt_priv,
 	} else if (type == UVB_EVT_DEVICE_ACT) {
 		vrt_device_act(dev, POINTER_TO_INT(data));
 	} else {
-		LOG_ERR("Unknown event %d for %p", type, dev);
+		LOG_ERROR("Unknown event %d for %p", type, dev);
 	}
 }
 

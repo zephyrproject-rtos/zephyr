@@ -19,5 +19,5 @@ LOG_MODULE_REGISTER(test2, 0);
 void test_func2(void)
 {
 	LOG_DBG(TEST_DBG_MSG);
-	LOG_ERR(TEST_ERR_MSG);
+	LOG_ERROR(TEST_ERR_MSG);
 }

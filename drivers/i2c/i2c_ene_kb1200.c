@@ -184,7 +184,7 @@ static int i2c_kb1200_poll_read(const struct device *dev, struct i2c_msg msg, ui
 
 	k_sem_reset(&data->wait);
 	if ((msg.flags & I2C_MSG_RESTART) && !(msg.flags & I2C_MSG_STOP)) {
-		LOG_ERR("ENE i2c format not support.");
+		LOG_ERROR("ENE i2c format not support.");
 	}
 	if (msg.flags & I2C_MSG_STOP) {
 		/* No CMD, No CNT, No PEC, with STOP*/
@@ -272,7 +272,7 @@ static int i2c_kb1200_get_config(const struct device *dev, uint32_t *dev_config)
 	const struct i2c_kb1200_config *config = dev->config;
 
 	if ((config->fsmbm->FSMBMCFG & FSMBM_FUNCTION_ENABLE) == 0x00) {
-		LOG_ERR("Cannot find i2c controller on 0x%p!", config->fsmbm);
+		LOG_ERROR("Cannot find i2c controller on 0x%p!", config->fsmbm);
 		return -EIO;
 	}
 

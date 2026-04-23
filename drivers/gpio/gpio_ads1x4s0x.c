@@ -111,7 +111,7 @@ static int gpio_ads1x4s0x_init(const struct device *dev)
 	const struct gpio_ads1x4s0x_config *config = dev->config;
 
 	if (!device_is_ready(config->parent)) {
-		LOG_ERR("parent ads1x4s0x device '%s' not ready", config->parent->name);
+		LOG_ERROR("parent ads1x4s0x device '%s' not ready", config->parent->name);
 		return -EINVAL;
 	}
 

@@ -165,7 +165,7 @@ static int i2c_rz_riic_configure(const struct device *dev, uint32_t dev_config)
 	fsp_err_t err;
 
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Only I2C Master mode supported.");
+		LOG_ERROR("Only I2C Master mode supported.");
 		return -EIO;
 	}
 
@@ -180,7 +180,8 @@ static int i2c_rz_riic_configure(const struct device *dev, uint32_t dev_config)
 		data->fsp_cfg->rate = I2C_MASTER_RATE_FASTPLUS;
 		break;
 	default:
-		LOG_ERR("%s: Invalid I2C speed rate flag: %d", __func__, I2C_SPEED_GET(dev_config));
+		LOG_ERROR("%s: Invalid I2C speed rate flag: %d", __func__,
+			  I2C_SPEED_GET(dev_config));
 		return -EIO;
 	}
 
@@ -190,13 +191,13 @@ static int i2c_rz_riic_configure(const struct device *dev, uint32_t dev_config)
 
 	err = config->fsp_api->close(data->fsp_ctrl);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to configure I2C device");
+		LOG_ERROR("Failed to configure I2C device");
 		return -EIO;
 	}
 
 	err = config->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to configure I2C device");
+		LOG_ERROR("Failed to configure I2C device");
 		return -EIO;
 	}
 
@@ -248,10 +249,10 @@ static int i2c_rz_riic_transfer(const struct device *dev, struct i2c_msg *msgs, 
 			 */
 			if (OPERATION(current) != OPERATION(next)) {
 				if (!(next->flags & I2C_MSG_RESTART)) {
-					LOG_ERR("%s: Restart condition between messages of "
-						"different directions is required."
-						"Current/Total: [%d/%d]",
-						__func__, i, num_msgs);
+					LOG_ERROR("%s: Restart condition between messages of "
+						  "different directions is required."
+						  "Current/Total: [%d/%d]",
+						  __func__, i, num_msgs);
 					ret = -EIO;
 					break;
 				}
@@ -259,7 +260,8 @@ static int i2c_rz_riic_transfer(const struct device *dev, struct i2c_msg *msgs, 
 
 			/* Stop condition is only allowed on last message */
 			if (current->flags & I2C_MSG_STOP) {
-				LOG_ERR("%s: Invalid stop flag. Stop condition is only allowed on "
+				LOG_ERROR(
+					"%s: Invalid stop flag. Stop condition is only allowed on "
 					"last message. "
 					"Current/Total: [%d/%d]",
 					__func__, i, num_msgs);
@@ -291,7 +293,7 @@ static int i2c_rz_riic_transfer(const struct device *dev, struct i2c_msg *msgs, 
 
 	err = config->fsp_api->slaveAddressSet(data->fsp_ctrl, addr, addr_mode);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to set slave address");
+		LOG_ERROR("Failed to set slave address");
 		return -EIO;
 	}
 
@@ -319,12 +321,13 @@ static int i2c_rz_riic_transfer(const struct device *dev, struct i2c_msg *msgs, 
 		if (err != FSP_SUCCESS) {
 			switch (err) {
 			case FSP_ERR_IN_USE:
-				LOG_ERR("%s: Bus busy condition. Another transfer was in progress.",
+				LOG_ERROR(
+					"%s: Bus busy condition. Another transfer was in progress.",
 					__func__);
 				break;
 			default:
 				/* Should not reach here. */
-				LOG_ERR("%s: Unknown error. FSP_ERR=%d\n", __func__, err);
+				LOG_ERROR("%s: Unknown error. FSP_ERR=%d\n", __func__, err);
 				break;
 			}
 
@@ -338,8 +341,8 @@ static int i2c_rz_riic_transfer(const struct device *dev, struct i2c_msg *msgs, 
 		/* Handle event msg from callback. */
 		switch (data->event) {
 		case I2C_MASTER_EVENT_ABORTED:
-			LOG_ERR("%s: %s failed.", __func__,
-				(current->flags & I2C_MSG_READ) ? "Read" : "Write");
+			LOG_ERROR("%s: %s failed.", __func__,
+				  (current->flags & I2C_MSG_READ) ? "Read" : "Write");
 			ret = -EIO;
 			goto RELEASE_BUS;
 		case I2C_MASTER_EVENT_RX_COMPLETE:
@@ -382,7 +385,7 @@ static int i2c_rz_riic_init(const struct device *dev)
 		ret = pinctrl_apply_state(config->pin_config, PINCTRL_STATE_DEFAULT);
 
 		if (ret < 0) {
-			LOG_ERR("%s: pinctrl config failed.", __func__);
+			LOG_ERROR("%s: pinctrl config failed.", __func__);
 			return ret;
 		}
 	}
@@ -400,14 +403,14 @@ static int i2c_rz_riic_init(const struct device *dev)
 		data->riic_master_ext_cfg->timeout_scl_low = IIC_MASTER_TIMEOUT_SCL_LOW_ENABLED;
 		break;
 	default:
-		LOG_ERR("%s: Invalid I2C speed rate: %d", __func__, data->fsp_cfg->rate);
+		LOG_ERROR("%s: Invalid I2C speed rate: %d", __func__, data->fsp_cfg->rate);
 		return -ENOTSUP;
 	}
 
 	err = config->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
 
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("I2C initialization failed");
+		LOG_ERROR("I2C initialization failed");
 		return -EIO;
 	}
 
@@ -472,7 +475,7 @@ static void calc_riic_master_clock_setting(const struct device *dev, const uint3
 		requested_bitrate = fsp_i2c_rate;
 		break;
 	default:
-		LOG_ERR("%s: Invalid I2C speed rate: %d", __func__, fsp_i2c_rate);
+		LOG_ERROR("%s: Invalid I2C speed rate: %d", __func__, fsp_i2c_rate);
 		return;
 	}
 

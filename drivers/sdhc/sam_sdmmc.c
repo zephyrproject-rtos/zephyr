@@ -215,7 +215,7 @@ static int sdmmc_reset(sdmmc_registers_t *sdmmc, uint8_t mask)
 	}
 
 	if (sdmmc->SDMMC_SRR & mask) {
-		LOG_ERR("%s: timeout!", __func__);
+		LOG_ERROR("%s: timeout!", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -305,7 +305,7 @@ done:
 	}
 
 	if (!(sdmmc->SDMMC_CCR & SDMMC_CCR_INTCLKS_Msk)) {
-		LOG_ERR("%s: timeout!", __func__);
+		LOG_ERROR("%s: timeout!", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -382,7 +382,7 @@ static int sdmmc_card_present(sdmmc_registers_t *sdmmc)
 	}
 
 	if (!(sdmmc->SDMMC_PSR & SDMMC_PSR_CARDSS_Msk)) {
-		LOG_ERR("%s: timeout!", __func__);
+		LOG_ERROR("%s: timeout!", __func__);
 		return 0;
 	}
 
@@ -510,8 +510,7 @@ static int sam_sdmmc_isr(const struct device *dev)
 
 		if (error) {
 			if (error & SDMMC_EISTR_SD_SDIO_CURLIM_Msk) {
-				LOG_ERR("%s: Card is consuming too much power!",
-					__func__);
+				LOG_ERROR("%s: Card is consuming too much power!", __func__);
 			}
 
 			if ((error & INT_CMD_ERROR_MASK) ||
@@ -521,8 +520,7 @@ static int sam_sdmmc_isr(const struct device *dev)
 
 			error &= ~INT_ERROR_MASK;
 			if (error) {
-				LOG_ERR("%s: Unexpected error interrupt 0x%04x",
-					__func__, error);
+				LOG_ERROR("%s: Unexpected error interrupt 0x%04x", __func__, error);
 			}
 		}
 
@@ -545,8 +543,7 @@ static int sam_sdmmc_isr(const struct device *dev)
 
 			status &= ~INT_MASK;
 			if (status) {
-				LOG_ERR("%s: Unexpected interrupt 0x%04x",
-					__func__, status);
+				LOG_ERROR("%s: Unexpected interrupt 0x%04x", __func__, status);
 			}
 
 		}
@@ -597,7 +594,7 @@ static int sdmmc_send_command(const struct device *dev, struct sdhc_command *cmd
 	}
 
 	if (sdmmc->SDMMC_PSR & (SDMMC_PSR_CMDINHC_Msk | SDMMC_PSR_CMDINHD_Msk)) {
-		LOG_ERR("%s: timeout waiting for CMD and DAT Inhibit bits", __func__);
+		LOG_ERROR("%s: timeout waiting for CMD and DAT Inhibit bits", __func__);
 		sdmmc_reset(sdmmc, INH_TO_RST(sdmmc->SDMMC_PSR));
 
 		return -EBUSY;
@@ -669,7 +666,7 @@ static int sdmmc_send_command(const struct device *dev, struct sdhc_command *cmd
 			uint32_t chunk;
 
 			if (len > ADMA2_MAX_SIZE) {
-				LOG_ERR("%s: data length exceeds ADMA link list", __func__);
+				LOG_ERROR("%s: data length exceeds ADMA link list", __func__);
 				return -EINVAL;
 			}
 
@@ -727,7 +724,7 @@ static int sdmmc_send_command(const struct device *dev, struct sdhc_command *cmd
 			/* Nothing to do */
 		}
 	} else {
-		LOG_ERR("%s: error waiting for completion, return %d", __func__, ret);
+		LOG_ERROR("%s: error waiting for completion, return %d", __func__, ret);
 	}
 
 	LOG_DBG("    rsp 0x%08x 0x%08x 0x%08x 0x%08x %s", cmd->response[0], cmd->response[1],
@@ -765,7 +762,7 @@ static int sam_sdmmc_init(const struct device *dev)
 	/* Connect pins to the peripheral */
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("%s: pinctrl_apply_state() => %d", __func__, ret);
+		LOG_ERROR("%s: pinctrl_apply_state() => %d", __func__, ret);
 		return ret;
 	}
 	/* Enable module's clock */

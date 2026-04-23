@@ -29,7 +29,7 @@ enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 
 	status = nrf_wifi_fmac_fw_parse(rpu_ctx, fw_patch, sizeof(fw_patch), &fw_info);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_fw_parse failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_fmac_fw_parse failed", __func__);
 		return status;
 	}
 
@@ -37,7 +37,7 @@ enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 	status = nrf_wifi_fmac_fw_load(rpu_ctx, &fw_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_fw_load failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_fmac_fw_load failed", __func__);
 	}
 	return status;
 }

@@ -84,7 +84,7 @@ static uint8_t get_hci_cte_type(enum bt_df_cte_type type)
 	case BT_DF_CTE_TYPE_AOD_2US:
 		return BT_HCI_LE_AOD_CTE_2US;
 	default:
-		LOG_ERR("Wrong CTE type");
+		LOG_ERROR("Wrong CTE type");
 		return BT_HCI_LE_NO_CTE;
 	}
 }
@@ -179,7 +179,7 @@ static int hci_df_read_ant_info(uint8_t *switch_sample_rates,
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_ANT_INFO, NULL, &rsp);
 	if (err) {
-		LOG_ERR("Failed to read antenna information");
+		LOG_ERROR("Failed to read antenna information");
 		return err;
 	}
 
@@ -378,7 +378,7 @@ int hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 	struct bt_le_per_adv_sync *per_adv_sync;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return -EINVAL;
 	}
 
@@ -387,13 +387,13 @@ int hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
 	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->sync_handle));
 
 	if (!per_adv_sync) {
-		LOG_ERR("Unknown handle 0x%04X for iq samples report",
-			sys_le16_to_cpu(evt->sync_handle));
+		LOG_ERROR("Unknown handle 0x%04X for iq samples report",
+			  sys_le16_to_cpu(evt->sync_handle));
 		return -EINVAL;
 	}
 
 	if (!atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_CTE_ENABLED)) {
-		LOG_ERR("Received PA CTE report when CTE receive disabled");
+		LOG_ERROR("Received PA CTE report when CTE receive disabled");
 		return -EINVAL;
 	}
 
@@ -426,7 +426,7 @@ int hci_df_vs_prepare_connectionless_iq_report(struct net_buf *buf,
 	struct bt_le_per_adv_sync *per_adv_sync;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return -EINVAL;
 	}
 
@@ -435,13 +435,13 @@ int hci_df_vs_prepare_connectionless_iq_report(struct net_buf *buf,
 	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->sync_handle));
 
 	if (!per_adv_sync) {
-		LOG_ERR("Unknown handle 0x%04X for iq samples report",
-			sys_le16_to_cpu(evt->sync_handle));
+		LOG_ERROR("Unknown handle 0x%04X for iq samples report",
+			  sys_le16_to_cpu(evt->sync_handle));
 		return -EINVAL;
 	}
 
 	if (!atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_CTE_ENABLED)) {
-		LOG_ERR("Received PA CTE report when CTE receive disabled");
+		LOG_ERROR("Received PA CTE report when CTE receive disabled");
 		return -EINVAL;
 	}
 
@@ -667,7 +667,7 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 	struct bt_conn *conn;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return -EINVAL;
 	}
 
@@ -675,13 +675,13 @@ int hci_df_prepare_connection_iq_report(struct net_buf *buf,
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
-		LOG_ERR("Unknown conn handle 0x%04X for iq samples report",
-			sys_le16_to_cpu(evt->conn_handle));
+		LOG_ERROR("Unknown conn handle 0x%04X for iq samples report",
+			  sys_le16_to_cpu(evt->conn_handle));
 		return -EINVAL;
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_ENABLED)) {
-		LOG_ERR("Received conn CTE report when CTE receive disabled");
+		LOG_ERROR("Received conn CTE report when CTE receive disabled");
 		bt_conn_unref(conn);
 		return -EINVAL;
 	}
@@ -719,7 +719,7 @@ int hci_df_vs_prepare_connection_iq_report(struct net_buf *buf,
 	struct bt_conn *conn;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return -EINVAL;
 	}
 
@@ -727,13 +727,13 @@ int hci_df_vs_prepare_connection_iq_report(struct net_buf *buf,
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
-		LOG_ERR("Unknown conn handle 0x%04X for iq samples report",
-			sys_le16_to_cpu(evt->conn_handle));
+		LOG_ERROR("Unknown conn handle 0x%04X for iq samples report",
+			  sys_le16_to_cpu(evt->conn_handle));
 		return -EINVAL;
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_ENABLED)) {
-		LOG_ERR("Received conn CTE report when CTE receive disabled");
+		LOG_ERROR("Received conn CTE report when CTE receive disabled");
 		bt_conn_unref(conn);
 		return -EINVAL;
 	}
@@ -843,7 +843,7 @@ int hci_df_prepare_conn_cte_req_failed(struct net_buf *buf,
 	struct bt_conn *conn;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return -EINVAL;
 	}
 
@@ -851,13 +851,13 @@ int hci_df_prepare_conn_cte_req_failed(struct net_buf *buf,
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
-		LOG_ERR("Unknown conn handle 0x%04X for iq samples report",
-			sys_le16_to_cpu(evt->conn_handle));
+		LOG_ERROR("Unknown conn handle 0x%04X for iq samples report",
+			  sys_le16_to_cpu(evt->conn_handle));
 		return -EINVAL;
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_REQ_ENABLED)) {
-		LOG_ERR("Received conn CTE request notification when CTE REQ disabled");
+		LOG_ERROR("Received conn CTE request notification when CTE REQ disabled");
 		bt_conn_unref(conn);
 		return -EINVAL;
 	}
@@ -1064,7 +1064,7 @@ static int bt_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 	}
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		LOG_ERR("not connected!");
+		LOG_ERROR("not connected!");
 		return -ENOTCONN;
 	}
 
@@ -1106,7 +1106,7 @@ int bt_df_set_conn_cte_tx_param(struct bt_conn *conn, const struct bt_df_conn_ct
 	}
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		LOG_ERR("not connected!");
+		LOG_ERROR("not connected!");
 		return -ENOTCONN;
 	}
 
@@ -1130,12 +1130,12 @@ static int bt_df_set_conn_cte_req_enable(struct bt_conn *conn, bool enable,
 	}
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		LOG_ERR("not connected!");
+		LOG_ERROR("not connected!");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_PARAMS_SET)) {
-		LOG_ERR("Can't start CTE request procedure before CTE RX params setup");
+		LOG_ERROR("Can't start CTE request procedure before CTE RX params setup");
 		return -EINVAL;
 	}
 
@@ -1178,12 +1178,12 @@ static int bt_df_set_conn_cte_rsp_enable(struct bt_conn *conn, bool enable)
 	}
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		LOG_ERR("not connected");
+		LOG_ERROR("not connected");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_TX_PARAMS_SET)) {
-		LOG_ERR("Can't start CTE response procedure before CTE TX params setup");
+		LOG_ERROR("Can't start CTE response procedure before CTE TX params setup");
 		return -EINVAL;
 	}
 

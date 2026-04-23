@@ -448,7 +448,7 @@ static int dfu_srv_init(const struct bt_mesh_model *mod)
 
 	if (!srv->cb || !srv->cb->start || !srv->imgs || srv->img_count == 0 ||
 	    srv->img_count == UPDATE_IDX_NONE) {
-		LOG_ERR("Invalid DFU Server initialization");
+		LOG_ERROR("Invalid DFU Server initialization");
 		return -EINVAL;
 	}
 
@@ -456,7 +456,7 @@ static int dfu_srv_init(const struct bt_mesh_model *mod)
 		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_BLOB_SRV);
 
 	if (blob_srv == NULL) {
-		LOG_ERR("Missing BLOB Srv.");
+		LOG_ERROR("Missing BLOB Srv.");
 		return -EINVAL;
 	}
 

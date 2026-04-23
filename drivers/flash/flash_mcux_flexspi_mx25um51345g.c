@@ -340,7 +340,7 @@ static int flash_flexspi_nor_wait_bus_busy(const struct device *dev)
 		ret = flash_flexspi_nor_read_status(dev, &status);
 		LOG_DBG("status: 0x%x", status);
 		if (ret) {
-			LOG_ERR("Could not read status");
+			LOG_ERROR("Could not read status");
 			return ret;
 		}
 	} while (status & BIT(0));
@@ -476,12 +476,12 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 	}
 
 	if (offset % SPI_NOR_SECTOR_SIZE) {
-		LOG_ERR("Invalid offset");
+		LOG_ERROR("Invalid offset");
 		return -EINVAL;
 	}
 
 	if (size % SPI_NOR_SECTOR_SIZE) {
-		LOG_ERR("Invalid size");
+		LOG_ERROR("Invalid size");
 		return -EINVAL;
 	}
 
@@ -556,7 +556,7 @@ static int flash_flexspi_nor_init(const struct device *dev)
 	uint8_t vendor_id;
 
 	if (!device_is_ready(data->controller)) {
-		LOG_ERR("Controller device not ready");
+		LOG_ERROR("Controller device not ready");
 		return -ENODEV;
 	}
 
@@ -569,19 +569,19 @@ static int flash_flexspi_nor_init(const struct device *dev)
 	    (const uint32_t *)flash_flexspi_nor_lut,
 	    sizeof(flash_flexspi_nor_lut) / MEMC_FLEXSPI_CMD_SIZE,
 	    data->port)) {
-		LOG_ERR("Could not set device configuration");
+		LOG_ERROR("Could not set device configuration");
 		return -EINVAL;
 	}
 
 	memc_flexspi_reset(data->controller);
 
 	if (flash_flexspi_enable_octal_mode(dev)) {
-		LOG_ERR("Could not enable octal mode");
+		LOG_ERROR("Could not enable octal mode");
 		return -EIO;
 	}
 
 	if (flash_flexspi_nor_get_vendor_id(dev, &vendor_id)) {
-		LOG_ERR("Could not read vendor id");
+		LOG_ERROR("Could not read vendor id");
 		return -EIO;
 	}
 	LOG_DBG("Vendor id: 0x%0x", vendor_id);

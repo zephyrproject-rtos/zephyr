@@ -71,7 +71,7 @@ static void eswifi_iface_uart_isr(const struct device *uart_dev,
 							  UINT32_MAX);
 		}
 		if (!partial_size) {
-			LOG_ERR("Rx buffer doesn't have enough space");
+			LOG_ERROR("Rx buffer doesn't have enough space");
 			eswifi_iface_uart_flush(uart);
 			break;
 		}
@@ -221,7 +221,7 @@ int eswifi_uart_init(struct eswifi_dev *eswifi)
 
 	uart->dev = DEVICE_DT_GET(DT_INST_BUS(0));
 	if (!device_is_ready(uart->dev)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 

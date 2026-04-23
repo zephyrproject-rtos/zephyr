@@ -284,7 +284,7 @@ static int start_scan(void)
 
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err != 0) {
-		LOG_ERR("Scan start failed (err %d)", err);
+		LOG_ERROR("Scan start failed (err %d)", err);
 		return err;
 	}
 
@@ -299,7 +299,7 @@ static int stop_scan(void)
 
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		LOG_ERR("Scan stop failed (err %d)", err);
+		LOG_ERROR("Scan stop failed (err %d)", err);
 		return err;
 	}
 	LOG_INF("Scan stopped");
@@ -323,8 +323,7 @@ static int create_pa_sync(struct bt_le_per_adv_sync **sync)
 	sem_timeout_us = per_interval_us * PA_RETRY_COUNT;
 	err = bt_le_per_adv_sync_create(&sync_create_param, sync);
 	if (err != 0) {
-		LOG_ERR("Periodic advertisement sync create failed (err %d)",
-		       err);
+		LOG_ERROR("Periodic advertisement sync create failed (err %d)", err);
 		return err;
 	}
 
@@ -336,8 +335,7 @@ static int create_pa_sync(struct bt_le_per_adv_sync **sync)
 		LOG_INF("Deleting Periodic Advertising Sync");
 		err = bt_le_per_adv_sync_delete(*sync);
 		if (err != 0) {
-			LOG_ERR("Failed to delete Periodic advertisement sync (err %d)",
-			       err);
+			LOG_ERROR("Failed to delete Periodic advertisement sync (err %d)", err);
 
 			return err;
 		}
@@ -371,7 +369,7 @@ static int create_big_sync(struct bt_iso_big **big, struct bt_le_per_adv_sync *s
 	LOG_INF("Waiting for BIG info");
 	err = k_sem_take(&sem_per_big_info, K_USEC(sem_timeout_us));
 	if (err != 0) {
-		LOG_ERR("failed to take sem_per_big_info (err %d)", err);
+		LOG_ERROR("failed to take sem_per_big_info (err %d)", err);
 		return err;
 	}
 
@@ -389,14 +387,14 @@ static int create_big_sync(struct bt_iso_big **big, struct bt_le_per_adv_sync *s
 	LOG_INF("Syncing to BIG");
 	err = bt_iso_big_sync(sync, &big_sync_param, big);
 	if (err != 0) {
-		LOG_ERR("BIG sync failed (err %d)", err);
+		LOG_ERROR("BIG sync failed (err %d)", err);
 		return err;
 	}
 
 	LOG_INF("Waiting for BIG sync");
 	err = k_sem_take(&sem_big_sync, K_USEC(sem_timeout_us));
 	if (err != 0) {
-		LOG_ERR("failed to take sem_big_sync (err %d)", err);
+		LOG_ERROR("failed to take sem_big_sync (err %d)", err);
 		return err;
 	}
 	LOG_INF("BIG sync established");
@@ -415,8 +413,7 @@ static int cleanup(struct bt_le_per_adv_sync *sync, struct bt_iso_big *big)
 		LOG_INF("Deleting Periodic advertisement Sync");
 		pa_err = bt_le_per_adv_sync_delete(sync);
 		if (pa_err != 0) {
-			LOG_ERR("Failed to delete Periodic advertisement sync (err %d)",
-				pa_err);
+			LOG_ERROR("Failed to delete Periodic advertisement sync (err %d)", pa_err);
 		}
 	}
 
@@ -424,14 +421,14 @@ static int cleanup(struct bt_le_per_adv_sync *sync, struct bt_iso_big *big)
 		LOG_INF("Terminating BIG Sync");
 		big_err = bt_iso_big_terminate(big);
 		if (big_err != 0) {
-			LOG_ERR("BIG terminate failed (err %d)", big_err);
+			LOG_ERROR("BIG terminate failed (err %d)", big_err);
 		}
 	}
 
 	if (pa_err != 0 || big_err != 0) {
-		LOG_ERR("Cleanup failed (%d), recommend restart application to "
-		       "avoid any potential leftovers",
-		       pa_err != 0 ? pa_err : big_err);
+		LOG_ERROR("Cleanup failed (%d), recommend restart application to "
+			  "avoid any potential leftovers",
+			  pa_err != 0 ? pa_err : big_err);
 	}
 
 	return pa_err != 0 ? pa_err : big_err;
@@ -474,7 +471,7 @@ int test_run_receiver(void)
 	LOG_INF("Waiting for periodic advertiser");
 	err = k_sem_take(&sem_per_adv, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("failed to take sem_per_adv (err %d)", err);
+		LOG_ERROR("failed to take sem_per_adv (err %d)", err);
 		return err;
 	}
 	LOG_INF("Periodic advertiser found");
@@ -501,7 +498,7 @@ int test_run_receiver(void)
 
 	err = k_sem_take(&sem_big_sync_lost, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("failed to take sem_big_sync_lost (err %d)", err);
+		LOG_ERROR("failed to take sem_big_sync_lost (err %d)", err);
 		return err;
 	}
 	LOG_INF("BIG sync lost, returning");

@@ -596,7 +596,7 @@ static int mipi_dbi_spi_configure_te(const struct device *dev,
 
 	ret = gpio_pin_configure_dt(&config->tearing_effect, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure Tearing Effect GPIO (%d)", ret);
+		LOG_ERROR("Could not configure Tearing Effect GPIO (%d)", ret);
 		return ret;
 	}
 
@@ -608,7 +608,7 @@ static int mipi_dbi_spi_configure_te(const struct device *dev,
 							GPIO_INT_EDGE_FALLING);
 	}
 	if (ret < 0) {
-		LOG_ERR("Could not configure Tearing Effect GPIO EXT interrupt (%d)", ret);
+		LOG_ERROR("Could not configure Tearing Effect GPIO EXT interrupt (%d)", ret);
 		return ret;
 	}
 
@@ -618,7 +618,7 @@ static int mipi_dbi_spi_configure_te(const struct device *dev,
 	ret = gpio_add_callback(config->tearing_effect.port,
 				&data->te_cb_data);
 	if (ret < 0) {
-		LOG_ERR("Could not add Tearing Effect GPIO callback (%d)", ret);
+		LOG_ERROR("Could not add Tearing Effect GPIO callback (%d)", ret);
 		return ret;
 	}
 
@@ -638,7 +638,7 @@ static int mipi_dbi_spi_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->spi_dev)) {
-		LOG_ERR("SPI device is not ready");
+		LOG_ERROR("SPI device is not ready");
 		return -ENODEV;
 	}
 
@@ -648,7 +648,7 @@ static int mipi_dbi_spi_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(&config->cmd_data, GPIO_OUTPUT);
 		if (ret < 0) {
-			LOG_ERR("Could not configure command/data GPIO (%d)", ret);
+			LOG_ERROR("Could not configure command/data GPIO (%d)", ret);
 			return ret;
 		}
 	}
@@ -659,7 +659,7 @@ static int mipi_dbi_spi_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure reset GPIO (%d)", ret);
+			LOG_ERROR("Could not configure reset GPIO (%d)", ret);
 			return ret;
 		}
 	}

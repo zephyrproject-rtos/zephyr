@@ -379,7 +379,7 @@ static int gc9x01x_set_pixel_format(const struct device *dev,
 		bytes_per_pixel = 3U;
 		tx_data = GC9X01X_PIXFMT_VAL_MCU_18_BIT | GC9X01X_PIXFMT_VAL_RGB_18_BIT;
 	} else {
-		LOG_ERR("Unsupported pixel format");
+		LOG_ERROR("Unsupported pixel format");
 		return -ENOTSUP;
 	}
 
@@ -468,13 +468,13 @@ static int gc9x01x_init(const struct device *dev)
 
 	ret = gc9x01x_configure(dev);
 	if (ret < 0) {
-		LOG_ERR("Could not configure display (%d)", ret);
+		LOG_ERROR("Could not configure display (%d)", ret);
 		return ret;
 	}
 
 	ret = gc9x01x_exit_sleep(dev);
 	if (ret < 0) {
-		LOG_ERR("Could not exit sleep mode (%d)", ret);
+		LOG_ERROR("Could not exit sleep mode (%d)", ret);
 		return ret;
 	}
 

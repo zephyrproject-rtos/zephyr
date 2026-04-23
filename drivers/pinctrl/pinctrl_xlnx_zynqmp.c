@@ -27,7 +27,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			}
 
 			default: {
-				LOG_ERR("Unsupported function enum was selected");
+				LOG_ERROR("Unsupported function enum was selected");
 				break;
 			}
 		}

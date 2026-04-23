@@ -359,13 +359,13 @@ static int get_mclk_rate(const struct sai_clock_data *clk_data,
 		clk_name = "mclk3";
 		break;
 	default:
-		LOG_ERR("invalid bitclock source: %d", bclk_source);
+		LOG_ERROR("invalid bitclock source: %d", bclk_source);
 		return -EINVAL;
 	}
 
 	clk_idx = clk_lookup_by_name(clk_data, clk_name);
 	if (clk_idx < 0) {
-		LOG_ERR("failed to get clock index for %s", clk_name);
+		LOG_ERROR("failed to get clock index for %s", clk_name);
 		return clk_idx;
 	}
 

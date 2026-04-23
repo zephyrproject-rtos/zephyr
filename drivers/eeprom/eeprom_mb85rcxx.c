@@ -77,20 +77,20 @@ static int mb85rcxx_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("i2c bus device not ready");
+		LOG_ERROR("i2c bus device not ready");
 		return -EINVAL;
 	}
 
 	if (cfg->wp_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->wp_gpio)) {
-			LOG_ERR("wp gpio device not ready");
+			LOG_ERROR("wp gpio device not ready");
 			return -EINVAL;
 		}
 
 		int err = gpio_pin_configure_dt(&cfg->wp_gpio, GPIO_OUTPUT_ACTIVE);
 
 		if (err) {
-			LOG_ERR("failed to configure WP GPIO pin (err %d)", err);
+			LOG_ERROR("failed to configure WP GPIO pin (err %d)", err);
 			return err;
 		}
 	}
@@ -107,7 +107,7 @@ static int mb85rcxx_read(const struct device *dev, off_t offset, void *buf, size
 	int ret;
 
 	if (offset + len > cfg->size) {
-		LOG_ERR("attempt to read past device boundary");
+		LOG_ERROR("attempt to read past device boundary");
 		return -EINVAL;
 	}
 
@@ -120,7 +120,7 @@ static int mb85rcxx_read(const struct device *dev, off_t offset, void *buf, size
 		ret = i2c_write_read(cfg->i2c.bus, i2c_addr, addr, DIV_ROUND_UP(cfg->addr_width, 8),
 				     buf, len_in_page);
 		if (ret < 0) {
-			LOG_ERR("failed to read FRAM (err %d)", ret);
+			LOG_ERROR("failed to read FRAM (err %d)", ret);
 			k_mutex_unlock(&data->lock);
 			return ret;
 		}
@@ -161,18 +161,18 @@ static int mb85rcxx_write(const struct device *dev, off_t offset, const void *bu
 	int ret;
 
 	if (cfg->readonly) {
-		LOG_ERR("attempt to write to read-only device");
+		LOG_ERROR("attempt to write to read-only device");
 		return -EACCES;
 	}
 
 	if (offset + len > cfg->size) {
-		LOG_ERR("attempt to write past device boundary");
+		LOG_ERROR("attempt to write past device boundary");
 		return -EINVAL;
 	}
 
 	ret = mb85rcxx_write_protect_set(dev, 0);
 	if (ret) {
-		LOG_ERR("failed to write-enable FRAM (err %d)", ret);
+		LOG_ERROR("failed to write-enable FRAM (err %d)", ret);
 		return ret;
 	}
 
@@ -184,7 +184,7 @@ static int mb85rcxx_write(const struct device *dev, off_t offset, const void *bu
 
 		ret = mb85rcxx_i2c_write(dev, i2c_addr, addr, buf, len_in_page);
 		if (ret < 0) {
-			LOG_ERR("failed to write to FRAM (err %d)", ret);
+			LOG_ERROR("failed to write to FRAM (err %d)", ret);
 			k_mutex_unlock(&data->lock);
 			return ret;
 		}

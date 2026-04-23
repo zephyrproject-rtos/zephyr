@@ -281,7 +281,7 @@ static bool spi_stm32_is_data_width_supported(const struct device *dev, uint32_t
 		return (width == 8) || (width == 16);
 
 	default:
-		LOG_ERR("No data width defined for this instance");
+		LOG_ERROR("No data width defined for this instance");
 		return false;
 	}
 }
@@ -695,7 +695,7 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	uint32_t sr = stm32_reg_read(&spi->SR);
 
 	if ((sr & SPI_STM32_ERR_MSK) != 0U) {
-		LOG_ERR("%s: err=%d", __func__, sr & (uint32_t)SPI_STM32_ERR_MSK);
+		LOG_ERROR("%s: err=%d", __func__, sr & (uint32_t)SPI_STM32_ERR_MSK);
 
 		/* OVR error must be explicitly cleared */
 		if (LL_SPI_IsActiveFlag_OVR(spi)) {
@@ -782,7 +782,7 @@ static int spi_stm32_shift_fifo(const struct spi_stm32_config *cfg, struct spi_s
 			LL_SPI_ClearFlag_EOT(spi);
 			ll_disable_spi(spi);
 			if (data->tx_len > cfg->fifo_max_transfer_size) {
-				LOG_ERR("Buffer size exceeds maximal supported value");
+				LOG_ERROR("Buffer size exceeds maximal supported value");
 				return -EINVAL;
 			}
 			LL_SPI_SetTransferSize(spi, data->tx_len);
@@ -1008,7 +1008,7 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 
 	if ((tx_buf != NULL && !stm32_buf_in_nocache((uintptr_t)tx_buf, buf_len)) ||
 	    (rx_buf != NULL && !stm32_buf_in_nocache((uintptr_t)rx_buf, buf_len))) {
-		LOG_ERR("SPI DMA transfers not supported on cached memory");
+		LOG_ERROR("SPI DMA transfers not supported on cached memory");
 		spi_stm32_iodev_complete(dev, -EINVAL);
 		return;
 	}
@@ -1057,7 +1057,7 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 		ret = spi_dma_move_rx_buffers(dev, dma_len);
 	}
 	if (ret != 0) {
-		LOG_ERR("Failed to start SPI DMA transfer");
+		LOG_ERROR("Failed to start SPI DMA transfer");
 		spi_stm32_iodev_complete(dev, -EIO);
 	}
 
@@ -1099,7 +1099,7 @@ static void spi_stm32_iodev_start(const struct device *dev)
 					  sqe->txrx.buf_len);
 		break;
 	default:
-		LOG_ERR("Invalid op code %d for submission %p", sqe->op, (void *)sqe);
+		LOG_ERROR("Invalid op code %d for submission %p", sqe->op, (void *)sqe);
 		spi_stm32_iodev_complete(dev, -EINVAL);
 		break;
 	}
@@ -1370,7 +1370,7 @@ static int spi_stm32_configure(const struct device *dev,
 #ifdef LL_SPI_PROTOCOL_TI
 		LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_TI);
 #else
-		LOG_ERR("Frame Format TI not supported");
+		LOG_ERROR("Frame Format TI not supported");
 		/* on stm32F1 or some stm32L1 (cat1,2) without SPI_CR2_FRF */
 		return -ENOTSUP;
 #endif
@@ -1382,14 +1382,14 @@ static int spi_stm32_configure(const struct device *dev,
 
 	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t) &cfg->pclken[1], &clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
+					   (clock_control_subsys_t)&cfg->pclken[1], &clock) < 0) {
+			LOG_ERROR("Failed call clock_control_get_rate(pclk[1])");
 			return -EIO;
 		}
 	} else {
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t) &cfg->pclken[0], &clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclk[0])");
+					   (clock_control_subsys_t)&cfg->pclken[0], &clock) < 0) {
+			LOG_ERROR("Failed call clock_control_get_rate(pclk[0])");
 			return -EIO;
 		}
 	}
@@ -1410,9 +1410,8 @@ static int spi_stm32_configure(const struct device *dev,
 	}
 
 	if (br >= ARRAY_SIZE(scaler)) {
-		LOG_ERR("Unsupported frequency %uHz, max %uHz, min %uHz",
-			config->frequency, clock >> shift,
-			clock >> (ARRAY_SIZE(scaler) - 1 + shift));
+		LOG_ERROR("Unsupported frequency %uHz, max %uHz, min %uHz", config->frequency,
+			  clock >> shift, clock >> (ARRAY_SIZE(scaler) - 1 + shift));
 		return -EINVAL;
 	}
 
@@ -1587,7 +1586,7 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 		data->tx_len = data->rx_len = frames;
 		LL_SPI_SetTransferSize(spi, (uint32_t)frames);
 	} else {
-		LOG_ERR("Buffer size exceeds maximal supported value");
+		LOG_ERROR("Buffer size exceeds maximal supported value");
 		return -EINVAL;
 	}
 
@@ -1833,25 +1832,25 @@ static void dma_callback_async(const struct device *dma_dev, const struct device
 	size_t dma_len;
 
 	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d.", channel);
+		LOG_ERROR("DMA callback error with channel %d.", channel);
 		ret = -EIO;
 		goto end;
 	}
 
 	if (ctx == NULL) {
-		LOG_ERR("spi_context struct ptr is NULL");
+		LOG_ERROR("spi_context struct ptr is NULL");
 		ret = -EINVAL;
 		goto end;
 	}
 
 	ret = spi_stm32_get_err(spi);
 	if (ret) {
-		LOG_ERR("SPI error %d", ret);
+		LOG_ERROR("SPI error %d", ret);
 		goto end;
 	}
 
 	if (config == NULL) {
-		LOG_ERR("config struct ptr is NULL");
+		LOG_ERROR("config struct ptr is NULL");
 		ret = -EINVAL;
 		goto end;
 	}
@@ -1878,7 +1877,7 @@ static void dma_callback_async(const struct device *dma_dev, const struct device
 		spi_stm32_dma_rx_done(spi_dev, config);
 		data->rx_dma_done = true;
 	} else {
-		LOG_ERR("DMA callback channel %d is not valid.", channel);
+		LOG_ERROR("DMA callback channel %d is not valid.", channel);
 		ret = -EINVAL;
 	}
 
@@ -1899,7 +1898,7 @@ static void dma_callback_async(const struct device *dma_dev, const struct device
 			ret = spi_dma_move_buffers(spi_dev, dma_len);
 
 			if (ret != 0) {
-				LOG_ERR("spi_dma_move_buffers err %d", ret);
+				LOG_ERROR("spi_dma_move_buffers err %d", ret);
 				goto end;
 			}
 
@@ -1937,10 +1936,10 @@ end:
 	LL_SPI_DisableDMAReq_RX(spi);
 
 	if (dma_stop(dma_dev, data->dma_rx.channel)) {
-		LOG_ERR("Rx dma_stop failed");
+		LOG_ERROR("Rx dma_stop failed");
 	}
 	if (dma_stop(dma_dev, data->dma_tx.channel)) {
-		LOG_ERR("Tx dma_stop failed");
+		LOG_ERROR("Tx dma_stop failed");
 	}
 
 unlock:
@@ -1955,7 +1954,7 @@ static void dma_callback_sync(const struct device *spi_dev, uint32_t channel, in
 	struct spi_stm32_data *data = spi_dev->data;
 
 	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d.", channel);
+		LOG_ERROR("DMA callback error with channel %d.", channel);
 		data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
 	} else {
 		/* identify the origin of this callback */
@@ -1966,7 +1965,7 @@ static void dma_callback_sync(const struct device *spi_dev, uint32_t channel, in
 			/* this part of the transfer ends */
 			data->status_flags |= SPI_STM32_DMA_RX_DONE_FLAG;
 		} else {
-			LOG_ERR("DMA callback channel %d is not valid.", channel);
+			LOG_ERROR("DMA callback channel %d is not valid.", channel);
 			data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
 		}
 	}
@@ -2053,7 +2052,7 @@ static int transceive_dma(const struct device *dev,
 #ifdef CONFIG_DCACHE
 	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 	    (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs))) {
-		LOG_ERR("SPI DMA transfers not supported on cached memory");
+		LOG_ERROR("SPI DMA transfers not supported on cached memory");
 		return -ENOTSUP;
 	}
 #endif /* CONFIG_DCACHE */
@@ -2340,7 +2339,7 @@ static int spi_stm32_pm_action(const struct device *dev, enum pm_device_action a
 		/* enable clock */
 		err = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
 		if (err != 0) {
-			LOG_ERR("Could not enable SPI clock");
+			LOG_ERROR("Could not enable SPI clock");
 			return err;
 		}
 		/* (re-)init SPI context and all CS configuration */
@@ -2353,7 +2352,7 @@ static int spi_stm32_pm_action(const struct device *dev, enum pm_device_action a
 		/* Stop device clock. */
 		err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken[0]);
 		if (err != 0) {
-			LOG_ERR("Could not disable SPI clock");
+			LOG_ERROR("Could not disable SPI clock");
 			return err;
 		}
 		/* Configure pins for sleep mode */
@@ -2381,7 +2380,7 @@ static int spi_stm32_init(const struct device *dev)
 					      (clock_control_subsys_t) &cfg->pclken[1],
 					      NULL);
 		if (err < 0) {
-			LOG_ERR("Could not select SPI domain clock");
+			LOG_ERROR("Could not select SPI domain clock");
 			return err;
 		}
 	}
@@ -2392,12 +2391,12 @@ static int spi_stm32_init(const struct device *dev)
 
 #ifdef CONFIG_SPI_STM32_DMA
 	if ((data->dma_rx.dma_dev != NULL) && !device_is_ready(data->dma_rx.dma_dev)) {
-		LOG_ERR("%s device not ready", data->dma_rx.dma_dev->name);
+		LOG_ERROR("%s device not ready", data->dma_rx.dma_dev->name);
 		return -ENODEV;
 	}
 
 	if ((data->dma_tx.dma_dev != NULL) && !device_is_ready(data->dma_tx.dma_dev)) {
-		LOG_ERR("%s device not ready", data->dma_tx.dma_dev->name);
+		LOG_ERROR("%s device not ready", data->dma_tx.dma_dev->name);
 		return -ENODEV;
 	}
 

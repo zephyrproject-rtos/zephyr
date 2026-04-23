@@ -184,13 +184,13 @@ static void bt_hci_tx_sync_in(struct usbd_class_data *const c_data,
 
 	buf = bt_hci_buf_alloc(ep);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return;
 	}
 
 	net_buf_add_mem(buf, bt_buf->data, bt_buf->len);
 	if (usbd_ep_enqueue(c_data, buf)) {
-		LOG_ERR("Failed to enqueue transfer");
+		LOG_ERROR("Failed to enqueue transfer");
 	} else {
 		k_sem_take(&hci_data->sync_sem, K_FOREVER);
 	}
@@ -221,7 +221,7 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 			ep = bt_hci_get_bulk_in(c_data);
 			break;
 		default:
-			LOG_ERR("Unsupported type %u", type);
+			LOG_ERROR("Unsupported type %u", type);
 			continue;
 		}
 
@@ -241,7 +241,7 @@ static void bt_hci_rx_thread(void *a, void *b, void *c)
 
 		err = bt_send(buf);
 		if (err) {
-			LOG_ERR("Error sending to driver");
+			LOG_ERROR("Error sending to driver");
 			net_buf_unref(buf);
 		}
 	}
@@ -270,7 +270,7 @@ static int bt_hci_acl_out_start(struct usbd_class_data *const c_data)
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_ERROR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 	}
 
@@ -309,7 +309,7 @@ static uint16_t hci_pkt_get_len(const uint8_t h4_type,
 		break;
 	}
 	default:
-		LOG_ERR("Unknown H4 buffer type");
+		LOG_ERROR("Unknown H4 buffer type");
 		return 0;
 	}
 
@@ -329,7 +329,7 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 		hci_data->acl_buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER,
 						  buf->data, buf->len);
 		if (hci_data->acl_buf == NULL) {
-			LOG_ERR("Failed to allocate net_buf");
+			LOG_ERROR("Failed to allocate net_buf");
 			goto restart_out_transfer;
 		}
 
@@ -340,13 +340,13 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 		LOG_DBG("acl_len %u, chunk %u", hci_data->acl_len, buf->len);
 
 		if (hci_data->acl_len == 0) {
-			LOG_ERR("Failed to get packet length");
+			LOG_ERROR("Failed to get packet length");
 			net_buf_unref(hci_data->acl_buf);
 			hci_data->acl_buf = NULL;
 		}
 	} else {
 		if (net_buf_tailroom(hci_data->acl_buf) < buf->len) {
-			LOG_ERR("Buffer tailroom too small");
+			LOG_ERROR("Buffer tailroom too small");
 			net_buf_unref(hci_data->acl_buf);
 			hci_data->acl_buf = NULL;
 			goto restart_out_transfer;
@@ -416,7 +416,7 @@ static void bt_hci_enable(struct usbd_class_data *const c_data)
 	LOG_INF("Configuration enabled");
 
 	if (bt_hci_acl_out_start(c_data)) {
-		LOG_ERR("Failed to start ACL OUT transfer");
+		LOG_ERROR("Failed to start ACL OUT transfer");
 	}
 }
 
@@ -446,7 +446,7 @@ static int bt_hci_ctd(struct usbd_class_data *const c_data,
 
 	cmd_buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, buf->data, buf->len);
 	if (!cmd_buf) {
-		LOG_ERR("Cannot get free buffer");
+		LOG_ERROR("Cannot get free buffer");
 
 		return -ENOMEM;
 	}
@@ -675,7 +675,7 @@ static int bt_hci_preinit(void)
 
 	ret = bt_enable_raw(&bt_hci_tx_queue);
 	if (ret) {
-		LOG_ERR("Failed to open Bluetooth raw channel: %d", ret);
+		LOG_ERROR("Failed to open Bluetooth raw channel: %d", ret);
 		return ret;
 	}
 

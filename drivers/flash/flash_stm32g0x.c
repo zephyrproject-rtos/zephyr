@@ -80,7 +80,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	 */
 	if ((flash[0] != 0xFFFFFFFFUL ||
 	     flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
-		LOG_ERR("Word at offs %ld not erased", (long)offset);
+		LOG_ERROR("Word at offs %ld not erased", (long)offset);
 		return -EIO;
 	}
 
@@ -291,7 +291,7 @@ int  flash_stm32_check_configuration(void)
 #if defined(STM32G0_DBANK_SUPPORT) && (CONFIG_FLASH_SIZE == 256)
 	/* Single bank mode not supported on dual bank SoCs with 256kiB flash */
 	if ((FLASH->OPTR & FLASH_OPTR_DUAL_BANK) == 0) {
-		LOG_ERR("Single bank configuration not supported by the driver");
+		LOG_ERROR("Single bank configuration not supported by the driver");
 		return -ENOTSUP;
 	}
 #endif

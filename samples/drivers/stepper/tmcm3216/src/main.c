@@ -52,12 +52,12 @@ int main(void)
 	LOG_INF("Starting TMCM-3216 stepper sample");
 
 	if (!device_is_ready(stepper_ctl)) {
-		LOG_ERR("Stepper ctrl device %s not ready", stepper_ctl->name);
+		LOG_ERROR("Stepper ctrl device %s not ready", stepper_ctl->name);
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(stepper_drv)) {
-		LOG_ERR("Stepper driver device %s not ready", stepper_drv->name);
+		LOG_ERROR("Stepper driver device %s not ready", stepper_drv->name);
 		return -ENODEV;
 	}
 

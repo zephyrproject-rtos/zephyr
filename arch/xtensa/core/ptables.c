@@ -694,8 +694,9 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	bool is_user;
 
 	if (size == 0) {
-		LOG_ERR("Cannot map physical memory at 0x%08X: invalid "
-			"zero size", (uint32_t)phys);
+		LOG_ERROR("Cannot map physical memory at 0x%08X: invalid "
+			  "zero size",
+			  (uint32_t)phys);
 		k_panic();
 	}
 
@@ -856,12 +857,12 @@ void arch_mem_unmap(void *addr, size_t size)
 	k_spinlock_key_t key;
 
 	if (addr == NULL) {
-		LOG_ERR("Cannot unmap NULL pointer");
+		LOG_ERROR("Cannot unmap NULL pointer");
 		return;
 	}
 
 	if (size == 0) {
-		LOG_ERR("Cannot unmap virtual memory with zero size");
+		LOG_ERROR("Cannot unmap virtual memory with zero size");
 		return;
 	}
 

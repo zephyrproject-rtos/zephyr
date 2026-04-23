@@ -68,17 +68,17 @@ static int ad569x_channel_setup(const struct device *dev, const struct dac_chann
 	const struct ad569x_config *config = dev->config;
 
 	if (channel_cfg->channel_id > 0) {
-		LOG_ERR("invalid channel %d", channel_cfg->channel_id);
+		LOG_ERROR("invalid channel %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->resolution != config->resolution) {
-		LOG_ERR("invalid resolution %d", channel_cfg->resolution);
+		LOG_ERROR("invalid resolution %d", channel_cfg->resolution);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -98,12 +98,12 @@ static int ad569x_sw_reset(const struct device *dev)
 	/* Check that DAC output is reset */
 	ret = ad569x_read(dev, &reg);
 	if (ret != 0) {
-		LOG_ERR("failed to read value");
+		LOG_ERROR("failed to read value");
 		return ret;
 	}
 
 	if (reg != 0) {
-		LOG_ERR("failed to reset DAC output");
+		LOG_ERROR("failed to reset DAC output");
 		return -EIO;
 	}
 
@@ -115,12 +115,12 @@ static int ad569x_write_value(const struct device *dev, uint8_t channel, uint32_
 	const struct ad569x_config *config = dev->config;
 
 	if (channel > 0) {
-		LOG_ERR("invalid channel %d", channel);
+		LOG_ERROR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	if (value > (BIT(config->resolution) - 1)) {
-		LOG_ERR("invalid value %d", value);
+		LOG_ERROR("invalid value %d", value);
 		return -EINVAL;
 	}
 
@@ -140,7 +140,7 @@ static int ad569x_init(const struct device *dev)
 
 	ret = ad569x_sw_reset(dev);
 	if (ret != 0) {
-		LOG_ERR("failed to perform sw reset");
+		LOG_ERROR("failed to perform sw reset");
 		return ret;
 	}
 
@@ -153,7 +153,7 @@ static int ad569x_init(const struct device *dev)
 
 	ret = ad569x_write(dev, AD569X_CMD_CONFIGURE, ctrl_reg);
 	if (ret != 0) {
-		LOG_ERR("failed to configure the device");
+		LOG_ERROR("failed to configure the device");
 		return ret;
 	}
 

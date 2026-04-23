@@ -33,19 +33,19 @@ static int spi_bitbang_configure(const struct spi_bitbang_config *info,
 			    const struct spi_config *config)
 {
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)) {
-		LOG_ERR("Unsupported configuration");
+		LOG_ERROR("Unsupported configuration");
 		return -ENOTSUP;
 	}
 
 	const int bits = SPI_WORD_SIZE_GET(config->operation);
 
 	if (bits > 32) {
-		LOG_ERR("Word sizes > 32 bits not supported");
+		LOG_ERROR("Word sizes > 32 bits not supported");
 		return -ENOTSUP;
 	}
 
@@ -92,12 +92,12 @@ static int spi_bitbang_transceive(const struct device *dev,
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
 		if (!info->mosi_gpio.port) {
-			LOG_ERR("No MOSI pin specified in half duplex mode");
+			LOG_ERROR("No MOSI pin specified in half duplex mode");
 			return -EINVAL;
 		}
 
 		if (tx_bufs && rx_bufs) {
-			LOG_ERR("Both RX and TX specified in half duplex mode");
+			LOG_ERROR("Both RX and TX specified in half duplex mode");
 			return -EINVAL;
 		} else if (tx_bufs && !rx_bufs) {
 			/* TX mode */
@@ -120,7 +120,7 @@ static int spi_bitbang_transceive(const struct device *dev,
 	if (info->mosi_gpio.port) {
 		rc = gpio_pin_configure_dt(&info->mosi_gpio, mosi_flags);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure MOSI pin: %d", rc);
+			LOG_ERROR("Couldn't configure MOSI pin: %d", rc);
 			return rc;
 		}
 	}
@@ -285,45 +285,45 @@ int spi_bitbang_init(const struct device *dev)
 	int rc;
 
 	if (!gpio_is_ready_dt(&config->clk_gpio)) {
-		LOG_ERR("GPIO port for clk pin is not ready");
+		LOG_ERROR("GPIO port for clk pin is not ready");
 		return -ENODEV;
 	}
 	rc = gpio_pin_configure_dt(&config->clk_gpio, GPIO_OUTPUT_INACTIVE);
 	if (rc < 0) {
-		LOG_ERR("Couldn't configure clk pin; (%d)", rc);
+		LOG_ERROR("Couldn't configure clk pin; (%d)", rc);
 		return rc;
 	}
 
 	if (config->mosi_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->mosi_gpio)) {
-			LOG_ERR("GPIO port for mosi pin is not ready");
+			LOG_ERROR("GPIO port for mosi pin is not ready");
 			return -ENODEV;
 		}
 		rc = gpio_pin_configure_dt(&config->mosi_gpio,
 				GPIO_OUTPUT_INACTIVE);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure mosi pin; (%d)", rc);
+			LOG_ERROR("Couldn't configure mosi pin; (%d)", rc);
 			return rc;
 		}
 	}
 
 	if (config->miso_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->miso_gpio)) {
-			LOG_ERR("GPIO port for miso pin is not ready");
+			LOG_ERROR("GPIO port for miso pin is not ready");
 			return -ENODEV;
 		}
 
 
 		rc = gpio_pin_configure_dt(&config->miso_gpio, GPIO_INPUT);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure miso pin; (%d)", rc);
+			LOG_ERROR("Couldn't configure miso pin; (%d)", rc);
 			return rc;
 		}
 	}
 
 	rc = spi_context_cs_configure_all(&data->ctx);
 	if (rc < 0) {
-		LOG_ERR("Failed to configure CS pins: %d", rc);
+		LOG_ERROR("Failed to configure CS pins: %d", rc);
 		return rc;
 	}
 

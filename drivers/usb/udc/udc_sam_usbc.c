@@ -139,7 +139,7 @@ static void sam_usbc_ep_isr_sta(Usbc *base, uint8_t ep_idx)
 
 	if (sr & USBC_UESTA0_RAMACERI) {
 		base->UESTACLR[ep_idx] = USBC_UESTA0CLR_RAMACERIC;
-		LOG_ERR("ISR: EP%d RAM Access Error", ep_idx);
+		LOG_ERROR("ISR: EP%d RAM Access Error", ep_idx);
 	}
 }
 
@@ -278,7 +278,7 @@ static int alloc_phys_ep(const struct device *const dev, const uint8_t virt_addr
 		}
 	}
 
-	LOG_ERR("No free physical EP for virt 0x%02x", virt_addr);
+	LOG_ERROR("No free physical EP for virt 0x%02x", virt_addr);
 	return -ENOMEM;
 }
 
@@ -428,7 +428,7 @@ static int sam_usbc_handle_evt_din(const struct device *const dev,
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for ep 0x%02x", ep_cfg->addr);
+		LOG_ERROR("No buffer for ep 0x%02x", ep_cfg->addr);
 		return -ENOBUFS;
 	}
 
@@ -479,7 +479,7 @@ static int sam_usbc_handle_evt_dout(const struct device *const dev,
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for OUT ep 0x%02x", ep_cfg->addr);
+		LOG_ERROR("No buffer for OUT ep 0x%02x", ep_cfg->addr);
 		return -ENODATA;
 	}
 
@@ -633,12 +633,12 @@ static void sam_usbc_handle_setup_isr(const struct device *const dev)
 		dt->sizes, dt->udesc_sizes.byte_count);
 
 	if (dt->udesc_sizes.byte_count != 8) {
-		LOG_ERR("Wrong byte count %u for setup packet "
-			"(UECFG[0]=%08x UESTA[0]=%08x UECON[0]=%08x)",
-			dt->udesc_sizes.byte_count,
-			base->UECFG[0], base->UESTA[0], base->UECON[0]);
-		LOG_ERR("Descriptor: addr=%p sizes=%08x bk_ctrl=%08x",
-			(void *)dt->ep_pipe_addr, dt->sizes, dt->bk_ctrl_stat);
+		LOG_ERROR("Wrong byte count %u for setup packet "
+			  "(UECFG[0]=%08x UESTA[0]=%08x UECON[0]=%08x)",
+			  dt->udesc_sizes.byte_count, base->UECFG[0], base->UESTA[0],
+			  base->UECON[0]);
+		LOG_ERROR("Descriptor: addr=%p sizes=%08x bk_ctrl=%08x", (void *)dt->ep_pipe_addr,
+			  dt->sizes, dt->bk_ctrl_stat);
 		LOG_HEXDUMP_ERR(priv->setup, 8, "setup[]:");
 	}
 
@@ -1157,7 +1157,7 @@ static int udc_sam_usbc_enable(const struct device *const dev)
 
 	while (!(base->USBSTA & USBC_USBSTA_CLKUSABLE)) {
 		if (sys_timepoint_expired(timeout)) {
-			LOG_ERR("USB clock not usable (timeout)");
+			LOG_ERROR("USB clock not usable (timeout)");
 			return -ETIMEDOUT;
 		}
 	}
@@ -1165,7 +1165,7 @@ static int udc_sam_usbc_enable(const struct device *const dev)
 	/* Configure USB pad */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Failed to apply pinctrl state (%d)", ret);
+		LOG_ERROR("Failed to apply pinctrl state (%d)", ret);
 		return ret;
 	}
 
@@ -1186,15 +1186,13 @@ static int udc_sam_usbc_enable(const struct device *const dev)
 	sam_usbc_phys_ep_reset(dev);
 
 	/* Enable control endpoints */
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control OUT endpoint");
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERROR("Failed to enable control OUT endpoint");
 		return -EIO;
 	}
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control IN endpoint");
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERROR("Failed to enable control IN endpoint");
 		return -EIO;
 	}
 
@@ -1237,11 +1235,11 @@ static int udc_sam_usbc_disable(const struct device *const dev)
 
 	/* Disable control endpoints */
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control OUT endpoint");
+		LOG_ERROR("Failed to disable control OUT endpoint");
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control IN endpoint");
+		LOG_ERROR("Failed to disable control IN endpoint");
 	}
 
 	/* Reset physical EP allocation */
@@ -1336,7 +1334,7 @@ static int udc_sam_usbc_driver_preinit(const struct device *const dev)
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -1356,7 +1354,7 @@ static int udc_sam_usbc_driver_preinit(const struct device *const dev)
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}

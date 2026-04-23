@@ -622,20 +622,20 @@ static int w5500_init(const struct device *dev)
 	struct w5500_runtime *ctx = dev->data;
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
+		LOG_ERROR("SPI master port %s not ready", config->spi.bus->name);
 		return -EINVAL;
 	}
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	if (DT_ALL_INST_HAS_PROP_STATUS_OKAY(int_gpios) || (config->interrupt.port != NULL)) {
 		if (!gpio_is_ready_dt(&config->interrupt)) {
-			LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
+			LOG_ERROR("GPIO port %s not ready", config->interrupt.port->name);
 			return -EINVAL;
 		}
 
 		err = gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT);
 		if (err < 0) {
-			LOG_ERR("Unable to configure GPIO pin %u", config->interrupt.pin);
+			LOG_ERROR("Unable to configure GPIO pin %u", config->interrupt.pin);
 			return err;
 		}
 
@@ -643,14 +643,14 @@ static int w5500_init(const struct device *dev)
 				BIT(config->interrupt.pin));
 		err = gpio_add_callback(config->interrupt.port, &(ctx->gpio_cb));
 		if (err < 0) {
-			LOG_ERR("Unable to add GPIO callback %u", config->interrupt.pin);
+			LOG_ERROR("Unable to add GPIO callback %u", config->interrupt.pin);
 			return err;
 		}
 
 		err = gpio_pin_interrupt_configure_dt(&config->interrupt,
 							GPIO_INT_EDGE_FALLING);
 		if (err < 0) {
-			LOG_ERR("Unable to enable GPIO INT %u", config->interrupt.pin);
+			LOG_ERROR("Unable to enable GPIO INT %u", config->interrupt.pin);
 			return err;
 		}
 		LOG_INF("%s: interrupt mode", dev->name);
@@ -663,13 +663,13 @@ static int w5500_init(const struct device *dev)
 
 	if (config->reset.port != NULL) {
 		if (!gpio_is_ready_dt(&config->reset)) {
-			LOG_ERR("GPIO port %s not ready", config->reset.port->name);
+			LOG_ERROR("GPIO port %s not ready", config->reset.port->name);
 			return -EINVAL;
 		}
 
 		err = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
 		if (err < 0) {
-			LOG_ERR("Unable to configure GPIO pin %u", config->reset.pin);
+			LOG_ERROR("Unable to configure GPIO pin %u", config->reset.pin);
 			return err;
 		}
 
@@ -685,7 +685,7 @@ static int w5500_init(const struct device *dev)
 
 	err = w5500_soft_reset(dev);
 	if (err != 0) {
-		LOG_ERR("Reset failed");
+		LOG_ERROR("Reset failed");
 		return err;
 	}
 
@@ -696,7 +696,7 @@ static int w5500_init(const struct device *dev)
 	/* check retry time value */
 	w5500_spi_read(dev, W5500_RTR, rtr, 2);
 	if (sys_get_be16(rtr) != RTR_DEFAULT) {
-		LOG_ERR("Unable to read RTR register");
+		LOG_ERROR("Unable to read RTR register");
 		return -ENODEV;
 	}
 

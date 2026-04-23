@@ -436,7 +436,7 @@ static int32_t rcar_mmc_convert_sd_to_mmc_resp(uint32_t response_type)
 		mmc_resp = RCAR_MMC_CMD_RSP_R3;
 		break;
 	default:
-		LOG_ERR("unknown response type 0x%08x", response_type);
+		LOG_ERROR("unknown response type 0x%08x", response_type);
 		return -EINVAL;
 	}
 
@@ -548,7 +548,7 @@ static int rcar_mmc_dma_rx_tx_data(const struct device *dev, struct sdhc_data *d
 
 	ret = sys_cache_data_flush_range(data->data, data->blocks * data->block_size);
 	if (ret < 0) {
-		LOG_ERR("%s: can't invalidate data cache before write", dev->name);
+		LOG_ERROR("%s: can't invalidate data cache before write", dev->name);
 		return ret;
 	}
 
@@ -583,13 +583,13 @@ static int rcar_mmc_dma_rx_tx_data(const struct device *dev, struct sdhc_data *d
 
 	ret = k_sem_take(&dev_data->irq_xref_fin, K_MSEC(data->timeout_ms));
 	if (ret < 0) {
-		LOG_ERR("%s: interrupt signal timeout error %d", dev->name, ret);
+		LOG_ERROR("%s: interrupt signal timeout error %d", dev->name, ret);
 	}
 
 	reg = rcar_mmc_read_reg32(dev, RCAR_MMC_DMA_INFO2);
 	if (reg) {
-		LOG_ERR("%s: an error occurs on the DMAC channel #%u", dev->name,
-			(reg & RCAR_MMC_DMA_INFO2_ERR_RD) ? 1U : 0U);
+		LOG_ERROR("%s: an error occurs on the DMAC channel #%u", dev->name,
+			  (reg & RCAR_MMC_DMA_INFO2_ERR_RD) ? 1U : 0U);
 		ret = -EIO;
 	}
 #else
@@ -601,7 +601,7 @@ static int rcar_mmc_dma_rx_tx_data(const struct device *dev, struct sdhc_data *d
 
 	if (is_read) {
 		if (sys_cache_data_invd_range(data->data, data->blocks * data->block_size) < 0) {
-			LOG_ERR("%s: can't invalidate data cache after read", dev->name);
+			LOG_ERROR("%s: can't invalidate data cache after read", dev->name);
 		}
 	}
 
@@ -705,8 +705,8 @@ static int rcar_mmc_sd_buf_rx_tx_data(const struct device *dev, struct sdhc_data
 	 */
 	if ((data->block_size % dev_data->width_access_sd_buf0) ||
 	    (data->block_size < dev_data->width_access_sd_buf0)) {
-		LOG_ERR("%s: block size (%u) less or not align on SD BUF0 access width (%hhu)",
-			dev->name, data->block_size, dev_data->width_access_sd_buf0);
+		LOG_ERROR("%s: block size (%u) less or not align on SD BUF0 access width (%hhu)",
+			  dev->name, data->block_size, dev_data->width_access_sd_buf0);
 		return -EINVAL;
 	}
 
@@ -722,8 +722,8 @@ static int rcar_mmc_sd_buf_rx_tx_data(const struct device *dev, struct sdhc_data
 	 * * Read and Write data block length size is always 512 bytes (same as SDHC).
 	 */
 	if (dev_data->ddr_mode && data->block_size != 512) {
-		LOG_ERR("%s: block size (%u) isn't equal to 512 in DDR mode", dev->name,
-			data->block_size);
+		LOG_ERROR("%s: block size (%u) isn't equal to 512 in DDR mode", dev->name,
+			  data->block_size);
 		return -EINVAL;
 	}
 
@@ -732,8 +732,8 @@ static int rcar_mmc_sd_buf_rx_tx_data(const struct device *dev, struct sdhc_data
 	 *       transfer data length register from R-Car S4 series User's Manual
 	 */
 	if (data->block_size > 512 || data->block_size == 0) {
-		LOG_ERR("%s: block size (%u) must not be bigger than 512 bytes and equal to zero",
-			dev->name, data->block_size);
+		LOG_ERROR("%s: block size (%u) must not be bigger than 512 bytes and equal to zero",
+			  dev->name, data->block_size);
 		return -EINVAL;
 	}
 
@@ -741,8 +741,8 @@ static int rcar_mmc_sd_buf_rx_tx_data(const struct device *dev, struct sdhc_data
 	if (cmd_reg & RCAR_MMC_CMD_MULTI) {
 		/* CMD12 is automatically issued at multiple block transfer */
 		if (!(cmd_reg & RCAR_MMC_CMD_NOSTOP) && data->block_size != 512) {
-			LOG_ERR("%s: illegal block size (%u) for multi-block xref with CMD12",
-				dev->name, data->block_size);
+			LOG_ERROR("%s: illegal block size (%u) for multi-block xref with CMD12",
+				  dev->name, data->block_size);
 			return -EINVAL;
 		}
 
@@ -754,14 +754,14 @@ static int rcar_mmc_sd_buf_rx_tx_data(const struct device *dev, struct sdhc_data
 		case 512:
 			break;
 		default:
-			LOG_ERR("%s: illegal block size (%u) for multi-block xref without CMD12",
-				dev->name, data->block_size);
+			LOG_ERROR("%s: illegal block size (%u) for multi-block xref without CMD12",
+				  dev->name, data->block_size);
 			return -EINVAL;
 		}
 	}
 
 	if (data->block_size == 1 && dev_data->host_io.bus_width == SDHC_BUS_WIDTH8BIT) {
-		LOG_ERR("%s: block size can't be equal to 1 with 8-bits bus width", dev->name);
+		LOG_ERROR("%s: block size can't be equal to 1 with 8-bits bus width", dev->name);
 		return -EINVAL;
 	}
 
@@ -1106,8 +1106,8 @@ static int rcar_mmc_set_clk_rate(const struct device *dev, struct sdhc_io *ios)
 	}
 
 	if (ios->clock > data->props.f_max || ios->clock < data->props.f_min) {
-		LOG_ERR("SDHC I/O: clock (%d) isn't in range %d - %d Hz", ios->clock,
-			data->props.f_min, data->props.f_max);
+		LOG_ERROR("SDHC I/O: clock (%d) isn't in range %d - %d Hz", ios->clock,
+			  data->props.f_min, data->props.f_max);
 		return -EINVAL;
 	}
 
@@ -1209,7 +1209,7 @@ static int rcar_mmc_set_bus_width(const struct device *dev, struct sdhc_io *ios)
 		if (data->props.bus_4_bit_support) {
 			reg_width = RCAR_MMC_OPTION_WIDTH_4;
 		} else {
-			LOG_ERR("SDHC I/O: 4-bits bus width isn't supported");
+			LOG_ERROR("SDHC I/O: 4-bits bus width isn't supported");
 			return -ENOTSUP;
 		}
 		break;
@@ -1217,7 +1217,7 @@ static int rcar_mmc_set_bus_width(const struct device *dev, struct sdhc_io *ios)
 		if (data->props.host_caps.bus_8_bit_support) {
 			reg_width = RCAR_MMC_OPTION_WIDTH_8;
 		} else {
-			LOG_ERR("SDHC I/O: 8-bits bus width isn't supported");
+			LOG_ERROR("SDHC I/O: 8-bits bus width isn't supported");
 			return -ENOTSUP;
 		}
 		break;
@@ -1316,7 +1316,7 @@ static int rcar_mmc_set_timings(const struct device *dev, struct sdhc_io *ios)
 		break;
 	case SDHC_TIMING_HS:
 		if (!data->props.host_caps.high_spd_support) {
-			LOG_ERR("SDHC I/O: HS timing isn't supported");
+			LOG_ERROR("SDHC I/O: HS timing isn't supported");
 			return -ENOTSUP;
 		}
 		break;
@@ -1326,13 +1326,13 @@ static int rcar_mmc_set_timings(const struct device *dev, struct sdhc_io *ios)
 		break;
 	case SDHC_TIMING_SDR104:
 		if (!data->props.host_caps.sdr104_support) {
-			LOG_ERR("SDHC I/O: SDR104 timing isn't supported");
+			LOG_ERROR("SDHC I/O: SDR104 timing isn't supported");
 			return -ENOTSUP;
 		}
 		break;
 	case SDHC_TIMING_HS400:
 		if (!data->props.hs400_support) {
-			LOG_ERR("SDHC I/O: HS400 timing isn't supported");
+			LOG_ERROR("SDHC I/O: HS400 timing isn't supported");
 			return -ENOTSUP;
 		}
 		new_voltage = SD_VOL_1_8_V;
@@ -1341,14 +1341,14 @@ static int rcar_mmc_set_timings(const struct device *dev, struct sdhc_io *ios)
 	case SDHC_TIMING_DDR50:
 	case SDHC_TIMING_DDR52:
 		if (!data->props.host_caps.ddr50_support) {
-			LOG_ERR("SDHC I/O: DDR50/DDR52 timing isn't supported");
+			LOG_ERROR("SDHC I/O: DDR50/DDR52 timing isn't supported");
 			return -ENOTSUP;
 		}
 		data->ddr_mode = 1;
 		break;
 	case SDHC_TIMING_HS200:
 		if (!data->props.hs200_support) {
-			LOG_ERR("SDHC I/O: HS200 timing isn't supported");
+			LOG_ERROR("SDHC I/O: HS200 timing isn't supported");
 			return -ENOTSUP;
 		}
 		new_voltage = SD_VOL_1_8_V;
@@ -1408,8 +1408,8 @@ static int rcar_mmc_set_io(const struct device *dev, struct sdhc_io *ios)
 	/* Set host clock */
 	ret = rcar_mmc_set_clk_rate(dev, ios);
 	if (ret) {
-		LOG_ERR("SDHC I/O: can't change clock rate error %d old %d new %d", ret,
-			host_io->clock, ios->clock);
+		LOG_ERROR("SDHC I/O: can't change clock rate error %d old %d new %d", ret,
+			  host_io->clock, ios->clock);
 		return ret;
 	}
 
@@ -1450,7 +1450,7 @@ static int rcar_mmc_set_io(const struct device *dev, struct sdhc_io *ios)
 	 * SDHC subsystem doesn't support any bus mode except push-pull.
 	 */
 	if (ios->bus_mode != SDHC_BUSMODE_PUSHPULL) {
-		LOG_ERR("SDHC I/O: not supported bus mode %d", ios->bus_mode);
+		LOG_ERROR("SDHC I/O: not supported bus mode %d", ios->bus_mode);
 		return -ENOTSUP;
 	}
 	host_io->bus_mode = ios->bus_mode;
@@ -1494,7 +1494,7 @@ static int rcar_mmc_set_io(const struct device *dev, struct sdhc_io *ios)
 			ret = rcar_mmc_enable_clock(dev, false);
 			break;
 		default:
-			LOG_ERR("SDHC I/O: not supported power mode %d", ios->power_mode);
+			LOG_ERROR("SDHC I/O: not supported power mode %d", ios->power_mode);
 			return -ENOTSUP;
 		}
 
@@ -1506,22 +1506,22 @@ static int rcar_mmc_set_io(const struct device *dev, struct sdhc_io *ios)
 
 	ret = rcar_mmc_set_bus_width(dev, ios);
 	if (ret) {
-		LOG_ERR("SDHC I/O: can't change bus width error %d old %d new %d", ret,
-			host_io->bus_width, ios->bus_width);
+		LOG_ERROR("SDHC I/O: can't change bus width error %d old %d new %d", ret,
+			  host_io->bus_width, ios->bus_width);
 		return ret;
 	}
 
 	ret = rcar_mmc_set_timings(dev, ios);
 	if (ret) {
-		LOG_ERR("SDHC I/O: can't change timing error %d old %d new %d", ret,
-			host_io->timing, ios->timing);
+		LOG_ERROR("SDHC I/O: can't change timing error %d old %d new %d", ret,
+			  host_io->timing, ios->timing);
 		return ret;
 	}
 
 	ret = rcar_mmc_change_voltage(dev->config, host_io, ios);
 	if (ret) {
-		LOG_ERR("SDHC I/O: can't change voltage! error %d old %d new %d", ret,
-			host_io->signal_voltage, ios->signal_voltage);
+		LOG_ERROR("SDHC I/O: can't change voltage! error %d old %d new %d", ret,
+			  host_io->signal_voltage, ios->signal_voltage);
 		return ret;
 	}
 
@@ -1636,8 +1636,8 @@ static int rcar_mmc_execute_tuning(const struct device *dev)
 	} else if (dev_data->host_io.timing != SDHC_TIMING_HS400) {
 		cmd.opcode = SD_SEND_TUNING_BLOCK;
 	} else {
-		LOG_ERR("%s: tuning isn't possible in HS400 mode, it should be done in HS200",
-			dev->name);
+		LOG_ERROR("%s: tuning isn't possible in HS400 mode, it should be done in HS200",
+			  dev->name);
 		return -EINVAL;
 	}
 
@@ -1654,7 +1654,7 @@ static int rcar_mmc_execute_tuning(const struct device *dev)
 		data.block_size = sizeof(tun_block_8_bits_bus);
 		tun_block_ptr = tun_block_8_bits_bus;
 	} else {
-		LOG_ERR("%s: don't support tuning for 1-bit bus width", dev->name);
+		LOG_ERROR("%s: don't support tuning for 1-bit bus width", dev->name);
 		return -EINVAL;
 	}
 
@@ -1730,7 +1730,7 @@ static int rcar_mmc_execute_tuning(const struct device *dev)
 	rcar_mmc_write_reg32(dev, RENESAS_SDHI_SCC_RVSREQ, 0);
 
 	if (!valid_taps) {
-		LOG_ERR("%s: there isn't any valid tap during tuning", dev->name);
+		LOG_ERROR("%s: there isn't any valid tap during tuning", dev->name);
 		goto reset_scc;
 	}
 
@@ -1839,7 +1839,7 @@ static int rcar_mmc_retune_if_needed(const struct device *dev, bool request_retu
 		break;
 	default:
 		ret = -EINVAL;
-		LOG_ERR("%s: can't perform manual tuning SCC_RVSREQ %08x", dev->name, reg);
+		LOG_ERROR("%s: can't perform manual tuning SCC_RVSREQ %08x", dev->name, reg);
 		break;
 	}
 
@@ -2120,7 +2120,7 @@ static int rcar_mmc_init(const struct device *dev)
 #ifdef CONFIG_RCAR_MMC_DMA_IRQ_DRIVEN_SUPPORT
 	ret = k_sem_init(&data->irq_xref_fin, 0, 1);
 	if (ret) {
-		LOG_ERR("%s: can't init semaphore", dev->name);
+		LOG_ERROR("%s: can't init semaphore", dev->name);
 		return ret;
 	}
 #endif
@@ -2130,19 +2130,19 @@ static int rcar_mmc_init(const struct device *dev)
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("%s: error can't apply pinctrl state", dev->name);
+		LOG_ERROR("%s: error can't apply pinctrl state", dev->name);
 		goto exit_unmap;
 	}
 
 	if (!device_is_ready(cfg->cpg_dev)) {
-		LOG_ERR("%s: error cpg_dev isn't ready", dev->name);
+		LOG_ERROR("%s: error cpg_dev isn't ready", dev->name);
 		ret = -ENODEV;
 		goto exit_unmap;
 	}
 
 	ret = rcar_mmc_init_start_clk(cfg);
 	if (ret < 0) {
-		LOG_ERR("%s: error can't turn on the cpg", dev->name);
+		LOG_ERROR("%s: error can't turn on the cpg", dev->name);
 		goto exit_unmap;
 	}
 

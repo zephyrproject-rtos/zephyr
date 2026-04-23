@@ -33,7 +33,7 @@ static const struct bt_data sd[] = {
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err != 0) {
-		LOG_ERR("Connection failed, err 0x%02x %s", err, bt_hci_err_to_str(err));
+		LOG_ERROR("Connection failed, err 0x%02x %s", err, bt_hci_err_to_str(err));
 		return;
 	}
 
@@ -51,7 +51,7 @@ static void start_adv(void)
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err != 0) {
-		LOG_ERR("Advertising failed to start (err %d)", err);
+		LOG_ERROR("Advertising failed to start (err %d)", err);
 		return;
 	}
 
@@ -72,7 +72,7 @@ int main(void)
 
 	ret = bt_enable(NULL);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable bluetooth: %d", ret);
+		LOG_ERROR("Failed to enable bluetooth: %d", ret);
 		return ret;
 	}
 
@@ -87,12 +87,12 @@ int main(void)
 
 	ret = bt_ans_set_new_alert_support_category(new_alert_mask);
 	if (ret != 0) {
-		LOG_ERR("Unable to set new alert support category mask! (err: %d)", ret);
+		LOG_ERROR("Unable to set new alert support category mask! (err: %d)", ret);
 	}
 
 	ret = bt_ans_set_unread_support_category(unread_mask);
 	if (ret != 0) {
-		LOG_ERR("Unable to set unread support category mask! (err: %d)", ret);
+		LOG_ERROR("Unable to set unread support category mask! (err: %d)", ret);
 	}
 
 	while (true) {
@@ -103,20 +103,20 @@ int main(void)
 
 		ret = bt_ans_notify_new_alert(NULL, BT_ANS_CAT_SIMPLE_ALERT, num_new, test_msg);
 		if (ret != 0) {
-			LOG_ERR("Failed to push new alert! (err: %d)", ret);
+			LOG_ERROR("Failed to push new alert! (err: %d)", ret);
 		}
 		k_sleep(K_SECONDS(1));
 
 		ret = bt_ans_notify_new_alert(NULL, BT_ANS_CAT_HIGH_PRI_ALERT, num_new,
 					      high_pri_msg);
 		if (ret != 0) {
-			LOG_ERR("Failed to push new alert! (err: %d)", ret);
+			LOG_ERROR("Failed to push new alert! (err: %d)", ret);
 		}
 		k_sleep(K_SECONDS(1));
 
 		ret = bt_ans_set_unread_count(NULL, BT_ANS_CAT_SIMPLE_ALERT, num_unread);
 		if (ret != 0) {
-			LOG_ERR("Failed to push new unread count! (err: %d)", ret);
+			LOG_ERROR("Failed to push new unread count! (err: %d)", ret);
 		}
 
 		num_unread++;

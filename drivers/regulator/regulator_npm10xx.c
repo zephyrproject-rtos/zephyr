@@ -197,7 +197,7 @@ static int set_gpio_ctrl(const struct regulator_npm10xx_config *config, regulato
 	}
 	if (mode & NPM10XX_REG_GPIO_NONE &&
 	    (mode & NPM10XX_REG_GPIO_Msk & ~NPM10XX_REG_GPIO_NONE)) {
-		LOG_ERR("Cannot combine NPM10XX_REG_GPIO_NONE with other GPIO modes");
+		LOG_ERROR("Cannot combine NPM10XX_REG_GPIO_NONE with other GPIO modes");
 		return -EINVAL;
 	}
 
@@ -217,14 +217,14 @@ static int set_gpio_ctrl(const struct regulator_npm10xx_config *config, regulato
 
 	case NPM10XX_SOURCE_LDO:
 		if (reg > 1U) {
-			LOG_ERR("invalid mode for the LDO regulator");
+			LOG_ERROR("invalid mode for the LDO regulator");
 			return -EINVAL;
 		}
 		return i2c_reg_write_byte_dt(&config->i2c, NPM10_LDO1_GPIO, reg);
 
 	case NPM10XX_SOURCE_LDSW:
 		if (reg > 1U) {
-			LOG_ERR("invalid mode for the LOADSW regulator");
+			LOG_ERROR("invalid mode for the LOADSW regulator");
 			return -EINVAL;
 		}
 		return i2c_reg_write_byte_dt(&config->i2c, NPM10_LOADSW2_GPIO, reg);
@@ -248,7 +248,7 @@ static int regulator_npm10xx_parent_dvs_state_set(const struct device *dev,
 		if (spec->port != NULL) {
 			ret = gpio_pin_set_dt(spec, IS_BIT_SET(state, idx));
 			if (ret != 0) {
-				LOG_ERR("failed to set DVS pin #%d", idx);
+				LOG_ERROR("failed to set DVS pin #%d", idx);
 				return ret;
 			}
 		}
@@ -275,13 +275,13 @@ static int regulator_npm10xx_parent_init(const struct device *dev)
 
 		if (spec->port != NULL) {
 			if (!gpio_is_ready_dt(spec)) {
-				LOG_ERR("DVS pin #%d is not ready", idx);
+				LOG_ERROR("DVS pin #%d is not ready", idx);
 				return -ENODEV;
 			}
 
 			ret = gpio_pin_configure_dt(spec, GPIO_OUTPUT);
 			if (ret != 0) {
-				LOG_ERR("failed to configure DVS pin #%d", idx);
+				LOG_ERROR("failed to configure DVS pin #%d", idx);
 				return ret;
 			}
 		}
@@ -788,7 +788,7 @@ static int configure_active_discharge(const struct regulator_npm10xx_config *con
 
 	if (config->pull_down_idx != UINT8_MAX) {
 		if (config->source != NPM10XX_SOURCE_BUCK) {
-			LOG_ERR("Pull-down resistance setting is supported on BUCK only");
+			LOG_ERROR("Pull-down resistance setting is supported on BUCK only");
 			return -ENOTSUP;
 		}
 
@@ -840,7 +840,7 @@ static int configure_soft_start(const struct regulator_npm10xx_config *config)
 		switch (config->source) {
 		case NPM10XX_SOURCE_BUCK:
 			if (config->soft_start_curr_idx < BUCK_ILIM_MIN_IDX) {
-				LOG_ERR("invalid regulator-soft-start-microamp for BUCK");
+				LOG_ERROR("invalid regulator-soft-start-microamp for BUCK");
 				return -EINVAL;
 			}
 			addr = NPM10_BUCK_ILIM;
@@ -851,7 +851,7 @@ static int configure_soft_start(const struct regulator_npm10xx_config *config)
 
 		case NPM10XX_SOURCE_LDO:
 			if (config->soft_start_curr_idx >= BUCK_ILIM_MIN_IDX) {
-				LOG_ERR("invalid regulator-soft-start-microamp for LDO");
+				LOG_ERROR("invalid regulator-soft-start-microamp for LDO");
 				return -EINVAL;
 			}
 			addr = NPM10_LDO1_CONFIG0;
@@ -861,7 +861,7 @@ static int configure_soft_start(const struct regulator_npm10xx_config *config)
 
 		case NPM10XX_SOURCE_LDSW:
 			if (config->soft_start_curr_idx >= BUCK_ILIM_MIN_IDX) {
-				LOG_ERR("invalid regulator-soft-start-microamp for LOADSW");
+				LOG_ERROR("invalid regulator-soft-start-microamp for LOADSW");
 				return -EINVAL;
 			}
 			addr = NPM10_LOADSW2_CONFIG;
@@ -877,7 +877,7 @@ static int configure_soft_start(const struct regulator_npm10xx_config *config)
 	if (config->soft_start_timeout_idx != UINT8_MAX) {
 		switch (config->source) {
 		case NPM10XX_SOURCE_BUCK:
-			LOG_ERR("Soft start timeout configuration is not supported on BUCK");
+			LOG_ERROR("Soft start timeout configuration is not supported on BUCK");
 			return -ENOTSUP;
 
 		case NPM10XX_SOURCE_LDO:
@@ -911,13 +911,13 @@ static int regulator_npm10xx_init(const struct device *dev)
 	bool enabled;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus is not ready");
+		LOG_ERROR("I2C bus is not ready");
 		return -ENODEV;
 	}
 
 	if (config->alternate_uv > INT32_MIN) {
 		if (config->source != NPM10XX_SOURCE_BUCK) {
-			LOG_ERR("Alternate VOUT is supported on BUCK only");
+			LOG_ERROR("Alternate VOUT is supported on BUCK only");
 			return -ENOTSUP;
 		}
 
@@ -935,7 +935,7 @@ static int regulator_npm10xx_init(const struct device *dev)
 
 	if (config->passthru) {
 		if (config->source != NPM10XX_SOURCE_BUCK) {
-			LOG_ERR("Pass-through mode is supported on BUCK only");
+			LOG_ERROR("Pass-through mode is supported on BUCK only");
 			return -ENOTSUP;
 		}
 
@@ -981,7 +981,7 @@ static int regulator_npm10xx_init(const struct device *dev)
 
 	if (config->ripple_idx != UINT8_MAX) {
 		if (config->source != NPM10XX_SOURCE_BUCK) {
-			LOG_ERR("Ripple level setting is supported on BUCK only");
+			LOG_ERROR("Ripple level setting is supported on BUCK only");
 			return -ENOTSUP;
 		}
 

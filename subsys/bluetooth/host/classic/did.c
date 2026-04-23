@@ -80,7 +80,7 @@ void bt_did_init(void)
 
 	err = bt_sdp_register_service(&did_rec);
 	if (err != 0) {
-		LOG_ERR("Failed to register DID SDP record (err %d)", err);
+		LOG_ERROR("Failed to register DID SDP record (err %d)", err);
 		return;
 	}
 

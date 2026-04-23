@@ -561,7 +561,7 @@ static int hx8394_init(const struct device *dev)
 
 	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
 	if (ret < 0) {
-		LOG_ERR("Could not attach to MIPI-DSI host");
+		LOG_ERROR("Could not attach to MIPI-DSI host");
 		return ret;
 	}
 
@@ -592,7 +592,7 @@ static int hx8394_init(const struct device *dev)
 	ret_tx = hx8394_mipi_tx(config->mipi_dsi, config->channel,
 			     enable_extension, sizeof(enable_extension));
 	if (ret_tx < 0) {
-		LOG_ERR("hx8394_mipi_tx error, %d", ret_tx);
+		LOG_ERROR("hx8394_mipi_tx error, %d", ret_tx);
 		return -EIO;
 	}
 
@@ -601,7 +601,7 @@ static int hx8394_init(const struct device *dev)
 	ret_tx = hx8394_mipi_tx(config->mipi_dsi, config->channel,
 			     setmipi, sizeof(setmipi));
 	if (ret_tx < 0) {
-		LOG_ERR("hx8394_mipi_tx error, %d", ret_tx);
+		LOG_ERROR("hx8394_mipi_tx error, %d", ret_tx);
 		return -EIO;
 	}
 
@@ -609,7 +609,7 @@ static int hx8394_init(const struct device *dev)
 	ret_tx = hx8394_mipi_tx(config->mipi_dsi, config->channel,
 			     address_config, sizeof(address_config));
 	if (ret_tx < 0) {
-		LOG_ERR("hx8394_mipi_tx error, %d", ret_tx);
+		LOG_ERROR("hx8394_mipi_tx error, %d", ret_tx);
 		return -EIO;
 	}
 
@@ -779,7 +779,7 @@ static int hx8394_init(const struct device *dev)
 	if (config->bl_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->bl_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure bl GPIO (%d)", ret);
+			LOG_ERROR("Could not configure bl GPIO (%d)", ret);
 			return ret;
 		}
 	}

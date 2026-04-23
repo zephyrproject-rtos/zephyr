@@ -160,7 +160,7 @@ static int memc_smartbond_init(const struct device *dev)
 	k_usleep(DT_INST_PROP(0, reset_delay_us));
 
 	if (memc_jedec_read_and_verify_id(QSPIC2_ID)) {
-		LOG_ERR("Device detection failed");
+		LOG_ERROR("Device detection failed");
 		memc_set_status(false, 0);
 
 		return -EINVAL;

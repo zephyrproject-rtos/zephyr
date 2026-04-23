@@ -172,7 +172,7 @@ static int stm32_digi_temp_init(const struct device *dev)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken) != 0) {
-		LOG_ERR("Could not enable DTS clock");
+		LOG_ERROR("Could not enable DTS clock");
 		return -EIO;
 	}
 
@@ -181,7 +181,7 @@ static int stm32_digi_temp_init(const struct device *dev)
 	 */
 	if (clock_control_get_rate(clk, (clock_control_subsys_t) &cfg->pclken,
 				   &data->pclk_freq) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken)");
+		LOG_ERROR("Failed call clock_control_get_rate(pclken)");
 		return -EIO;
 	}
 
@@ -201,7 +201,7 @@ static int stm32_digi_temp_init(const struct device *dev)
 		data->t0 = TS1_T0_VAL1;
 		break;
 	default:
-		LOG_ERR("Unknown T0 temperature value");
+		LOG_ERROR("Unknown T0 temperature value");
 		return -EIO;
 	}
 
@@ -229,7 +229,7 @@ static int stm32_digi_temp_pm_action(const struct device *dev, enum pm_device_ac
 		/* enable clock */
 		err = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken);
 		if (err != 0) {
-			LOG_ERR("Could not enable DTS clock");
+			LOG_ERROR("Could not enable DTS clock");
 			return err;
 		}
 		/* Enable sensor */
@@ -241,7 +241,7 @@ static int stm32_digi_temp_pm_action(const struct device *dev, enum pm_device_ac
 		/* Stop device clock */
 		err = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken);
 		if (err != 0) {
-			LOG_ERR("Could not disable DTS clock");
+			LOG_ERROR("Could not disable DTS clock");
 			return err;
 		}
 		break;

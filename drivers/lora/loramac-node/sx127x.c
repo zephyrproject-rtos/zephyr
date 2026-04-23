@@ -363,8 +363,7 @@ void SX127xIoIrqInit(DioIrqHandler **irqHandlers)
 		}
 
 		if (!gpio_is_ready_dt(&sx127x_dios[i])) {
-			LOG_ERR("GPIO port %s not ready",
-				sx127x_dios[i].port->name);
+			LOG_ERROR("GPIO port %s not ready", sx127x_dios[i].port->name);
 			return;
 		}
 
@@ -377,7 +376,7 @@ void SX127xIoIrqInit(DioIrqHandler **irqHandlers)
 				   BIT(sx127x_dios[i].pin));
 
 		if (gpio_add_callback(sx127x_dios[i].port, &callbacks[i]) < 0) {
-			LOG_ERR("Could not set gpio callback.");
+			LOG_ERROR("Could not set gpio callback.");
 			return;
 		}
 		gpio_pin_interrupt_configure_dt(&sx127x_dios[i],
@@ -432,7 +431,7 @@ void SX127xWriteBuffer(uint32_t addr, uint8_t *buffer, uint8_t size)
 
 	ret = sx127x_write(addr, buffer, size);
 	if (ret < 0) {
-		LOG_ERR("Unable to write address: 0x%x", addr);
+		LOG_ERROR("Unable to write address: 0x%x", addr);
 	}
 }
 
@@ -442,7 +441,7 @@ void SX127xReadBuffer(uint32_t addr, uint8_t *buffer, uint8_t size)
 
 	ret = sx127x_read(addr, buffer, size);
 	if (ret < 0) {
-		LOG_ERR("Unable to read address: 0x%x", addr);
+		LOG_ERROR("Unable to read address: 0x%x", addr);
 	}
 }
 
@@ -454,7 +453,7 @@ void SX127xSetRfTxPower(int8_t power)
 
 	ret = sx127x_read(REG_PADAC, &pa_dac, 1);
 	if (ret < 0) {
-		LOG_ERR("Unable to read PA dac");
+		LOG_ERROR("Unable to read PA dac");
 		return;
 	}
 
@@ -499,13 +498,13 @@ void SX127xSetRfTxPower(int8_t power)
 
 	ret = sx127x_write(REG_PACONFIG, &pa_config, 1);
 	if (ret < 0) {
-		LOG_ERR("Unable to write PA config");
+		LOG_ERROR("Unable to write PA config");
 		return;
 	}
 
 	ret = sx127x_write(REG_PADAC, &pa_dac, 1);
 	if (ret < 0) {
-		LOG_ERR("Unable to write PA dac");
+		LOG_ERROR("Unable to write PA dac");
 		return;
 	}
 }
@@ -583,7 +582,7 @@ static int sx127x_lora_init(const struct device *dev)
 	uint8_t regval;
 
 	if (!spi_is_ready_dt(&dev_config.bus)) {
-		LOG_ERR("SPI device not ready");
+		LOG_ERROR("SPI device not ready");
 		return -ENODEV;
 	}
 
@@ -604,7 +603,7 @@ static int sx127x_lora_init(const struct device *dev)
 
 	ret = sx127x_read(REG_VERSION, &regval, 1);
 	if (ret < 0) {
-		LOG_ERR("Unable to read version info");
+		LOG_ERROR("Unable to read version info");
 		return -EIO;
 	}
 
@@ -612,13 +611,13 @@ static int sx127x_lora_init(const struct device *dev)
 
 	ret = sx127x_antenna_configure();
 	if (ret < 0) {
-		LOG_ERR("Unable to configure antenna");
+		LOG_ERROR("Unable to configure antenna");
 		return -EIO;
 	}
 
 	ret = sx12xx_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize SX12xx common");
+		LOG_ERROR("Failed to initialize SX12xx common");
 		return ret;
 	}
 

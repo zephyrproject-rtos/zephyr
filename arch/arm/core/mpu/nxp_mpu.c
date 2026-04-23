@@ -133,7 +133,7 @@ static int region_allocate_and_init(const uint8_t index,
 	if (index > (get_num_regions() - 1)) {
 
 		/* No available MPU region index. */
-		LOG_ERR("Failed to allocate new MPU region %u\n", index);
+		LOG_ERROR("Failed to allocate new MPU region %u\n", index);
 		return -EINVAL;
 	}
 
@@ -184,7 +184,7 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 			 * exists or the `REGION_*_ATTR` macro is not defined
 			 * for that attribute.
 			 */
-			LOG_ERR("Invalid attribute for the region\n");
+			LOG_ERROR("Invalid attribute for the region\n");
 			return -EINVAL;
 		}
 
@@ -314,7 +314,7 @@ static int mpu_configure_regions(const struct z_arm_mpu_partition regions[],
 
 		if (do_coherence_check &&
 				(!mpu_partition_is_valid(&regions[i]))) {
-			LOG_ERR("Partition %u: coherence check failed.", i);
+			LOG_ERROR("Partition %u: coherence check failed.", i);
 			return -EINVAL;
 		}
 

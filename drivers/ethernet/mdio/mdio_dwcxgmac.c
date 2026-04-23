@@ -97,7 +97,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 	retval = mdio_busy_wait((ioaddr + CORE_MDIO_SINGLE_COMMAND_CONTROL_DATA_OFST),
 				CORE_MDIO_SINGLE_COMMAND_CONTROL_DATA_SBUSY_SET_MSK);
 	if (retval) {
-		LOG_ERR("%s: MDIO device busy wait timedout", dev->name);
+		LOG_ERROR("%s: MDIO device busy wait timedout", dev->name);
 		return retval;
 	}
 
@@ -126,7 +126,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad,
 	retval = mdio_busy_wait(reg_addr, CORE_MDIO_SINGLE_COMMAND_CONTROL_DATA_SBUSY_SET_MSK);
 
 	if (retval) {
-		LOG_ERR("%s: transfer timedout", dev->name);
+		LOG_ERROR("%s: transfer timedout", dev->name);
 	} else {
 		if (data_out) {
 			*data_out = CORE_MDIO_SINGLE_COMMAND_CONTROL_DATA_SDATA_GET(
@@ -162,16 +162,16 @@ static int mdio_dwcxgmac_initialize(const struct device *dev)
 
 	if (cfg->reset.dev != NULL) {
 		if (!device_is_ready(cfg->reset.dev)) {
-			LOG_ERR("%s, Reset device is not ready", dev->name);
+			LOG_ERROR("%s, Reset device is not ready", dev->name);
 			return -ENODEV;
 		}
 		ret = reset_line_toggle(cfg->reset.dev, cfg->reset.id);
 		if (ret) {
-			LOG_ERR("%s: Failed to reset peripheral", dev->name);
+			LOG_ERROR("%s: Failed to reset peripheral", dev->name);
 			return ret;
 		}
 	} else {
-		LOG_ERR("%s, Reset device is not available", dev->name);
+		LOG_ERROR("%s, Reset device is not available", dev->name);
 		return -ENODEV;
 	}
 
@@ -182,7 +182,7 @@ static int mdio_dwcxgmac_initialize(const struct device *dev)
 
 	ret = dwxgmac_software_reset(ioaddr);
 	if (ret) {
-		LOG_ERR("%s: XGMAC reset timeout", dev->name);
+		LOG_ERROR("%s: XGMAC reset timeout", dev->name);
 		return ret;
 	}
 

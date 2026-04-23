@@ -82,7 +82,7 @@ static int hx8379c_blanking_on(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, MIPI_DCS_SET_DISPLAY_OFF, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to turn off display (%d)", ret);
+		LOG_ERROR("Failed to turn off display (%d)", ret);
 		return ret;
 	}
 
@@ -95,7 +95,7 @@ static int hx8379c_blanking_off(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, MIPI_DCS_SET_DISPLAY_ON, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to turn on display (%d)", ret);
+		LOG_ERROR("Failed to turn on display (%d)", ret);
 		return ret;
 	}
 
@@ -132,7 +132,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETEXTC, enable_extension, sizeof(enable_extension));
 	if (ret < 0) {
-		LOG_ERR("Controller init step 1 failed (%d)", ret);
+		LOG_ERROR("Controller init step 1 failed (%d)", ret);
 		return ret;
 	}
 
@@ -141,7 +141,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETPOWER, power_config, sizeof(power_config));
 	if (ret < 0) {
-		LOG_ERR("Controller SETPOWER failed (%d)", ret);
+		LOG_ERROR("Controller SETPOWER failed (%d)", ret);
 		return ret;
 	}
 
@@ -156,7 +156,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETDISP, line_config, sizeof(line_config));
 	if (ret < 0) {
-		LOG_ERR("Controller SETDISP failed (%d)", ret);
+		LOG_ERROR("Controller SETDISP failed (%d)", ret);
 		return ret;
 	}
 
@@ -165,7 +165,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETCYC, cycle_config, sizeof(cycle_config));
 	if (ret < 0) {
-		LOG_ERR("Controller timing config failed (%d)", ret);
+		LOG_ERROR("Controller timing config failed (%d)", ret);
 		return ret;
 	}
 
@@ -173,7 +173,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETTCON, tcon_config, sizeof(tcon_config));
 	if (ret < 0) {
-		LOG_ERR("Controller SETTCON failed (%d)", ret);
+		LOG_ERROR("Controller SETTCON failed (%d)", ret);
 		return ret;
 	}
 
@@ -181,7 +181,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETPANEL, panel_config, sizeof(panel_config));
 	if (ret < 0) {
-		LOG_ERR("Controller register SETPANEL failed (%d)", ret);
+		LOG_ERROR("Controller register SETPANEL failed (%d)", ret);
 		return ret;
 	}
 
@@ -189,7 +189,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETOFFSET, offset_config, sizeof(offset_config));
 	if (ret < 0) {
-		LOG_ERR("Controller register SETOFFSET failed (%d)", ret);
+		LOG_ERROR("Controller register SETOFFSET failed (%d)", ret);
 		return ret;
 	}
 
@@ -207,7 +207,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETGIP_0, gip0_config, sizeof(gip0_config));
 	if (ret < 0) {
-		LOG_ERR("Controller register SETGIP_0 failed (%d)", ret);
+		LOG_ERROR("Controller register SETGIP_0 failed (%d)", ret);
 		return ret;
 	}
 
@@ -225,7 +225,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETGIP_1, gip1_config, sizeof(gip1_config));
 	if (ret < 0) {
-		LOG_ERR("Controller register SETGIP_1 failed (%d)", ret);
+		LOG_ERROR("Controller register SETGIP_1 failed (%d)", ret);
 		return ret;
 	}
 
@@ -236,7 +236,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETGIP_2, gip2_config, sizeof(gip2_config));
 	if (ret < 0) {
-		LOG_ERR("Controller register SETGIP_2 failed (%d)", ret);
+		LOG_ERROR("Controller register SETGIP_2 failed (%d)", ret);
 		return ret;
 	}
 
@@ -249,7 +249,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETGAMMA, gamma_config, sizeof(gamma_config));
 	if (ret < 0) {
-		LOG_ERR("Controller gamma configuration failed (%d)", ret);
+		LOG_ERROR("Controller gamma configuration failed (%d)", ret);
 		return ret;
 	}
 
@@ -257,7 +257,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETVCOM, vcom_config, sizeof(vcom_config));
 	if (ret < 0) {
-		LOG_ERR("Controller register SETVCOM failed (%d)", ret);
+		LOG_ERROR("Controller register SETVCOM failed (%d)", ret);
 		return ret;
 	}
 
@@ -265,7 +265,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETBANK, bank0_config, sizeof(bank0_config));
 	if (ret < 0) {
-		LOG_ERR("Controller register HX8379C_SETBANK(0) failed (%d)", ret);
+		LOG_ERROR("Controller register HX8379C_SETBANK(0) failed (%d)", ret);
 		return ret;
 	}
 
@@ -278,7 +278,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETDGC_LUT, lut1_config, sizeof(lut1_config));
 	if (ret < 0) {
-		LOG_ERR("Controller color LUT 1 failed (%d)", ret);
+		LOG_ERROR("Controller color LUT 1 failed (%d)", ret);
 		return ret;
 	}
 
@@ -286,7 +286,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETBANK, bank1_config, sizeof(bank1_config));
 	if (ret < 0) {
-		LOG_ERR("Controller register HX8379C_SETBANK(1) failed (%d)", ret);
+		LOG_ERROR("Controller register HX8379C_SETBANK(1) failed (%d)", ret);
 		return ret;
 	}
 
@@ -299,7 +299,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETDGC_LUT, lut2_config, sizeof(lut2_config));
 	if (ret < 0) {
-		LOG_ERR("Controller color LUT 2 failed (%d)", ret);
+		LOG_ERROR("Controller color LUT 2 failed (%d)", ret);
 		return ret;
 	}
 
@@ -307,7 +307,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETBANK, bank2_config, sizeof(bank2_config));
 	if (ret < 0) {
-		LOG_ERR("Controller register HX8379C_SETBANK(2) failed (%d)", ret);
+		LOG_ERROR("Controller register HX8379C_SETBANK(2) failed (%d)", ret);
 		return ret;
 	}
 
@@ -320,7 +320,7 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETDGC_LUT, lut3_config, sizeof(lut3_config));
 	if (ret < 0) {
-		LOG_ERR("Controller color LUT 3 failed (%d)", ret);
+		LOG_ERROR("Controller color LUT 3 failed (%d)", ret);
 		return ret;
 	}
 
@@ -328,14 +328,14 @@ static int hx8379c_configure(const struct device *dev)
 
 	ret = hx8379c_transmit(dev, HX8379C_SETBANK, bank00_config, sizeof(bank00_config));
 	if (ret < 0) {
-		LOG_ERR("Controller register HX8379C_SETBANK(0) failed (%d)", ret);
+		LOG_ERROR("Controller register HX8379C_SETBANK(0) failed (%d)", ret);
 		return ret;
 	}
 
 	/* Exit Sleep Mode */
 	ret = hx8379c_transmit(dev, MIPI_DCS_EXIT_SLEEP_MODE, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Exit sleep mode failed (%d)", ret);
+		LOG_ERROR("Exit sleep mode failed (%d)", ret);
 		return ret;
 	}
 
@@ -344,7 +344,7 @@ static int hx8379c_configure(const struct device *dev)
 	/* Display On */
 	ret = hx8379c_blanking_off(dev);
 	if (ret < 0) {
-		LOG_ERR("Display blanking off failed (%d)", ret);
+		LOG_ERROR("Display blanking off failed (%d)", ret);
 		return ret;
 	}
 
@@ -362,18 +362,18 @@ static int hx8379c_init(const struct device *dev)
 
 	if (config->reset_gpio.port) {
 		if (!gpio_is_ready_dt(&config->reset_gpio)) {
-			LOG_ERR("Reset GPIO device is not ready");
+			LOG_ERROR("Reset GPIO device is not ready");
 			return -ENODEV;
 		}
 		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure reset GPIO (%d)", ret);
+			LOG_ERROR("Failed to configure reset GPIO (%d)", ret);
 			return ret;
 		}
 		k_msleep(11);
 		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to activate reset GPIO (%d)", ret);
+			LOG_ERROR("Failed to activate reset GPIO (%d)", ret);
 			return ret;
 		}
 		k_msleep(150);
@@ -395,13 +395,13 @@ static int hx8379c_init(const struct device *dev)
 
 	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
 	if (ret < 0) {
-		LOG_ERR("Failed to attach to MIPI-DSI host (%d)", ret);
+		LOG_ERROR("Failed to attach to MIPI-DSI host (%d)", ret);
 		return ret;
 	}
 
 	ret = hx8379c_configure(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure display (%d)", ret);
+		LOG_ERROR("Failed to configure display (%d)", ret);
 		return ret;
 	}
 

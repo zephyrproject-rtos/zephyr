@@ -264,13 +264,13 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 
 	rc = clock_control_on(dev_cfg->clk_dev, dev_cfg->clk_id);
 	if (rc < 0) {
-		LOG_ERR("Failed to enable the clock");
+		LOG_ERROR("Failed to enable the clock");
 		return rc;
 	}
 
 	rc = clock_control_get_rate(dev_cfg->clk_dev, dev_cfg->clk_id, &clock_freq);
 	if (rc < 0) {
-		LOG_ERR("Failed to get clock frequency");
+		LOG_ERROR("Failed to get clock frequency");
 		return rc;
 	}
 
@@ -279,7 +279,7 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 	}
 
 	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -293,7 +293,7 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 
 #if defined(CONFIG_SPI_EXTENDED_MODES)
 	if (spi_cfg->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)) {
-		LOG_ERR("Unsupported configuration");
+		LOG_ERROR("Unsupported configuration");
 		return -ENOTSUP;
 	}
 #endif /* CONFIG_SPI_EXTENDED_MODES */
@@ -301,7 +301,7 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 	data->bits = SPI_WORD_SIZE_GET(spi_cfg->operation);
 
 	if ((data->bits != 8) && (data->bits != 16) && (data->bits != 32)) {
-		LOG_ERR("Only 8, 16, and 32 bit word sizes are supported");
+		LOG_ERROR("Only 8, 16, and 32 bit word sizes are supported");
 		return -ENOTSUP;
 	}
 
@@ -318,7 +318,7 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		cpha = 1;
 	}
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback not supported");
+		LOG_ERROR("Loopback not supported");
 		return -ENOTSUP;
 	}
 
@@ -326,13 +326,13 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
 #if defined(CONFIG_SPI_RPI_PICO_PIO_DMA)
 		if (dev_cfg->dma_config.dev) {
-			LOG_ERR("DMA not supported in 3-wire operation");
+			LOG_ERROR("DMA not supported in 3-wire operation");
 			return -ENOTSUP;
 		}
 #endif
 
 		if ((cpol != 0) || (cpha != 0)) {
-			LOG_ERR("Only mode (0, 0) supported in 3-wire SIO");
+			LOG_ERROR("Only mode (0, 0) supported in 3-wire SIO");
 			return -ENOTSUP;
 		}
 
@@ -340,16 +340,16 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 						  clock_freq, SPI_SIO_MODE_0_0_TX_CYCLES)) ||
 		    (spi_cfg->frequency < spi_pico_pio_minimum_clock_frequency(
 						  clock_freq, SPI_SIO_MODE_0_0_TX_CYCLES))) {
-			LOG_ERR("clock-frequency out of range");
+			LOG_ERROR("clock-frequency out of range");
 			return -EINVAL;
 		}
 	} else if (dev_cfg->sio_gpio.port) {
-		LOG_ERR("SPI_HALF_DUPLEX operation needed for sio-gpios");
+		LOG_ERROR("SPI_HALF_DUPLEX operation needed for sio-gpios");
 		return -EINVAL;
 	}
 #else
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("No sio-gpios defined, half-duplex not enabled");
+		LOG_ERROR("No sio-gpios defined, half-duplex not enabled");
 		return -EINVAL;
 	}
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
@@ -419,7 +419,7 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		pio_sm_init(pio, data->pio_sm, data->pio_tx_offset, &sm_config);
 		pio_sm_set_enabled(pio, data->pio_sm, true);
 #else
-		LOG_ERR("SIO pin requires half-duplex support");
+		LOG_ERROR("SIO pin requires half-duplex support");
 		return -EINVAL;
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 	} else {
@@ -449,7 +449,7 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 			wrap = RPI_PICO_PIO_GET_WRAP(spi_mode_0_1);
 			cycles = SPI_MODE_0_1_CYCLES;
 		} else {
-			LOG_ERR("Not supported:  cpol=%d, cpha=%d", cpol, cpha);
+			LOG_ERROR("Not supported:  cpol=%d, cpha=%d", cpol, cpha);
 			return -ENOTSUP;
 		}
 
@@ -457,7 +457,7 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		     spi_pico_pio_maximum_clock_frequency(clock_freq, cycles)) ||
 		    (spi_cfg->frequency <
 		     spi_pico_pio_minimum_clock_frequency(clock_freq, cycles))) {
-			LOG_ERR("clock-frequency out of range");
+			LOG_ERROR("clock-frequency out of range");
 			return -EINVAL;
 		}
 
@@ -551,7 +551,7 @@ static void spi_pico_pio_dma_callback(const struct device *dma_dev, void *arg, u
 	if (status < 0) {
 		key = k_spin_lock(&data->lock);
 
-		LOG_ERR("dma:%p ch:%d callback gets error: %d", dma_dev, channel, status);
+		LOG_ERROR("dma:%p ch:%d callback gets error: %d", dma_dev, channel, status);
 		spi_pico_pio_dma_complete(dev, status);
 
 		k_spin_unlock(&data->lock, key);
@@ -668,13 +668,13 @@ static int spi_pico_pio_dma_setup(const struct device *dev, bool dir)
 
 	ret = dma_config(dev_cfg->dma_config.dev, dma_channel, dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("dma ctrl %p: dma_config failed with %d", dev_cfg->dma_config.dev, ret);
+		LOG_ERROR("dma ctrl %p: dma_config failed with %d", dev_cfg->dma_config.dev, ret);
 		return ret;
 	}
 
 	ret = dma_start(dev_cfg->dma_config.dev, dma_channel);
 	if (ret < 0) {
-		LOG_ERR("dma ctrl %p: dma_start failed with %d", dev_cfg->dma_config.dev, ret);
+		LOG_ERROR("dma ctrl %p: dma_start failed with %d", dev_cfg->dma_config.dev, ret);
 		return ret;
 	}
 
@@ -723,7 +723,7 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 			} break;
 
 			default:
-				LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+				LOG_ERROR("Support fot %d bits not enabled", (data->dfs * 8));
 				break;
 			}
 			data->tx_count++;
@@ -761,7 +761,7 @@ static void spi_pico_pio_txrx_4_wire(const struct device *dev)
 			} break;
 
 			default:
-				LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+				LOG_ERROR("Support fot %d bits not enabled", (data->dfs * 8));
 				break;
 			}
 			data->rx_count++;
@@ -819,7 +819,8 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 				} break;
 
 				default:
-					LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+					LOG_ERROR("Support fot %d bits not enabled",
+						  (data->dfs * 8));
 					break;
 				}
 				data->tx_count++;
@@ -866,7 +867,8 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 				} break;
 
 				default:
-					LOG_ERR("Support fot %d bits not enabled", (data->dfs * 8));
+					LOG_ERROR("Support fot %d bits not enabled",
+						  (data->dfs * 8));
 					break;
 				}
 				data->rx_count++;
@@ -874,7 +876,7 @@ static void spi_pico_pio_txrx_3_wire(const struct device *dev)
 		}
 	}
 #else
-	LOG_ERR("SIO pin requires half-duplex support");
+	LOG_ERROR("SIO pin requires half-duplex support");
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 }
 
@@ -981,13 +983,13 @@ static int config_gpio(const struct gpio_dt_spec *gpio, const char *tag, int mod
 	int rc = 0;
 
 	if (!device_is_ready(gpio->port)) {
-		LOG_ERR("GPIO port for %s pin is not ready", tag);
+		LOG_ERROR("GPIO port for %s pin is not ready", tag);
 		return -ENODEV;
 	}
 
 	rc = gpio_pin_configure_dt(gpio, mode);
 	if (rc < 0) {
-		LOG_ERR("Couldn't configure %s pin; (%d)", tag, rc);
+		LOG_ERROR("Couldn't configure %s pin; (%d)", tag, rc);
 		return rc;
 	}
 
@@ -1002,7 +1004,7 @@ int spi_pico_pio_init(const struct device *dev)
 
 	rc = pinctrl_apply_state(dev_cfg->pin_cfg, PINCTRL_STATE_DEFAULT);
 	if (rc) {
-		LOG_ERR("Failed to apply pinctrl state");
+		LOG_ERROR("Failed to apply pinctrl state");
 		return rc;
 	}
 
@@ -1027,7 +1029,7 @@ int spi_pico_pio_init(const struct device *dev)
 
 	rc = spi_context_cs_configure_all(&data->spi_ctx);
 	if (rc < 0) {
-		LOG_ERR("Failed to configure CS pins: %d", rc);
+		LOG_ERROR("Failed to configure CS pins: %d", rc);
 		return rc;
 	}
 

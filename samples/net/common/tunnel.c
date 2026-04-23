@@ -61,7 +61,7 @@ static int setup_iface(struct net_if *iface, const char *ipaddr)
 	conn_mgr_ignore_iface(iface);
 
 	if (!net_ipaddr_parse(ipaddr, strlen(ipaddr), &addr)) {
-		LOG_ERR("Tunnel peer address \"%s\" invalid.", ipaddr);
+		LOG_ERROR("Tunnel peer address \"%s\" invalid.", ipaddr);
 		return -EINVAL;
 	}
 
@@ -70,8 +70,8 @@ static int setup_iface(struct net_if *iface, const char *ipaddr)
 					      &net_sin6(&addr)->sin6_addr,
 					      NET_ADDR_MANUAL, 0);
 		if (!ifaddr) {
-			LOG_ERR("Cannot add %s to interface %d",
-				ipaddr, net_if_get_by_iface(iface));
+			LOG_ERROR("Cannot add %s to interface %d", ipaddr,
+				  net_if_get_by_iface(iface));
 			return -EINVAL;
 		}
 	}
@@ -81,8 +81,8 @@ static int setup_iface(struct net_if *iface, const char *ipaddr)
 					      &net_sin(&addr)->sin_addr,
 					      NET_ADDR_MANUAL, 0);
 		if (!ifaddr) {
-			LOG_ERR("Cannot add %s to interface %d",
-				ipaddr, net_if_get_by_iface(iface));
+			LOG_ERROR("Cannot add %s to interface %d", ipaddr,
+				  net_if_get_by_iface(iface));
 			return -EINVAL;
 		}
 	}
@@ -106,10 +106,9 @@ int init_tunnel(void)
 	}
 
 	if (!net_ipaddr_parse(NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR,
-			      strlen(NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR),
-			      &peer)) {
-		LOG_ERR("Tunnel peer address \"%s\" invalid.",
-			NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR);
+			      strlen(NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR), &peer)) {
+		LOG_ERROR("Tunnel peer address \"%s\" invalid.",
+			  NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR);
 		return -EINVAL;
 	}
 
@@ -136,31 +135,28 @@ int init_tunnel(void)
 		mtu = NET_ETH_MTU - sizeof(struct net_ipv4_hdr);
 
 	} else {
-		LOG_ERR("Invalid address family %d", peer.sa_family);
+		LOG_ERROR("Invalid address family %d", peer.sa_family);
 		return -EINVAL;
 	}
 
 	if (ud.peer == NULL) {
-		LOG_ERR("Peer address %s unreachable",
-			NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR);
+		LOG_ERROR("Peer address %s unreachable", NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR);
 		return -ENETUNREACH;
 	}
 
 	net_if_foreach(iface_cb, &ud);
 
 	if (ud.tunnel == NULL) {
-		LOG_ERR("Tunnel interface not found.");
+		LOG_ERROR("Tunnel interface not found.");
 		return -ENOENT;
 	}
 
 	ret = net_mgmt(NET_REQUEST_VIRTUAL_INTERFACE_SET_PEER_ADDRESS,
 		       ud.tunnel, &params, sizeof(params));
 	if (ret < 0 && ret != -ENOTSUP) {
-		LOG_ERR("Cannot set peer address %s to "
-			"interface %d (%d)",
-			NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR,
-			net_if_get_by_iface(ud.tunnel),
-			ret);
+		LOG_ERROR("Cannot set peer address %s to "
+			  "interface %d (%d)",
+			  NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR, net_if_get_by_iface(ud.tunnel), ret);
 	}
 
 	params.mtu = mtu;
@@ -168,15 +164,15 @@ int init_tunnel(void)
 	ret = net_mgmt(NET_REQUEST_VIRTUAL_INTERFACE_SET_MTU,
 		       ud.tunnel, &params, sizeof(params));
 	if (ret < 0 && ret != -ENOTSUP) {
-		LOG_ERR("Cannot set interface %d MTU to %d (%d)",
-			net_if_get_by_iface(ud.tunnel), params.mtu, ret);
+		LOG_ERROR("Cannot set interface %d MTU to %d (%d)", net_if_get_by_iface(ud.tunnel),
+			  params.mtu, ret);
 	}
 
 	ret = setup_iface(ud.tunnel,
 			  NET_SAMPLE_COMMON_TUNNEL_MY_ADDR);
 	if (ret < 0) {
-		LOG_ERR("Cannot set IP address %s to tunnel interface",
-			NET_SAMPLE_COMMON_TUNNEL_MY_ADDR);
+		LOG_ERROR("Cannot set IP address %s to tunnel interface",
+			  NET_SAMPLE_COMMON_TUNNEL_MY_ADDR);
 		return -EINVAL;
 	}
 

@@ -114,7 +114,7 @@ static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 	case BT_HCI_H4_EVT:
 		buf = bt_buf_get_evt(hci_rx->data[0], 0, K_NO_WAIT);
 		if (!buf) {
-			LOG_ERR("Failed to allocate the buffer for RX: EVENT ");
+			LOG_ERROR("Failed to allocate the buffer for RX: EVENT ");
 			return;
 		}
 
@@ -122,7 +122,7 @@ static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 	case BT_HCI_H4_ACL:
 		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
 		if (!buf) {
-			LOG_ERR("Failed to allocate the buffer for RX: ACL ");
+			LOG_ERROR("Failed to allocate the buffer for RX: ACL ");
 			return;
 		}
 
@@ -170,13 +170,13 @@ static int psoc6_bless_send(const struct device *dev, struct net_buf *buf)
 	hci_tx_pkt.data = buf->data;
 
 	if (k_sem_take(&psoc6_bless_operation_sem, K_MSEC(BLE_LOCK_TMOUT_MS)) != 0) {
-		LOG_ERR("Failed to acquire BLE DRV Semaphore");
+		LOG_ERROR("Failed to acquire BLE DRV Semaphore");
 		return -EIO;
 	}
 
 	result = Cy_BLE_SoftHciSendAppPkt(&hci_tx_pkt);
 	if (result != CY_BLE_SUCCESS) {
-		LOG_ERR("Error in sending packet reason %d\r\n", result);
+		LOG_ERROR("Error in sending packet reason %d\r\n", result);
 	}
 
 	k_sem_give(&psoc6_bless_operation_sem);
@@ -203,7 +203,7 @@ static int psoc6_bless_setup(const struct device *dev, const struct bt_hci_setup
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (buf == NULL) {
-		LOG_ERR("Unable to allocate command buffer");
+		LOG_ERROR("Unable to allocate command buffer");
 		return -ENOMEM;
 	}
 
@@ -233,14 +233,14 @@ static int psoc6_bless_hci_init(const struct device *dev)
 	/* Initializes the PSOC 6 BLESS Controller. */
 	result = Cy_BLE_InitController(&psoc6_bless_config);
 	if (result != CY_BLE_SUCCESS) {
-		LOG_ERR("Failed to init the BLE Controller");
+		LOG_ERROR("Failed to init the BLE Controller");
 		return -EIO;
 	}
 
 	/* Enables the BLESS controller in HCI only mode. */
 	result = Cy_BLE_EnableHCIModeController();
 	if (result != CY_BLE_SUCCESS) {
-		LOG_ERR("Failed to enable the BLE Controller in hci mode");
+		LOG_ERROR("Failed to enable the BLE Controller in hci mode");
 		return -EIO;
 	}
 

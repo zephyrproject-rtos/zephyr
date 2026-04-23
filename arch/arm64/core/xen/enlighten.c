@@ -49,8 +49,7 @@ static int xen_enlighten_init(void)
 
 	ret = xen_map_shared_info(info);
 	if (ret) {
-		LOG_ERR("%s: failed to map for Xen shared page, ret = %d\n",
-			__func__, ret);
+		LOG_ERROR("%s: failed to map for Xen shared page, ret = %d\n", __func__, ret);
 		return ret;
 	}
 
@@ -59,8 +58,7 @@ static int xen_enlighten_init(void)
 
 	ret = xen_events_init();
 	if (ret) {
-		LOG_ERR("%s: failed init Xen event channels, ret = %d\n",
-			__func__, ret);
+		LOG_ERROR("%s: failed init Xen event channels, ret = %d\n", __func__, ret);
 		return ret;
 	}
 

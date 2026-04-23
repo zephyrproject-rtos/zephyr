@@ -215,7 +215,7 @@ static inline int npcm_clock_control_on(const struct device *dev, clock_control_
 
 	priv = npcm_get_cfg(sub_system);
 	if (!priv) {
-		LOG_ERR("Unsupported clock id %d", clk_id);
+		LOG_ERROR("Unsupported clock id %d", clk_id);
 		return -EINVAL;
 	}
 
@@ -234,7 +234,7 @@ static inline int npcm_clock_control_off(const struct device *dev,
 
 	priv = npcm_get_cfg(sub_system);
 	if (!priv) {
-		LOG_ERR("Unsupported clock id %d", clk_id);
+		LOG_ERROR("Unsupported clock id %d", clk_id);
 		return -EINVAL;
 	}
 
@@ -253,7 +253,7 @@ static int npcm_clock_control_get_subsys_rate(const struct device *dev,
 
 	priv = npcm_get_cfg(sub_system);
 	if (!priv) {
-		LOG_ERR("Unsupported clock id %d", clk_id);
+		LOG_ERROR("Unsupported clock id %d", clk_id);
 		return -EINVAL;
 	}
 
@@ -321,7 +321,7 @@ static int npcm_clock_control_init(const struct device *dev)
 	}
 
 	if (i >= ARRAY_SIZE(freq_multiplier)) {
-		LOG_ERR("Unsupported OFMCLK frequency %d", OFMCLK);
+		LOG_ERROR("Unsupported OFMCLK frequency %d", OFMCLK);
 		return -EINVAL;
 	}
 

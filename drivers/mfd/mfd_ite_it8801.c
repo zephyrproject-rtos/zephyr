@@ -37,14 +37,14 @@ static int it8801_check_vendor_id(const struct device *dev)
 		ret = i2c_reg_read_byte_dt(&config->i2c_dev, it8801_id_verify[i].reg, &val);
 
 		if (ret != 0) {
-			LOG_ERR("Failed to read vendoer ID (ret %d)", ret);
+			LOG_ERROR("Failed to read vendoer ID (ret %d)", ret);
 			return ret;
 		}
 
 		if (val != it8801_id_verify[i].chip_id) {
-			LOG_ERR("The IT8801 vendor ID is wrong. Index: %d, Expected ID: 0x%x,"
-				"Read ID: 0x%x",
-				i, it8801_id_verify[i].chip_id, val);
+			LOG_ERROR("The IT8801 vendor ID is wrong. Index: %d, Expected ID: 0x%x,"
+				  "Read ID: 0x%x",
+				  i, it8801_id_verify[i].chip_id, val);
 			return -ENODEV;
 		}
 	}
@@ -85,14 +85,14 @@ static int mfd_it8801_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&config->i2c_dev)) {
-		LOG_ERR("I2C bus %s is not ready", config->i2c_dev.bus->name);
+		LOG_ERROR("I2C bus %s is not ready", config->i2c_dev.bus->name);
 		return -ENODEV;
 	}
 
 	/*  Verify Vendor ID registers. */
 	ret = it8801_check_vendor_id(dev);
 	if (ret) {
-		LOG_ERR("Failed to read IT8801 vendor id %x", ret);
+		LOG_ERROR("Failed to read IT8801 vendor id %x", ret);
 		return ret;
 	}
 
@@ -103,7 +103,7 @@ static int mfd_it8801_init(const struct device *dev)
 	/* Alert response enable */
 	ret = i2c_reg_write_byte_dt(&config->i2c_dev, IT8801_REG_SMBCR, IT8801_REG_MASK_ARE);
 	if (ret != 0) {
-		LOG_ERR("Failed to initialization setting (ret %d)", ret);
+		LOG_ERROR("Failed to initialization setting (ret %d)", ret);
 		return ret;
 	}
 
@@ -114,7 +114,7 @@ static int mfd_it8801_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->irq_gpios.port, &data->gpio_cb);
 	if (ret != 0) {
-		LOG_ERR("Failed to add INT callback: %d", ret);
+		LOG_ERROR("Failed to add INT callback: %d", ret);
 		return ret;
 	}
 	gpio_pin_interrupt_configure_dt(&config->irq_gpios, GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);

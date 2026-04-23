@@ -40,7 +40,7 @@ static psa_status_t make_its_uid(secure_storage_its_caller_id_t caller_id, psa_s
 
 static void log_failed_operation(const char *operation, const char *preposition, psa_status_t ret)
 {
-	LOG_ERR("Failed to %s data %s storage. (%d)", operation, preposition, ret);
+	LOG_ERROR("Failed to %s data %s storage. (%d)", operation, preposition, ret);
 }
 
 static psa_status_t get_stored_data(

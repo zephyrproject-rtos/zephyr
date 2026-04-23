@@ -23,19 +23,19 @@ int main(void)
 	static const struct device *dev = DEVICE_DT_GET_ANY(sct_sct2024);
 
 	if (!dev) {
-		LOG_ERR("No SCT2024 LED controller found");
+		LOG_ERROR("No SCT2024 LED controller found");
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("SCT2024 LED controller not ready");
+		LOG_ERROR("SCT2024 LED controller not ready");
 		return -ENODEV;
 	}
 
 	do {
 		for (int i = 0; i < NUM_LEDS; i++) {
 			if (led_on(dev, i)) {
-				LOG_ERR("Failed to turn on LED %d", i);
+				LOG_ERROR("Failed to turn on LED %d", i);
 			}
 			k_msleep(LED_DELAY_MS);
 		}
@@ -44,7 +44,7 @@ int main(void)
 
 		for (int i = 0; i < NUM_LEDS; i++) {
 			if (led_off(dev, i)) {
-				LOG_ERR("Failed to turn off LED %d", i);
+				LOG_ERROR("Failed to turn off LED %d", i);
 			}
 			k_msleep(LED_DELAY_MS);
 		}

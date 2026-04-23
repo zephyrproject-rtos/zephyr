@@ -363,7 +363,7 @@ static int adc_stm32_dma_start(const struct device *dev,
 	ret = dma_config(data->dma.dma_dev, data->dma.channel,
 			 &dma->dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Problem setting up DMA: %d", ret);
+		LOG_ERROR("Problem setting up DMA: %d", ret);
 		return ret;
 	}
 
@@ -372,7 +372,7 @@ static int adc_stm32_dma_start(const struct device *dev,
 	data->dma_error = 0;
 	ret = dma_start(data->dma.dma_dev, data->dma.channel);
 	if (ret != 0) {
-		LOG_ERR("Problem starting DMA: %d", ret);
+		LOG_ERROR("Problem starting DMA: %d", ret);
 		return ret;
 	}
 
@@ -394,15 +394,15 @@ static int check_buffer(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-				sequence->buffer_size, needed_buffer_size);
+		LOG_ERROR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			  needed_buffer_size);
 		return -ENOMEM;
 	}
 
 #if defined(CONFIG_ADC_STM32_DMA)
 	/* Buffer is forced to be in non-cacheable SRAM region to avoid cache maintenance */
 	if (!stm32_buf_in_nocache((uintptr_t)sequence->buffer, needed_buffer_size)) {
-		LOG_ERR("Supplied buffer is not in a non-cacheable region.");
+		LOG_ERROR("Supplied buffer is not in a non-cacheable region.");
 		return -EINVAL;
 	}
 #endif /* CONFIG_ADC_STM32_DMA */
@@ -575,11 +575,11 @@ static void adc_stm32_calibration_delay(const struct device *dev)
 	uint32_t adc_rate, wait_cycles;
 
 	if (clock_control_get_rate(clk, (clock_control_subsys_t)&config->pclken, &adc_rate) < 0) {
-		LOG_ERR("ADC clock rate get error.");
+		LOG_ERROR("ADC clock rate get error.");
 	}
 
 	if (adc_rate == 0) {
-		LOG_ERR("ADC Clock rate null");
+		LOG_ERROR("ADC Clock rate null");
 		return;
 	}
 	wait_cycles = SystemCoreClock / adc_rate *
@@ -887,7 +887,7 @@ static int adc_stm32_oversampling(const struct device *dev, uint8_t ratio)
 	} else if (ratio < ARRAY_SIZE(table_oversampling_shift)) {
 		adc_stm32_oversampling_scope(adc, STM32_ADC_OVS_REG_CONTINUED);
 	} else {
-		LOG_ERR("Invalid oversampling");
+		LOG_ERROR("Invalid oversampling");
 		return -EINVAL;
 	}
 
@@ -928,8 +928,8 @@ static void dma_callback(const struct device *dev, void *user_data,
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 		if (LL_ADC_IsActiveFlag_OVR(adc)) {
 			LL_ADC_ClearFlag_OVR(adc);
-			LOG_ERR("ADC overrun error occurred. Reduce clock source frequency, "
-				"increase prescaler value or increase sampling times.");
+			LOG_ERROR("ADC overrun error occurred. Reduce clock source frequency, "
+				  "increase prescaler value or increase sampling times.");
 		}
 #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 		if (status >= 0) {
@@ -952,7 +952,7 @@ static void dma_callback(const struct device *dev, void *user_data,
 							 PM_ALL_SUBSTATES);
 			}
 		} else if (status < 0) {
-			LOG_ERR("DMA sampling complete, but DMA reported error %d", status);
+			LOG_ERROR("DMA sampling complete, but DMA reported error %d", status);
 			data->dma_error = status;
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 			LL_ADC_REG_StopConversion(adc);
@@ -982,7 +982,7 @@ static int set_resolution(const struct device *dev,
 	}
 
 	if (i == config->table_resolution_size) {
-		LOG_ERR("Invalid resolution");
+		LOG_ERROR("Invalid resolution");
 		return -EINVAL;
 	}
 
@@ -1135,32 +1135,32 @@ static int start_inj_read(const struct device *dev, const struct adc_sequence *s
 	data->inj_channel_count = POPCOUNT(data->inj_channels);
 
 	if (data->inj_channel_count == 0) {
-		LOG_ERR("No channels selected");
+		LOG_ERROR("No channels selected");
 		return -EINVAL;
 	}
 
 	if (data->inj_channel_count > STM32_NB_INJECTED_CHANNELS) {
-		LOG_ERR("Too many channels for injected sequencer. Max: %d",
-			STM32_NB_INJECTED_CHANNELS);
+		LOG_ERROR("Too many channels for injected sequencer. Max: %d",
+			  STM32_NB_INJECTED_CHANNELS);
 		return -EINVAL;
 	}
 
 	err = check_buffer(sequence, data->inj_channel_count);
 	if (err < 0) {
-		LOG_ERR("ADC buffer error");
+		LOG_ERROR("ADC buffer error");
 		return err;
 	}
 
 	err = set_resolution(dev, sequence);
 	if (err < 0) {
-		LOG_ERR("Error setting the ADC resolution");
+		LOG_ERROR("Error setting the ADC resolution");
 		return err;
 	}
 
 	/* Configure the sequencer */
 	err = set_inj_sequencer(dev);
 	if (err < 0) {
-		LOG_ERR("Error setting the ADC injected sequencer");
+		LOG_ERROR("Error setting the ADC injected sequencer");
 		return err;
 	}
 
@@ -1189,13 +1189,13 @@ static int start_read(const struct device *dev,
 	data->resolution = sequence->resolution;
 
 	if (data->channel_count == 0) {
-		LOG_ERR("No channels selected");
+		LOG_ERROR("No channels selected");
 		return -EINVAL;
 	}
 
 #if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE)
 	if (data->channel_count > ARRAY_SIZE(table_seq_len)) {
-		LOG_ERR("Too many channels for sequencer. Max: %d", ARRAY_SIZE(table_seq_len));
+		LOG_ERROR("Too many channels for sequencer. Max: %d", ARRAY_SIZE(table_seq_len));
 		return -EINVAL;
 	}
 #endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE) */
@@ -1203,7 +1203,7 @@ static int start_read(const struct device *dev,
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !defined(CONFIG_ADC_STM32_DMA)
 	/* Multiple samplings is only supported with DMA for F1 */
 	if (data->channel_count > 1) {
-		LOG_ERR("Without DMA, this device only supports single channel sampling");
+		LOG_ERROR("Without DMA, this device only supports single channel sampling");
 		return -EINVAL;
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !CONFIG_ADC_STM32_DMA */
@@ -1211,32 +1211,32 @@ static int start_read(const struct device *dev,
 	/* Check and set the resolution */
 	err = set_resolution(dev, sequence);
 	if (err < 0) {
-		LOG_ERR("Error setting the ADC resolution");
+		LOG_ERROR("Error setting the ADC resolution");
 		return err;
 	}
 
 	/* Configure the sequencer */
 	err = set_sequencer(dev);
 	if (err < 0) {
-		LOG_ERR("Error setting the ADC sequencer");
+		LOG_ERROR("Error setting the ADC sequencer");
 		return err;
 	}
 
 	err = check_buffer(sequence, data->channel_count);
 	if (err) {
-		LOG_ERR("ADC buffer error");
+		LOG_ERROR("ADC buffer error");
 		return err;
 	}
 
 #ifdef HAS_OVERSAMPLING
 	err = adc_stm32_oversampling(dev, sequence->oversampling);
 	if (err) {
-		LOG_ERR("Error setting the ADC oversampler");
+		LOG_ERROR("Error setting the ADC oversampler");
 		return err;
 	}
 #else
 	if (sequence->oversampling) {
-		LOG_ERR("Oversampling not supported");
+		LOG_ERROR("Oversampling not supported");
 		return -ENOTSUP;
 	}
 #endif /* HAS_OVERSAMPLING */
@@ -1245,11 +1245,11 @@ static int start_read(const struct device *dev,
 #if defined(HAS_CALIBRATION)
 		err = adc_stm32_calibrate(dev, false);
 		if (err < 0) {
-			LOG_ERR("Calibration error");
+			LOG_ERROR("Calibration error");
 			return err;
 		}
 #else
-		LOG_ERR("Calibration not supported");
+		LOG_ERROR("Calibration not supported");
 		return -ENOTSUP;
 #endif
 	}
@@ -1347,8 +1347,8 @@ static void adc_stm32_isr(const struct device *dev)
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	if (LL_ADC_IsActiveFlag_OVR(adc)) {
 		LL_ADC_ClearFlag_OVR(adc);
-		LOG_ERR("ADC overrun error occurred. Use DMA, reduce clock source frequency, "
-			"increase prescaler value or increase sampling times.");
+		LOG_ERROR("ADC overrun error occurred. Use DMA, reduce clock source frequency, "
+			  "increase prescaler value or increase sampling times.");
 	}
 #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
 
@@ -1469,12 +1469,12 @@ static int adc_stm32_read(const struct device *dev,
 		is_injected = false;
 	} else if (sequence->priority == STM32_INJ_SEQ_PRIORITY) {
 		if (!config->has_injected_support) {
-			LOG_ERR("Injected channels are not available on this ADC instance");
+			LOG_ERROR("Injected channels are not available on this ADC instance");
 			return -ENOTSUP;
 		}
 		is_injected = true;
 	} else {
-		LOG_ERR("Sequence priority %d is invalid", sequence->priority);
+		LOG_ERROR("Sequence priority %d is invalid", sequence->priority);
 		return -EINVAL;
 	}
 	ctx = is_injected ? &data->inj_ctx : &data->ctx;
@@ -1523,7 +1523,7 @@ static int adc_stm32_sampling_time_check(const struct device *dev, uint16_t acq_
 	}
 
 	if (ADC_ACQ_TIME_UNIT(acq_time) != ADC_ACQ_TIME_TICKS) {
-		LOG_ERR("Acquisition time expected in ticks only");
+		LOG_ERROR("Acquisition time expected in ticks only");
 		return -EINVAL;
 	}
 
@@ -1534,7 +1534,7 @@ static int adc_stm32_sampling_time_check(const struct device *dev, uint16_t acq_
 		}
 	}
 
-	LOG_ERR("Sampling time value not supported.");
+	LOG_ERROR("Sampling time value not supported.");
 	return -EINVAL;
 }
 
@@ -1580,7 +1580,7 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 							     (uint32_t)acq_time_index);
 		} else {
 			/* Reg is used and value does not match */
-			LOG_ERR("Multiple sampling times not supported");
+			LOG_ERROR("Multiple sampling times not supported");
 			return -EINVAL;
 		}
 #endif
@@ -1612,13 +1612,13 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 							     (uint32_t)acq_time_index);
 		} else {
 			/* Both regs are used, value does not match any of them */
-			LOG_ERR("Only two different sampling times supported");
+			LOG_ERROR("Only two different sampling times supported");
 			return -EINVAL;
 		}
 #endif
 		break;
 	default:
-		LOG_ERR("Number of common sampling time channels not supported");
+		LOG_ERROR("Number of common sampling time channels not supported");
 		return -EINVAL;
 	}
 	return 0;
@@ -1660,7 +1660,7 @@ static int adc_stm32_channel_setup(const struct device *dev,
 
 	if (!config->has_differential_support) {
 		if (channel_cfg->differential) {
-			LOG_ERR("Differential channels not supported on this ADC");
+			LOG_ERROR("Differential channels not supported on this ADC");
 			return -EINVAL;
 		}
 	}
@@ -1669,38 +1669,38 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		/* At least one channel must be set to differential mode in the devicetree
 		 * to cause a differential calibration to be performed during init.
 		 */
-		LOG_ERR("Differential calibration not done, cannot use differential mode");
+		LOG_ERROR("Differential calibration not done, cannot use differential mode");
 		return -EINVAL;
 	}
 
 	err = set_channel_differential_mode(adc, channel_cfg->channel_id,
 					    channel_cfg->differential);
 	if (err != 0) {
-		LOG_ERR("Error setting differential channel");
+		LOG_ERROR("Error setting differential channel");
 		return err;
 	}
 #endif
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Invalid channel gain");
+		LOG_ERROR("Invalid channel gain");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Invalid channel reference");
+		LOG_ERROR("Invalid channel reference");
 		return -EINVAL;
 	}
 
 	if (adc_stm32_sampling_time_setup(dev, channel_cfg->channel_id,
 					  channel_cfg->acquisition_time) != 0) {
-		LOG_ERR("Invalid sampling time");
+		LOG_ERROR("Invalid sampling time");
 		return -EINVAL;
 	}
 
 #if ANY_ADC_HAS_CHANNEL_PRESELECTION && defined(CONFIG_ADC_STM32_INJECTED_CHANNELS)
 	err = adc_stm32_preselection_setup(dev, channel_cfg->channel_id);
 	if (err < 0) {
-		LOG_ERR("Error setting preselection register");
+		LOG_ERROR("Error setting preselection register");
 		return err;
 	}
 #endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION && CONFIG_ADC_STM32_INJECTED_CHANNELS */
@@ -1802,14 +1802,14 @@ static int adc_stm32h7_setup_boost(const struct adc_stm32_cfg *config, ADC_TypeD
 									 : &config->pclken_ker);
 
 	if (clock_control_get_rate(clk, clk_src, &input_freq) != 0) {
-		LOG_ERR("Failed to get ADC clock frequency");
+		LOG_ERROR("Failed to get ADC clock frequency");
 		return -EIO;
 	}
 
 	/* Adjust the pre-scaler value so that we can divide down the clock */
 	presc = adc_stm32_get_clock_prescaler(config);
 	if (presc < 0) {
-		LOG_ERR("Invalid clock prescaler value");
+		LOG_ERROR("Invalid clock prescaler value");
 		return presc;
 	}
 
@@ -1937,16 +1937,15 @@ static int adc_stm32_init(const struct device *dev)
 		 * provided in Device Tree, and pinctrl_apply_state returns -ENOENT,
 		 * but this should not be treated as an error.
 		 */
-		LOG_ERR("ADC pinctrl setup failed (%d)", err);
+		LOG_ERROR("ADC pinctrl setup failed (%d)", err);
 		return err;
 	}
 
 	adc_stm32_enable_analog_supply();
 
 #ifdef CONFIG_ADC_STM32_DMA
-	if ((data->dma.dma_dev != NULL) &&
-	    !device_is_ready(data->dma.dma_dev)) {
-		LOG_ERR("%s device not ready", data->dma.dma_dev->name);
+	if ((data->dma.dma_dev != NULL) && !device_is_ready(data->dma.dma_dev)) {
+		LOG_ERROR("%s device not ready", data->dma.dma_dev->name);
 		return -ENODEV;
 	}
 #endif
@@ -2039,7 +2038,7 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 	/* Stop device clock. Note: fixed clocks are not handled yet. */
 	err = clock_control_off(clk, (clock_control_subsys_t)&config->pclken);
 	if (err != 0) {
-		LOG_ERR("Could not disable ADC clock");
+		LOG_ERROR("Could not disable ADC clock");
 		return err;
 	}
 
@@ -2089,7 +2088,7 @@ static void adc_stm32_submit_stream(const struct device *dev, struct rtio_iodev_
 	adc_context_release(&data->ctx, rc);
 
 	if (rc < 0) {
-		LOG_ERR("Error starting conversion (%d)", rc);
+		LOG_ERROR("Error starting conversion (%d)", rc);
 	}
 }
 

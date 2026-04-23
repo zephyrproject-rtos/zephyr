@@ -41,7 +41,7 @@ int z_impl_pwm_capture_cycles(const struct device *dev, uint32_t channel,
 	int err;
 
 	if ((flags & PWM_CAPTURE_MODE_MASK) == PWM_CAPTURE_MODE_CONTINUOUS) {
-		LOG_ERR("continuous capture mode only supported via callback");
+		LOG_ERROR("continuous capture mode only supported via callback");
 		return -ENOTSUP;
 	}
 
@@ -51,13 +51,13 @@ int z_impl_pwm_capture_cycles(const struct device *dev, uint32_t channel,
 	err = pwm_configure_capture(dev, channel, flags,
 				    z_pwm_capture_cycles_callback, &data);
 	if (err) {
-		LOG_ERR("failed to configure pwm capture");
+		LOG_ERROR("failed to configure pwm capture");
 		return err;
 	}
 
 	err = pwm_enable_capture(dev, channel);
 	if (err) {
-		LOG_ERR("failed to enable pwm capture");
+		LOG_ERROR("failed to enable pwm capture");
 		return err;
 	}
 

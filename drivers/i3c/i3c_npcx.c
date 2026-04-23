@@ -375,7 +375,7 @@ static void npcx_i3c_enable_target_interrupt(const struct device *dev, bool enab
 static bool npcx_i3c_has_error(struct i3c_reg *inst)
 {
 	if (IS_BIT_SET(inst->MSTATUS, NPCX_I3C_MSTATUS_ERRWARN)) {
-		LOG_ERR("ERROR: MSTATUS 0x%08x MERRWARN 0x%08x", inst->MSTATUS, inst->MERRWARN);
+		LOG_ERROR("ERROR: MSTATUS 0x%08x MERRWARN 0x%08x", inst->MSTATUS, inst->MERRWARN);
 
 		return true;
 	}
@@ -419,7 +419,7 @@ static inline int npcx_i3c_send_request(struct i3c_reg *inst, uint32_t mctrl_val
 
 	/* Check invalid use of request */
 	if (IS_BIT_SET(inst->MERRWARN, NPCX_I3C_MERRWARN_INVERQ)) {
-		LOG_ERR("%s: Invalid request, merrwarn: %#x", __func__, inst->MERRWARN);
+		LOG_ERROR("%s: Invalid request, merrwarn: %#x", __func__, inst->MERRWARN);
 		return -ENOSYS;
 	}
 
@@ -440,7 +440,7 @@ static inline int npcx_i3c_request_daa(struct i3c_reg *inst)
 
 	ret = npcx_i3c_send_request(inst, val);
 	if (ret != 0) {
-		LOG_ERR("Request DAA error, %d", ret);
+		LOG_ERROR("Request DAA error, %d", ret);
 		return ret;
 	}
 
@@ -458,7 +458,7 @@ static inline int npcx_i3c_request_auto_ibi(struct i3c_reg *inst)
 
 	ret = npcx_i3c_send_request(inst, val);
 	if (ret != 0) {
-		LOG_ERR("Request auto ibi error, %d", ret);
+		LOG_ERROR("Request auto ibi error, %d", ret);
 		return ret;
 	}
 
@@ -507,7 +507,7 @@ static int npcx_i3c_request_emit_start(struct i3c_reg *inst, uint8_t addr,
 
 	ret = npcx_i3c_send_request(inst, mctrl);
 	if (ret != 0) {
-		LOG_ERR("Request start error, %d", ret);
+		LOG_ERROR("Request start error, %d", ret);
 		return ret;
 	}
 
@@ -548,7 +548,7 @@ static inline int npcx_i3c_request_emit_stop(struct i3c_reg *inst)
 
 	ret = npcx_i3c_send_request(inst, val);
 	if (ret != 0) {
-		LOG_ERR("Request stop error, %d", ret);
+		LOG_ERROR("Request stop error, %d", ret);
 		return ret;
 	}
 
@@ -564,7 +564,7 @@ static inline int npcx_i3c_request_hdr_exit(struct i3c_reg *inst)
 	/* Before sending the HDR exit command, check the HDR mode */
 	state = npcx_i3c_state_get(inst);
 	if (state != MSTATUS_STATE_MSGDDR) {
-		LOG_ERR("%s, state error: %#x", __func__, state);
+		LOG_ERROR("%s, state error: %#x", __func__, state);
 		return -EPERM;
 	}
 
@@ -573,7 +573,7 @@ static inline int npcx_i3c_request_hdr_exit(struct i3c_reg *inst)
 
 	ret = npcx_i3c_send_request(inst, val);
 	if (ret != 0) {
-		LOG_ERR("Request hdr exit error %d", ret);
+		LOG_ERROR("Request hdr exit error %d", ret);
 		return ret;
 	}
 
@@ -591,7 +591,7 @@ static inline int npcx_i3c_request_tgt_reset(struct i3c_reg *inst)
 
 	ret = npcx_i3c_send_request(inst, val);
 	if (ret != 0) {
-		LOG_ERR("Sending tgt reset pattern error %d", ret);
+		LOG_ERROR("Sending tgt reset pattern error %d", ret);
 		return ret;
 	}
 
@@ -633,7 +633,7 @@ static inline int npcx_i3c_ibi_respond_nack(struct i3c_reg *inst)
 
 	ret = npcx_i3c_send_request(inst, val);
 	if (ret != 0) {
-		LOG_ERR("Request ibi_rsp nack error, %d", ret);
+		LOG_ERROR("Request ibi_rsp nack error, %d", ret);
 		return ret;
 	}
 
@@ -650,7 +650,7 @@ static inline int npcx_i3c_ibi_respond_ack(struct i3c_reg *inst)
 
 	ret = npcx_i3c_send_request(inst, val);
 	if (ret != 0) {
-		LOG_ERR("Request ibi_rsp ack error %d", ret);
+		LOG_ERROR("Request ibi_rsp ack error %d", ret);
 		return ret;
 	}
 
@@ -846,12 +846,12 @@ static int npcx_i3c_cfg_dma_rx(const struct device *dev, bool dma_en, uint8_t *b
 	struct mdma_reg *mdma_inst = config->mdma_base;
 
 	if (dev == NULL) {
-		LOG_ERR("Invalid device");
+		LOG_ERROR("Invalid device");
 		return -EINVAL;
 	}
 
 	if (dma_en && len == 0) {
-		LOG_ERR("Invalid length for DMA transfer");
+		LOG_ERROR("Invalid length for DMA transfer");
 		return -EINVAL;
 	}
 
@@ -890,12 +890,12 @@ static int npcx_i3c_cfg_dma_tx(const struct device *dev, bool dma_en, uint8_t *b
 	struct mdma_reg *mdma_inst = config->mdma_base;
 
 	if (dev == NULL) {
-		LOG_ERR("Invalid device");
+		LOG_ERROR("Invalid device");
 		return -EINVAL;
 	}
 
 	if (dma_en && len == 0) {
-		LOG_ERR("Invalid length for DMA transfer");
+		LOG_ERROR("Invalid length for DMA transfer");
 		return -EINVAL;
 	}
 
@@ -1007,14 +1007,14 @@ static int npcx_i3c_xfer_read_fifo_dma(const struct device *dev, uint8_t *buf, u
 	/* Wait I3C COMPLETE */
 	ret = i3c_ctrl_wait_completion(dev);
 	if (ret < 0) {
-		LOG_ERR("Wait I3C COMPLETE timeout, ret = %d", ret);
+		LOG_ERROR("Wait I3C COMPLETE timeout, ret = %d", ret);
 		goto out_xfer_rd_fifo_dma;
 	}
 
 	/* Check all the RX FIFO data transferred to RAM by DMA */
 	if (WAIT_FOR(IS_BIT_SET(i3c_inst->MDATACTRL, NPCX_I3C_MDATACTRL_RXEMPTY),
 		     NPCX_I3C_DMA_RX_TIMEOUT_US, NULL) == false) {
-		LOG_ERR("DMA transfer incomplete: RX FIFO not empty");
+		LOG_ERROR("DMA transfer incomplete: RX FIFO not empty");
 		goto out_xfer_rd_fifo_dma;
 	}
 
@@ -1061,7 +1061,7 @@ static int npcx_i3c_do_one_xfer_dma(const struct device *dev, uint8_t addr,
 
 	/* Check HDR-DDR moves data by words */
 	if (is_hdr_ddr && (buf_sz % 2 != 0)) {
-		LOG_ERR("%s, HDR-DDR data length should be even, len=%#x", __func__, buf_sz);
+		LOG_ERROR("%s, HDR-DDR data length should be even, len=%#x", __func__, buf_sz);
 		return -EINVAL;
 	}
 
@@ -1088,7 +1088,7 @@ static int npcx_i3c_do_one_xfer_dma(const struct device *dev, uint8_t addr,
 
 		ret = npcx_i3c_request_emit_start(inst, addr, op_type, is_read, rd_len);
 		if (ret != 0) {
-			LOG_ERR("%s: emit start fail", __func__);
+			LOG_ERROR("%s: emit start fail", __func__);
 			goto out_do_one_xfer_dma;
 		}
 	}
@@ -1106,14 +1106,14 @@ static int npcx_i3c_do_one_xfer_dma(const struct device *dev, uint8_t addr,
 	}
 
 	if (ret < 0) {
-		LOG_ERR("%s: %s fifo fail", __func__, is_read ? "read" : "write");
+		LOG_ERROR("%s: %s fifo fail", __func__, is_read ? "read" : "write");
 		goto out_do_one_xfer_dma;
 	}
 
 	/* Check I3C bus error */
 	if (npcx_i3c_has_error(inst)) {
 		ret = -EIO;
-		LOG_ERR("%s: I3C bus error", __func__);
+		LOG_ERROR("%s: I3C bus error", __func__);
 	}
 
 out_do_one_xfer_dma:
@@ -1155,7 +1155,7 @@ static int npcx_i3c_do_one_xfer(struct i3c_reg *inst, uint8_t addr,
 	if (emit_start) {
 		ret = npcx_i3c_request_emit_start(inst, addr, op_type, is_read, buf_sz);
 		if (ret != 0) {
-			LOG_ERR("%s: emit start fail", __func__);
+			LOG_ERROR("%s: emit start fail", __func__);
 			goto out_do_one_xfer;
 		}
 	}
@@ -1173,7 +1173,7 @@ static int npcx_i3c_do_one_xfer(struct i3c_reg *inst, uint8_t addr,
 	}
 
 	if (ret < 0) {
-		LOG_ERR("%s: %s fifo fail", __func__, is_read ? "read" : "write");
+		LOG_ERROR("%s: %s fifo fail", __func__, is_read ? "read" : "write");
 		goto out_do_one_xfer;
 	}
 
@@ -1198,7 +1198,7 @@ static int npcx_i3c_do_one_xfer(struct i3c_reg *inst, uint8_t addr,
 	/* Check I3C bus error */
 	if (npcx_i3c_has_error(inst)) {
 		ret = -EIO;
-		LOG_ERR("%s: I3C bus error", __func__);
+		LOG_ERROR("%s: I3C bus error", __func__);
 	}
 
 out_do_one_xfer:
@@ -1248,7 +1248,7 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 	/* Check bus in idle state */
 	if (WAIT_FOR((npcx_i3c_state_get(inst) == MSTATUS_STATE_IDLE), NPCX_I3C_CHK_TIMEOUT_US,
 		     NULL) == false) {
-		LOG_ERR("%s: xfer state error: %d", __func__, npcx_i3c_state_get(inst));
+		LOG_ERROR("%s: xfer state error: %d", __func__, npcx_i3c_state_get(inst));
 		npcx_i3c_mutex_unlock(dev);
 		return -ETIMEDOUT;
 	}
@@ -1301,7 +1301,7 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 #ifdef CONFIG_I3C_NPCX_DMA
 		/* Current DMA not support multi-message write */
 		if (!is_read && no_ending) {
-			LOG_ERR("I3C DMA transfer not support multi-message write");
+			LOG_ERROR("I3C DMA transfer not support multi-message write");
 			ret = -EINVAL;
 			break;
 		}
@@ -1329,9 +1329,9 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 								  NPCX_I3C_MCTRL_TYPE_I3C, false,
 								  0);
 				if (ret < 0) {
-					LOG_ERR("%s: emit start of broadcast addr failed, error "
-						"(%d)",
-						__func__, ret);
+					LOG_ERROR("%s: emit start of broadcast addr failed, error "
+						  "(%d)",
+						  __func__, ret);
 					break;
 				}
 				send_broadcast = false;
@@ -1343,17 +1343,17 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 
 			/* Check HDR-DDR moves data by words */
 			if ((msgs[i].len % 2) != 0x0) {
-				LOG_ERR("HDR-DDR data length should be number of words , xfer "
-					"len=%d",
-					msgs[i].num_xfer);
+				LOG_ERROR("HDR-DDR data length should be number of words , xfer "
+					  "len=%d",
+					  msgs[i].num_xfer);
 				ret = -EINVAL;
 				break;
 			}
 		} else {
-			LOG_ERR("%s: %s controller HDR Mode %#x\r\n"
-				"msg HDR mode %#x, msg flag %#x",
-				__func__, dev->name, data->common.ctrl_config.supported_hdr,
-				msgs[i].hdr_mode, msgs[i].flags);
+			LOG_ERROR("%s: %s controller HDR Mode %#x\r\n"
+				  "msg HDR mode %#x, msg flag %#x",
+				  __func__, dev->name, data->common.ctrl_config.supported_hdr,
+				  msgs[i].hdr_mode, msgs[i].flags);
 			ret = -ENOTSUP;
 			break;
 		}
@@ -1366,7 +1366,7 @@ static int npcx_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 #endif
 
 		if (xfered_len < 0) {
-			LOG_ERR("%s: do xfer fail", __func__);
+			LOG_ERROR("%s: do xfer fail", __func__);
 			ret = xfered_len; /* Set error code to ret */
 			break;
 		}
@@ -1431,7 +1431,7 @@ static int npcx_i3c_do_daa(const struct device *dev)
 	/* Check bus in idle state */
 	if (WAIT_FOR((npcx_i3c_state_get(inst) == MSTATUS_STATE_IDLE), NPCX_I3C_CHK_TIMEOUT_US,
 		     NULL) == false) {
-		LOG_ERR("%s: DAA state error: %d", __func__, npcx_i3c_state_get(inst));
+		LOG_ERROR("%s: DAA state error: %d", __func__, npcx_i3c_state_get(inst));
 		npcx_i3c_mutex_unlock(dev);
 		return -ETIMEDOUT;
 	}
@@ -1447,7 +1447,7 @@ static int npcx_i3c_do_daa(const struct device *dev)
 	/* Emit process DAA */
 	if (npcx_i3c_request_daa(inst) != 0) {
 		ret = -ETIMEDOUT;
-		LOG_ERR("Emit process DAA error");
+		LOG_ERROR("Emit process DAA error");
 		goto out_do_daa;
 	}
 
@@ -1456,7 +1456,7 @@ static int npcx_i3c_do_daa(const struct device *dev)
 		/* Check ERRWARN bit set */
 		if (npcx_i3c_has_error(inst)) {
 			ret = -EIO;
-			LOG_ERR("DAA recv error");
+			LOG_ERROR("DAA recv error");
 			break;
 		}
 
@@ -1500,7 +1500,7 @@ static int npcx_i3c_do_daa(const struct device *dev)
 							   &config->common.dev_list, pid, false,
 							   false, &target, &dyn_addr);
 			if (ret != 0) {
-				LOG_ERR("%s: Assign new DA error", __func__);
+				LOG_ERROR("%s: Assign new DA error", __func__);
 				break;
 			}
 
@@ -1534,7 +1534,7 @@ static int npcx_i3c_do_daa(const struct device *dev)
 			inst->MWDATAB = dyn_addr;
 			ret = npcx_i3c_request_daa(inst);
 			if (ret != 0) {
-				LOG_ERR("%s: Assign DA timeout", __func__);
+				LOG_ERROR("%s: Assign DA timeout", __func__);
 				break;
 			}
 
@@ -1622,8 +1622,8 @@ static int npcx_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	ret = npcx_i3c_request_emit_start(inst, I3C_BROADCAST_ADDR, NPCX_I3C_MCTRL_TYPE_I3C, false,
 					  0);
 	if (ret < 0) {
-		LOG_ERR("CCC[0x%02x] %s START error (%d)", payload->ccc.id,
-			i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct", ret);
+		LOG_ERROR("CCC[0x%02x] %s START error (%d)", payload->ccc.id,
+			  i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct", ret);
 
 		goto out_do_ccc;
 	}
@@ -1634,8 +1634,8 @@ static int npcx_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	xfered_len = npcx_i3c_xfer_write_fifo(inst, &payload->ccc.id, 1, payload->ccc.data_len > 0);
 	if (xfered_len < 0) {
 		ret = xfered_len;
-		LOG_ERR("CCC[0x%02x] %s command error (%d)", payload->ccc.id,
-			i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct", ret);
+		LOG_ERROR("CCC[0x%02x] %s command error (%d)", payload->ccc.id,
+			  i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct", ret);
 
 		goto out_do_ccc;
 	}
@@ -1648,9 +1648,9 @@ static int npcx_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 						      payload->ccc.data_len, false);
 		if (xfered_len < 0) {
 			ret = xfered_len;
-			LOG_ERR("CCC[0x%02x] %s command payload error (%d)", payload->ccc.id,
-				i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct",
-				ret);
+			LOG_ERROR("CCC[0x%02x] %s command payload error (%d)", payload->ccc.id,
+				  i3c_ccc_is_payload_broadcast(payload) ? "broadcast" : "direct",
+				  ret);
 
 			goto out_do_ccc;
 		}
@@ -1686,8 +1686,8 @@ static int npcx_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 				tgt_payload->data_len, is_read, true, false, false);
 			if (xfered_len < 0) {
 				ret = xfered_len;
-				LOG_ERR("CCC[0x%02x] target payload error (%d)", payload->ccc.id,
-					ret);
+				LOG_ERROR("CCC[0x%02x] target payload error (%d)", payload->ccc.id,
+					  ret);
 
 				goto out_do_ccc;
 			}
@@ -1701,8 +1701,8 @@ static int npcx_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	if (payload->ccc.id == I3C_CCC_RSTACT(true)) {
 		/* Handle invalid or unsupported defining bytes */
 		if (payload->ccc.data[0] > I3C_CCC_RSTACT_VIRTUAL_TARGET_DETECT) {
-			LOG_ERR("Invalid or unsupported RSTACT defining byte: %#x",
-				payload->ccc.data[0]);
+			LOG_ERROR("Invalid or unsupported RSTACT defining byte: %#x",
+				  payload->ccc.data[0]);
 			ret = -EINVAL;
 			goto out_do_ccc;
 		}
@@ -1745,10 +1745,10 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 
 	if (npcx_i3c_state_get(inst) != MSTATUS_STATE_TGTREQ) {
 		LOG_DBG("IBI work %p running not because of IBI", work);
-		LOG_ERR("%s: IBI not in TGTREQ state, state : %#x", __func__,
-			npcx_i3c_state_get(inst));
-		LOG_ERR("%s: MSTATUS 0x%08x MERRWARN 0x%08x", __func__, inst->MSTATUS,
-			inst->MERRWARN);
+		LOG_ERROR("%s: IBI not in TGTREQ state, state : %#x", __func__,
+			  npcx_i3c_state_get(inst));
+		LOG_ERROR("%s: MSTATUS 0x%08x MERRWARN 0x%08x", __func__, inst->MSTATUS,
+			  inst->MERRWARN);
 		npcx_i3c_request_emit_stop(inst);
 
 		goto out_ibi_work;
@@ -1760,9 +1760,9 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 	/* Wait for target to win address arbitration (ibitype and ibiaddr) */
 	if (WAIT_FOR(IS_BIT_SET(inst->MSTATUS, NPCX_I3C_MSTATUS_IBIWON), NPCX_I3C_CHK_TIMEOUT_US,
 		     NULL) == false) {
-		LOG_ERR("IBI work, IBIWON timeout");
-		LOG_ERR("%s: MSTATUS 0x%08x MERRWARN 0x%08x", __func__, inst->MSTATUS,
-			inst->MERRWARN);
+		LOG_ERROR("IBI work, IBIWON timeout");
+		LOG_ERROR("%s: MSTATUS 0x%08x MERRWARN 0x%08x", __func__, inst->MSTATUS,
+			  inst->MERRWARN);
 		npcx_i3c_request_emit_stop(inst);
 
 		goto out_ibi_work;
@@ -1777,7 +1777,7 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 		if (ret >= 0) {
 			payload_sz = (size_t)ret;
 		} else {
-			LOG_ERR("Error reading IBI payload");
+			LOG_ERROR("Error reading IBI payload");
 			npcx_i3c_request_emit_stop(inst);
 
 			goto out_ibi_work;
@@ -1797,7 +1797,7 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 	}
 
 	if (npcx_i3c_has_error(inst)) {
-		LOG_ERR("%s: unexpected error, ibi type:%d", __func__, ibitype);
+		LOG_ERROR("%s: unexpected error, ibi type:%d", __func__, ibitype);
 		/*
 		 * If the controller detects any errors, simply
 		 * emit a STOP to abort the IBI. The target will
@@ -1813,10 +1813,10 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 		target = i3c_dev_list_i3c_addr_find(dev, (uint8_t)ibiaddr);
 		if (target != NULL) {
 			if (i3c_ibi_work_enqueue_target_irq(target, &payload[0], payload_sz) != 0) {
-				LOG_ERR("Error enqueue IBI IRQ work");
+				LOG_ERROR("Error enqueue IBI IRQ work");
 			}
 		} else {
-			LOG_ERR("IBI (MDB) target not in the list");
+			LOG_ERROR("IBI (MDB) target not in the list");
 		}
 
 		/* Finishing the IBI transaction */
@@ -1824,7 +1824,7 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 		break;
 	case MSTATUS_IBITYPE_HJ:
 		if (i3c_ibi_work_enqueue_hotjoin(dev) != 0) {
-			LOG_ERR("Error enqueue IBI HJ work");
+			LOG_ERROR("Error enqueue IBI HJ work");
 		}
 		break;
 	case MSTATUS_IBITYPE_CR:
@@ -1892,20 +1892,20 @@ static int npcx_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc 
 
 	/* Check target IBI request capable */
 	if (!i3c_device_is_ibi_capable(target)) {
-		LOG_ERR("%s: device is not ibi capable", __func__);
+		LOG_ERROR("%s: device is not ibi capable", __func__);
 		return -EINVAL;
 	}
 
 	if (data->ibi.num_addr >= ARRAY_SIZE(data->ibi.addr)) {
 		/* No more free entries in the IBI Rules table */
-		LOG_ERR("%s: no more free space in the IBI rules table", __func__);
+		LOG_ERROR("%s: no more free space in the IBI rules table", __func__);
 		return -ENOMEM;
 	}
 
 	/* Check whether the selected target is already in the list */
 	for (idx = 0; idx < ARRAY_SIZE(data->ibi.addr); idx++) {
 		if (data->ibi.addr[idx] == target->dynamic_addr) {
-			LOG_ERR("%s: selected target is already in the list", __func__);
+			LOG_ERROR("%s: selected target is already in the list", __func__);
 			return -EINVAL;
 		}
 	}
@@ -1937,9 +1937,9 @@ static int npcx_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc 
 		if ((has_mandatory_byte != data->ibi.has_mandatory_byte) ||
 		    (msb != data->ibi.msb)) {
 			ret = -EINVAL;
-			LOG_ERR("%s: New IBI does not have same mandatory byte or msb"
-				" as previous IBI",
-				__func__);
+			LOG_ERROR("%s: New IBI does not have same mandatory byte or msb"
+				  " as previous IBI",
+				  __func__);
 			goto out_ibi_enable;
 		}
 
@@ -1952,7 +1952,7 @@ static int npcx_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc 
 
 		if (idx >= ARRAY_SIZE(data->ibi.addr)) {
 			ret = -ENOTSUP;
-			LOG_ERR("Cannot support more IBIs");
+			LOG_ERROR("Cannot support more IBIs");
 			goto out_ibi_enable;
 		}
 	} else {
@@ -1970,7 +1970,7 @@ static int npcx_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc 
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, true, &i3c_events);
 	if (ret != 0) {
-		LOG_ERR("Error sending IBI ENEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		LOG_ERROR("Error sending IBI ENEC for 0x%02x (%d)", target->dynamic_addr, ret);
 		goto out_ibi_enable;
 	}
 
@@ -2003,7 +2003,7 @@ static int npcx_i3c_ibi_disable(const struct device *dev, struct i3c_device_desc
 	int idx;
 
 	if (!i3c_device_is_ibi_capable(target)) {
-		LOG_ERR("%s: device is not ibi capable", __func__);
+		LOG_ERROR("%s: device is not ibi capable", __func__);
 		return -EINVAL;
 	}
 
@@ -2014,7 +2014,7 @@ static int npcx_i3c_ibi_disable(const struct device *dev, struct i3c_device_desc
 	}
 
 	if (idx == ARRAY_SIZE(data->ibi.addr)) {
-		LOG_ERR("%s: target is not in list of registered addresses", __func__);
+		LOG_ERROR("%s: target is not in list of registered addresses", __func__);
 		return -ENODEV;
 	}
 
@@ -2025,7 +2025,7 @@ static int npcx_i3c_ibi_disable(const struct device *dev, struct i3c_device_desc
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, false, &i3c_events);
 	if (ret != 0) {
-		LOG_ERR("Error sending IBI DISEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		LOG_ERROR("Error sending IBI DISEC for 0x%02x (%d)", target->dynamic_addr, ret);
 		goto out_ibi_disable;
 	}
 
@@ -2073,8 +2073,8 @@ static int npcx_i3c_target_ibi_raise(const struct device *dev, struct i3c_ibi *r
 		}
 
 		if (request->payload_len == 0) {
-			LOG_ERR("%s: IBI invalid payload_len, len: %#x", __func__,
-				request->payload_len);
+			LOG_ERROR("%s: IBI invalid payload_len, len: %#x", __func__,
+				  request->payload_len);
 			return -EINVAL;
 		}
 
@@ -2293,13 +2293,13 @@ static int npcx_i3c_target_xfer_end_handle(const struct device *dev)
 	int ret = 0;
 
 	if ((op_state != NPCX_I3C_OP_STATE_WR) && (op_state != NPCX_I3C_OP_STATE_RD)) {
-		LOG_ERR("%s: op_staste error :%d", __func__, op_state);
+		LOG_ERROR("%s: op_staste error :%d", __func__, op_state);
 		return -EINVAL;
 	}
 
 	if ((is_i3c_start | is_i3c_stop) == 0) {
-		LOG_ERR("%s: not the end of xfer, is_start: %d, is_stop:%d", __func__, is_i3c_start,
-			is_i3c_stop);
+		LOG_ERROR("%s: not the end of xfer, is_start: %d, is_stop:%d", __func__,
+			  is_i3c_start, is_i3c_stop);
 		return -EINVAL;
 	}
 
@@ -2313,8 +2313,8 @@ static int npcx_i3c_target_xfer_end_handle(const struct device *dev)
 	/* Check rx fifo count is 0 */
 	if (WAIT_FOR((GET_FIELD(inst->DATACTRL, NPCX_I3C_DATACTRL_RXCOUNT) == 0),
 		     I3C_TGT_WR_REQ_WAIT_US, NULL) == false) {
-		LOG_ERR("%s: target wr_req rxcnt timeout %d", __func__,
-			GET_FIELD(inst->DATACTRL, NPCX_I3C_DATACTRL_RXCOUNT));
+		LOG_ERROR("%s: target wr_req rxcnt timeout %d", __func__,
+			  GET_FIELD(inst->DATACTRL, NPCX_I3C_DATACTRL_RXCOUNT));
 		ret = -EIO;
 		npcx_i3c_target_disable_mdmafb(dev);
 		goto out_tgt_xfer_end_hdl;
@@ -2346,8 +2346,8 @@ static int npcx_i3c_target_xfer_end_handle(const struct device *dev)
 		}
 #endif
 	} else {
-		LOG_ERR("(%s) MDMA rx abnormal, force mdma stop, xfer cnt=%#x",
-			is_i3c_start ? "Sr" : "STOP", cur_xfer_cnt);
+		LOG_ERROR("(%s) MDMA rx abnormal, force mdma stop, xfer cnt=%#x",
+			  is_i3c_start ? "Sr" : "STOP", cur_xfer_cnt);
 		ret = -EBUSY;
 	}
 
@@ -2368,12 +2368,12 @@ static int npcx_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint
 				    uint8_t hdr_mode)
 {
 	if ((buf == NULL) || (len == 0)) {
-		LOG_ERR("%s: Data buffer configuration failed", __func__);
+		LOG_ERROR("%s: Data buffer configuration failed", __func__);
 		return -EINVAL;
 	}
 
 	if (hdr_mode != 0) {
-		LOG_ERR("%s: HDR not supported", __func__);
+		LOG_ERROR("%s: HDR not supported", __func__);
 		return -ENOSYS;
 	}
 
@@ -2382,7 +2382,7 @@ static int npcx_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint
 
 	return npcx_i3c_target_get_mdmatb_count(dev); /* Return total bytes written */
 #else
-	LOG_ERR("%s: Support dma mode only", __func__);
+	LOG_ERROR("%s: Support dma mode only", __func__);
 	return -ENOSYS;
 #endif
 }
@@ -2413,14 +2413,14 @@ static int npcx_i3c_get_scl_config(struct npcx_i3c_timing_cfg *cfg, uint32_t i3c
 	uint32_t pplow_ns, odlow_ns;
 
 	if (cfg == NULL) {
-		LOG_ERR("Freq config NULL");
+		LOG_ERROR("Freq config NULL");
 		return -EINVAL;
 	}
 
 	if ((pp_baudrate_hz == 0) || (pp_baudrate_hz > I3C_SCL_PP_FREQ_MAX_MHZ) ||
 	    (od_baudrate_hz == 0) || (od_baudrate_hz > I3C_SCL_OD_FREQ_MAX_MHZ)) {
-		LOG_ERR("I3C PP_SCL should within 12.5 Mhz, input: %d", pp_baudrate_hz);
-		LOG_ERR("I3C OD_SCL should within 4.17 Mhz, input: %d", od_baudrate_hz);
+		LOG_ERROR("I3C PP_SCL should within 12.5 Mhz, input: %d", pp_baudrate_hz);
+		LOG_ERROR("I3C OD_SCL should within 4.17 Mhz, input: %d", od_baudrate_hz);
 		return -EINVAL;
 	}
 
@@ -2435,7 +2435,7 @@ static int npcx_i3c_get_scl_config(struct npcx_i3c_timing_cfg *cfg, uint32_t i3c
 	}
 
 	if (i3c_div > PPBAUD_DIV_MAX) {
-		LOG_ERR("PPBAUD out of range");
+		LOG_ERROR("PPBAUD out of range");
 		return -EINVAL;
 	}
 
@@ -2445,7 +2445,7 @@ static int npcx_i3c_get_scl_config(struct npcx_i3c_timing_cfg *cfg, uint32_t i3c
 	/* Check PP low period in spec (should be the same as PPHIGH) */
 	pplow_ns = (uint32_t)(NSEC_PER_SEC / (2UL * freq));
 	if (pplow_ns < I3C_BUS_TLOW_PP_MIN_NS) {
-		LOG_ERR("PPLOW ns out of spec");
+		LOG_ERROR("PPLOW ns out of spec");
 		return -EINVAL;
 	}
 
@@ -2463,7 +2463,7 @@ static int npcx_i3c_get_scl_config(struct npcx_i3c_timing_cfg *cfg, uint32_t i3c
 	/* Check OD low period in spec */
 	odlow_ns = (odbaud + 1UL) * pplow_ns;
 	if (odlow_ns < I3C_BUS_TLOW_OD_MIN_NS) {
-		LOG_ERR("ODBAUD ns out of spec");
+		LOG_ERROR("ODBAUD ns out of spec");
 		return -EINVAL;
 	}
 
@@ -2491,7 +2491,7 @@ static int npcx_i3c_freq_init(const struct device *dev)
 	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clock_subsys,
 				     &mclkd);
 	if (ret != 0x0) {
-		LOG_ERR("Get I3C source clock fail %d", ret);
+		LOG_ERROR("Get I3C source clock fail %d", ret);
 		return -EINVAL;
 	}
 
@@ -2518,13 +2518,13 @@ static int npcx_i3c_freq_init(const struct device *dev)
 		/* Set default I3C_SCL configuration */
 		timing_cfg = npcx_def_speed_cfg[NPCX_I3C_BUS_SPEED_50MHZ];
 	} else {
-		LOG_ERR("Unsupported MCLKD freq for %s.", dev->name);
+		LOG_ERROR("Unsupported MCLKD freq for %s.", dev->name);
 		return -EINVAL;
 	}
 
 	ret = npcx_i3c_get_scl_config(&timing_cfg, mclkd, scl_pp, scl_od);
 	if (ret != 0x0) {
-		LOG_ERR("Adjust I3C frequency fail");
+		LOG_ERROR("Adjust I3C frequency fail");
 		return -EINVAL;
 	}
 
@@ -2584,7 +2584,7 @@ static int npcx_i3c_apply_cntlr_config(const struct device *dev)
 	LOG_DBG("APB4_CLK: %d", apb4_rate);
 
 	if (ret != 0x0) {
-		LOG_ERR("%s: Get APB4 source clock fail %d", __func__, ret);
+		LOG_ERROR("%s: Get APB4 source clock fail %d", __func__, ret);
 		return -EINVAL;
 	}
 
@@ -2618,7 +2618,7 @@ static int npcx_i3c_apply_target_config(const struct device *dev)
 	LOG_DBG("APB4_CLK: %d", apb4_rate);
 
 	if (ret != 0x0) {
-		LOG_ERR("%s: Get APB4 source clock fail %d", __func__, ret);
+		LOG_ERROR("%s: Get APB4 source clock fail %d", __func__, ret);
 		return -EINVAL;
 	}
 
@@ -2704,7 +2704,7 @@ static int npcx_i3c_configure(const struct device *dev, enum i3c_config_type typ
 	struct i3c_config_target *config_target;
 
 	if (config == NULL) {
-		LOG_ERR("%s: config is NULL", __func__);
+		LOG_ERROR("%s: config is NULL", __func__);
 		return -EINVAL;
 	}
 
@@ -2715,7 +2715,7 @@ static int npcx_i3c_configure(const struct device *dev, enum i3c_config_type typ
 		 * Currently, must be the primary controller.
 		 */
 		if (config_cntlr->scl.i3c == 0U) {
-			LOG_ERR("%s: configure controller failed", __func__);
+			LOG_ERROR("%s: configure controller failed", __func__);
 			return -EINVAL;
 		}
 
@@ -2727,14 +2727,14 @@ static int npcx_i3c_configure(const struct device *dev, enum i3c_config_type typ
 		config_target = config;
 
 		if (config_target->pid == 0) {
-			LOG_ERR("%s: configure target failed", __func__);
+			LOG_ERROR("%s: configure target failed", __func__);
 			return -EINVAL;
 		}
 
 		return npcx_i3c_apply_target_config(dev);
 	}
 
-	LOG_ERR("Config type not supported, %d", type);
+	LOG_ERROR("Config type not supported, %d", type);
 
 	return -EINVAL;
 }
@@ -2785,8 +2785,8 @@ static void npcx_i3c_target_isr(const struct device *dev)
 			}
 #endif
 		} else {
-			LOG_ERR("%s: write request TC=1, operation state error, %d", __func__,
-				data->oper_state);
+			LOG_ERROR("%s: write request TC=1, operation state error, %d", __func__,
+				  data->oper_state);
 		}
 
 		set_oper_state(dev, NPCX_I3C_OP_STATE_IDLE);
@@ -2809,8 +2809,8 @@ static void npcx_i3c_target_isr(const struct device *dev)
 			if ((get_oper_state(dev) == NPCX_I3C_OP_STATE_WR) ||
 			    (get_oper_state(dev) == NPCX_I3C_OP_STATE_RD)) {
 				if (npcx_i3c_target_xfer_end_handle(dev) != 0) {
-					LOG_ERR("xfer end handle failed after stop, op state=%d",
-						get_oper_state(dev));
+					LOG_ERROR("xfer end handle failed after stop, op state=%d",
+						  get_oper_state(dev));
 				}
 			}
 
@@ -2847,7 +2847,7 @@ static void npcx_i3c_target_isr(const struct device *dev)
 
 		/* Check error or warning has occurred */
 		if (IS_BIT_SET(inst->INTMASKED, NPCX_I3C_INTMASKED_ERRWARN)) {
-			LOG_ERR("%s: Error %#x", __func__, inst->ERRWARN);
+			LOG_ERROR("%s: Error %#x", __func__, inst->ERRWARN);
 			inst->ERRWARN = inst->ERRWARN;
 		}
 
@@ -2986,7 +2986,7 @@ static void npcx_i3c_isr(const struct device *dev)
 		/* Handle IBI in workqueue */
 		ret = i3c_ibi_work_enqueue_cb(dev, npcx_i3c_ibi_work);
 		if (ret < 0) {
-			LOG_ERR("Enqueuing ibi work fail, ret %d", ret);
+			LOG_ERROR("Enqueuing ibi work fail, ret %d", ret);
 			inst->MINTSET = BIT(NPCX_I3C_MINTSET_TGTSTART);
 		}
 	}
@@ -3004,21 +3004,21 @@ static int npcx_i3c_init(const struct device *dev)
 
 	/* Check clock device ready */
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("%s Clk device not ready", clk_dev->name);
+		LOG_ERROR("%s Clk device not ready", clk_dev->name);
 		return -ENODEV;
 	}
 
 	/* Set I3C_PD operational */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clock_subsys);
 	if (ret < 0) {
-		LOG_ERR("Turn on I3C clock fail %d", ret);
+		LOG_ERROR("Turn on I3C clock fail %d", ret);
 		return ret;
 	}
 
 #ifdef CONFIG_I3C_NPCX_DMA
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->mdma_clk_subsys);
 	if (ret < 0) {
-		LOG_ERR("Turn on I3C MDMA clock fail %d", ret);
+		LOG_ERROR("Turn on I3C MDMA clock fail %d", ret);
 		return ret;
 	}
 #endif
@@ -3026,7 +3026,7 @@ static int npcx_i3c_init(const struct device *dev)
 	/* Apply pin-muxing */
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("Apply pinctrl fail %d", ret);
+		LOG_ERROR("Apply pinctrl fail %d", ret);
 		return ret;
 	}
 
@@ -3039,7 +3039,7 @@ static int npcx_i3c_init(const struct device *dev)
 
 	ret = i3c_addr_slots_init(dev);
 	if (ret != 0) {
-		LOG_ERR("Addr slots init fail %d", ret);
+		LOG_ERROR("Addr slots init fail %d", ret);
 		return ret;
 	}
 
@@ -3054,7 +3054,7 @@ static int npcx_i3c_init(const struct device *dev)
 		/* Just in case the bus is not in idle. */
 		ret = npcx_i3c_recover_bus(dev);
 		if (ret != 0) {
-			LOG_ERR("Apply i3c_recover_bus() fail %d", ret);
+			LOG_ERROR("Apply i3c_recover_bus() fail %d", ret);
 			return ret;
 		}
 	}
@@ -3072,7 +3072,7 @@ static int npcx_i3c_init(const struct device *dev)
 		/* Perform bus initialization */
 		ret = i3c_bus_init(dev, &config->common.dev_list);
 		if (ret != 0) {
-			LOG_ERR("Apply i3c_bus_init() fail %d", ret);
+			LOG_ERROR("Apply i3c_bus_init() fail %d", ret);
 			return ret;
 		}
 	}

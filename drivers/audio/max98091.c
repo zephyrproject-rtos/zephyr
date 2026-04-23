@@ -28,7 +28,7 @@ static void max98091_write_reg(const struct device *dev, uint8_t reg, uint8_t va
 
 	ret = i2c_reg_write_byte_dt(&dev_cfg->i2c, reg, val);
 	if (ret < 0) {
-		LOG_ERR("I2C write failed: reg 0x%02x, err %d", reg, ret);
+		LOG_ERROR("I2C write failed: reg 0x%02x, err %d", reg, ret);
 	}
 }
 
@@ -39,7 +39,7 @@ static void max98091_read_reg(const struct device *dev, uint8_t reg, uint8_t *va
 
 	ret = i2c_reg_read_byte_dt(&dev_cfg->i2c, reg, val);
 	if (ret < 0) {
-		LOG_ERR("I2C read failed: reg 0x%02x, err %d", reg, ret);
+		LOG_ERROR("I2C read failed: reg 0x%02x, err %d", reg, ret);
 	}
 }
 
@@ -50,7 +50,7 @@ static void max98091_update_reg(const struct device *dev, uint8_t reg, uint8_t m
 
 	ret = i2c_reg_update_byte_dt(&dev_cfg->i2c, reg, mask, val);
 	if (ret < 0) {
-		LOG_ERR("I2C update failed: reg 0x%02x, err %d", reg, ret);
+		LOG_ERROR("I2C update failed: reg 0x%02x, err %d", reg, ret);
 	}
 }
 
@@ -76,7 +76,7 @@ static int max98091_protocol_config(const struct device *dev, audio_dai_type_t d
 		fmt_reg |= M98091_RJ_S_MASK;
 		break;
 	default:
-		LOG_ERR("Unsupported DAI type: %d", dai_type);
+		LOG_ERROR("Unsupported DAI type: %d", dai_type);
 		return -EINVAL;
 	}
 	max98091_write_reg(dev, M98091_REG_DAI_INTERFACE, fmt_reg);
@@ -110,7 +110,7 @@ static int max98091_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *
 		sample_rate = M98091_SR_96K_MASK;
 		break;
 	default:
-		LOG_ERR("Unsupported sample rate: %d", cfg->i2s.frame_clk_freq);
+		LOG_ERROR("Unsupported sample rate: %d", cfg->i2s.frame_clk_freq);
 		return -EINVAL;
 	}
 
@@ -124,7 +124,7 @@ static int max98091_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *
 		channels = 0;
 		break;
 	default:
-		LOG_ERR("Unsupported channels: %d", cfg->i2s.channels);
+		LOG_ERROR("Unsupported channels: %d", cfg->i2s.channels);
 		return -EINVAL;
 	}
 	max98091_update_reg(dev, M98091_REG_IO_CONFIGURATION, M98091_DMONO_MASK, channels);
@@ -134,8 +134,8 @@ static int max98091_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *
 		word_size = M98091_16B_WS;
 		break;
 	default:
-		LOG_ERR("Word size %d bits not supported; falling back to 16 bits",
-			cfg->i2s.word_size);
+		LOG_ERROR("Word size %d bits not supported; falling back to 16 bits",
+			  cfg->i2s.word_size);
 		word_size = M98091_16B_WS;
 		break;
 	}
@@ -155,7 +155,7 @@ static void max98091_set_system_clock(const struct device *dev, uint32_t mclk_fr
 	} else if (mclk_freq > 40000000 && mclk_freq <= 60000000) {
 		psclk = M98091_PSCLK_DIV4;
 	} else {
-		LOG_ERR("Invalid MCLK frequency: %u", mclk_freq);
+		LOG_ERROR("Invalid MCLK frequency: %u", mclk_freq);
 		return;
 	}
 	max98091_write_reg(dev, M98091_REG_SYSTEM_CLOCK, psclk);
@@ -257,7 +257,7 @@ static int max98091_configure(const struct device *dev, struct audio_codec_cfg *
 	const struct max98091_config *const dev_cfg = dev->config;
 
 	if (cfg->dai_type >= AUDIO_DAI_TYPE_INVALID) {
-		LOG_ERR("dai_type not supported");
+		LOG_ERROR("dai_type not supported");
 		return -EINVAL;
 	}
 
@@ -314,7 +314,7 @@ static int max98091_init(const struct device *dev)
 	uint8_t device_id;
 
 	if (!i2c_is_ready_dt(&cfg_tan->i2c)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 
@@ -324,7 +324,7 @@ static int max98091_init(const struct device *dev)
 		return 0;
 	}
 
-	LOG_ERR("Invalid MAX98091 Device ID: 0x%02X", device_id);
+	LOG_ERROR("Invalid MAX98091 Device ID: 0x%02X", device_id);
 	return -EINVAL;
 }
 

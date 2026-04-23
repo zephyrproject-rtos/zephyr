@@ -121,7 +121,7 @@ static int adc_sam0_channel_setup(const struct device *dev,
 		retval = adc_sam0_acquisition_to_clocks(dev,
 							channel_cfg->acquisition_time);
 		if (retval < 0) {
-			LOG_ERR("Selected ADC acquisition time is not valid");
+			LOG_ERROR("Selected ADC acquisition time is not valid");
 			return retval;
 		}
 
@@ -156,7 +156,7 @@ static int adc_sam0_channel_setup(const struct device *dev,
 		break;
 #endif
 	default:
-		LOG_ERR("Selected reference is not valid");
+		LOG_ERROR("Selected reference is not valid");
 		return -EINVAL;
 	}
 	if (adc->REFCTRL.reg != refctrl) {
@@ -211,7 +211,7 @@ static int adc_sam0_channel_setup(const struct device *dev,
 		break;
 #endif
 	default:
-		LOG_ERR("Selected ADC gain is not valid");
+		LOG_ERROR("Selected ADC gain is not valid");
 		return -EINVAL;
 	}
 
@@ -302,7 +302,7 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
+		LOG_ERROR("Provided buffer is too small (%u/%u)",
 			sequence->buffer_size, needed_buffer_size);
 		return -ENOMEM;
 	}
@@ -318,7 +318,7 @@ static int start_read(const struct device *dev,
 	int error;
 
 	if (sequence->oversampling > 10U) {
-		LOG_ERR("Invalid oversampling");
+		LOG_ERROR("Invalid oversampling");
 		return -EINVAL;
 	}
 
@@ -344,7 +344,7 @@ static int start_read(const struct device *dev,
 	switch (sequence->resolution) {
 	case 8:
 		if (sequence->oversampling) {
-			LOG_ERR("Oversampling requires 12 bit resolution");
+			LOG_ERROR("Oversampling requires 12 bit resolution");
 			return -EINVAL;
 		}
 
@@ -352,7 +352,7 @@ static int start_read(const struct device *dev,
 		break;
 	case 10:
 		if (sequence->oversampling) {
-			LOG_ERR("Oversampling requires 12 bit resolution");
+			LOG_ERROR("Oversampling requires 12 bit resolution");
 			return -EINVAL;
 		}
 
@@ -366,7 +366,7 @@ static int start_read(const struct device *dev,
 		}
 		break;
 	default:
-		LOG_ERR("ADC resolution value %d is not valid",
+		LOG_ERROR("ADC resolution value %d is not valid",
 			sequence->resolution);
 		return -EINVAL;
 	}
@@ -382,7 +382,7 @@ static int start_read(const struct device *dev,
 		 * might be sensible, this will likely break users before this revision
 		 * was put in place.
 		 */
-		LOG_ERR("Channel scanning is not supported");
+		LOG_ERROR("Channel scanning is not supported");
 		return -ENOTSUP;
 	}
 

@@ -181,7 +181,7 @@ static void mcux_tsi_scan_work_handler(struct k_work *work)
 	int next_ch = mcux_tsi_get_next_channel(config, data->current_channel);
 
 	if (next_ch < 0) {
-		LOG_ERR("No enabled channels");
+		LOG_ERROR("No enabled channels");
 		return;
 	}
 
@@ -220,19 +220,19 @@ static int mcux_tsi_init(const struct device *dev)
 	uint8_t enabled_channels = POPCOUNT(mask);
 
 	if (mask & ~BIT_MASK(FSL_FEATURE_TSI_CHANNEL_COUNT)) {
-		LOG_ERR("Channel mask 0x%x exceeds %d channels", mask,
-			FSL_FEATURE_TSI_CHANNEL_COUNT);
+		LOG_ERROR("Channel mask 0x%x exceeds %d channels", mask,
+			  FSL_FEATURE_TSI_CHANNEL_COUNT);
 		return -EINVAL;
 	}
 
 	if (enabled_channels == 0) {
-		LOG_ERR("No TSI channels enabled");
+		LOG_ERROR("No TSI channels enabled");
 		return -EINVAL;
 	}
 
 	if (enabled_channels != config->input_code_count) {
-		LOG_ERR("channel_mask bits (%u) != input_codes (%u)",
-			enabled_channels, config->input_code_count);
+		LOG_ERROR("channel_mask bits (%u) != input_codes (%u)", enabled_channels,
+			  config->input_code_count);
 		return -EINVAL;
 	}
 
@@ -242,19 +242,19 @@ static int mcux_tsi_init(const struct device *dev)
 	/* Apply pin configuration */
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to apply pinctrl state: %d", ret);
+		LOG_ERROR("Failed to apply pinctrl state: %d", ret);
 		return ret;
 	}
 
 	/* Enable clock */
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock device not ready");
+		LOG_ERROR("Clock device not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable clock: %d", ret);
+		LOG_ERROR("Failed to enable clock: %d", ret);
 		return ret;
 	}
 

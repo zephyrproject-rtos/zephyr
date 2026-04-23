@@ -43,15 +43,15 @@ static int mcp7940n_emul_transfer_i2c(const struct emul *target, struct i2c_msg 
 	i2c_dump_msgs_rw(target->dev, msgs, num_msgs, addr, false);
 
 	if (num_msgs < 1) {
-		LOG_ERR("Invalid number of messages: %d", num_msgs);
+		LOG_ERROR("Invalid number of messages: %d", num_msgs);
 		return -EIO;
 	}
 	if (FIELD_GET(I2C_MSG_READ, msgs->flags)) {
-		LOG_ERR("Unexpected read");
+		LOG_ERROR("Unexpected read");
 		return -EIO;
 	}
 	if (msgs->len < 1) {
-		LOG_ERR("Unexpected msg0 length %d", msgs->len);
+		LOG_ERROR("Unexpected msg0 length %d", msgs->len);
 		return -EIO;
 	}
 

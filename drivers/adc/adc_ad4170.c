@@ -405,8 +405,8 @@ static int adc_ad4170_clock_select(const struct device *dev, enum ad4170_clk_sel
 	if ((clk_sel == AD4170_CLKSEL_EXT || clk_sel == AD4170_CLKSEL_EXT_XTAL) &&
 	    (config->mclk_hz < AD4170_EXT_CLOCK_MHZ_MIN ||
 	     config->mclk_hz > AD4170_EXT_CLOCK_MHZ_MAX)) {
-		LOG_ERR("Invalid external clock frequency %u or no external clock provided",
-			config->mclk_hz);
+		LOG_ERROR("Invalid external clock frequency %u or no external clock provided",
+			  config->mclk_hz);
 		return -EINVAL;
 	}
 
@@ -462,7 +462,7 @@ static int adc_ad4170_acq_time_to_odr(const struct device *dev, uint16_t acq_tim
 	}
 
 	if (acquisition_time_unit != ADC_ACQ_TIME_TICKS) {
-		LOG_ERR("Unsupported acquisition time unit %u", acquisition_time_unit);
+		LOG_ERROR("Unsupported acquisition time unit %u", acquisition_time_unit);
 		return -EINVAL;
 	}
 
@@ -471,7 +471,7 @@ static int adc_ad4170_acq_time_to_odr(const struct device *dev, uint16_t acq_tim
 	case AD4170_SINC3:
 		if (acquisition_time_value < data->sps_tbl[AD4170_SINC3][sinc3_fs_tbl_size - 1] ||
 		    acquisition_time_value > data->sps_tbl[AD4170_SINC3][0]) {
-			LOG_ERR("Unsupported acquisition time %u", acquisition_time_value);
+			LOG_ERROR("Unsupported acquisition time %u", acquisition_time_value);
 			return -EINVAL;
 		}
 
@@ -479,12 +479,12 @@ static int adc_ad4170_acq_time_to_odr(const struct device *dev, uint16_t acq_tim
 	case AD4170_SINC5:
 		if (acquisition_time_value < data->sps_tbl[AD4170_SINC5][sinc5_fs_tbl_size - 1] ||
 		    acquisition_time_value > data->sps_tbl[AD4170_SINC5][0]) {
-			LOG_ERR("Unsupported acquisition time %u", acquisition_time_value);
+			LOG_ERROR("Unsupported acquisition time %u", acquisition_time_value);
 			return -EINVAL;
 		}
 		break;
 	default:
-		LOG_ERR("Invalid filter type");
+		LOG_ERROR("Invalid filter type");
 		return -EINVAL;
 	}
 
@@ -656,8 +656,8 @@ static int adc_ad4170_create_new_cfg(const struct device *dev, const struct adc_
 	/* Only support DEFAULT and TICKS units for acquisition time */
 	if (ADC_ACQ_TIME_UNIT(cfg->acquisition_time) != ADC_ACQ_TIME_UNIT(ADC_ACQ_TIME_DEFAULT) &&
 	    ADC_ACQ_TIME_UNIT(cfg->acquisition_time) != ADC_ACQ_TIME_TICKS) {
-		LOG_ERR("Unsupported acquisition time unit: %u",
-			(unsigned int)ADC_ACQ_TIME_UNIT(cfg->acquisition_time));
+		LOG_ERROR("Unsupported acquisition time unit: %u",
+			  (unsigned int)ADC_ACQ_TIME_UNIT(cfg->acquisition_time));
 		return -EINVAL;
 	}
 
@@ -675,7 +675,7 @@ static int adc_ad4170_create_new_cfg(const struct device *dev, const struct adc_
 		ref_source = AD4170_REF_AVDD_AVSS;
 		break;
 	default:
-		LOG_ERR("Invalid reference source (%u)", cfg->reference);
+		LOG_ERROR("Invalid reference source (%u)", cfg->reference);
 		return -EINVAL;
 	}
 
@@ -710,7 +710,7 @@ static int adc_ad4170_create_new_cfg(const struct device *dev, const struct adc_
 		gain = AD4170_GAIN_1_2;
 		break;
 	default:
-		LOG_ERR("Invalid gain value (%u)", cfg->gain);
+		LOG_ERROR("Invalid gain value (%u)", cfg->gain);
 		return -EINVAL;
 	}
 
@@ -718,7 +718,7 @@ static int adc_ad4170_create_new_cfg(const struct device *dev, const struct adc_
 
 	ret = adc_ad4170_acq_time_to_odr(dev, cfg->acquisition_time, &odr);
 	if (ret) {
-		LOG_ERR("Invalid acquisition time (%u)", cfg->acquisition_time);
+		LOG_ERROR("Invalid acquisition time (%u)", cfg->acquisition_time);
 		return ret;
 	}
 
@@ -792,7 +792,7 @@ static int adc_ad4170_channel_setup(const struct device *dev, const struct adc_c
 	int ret;
 
 	if (cfg->channel_id >= AD4170_MAX_SETUPS) {
-		LOG_ERR("Invalid channel (%u)", cfg->channel_id);
+		LOG_ERROR("Invalid channel (%u)", cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -824,32 +824,32 @@ static int adc_ad4170_channel_setup(const struct device *dev, const struct adc_c
 
 	ret = adc_ad4170_setup_afe(dev, &data->channel_setup_cfg[cfg->channel_id]);
 	if (ret) {
-		LOG_ERR("Error setting up configuration");
+		LOG_ERROR("Error setting up configuration");
 		return ret;
 	}
 
 	ret = adc_ad4170_connect_analog_input(dev, cfg->channel_id, cfg->input_positive,
 					      cfg->input_negative);
 	if (ret) {
-		LOG_ERR("Error setting up configuration");
+		LOG_ERROR("Error setting up configuration");
 		return ret;
 	}
 
 	ret = adc_ad4170_setup_filter(dev, &data->channel_setup_cfg[cfg->channel_id]);
 	if (ret) {
-		LOG_ERR("Error setting up configuration");
+		LOG_ERROR("Error setting up configuration");
 		return ret;
 	}
 
 	ret = adc_ad4170_set_channel_setup(dev, cfg->channel_id, new_cfg.cfg_slot);
 	if (ret) {
-		LOG_ERR("Error setting up configuration");
+		LOG_ERROR("Error setting up configuration");
 		return ret;
 	}
 
 	ret = adc_ad4170_channel_en(dev, cfg->channel_id, true);
 	if (ret) {
-		LOG_ERR("Error setting up configuration");
+		LOG_ERROR("Error setting up configuration");
 		return ret;
 	}
 
@@ -938,14 +938,14 @@ static int adc_ad4170_perform_read(const struct device *dev)
 
 		ret = ad4170_reg_read(dev, AD4170_DATA_24B_REG, data->buffer);
 		if (ret) {
-			LOG_ERR("Reading sample failed");
+			LOG_ERROR("Reading sample failed");
 			adc_context_complete(&data->ctx, ret);
 			return ret;
 		}
 
 		ret = adc_ad4170_get_read_channel_id(dev, &adc_ch_id);
 		if (ret) {
-			LOG_ERR("Reading channel ID failed");
+			LOG_ERROR("Reading channel ID failed");
 			adc_context_complete(&data->ctx, ret);
 			return ret;
 		}
@@ -973,17 +973,17 @@ static int adc_ad4170_validate_sequence(const struct device *dev,
 	size_t necessary;
 
 	if (sequence->resolution != config->resolution) {
-		LOG_ERR("Unsupported resolution %u", sequence->resolution);
+		LOG_ERROR("Unsupported resolution %u", sequence->resolution);
 		return -EINVAL;
 	}
 
 	if (!sequence->channels) {
-		LOG_ERR("no channel selected");
+		LOG_ERROR("no channel selected");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("oversampling is not supported");
+		LOG_ERROR("oversampling is not supported");
 		return -EINVAL;
 	}
 
@@ -995,7 +995,7 @@ static int adc_ad4170_validate_sequence(const struct device *dev,
 	}
 
 	if (sequence->buffer_size < necessary) {
-		LOG_ERR("buffer size %u is too small, need %u", sequence->buffer_size, necessary);
+		LOG_ERROR("buffer size %u is too small, need %u", sequence->buffer_size, necessary);
 		return -ENOMEM;
 	}
 
@@ -1005,12 +1005,12 @@ static int adc_ad4170_validate_sequence(const struct device *dev,
 		}
 
 		if ((BIT(i) & sequence->channels) && !(BIT(i) & data->channels)) {
-			LOG_ERR("Channel-%d not enabled", i);
+			LOG_ERROR("Channel-%d not enabled", i);
 			return -EINVAL;
 		}
 
 		if (i >= AD4170_MAX_SETUPS) {
-			LOG_ERR("invalid channel selection");
+			LOG_ERROR("invalid channel selection");
 			return -EINVAL;
 		}
 	}
@@ -1026,7 +1026,7 @@ static int adc_ad4170_start_read(const struct device *dev, const struct adc_sequ
 
 	result = adc_ad4170_validate_sequence(dev, sequence);
 	if (result != 0) {
-		LOG_ERR("Failed to validate sequence: %d", result);
+		LOG_ERROR("Failed to validate sequence: %d", result);
 		return result;
 	}
 
@@ -1110,7 +1110,7 @@ static int ad4170_check_chip_id(const struct device *dev)
 
 	ret = ad4170_reg_read(dev, AD4170_PRODUCT_ID_H, &val);
 	if (ret) {
-		LOG_ERR("Failed to read chip ID: %d", ret);
+		LOG_ERROR("Failed to read chip ID: %d", ret);
 		return ret;
 	}
 
@@ -1118,14 +1118,14 @@ static int ad4170_check_chip_id(const struct device *dev)
 
 	ret = ad4170_reg_read(dev, AD4170_PRODUCT_ID_L, &val);
 	if (ret) {
-		LOG_ERR("Failed to read chip ID: %d", ret);
+		LOG_ERROR("Failed to read chip ID: %d", ret);
 		return ret;
 	}
 
 	id |= (val & AD4170_PRODUCT_ID_L_MASK);
 
 	if (id != config->chip_id) {
-		LOG_ERR("Invalid chip ID (0x%04X != 0x%04X)", id, config->chip_id);
+		LOG_ERROR("Invalid chip ID (0x%04X != 0x%04X)", id, config->chip_id);
 		return -EINVAL;
 	}
 
@@ -1138,7 +1138,7 @@ static int ad4170_soft_reset(const struct device *dev)
 
 	ret = ad4170_reg_write(dev, AD4170_CONFIG_A_REG, AD4170_SW_RESET_MSK);
 	if (ret) {
-		LOG_ERR("Failed to reset ad4170: %d", ret);
+		LOG_ERROR("Failed to reset ad4170: %d", ret);
 		return ret;
 	}
 
@@ -1195,7 +1195,7 @@ static int ad4170_init(const struct device *dev)
 	k_sem_init(&data->acquire_signal, 0, 1);
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("spi bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("spi bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 

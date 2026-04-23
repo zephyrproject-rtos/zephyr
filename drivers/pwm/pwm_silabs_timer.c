@@ -127,12 +127,12 @@ static int silabs_timer_pwm_configure_capture(const struct device *dev, uint32_t
 	struct silabs_timer_pwm_data *data = dev->data;
 
 	if (channel != 0) {
-		LOG_ERR("Only channel 0 is supported for capture");
+		LOG_ERROR("Only channel 0 is supported for capture");
 		return -ENOTSUP;
 	}
 
 	if (config->base->IEN & TIMER_IEN_CC0) {
-		LOG_ERR("Capture in progress");
+		LOG_ERROR("Capture in progress");
 		return -EBUSY;
 	}
 
@@ -161,7 +161,7 @@ static int silabs_timer_pwm_configure_capture(const struct device *dev, uint32_t
 							: SL_HAL_TIMER_CHANNEL_EVENT_FALLING;
 		break;
 	default:
-		LOG_ERR("Invalid capture type");
+		LOG_ERROR("Invalid capture type");
 		return -EINVAL;
 	}
 
@@ -184,12 +184,12 @@ static int silabs_timer_pwm_enable_capture(const struct device *dev, uint32_t ch
 	struct silabs_timer_pwm_data *data = dev->data;
 
 	if (channel != 0) {
-		LOG_ERR("Only channel 0 is supported for capture");
+		LOG_ERROR("Only channel 0 is supported for capture");
 		return -ENOTSUP;
 	}
 
 	if (config->base->IEN & TIMER_IEN_CC0) {
-		LOG_ERR("Capture in progress");
+		LOG_ERROR("Capture in progress");
 		return -EBUSY;
 	}
 
@@ -212,7 +212,7 @@ static int silabs_timer_pwm_disable_capture(const struct device *dev, uint32_t c
 	const struct silabs_timer_pwm_config *config = dev->config;
 
 	if (channel != 0) {
-		LOG_ERR("Only channel 0 is supported for capture");
+		LOG_ERROR("Only channel 0 is supported for capture");
 		return -ENOTSUP;
 	}
 

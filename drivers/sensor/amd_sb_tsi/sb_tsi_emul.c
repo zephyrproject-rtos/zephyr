@@ -57,11 +57,11 @@ static int sb_tsi_emul_transfer_i2c(const struct emul *target, struct i2c_msg *m
 	switch (num_msgs) {
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 		if (msgs->len != 1) {
-			LOG_ERR("Unexpected msg0 length %d", msgs->len);
+			LOG_ERROR("Unexpected msg0 length %d", msgs->len);
 			return -EIO;
 		}
 		reg = msgs->buf[0];
@@ -75,18 +75,18 @@ static int sb_tsi_emul_transfer_i2c(const struct emul *target, struct i2c_msg *m
 				msgs->buf[0] = val;
 				break;
 			default:
-				LOG_ERR("Unexpected msg1 length %d", msgs->len);
+				LOG_ERROR("Unexpected msg1 length %d", msgs->len);
 				return -EIO;
 			}
 		} else {
 			if (msgs->len != 1) {
-				LOG_ERR("Unexpected msg1 length %d", msgs->len);
+				LOG_ERROR("Unexpected msg1 length %d", msgs->len);
 			}
 			sb_tsi_emul_set_reg(target, reg, msgs->buf[0]);
 		}
 		break;
 	default:
-		LOG_ERR("Invalid number of messages: %d", num_msgs);
+		LOG_ERROR("Invalid number of messages: %d", num_msgs);
 		return -EIO;
 	}
 

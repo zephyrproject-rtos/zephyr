@@ -168,45 +168,45 @@ static int spi_cc23x0_configure(const struct device *dev,
 	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex is not supported");
+		LOG_ERROR("Half-duplex is not supported");
 		return -ENOTSUP;
 	}
 
 	/* Peripheral mode has not been implemented */
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Peripheral mode is not supported");
+		LOG_ERROR("Peripheral mode is not supported");
 		return -ENOTSUP;
 	}
 
 	/* Word sizes other than 8 bits has not been implemented */
 	if (SPI_WORD_SIZE_GET(config->operation) != SPI_CC23_DATA_WIDTH) {
-		LOG_ERR("Word sizes other than %d bits are not supported", SPI_CC23_DATA_WIDTH);
+		LOG_ERROR("Word sizes other than %d bits are not supported", SPI_CC23_DATA_WIDTH);
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("Transfer LSB first mode is not supported");
+		LOG_ERROR("Transfer LSB first mode is not supported");
 		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Multiple lines are not supported");
+		LOG_ERROR("Multiple lines are not supported");
 		return -EINVAL;
 	}
 
 	if (config->operation & SPI_CS_ACTIVE_HIGH && !spi_cs_is_gpio(config)) {
-		LOG_ERR("Active high CS requires emulation through a GPIO line");
+		LOG_ERROR("Active high CS requires emulation through a GPIO line");
 		return -EINVAL;
 	}
 
 	if (config->frequency < SPI_CC23_MIN_FREQ) {
-		LOG_ERR("Frequencies lower than %d Hz are not supported", SPI_CC23_MIN_FREQ);
+		LOG_ERROR("Frequencies lower than %d Hz are not supported", SPI_CC23_MIN_FREQ);
 		return -EINVAL;
 	}
 
 	if (config->frequency > SPI_CC23_MAX_FREQ) {
-		LOG_ERR("Frequency greater than %d Hz are not supported", SPI_CC23_MAX_FREQ);
+		LOG_ERROR("Frequency greater than %d Hz are not supported", SPI_CC23_MAX_FREQ);
 		return -EINVAL;
 	}
 
@@ -323,7 +323,7 @@ static int spi_cc23x0_transceive(const struct device *dev,
 
 #ifdef CONFIG_SPI_CC23X0_DMA_DRIVEN
 	if (spi_context_total_tx_len(ctx) != spi_context_total_rx_len(ctx)) {
-		LOG_ERR("In DMA mode, RX and TX buffer lengths must be the same");
+		LOG_ERROR("In DMA mode, RX and TX buffer lengths must be the same");
 		ret = -EINVAL;
 		goto ctx_release;
 	}
@@ -346,19 +346,19 @@ static int spi_cc23x0_transceive(const struct device *dev,
 
 	ret = pm_device_runtime_get(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to resume DMA (%d)", ret);
+		LOG_ERROR("Failed to resume DMA (%d)", ret);
 		goto int_disable;
 	}
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_tx, &dma_cfg_tx);
 	if (ret) {
-		LOG_ERR("Failed to configure DMA TX channel (%d)", ret);
+		LOG_ERROR("Failed to configure DMA TX channel (%d)", ret);
 		goto dma_suspend;
 	}
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_rx, &dma_cfg_rx);
 	if (ret) {
-		LOG_ERR("Failed to configure DMA RX channel (%d)", ret);
+		LOG_ERROR("Failed to configure DMA RX channel (%d)", ret);
 		goto dma_suspend;
 	}
 
@@ -374,7 +374,7 @@ static int spi_cc23x0_transceive(const struct device *dev,
 
 	ret = spi_context_wait_for_completion(&data->ctx);
 	if (ret) {
-		LOG_ERR("SPI transfer failed (%d)", ret);
+		LOG_ERROR("SPI transfer failed (%d)", ret);
 		goto dma_suspend;
 	}
 
@@ -386,7 +386,7 @@ static int spi_cc23x0_transceive(const struct device *dev,
 dma_suspend:
 	ret = pm_device_runtime_put(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to suspend DMA (%d)", ret);
+		LOG_ERROR("Failed to suspend DMA (%d)", ret);
 	}
 int_disable:
 	SPIDisableInt(cfg->base, SPI_CC23_INT_MASK);
@@ -394,7 +394,7 @@ int_disable:
 	ret = spi_context_wait_for_completion(ctx);
 	if (ret) {
 		SPIDisableInt(cfg->base, SPI_CC23_INT_MASK);
-		LOG_ERR("SPI transfer failed (%d)", ret);
+		LOG_ERROR("SPI transfer failed (%d)", ret);
 	} else {
 		LOG_DBG("SPI transfer completed");
 	}
@@ -442,13 +442,13 @@ static int spi_cc23x0_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Failed to apply SPI pinctrl state");
+		LOG_ERROR("Failed to apply SPI pinctrl state");
 		return ret;
 	}
 
 #ifdef CONFIG_SPI_CC23X0_DMA_DRIVEN
 	if (!device_is_ready(cfg->dma_dev)) {
-		LOG_ERR("DMA not ready");
+		LOG_ERROR("DMA not ready");
 		return -ENODEV;
 	}
 #endif

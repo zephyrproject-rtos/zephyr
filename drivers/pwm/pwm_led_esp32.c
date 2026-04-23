@@ -202,7 +202,7 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 	prescaler = ((uint64_t)channel->clock_src_hz << 8) / channel->freq / precision;
 
 	if (prescaler < 0x100 || prescaler > 0x3FFFF) {
-		LOG_ERR("Prescaler out of range: %#X", prescaler);
+		LOG_ERROR("Prescaler out of range: %#X", prescaler);
 		return -EINVAL;
 	}
 
@@ -247,7 +247,7 @@ static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev, uint32_t c
 	struct pwm_ledc_esp32_channel_config *channel = get_channel_config(dev, channel_idx);
 
 	if (!channel) {
-		LOG_ERR("Error getting channel %d", channel_idx);
+		LOG_ERROR("Error getting channel %d", channel_idx);
 		return -EINVAL;
 	}
 
@@ -290,11 +290,10 @@ static int pwm_led_esp32_channel_update_frequency(const struct device *dev,
 		struct pwm_ledc_esp32_channel_config *ch = &config->channel_config[i];
 
 		if (ch->freq && (channel->channel_num != ch->channel_num) &&
-			(channel->timer_num == ch->timer_num) &&
-			(channel->speed_mode == ch->speed_mode) &&
-			(channel->freq != ch->freq)) {
-			LOG_ERR("Timer can't be shared and different frequency be "
-				"requested");
+		    (channel->timer_num == ch->timer_num) &&
+		    (channel->speed_mode == ch->speed_mode) && (channel->freq != ch->freq)) {
+			LOG_ERROR("Timer can't be shared and different frequency be "
+				  "requested");
 			channel->freq = 0;
 			return -EINVAL;
 		}
@@ -305,7 +304,7 @@ static int pwm_led_esp32_channel_update_frequency(const struct device *dev,
 	ret = pwm_led_esp32_timer_set(dev, channel);
 
 	if (ret < 0) {
-		LOG_ERR("Error setting timer for channel %d", channel->idx);
+		LOG_ERROR("Error setting timer for channel %d", channel->idx);
 		return ret;
 	}
 
@@ -321,7 +320,7 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 	int ret = 0;
 
 	if (!channel) {
-		LOG_ERR("Error getting channel %d", channel_idx);
+		LOG_ERROR("Error getting channel %d", channel_idx);
 		return -EINVAL;
 	}
 
@@ -348,7 +347,7 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 	ret = pwm_led_esp32_channel_update_frequency(dev, channel, period_cycles);
 
 	if (ret < 0) {
-		LOG_ERR("Error updating frequency of channel %d", channel_idx);
+		LOG_ERROR("Error updating frequency of channel %d", channel_idx);
 		goto sem_give;
 	}
 
@@ -417,7 +416,7 @@ int pwm_led_esp32_init(const struct device *dev)
 	int ret = 0;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -462,7 +461,7 @@ int pwm_led_esp32_init(const struct device *dev)
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
-		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
+		LOG_ERROR("PWM pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

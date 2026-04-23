@@ -101,12 +101,12 @@ struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
 int video_buffer_release(struct video_buffer *vbuf)
 {
 	if (vbuf == NULL || vbuf->index >= ARRAY_SIZE(video_buf)) {
-		LOG_ERR("Invalid buffer index: %u", vbuf->index);
+		LOG_ERROR("Invalid buffer index: %u", vbuf->index);
 		return -EINVAL;
 	}
 
 	if (video_buf[vbuf->index].buffer == NULL) {
-		LOG_ERR("Buffer %u is already released", vbuf->index);
+		LOG_ERROR("Buffer %u is already released", vbuf->index);
 		return -EINVAL;
 	}
 
@@ -124,7 +124,7 @@ int video_import_buffer(uint8_t *mem, size_t sz, uint16_t *idx)
 	uint16_t ind;
 
 	if (mem == NULL || sz == 0) {
-		LOG_ERR("Invalid memory address or size");
+		LOG_ERROR("Invalid memory address or size");
 		return -EINVAL;
 	}
 
@@ -325,7 +325,7 @@ int video_read_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_
 
 		ret = video_read_reg_retry(i2c, buf_w, addr_size, &data_ptr[i], 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to read from register 0x%x", addr + i);
+			LOG_ERROR("Failed to read from register 0x%x", addr + i);
 			return ret;
 		}
 
@@ -401,7 +401,7 @@ int video_write_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32
 
 		ret = video_write_reg_retry(i2c, buf_w, addr_size + 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to write to register 0x%x", addr + i);
+			LOG_ERROR("Failed to write to register 0x%x", addr + i);
 			return ret;
 		}
 	}
@@ -570,7 +570,7 @@ int video_set_compose_format(const struct device *dev, struct video_format *fmt)
 
 	ret = video_set_selection(dev, &sel);
 	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Unable to set selection compose");
+		LOG_ERROR("Unable to set selection compose");
 		return ret;
 	}
 

@@ -139,7 +139,7 @@ static int tmc50xx_stepper_driver_init(const struct device *dev)
 
 	LOG_DBG("Controller: %s, Stepper: %s", config->controller->name, dev->name);
 	if (!IN_RANGE(config->sg_threshold, TMC5XXX_SG_MIN_VALUE, TMC5XXX_SG_MAX_VALUE)) {
-		LOG_ERR("Stallguard threshold out of range");
+		LOG_ERROR("Stallguard threshold out of range");
 		return -EINVAL;
 	}
 

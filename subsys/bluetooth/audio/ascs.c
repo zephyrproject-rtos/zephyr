@@ -286,8 +286,7 @@ static void ascs_disconnect_stream_work_handler(struct k_work *work)
 		const int err = bt_bap_stream_disconnect(stream);
 
 		if (err != 0) {
-			LOG_ERR("Failed to disconnect CIS %p: %d",
-				stream, err);
+			LOG_ERROR("Failed to disconnect CIS %p: %d", stream, err);
 		}
 	}
 }
@@ -502,7 +501,7 @@ static void ase_enter_state_releasing(struct bt_ascs_ase *ase)
 
 		err = ascs_disconnect_stream(stream);
 		if (err < 0) {
-			LOG_ERR("Failed to disconnect stream %p: %d", stream, err);
+			LOG_ERROR("Failed to disconnect stream %p: %d", stream, err);
 		}
 	} else {
 		ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_IDLE);
@@ -545,7 +544,7 @@ static void state_transition_work_handler(struct k_work *work)
 		}
 
 		if (err < 0) {
-			LOG_ERR("Failed to notify ASE state (err %d)", err);
+			LOG_ERROR("Failed to notify ASE state (err %d)", err);
 		}
 	}
 
@@ -702,7 +701,7 @@ int ascs_ep_set_state(struct bt_bap_ep *ep, enum bt_bap_ep_state state)
 
 	err = k_work_schedule(&ase->state_transition_work, K_NO_WAIT);
 	if (err < 0) {
-		LOG_ERR("Failed to schedule state transition work err %d", err);
+		LOG_ERROR("Failed to schedule state transition work err %d", err);
 		return err;
 	}
 
@@ -821,7 +820,7 @@ static int ascs_ep_get_status(struct bt_bap_ep *ep, struct net_buf_simple *buf)
 		ascs_ep_get_status_enable(ep, buf);
 		break;
 	default:
-		LOG_ERR("Invalid Endpoint state");
+		LOG_ERROR("Invalid Endpoint state");
 		break;
 	}
 
@@ -906,7 +905,7 @@ static void ascs_iso_recv(struct bt_iso_chan *chan,
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -934,13 +933,13 @@ static void ascs_iso_sent(struct bt_iso_chan *chan)
 
 	ep = iso->tx.ep;
 	if (ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		LOG_ERROR("iso %p not bound with ep", chan);
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -986,7 +985,7 @@ static void ascs_ep_iso_connected(struct bt_bap_ep *ep)
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -1026,7 +1025,7 @@ static void ascs_iso_connected(struct bt_iso_chan *chan)
 	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 
 	if (iso->rx.ep == NULL && iso->tx.ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		LOG_ERROR("iso %p not bound with ep", chan);
 		return;
 	}
 
@@ -1047,7 +1046,7 @@ static void ascs_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t reason)
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -1198,7 +1197,8 @@ static int ase_release(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 					       BT_BAP_ASCS_REASON_NONE);
 		}
 
-		LOG_ERR("Release failed: err %d, code %u, reason %u", err, rsp->code, rsp->reason);
+		LOG_ERROR("Release failed: err %d, code %u, reason %u", err, rsp->code,
+			  rsp->reason);
 		return err;
 	}
 
@@ -1261,7 +1261,8 @@ static int ase_disable(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 					       BT_BAP_ASCS_REASON_NONE);
 		}
 
-		LOG_ERR("Disable failed: err %d, code %u, reason %u", err, rsp->code, rsp->reason);
+		LOG_ERROR("Disable failed: err %d, code %u, reason %u", err, rsp->code,
+			  rsp->reason);
 		return err;
 	}
 
@@ -1954,13 +1955,13 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("NULL stream");
+		LOG_ERROR("NULL stream");
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
 		return;
 	}
 
 	if (stream->ep == NULL) {
-		LOG_ERR("NULL stream->ep");
+		LOG_ERROR("NULL stream->ep");
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
 		return;
 	}
@@ -2003,15 +2004,15 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 
 		iso = bap_iso_get_or_new(ase->conn, cig_id, cis_id);
 		if (iso == NULL) {
-			LOG_ERR("Could not allocate bap_iso");
+			LOG_ERROR("Could not allocate bap_iso");
 			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM,
 					       BT_BAP_ASCS_REASON_NONE);
 			return;
 		}
 
 		if (bt_bap_iso_get_ep(false, iso, ep->dir) != NULL) {
-			LOG_ERR("iso %p already in use in dir %s",
-			       &iso->chan, bt_audio_dir_str(ep->dir));
+			LOG_ERROR("iso %p already in use in dir %s", &iso->chan,
+				  bt_audio_dir_str(ep->dir));
 			bt_bap_iso_unref(iso);
 			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
 					       BT_BAP_ASCS_REASON_CIS);
@@ -2326,7 +2327,7 @@ static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 					      BT_BAP_ASCS_REASON_NONE);
 		}
 
-		LOG_ERR("Metadata failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
+		LOG_ERROR("Metadata failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
 		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
 		return;
 	}
@@ -2383,7 +2384,7 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 					      BT_BAP_ASCS_REASON_NONE);
 		}
 
-		LOG_ERR("Enable rejected: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
+		LOG_ERROR("Enable rejected: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
 		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
 
 		return -EFAULT;
@@ -2529,7 +2530,7 @@ static void ase_start(struct bt_ascs_ase *ase)
 					      BT_BAP_ASCS_REASON_NONE);
 		}
 
-		LOG_ERR("Start failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
+		LOG_ERROR("Start failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
 		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
 
 		return;
@@ -2730,7 +2731,7 @@ static void ase_stop(struct bt_ascs_ase *ase)
 					      BT_BAP_ASCS_REASON_NONE);
 		}
 
-		LOG_ERR("Stop failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
+		LOG_ERROR("Stop failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
 		ascs_cp_rsp_add(ASE_ID(ase), rsp.code, rsp.reason);
 		return;
 	}
@@ -2743,7 +2744,7 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	if (bt_bap_stream_can_disconnect(stream)) {
 		err = ascs_disconnect_stream(stream);
 		if (err < 0) {
-			LOG_ERR("Failed to disconnect stream %p: %d", stream, err);
+			LOG_ERROR("Failed to disconnect stream %p: %d", stream, err);
 		}
 	}
 
@@ -3216,7 +3217,7 @@ int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb)
 
 	err = bt_iso_server_register(&iso_server);
 	if (err != 0) {
-		LOG_ERR("Failed to register ISO server %d", err);
+		LOG_ERROR("Failed to register ISO server %d", err);
 		return err;
 	}
 

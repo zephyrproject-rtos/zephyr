@@ -230,19 +230,19 @@ static int i2c_cc23x0_configure(const struct device *dev, uint32_t dev_config)
 		fast = true;
 		break;
 	default:
-		LOG_ERR("Unsupported speed");
+		LOG_ERROR("Unsupported speed");
 		return -EIO;
 	}
 
 	/* Support for slave mode has not been implemented */
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Slave mode is not supported");
+		LOG_ERROR("Slave mode is not supported");
 		return -EIO;
 	}
 
 	/* This is deprecated and could be ignored in the future */
 	if (dev_config & I2C_ADDR_10_BITS) {
-		LOG_ERR("10-bit addressing mode is not supported");
+		LOG_ERROR("10-bit addressing mode is not supported");
 		return -EIO;
 	}
 
@@ -292,7 +292,7 @@ static void i2c_cc23x0_isr(const struct device *dev)
 
 		data->error = I2CControllerError(base);
 		if (data->error) {
-			LOG_ERR("Error [%x]", data->error);
+			LOG_ERROR("Error [%x]", data->error);
 		}
 		if (!I2CControllerBusy(config->base)) {
 			k_sem_give(&data->complete);
@@ -319,14 +319,14 @@ static DEVICE_API(i2c, i2c_cc23x0_driver_api) = {.configure = i2c_cc23x0_configu
                                                                                                    \
 		err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);                    \
 		if (err < 0) {                                                                     \
-			LOG_ERR("Failed to configure pinctrl state\n");                            \
+			LOG_ERROR("Failed to configure pinctrl state\n");                          \
 			return err;                                                                \
 		}                                                                                  \
                                                                                                    \
 		cfg = i2c_map_dt_bitrate(DT_INST_PROP(id, clock_frequency));                       \
 		err = i2c_cc23x0_configure(dev, cfg | I2C_MODE_CONTROLLER);                        \
 		if (err) {                                                                         \
-			LOG_ERR("Failed to configure\n");                                          \
+			LOG_ERROR("Failed to configure\n");                                        \
 			return err;                                                                \
 		}                                                                                  \
                                                                                                    \

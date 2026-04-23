@@ -110,7 +110,7 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 							bap_stream, tx_streams[i].seq_num, sdu_len);
 					}
 				} else {
-					LOG_ERR("Unable to send: %d", err);
+					LOG_ERROR("Unable to send: %d", err);
 					net_buf_unref(buf);
 				}
 			} /* No-op if stream is not streaming */

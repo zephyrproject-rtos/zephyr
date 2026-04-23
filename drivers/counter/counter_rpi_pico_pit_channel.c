@@ -77,8 +77,8 @@ static int counter_rpi_pico_pit_channel_set_top_value(const struct device *dev,
 	uint32_t counter_value = 0;
 
 	if (cfg->ticks == 0 || cfg->ticks > UINT16_MAX) {
-		LOG_ERR("%s: Top value should be greater than 0 and have a maximum value of %u",
-			dev->name, UINT16_MAX);
+		LOG_ERROR("%s: Top value should be greater than 0 and have a maximum value of %u",
+			  dev->name, UINT16_MAX);
 		return -EINVAL;
 	}
 	pwm_set_enabled(config->slice, false);

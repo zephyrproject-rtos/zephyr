@@ -362,8 +362,8 @@ static int net_key_list(const struct bt_mesh_model *model,
 			err = bt_mesh_key_idx_unpack_list(buf, param->keys, param->key_cnt);
 
 			if (err) {
-				LOG_ERR("The message size for the application opcode is "
-					"incorrect.");
+				LOG_ERROR("The message size for the application opcode is "
+					  "incorrect.");
 				goto done;
 			}
 		}
@@ -490,8 +490,8 @@ static int app_key_list(const struct bt_mesh_model *model,
 			err = bt_mesh_key_idx_unpack_list(buf, param->keys, param->key_cnt);
 
 			if (err) {
-				LOG_ERR("The message size for the application opcode is "
-					"incorrect.");
+				LOG_ERROR("The message size for the application opcode is "
+					  "incorrect.");
 				goto done;
 			}
 		}
@@ -533,7 +533,7 @@ static int mod_app_status(const struct bt_mesh_model *model,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
 	if ((buf->len != 7U) && (buf->len != 9U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -672,8 +672,8 @@ static int mod_app_list_handle(struct bt_mesh_msg_ctx *ctx, struct net_buf_simpl
 			err = bt_mesh_key_idx_unpack_list(buf, param->members, param->member_cnt);
 
 			if (err) {
-				LOG_ERR("The message size for the application opcode is "
-					"incorrect.");
+				LOG_ERROR("The message size for the application opcode is "
+					  "incorrect.");
 				goto done;
 			}
 		}
@@ -735,7 +735,7 @@ static int mod_pub_status(const struct bt_mesh_model *model,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
 	if ((buf->len != 12U) && (buf->len != 14U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EINVAL;
 	}
 
@@ -819,7 +819,7 @@ static int mod_sub_status(const struct bt_mesh_model *model,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
 
 	if ((buf->len != 7U) && (buf->len != 9U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EINVAL;
 	}
 
@@ -1089,12 +1089,12 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 static int cfg_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
-		LOG_ERR("Configuration Client only allowed in primary element");
+		LOG_ERROR("Configuration Client only allowed in primary element");
 		return -EINVAL;
 	}
 
 	if (!model->rt->user_data) {
-		LOG_ERR("No Configuration Client context provided");
+		LOG_ERROR("No Configuration Client context provided");
 		return -EINVAL;
 	}
 
@@ -2369,7 +2369,7 @@ struct bt_mesh_comp_p1_model_item *bt_mesh_comp_p1_item_pull(
 	struct bt_mesh_comp_p1_elem *elem, struct bt_mesh_comp_p1_model_item *item)
 {
 	if (elem->_buf->len < 1) {
-		LOG_ERR("Empty buffer");
+		LOG_ERROR("Empty buffer");
 		return NULL;
 	}
 	LOG_DBG("N_SIG %d, N_VND %d, buf len=%d:0x%s",
@@ -2409,7 +2409,7 @@ static struct bt_mesh_comp_p1_item_short *comp_p1_pull_item_short(
 	struct bt_mesh_comp_p1_model_item *item, struct bt_mesh_comp_p1_item_short *ext_item)
 {
 	if (item->_buf->len < 1) {
-		LOG_ERR("Empty buffer");
+		LOG_ERROR("Empty buffer");
 		return NULL;
 	}
 
@@ -2431,7 +2431,7 @@ static struct bt_mesh_comp_p1_item_long *comp_p1_pull_item_long(
 	struct bt_mesh_comp_p1_model_item *item, struct bt_mesh_comp_p1_item_long *ext_item)
 {
 	if (item->_buf->len < 2) {
-		LOG_ERR("Missing data, buf len=%d", item->_buf->len);
+		LOG_ERROR("Missing data, buf len=%d", item->_buf->len);
 		return NULL;
 	}
 
@@ -2453,7 +2453,7 @@ struct bt_mesh_comp_p1_ext_item *bt_mesh_comp_p1_pull_ext_item(
 	struct bt_mesh_comp_p1_model_item *item, struct bt_mesh_comp_p1_ext_item *ext_item)
 {
 	if (item->_buf->len < 1) {
-		LOG_ERR("Empty buffer");
+		LOG_ERROR("Empty buffer");
 		return NULL;
 	} else if (item->_buf->len < 2) {
 		LOG_DBG("Item in short format");

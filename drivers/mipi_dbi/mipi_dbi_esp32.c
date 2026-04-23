@@ -70,7 +70,7 @@ mipi_dbi_esp32_get_device_config(const struct mipi_dbi_esp32_config *cfg,
 	uint16_t index = dbi_cfg->config.slave;
 
 	if (index >= cfg->num_devices) {
-		LOG_ERR("Invalid device index %d", index);
+		LOG_ERROR("Invalid device index %d", index);
 		return NULL;
 	}
 
@@ -119,7 +119,7 @@ static int mipi_dbi_esp32_switch_device(const struct device *dev,
 		lcd_ll_set_data_wire_width(hal->dev, 8);
 		break;
 	default:
-		LOG_ERR("MIPI DBI mode %u is not supported.", next_dbi_cfg->mode);
+		LOG_ERROR("MIPI DBI mode %u is not supported.", next_dbi_cfg->mode);
 		return -ENOTSUP;
 	}
 
@@ -129,13 +129,13 @@ static int mipi_dbi_esp32_switch_device(const struct device *dev,
 	}
 
 	if (pcfg->pclk_freq_hz == 0U) {
-		LOG_ERR("Invalid PCLK frequency for device %u", next_dbi_cfg->config.slave);
+		LOG_ERROR("Invalid PCLK frequency for device %u", next_dbi_cfg->config.slave);
 		return -EINVAL;
 	}
 
 	pclk_prescale = DIV_ROUND_UP(data->resolution_hz, pcfg->pclk_freq_hz);
 	if (pclk_prescale == 0 || pclk_prescale > LCD_LL_PCLK_DIV_MAX) {
-		LOG_ERR("Unsupported PCLK frequency %" PRIu32 " Hz", pcfg->pclk_freq_hz);
+		LOG_ERROR("Unsupported PCLK frequency %" PRIu32 " Hz", pcfg->pclk_freq_hz);
 		return -EINVAL;
 	}
 
@@ -167,7 +167,7 @@ static int mipi_dbi_esp32_dma_start(const struct device *dev, const uint8_t *buf
 
 	ret = dma_get_status(cfg->dma_dev, cfg->tx_dma_channel, &dma_status);
 	if (ret < 0) {
-		LOG_ERR("Unable to get DMA status (%d)", ret);
+		LOG_ERROR("Unable to get DMA status (%d)", ret);
 		return ret;
 	}
 
@@ -185,13 +185,13 @@ static int mipi_dbi_esp32_dma_start(const struct device *dev, const uint8_t *buf
 
 	ret = dma_config(cfg->dma_dev, cfg->tx_dma_channel, &dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure DMA channel %u (%d)", cfg->tx_dma_channel, ret);
+		LOG_ERROR("Failed to configure DMA channel %u (%d)", cfg->tx_dma_channel, ret);
 		return ret;
 	}
 
 	ret = dma_start(cfg->dma_dev, cfg->tx_dma_channel);
 	if (ret < 0) {
-		LOG_ERR("Failed to start DMA channel %u (%d)", cfg->tx_dma_channel, ret);
+		LOG_ERROR("Failed to start DMA channel %u (%d)", cfg->tx_dma_channel, ret);
 		return ret;
 	}
 
@@ -219,7 +219,7 @@ static int mipi_dbi_esp32_transfer(const struct device *dev, const struct mipi_d
 	if (len > 0 && !esp_ptr_dma_capable(buffer)) {
 		tmp_buffer = k_malloc(len);
 		if (tmp_buffer == NULL) {
-			LOG_ERR("Failed to allocate DMA capable buffer (%zu bytes)", len);
+			LOG_ERROR("Failed to allocate DMA capable buffer (%zu bytes)", len);
 			return -ENOMEM;
 		}
 
@@ -251,7 +251,7 @@ static int mipi_dbi_esp32_transfer(const struct device *dev, const struct mipi_d
 
 	ret = k_sem_take(&data->dma_sem, K_MSEC(LCD_DMA_TRANSFER_TIMEOUT_MS));
 	if (ret < 0) {
-		LOG_ERR("Timed out waiting for transfer done");
+		LOG_ERROR("Timed out waiting for transfer done");
 		ret = -ETIMEDOUT;
 	}
 
@@ -353,39 +353,39 @@ static int mipi_dbi_esp32_init(const struct device *dev)
 	k_sem_init(&data->dma_sem, 0, 1);
 
 	if (cfg->dma_dev == NULL) {
-		LOG_ERR("DMA device not configured");
+		LOG_ERROR("DMA device not configured");
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(cfg->dma_dev)) {
-		LOG_ERR("DMA device not ready");
+		LOG_ERROR("DMA device not ready");
 		return -ENODEV;
 	}
 
 	for (cs_gpio = cfg->cs_gpios; cs_gpio < &cfg->cs_gpios[cfg->num_cs_gpios]; cs_gpio++) {
 		if (!gpio_is_ready_dt(cs_gpio)) {
-			LOG_ERR("CS GPIO port %s pin %d is not ready", cs_gpio->port->name,
-				cs_gpio->pin);
+			LOG_ERROR("CS GPIO port %s pin %d is not ready", cs_gpio->port->name,
+				  cs_gpio->pin);
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(cs_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure CS GPIO (%d)", ret);
+			LOG_ERROR("Failed to configure CS GPIO (%d)", ret);
 			return ret;
 		}
 	}
 
 	if (cfg->reset_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-			LOG_ERR("Reset GPIO port %s pin %d is not ready",
-				cfg->reset_gpio.port->name, cfg->reset_gpio.pin);
+			LOG_ERROR("Reset GPIO port %s pin %d is not ready",
+				  cfg->reset_gpio.port->name, cfg->reset_gpio.pin);
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure reset GPIO (%d)", ret);
+			LOG_ERROR("Failed to configure reset GPIO (%d)", ret);
 			return ret;
 		}
 	}
@@ -398,7 +398,7 @@ static int mipi_dbi_esp32_init(const struct device *dev)
 	ret = esp_clk_tree_src_get_freq_hz(
 		cfg->clock_source, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_freq_hz);
 	if (ret != ESP_OK) {
-		LOG_ERR("Failed to get clock source frequency (%d)", ret);
+		LOG_ERROR("Failed to get clock source frequency (%d)", ret);
 		return -EINVAL;
 	}
 
@@ -418,7 +418,7 @@ static int mipi_dbi_esp32_init(const struct device *dev)
 		(uint32_t)lcd_ll_get_interrupt_status_reg(hal->dev), LCD_LL_EVENT_TRANS_DONE,
 		(intr_handler_t)mipi_dbi_esp32_isr, (void *)dev, NULL);
 	if (ret != 0) {
-		LOG_ERR("Failed to allocate interrupt (%d)", ret);
+		LOG_ERROR("Failed to allocate interrupt (%d)", ret);
 		return ret;
 	}
 

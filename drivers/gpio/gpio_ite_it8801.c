@@ -47,7 +47,7 @@ static int ioex_check_is_not_valid(const struct device *dev, gpio_pin_t pin)
 	const struct gpio_it8801_config *config = dev->config;
 
 	if (BIT(pin) & ~(config->pin_mask)) {
-		LOG_ERR("GPIO  port%d-%d is not support", config->reg_ipsr, pin);
+		LOG_ERROR("GPIO  port%d-%d is not support", config->reg_ipsr, pin);
 		return -ENOTSUP;
 	}
 
@@ -73,7 +73,7 @@ static int gpio_it8801_configure(const struct device *dev, gpio_pin_t pin, gpio_
 
 	ret = i2c_reg_read_byte_dt(&config->i2c_dev, reg_gpcr, &control);
 	if (ret) {
-		LOG_ERR("Failed to read control value (ret %d)", ret);
+		LOG_ERROR("Failed to read control value (ret %d)", ret);
 		return ret;
 	}
 
@@ -92,7 +92,7 @@ static int gpio_it8801_configure(const struct device *dev, gpio_pin_t pin, gpio_
 			ret = i2c_reg_update_byte_dt(&config->i2c_dev, config->reg_sovr, mask, 0);
 		}
 		if (ret) {
-			LOG_ERR("Failed to set output value (ret %d)", ret);
+			LOG_ERROR("Failed to set output value (ret %d)", ret);
 			return ret;
 		}
 		/* Set output */
@@ -122,7 +122,7 @@ write_and_return:
 	/* Set GPIO control */
 	ret = i2c_reg_write_byte_dt(&config->i2c_dev, reg_gpcr, control);
 	if (ret) {
-		LOG_ERR("Failed to set control value (ret %d)", ret);
+		LOG_ERROR("Failed to set control value (ret %d)", ret);
 		return ret;
 	}
 
@@ -145,7 +145,7 @@ static int gpio_it8801_get_config(const struct device *dev, gpio_pin_t pin, gpio
 
 	ret = i2c_reg_read_byte_dt(&config->i2c_dev, reg_gpcr, &control);
 	if (ret) {
-		LOG_ERR("Failed to read control value (ret %d)", ret);
+		LOG_ERROR("Failed to read control value (ret %d)", ret);
 		return ret;
 	}
 
@@ -160,7 +160,7 @@ static int gpio_it8801_get_config(const struct device *dev, gpio_pin_t pin, gpio
 
 		ret = i2c_reg_read_byte_dt(&config->i2c_dev, config->reg_ipsr, &value);
 		if (ret) {
-			LOG_ERR("Failed to read pin status (ret %d)", ret);
+			LOG_ERROR("Failed to read pin status (ret %d)", ret);
 			return ret;
 		}
 
@@ -196,7 +196,7 @@ static int gpio_it8801_port_get_raw(const struct device *dev, gpio_port_value_t 
 	/* Get raw bits of GPIO mirror register */
 	ret = i2c_reg_read_byte_dt(&config->i2c_dev, config->reg_ipsr, &val);
 	if (ret) {
-		LOG_ERR("Failed to get port mask (ret %d)", ret);
+		LOG_ERROR("Failed to get port mask (ret %d)", ret);
 		return ret;
 	}
 
@@ -213,7 +213,7 @@ static int gpio_it8801_port_set_masked_raw(const struct device *dev, gpio_port_p
 
 	ret = i2c_reg_update_byte_dt(&config->i2c_dev, config->reg_sovr, mask, value);
 	if (ret) {
-		LOG_ERR("Failed to set port mask (ret %d)", ret);
+		LOG_ERROR("Failed to set port mask (ret %d)", ret);
 		return ret;
 	}
 
@@ -228,7 +228,7 @@ static int gpio_it8801_port_set_bits_raw(const struct device *dev, gpio_port_pin
 	/* Set raw bits of GPIO data register */
 	ret = i2c_reg_update_byte_dt(&config->i2c_dev, config->reg_sovr, pins, pins);
 	if (ret) {
-		LOG_ERR("Failed to set bits raw (ret %d)", ret);
+		LOG_ERROR("Failed to set bits raw (ret %d)", ret);
 		return ret;
 	}
 
@@ -243,7 +243,7 @@ static int gpio_it8801_port_clear_bits_raw(const struct device *dev, gpio_port_p
 	/* Clear raw bits of GPIO data register */
 	ret = i2c_reg_update_byte_dt(&config->i2c_dev, config->reg_sovr, pins, 0);
 	if (ret) {
-		LOG_ERR("Failed to clear bits raw (ret %d)", ret);
+		LOG_ERROR("Failed to clear bits raw (ret %d)", ret);
 		return ret;
 	}
 
@@ -265,7 +265,7 @@ static int gpio_it8801_port_toggle_bits(const struct device *dev, gpio_port_pins
 	if (new_val != val) {
 		ret = i2c_reg_write_byte_dt(&config->i2c_dev, config->reg_sovr, new_val);
 		if (ret) {
-			LOG_ERR("Failed to write toggle value (ret %d)", ret);
+			LOG_ERROR("Failed to write toggle value (ret %d)", ret);
 			return ret;
 		}
 	}
@@ -293,13 +293,13 @@ static void it8801_gpio_alert_handler(const struct device *dev)
 
 	ret = i2c_reg_read_byte_dt(&config->i2c_dev, config->reg_gpisr, &isr_val);
 	if (ret) {
-		LOG_ERR("Failed to read GPIO interrupt status (ret %d)", ret);
+		LOG_ERROR("Failed to read GPIO interrupt status (ret %d)", ret);
 		return;
 	}
 
 	ret = i2c_reg_read_byte_dt(&config->i2c_dev, config->reg_gpier, &ier_val);
 	if (ret) {
-		LOG_ERR("Failed to read GPIO interrupt pin set (ret %d)", ret);
+		LOG_ERROR("Failed to read GPIO interrupt pin set (ret %d)", ret);
 		return;
 	}
 
@@ -307,7 +307,7 @@ static void it8801_gpio_alert_handler(const struct device *dev)
 		/* Clear pending interrupt */
 		ret = i2c_reg_write_byte_dt(&config->i2c_dev, config->reg_gpisr, isr_val);
 		if (ret) {
-			LOG_ERR("Failed to clear GPIO interrupt (ret %d)", ret);
+			LOG_ERROR("Failed to clear GPIO interrupt (ret %d)", ret);
 			return;
 		}
 
@@ -332,7 +332,7 @@ static int gpio_it8801_pin_interrupt_configure(const struct device *dev, gpio_pi
 	/* Disable irq before configuring it  */
 	ret = i2c_reg_update_byte_dt(&config->i2c_dev, config->reg_gpier, mask, 0);
 	if (ret) {
-		LOG_ERR("Failed to disable irq (ret %d)", ret);
+		LOG_ERROR("Failed to disable irq (ret %d)", ret);
 		return ret;
 	}
 
@@ -343,20 +343,20 @@ static int gpio_it8801_pin_interrupt_configure(const struct device *dev, gpio_pi
 	/* Set input pin */
 	ret = i2c_reg_update_byte_dt(&config->i2c_dev, reg_gpcr, IT8801_GPIODIR, 0);
 	if (ret) {
-		LOG_ERR("Failed to set input pin (ret %d)", ret);
+		LOG_ERROR("Failed to set input pin (ret %d)", ret);
 		return ret;
 	}
 
 	/* Clear trigger type */
 	ret = i2c_reg_update_byte_dt(&config->i2c_dev, reg_gpcr, GENMASK(4, 3), 0);
 	if (ret) {
-		LOG_ERR("Failed to clear trigger type (ret %d)", ret);
+		LOG_ERROR("Failed to clear trigger type (ret %d)", ret);
 		return ret;
 	}
 
 	ret = i2c_reg_read_byte_dt(&config->i2c_dev, reg_gpcr, &control);
 	if (ret) {
-		LOG_ERR("Failed to read gpio control (ret %d)", ret);
+		LOG_ERROR("Failed to read gpio control (ret %d)", ret);
 		return ret;
 	}
 
@@ -369,7 +369,7 @@ static int gpio_it8801_pin_interrupt_configure(const struct device *dev, gpio_pi
 		} else if (trig & GPIO_INT_TRIG_HIGH) {
 			control |= IT8801_GPIOIOT_INT_RISE;
 		} else {
-			LOG_ERR("Invalid interrupt trigger type %d", trig);
+			LOG_ERROR("Invalid interrupt trigger type %d", trig);
 			return -EINVAL;
 		}
 	} else if (mode == GPIO_INT_MODE_LEVEL) {
@@ -384,21 +384,21 @@ static int gpio_it8801_pin_interrupt_configure(const struct device *dev, gpio_pi
 	/* Set control value */
 	ret = i2c_reg_write_byte_dt(&config->i2c_dev, reg_gpcr, control);
 	if (ret) {
-		LOG_ERR("Failed to write trigger state (ret %d)", ret);
+		LOG_ERROR("Failed to write trigger state (ret %d)", ret);
 		return ret;
 	}
 
 	/* Clear pending interrupt */
 	ret = i2c_reg_update_byte_dt(&config->i2c_dev, config->reg_gpisr, mask, mask);
 	if (ret) {
-		LOG_ERR("Failed to clear pending interrupt (ret %d)", ret);
+		LOG_ERROR("Failed to clear pending interrupt (ret %d)", ret);
 		return ret;
 	}
 
 	/* Enable GPIO interrupt */
 	ret = i2c_reg_update_byte_dt(&config->i2c_dev, config->reg_gpier, mask, mask);
 	if (ret) {
-		LOG_ERR("Failed to enable interrupt (ret %d)", ret);
+		LOG_ERROR("Failed to enable interrupt (ret %d)", ret);
 		return ret;
 	}
 
@@ -433,7 +433,7 @@ static int gpio_it8801_init(const struct device *dev)
 
 	/* Verify multi-function parent is ready */
 	if (!device_is_ready(config->mfd)) {
-		LOG_ERR("(gpio)%s is not ready", config->mfd->name);
+		LOG_ERROR("(gpio)%s is not ready", config->mfd->name);
 		return -ENODEV;
 	}
 

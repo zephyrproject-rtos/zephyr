@@ -136,7 +136,7 @@ static int mcux_lpadc_acquisition_time_setup(const struct device *dev, uint16_t 
 		conversion_factor = 1;
 	} else {
 		if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &adc_freq_hz)) {
-			LOG_ERR("Get clock rate failed");
+			LOG_ERROR("Get clock rate failed");
 			return -EINVAL;
 		}
 
@@ -203,7 +203,7 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 
 	/* User may configure maximum number of active channels */
 	if (channel_cfg->channel_id >= CONFIG_LPADC_CHANNEL_COUNT) {
-		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
+		LOG_ERROR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -222,7 +222,7 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 
 	/* Configure LPADC acquisition time. */
 	if (mcux_lpadc_acquisition_time_setup(dev, channel_cfg->acquisition_time, cmd)) {
-		LOG_ERR("LPADC acquisition time setting failed");
+		LOG_ERROR("LPADC acquisition time setting failed");
 		return -EINVAL;
 	}
 
@@ -267,12 +267,12 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	} else if (channel_cfg->gain == ADC_GAIN_1) {
 		cmd->sampleScaleMode = kLPADC_SampleFullScale;
 	} else {
-		LOG_ERR("Invalid channel gain");
+		LOG_ERROR("Invalid channel gain");
 		return -EINVAL;
 	}
 #else
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Invalid channel gain");
+		LOG_ERROR("Invalid channel gain");
 		return -EINVAL;
 	}
 #endif
@@ -322,14 +322,14 @@ static int mcux_lpadc_start_read(const struct device *dev,
 		resolution_mode = kLPADC_ConversionResolutionHigh;
 		break;
 	default:
-		LOG_ERR("Unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("Unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 #else
 	/* If FSL_FEATURE_LPADC_HAS_CMDL_MODE is not defined
 	   only 12/13 bit resolution is supported. */
 	if (sequence->resolution != 12 && sequence->resolution != 13) {
-		LOG_ERR("Unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("Unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 #endif /* FSL_FEATURE_LPADC_HAS_CMDL_MODE */
@@ -360,8 +360,7 @@ static int mcux_lpadc_start_read(const struct device *dev,
 		hardware_average_mode = kLPADC_HardwareAverageCount128;
 		break;
 	default:
-		LOG_ERR("Unsupported oversampling value %d",
-			sequence->oversampling);
+		LOG_ERROR("Unsupported oversampling value %d", sequence->oversampling);
 		return -ENOTSUP;
 	}
 
@@ -550,12 +549,12 @@ static void mcux_lpadc_dma_callback(const struct device *dma_dev, void *user_dat
 	int ret = dma_stop(config->dma_dev, config->dma_channel);
 
 	if (ret != 0) {
-		LOG_ERR("DMA stop failed: %d", ret);
+		LOG_ERROR("DMA stop failed: %d", ret);
 	}
 
 	if (status < 0) {
 		adc_context_complete(&data->ctx, status);
-		LOG_ERR("DMA transfer error: %d", status);
+		LOG_ERROR("DMA transfer error: %d", status);
 		return;
 	}
 
@@ -633,7 +632,7 @@ static void mcux_lpadc_dma_configure(struct mcux_lpadc_data *data)
 
 	if (data->channels_count == 0U) {
 		adc_context_complete(&data->ctx, -EINVAL);
-		LOG_ERR("No channels to sample for DMA");
+		LOG_ERROR("No channels to sample for DMA");
 		return;
 	}
 
@@ -880,14 +879,14 @@ static int mcux_lpadc_init(const struct device *dev)
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock device not ready");
+		LOG_ERROR("clock device not ready");
 		return -ENODEV;
 	}
 
 	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
 	if (err && err != -ENOSYS) {
 		/* Real error occurred */
-		LOG_ERR("Failed to configure clock: %d", err);
+		LOG_ERROR("Failed to configure clock: %d", err);
 		return err;
 	}
 

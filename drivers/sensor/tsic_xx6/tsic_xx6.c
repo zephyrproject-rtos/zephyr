@@ -94,12 +94,12 @@ static void tsic_xx6_pwm_callback(const struct device *dev, uint32_t channel,
 	}
 
 	if (status != 0) {
-		LOG_ERR("callback failed: %d", status);
+		LOG_ERROR("callback failed: %d", status);
 		return;
 	}
 
 	if (!tsic_xx6_is_buf_reset(data) && tsic_xx6_is_data_line_idle(data, period_cycles)) {
-		LOG_ERR("unexpected data idle");
+		LOG_ERROR("unexpected data idle");
 		tsic_xx6_buf_reset(data);
 	}
 

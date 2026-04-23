@@ -42,10 +42,10 @@ static void usbhs_vbus_handler(nrfs_usb_evt_t const *p_evt, void *const context)
 
 		break;
 	case NRFS_USB_EVT_REJECT:
-		LOG_ERR("Request rejected");
+		LOG_ERROR("Request rejected");
 		break;
 	default:
-		LOG_ERR("Unknown event type 0x%x", p_evt->type);
+		LOG_ERROR("Unknown event type 0x%x", p_evt->type);
 		break;
 	}
 }
@@ -64,13 +64,13 @@ static inline int usbhs_enable_nrfs_service(const struct device *dev)
 
 	nrfs_err = nrfs_usb_init(usbhs_vbus_handler);
 	if (nrfs_err != NRFS_SUCCESS) {
-		LOG_ERR("Failed to init NRFS VBUS handler: %d", nrfs_err);
+		LOG_ERROR("Failed to init NRFS VBUS handler: %d", nrfs_err);
 		return -EIO;
 	}
 
 	nrfs_err = nrfs_usb_enable_request((void *)dev);
 	if (nrfs_err != NRFS_SUCCESS) {
-		LOG_ERR("Failed to enable NRFS VBUS service: %d", nrfs_err);
+		LOG_ERROR("Failed to enable NRFS VBUS service: %d", nrfs_err);
 		return -EIO;
 	}
 
@@ -143,7 +143,7 @@ static inline int usbhs_disable_nrfs_service(const struct device *dev)
 
 	nrfs_err = nrfs_usb_disable_request((void *)dev);
 	if (nrfs_err != NRFS_SUCCESS) {
-		LOG_ERR("Failed to disable NRFS VBUS service: %d", nrfs_err);
+		LOG_ERROR("Failed to disable NRFS VBUS service: %d", nrfs_err);
 		return -EIO;
 	}
 

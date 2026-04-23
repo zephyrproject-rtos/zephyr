@@ -105,7 +105,7 @@ int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params)
 
 	ret = radio_tx(params->frame, params->frame_len, params->tx_freq, &tx_dr, tx_power);
 	if (ret != 0) {
-		LOG_ERR("TX failed: %d", ret);
+		LOG_ERROR("TX failed: %d", ret);
 		return ret;
 	}
 

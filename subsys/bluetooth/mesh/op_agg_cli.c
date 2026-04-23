@@ -65,13 +65,13 @@ static int handle_status(const struct bt_mesh_model *model,
 	while (buf->len > 0) {
 		err = bt_mesh_op_agg_decode_msg(&msg, buf);
 		if (err) {
-			LOG_ERR("Cannot decode aggregated message %d", err);
+			LOG_ERROR("Cannot decode aggregated message %d", err);
 			cli.ctx.initialized = true;
 			return -EINVAL;
 		}
 
 		if (cli.srcs->len < 2) {
-			LOG_ERR("Mismatch in sources address buffer");
+			LOG_ERROR("Mismatch in sources address buffer");
 			cli.ctx.initialized = true;
 			return -ENOENT;
 		}
@@ -86,7 +86,7 @@ static int handle_status(const struct bt_mesh_model *model,
 		ctx->recv_dst = addr;
 		err = bt_mesh_model_recv(ctx, &msg);
 		if (err) {
-			LOG_ERR("Opcodes Aggregator receive error %d", err);
+			LOG_ERROR("Opcodes Aggregator receive error %d", err);
 			cli.ctx.initialized = true;
 			return err;
 		}
@@ -105,7 +105,7 @@ const struct bt_mesh_model_op _bt_mesh_op_agg_cli_op[] = {
 static int op_agg_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
-		LOG_ERR("Opcodes Aggregator Client only allowed in primary element");
+		LOG_ERROR("Opcodes Aggregator Client only allowed in primary element");
 		return -EINVAL;
 	}
 
@@ -125,12 +125,12 @@ int bt_mesh_op_agg_cli_seq_start(uint16_t net_idx, uint16_t app_idx, uint16_t ds
 				 uint16_t elem_addr)
 {
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
-		LOG_ERR("Element address shall be a unicast address");
+		LOG_ERROR("Element address shall be a unicast address");
 		return -EINVAL;
 	}
 
 	if (cli.ctx.initialized) {
-		LOG_ERR("Opcodes Aggregator is already configured");
+		LOG_ERROR("Opcodes Aggregator is already configured");
 		return -EALREADY;
 	}
 
@@ -156,7 +156,7 @@ int bt_mesh_op_agg_cli_seq_send(void)
 	int err;
 
 	if (!cli.ctx.initialized) {
-		LOG_ERR("Opcodes Aggregator not initialized");
+		LOG_ERROR("Opcodes Aggregator not initialized");
 		return -EINVAL;
 	}
 
@@ -170,7 +170,7 @@ int bt_mesh_op_agg_cli_seq_send(void)
 
 	err = bt_mesh_model_send(cli.model, &ctx, cli.ctx.sdu, NULL, NULL);
 	if (err) {
-		LOG_ERR("model_send() failed (err %d)", err);
+		LOG_ERROR("model_send() failed (err %d)", err);
 		bt_mesh_msg_ack_ctx_clear(&cli.ack_ctx);
 		return err;
 	}

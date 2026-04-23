@@ -36,7 +36,7 @@ int main(void)
 
 	printk("Hello World! %s\n", CONFIG_BOARD);
 
-	LOG_ERR("error string");
+	LOG_ERROR("error string");
 	LOG_DBG("debug string");
 	LOG_INF("info string");
 
@@ -90,7 +90,7 @@ int main(void)
 static int rt_demo_cmd(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(sh);
-	LOG_ERR("demo %s", argc > 1 ? argv[1] : "");
+	LOG_ERROR("demo %s", argc > 1 ? argv[1] : "");
 	LOG_WRN("demo %s", argc > 1 ? argv[1] : "");
 	LOG_INF("demo %s", argc > 1 ? argv[1] : "");
 	LOG_DBG("demo %s", argc > 1 ? argv[1] : "");

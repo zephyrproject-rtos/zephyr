@@ -144,7 +144,7 @@ static int mspi_stm32_qspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 
 	/* Check if DMA device is ready */
 	if (!device_is_ready(dma_stream->dev)) {
-		LOG_ERR("DMA %s device not ready", dma_stream->dev->name);
+		LOG_ERROR("DMA %s device not ready", dma_stream->dev->name);
 		return -ENODEV;
 	}
 
@@ -155,13 +155,13 @@ static int mspi_stm32_qspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 
 	ret = dma_config(dma_stream->dev, dma_stream->channel, &dma_stream->cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d", dma_stream->channel);
+		LOG_ERROR("Failed to configure DMA channel %d", dma_stream->channel);
 		return ret;
 	}
 
 	/* Validate data size alignment */
 	if (dma_stream->cfg.source_data_size != dma_stream->cfg.dest_data_size) {
-		LOG_ERR("DMA Source and destination data sizes not aligned");
+		LOG_ERROR("DMA Source and destination data sizes not aligned");
 		return -EINVAL;
 	}
 
@@ -187,7 +187,7 @@ static int mspi_stm32_qspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 
 	/* Initialize HAL DMA */
 	if (HAL_DMA_Init(hdma) != HAL_OK) {
-		LOG_ERR("QSPI DMA Init failed");
+		LOG_ERROR("QSPI DMA Init failed");
 		return -EIO;
 	}
 
@@ -208,14 +208,14 @@ static int mspi_stm32_qspi_dma_setup(const struct mspi_stm32_conf *dev_cfg,
 	int ret;
 
 	if (!dev_cfg->dma_specified) {
-		LOG_ERR("DMA configuration is missing from the device tree");
+		LOG_ERROR("DMA configuration is missing from the device tree");
 		return -EIO;
 	}
 
 	/* Initialize DMA */
 	ret = mspi_stm32_qspi_dma_init(&dev_data->hdma, &dev_data->dma);
 	if (ret != 0) {
-		LOG_ERR("QSPI DMA init failed");
+		LOG_ERROR("QSPI DMA init failed");
 		return ret;
 	}
 
@@ -240,7 +240,7 @@ static void mspi_stm32_qspi_dma_callback(const struct device *dev, void *arg,
 	ARG_UNUSED(channel);
 
 	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d", channel);
+		LOG_ERROR("DMA callback error with channel %d", channel);
 	}
 
 	HAL_DMA_IRQHandler(hdma);
@@ -268,7 +268,7 @@ static int mspi_stm32_qspi_memmap_off(const struct device *controller)
 	}
 
 	if (HAL_QSPI_Abort(&dev_data->hmspi.qspi) != HAL_OK) {
-		LOG_ERR("QSPI MemMapped abort failed");
+		LOG_ERROR("QSPI MemMapped abort failed");
 		return -EIO;
 	}
 
@@ -314,7 +314,7 @@ static int mspi_stm32_qspi_memmap_on(const struct device *controller)
 
 	hal_ret = HAL_QSPI_MemoryMapped(&dev_data->hmspi.qspi, &s_command, &s_MemMappedCfg);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to enable QSPI memory mapped mode: %d", hal_ret);
+		LOG_ERROR("Failed to enable QSPI memory mapped mode: %d", hal_ret);
 		return -EIO;
 	}
 
@@ -366,12 +366,12 @@ static int mspi_stm32_qspi_execute_transfer(const struct device *dev,
 #if defined(CONFIG_MSPI_DMA)
 			hal_ret = HAL_QSPI_Receive_DMA(&dev_data->hmspi.qspi, packet->data_buf);
 #else
-			LOG_ERR("DMA mode not enabled (CONFIG_MSPI_DMA not set)");
+			LOG_ERROR("DMA mode not enabled (CONFIG_MSPI_DMA not set)");
 			return -ENOTSUP;
 #endif
 			break;
 		default:
-			LOG_ERR("Invalid access mode: %d", access_mode);
+			LOG_ERROR("Invalid access mode: %d", access_mode);
 			return -EINVAL;
 		}
 	} else {
@@ -388,12 +388,12 @@ static int mspi_stm32_qspi_execute_transfer(const struct device *dev,
 #if defined(CONFIG_MSPI_DMA)
 			hal_ret = HAL_QSPI_Transmit_DMA(&dev_data->hmspi.qspi, packet->data_buf);
 #else
-			LOG_ERR("DMA mode not enabled (CONFIG_MSPI_DMA not set)");
+			LOG_ERROR("DMA mode not enabled (CONFIG_MSPI_DMA not set)");
 			return -ENOTSUP;
 #endif
 			break;
 		default:
-			LOG_ERR("Invalid access mode: %d", access_mode);
+			LOG_ERROR("Invalid access mode: %d", access_mode);
 			return -EINVAL;
 		}
 	}
@@ -403,8 +403,8 @@ static int mspi_stm32_qspi_execute_transfer(const struct device *dev,
 		(void)pm_device_runtime_put(dev);
 
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to start %s transfer: %d",
-				packet->dir == MSPI_RX ? "receive" : "transmit", hal_ret);
+			LOG_ERROR("Failed to start %s transfer: %d",
+				  packet->dir == MSPI_RX ? "receive" : "transmit", hal_ret);
 			return -EIO;
 		}
 
@@ -413,7 +413,7 @@ static int mspi_stm32_qspi_execute_transfer(const struct device *dev,
 
 	/* For ASYNC mode, wait for IRQ completion (PM locks released in ISR) */
 	if (k_sem_take(&dev_data->sync, K_FOREVER) < 0) {
-		LOG_ERR("Failed to complete async transfer");
+		LOG_ERROR("Failed to complete async transfer");
 		/* If semaphore wait fails, ISR never completed, so release PM locks */
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		(void)pm_device_runtime_put(dev);
@@ -443,7 +443,7 @@ static int mspi_stm32_qspi_memory_mapped_read(const struct device *dev,
 	if (!mspi_stm32_qspi_is_memmap(dev)) {
 		ret = mspi_stm32_qspi_memmap_on(dev);
 		if (ret != 0) {
-			LOG_ERR("Failed to enable memory mapped mode");
+			LOG_ERROR("Failed to enable memory mapped mode");
 			return ret;
 		}
 	}
@@ -483,7 +483,7 @@ static int mspi_stm32_qspi_access(const struct device *dev, const struct mspi_xf
 		/* Commands that need indirect mode*/
 		ret = mspi_stm32_qspi_memmap_off(dev);
 		if (ret != 0) {
-			LOG_ERR("Failed to abort memory-mapped mode");
+			LOG_ERROR("Failed to abort memory-mapped mode");
 			return ret;
 		}
 	}
@@ -515,7 +515,7 @@ static int mspi_stm32_qspi_access(const struct device *dev, const struct mspi_xf
 
 	hal_ret = HAL_QSPI_Command(&dev_data->hmspi.qspi, &cmd, HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_QSPI_Command failed: %d", hal_ret);
+		LOG_ERROR("HAL_QSPI_Command failed: %d", hal_ret);
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		(void)pm_device_runtime_put(dev);
 		return -EIO;
@@ -542,23 +542,23 @@ static int mspi_stm32_qspi_conf_validate(const struct mspi_cfg *config, uint32_t
 {
 	/* Only Controller mode is supported */
 	if (config->op_mode != MSPI_OP_MODE_CONTROLLER) {
-		LOG_ERR("Only support MSPI controller mode.");
+		LOG_ERROR("Only support MSPI controller mode.");
 		return -ENOTSUP;
 	}
 
 	/* Check the max possible freq. */
 	if (config->max_freq > max_frequency) {
-		LOG_ERR("Max_freq %d too large.", config->max_freq);
+		LOG_ERROR("Max_freq %d too large.", config->max_freq);
 		return -ENOTSUP;
 	}
 
 	if (config->duplex != MSPI_HALF_DUPLEX) {
-		LOG_ERR("Only support half duplex mode.");
+		LOG_ERROR("Only support half duplex mode.");
 		return -ENOTSUP;
 	}
 
 	if (config->num_periph > MSPI_MAX_DEVICE) {
-		LOG_ERR("Invalid MSPI peripheral number.");
+		LOG_ERROR("Invalid MSPI peripheral number.");
 		return -ENOTSUP;
 	}
 
@@ -581,12 +581,12 @@ static int mspi_stm32_qspi_clock_config(const struct mspi_stm32_conf *cfg,
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			     (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
-		LOG_ERR("Could not enable MSPI clock");
+		LOG_ERROR("Could not enable MSPI clock");
 		return -EIO;
 	}
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				   (clock_control_subsys_t)&cfg->pclken[0], &ahb_clock_freq) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken)");
+		LOG_ERROR("Failed call clock_control_get_rate(pclken)");
 		return -EIO;
 	}
 
@@ -628,7 +628,7 @@ static int mspi_stm32_qspi_hal_init(QSPI_HandleTypeDef *hmspi)
 	/* Initialize HAL QSPI */
 	hal_ret = HAL_QSPI_Init(hmspi);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_QSPI_Init failed: %d", hal_ret);
+		LOG_ERROR("HAL_QSPI_Init failed: %d", hal_ret);
 		return -EIO;
 	}
 
@@ -664,12 +664,12 @@ static int mspi_stm32_qspi_config(const struct mspi_dt_spec *spec)
 	/* Configure pins */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("MSPI pinctrl setup failed");
+		LOG_ERROR("MSPI pinctrl setup failed");
 		goto end;
 	}
 
 	if (data->dev_cfg.dqs_enable && !cfg->mspicfg.dqs_support) {
-		LOG_ERR("MSPI dqs mismatch (not supported but enabled)");
+		LOG_ERROR("MSPI dqs mismatch (not supported but enabled)");
 		ret = -ENOTSUP;
 		goto end;
 	}
@@ -694,7 +694,7 @@ static int mspi_stm32_qspi_config(const struct mspi_dt_spec *spec)
 	if (cfg->dma_specified) {
 		ret = mspi_stm32_qspi_dma_setup(cfg, data);
 		if (ret != 0) {
-			LOG_ERR("QSPI DMA setup failed: %d", ret);
+			LOG_ERROR("QSPI DMA setup failed: %d", ret);
 			goto end;
 		}
 	}
@@ -721,7 +721,7 @@ static int mspi_stm32_qspi_validate_and_set_freq(struct mspi_stm32_data *data, u
 						 uint32_t max_frequency)
 {
 	if (freq > max_frequency) {
-		LOG_ERR("%u, freq is too large", __LINE__);
+		LOG_ERROR("%u, freq is too large", __LINE__);
 		return -ENOTSUP;
 	}
 	data->dev_cfg.freq = freq;
@@ -735,12 +735,12 @@ static int mspi_stm32_qspi_validate_and_set_freq(struct mspi_stm32_data *data, u
 static int mspi_stm32_qspi_validate_and_set_io_mode(struct mspi_stm32_data *data, uint32_t io_mode)
 {
 	if (io_mode == MSPI_IO_MODE_OCTAL) {
-		LOG_ERR("%u, QSPI doesn't support octal mode", __LINE__);
+		LOG_ERROR("%u, QSPI doesn't support octal mode", __LINE__);
 		return -ENOTSUP;
 	}
 
 	if (io_mode >= MSPI_IO_MODE_MAX) {
-		LOG_ERR("%u, Invalid io_mode", __LINE__);
+		LOG_ERROR("%u, Invalid io_mode", __LINE__);
 		return -EINVAL;
 	}
 
@@ -756,12 +756,12 @@ static int mspi_stm32_qspi_validate_and_set_data_rate(struct mspi_stm32_data *da
 						      uint32_t data_rate)
 {
 	if (data_rate != MSPI_DATA_RATE_SINGLE) {
-		LOG_ERR("%u, only single data rate supported", __LINE__);
+		LOG_ERROR("%u, only single data rate supported", __LINE__);
 		return -ENOTSUP;
 	}
 
 	if (data_rate >= MSPI_DATA_RATE_MAX) {
-		LOG_ERR("%u, Invalid data_rate", __LINE__);
+		LOG_ERROR("%u, Invalid data_rate", __LINE__);
 		return -EINVAL;
 	}
 
@@ -775,7 +775,7 @@ static int mspi_stm32_qspi_validate_and_set_data_rate(struct mspi_stm32_data *da
 static int mspi_stm32_qspi_validate_and_set_cpp(struct mspi_stm32_data *data, uint32_t cpp)
 {
 	if (cpp > MSPI_CPP_MODE_3) {
-		LOG_ERR("%u, Invalid cpp", __LINE__);
+		LOG_ERROR("%u, Invalid cpp", __LINE__);
 		return -EINVAL;
 	}
 	data->dev_cfg.cpp = cpp;
@@ -788,7 +788,7 @@ static int mspi_stm32_qspi_validate_and_set_cpp(struct mspi_stm32_data *data, ui
 static int mspi_stm32_qspi_validate_and_set_endian(struct mspi_stm32_data *data, uint32_t endian)
 {
 	if (endian > MSPI_XFER_BIG_ENDIAN) {
-		LOG_ERR("%u, Invalid endian", __LINE__);
+		LOG_ERROR("%u, Invalid endian", __LINE__);
 		return -EINVAL;
 	}
 	data->dev_cfg.endian = endian;
@@ -802,7 +802,7 @@ static int mspi_stm32_qspi_validate_and_set_ce_polarity(struct mspi_stm32_data *
 							uint32_t ce_polarity)
 {
 	if (ce_polarity > MSPI_CE_ACTIVE_HIGH) {
-		LOG_ERR("%u, Invalid ce_polarity", __LINE__);
+		LOG_ERROR("%u, Invalid ce_polarity", __LINE__);
 		return -EINVAL;
 	}
 	data->dev_cfg.ce_polarity = ce_polarity;
@@ -816,7 +816,7 @@ static int mspi_stm32_qspi_validate_and_set_dqs(struct mspi_stm32_data *data, bo
 						bool dqs_support)
 {
 	if (dqs_enable && !dqs_support) {
-		LOG_ERR("%u, DQS mode not supported", __LINE__);
+		LOG_ERROR("%u, DQS mode not supported", __LINE__);
 		return -ENOTSUP;
 	}
 	data->dev_cfg.dqs_enable = dqs_enable;
@@ -963,7 +963,7 @@ static int mspi_stm32_qspi_dev_config(const struct device *controller,
 	/* Check if device ID has changed and lock accordingly */
 	if (data->dev_id != dev_id) {
 		if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
-			LOG_ERR("Failed to acquire lock for device config");
+			LOG_ERROR("Failed to acquire lock for device config");
 			return -EBUSY;
 		}
 
@@ -985,7 +985,7 @@ static int mspi_stm32_qspi_dev_config(const struct device *controller,
 	/* Validate and save device configuration */
 	ret = mspi_stm32_qspi_dev_cfg_save(controller, param_mask, dev_cfg);
 	if (ret != 0) {
-		LOG_ERR("failed to change device cfg");
+		LOG_ERROR("failed to change device cfg");
 	}
 
 e_return:
@@ -1014,13 +1014,13 @@ static int mspi_stm32_qspi_xip_config(const struct device *controller,
 	int ret = 0;
 
 	if (dev_id != dev_data->dev_id) {
-		LOG_ERR("xip_config: dev_id don't match");
+		LOG_ERROR("xip_config: dev_id don't match");
 		return -ESTALE;
 	}
 
 	ret = pm_device_runtime_get(controller);
 	if (ret != 0) {
-		LOG_ERR("%u, pm_device_runtime_get() failed: %d", __LINE__, ret);
+		LOG_ERROR("%u, pm_device_runtime_get() failed: %d", __LINE__, ret);
 		return ret;
 	}
 
@@ -1040,7 +1040,7 @@ static int mspi_stm32_qspi_xip_config(const struct device *controller,
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	if (pm_device_runtime_put(controller)) {
-		LOG_ERR("%u, pm_device_runtime_put() failed", __LINE__);
+		LOG_ERROR("%u, pm_device_runtime_put() failed", __LINE__);
 	}
 
 	return ret;
@@ -1083,7 +1083,7 @@ static int mspi_stm32_qspi_pio_transceive(const struct device *controller,
 
 	if (xfer->num_packet == 0 || xfer->packets == NULL ||
 	    xfer->timeout > CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE) {
-		LOG_ERR("Transfer: wrong parameters");
+		LOG_ERROR("Transfer: wrong parameters");
 		return -EFAULT;
 	}
 
@@ -1107,7 +1107,7 @@ static int mspi_stm32_qspi_pio_transceive(const struct device *controller,
 					     MSPI_ACCESS_ASYNC : MSPI_ACCESS_SYNC);
 
 		if (ret != 0) {
-			LOG_ERR("QSPI access failed for packet %d: %d", packet_idx, ret);
+			LOG_ERROR("QSPI access failed for packet %d: %d", packet_idx, ret);
 			ret = -EIO;
 			goto out;
 		}
@@ -1140,7 +1140,7 @@ static int mspi_stm32_qspi_transceive(const struct device *controller,
 
 	/* Verify device ID matches */
 	if (dev_id != data->dev_id) {
-		LOG_ERR("transceive : dev_id don't match");
+		LOG_ERROR("transceive : dev_id don't match");
 		return -ESTALE;
 	}
 
@@ -1184,14 +1184,14 @@ static int mspi_stm32_qspi_pm_action(const struct device *dev, enum pm_device_ac
 	case PM_DEVICE_ACTION_RESUME:
 		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
-			LOG_ERR("Cannot apply default pins state (%d)", ret);
+			LOG_ERROR("Cannot apply default pins state (%d)", ret);
 			return ret;
 		}
 
 		/* Re-enable clock */
 		if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				     (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
-			LOG_ERR("Could not enable MSPI clock on resume");
+			LOG_ERROR("Could not enable MSPI clock on resume");
 			return -EIO;
 		}
 
@@ -1201,13 +1201,13 @@ static int mspi_stm32_qspi_pm_action(const struct device *dev, enum pm_device_ac
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
 		if (ret < 0 && ret != -ENOENT) {
-			LOG_ERR("Cannot apply sleep pins state (%d)", ret);
+			LOG_ERROR("Cannot apply sleep pins state (%d)", ret);
 			return ret;
 		}
 
 		/* Check if XIP is enabled or if controller is in use */
 		if (dev_data->xip_cfg.enable || k_mutex_lock(&dev_data->lock, K_NO_WAIT) != 0) {
-			LOG_ERR("Controller in use, cannot be suspended");
+			LOG_ERROR("Controller in use, cannot be suspended");
 			return -EBUSY;
 		}
 

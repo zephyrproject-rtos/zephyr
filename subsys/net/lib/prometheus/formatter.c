@@ -57,7 +57,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 					     "# HELP %s %s\n", metric->name,
 					     metric->description);
 		if (ret < 0) {
-			LOG_ERR("Error writing to buffer");
+			LOG_ERROR("Error writing to buffer");
 			goto out;
 		}
 	}
@@ -68,7 +68,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 		ret = write_metric_to_buffer(buffer + *written, buffer_size - *written,
 					     "# TYPE %s counter\n", metric->name);
 		if (ret < 0) {
-			LOG_ERR("Error writing counter");
+			LOG_ERROR("Error writing counter");
 			goto out;
 		}
 
@@ -78,7 +78,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 		ret = write_metric_to_buffer(buffer + *written, buffer_size - *written,
 					     "# TYPE %s gauge\n", metric->name);
 		if (ret < 0) {
-			LOG_ERR("Error writing gauge");
+			LOG_ERROR("Error writing gauge");
 			goto out;
 		}
 
@@ -88,7 +88,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 		ret = write_metric_to_buffer(buffer + *written, buffer_size - *written,
 					     "# TYPE %s histogram\n", metric->name);
 		if (ret < 0) {
-			LOG_ERR("Error writing histogram");
+			LOG_ERROR("Error writing histogram");
 			goto out;
 		}
 
@@ -98,7 +98,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 		ret = write_metric_to_buffer(buffer + *written, buffer_size - *written,
 					     "# TYPE %s summary\n", metric->name);
 		if (ret < 0) {
-			LOG_ERR("Error writing summary");
+			LOG_ERROR("Error writing summary");
 			goto out;
 		}
 
@@ -108,7 +108,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 		ret = write_metric_to_buffer(buffer + *written, buffer_size - *written,
 					     "# TYPE %s untyped\n", metric->name);
 		if (ret < 0) {
-			LOG_ERR("Error writing untyped");
+			LOG_ERROR("Error writing untyped");
 			goto out;
 		}
 
@@ -129,7 +129,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 				"%s{%s=\"%s\"} %llu\n", metric->name, metric->labels[i].key,
 				metric->labels[i].value, counter->value);
 			if (ret < 0) {
-				LOG_ERR("Error writing counter");
+				LOG_ERROR("Error writing counter");
 				goto out;
 			}
 		}
@@ -149,7 +149,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 				"%s{%s=\"%s\"} %f\n", metric->name, metric->labels[i].key,
 				metric->labels[i].value, gauge->value);
 			if (ret < 0) {
-				LOG_ERR("Error writing gauge");
+				LOG_ERROR("Error writing gauge");
 				goto out;
 			}
 		}
@@ -170,7 +170,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 				histogram->buckets[i].upper_bound,
 				histogram->buckets[i].count);
 			if (ret < 0) {
-				LOG_ERR("Error writing histogram");
+				LOG_ERROR("Error writing histogram");
 				goto out;
 			}
 		}
@@ -178,7 +178,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 		ret = write_metric_to_buffer(buffer + *written, buffer_size - *written,
 					     "%s_sum %f\n", metric->name, histogram->sum);
 		if (ret < 0) {
-			LOG_ERR("Error writing histogram");
+			LOG_ERROR("Error writing histogram");
 			goto out;
 		}
 
@@ -186,7 +186,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 					     "%s_count %lu\n", metric->name,
 					     histogram->count);
 		if (ret < 0) {
-			LOG_ERR("Error writing histogram");
+			LOG_ERROR("Error writing histogram");
 			goto out;
 		}
 
@@ -206,7 +206,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 				summary->quantiles[i].quantile,
 				summary->quantiles[i].value);
 			if (ret < 0) {
-				LOG_ERR("Error writing summary");
+				LOG_ERROR("Error writing summary");
 				goto out;
 			}
 		}
@@ -214,7 +214,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 		ret = write_metric_to_buffer(buffer + *written, buffer_size - *written,
 					     "%s_sum %f\n", metric->name, summary->sum);
 		if (ret < 0) {
-			LOG_ERR("Error writing summary");
+			LOG_ERROR("Error writing summary");
 			goto out;
 		}
 
@@ -222,7 +222,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 					     "%s_count %lu\n", metric->name,
 					     summary->count);
 		if (ret < 0) {
-			LOG_ERR("Error writing summary");
+			LOG_ERROR("Error writing summary");
 			goto out;
 		}
 
@@ -231,7 +231,7 @@ int prometheus_format_one_metric(struct prometheus_metric *metric, char *buffer,
 
 	default:
 		/* should not happen */
-		LOG_ERR("Unsupported metric type %d", metric->type);
+		LOG_ERROR("Unsupported metric type %d", metric->type);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -249,7 +249,7 @@ int prometheus_format_exposition(struct prometheus_collector *collector, char *b
 	int ret = 0;
 
 	if (collector == NULL || buffer == NULL || buffer_size == 0) {
-		LOG_ERR("Invalid arguments");
+		LOG_ERROR("Invalid arguments");
 		return -EINVAL;
 	}
 
@@ -266,7 +266,7 @@ int prometheus_format_exposition(struct prometheus_collector *collector, char *b
 					continue;
 				}
 
-				LOG_ERR("Error in user callback (%d)", ret);
+				LOG_ERROR("Error in user callback (%d)", ret);
 				goto out;
 			}
 		}

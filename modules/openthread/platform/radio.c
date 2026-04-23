@@ -184,11 +184,11 @@ enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt
 	}
 
 	if (ack_frame.mLength != 0) {
-		LOG_ERR("Overwriting unhandled ACK frame.");
+		LOG_ERROR("Overwriting unhandled ACK frame.");
 	}
 
 	if (net_pkt_read(pkt, ack_psdu, ack_len) < 0) {
-		LOG_ERR("Failed to read ACK frame.");
+		LOG_ERROR("Failed to read ACK frame.");
 		return NET_CONTINUE;
 	}
 
@@ -365,10 +365,10 @@ void platformRadioInit(void)
 			   OT_WORKER_PRIORITY, NULL);
 	k_thread_name_set(&ot_work_q.thread, "ot_radio_workq");
 
-	if ((radio_api->get_capabilities(radio_dev) &
-	     IEEE802154_HW_TX_RX_ACK) != IEEE802154_HW_TX_RX_ACK) {
-		LOG_ERR("Only radios with automatic ack handling "
-			"are currently supported");
+	if ((radio_api->get_capabilities(radio_dev) & IEEE802154_HW_TX_RX_ACK) !=
+	    IEEE802154_HW_TX_RX_ACK) {
+		LOG_ERROR("Only radios with automatic ack handling "
+			  "are currently supported");
 		k_panic();
 	}
 
@@ -574,7 +574,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 	message = is_ip6 ? otIp6NewMessage(instance, &settings)
 			 : openthread_ip4_new_msg(instance, &settings);
 	if (!message) {
-		LOG_ERR("Cannot allocate new message buffer");
+		LOG_ERROR("Cannot allocate new message buffer");
 		goto exit;
 	}
 
@@ -587,7 +587,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 
 	for (buf = pkt->buffer; buf; buf = buf->frags) {
 		if (otMessageAppend(message, buf->data, buf->len) != OT_ERROR_NONE) {
-			LOG_ERR("Error while appending to otMessage");
+			LOG_ERROR("Error while appending to otMessage");
 			otMessageFree(message);
 			goto exit;
 		}
@@ -596,8 +596,8 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 	error = is_ip6 ? otIp6Send(instance, message) : openthread_nat64_send(instance, message);
 
 	if (error != OT_ERROR_NONE) {
-		LOG_ERR("Error while calling %s [error: %d]",
-			is_ip6 ? "otIp6Send" : "openthread_nat64_send", error);
+		LOG_ERROR("Error while calling %s [error: %d]",
+			  is_ip6 ? "otIp6Send" : "openthread_nat64_send", error);
 	}
 
 exit:
@@ -1089,7 +1089,7 @@ otError otPlatRadioEnergyScan(otInstance *aInstance, uint8_t aScanChannel,
 		 * If ed_scan start failed event is set to schedule the scan at
 		 * later time.
 		 */
-		LOG_ERR("Failed do start energy scan, scheduling for later");
+		LOG_ERROR("Failed do start energy scan, scheduling for later");
 		set_pending_event(PENDING_EVENT_DETECT_ENERGY);
 	}
 

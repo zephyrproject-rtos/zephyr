@@ -28,7 +28,7 @@ static inline dac_channel_id_t convert_channel_id(uint8_t channel_id)
 	case 0: return kDAC_ChannelA;
 	case 1: return kDAC_ChannelB;
 	default:
-		LOG_ERR("Invalid DAC channel ID");
+		LOG_ERROR("Invalid DAC channel ID");
 		return -EINVAL;
 	};
 }
@@ -41,12 +41,12 @@ static int nxp_gau_dac_channel_setup(const struct device *dev,
 	bool use_internal = true;
 
 	if (channel_cfg->resolution != 10) {
-		LOG_ERR("DAC only support 10 bit resolution");
+		LOG_ERROR("DAC only support 10 bit resolution");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->internal && channel_cfg->buffered) {
-		LOG_ERR("DAC output can not be buffered and internal");
+		LOG_ERROR("DAC output can not be buffered and internal");
 		return -EINVAL;
 	} else if (channel_cfg->buffered) {
 		/* External and internal output are mutually exclusive */

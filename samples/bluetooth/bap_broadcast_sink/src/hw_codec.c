@@ -95,7 +95,7 @@ int hw_codec_open(void)
 {
 	g_dev = DEVICE_DT_GET(DT_ALIAS(codec0));
 	if (!device_is_ready(g_dev)) {
-		LOG_ERR("Could not open codec device");
+		LOG_ERROR("Could not open codec device");
 		return -EIO;
 	}
 	ring_buf_init(&rb, RING_BUF_SIZE, ring_buffer);
@@ -124,21 +124,21 @@ int hw_codec_cfg(uint32_t samplerate)
 	audio_codec_register_done_callback(g_dev, tx_done, NULL, NULL, NULL);
 	ret = audio_codec_configure(g_dev, &cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure codec (err %d)", ret);
+		LOG_ERROR("Failed to configure codec (err %d)", ret);
 		return ret;
 	}
 
 	ret = audio_codec_start(g_dev, AUDIO_DAI_DIR_TX);
 	if (ret != 0) {
-		LOG_ERR("Failed to start codec (err %d)", ret);
+		LOG_ERROR("Failed to start codec (err %d)", ret);
 		return ret;
 	}
 
 	ret = audio_codec_set_property(g_dev, AUDIO_PROPERTY_OUTPUT_VOLUME, 0, val);
 	if (ret != 0) {
-		LOG_ERR("Failed to set codec output volume (err %d)", ret);
+		LOG_ERROR("Failed to set codec output volume (err %d)", ret);
 		if (audio_codec_stop(g_dev, AUDIO_DAI_DIR_TX) < 0) {
-			LOG_ERR("Failed to stop codec");
+			LOG_ERROR("Failed to stop codec");
 		}
 		return ret;
 	}

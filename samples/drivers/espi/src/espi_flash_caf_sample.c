@@ -36,7 +36,7 @@ int read_test_block(uint8_t *buf, uint32_t start_flash_adr, uint16_t block_len)
 
 		ret = espi_read_flash(espi_dev, &pckt);
 		if (ret) {
-			LOG_ERR("espi_read_flash failed: %d", ret);
+			LOG_ERROR("espi_read_flash failed: %d", ret);
 			return ret;
 		}
 
@@ -64,7 +64,7 @@ int write_test_block(uint8_t *buf, uint32_t start_flash_adr, uint16_t block_len)
 
 		ret = espi_write_flash(espi_dev, &pckt);
 		if (ret) {
-			LOG_ERR("espi_write_flash failed: %d", ret);
+			LOG_ERROR("espi_write_flash failed: %d", ret);
 			return ret;
 		}
 
@@ -90,7 +90,7 @@ int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 		memset(flash_write_buf, pattern++, sizeof(flash_write_buf));
 		ret = write_test_block(flash_write_buf, flash_addr, sizeof(flash_write_buf));
 		if (ret) {
-			LOG_ERR("Failed to write to eSPI");
+			LOG_ERROR("Failed to write to eSPI");
 			return ret;
 		}
 
@@ -107,7 +107,7 @@ int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 		memset(flash_read_buf, 0, sizeof(flash_read_buf));
 		ret = read_test_block(flash_read_buf, flash_addr, sizeof(flash_read_buf));
 		if (ret) {
-			LOG_ERR("Failed to read from eSPI");
+			LOG_ERROR("Failed to read from eSPI");
 			return ret;
 		}
 
@@ -115,7 +115,7 @@ int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 		int cmp = memcmp(flash_write_buf, flash_read_buf, sizeof(flash_write_buf));
 
 		if (cmp != 0) {
-			LOG_ERR("eSPI read mismmatch at %d expected %x", cmp, pattern);
+			LOG_ERROR("eSPI read mismmatch at %d expected %x", cmp, pattern);
 		}
 
 		flash_addr += sizeof(flash_read_buf);

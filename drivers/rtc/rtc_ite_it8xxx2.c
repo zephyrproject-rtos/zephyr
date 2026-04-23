@@ -219,7 +219,7 @@ static inline void ec2i_ite_wait_status_cleared(const struct device *dev, uint8_
 	 */
 	if (!WAIT_FOR(!(sys_read8(config->reg_ec2i + RTC_EC2I_IBCTL) & mask),
 		      RTC_EC2I_WAIT_STATUS_TIMEOUT, NULL)) {
-		LOG_ERR("%s: Timeout waiting for status", __func__);
+		LOG_ERROR("%s: Timeout waiting for status", __func__);
 		return;
 	}
 }
@@ -314,20 +314,20 @@ static int rtc_it8xxx2_set_time(const struct device *dev, const struct rtc_time 
 	uint8_t ctlregb;
 
 	if (timeptr == NULL) {
-		LOG_ERR("RTC set time failed: time pointer is NULL");
+		LOG_ERROR("RTC set time failed: time pointer is NULL");
 		return -EINVAL;
 	}
 
 	if (!rtc_utils_validate_rtc_time(timeptr, RTC_ITE_SUPPORTED_TIME_FIELDS)) {
-		LOG_ERR("Invalid RTC time provided");
+		LOG_ERROR("Invalid RTC time provided");
 		return -EINVAL;
 	}
 
 	year = timeptr->tm_year + TM_YEAR_REF;
 	/* RTC supports only years 2000-2099 */
 	if (year < RTC_ITE_MIN_YEAR || year > RTC_ITE_MAX_YEAR) {
-		LOG_ERR("RTC year %d out of HW range (%d-%d)", year, RTC_ITE_MIN_YEAR,
-			RTC_ITE_MAX_YEAR);
+		LOG_ERROR("RTC year %d out of HW range (%d-%d)", year, RTC_ITE_MIN_YEAR,
+			  RTC_ITE_MAX_YEAR);
 		return -EINVAL;
 	}
 
@@ -376,7 +376,7 @@ static int rtc_it8xxx2_get_time(const struct device *dev, struct rtc_time *timep
 	struct rtc_ite_data *data = dev->data;
 
 	if (timeptr == NULL) {
-		LOG_ERR("RTC get time failed: time pointer is NULL");
+		LOG_ERROR("RTC get time failed: time pointer is NULL");
 		return -EINVAL;
 	}
 
@@ -436,8 +436,8 @@ static inline int rtc_it8xxx2_validate_alarm_id(const struct device *dev, uint16
 	const struct rtc_ite_config *const config = dev->config;
 
 	if (id >= config->alarms_count) {
-		LOG_ERR("%s: RTC alarm ID %d is out of range (max %d)", func, id,
-			config->alarms_count - 1);
+		LOG_ERROR("%s: RTC alarm ID %d is out of range (max %d)", func, id,
+			  config->alarms_count - 1);
 		return -EINVAL;
 	}
 
@@ -470,17 +470,17 @@ static int rtc_it8xxx2_alarm_set_time(const struct device *dev, uint16_t id, uin
 	}
 
 	if ((mask != 0) && (timeptr == NULL)) {
-		LOG_ERR("No pointer is provided to set alarm");
+		LOG_ERROR("No pointer is provided to set alarm");
 		return -EINVAL;
 	}
 
 	if (mask & ~mask_capable) {
-		LOG_ERR("Invalid RTC alarm mask");
+		LOG_ERROR("Invalid RTC alarm mask");
 		return -EINVAL;
 	}
 
 	if (!rtc_utils_validate_rtc_time(timeptr, mask)) {
-		LOG_ERR("Invalid RTC alarm time provided");
+		LOG_ERROR("Invalid RTC alarm time provided");
 		return -EINVAL;
 	}
 
@@ -543,7 +543,7 @@ static int rtc_it8xxx2_alarm_get_time(const struct device *dev, uint16_t id, uin
 	}
 
 	if ((mask == NULL) || (timeptr == NULL)) {
-		LOG_ERR("No pointer is provided to get alarm");
+		LOG_ERROR("No pointer is provided to get alarm");
 		return -EINVAL;
 	}
 

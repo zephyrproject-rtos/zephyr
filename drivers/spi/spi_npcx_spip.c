@@ -55,17 +55,17 @@ static int spi_npcx_spip_configure(const struct device *dev, const struct spi_co
 	}
 
 	if (operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half duplex mode is not supported");
+		LOG_ERROR("Half duplex mode is not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_OP_MODE_GET(operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Only SPI controller mode is supported");
+		LOG_ERROR("Only SPI controller mode is supported");
 		return -ENOTSUP;
 	}
 
 	if (operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback mode is not supported");
+		LOG_ERROR("Loopback mode is not supported");
 		return -ENOTSUP;
 	}
 
@@ -74,7 +74,7 @@ static int spi_npcx_spip_configure(const struct device *dev, const struct spi_co
 	 * not supported.
 	 */
 	if (!spi_cs_is_gpio(spi_cfg)) {
-		LOG_ERR("Only GPIO CS is supported");
+		LOG_ERROR("Only GPIO CS is supported");
 		return -ENOTSUP;
 	}
 
@@ -87,19 +87,19 @@ static int spi_npcx_spip_configure(const struct device *dev, const struct spi_co
 		reg_base->SPIP_CTL1 |= BIT(NPCX_SPIP_CTL1_MOD);
 		data->bytes_per_frame = 2;
 	} else {
-		LOG_ERR("Only support word sizes either 8 or 16 bits");
+		LOG_ERROR("Only support word sizes either 8 or 16 bits");
 		return -ENOTSUP;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only single line mode is supported");
+		LOG_ERROR("Only single line mode is supported");
 		return -ENOTSUP;
 	}
 
 	/* Set the endianness */
 	if (operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("Shift out with LSB is not supported");
+		LOG_ERROR("Shift out with LSB is not supported");
 		return -ENOTSUP;
 	}
 
@@ -131,8 +131,8 @@ static int spi_npcx_spip_configure(const struct device *dev, const struct spi_co
 		prescaler_divider -= 1;
 	}
 	if (prescaler_divider >= SPI_NPCX_MAX_PRESCALER_DIV) {
-		LOG_ERR("SPI divider %d exceeds the max allowed value %d.", prescaler_divider,
-			SPI_NPCX_MAX_PRESCALER_DIV);
+		LOG_ERROR("SPI divider %d exceeds the max allowed value %d.", prescaler_divider,
+			  SPI_NPCX_MAX_PRESCALER_DIV);
 		return -ENOTSUP;
 	}
 	SET_FIELD(reg_base->SPIP_CTL1, NPCX_SPIP_CTL1_SCDV, prescaler_divider);
@@ -184,7 +184,7 @@ static int spi_npcx_spip_xfer_frame(const struct device *dev)
 
 	if (WAIT_FOR(!IS_BIT_SET(reg_base->SPIP_STAT, NPCX_SPIP_STAT_BSY),
 		     SPI_NPCX_SPIP_WAIT_STATUS_TIMEOUT_US, NULL) == false) {
-		LOG_ERR("Check Status BSY Timeout");
+		LOG_ERROR("Check Status BSY Timeout");
 		return -ETIMEDOUT;
 	}
 
@@ -192,7 +192,7 @@ static int spi_npcx_spip_xfer_frame(const struct device *dev)
 
 	if (WAIT_FOR(IS_BIT_SET(reg_base->SPIP_STAT, NPCX_SPIP_STAT_RBF),
 		     SPI_NPCX_SPIP_WAIT_STATUS_TIMEOUT_US, NULL) == false) {
-		LOG_ERR("Check Status RBF Timeout");
+		LOG_ERROR("Check Status RBF Timeout");
 		return -ETIMEDOUT;
 	}
 
@@ -362,20 +362,20 @@ static int spi_npcx_spip_init(const struct device *dev)
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on SPIP clock fail %d", ret);
+		LOG_ERROR("Turn on SPIP clock fail %d", ret);
 		return ret;
 	}
 
 	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg,
 				     &data->src_clock_freq);
 	if (ret < 0) {
-		LOG_ERR("Get SPIP clock source rate error %d", ret);
+		LOG_ERROR("Get SPIP clock source rate error %d", ret);
 		return ret;
 	}
 

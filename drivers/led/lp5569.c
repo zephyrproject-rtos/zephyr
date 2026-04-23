@@ -58,7 +58,7 @@ static int lp5569_led_set_brightness(const struct device *dev, uint32_t led, uin
 
 	ret = i2c_reg_write_byte_dt(&config->bus, LP5569_LED0_PWM + led, val);
 	if (ret < 0) {
-		LOG_ERR("LED reg update failed");
+		LOG_ERROR("LED reg update failed");
 		return ret;
 	}
 
@@ -88,20 +88,20 @@ static int lp5569_enable(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 
 	/* flip the enable pin if specified */
 	if (config->enable_gpio.port) {
 		if (!gpio_is_ready_dt(&config->enable_gpio)) {
-			LOG_ERR("Enable GPIO not ready");
+			LOG_ERROR("Enable GPIO not ready");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&config->enable_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure enable_gpio, err: %d", ret);
+			LOG_ERROR("Failed to configure enable_gpio, err: %d", ret);
 			return ret;
 		}
 
@@ -111,7 +111,7 @@ static int lp5569_enable(const struct device *dev)
 
 	ret = i2c_reg_write_byte_dt(&config->bus, LP5569_CONFIG, LP5569_CHIP_EN);
 	if (ret < 0) {
-		LOG_ERR("Enable LP5569 failed");
+		LOG_ERROR("Enable LP5569 failed");
 		return ret;
 	}
 
@@ -119,7 +119,7 @@ static int lp5569_enable(const struct device *dev)
 				    LP5569_POWERSAVE_EN | LP5569_EN_AUTO_INCR |
 					    (config->cp_mode << LP5569_CP_MODE_SHIFT));
 	if (ret < 0) {
-		LOG_ERR("LED reg update failed");
+		LOG_ERROR("LED reg update failed");
 		return ret;
 	}
 
@@ -151,7 +151,7 @@ static int lp5569_pm_action(const struct device *dev, enum pm_device_action acti
 	case PM_DEVICE_ACTION_RESUME:
 		ret = lp5569_enable(dev);
 		if (ret < 0) {
-			LOG_ERR("Enable LP5569 failed");
+			LOG_ERROR("Enable LP5569 failed");
 			return ret;
 		}
 		break;
@@ -159,7 +159,7 @@ static int lp5569_pm_action(const struct device *dev, enum pm_device_action acti
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = i2c_reg_update_byte_dt(&config->bus, LP5569_CONFIG, LP5569_CHIP_EN, 0);
 		if (ret < 0) {
-			LOG_ERR("Disable LP5569 failed");
+			LOG_ERROR("Disable LP5569 failed");
 			return ret;
 		}
 		break;

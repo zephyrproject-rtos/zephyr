@@ -151,21 +151,21 @@ static int tlc59731_gpio_init(const struct device *dev)
 	int err = 0;
 
 	if (!device_is_ready(led->port)) {
-		LOG_ERR("%s: no LEDs found (DT child nodes missing)", dev->name);
+		LOG_ERROR("%s: no LEDs found (DT child nodes missing)", dev->name);
 		err = -ENODEV;
 		goto scape;
 	}
 
 	err = gpio_pin_configure_dt(led, GPIO_OUTPUT_ACTIVE);
 	if (err < 0) {
-		LOG_ERR("%s: Unable to setup SDI port", dev->name);
+		LOG_ERROR("%s: Unable to setup SDI port", dev->name);
 		err = -EIO;
 		goto scape;
 	}
 
 	err = gpio_pin_set_dt(led, TLC59731_LOW);
 	if (err < 0) {
-		LOG_ERR("%s: Unable to set the SDI-GPIO)", dev->name);
+		LOG_ERROR("%s: Unable to set the SDI-GPIO)", dev->name);
 		err = -EIO;
 		goto scape;
 	}

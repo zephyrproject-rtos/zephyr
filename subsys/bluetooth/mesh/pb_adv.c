@@ -385,7 +385,7 @@ static struct bt_mesh_adv *adv_create(uint8_t retransmits)
 				 BT_MESH_TRANSMIT(retransmits, 20),
 				 BUF_TIMEOUT);
 	if (!adv) {
-		LOG_ERR("Out of provisioning advs");
+		LOG_ERROR("Out of provisioning advs");
 		return NULL;
 	}
 
@@ -415,7 +415,7 @@ static void prov_msg_recv(void)
 	k_work_reschedule(&link.prot_timer, bt_mesh_prov_protocol_timeout_get());
 
 	if (!bt_mesh_fcs_check(link.rx.buf, link.rx.fcs)) {
-		LOG_ERR("Incorrect FCS");
+		LOG_ERROR("Incorrect FCS");
 		return;
 	}
 
@@ -523,7 +523,7 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 	}
 
 	if (seg > link.rx.last_seg || seg == 0) {
-		LOG_ERR("Invalid segment index %u", seg);
+		LOG_ERROR("Invalid segment index %u", seg);
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
 	}
@@ -547,7 +547,7 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 		expect_len = (link.rx.buf->len - 20U -
 				((link.rx.last_seg - 1) * 23U));
 		if (expect_len != buf->len) {
-			LOG_ERR("Incorrect last seg len: %u != %u", expect_len, buf->len);
+			LOG_ERROR("Incorrect last seg len: %u != %u", expect_len, buf->len);
 			prov_failed(PROV_ERR_NVAL_FMT);
 			return;
 		}
@@ -623,33 +623,33 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 		link.rx.buf->len, link.rx.fcs);
 
 	if (link.rx.buf->len < 1) {
-		LOG_ERR("Ignoring zero-length provisioning PDU");
+		LOG_ERROR("Ignoring zero-length provisioning PDU");
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
 	}
 
 	if (link.rx.buf->len > link.rx.buf->size) {
-		LOG_ERR("Too large provisioning PDU (%u bytes)", link.rx.buf->len);
+		LOG_ERROR("Too large provisioning PDU (%u bytes)", link.rx.buf->len);
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
 	}
 
 	if (link.rx.buf->len < buf->len) {
-		LOG_ERR("Invalid declared provisionig PDU length (%u > %u)", buf->len,
-			link.rx.buf->len);
+		LOG_ERROR("Invalid declared provisionig PDU length (%u > %u)", buf->len,
+			  link.rx.buf->len);
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
 	}
 
 	if (START_LAST_SEG(rx->gpc) > 0 && link.rx.buf->len <= 20U) {
-		LOG_ERR("Too small total length for multi-segment PDU");
+		LOG_ERROR("Too small total length for multi-segment PDU");
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
 	}
 
 	if (START_LAST_SEG(rx->gpc) != last_seg(link.rx.buf->len)) {
-		LOG_ERR("Invalid SegN (%u, calculated %u)", START_LAST_SEG(rx->gpc),
-			last_seg(link.rx.buf->len));
+		LOG_ERROR("Invalid SegN (%u, calculated %u)", START_LAST_SEG(rx->gpc),
+			  last_seg(link.rx.buf->len));
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
 	}
@@ -667,7 +667,7 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 	if ((link.rx.seg & BIT(0)) &&
 	    ((link.rx.seg & SEG_NVAL) != SEG_NVAL) &&
 	    (find_msb_set((~link.rx.seg) & SEG_NVAL) - 1 > link.rx.last_seg)) {
-		LOG_ERR("Invalid segment index %u", seg);
+		LOG_ERROR("Invalid segment index %u", seg);
 		prov_failed(PROV_ERR_NVAL_FMT);
 		return;
 	}
@@ -708,7 +708,7 @@ static void gen_prov_ctl(struct prov_rx *rx, struct net_buf_simple *buf)
 		link_close(rx, buf);
 		break;
 	default:
-		LOG_ERR("Unknown bearer opcode: 0x%02x", BEARER_CTL(rx->gpc));
+		LOG_ERROR("Unknown bearer opcode: 0x%02x", BEARER_CTL(rx->gpc));
 
 		if (IS_ENABLED(CONFIG_BT_TESTING)) {
 			bt_mesh_test_prov_invalid_bearer(BEARER_CTL(rx->gpc));
@@ -732,7 +732,7 @@ static const struct {
 static void gen_prov_recv(struct prov_rx *rx, struct net_buf_simple *buf)
 {
 	if (buf->len < gen_prov[GPCF(rx->gpc)].min_len) {
-		LOG_ERR("Too short GPC message type %u", GPCF(rx->gpc));
+		LOG_ERROR("Too short GPC message type %u", GPCF(rx->gpc));
 		return;
 	}
 
@@ -872,7 +872,7 @@ static int prov_send_adv(struct net_buf_simple *msg,
 	adv = start;
 	for (seg_id = 1U; msg->len > 0; seg_id++) {
 		if (seg_id >= ARRAY_SIZE(link.tx.adv)) {
-			LOG_ERR("Too big message");
+			LOG_ERROR("Too big message");
 			free_segments();
 			return -E2BIG;
 		}
@@ -912,7 +912,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 	LOG_DBG("len %u", buf->len);
 
 	if (buf->len < 16) {
-		LOG_ERR("Too short bearer open message (len %u)", buf->len);
+		LOG_ERROR("Too short bearer open message (len %u)", buf->len);
 		return;
 	}
 
@@ -1024,7 +1024,7 @@ static int prov_link_open(const uint8_t uuid[16], uint8_t timeout,
 
 	err = bt_mesh_adv_enable();
 	if (err) {
-		LOG_ERR("Failed enabling advertiser");
+		LOG_ERROR("Failed enabling advertiser");
 		return err;
 	}
 
@@ -1056,7 +1056,7 @@ static int prov_link_accept(const struct prov_bearer_cb *cb, void *cb_data)
 
 	err = bt_mesh_adv_enable();
 	if (err) {
-		LOG_ERR("Failed enabling advertiser");
+		LOG_ERROR("Failed enabling advertiser");
 		return err;
 	}
 

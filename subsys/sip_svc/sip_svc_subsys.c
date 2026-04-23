@@ -167,7 +167,7 @@ uint32_t sip_svc_register(void *ct, void *priv_data)
 
 	err = k_mutex_lock(&ctrl->data_mutex, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("Error in acquiring mutex %d", err);
+		LOG_ERROR("Error in acquiring mutex %d", err);
 		return SIP_SVC_ID_INVALID;
 	}
 
@@ -199,7 +199,7 @@ int sip_svc_unregister(void *ct, uint32_t c_token)
 
 	err = k_mutex_lock(&ctrl->data_mutex, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("Error in acquiring mutex %d", err);
+		LOG_ERROR("Error in acquiring mutex %d", err);
 		return -ENOLCK;
 	}
 
@@ -293,7 +293,7 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 
 		c_idx = sip_svc_get_c_idx(ctrl, c_token);
 		if (c_idx == SIP_SVC_ID_INVALID) {
-			LOG_ERR("Invalid client token");
+			LOG_ERROR("Invalid client token");
 			k_mutex_unlock(&ctrl->data_mutex);
 			k_timer_stop(&timer);
 			return -EINVAL;
@@ -335,7 +335,7 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 	}
 
 	k_timer_stop(&timer);
-	LOG_ERR("Timedout at %s for 0x%x", __func__, c_token);
+	LOG_ERROR("Timedout at %s for 0x%x", __func__, c_token);
 	return -ETIMEDOUT;
 }
 
@@ -354,14 +354,14 @@ int sip_svc_close(void *ct, uint32_t c_token, struct sip_svc_request *pre_close_
 	if (pre_close_req != NULL) {
 		err = sip_svc_send(ct, c_token, pre_close_req, NULL);
 		if (err < 0) {
-			LOG_ERR("Error sending pre_close_req : %d", err);
+			LOG_ERROR("Error sending pre_close_req : %d", err);
 			return -ENOTSUP;
 		}
 	}
 
 	err = k_mutex_lock(&ctrl->data_mutex, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("Error in acquiring lock %d", err);
+		LOG_ERROR("Error in acquiring lock %d", err);
 		return err;
 	}
 
@@ -372,7 +372,7 @@ int sip_svc_close(void *ct, uint32_t c_token, struct sip_svc_request *pre_close_
 	}
 
 	if (ctrl->clients[c_idx].state != SIP_SVC_CLIENT_ST_OPEN) {
-		LOG_ERR("Client is in wrong state  %d", ctrl->clients[c_idx].state);
+		LOG_ERROR("Client is in wrong state  %d", ctrl->clients[c_idx].state);
 		k_mutex_unlock(&ctrl->data_mutex);
 		return -EPROTO;
 	}
@@ -408,7 +408,7 @@ static void sip_svc_callback(struct sip_svc_controller *ctrl, uint32_t trans_id,
 
 	err = k_mutex_lock(&ctrl->data_mutex, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("Failed to get lock,%d", err);
+		LOG_ERROR("Failed to get lock,%d", err);
 		return;
 	}
 
@@ -416,7 +416,7 @@ static void sip_svc_callback(struct sip_svc_controller *ctrl, uint32_t trans_id,
 	trans_id_item = sip_svc_id_map_query_item(ctrl->trans_id_map, trans_id);
 
 	if (!trans_id_item) {
-		LOG_ERR("Failed to get the entry from database");
+		LOG_ERROR("Failed to get the entry from database");
 		k_mutex_unlock(&ctrl->data_mutex);
 		return;
 	}
@@ -469,7 +469,7 @@ static int sip_svc_request_handler(struct sip_svc_controller *ctrl)
 	uint32_t error_code;
 
 	if (!ctrl) {
-		LOG_ERR("Error ctrl is NULL");
+		LOG_ERROR("Error ctrl is NULL");
 		return -EINVAL;
 	}
 
@@ -563,7 +563,7 @@ static int sip_svc_async_response_handler(struct sip_svc_controller *ctrl)
 	struct arm_smccc_res res;
 
 	if (!ctrl) {
-		LOG_ERR("controller is NULL");
+		LOG_ERROR("controller is NULL");
 		return -EINVAL;
 	}
 
@@ -575,7 +575,7 @@ static int sip_svc_async_response_handler(struct sip_svc_controller *ctrl)
 
 	if (sip_svc_plat_async_res_req(ctrl->dev, &a0, &a1, &a2, &a3, &a4, &a5, &a6, &a7,
 				       ctrl->async_resp_data, ctrl->resp_size)) {
-		LOG_ERR("Error during creation of ASYNC polling request");
+		LOG_ERROR("Error during creation of ASYNC polling request");
 		return -ENOTSUP;
 	}
 
@@ -597,7 +597,7 @@ static int sip_svc_async_response_handler(struct sip_svc_controller *ctrl)
 	trans_id_item = sip_svc_id_map_query_item(ctrl->trans_id_map, trans_id);
 
 	if (!trans_id_item) {
-		LOG_ERR("Failed to get entry from database");
+		LOG_ERROR("Failed to get entry from database");
 		return -ENOENT;
 	}
 
@@ -688,7 +688,7 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 
 	ret = k_mutex_lock(&ctrl->data_mutex, K_FOREVER);
 	if (ret != 0) {
-		LOG_ERR("Failed to get lock %d", ret);
+		LOG_ERROR("Failed to get lock %d", ret);
 		return -ENOLCK;
 	}
 
@@ -706,7 +706,7 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 	/* Allocate a trans id for the request */
 	trans_idx = sip_svc_id_mgr_alloc(ctrl->clients[c_idx].trans_idx_pool);
 	if (trans_idx == SIP_SVC_ID_INVALID) {
-		LOG_ERR("Fail to allocate transaction id");
+		LOG_ERROR("Fail to allocate transaction id");
 		k_mutex_unlock(&ctrl->data_mutex);
 		return -ENOMEM;
 	}
@@ -714,7 +714,7 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 	trans_id = sip_svc_plat_format_trans_id(ctrl->dev, c_idx, trans_idx);
 	/* Additional check for an unsupported condition*/
 	if (((int)trans_id) < 0) {
-		LOG_ERR("Unsupported condition, trans_id < 0");
+		LOG_ERROR("Unsupported condition, trans_id < 0");
 		sip_svc_id_mgr_free(ctrl->clients[c_idx].trans_idx_pool, trans_idx);
 		k_mutex_unlock(&ctrl->data_mutex);
 		return -ENOTSUP;
@@ -730,7 +730,7 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 				       (void *)(uint64_t)request->resp_data_size,
 				       request->priv_data, (void *)(uint64_t)c_idx) != 0) {
 
-		LOG_ERR("Fail to insert transaction id to map");
+		LOG_ERROR("Fail to insert transaction id to map");
 		sip_svc_id_mgr_free(ctrl->clients[c_idx].trans_idx_pool, trans_idx);
 		k_mutex_unlock(&ctrl->data_mutex);
 		return -ENOMSG;
@@ -739,7 +739,7 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 	/* Insert request to MSGQ */
 	LOG_INF("send command to msgq");
 	if (k_msgq_put(&ctrl->req_msgq, (void *)request, K_NO_WAIT) != 0) {
-		LOG_ERR("Request msgq full");
+		LOG_ERROR("Request msgq full");
 		sip_svc_id_map_remove_item(ctrl->trans_id_map, trans_id);
 		sip_svc_id_mgr_free(ctrl->clients[c_idx].trans_idx_pool, trans_idx);
 		k_mutex_unlock(&ctrl->data_mutex);
@@ -748,7 +748,7 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 	++ctrl->clients[c_idx].active_trans_cnt;
 
 	if (!ctrl->tid) {
-		LOG_ERR("Thread not spawned during init");
+		LOG_ERROR("Thread not spawned during init");
 		sip_svc_id_map_remove_item(ctrl->trans_id_map, trans_id);
 		sip_svc_id_mgr_free(ctrl->clients[c_idx].trans_idx_pool, trans_idx);
 		k_mutex_unlock(&ctrl->data_mutex);
@@ -775,13 +775,13 @@ void *sip_svc_get_priv_data(void *ct, uint32_t c_token)
 
 	err = k_mutex_lock(&ctrl->data_mutex, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("Failed to get lock %d", err);
+		LOG_ERROR("Failed to get lock %d", err);
 		return NULL;
 	}
 
 	c_idx = sip_svc_get_c_idx(ctrl, c_token);
 	if (c_idx == SIP_SVC_ID_INVALID) {
-		LOG_ERR("Client id is invalid");
+		LOG_ERROR("Client id is invalid");
 		k_mutex_unlock(&ctrl->data_mutex);
 		return NULL;
 	}
@@ -793,7 +793,7 @@ void *sip_svc_get_priv_data(void *ct, uint32_t c_token)
 void *sip_svc_get_controller(char *method)
 {
 	if (method == NULL) {
-		LOG_ERR("controller is NULL");
+		LOG_ERROR("controller is NULL");
 		return NULL;
 	}
 
@@ -806,7 +806,7 @@ void *sip_svc_get_controller(char *method)
 		}
 	}
 
-	LOG_ERR("controller couldn't be found");
+	LOG_ERROR("controller couldn't be found");
 	return NULL;
 }
 
@@ -830,7 +830,7 @@ static int sip_svc_subsys_init(void)
 	 */
 	STRUCT_SECTION_FOREACH(sip_svc_controller, ctrl) {
 		if (!device_is_ready(ctrl->dev)) {
-			LOG_ERR("device not ready");
+			LOG_ERROR("device not ready");
 			return -ENODEV;
 		}
 		dev = (struct device *)(ctrl->dev);

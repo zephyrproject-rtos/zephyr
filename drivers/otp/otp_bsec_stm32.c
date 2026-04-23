@@ -76,13 +76,13 @@ static int otp_bsec_stm32_program(const struct device *dev, off_t offset, const 
 
 	/* Allow programming of 4bytes words only */
 	if (!IS_ALIGNED(len, BSEC_WORD_SIZE)) {
-		LOG_ERR("Invalid length to program OTP: %zu", len);
+		LOG_ERROR("Invalid length to program OTP: %zu", len);
 		return -EINVAL;
 	}
 
 	/* Allow programming only at the beginning of a new word */
 	if (!IS_ALIGNED(offset, BSEC_WORD_SIZE)) {
-		LOG_ERR("Programmed data not aligned on an OTP word");
+		LOG_ERROR("Programmed data not aligned on an OTP word");
 		return -EINVAL;
 	}
 

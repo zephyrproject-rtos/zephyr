@@ -50,16 +50,16 @@ LOG_MODULE_REGISTER(sdhc_numaker, CONFIG_SDHC_LOG_LEVEL);
 
 #define NUMAKER_SDHC_LOG_COMMAND_ERR(cmd)                                                          \
 	do {                                                                                       \
-		LOG_ERR("opcode: %d", cmd->opcode);                                                \
-		LOG_ERR("arg: 0x%08x", cmd->arg);                                                  \
-		LOG_ERR("response_type: 0x%08x", cmd->response_type);                              \
+		LOG_ERROR("opcode: %d", cmd->opcode);                                              \
+		LOG_ERROR("arg: 0x%08x", cmd->arg);                                                \
+		LOG_ERROR("response_type: 0x%08x", cmd->response_type);                            \
 	} while (0)
 
 #define NUMAKER_SDHC_LOG_DATA_ERR(data)                                                            \
 	do {                                                                                       \
-		LOG_ERR("block_addr: 0x%08x", data->block_addr);                                   \
-		LOG_ERR("block_size: %d", data->block_size);                                       \
-		LOG_ERR("blocks: %d", data->blocks);                                               \
+		LOG_ERROR("block_addr: 0x%08x", data->block_addr);                                 \
+		LOG_ERROR("block_size: %d", data->block_size);                                     \
+		LOG_ERROR("blocks: %d", data->blocks);                                             \
 	} while (0)
 
 struct sdhc_numaker_config {
@@ -139,19 +139,19 @@ static int numaker_sdhc_reset_hw_fsm(const struct device *dev)
 	base->DMACTL = SDH_DMACTL_DMARST_Msk;
 	if (!WAIT_FOR((base->DMACTL & SDH_DMACTL_DMARST_Msk) == 0, NUMAKER_SDHC_RESET_TIMEOUT_US,
 		      k_yield())) {
-		LOG_ERR("DMACTL.DMARST timeout");
+		LOG_ERROR("DMACTL.DMARST timeout");
 	}
 
 	base->GCTL = SDH_GCTL_GCTLRST_Msk | SDH_GCTL_SDEN_Msk;
 	if (!WAIT_FOR((base->GCTL & SDH_GCTL_GCTLRST_Msk) == 0, NUMAKER_SDHC_RESET_TIMEOUT_US,
 		      k_yield())) {
-		LOG_ERR("GCTL.GCTLRST timeout");
+		LOG_ERROR("GCTL.GCTLRST timeout");
 	}
 
 	base->CTL |= SDH_CTL_CTLRST_Msk;
 	if (!WAIT_FOR((base->CTL & SDH_CTL_CTLRST_Msk) == 0, NUMAKER_SDHC_RESET_TIMEOUT_US,
 		      k_yield())) {
-		LOG_ERR("CTL.CTLRST timeout");
+		LOG_ERROR("CTL.CTLRST timeout");
 	}
 
 	return 0;
@@ -262,7 +262,7 @@ static int numaker_sdhc_set_bus_clock(const struct device *dev, uint32_t rate,
 	}
 
 	if (rate_cand == 0) {
-		LOG_ERR("No match clock configuration");
+		LOG_ERROR("No match clock configuration");
 		return -ENOTSUP;
 	}
 
@@ -308,14 +308,14 @@ static int numaker_sdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 		uint32_t clock_actual;
 
 		if (ios->clock > data->props.f_max || ios->clock < data->props.f_min) {
-			LOG_ERR("Unsupported bus clock %dHz (min %dHz, max %dHz)", ios->clock,
-				data->props.f_min, data->props.f_max);
+			LOG_ERROR("Unsupported bus clock %dHz (min %dHz, max %dHz)", ios->clock,
+				  data->props.f_min, data->props.f_max);
 			return -ENOTSUP;
 		}
 
 		rc = numaker_sdhc_set_bus_clock(dev, ios->clock, &clock_actual);
 		if (rc < 0) {
-			LOG_ERR("Set bus clock %dHz failed: %d", ios->clock, rc);
+			LOG_ERROR("Set bus clock %dHz failed: %d", ios->clock, rc);
 			return rc;
 		}
 
@@ -328,7 +328,7 @@ static int numaker_sdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 		} else if (ios->bus_width == SDHC_BUS_WIDTH4BIT) {
 			base->CTL |= SDH_CTL_DBW_Msk;
 		} else {
-			LOG_ERR("Unsupported bus width %d", ios->bus_width);
+			LOG_ERROR("Unsupported bus width %d", ios->bus_width);
 			return -ENOTSUP;
 		}
 	}
@@ -386,7 +386,7 @@ static int numaker_sdhc_card_busy(const struct device *dev)
 	base->CTL |= SDH_CTL_CLK8OEN_Msk;
 	if (!WAIT_FOR((base->CTL & SDH_CTL_CLK8OEN_Msk) == 0, NUMAKER_SDHC_8CLKS_TIMEOUT_US,
 		      k_yield())) {
-		LOG_ERR("CTL.CLK8OEN timeout");
+		LOG_ERROR("CTL.CLK8OEN timeout");
 		return -ETIMEDOUT;
 	}
 
@@ -434,7 +434,7 @@ static int numaker_sdhc_request_command(const struct device *dev, struct sdhc_co
 
 	if (!WAIT_FOR((base->CTL & (SDH_CTL_R2EN_Msk | SDH_CTL_RIEN_Msk | SDH_CTL_COEN_Msk)) == 0,
 		      sd_cmd->timeout_ms * 1000, k_yield())) {
-		LOG_ERR("Command/response timeout");
+		LOG_ERROR("Command/response timeout");
 		NUMAKER_SDHC_LOG_REGS_DBG(base);
 		NUMAKER_SDHC_LOG_COMMAND_ERR(sd_cmd);
 		return -ETIMEDOUT;
@@ -450,7 +450,7 @@ static int numaker_sdhc_request_command(const struct device *dev, struct sdhc_co
 		break;
 	default:
 		if ((base->INTSTS & SDH_INTSTS_CRC7_Msk) != SDH_INTSTS_CRC7_Msk) {
-			LOG_ERR("Response CRC7 error");
+			LOG_ERROR("Response CRC7 error");
 			NUMAKER_SDHC_LOG_COMMAND_ERR(sd_cmd);
 			return -EIO;
 		}
@@ -535,7 +535,8 @@ static int numaker_sdhc_request_data(const struct device *dev, struct sdhc_comma
 		break;
 	default:
 		if (log) {
-			LOG_ERR("Unsupported command code (%d) for data transfer", sd_cmd->opcode);
+			LOG_ERROR("Unsupported command code (%d) for data transfer",
+				  sd_cmd->opcode);
 		}
 		return -ENOTSUP;
 	}
@@ -574,7 +575,7 @@ static int numaker_sdhc_request_data(const struct device *dev, struct sdhc_comma
 		rc = k_sem_take(&data->xfer_complete, K_MSEC(sd_data->timeout_ms));
 		if (rc < 0) {
 			if (log) {
-				LOG_ERR("Data transfer timeout");
+				LOG_ERROR("Data transfer timeout");
 				NUMAKER_SDHC_LOG_COMMAND_ERR(sd_cmd);
 			}
 
@@ -590,14 +591,14 @@ static int numaker_sdhc_request_data(const struct device *dev, struct sdhc_comma
 		/* Check CRC */
 		if (is_write_cmd) {
 			if ((base->INTSTS & SDH_INTSTS_CRCSTS_Msk) != SDH_INTSTS_CRCSTS_OK) {
-				LOG_ERR("Data out CRC status error");
+				LOG_ERROR("Data out CRC status error");
 				NUMAKER_SDHC_LOG_COMMAND_ERR(sd_cmd);
 				rc = -EIO;
 				break;
 			}
 		} else {
 			if ((base->INTSTS & SDH_INTSTS_CRC16_Msk) != SDH_INTSTS_CRC16_Msk) {
-				LOG_ERR("Data in CRC16 error");
+				LOG_ERROR("Data in CRC16 error");
 				NUMAKER_SDHC_LOG_COMMAND_ERR(sd_cmd);
 				rc = -EIO;
 				break;
@@ -658,7 +659,7 @@ static int numaker_sdhc_enable_interrupt(const struct device *dev, sdhc_interrup
 	SDH_T *base = config->base;
 
 	if (sources & SDHC_INT_SDIO) {
-		LOG_ERR("Unsupported interrupt source SDHC_INT_SDIO");
+		LOG_ERROR("Unsupported interrupt source SDHC_INT_SDIO");
 		return -ENOTSUP;
 	}
 
@@ -667,7 +668,8 @@ static int numaker_sdhc_enable_interrupt(const struct device *dev, sdhc_interrup
 		/* Not support card detect interrupt due to SD bus clock
 		 * not kept on for DAT3
 		 */
-		LOG_ERR("Unsupported interrupt source SDHC_INT_INSERTED/SDHC_INT_REMOVED for DAT3 "
+		LOG_ERROR(
+			"Unsupported interrupt source SDHC_INT_INSERTED/SDHC_INT_REMOVED for DAT3 "
 			"as card detect pin");
 		return -ENOTSUP;
 	}
@@ -905,7 +907,7 @@ static int sdhc_numaker_init(const struct device *dev)
 
 	/* Validate this module's reset object */
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 

@@ -33,7 +33,7 @@ static int bq27z746_read16(const struct device *dev, uint8_t reg, uint16_t *valu
 	const int status = i2c_burst_read_dt(&cfg->i2c, reg, i2c_data, sizeof(i2c_data));
 
 	if (status < 0) {
-		LOG_ERR("Unable to read register");
+		LOG_ERROR("Unable to read register");
 		return status;
 	}
 	*value = sys_get_le16(i2c_data);
@@ -86,7 +86,7 @@ static int bq27z746_read_mac(const struct device *dev, uint16_t cmd, uint8_t *da
 	const uint16_t read_cmd = sys_get_le16(buf);
 
 	if (read_cmd != cmd) {
-		LOG_ERR("Read command 0x%x != written command 0x%x", read_cmd, cmd);
+		LOG_ERROR("Read command 0x%x != written command 0x%x", read_cmd, cmd);
 		return -EIO;
 	}
 
@@ -100,7 +100,7 @@ static int bq27z746_read_mac(const struct device *dev, uint16_t cmd, uint8_t *da
 	const uint8_t checksum_expected = 0xFF - sum;
 
 	if (checksum_expected != checksum_actual) {
-		LOG_ERR("Checksum mismatch");
+		LOG_ERROR("Checksum mismatch");
 		return -EIO;
 	}
 
@@ -267,7 +267,7 @@ static int bq27z746_init(const struct device *dev)
 	cfg = dev->config;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 

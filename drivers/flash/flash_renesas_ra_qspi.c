@@ -138,7 +138,7 @@ static int get_flash_status(const struct device *dev)
 	do {
 		err = R_QSPI_StatusGet(&qspi_data->qspi_ctrl, &status);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Status get failed");
+			LOG_ERROR("Status get failed");
 			return -EIO;
 		}
 		--time_out;
@@ -171,7 +171,7 @@ static int qspi_flash_ra_ex_op(const struct device *dev, uint16_t code, const ui
 		cmd = QSPI_QPI_CMD_RSTQIO;
 		err = R_QSPI_DirectWrite(&qspi_data->qspi_ctrl, &cmd, ONE_BYTE, false);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Direct write for EXIT QPI failed");
+			LOG_ERROR("Direct write for EXIT QPI failed");
 			err = -EIO;
 		}
 		break;
@@ -183,12 +183,12 @@ static int qspi_flash_ra_ex_op(const struct device *dev, uint16_t code, const ui
 			cmd = SPI_NOR_CMD_RESET_MEM;
 			err = R_QSPI_DirectWrite(&qspi_data->qspi_ctrl, &cmd, ONE_BYTE, false);
 			if (err != FSP_SUCCESS) {
-				LOG_ERR("Direct write for RESET MEM failed");
+				LOG_ERROR("Direct write for RESET MEM failed");
 				err = -EIO;
 			}
 		} else {
 			if (err != FSP_SUCCESS) {
-				LOG_ERR("Direct write for RESET Flash failed");
+				LOG_ERROR("Direct write for RESET Flash failed");
 				err = -EIO;
 			}
 		}
@@ -236,21 +236,21 @@ static int qspi_flash_ra_read_jedec_id(const struct device *dev, uint8_t *id)
 	}
 	err = R_QSPI_DirectWrite(&qspi_data->qspi_ctrl, &cmd, ONE_BYTE, true);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Direct write for READ ID failed");
+		LOG_ERROR("Direct write for READ ID failed");
 		err = -EIO;
 		goto out;
 	}
 
 	err = R_QSPI_DirectRead(&qspi_data->qspi_ctrl, id, THREE_BYTE);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Direct read failed");
+		LOG_ERROR("Direct read failed");
 		err = -EIO;
 		goto out;
 	}
 
 	err = get_flash_status(dev);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to get status for QSPI operation");
+		LOG_ERROR("Failed to get status for QSPI operation");
 		err = -EIO;
 	}
 out:
@@ -269,7 +269,7 @@ static int qspi_flash_ra_sfdp_read(const struct device *dev, off_t addr, void *d
 	uint8_t *buffer = k_malloc((size + offset) > 4 ? (size + offset) : 4);
 
 	if (!buffer) {
-		LOG_ERR("Failed to allocate buffer for SFDP read");
+		LOG_ERROR("Failed to allocate buffer for SFDP read");
 		return -ENOMEM;
 	}
 
@@ -282,21 +282,21 @@ static int qspi_flash_ra_sfdp_read(const struct device *dev, off_t addr, void *d
 
 	err = R_QSPI_DirectWrite(&qspi_data->qspi_ctrl, &buffer[0], FOUR_BYTE, true);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Direct write for READ SFDP failed");
+		LOG_ERROR("Direct write for READ SFDP failed");
 		err = -EIO;
 		goto out;
 	}
 
 	err = R_QSPI_DirectRead(&qspi_data->qspi_ctrl, &buffer[0], size + offset);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Direct read failed");
+		LOG_ERROR("Direct read failed");
 		err = -EIO;
 		goto out;
 	}
 
 	err = get_flash_status(dev);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to get status for QSPI operation");
+		LOG_ERROR("Failed to get status for QSPI operation");
 		err = -EIO;
 		goto out;
 	}
@@ -336,24 +336,24 @@ static int qspi_flash_ra_erase(const struct device *dev, off_t offset, size_t le
 	}
 
 	if (!qspi_flash_ra_valid(QSPI_NOR_FLASH_SIZE, offset, len)) {
-		LOG_ERR("The offset 0x%lx is invalid", (long)offset);
+		LOG_ERROR("The offset 0x%lx is invalid", (long)offset);
 		return -EINVAL;
 	}
 
 	if (len % QSPI_ERASE_BLK_SZ != 0) {
-		LOG_ERR("The size %u is not align with block size (%u)", len, QSPI_ERASE_BLK_SZ);
+		LOG_ERROR("The size %u is not align with block size (%u)", len, QSPI_ERASE_BLK_SZ);
 		return -EINVAL;
 	}
 
 	rc = flash_get_page_info_by_offs(dev, offset, &page_info_start);
 	if ((rc != 0) || (offset != page_info_start.start_offset)) {
-		LOG_ERR("The offset 0x%lx is not aligned with the starting sector", (long)offset);
+		LOG_ERROR("The offset 0x%lx is not aligned with the starting sector", (long)offset);
 		return -EINVAL;
 	}
 
 	rc = flash_get_page_info_by_offs(dev, (offset + len), &page_info_end);
 	if ((rc != 0) || ((offset + len) != page_info_end.start_offset)) {
-		LOG_ERR("The size %u is not aligned with the ending sector", len);
+		LOG_ERROR("The size %u is not aligned with the ending sector", len);
 		return -EINVAL;
 	}
 
@@ -370,14 +370,14 @@ static int qspi_flash_ra_erase(const struct device *dev, off_t offset, size_t le
 		err = R_QSPI_Erase(&qspi_data->qspi_ctrl,
 				   (uint8_t *)(QSPI_DEVICE_START_ADDRESS + offset), erase_size);
 		if (err) {
-			LOG_ERR("Erase failed");
+			LOG_ERROR("Erase failed");
 			err = -EIO;
 			break;
 		}
 
 		err = get_flash_status(dev);
 		if (err) {
-			LOG_ERR("failed to get status for QSPI operation");
+			LOG_ERROR("failed to get status for QSPI operation");
 			err = -EIO;
 			break;
 		}
@@ -430,14 +430,14 @@ static int qspi_flash_ra_write(const struct device *dev, off_t offset, const voi
 		err = R_QSPI_Write(&qspi_data->qspi_ctrl, p_data,
 				   (uint8_t *)(QSPI_DEVICE_START_ADDRESS + offset), size);
 		if (err) {
-			LOG_ERR("Direct write failed");
+			LOG_ERROR("Direct write failed");
 			err = -EIO;
 			break;
 		}
 
 		err = get_flash_status(dev);
 		if (err) {
-			LOG_ERR("Failed to get status for QSPI operation");
+			LOG_ERROR("Failed to get status for QSPI operation");
 			err = -EIO;
 			break;
 		}
@@ -490,30 +490,30 @@ static int set_qspi_flash_status(const struct device *dev)
 
 	ret = R_QSPI_DirectWrite(&qspi_data->qspi_ctrl, data_sreg, sizeof(data_sreg), false);
 	if (ret) {
-		LOG_ERR("Direct write for STATUS_REG_PAYLOAD fail");
+		LOG_ERROR("Direct write for STATUS_REG_PAYLOAD fail");
 		return -EIO;
 	}
 
 	ret = get_flash_status(dev);
 	if (ret) {
-		LOG_ERR("Failed to get status for QSPI operation");
+		LOG_ERROR("Failed to get status for QSPI operation");
 		return -EIO;
 	}
 	ret = R_QSPI_DirectWrite(&qspi_data->qspi_ctrl, &(qspi_data->qspi_cfg.status_command),
 				 ONE_BYTE, true);
 	if (ret) {
-		LOG_ERR("Direct write for status command fail ");
+		LOG_ERROR("Direct write for status command fail ");
 		return -EIO;
 	}
 
 	ret = R_QSPI_DirectRead(&qspi_data->qspi_ctrl, &sreg_data, ONE_BYTE);
 	if (ret) {
-		LOG_ERR("Direct read fail");
+		LOG_ERROR("Direct read fail");
 		return -EIO;
 	}
 
 	if (SET_SREG_VALUE != sreg_data) {
-		LOG_ERR("Verify status register data failed");
+		LOG_ERROR("Verify status register data failed");
 		return -EIO;
 	}
 	return ret;
@@ -527,33 +527,33 @@ static int qspi_flash_ra_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Failed to configure pins for QSPI");
+		LOG_ERROR("Failed to configure pins for QSPI");
 		return -EIO;
 	}
 	k_sem_init(&qspi_data->sem, 1, 1);
 
 	ret = R_QSPI_Open(&qspi_data->qspi_ctrl, &qspi_data->qspi_cfg);
 	if (ret) {
-		LOG_ERR("Open failed");
+		LOG_ERROR("Open failed");
 		return -EIO;
 	}
 
 	ret = R_QSPI_DirectWrite(&qspi_data->qspi_ctrl, &(qspi_data->qspi_cfg.write_enable_command),
 				 ONE_BYTE, false);
 	if (ret) {
-		LOG_ERR("Direct write enable command failed");
+		LOG_ERROR("Direct write enable command failed");
 		return -EIO;
 	}
 
 	ret = get_flash_status(dev);
 	if (ret) {
-		LOG_ERR("Failed to get status for QSPI operation");
+		LOG_ERROR("Failed to get status for QSPI operation");
 		return -EIO;
 	}
 
 	ret = set_qspi_flash_status(dev);
 	if (ret) {
-		LOG_ERR("Set qspi flash status failed");
+		LOG_ERROR("Set qspi flash status failed");
 		return -EIO;
 	}
 #if QSPI_ENABLE_QUAD_MODE
@@ -562,13 +562,13 @@ static int qspi_flash_ra_init(const struct device *dev)
 	qspi_data->qspi_cfg.spi_protocol = SPI_FLASH_PROTOCOL_QPI;
 	ret = R_QSPI_DirectWrite(&qspi_data->qspi_ctrl, &data_qpi_en, ONE_BYTE, false);
 	if (ret) {
-		LOG_ERR("Direct write SPI_FLASH_PROTOCOL_QPI failed");
+		LOG_ERROR("Direct write SPI_FLASH_PROTOCOL_QPI failed");
 		return -EIO;
 	}
 
 	ret = R_QSPI_SpiProtocolSet(&qspi_data->qspi_ctrl, SPI_FLASH_PROTOCOL_QPI);
 	if (ret) {
-		LOG_ERR("Set SpiProtocol failed");
+		LOG_ERROR("Set SpiProtocol failed");
 		return -EIO;
 	}
 #endif

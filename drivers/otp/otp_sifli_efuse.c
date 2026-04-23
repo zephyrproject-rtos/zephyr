@@ -103,7 +103,7 @@ static int efuse_read_bank(const struct otp_sifli_efuse_config *config, uint8_t 
 		k_busy_wait(1);
 		timeout++;
 		if (timeout > EFUSE_READ_TIMEOUT_US) {
-			LOG_ERR("eFuse read timeout for bank %u", bank);
+			LOG_ERROR("eFuse read timeout for bank %u", bank);
 			pmuc_write_reg(config, PMUC_REG_HPSYS_VOUT, org_vout);
 			return -ETIMEDOUT;
 		}
@@ -139,7 +139,7 @@ static int efuse_load_cache(const struct device *dev)
 	for (size_t bank = 0; bank < config->bank_num; bank++) {
 		ret = efuse_read_bank(config, bank, &config->cache[bank * config->bank_size]);
 		if (ret < 0) {
-			LOG_ERR("Failed to read eFuse bank %zu: %d", bank, ret);
+			LOG_ERROR("Failed to read eFuse bank %zu: %d", bank, ret);
 			return ret;
 		}
 	}

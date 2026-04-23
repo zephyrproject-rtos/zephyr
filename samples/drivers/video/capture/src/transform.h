@@ -19,13 +19,13 @@ static inline int setup_video_transform(const struct device *const transform_dev
 	in_fmt->type = VIDEO_BUF_TYPE_INPUT;
 	ret = video_set_format(transform_dev, in_fmt);
 	if (ret < 0) {
-		LOG_ERR("Unable to set input format");
+		LOG_ERROR("Unable to set input format");
 		return ret;
 	}
 
 	ret = video_set_format(transform_dev, out_fmt);
 	if (ret < 0) {
-		LOG_ERR("Unable to set output format");
+		LOG_ERROR("Unable to set output format");
 		return ret;
 	}
 
@@ -33,7 +33,7 @@ static inline int setup_video_transform(const struct device *const transform_dev
 	*out_buf = video_buffer_aligned_alloc(out_fmt->size,
 					      CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_NO_WAIT);
 	if (*out_buf == NULL) {
-		LOG_ERR("Unable to allocate output video buffer");
+		LOG_ERROR("Unable to allocate output video buffer");
 		return -ENOMEM;
 	}
 
@@ -51,27 +51,27 @@ static inline int transform_frame(const struct device *const transform_dev,
 	in_buf->type = VIDEO_BUF_TYPE_INPUT;
 	ret = video_enqueue(transform_dev, in_buf);
 	if (ret < 0) {
-		LOG_ERR("Unable to enqueue input buffer");
+		LOG_ERROR("Unable to enqueue input buffer");
 		return ret;
 	}
 
 	(*out_buf)->type = VIDEO_BUF_TYPE_OUTPUT;
 	ret = video_enqueue(transform_dev, *out_buf);
 	if (ret < 0) {
-		LOG_ERR("Unable to enqueue output buffer");
+		LOG_ERROR("Unable to enqueue output buffer");
 		return ret;
 	}
 
 	if (!started) {
 		ret = video_stream_start(transform_dev, VIDEO_BUF_TYPE_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Unable to start the transform input");
+			LOG_ERROR("Unable to start the transform input");
 			return ret;
 		}
 
 		ret = video_stream_start(transform_dev, VIDEO_BUF_TYPE_OUTPUT);
 		if (ret < 0) {
-			LOG_ERR("Unable to start the transform output");
+			LOG_ERROR("Unable to start the transform output");
 			return ret;
 		}
 
@@ -80,13 +80,13 @@ static inline int transform_frame(const struct device *const transform_dev,
 
 	ret = video_dequeue(transform_dev, &in_buf, K_FOREVER);
 	if (ret < 0) {
-		LOG_ERR("Unable to dequeue input buffer");
+		LOG_ERROR("Unable to dequeue input buffer");
 		return ret;
 	}
 
 	ret = video_dequeue(transform_dev, out_buf, K_FOREVER);
 	if (ret < 0) {
-		LOG_ERR("Unable to dequeue output buffer");
+		LOG_ERROR("Unable to dequeue output buffer");
 		return ret;
 	}
 

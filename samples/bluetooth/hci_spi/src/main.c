@@ -110,7 +110,7 @@ static inline int spi_send(struct net_buf *buf)
 	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	if (buf->len > SPI_MAX_MSG_LEN) {
-		LOG_ERR("TX message too long");
+		LOG_ERROR("TX message too long");
 		net_buf_unref(buf);
 		return -EINVAL;
 	}
@@ -128,7 +128,7 @@ static inline int spi_send(struct net_buf *buf)
 	do {
 		ret = spi_transceive(spi_hci_dev, &spi_cfg, &tx_bufs, &rx_bufs);
 		if (ret < 0) {
-			LOG_ERR("SPI transceive error: %d", ret);
+			LOG_ERROR("SPI transceive error: %d", ret);
 		}
 	} while (header_master[STATUS_HEADER_READY] != SPI_READ);
 
@@ -137,7 +137,7 @@ static inline int spi_send(struct net_buf *buf)
 
 	ret = spi_write(spi_hci_dev, &spi_cfg, &tx_bufs);
 	if (ret < 0) {
-		LOG_ERR("SPI transceive error: %d", ret);
+		LOG_ERROR("SPI transceive error: %d", ret);
 	}
 	net_buf_unref(buf);
 
@@ -177,7 +177,7 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 			ret = spi_transceive(spi_hci_dev, &spi_cfg,
 					     &tx_bufs, &rx_bufs);
 			if (ret < 0) {
-				LOG_ERR("SPI transceive error: %d", ret);
+				LOG_ERROR("SPI transceive error: %d", ret);
 			}
 		} while ((header_master[STATUS_HEADER_READY] != SPI_READ) &&
 			 (header_master[STATUS_HEADER_READY] != SPI_WRITE));
@@ -198,7 +198,7 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 		ret = spi_transceive(spi_hci_dev, &spi_cfg,
 				     &tx_bufs, &rx_bufs);
 		if (ret < 0) {
-			LOG_ERR("SPI transceive error: %d", ret);
+			LOG_ERROR("SPI transceive error: %d", ret);
 			continue;
 		}
 
@@ -211,7 +211,7 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 				net_buf_add_mem(buf, &rxmsg[4],
 						hci_hdr.cmd_hdr->param_len);
 			} else {
-				LOG_ERR("No available command buffers!");
+				LOG_ERROR("No available command buffers!");
 				continue;
 			}
 			break;
@@ -223,12 +223,12 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 				net_buf_add_mem(buf, &rxmsg[5],
 						sys_le16_to_cpu(hci_hdr.acl_hdr->len));
 			} else {
-				LOG_ERR("No available ACL buffers!");
+				LOG_ERROR("No available ACL buffers!");
 				continue;
 			}
 			break;
 		default:
-			LOG_ERR("Unknown BT HCI buf type");
+			LOG_ERROR("Unknown BT HCI buf type");
 			continue;
 		}
 
@@ -236,7 +236,7 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 
 		ret = bt_send(buf);
 		if (ret) {
-			LOG_ERR("Unable to send (ret %d)", ret);
+			LOG_ERROR("Unable to send (ret %d)", ret);
 			net_buf_unref(buf);
 		}
 
@@ -251,12 +251,12 @@ static int hci_spi_init(void)
 	LOG_DBG("");
 
 	if (!device_is_ready(spi_hci_dev)) {
-		LOG_ERR("SPI bus %s is not ready", spi_hci_dev->name);
+		LOG_ERROR("SPI bus %s is not ready", spi_hci_dev->name);
 		return -EINVAL;
 	}
 
 	if (!gpio_is_ready_dt(&irq)) {
-		LOG_ERR("IRQ GPIO port %s is not ready", irq.port->name);
+		LOG_ERROR("IRQ GPIO port %s is not ready", irq.port->name);
 		return -EINVAL;
 	}
 	gpio_pin_configure_dt(&irq, GPIO_OUTPUT_INACTIVE);
@@ -278,7 +278,7 @@ int main(void)
 
 	err = bt_enable_raw(&rx_queue);
 	if (err) {
-		LOG_ERR("bt_enable_raw: %d; aborting", err);
+		LOG_ERROR("bt_enable_raw: %d; aborting", err);
 		return 0;
 	}
 
@@ -297,7 +297,7 @@ int main(void)
 	net_buf_add_le16(buf, EVT_BLUE_INITIALIZED);
 	err = spi_send(buf);
 	if (err) {
-		LOG_ERR("can't send initialization event; aborting");
+		LOG_ERROR("can't send initialization event; aborting");
 		k_thread_abort(tx_id);
 		return 0;
 	}
@@ -306,7 +306,7 @@ int main(void)
 		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		err = spi_send(buf);
 		if (err) {
-			LOG_ERR("Failed to send");
+			LOG_ERROR("Failed to send");
 		}
 		/* Ensure that the IRQ line is de-asserted for some minimum
 		 * duration between buffers, so that the HCI controller has

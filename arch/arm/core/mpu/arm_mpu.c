@@ -86,7 +86,7 @@ static int region_allocate_and_init(const uint8_t index,
 	if (index > (get_num_regions() - 1U)) {
 
 		/* No available MPU region index. */
-		LOG_ERR("Failed to allocate new MPU region %u\n", index);
+		LOG_ERROR("Failed to allocate new MPU region %u\n", index);
 		return -EINVAL;
 	}
 
@@ -228,7 +228,7 @@ static int mpu_configure_regions(const struct z_arm_mpu_partition
 
 		if (do_coherence_check &&
 				(!mpu_partition_is_valid(&regions[i]))) {
-			LOG_ERR("Partition %u: coherence check failed.", i);
+			LOG_ERROR("Partition %u: coherence check failed.", i);
 			return -EINVAL;
 		}
 

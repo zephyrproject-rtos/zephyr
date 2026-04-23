@@ -93,7 +93,7 @@ static int memc_mspi_aps_z8_command_write(const struct device *psram, uint8_t cm
 
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
 	if (ret) {
-		LOG_ERR("MSPI write transaction failed with code: %d/%u", ret, __LINE__);
+		LOG_ERROR("MSPI write transaction failed with code: %d/%u", ret, __LINE__);
 		return -EIO;
 	}
 	return ret;
@@ -125,7 +125,7 @@ static int memc_mspi_aps_z8_command_read(const struct device *psram, uint8_t cmd
 
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
 	if (ret) {
-		LOG_ERR("MSPI read transaction failed with code: %d/%u", ret, __LINE__);
+		LOG_ERROR("MSPI read transaction failed with code: %d/%u", ret, __LINE__);
 		return -EIO;
 	}
 	return ret;
@@ -144,7 +144,7 @@ static int memc_mspi_aps_z8_enter_command_mode(const struct device *psram)
 	ret = mspi_dev_config(cfg->bus, &cfg->dev_id,
 			      MSPI_DEVICE_CONFIG_ALL, &cfg->octal_cfg);
 	if (ret) {
-		LOG_ERR("Failed to reconfigure MSPI while entering command mode/%u", __LINE__);
+		LOG_ERROR("Failed to reconfigure MSPI while entering command mode/%u", __LINE__);
 		return -EIO;
 	}
 	data->dev_cfg = cfg->octal_cfg;
@@ -152,7 +152,7 @@ static int memc_mspi_aps_z8_enter_command_mode(const struct device *psram)
 	data->regs.MR8_b.IOM = 0x0;
 	ret = memc_mspi_aps_z8_command_write(psram, APS_Z8_WRITE_REGISTER, 8, &data->regs.MR8, 1);
 	if (ret) {
-		LOG_ERR("Failed to exit hex mode/%u", __LINE__);
+		LOG_ERROR("Failed to exit hex mode/%u", __LINE__);
 		return -EIO;
 	}
 	return 0;
@@ -171,14 +171,14 @@ static int memc_mspi_aps_z8_exit_command_mode(const struct device *psram)
 	data->regs.MR8_b.IOM = 0x1;
 	ret = memc_mspi_aps_z8_command_write(psram, APS_Z8_WRITE_REGISTER, 8, &data->regs.MR8, 1);
 	if (ret) {
-		LOG_ERR("Failed to enter hex mode/%u", __LINE__);
+		LOG_ERROR("Failed to enter hex mode/%u", __LINE__);
 		return -EIO;
 	}
 
 	ret = mspi_dev_config(cfg->bus, &cfg->dev_id,
 			      MSPI_DEVICE_CONFIG_ALL, &cfg->tar_dev_cfg);
 	if (ret) {
-		LOG_ERR("Failed to reconfigure MSPI while exiting command mode/%u", __LINE__);
+		LOG_ERROR("Failed to reconfigure MSPI while exiting command mode/%u", __LINE__);
 		return -EIO;
 	}
 	data->dev_cfg = cfg->tar_dev_cfg;
@@ -321,7 +321,7 @@ static int memc_mspi_aps_z8_half_sleep_enter(const struct device *psram)
 #if CONFIG_MSPI_XIP
 	xip_cfg.enable = false;
 	if (mspi_xip_config(cfg->bus, &cfg->dev_id, &xip_cfg)) {
-		LOG_ERR("Failed to disable XIP/%u", __LINE__);
+		LOG_ERROR("Failed to disable XIP/%u", __LINE__);
 		return -EIO;
 	}
 #endif /* CONFIG_MSPI_XIP */
@@ -335,7 +335,7 @@ static int memc_mspi_aps_z8_half_sleep_enter(const struct device *psram)
 	data->regs.MR6 = 0xF0;
 	ret = memc_mspi_aps_z8_command_write(psram, APS_Z8_WRITE_REGISTER, 6, &data->regs.MR6, 1);
 	if (ret) {
-		LOG_ERR("Failed to enter half sleep/%u", __LINE__);
+		LOG_ERROR("Failed to enter half sleep/%u", __LINE__);
 		return ret;
 	}
 	/* Minimum half sleep duration time(tHS) */
@@ -353,7 +353,7 @@ static int memc_mspi_aps_z8_half_sleep_exit(const struct device *psram)
 	LOG_DBG("Waking up aps_z8 from half sleep/%u", __LINE__);
 	ret = memc_mspi_aps_z8_command_write(psram, 0, 0, (uint8_t *)&data->dummy, 2);
 	if (ret) {
-		LOG_ERR("Failed to exit from half sleep/%u", __LINE__);
+		LOG_ERROR("Failed to exit from half sleep/%u", __LINE__);
 		return ret;
 	}
 	/* Minimum half sleep exit CE to CLK setup time(tXHS)  */
@@ -366,7 +366,7 @@ static int memc_mspi_aps_z8_half_sleep_exit(const struct device *psram)
 
 #if CONFIG_MSPI_XIP
 	if (mspi_xip_config(cfg->bus, &cfg->dev_id, &data->xip_cfg)) {
-		LOG_ERR("Failed to enable XIP/%u", __LINE__);
+		LOG_ERROR("Failed to enable XIP/%u", __LINE__);
 		return -EIO;
 	}
 #endif /* CONFIG_MSPI_XIP */
@@ -407,7 +407,7 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 	struct memc_mspi_aps_z8_data *data = psram->data;
 
 	if (!device_is_ready(cfg->bus)) {
-		LOG_ERR("Controller device not ready/%u", __LINE__);
+		LOG_ERROR("Controller device not ready/%u", __LINE__);
 		return -ENODEV;
 	}
 
@@ -416,65 +416,65 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 	case MSPI_IO_MODE_HEX_8_8_16:
 		break;
 	default:
-		LOG_ERR("Bus mode %d not supported/%u", cfg->tar_dev_cfg.io_mode, __LINE__);
+		LOG_ERROR("Bus mode %d not supported/%u", cfg->tar_dev_cfg.io_mode, __LINE__);
 		return -EIO;
 	}
 
 	if (cfg->tar_dev_cfg.data_rate != MSPI_DATA_RATE_S_D_D) {
-		LOG_ERR("Data rate %d not supported/%u", cfg->tar_dev_cfg.data_rate, __LINE__);
+		LOG_ERROR("Data rate %d not supported/%u", cfg->tar_dev_cfg.data_rate, __LINE__);
 		return -EIO;
 	}
 
 	if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL, &cfg->octal_cfg)) {
-		LOG_ERR("Failed to config mspi controller/%u", __LINE__);
+		LOG_ERROR("Failed to config mspi controller/%u", __LINE__);
 		return -EIO;
 	}
 	data->dev_cfg = cfg->octal_cfg;
 
 	if (memc_mspi_aps_z8_reset(psram)) {
-		LOG_ERR("Could not reset pSRAM/%u", __LINE__);
+		LOG_ERROR("Could not reset pSRAM/%u", __LINE__);
 		return -EIO;
 	}
 
 	if (memc_mspi_aps_z8_get_vendor_id(psram)) {
-		LOG_ERR("Could not read vendor id/%u", __LINE__);
+		LOG_ERROR("Could not read vendor id/%u", __LINE__);
 		return -EIO;
 	}
 
 	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 0, &data->regs.MR0, 1)) {
-		LOG_ERR("Could not read MR0 register/%u", __LINE__);
+		LOG_ERROR("Could not read MR0 register/%u", __LINE__);
 		return -EIO;
 	}
 
 	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 2, &data->regs.MR2, 1)) {
-		LOG_ERR("Could not read MR2 register/%u", __LINE__);
+		LOG_ERROR("Could not read MR2 register/%u", __LINE__);
 		return -EIO;
 	}
 
 	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 3, &data->regs.MR3, 1)) {
-		LOG_ERR("Could not read MR3 register/%u", __LINE__);
+		LOG_ERROR("Could not read MR3 register/%u", __LINE__);
 		return -EIO;
 	}
 
 	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 4, &data->regs.MR4, 1)) {
-		LOG_ERR("Could not read MR4 register/%u", __LINE__);
+		LOG_ERROR("Could not read MR4 register/%u", __LINE__);
 		return -EIO;
 	}
 
 	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 6, &data->regs.MR6, 1)) {
-		LOG_ERR("Could not read MR2 register/%u", __LINE__);
+		LOG_ERROR("Could not read MR2 register/%u", __LINE__);
 		return -EIO;
 	}
 
 	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 8, &data->regs.MR8, 1)) {
-		LOG_ERR("Could not read MR8 register/%u", __LINE__);
+		LOG_ERROR("Could not read MR8 register/%u", __LINE__);
 		return -EIO;
 	}
 
 	enum memc_mspi_aps_z8_rlc rlc;
 
 	if (memc_mspi_aps_z8_get_rlc(cfg->tar_dev_cfg.rx_dummy, &rlc)) {
-		LOG_ERR("rx_dummy:%d not supported/%u", cfg->tar_dev_cfg.rx_dummy, __LINE__);
+		LOG_ERROR("rx_dummy:%d not supported/%u", cfg->tar_dev_cfg.rx_dummy, __LINE__);
 		return -EIO;
 	}
 	data->regs.MR0_b.RLC = rlc;
@@ -482,7 +482,7 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 	enum memc_mspi_aps_z8_wlc wlc;
 
 	if (memc_mspi_aps_z8_get_wlc(cfg->tar_dev_cfg.tx_dummy, &wlc)) {
-		LOG_ERR("tx_dummy:%d not supported/%u", cfg->tar_dev_cfg.tx_dummy, __LINE__);
+		LOG_ERROR("tx_dummy:%d not supported/%u", cfg->tar_dev_cfg.tx_dummy, __LINE__);
 		return -EIO;
 	}
 	data->regs.MR4_b.WLC = wlc;
@@ -490,12 +490,12 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 	data->regs.MR0_b.LT = !cfg->tar_dev_cfg.dqs_enable;
 
 	if (memc_mspi_aps_z8_command_write(psram, APS_Z8_WRITE_REGISTER, 0, &data->regs.MR0, 1)) {
-		LOG_ERR("Could not write MR0 register/%u", __LINE__);
+		LOG_ERROR("Could not write MR0 register/%u", __LINE__);
 		return -EIO;
 	}
 
 	if (memc_mspi_aps_z8_command_write(psram, APS_Z8_WRITE_REGISTER, 4, &data->regs.MR4, 1)) {
-		LOG_ERR("Could not write MR4 register/%u", __LINE__);
+		LOG_ERROR("Could not write MR4 register/%u", __LINE__);
 		return -EIO;
 	}
 
@@ -503,13 +503,13 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 		data->regs.MR8_b.IOM = 1;
 		if (memc_mspi_aps_z8_command_write(psram, APS_Z8_WRITE_REGISTER, 8,
 						   &data->regs.MR8, 1)) {
-			LOG_ERR("Could not write MR8 register/%u", __LINE__);
+			LOG_ERROR("Could not write MR8 register/%u", __LINE__);
 			return -EIO;
 		}
 	}
 
 	if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL, &cfg->tar_dev_cfg)) {
-		LOG_ERR("Failed to config mspi controller/%u", __LINE__);
+		LOG_ERROR("Failed to config mspi controller/%u", __LINE__);
 		return -EIO;
 	}
 	data->dev_cfg = cfg->tar_dev_cfg;
@@ -517,7 +517,7 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 #if CONFIG_MSPI_TIMING
 	if (mspi_timing_config(cfg->bus, &cfg->dev_id, cfg->timing_cfg_mask,
 			       (void *)&cfg->tar_timing_cfg)) {
-		LOG_ERR("Failed to config mspi timing/%u", __LINE__);
+		LOG_ERROR("Failed to config mspi timing/%u", __LINE__);
 		return -EIO;
 	}
 	data->timing_cfg = cfg->tar_timing_cfg;
@@ -526,7 +526,7 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 #if CONFIG_MSPI_XIP
 	if (cfg->tar_xip_cfg.enable) {
 		if (mspi_xip_config(cfg->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
-			LOG_ERR("Failed to enable XIP/%u", __LINE__);
+			LOG_ERROR("Failed to enable XIP/%u", __LINE__);
 			return -EIO;
 		}
 		data->xip_cfg = cfg->tar_xip_cfg;
@@ -536,7 +536,7 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 #if CONFIG_MSPI_SCRAMBLE
 	if (cfg->tar_scramble_cfg.enable) {
 		if (mspi_scramble_config(cfg->bus, &cfg->dev_id, &cfg->tar_scramble_cfg)) {
-			LOG_ERR("Failed to enable scrambling/%u", __LINE__);
+			LOG_ERROR("Failed to enable scrambling/%u", __LINE__);
 			return -EIO;
 		}
 		data->scramble_cfg = cfg->tar_scramble_cfg;

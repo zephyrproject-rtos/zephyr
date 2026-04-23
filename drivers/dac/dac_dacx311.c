@@ -91,12 +91,12 @@ static int dac_xx11_channel_setup(const struct device *dev,
 
 	/* Validate configuration */
 	if (channel_cfg->channel_id > (DACX311_MAX_CHANNEL - 1)) {
-		LOG_ERR("Unsupported channel %d", channel_cfg->channel_id);
+		LOG_ERROR("Unsupported channel %d", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -123,7 +123,7 @@ static int dac_xx11_write_value(const struct device *dev, uint8_t channel,
 	const bool brdcast = (channel == DAC_CHANNEL_BROADCAST);
 
 	if (!brdcast && (channel > (DACX311_MAX_CHANNEL - 1))) {
-		LOG_ERR("Unsupported channel %d", channel);
+		LOG_ERROR("Unsupported channel %d", channel);
 		return -ENOTSUP;
 	}
 
@@ -133,12 +133,12 @@ static int dac_xx11_write_value(const struct device *dev, uint8_t channel,
 	 */
 	if ((brdcast && !data->configured) ||
 	    (channel < DACX311_MAX_CHANNEL && !(data->configured & BIT(channel)))) {
-		LOG_ERR("Channel %d not initialized", channel);
+		LOG_ERROR("Channel %d not initialized", channel);
 		return -EINVAL;
 	}
 
 	if (value >= data->limit_value) {
-		LOG_ERR("Value %d out of range", value);
+		LOG_ERROR("Value %d out of range", value);
 		return -EINVAL;
 	}
 
@@ -181,7 +181,7 @@ static int dac_xx11_write_value(const struct device *dev, uint8_t channel,
 	ret = dac_xx11_reg_write(dev, regval);
 
 	if (ret) {
-		LOG_ERR("Unable to set value %d on channel %d", value, channel);
+		LOG_ERROR("Unable to set value %d on channel %d", value, channel);
 		return -EIO;
 	}
 

@@ -41,34 +41,34 @@ static int esai_get_clock_rate_config(uint32_t extal_rate, uint32_t hclk_rate,
 
 	/* sanity checks */
 	if (!cfg) {
-		LOG_ERR("got NULL clock configuration");
+		LOG_ERROR("got NULL clock configuration");
 		return -EINVAL;
 	}
 
 	if (!extal_rate || !hclk_rate || !bclk_rate) {
-		LOG_ERR("got NULL clock rate");
+		LOG_ERROR("got NULL clock rate");
 		return -EINVAL;
 	}
 
 	if (hclk_rate > extal_rate) {
-		LOG_ERR("HCLK rate cannot be higher than EXTAL rate");
+		LOG_ERROR("HCLK rate cannot be higher than EXTAL rate");
 		return -EINVAL;
 	}
 
 	if (bclk_rate > extal_rate) {
-		LOG_ERR("BCLK rate cannot be higher than EXTAL rate");
+		LOG_ERROR("BCLK rate cannot be higher than EXTAL rate");
 		return -EINVAL;
 	}
 
 	if (DIV_ROUND_UP(extal_rate, bclk_rate) > 2 * 8 * 256 * 16) {
-		LOG_ERR("BCLK rate %u cannot be obtained from EXTAL rate %u",
-			bclk_rate, extal_rate);
+		LOG_ERROR("BCLK rate %u cannot be obtained from EXTAL rate %u", bclk_rate,
+			  extal_rate);
 		return -EINVAL;
 	}
 
 	/* TODO: add explanation */
 	if (DIV_ROUND_UP(extal_rate / 2, bclk_rate) == 1) {
-		LOG_ERR("HCLK prescaler bypass with divider bypass is not supported");
+		LOG_ERROR("HCLK prescaler bypass with divider bypass is not supported");
 		return -EINVAL;
 	}
 
@@ -79,7 +79,7 @@ static int esai_get_clock_rate_config(uint32_t extal_rate, uint32_t hclk_rate,
 	 * return an error as any rates from this interval cannot be obtained.
 	 */
 	if (hclk_rate > extal_rate / 2 && hclk_rate < extal_rate) {
-		LOG_ERR("HCLK rate cannot be higher than EXTAL's rate divided by 2");
+		LOG_ERROR("HCLK rate cannot be higher than EXTAL's rate divided by 2");
 		return -EINVAL;
 	}
 
@@ -105,8 +105,8 @@ static int esai_get_clock_rate_config(uint32_t extal_rate, uint32_t hclk_rate,
 				hclk_div_ratio = DIV_ROUND_UP(extal_rate, hclk_rate);
 
 				if (hclk_div_ratio > 256) {
-					LOG_ERR("cannot obtain HCLK rate %u from EXTAL rate %u",
-						hclk_rate, extal_rate);
+					LOG_ERROR("cannot obtain HCLK rate %u from EXTAL rate %u",
+						  hclk_rate, extal_rate);
 					return -EINVAL;
 				}
 			}
@@ -156,8 +156,8 @@ static int esai_get_clock_rate_config(uint32_t extal_rate, uint32_t hclk_rate,
 		}
 
 		/* no valid configuration found */
-		LOG_ERR("no valid configuration for BCLK rate %u and EXTAL rate %u",
-			bclk_rate, extal_rate);
+		LOG_ERROR("no valid configuration for BCLK rate %u and EXTAL rate %u", bclk_rate,
+			  extal_rate);
 		return -EINVAL;
 	}
 
@@ -165,8 +165,7 @@ static int esai_get_clock_rate_config(uint32_t extal_rate, uint32_t hclk_rate,
 	bclk_div_ratio = DIV_ROUND_UP(extal_rate, bclk_rate);
 
 	if (bclk_div_ratio > 16) {
-		LOG_ERR("cannot obtain BCLK rate %d from EXTAL rate %d",
-			bclk_rate, extal_rate);
+		LOG_ERROR("cannot obtain BCLK rate %d from EXTAL rate %d", bclk_rate, extal_rate);
 		return -EINVAL;
 	}
 
@@ -189,8 +188,8 @@ static int esai_get_clk_provider_config(const struct dai_config *cfg,
 		xceiver_cfg->fsync_dir = kESAI_ClockInput;
 		break;
 	default:
-		LOG_ERR("invalid clock provider configuration: %d",
-			cfg->format & DAI_FORMAT_CLOCK_PROVIDER_MASK);
+		LOG_ERROR("invalid clock provider configuration: %d",
+			  cfg->format & DAI_FORMAT_CLOCK_PROVIDER_MASK);
 		return -EINVAL;
 	}
 
@@ -215,8 +214,8 @@ static int esai_get_clk_inversion_config(const struct dai_config *cfg,
 		/* nothing to do here */
 		break;
 	default:
-		LOG_ERR("invalid clock inversion configuration: %d",
-			cfg->format & DAI_FORMAT_CLOCK_INVERSION_MASK);
+		LOG_ERROR("invalid clock inversion configuration: %d",
+			  cfg->format & DAI_FORMAT_CLOCK_INVERSION_MASK);
 		return -EINVAL;
 	}
 
@@ -236,8 +235,7 @@ static int esai_get_proto_config(const struct dai_config *cfg,
 		xceiver_cfg->fsync_is_bit_wide = true;
 		break;
 	default:
-		LOG_ERR("invalid DAI protocol: %d",
-			cfg->format & DAI_FORMAT_PROTOCOL_MASK);
+		LOG_ERROR("invalid DAI protocol: %d", cfg->format & DAI_FORMAT_PROTOCOL_MASK);
 		return -EINVAL;
 	}
 	return 0;
@@ -248,8 +246,7 @@ static int esai_get_slot_format(uint32_t slot_width, uint32_t word_width,
 {
 	/* sanity check */
 	if (!ESAI_SLOT_WORD_WIDTH_IS_VALID(slot_width, word_width)) {
-		LOG_ERR("invalid slot %d word %d width configuration",
-			slot_width, word_width);
+		LOG_ERROR("invalid slot %d word %d width configuration", slot_width, word_width);
 		return -EINVAL;
 	}
 
@@ -391,7 +388,7 @@ static int esai_config_set(const struct device *dev,
 	}
 
 	if (cfg->type != DAI_IMX_ESAI) {
-		LOG_ERR("wrong DAI type: %d", cfg->type);
+		LOG_ERROR("wrong DAI type: %d", cfg->type);
 		return -EINVAL;
 	}
 
@@ -407,13 +404,13 @@ static int esai_config_set(const struct device *dev,
 	 */
 	ret = esai_update_state(data, DAI_DIR_TX, DAI_STATE_READY);
 	if (ret < 0) {
-		LOG_ERR("failed to update TX state");
+		LOG_ERROR("failed to update TX state");
 		return ret;
 	}
 
 	ret = esai_update_state(data, DAI_DIR_RX, DAI_STATE_READY);
 	if (ret < 0) {
-		LOG_ERR("failed to update RX state");
+		LOG_ERROR("failed to update RX state");
 		return ret;
 	}
 
@@ -558,7 +555,7 @@ static int esai_trigger_start(const struct device *dev, enum dai_dir dir)
 
 	ret = esai_update_state(data, dir, DAI_STATE_RUNNING);
 	if (ret < 0) {
-		LOG_ERR("failed to transition to RUNNING");
+		LOG_ERROR("failed to transition to RUNNING");
 		return -EINVAL;
 	}
 
@@ -596,7 +593,7 @@ static int esai_trigger_stop(const struct device *dev, enum dai_dir dir)
 
 	ret = esai_update_state(data, dir, DAI_STATE_STOPPING);
 	if (ret < 0) {
-		LOG_ERR("failed to transition to STOPPING");
+		LOG_ERROR("failed to transition to STOPPING");
 		return -EINVAL;
 	}
 
@@ -617,7 +614,7 @@ static int esai_trigger(const struct device *dev,
 {
 	/* TX/RX should be triggered individually */
 	if (dir != DAI_DIR_RX && dir != DAI_DIR_TX) {
-		LOG_ERR("invalid direction: %d", dir);
+		LOG_ERROR("invalid direction: %d", dir);
 		return -EINVAL;
 	}
 
@@ -632,7 +629,7 @@ static int esai_trigger(const struct device *dev,
 		/* nothing to do here, return success code */
 		return 0;
 	default:
-		LOG_ERR("invalid trigger command: %d", cmd);
+		LOG_ERROR("invalid trigger command: %d", cmd);
 		return -EINVAL;
 	}
 
@@ -650,7 +647,7 @@ static const struct dai_properties
 	case DAI_DIR_TX:
 		return cfg->tx_props;
 	default:
-		LOG_ERR("invalid direction: %d", dir);
+		LOG_ERROR("invalid direction: %d", dir);
 		return NULL;
 	}
 }
@@ -692,8 +689,8 @@ static int esai_clks_enable_disable(const struct device *dev, bool enable)
 		}
 
 		if (ret < 0) {
-			LOG_ERR("failed to gate/ungate clock %u: %d",
-				cfg->clk_data.clocks[i], ret);
+			LOG_ERROR("failed to gate/ungate clock %u: %d", cfg->clk_data.clocks[i],
+				  ret);
 			return ret;
 		}
 	}

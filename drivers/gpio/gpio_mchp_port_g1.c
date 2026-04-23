@@ -580,7 +580,7 @@ static enum mchp_eic_trigger get_eic_trig_type(uint32_t trigger_mode)
 		LOG_DBG("level low");
 		break;
 	default:
-		LOG_ERR("Unknown trigger mode 0x%x", trigger_mode);
+		LOG_ERROR("Unknown trigger mode 0x%x", trigger_mode);
 		break;
 	}
 
@@ -634,7 +634,7 @@ static int gpio_mchp_pin_interrupt_configure(const struct device *dev, gpio_pin_
 		break;
 	default:
 		ret_val = -EINVAL;
-		LOG_ERR("Invalid trigger mode for interrupt");
+		LOG_ERROR("Invalid trigger mode for interrupt");
 		break;
 	}
 	LOG_DBG("retval = %d", ret_val);

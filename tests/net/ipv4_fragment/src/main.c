@@ -252,7 +252,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 	uint16_t offset;
 
 	if (!pkt->buffer) {
-		LOG_ERR("No data to send!");
+		LOG_ERROR("No data to send!");
 		return -ENODATA;
 	}
 

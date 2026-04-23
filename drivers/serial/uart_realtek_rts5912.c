@@ -177,7 +177,7 @@ static int rts5912_uart_init(const struct device *dev)
 	}
 
 	if (wf_cycle_count <= (wf_now - wf_start)) {
-		LOG_ERR("Uart reset iir reach timeout");
+		LOG_ERROR("Uart reset iir reach timeout");
 		return -EIO;
 	}
 

@@ -130,7 +130,7 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 
 	err = k_sem_take(&usb->tx_lock, K_MSEC(CONFIG_MCTP_USB_TX_TIMEOUT));
 	if (err != 0) {
-		LOG_ERR("Semaphore could not be obtained");
+		LOG_ERROR("Semaphore could not be obtained");
 		return err;
 	}
 
@@ -152,7 +152,7 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 		zlp = mctp_usb_class_buf_alloc(mctp_usb_class_get_bulk_in(c_data));
 		if (!zlp) {
 			k_sem_give(&usb->tx_lock);
-			LOG_ERR("Failed to allocate ZLP buffer");
+			LOG_ERROR("Failed to allocate ZLP buffer");
 			return -ENOMEM;
 		}
 	}
@@ -170,7 +170,7 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 	LOG_HEXDUMP_DBG(usb->tx_buf, len + MCTP_USB_HEADER_SIZE, "buf = ");
 
 	if (usb->usb_class_data == NULL) {
-		LOG_ERR("MCTP instance not found");
+		LOG_ERROR("MCTP instance not found");
 		return -ENODEV;
 	}
 
@@ -181,7 +181,7 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 			net_buf_unref(zlp);
 		}
 		k_sem_give(&usb->tx_lock);
-		LOG_ERR("Failed to allocate IN buffer");
+		LOG_ERROR("Failed to allocate IN buffer");
 		return -ENOMEM;
 	}
 
@@ -194,7 +194,7 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 			net_buf_unref(zlp);
 		}
 		k_sem_give(&usb->tx_lock);
-		LOG_ERR("Failed to enqueue IN buffer");
+		LOG_ERROR("Failed to enqueue IN buffer");
 		net_buf_unref(buf);
 		return err;
 	}
@@ -207,7 +207,7 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 			net_buf_unref(zlp);
 			atomic_set(&ctx->in_pending, 1);
 			k_sem_give(&usb->tx_lock);
-			LOG_ERR("Failed to enqueue ZLP: %d", err);
+			LOG_ERROR("Failed to enqueue ZLP: %d", err);
 			return err;
 		}
 	}
@@ -280,7 +280,7 @@ static void mctp_usb_class_out_work(struct k_work *work)
 				 */
 				if ((byte < MCTP_USB_HEADER_SIZE) ||
 				    (byte > MCTP_USB_MAX_PACKET_LENGTH)) {
-					LOG_ERR("Invalid LEN %02X", byte);
+					LOG_ERROR("Invalid LEN %02X", byte);
 					mctp_usb_reset_rx_state(usb);
 					break;
 				}
@@ -289,7 +289,7 @@ static void mctp_usb_class_out_work(struct k_work *work)
 				usb->rx_pkt = mctp_pktbuf_alloc(&usb->binding,
 								byte - MCTP_USB_HEADER_SIZE);
 				if (usb->rx_pkt == NULL) {
-					LOG_ERR("Failed to alloc pktbuf");
+					LOG_ERROR("Failed to alloc pktbuf");
 					mctp_usb_reset_rx_state(usb);
 					break;
 				}
@@ -382,7 +382,7 @@ static int mctp_usb_class_request(struct usbd_class_data *const c_data,
 					net_buf_unref(nb);
 				}
 			} else {
-				LOG_ERR("OUT: failed to alloc next OUT buffer");
+				LOG_ERROR("OUT: failed to alloc next OUT buffer");
 			}
 		}
 
@@ -432,13 +432,13 @@ static void mctp_usb_class_enable(struct usbd_class_data *const c_data)
 		/* Arm FIRST OUT transfer so the host's first write can complete */
 		nb = mctp_usb_class_buf_alloc(mctp_usb_class_get_bulk_out(c_data));
 		if (!nb) {
-			LOG_ERR("Failed to allocate initial OUT buffer");
+			LOG_ERROR("Failed to allocate initial OUT buffer");
 			return;
 		}
 
 		e = usbd_ep_enqueue(c_data, nb);
 		if (e) {
-			LOG_ERR("Failed to enqueue initial OUT buffer: %d", e);
+			LOG_ERROR("Failed to enqueue initial OUT buffer: %d", e);
 			net_buf_unref(nb);
 			return;
 		}
@@ -491,9 +491,9 @@ static int mctp_usb_class_init(struct usbd_class_data *const c_data)
 	STRUCT_SECTION_COUNT(mctp_usb_class_inst, &num_instances);
 
 	if (num_instances != MCTP_USB_NUM_INSTANCES) {
-		LOG_ERR("The number of application instances (%d) does not match the number "
-			"specified by CONFIG_MCTP_USB_CLASS_INSTANCES_COUNT (%d)",
-			num_instances, MCTP_USB_NUM_INSTANCES);
+		LOG_ERROR("The number of application instances (%d) does not match the number "
+			  "specified by CONFIG_MCTP_USB_CLASS_INSTANCES_COUNT (%d)",
+			  num_instances, MCTP_USB_NUM_INSTANCES);
 		return -EINVAL;
 	}
 
@@ -514,7 +514,7 @@ static int mctp_usb_class_init(struct usbd_class_data *const c_data)
 	    ctx->inst->sublcass == USBD_MCTP_SUBCLASS_HOST_INTERFACE_ENDPOINT) {
 		ctx->desc->if0.bInterfaceSubClass = ctx->inst->sublcass;
 	} else {
-		LOG_ERR("Invalid USB MCTP sublcass");
+		LOG_ERROR("Invalid USB MCTP sublcass");
 		return -EINVAL;
 	}
 
@@ -522,7 +522,7 @@ static int mctp_usb_class_init(struct usbd_class_data *const c_data)
 	    ctx->inst->mctp_protocol == USBD_MCTP_PROTOCOL_2_X) {
 		ctx->desc->if0.bInterfaceProtocol = ctx->inst->mctp_protocol;
 	} else {
-		LOG_ERR("Invalid MCTP protocol");
+		LOG_ERROR("Invalid MCTP protocol");
 		return -EINVAL;
 	}
 

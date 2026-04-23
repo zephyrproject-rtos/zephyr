@@ -79,17 +79,17 @@ static int spi_feature_support(const struct spi_config *config)
 	/* NOTE: bit(11) is Half-duplex(3-wire) */
 	if ((config->operation &
 	     (SPI_TRANSFER_LSB | SPI_OP_MODE_SLAVE | SPI_MODE_LOOP | SPI_HALF_DUPLEX)) != 0) {
-		LOG_ERR("Driver does not support LSB first, slave, loop back, or half-duplex");
+		LOG_ERROR("Driver does not support LSB first, slave, loop back, or half-duplex");
 		return -ENOTSUP;
 	}
 
 	if ((config->operation & SPI_CS_ACTIVE_HIGH) != 0) {
-		LOG_ERR("CS active high not supported. Use invert property of CS pin");
+		LOG_ERROR("CS active high not supported. Use invert property of CS pin");
 		return -ENOTSUP;
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
-		LOG_ERR("Word size != 8 not supported");
+		LOG_ERROR("Word size != 8 not supported");
 		return -ENOTSUP;
 	}
 
@@ -338,12 +338,12 @@ static int mec5_qspi_configure(const struct device *dev, const struct spi_config
 	/* chip select */
 #ifdef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	if (config->slave >= XEC_QSPI_MAX_CS) {
-		LOG_ERR("Invalid HW chip select [0,1]");
+		LOG_ERROR("Invalid HW chip select [0,1]");
 		return -EINVAL;
 	}
 #else
 	if ((config->cs.cs_is_gpio == true) && (config->slave >= data->ctx.num_cs_gpios)) {
-		LOG_ERR("Invalid GPIO chip select");
+		LOG_ERROR("Invalid GPIO chip select");
 		return -EINVAL;
 	}
 #endif
@@ -739,18 +739,18 @@ static int mec5_qspi_init(const struct device *dev)
 
 	ret = mec5_qspi_configure(dev, &spi_cfg);
 	if (ret != 0) {
-		LOG_ERR("QSPI init error (%d)", ret);
+		LOG_ERROR("QSPI init error (%d)", ret);
 		return -EINVAL;
 	}
 
 	ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("QSPI pinctrl setup failed (%d)", ret);
+		LOG_ERROR("QSPI pinctrl setup failed (%d)", ret);
 	}
 
 	ret = spi_context_cs_configure_all(&data->ctx);
 	if (ret != 0) {
-		LOG_ERR("QSPI cs config failed (%d)", ret);
+		LOG_ERROR("QSPI cs config failed (%d)", ret);
 		return ret;
 	}
 

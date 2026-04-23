@@ -72,30 +72,30 @@ static int bma4xx_emul_write_byte(const struct emul *target, int reg, uint8_t va
 	struct bma4xx_emul_data *data = target->data;
 
 	if (bytes != 1) {
-		LOG_ERR("multi-byte writes are not supported");
+		LOG_ERROR("multi-byte writes are not supported");
 		return -ENOTSUP;
 	}
 
 	switch (reg) {
 	case BMA4XX_REG_ACCEL_CONFIG:
 		if ((val & 0xF0) != 0xA0) {
-			LOG_ERR("unsupported acc_bwp/acc_perf_mode: %#x", val);
+			LOG_ERROR("unsupported acc_bwp/acc_perf_mode: %#x", val);
 			return -EINVAL;
 		}
 		data->regs[reg] = val & GENMASK(1, 0);
 		return 0;
 	case BMA4XX_REG_ACCEL_RANGE:
 		if ((val & GENMASK(1, 0)) != val) {
-			LOG_ERR("reserved bits set in ACC_RANGE write: %#x", val);
+			LOG_ERROR("reserved bits set in ACC_RANGE write: %#x", val);
 			return -EINVAL;
 		}
 		data->regs[reg] = val;
 		return 0;
 	case BMA4XX_REG_FIFO_CONFIG_1:
 		if (val & ~BMA4XX_FIFO_ACC_EN) {
-			LOG_ERR("unsupported bits set in FIFO_CONFIG_1"
-				" write: %#x",
-				val);
+			LOG_ERROR("unsupported bits set in FIFO_CONFIG_1"
+				  " write: %#x",
+				  val);
 			return -EINVAL;
 		}
 		data->regs[reg] = (val & BMA4XX_FIFO_ACC_EN) != 0;
@@ -105,7 +105,7 @@ static int bma4xx_emul_write_byte(const struct emul *target, int reg, uint8_t va
 		return 0;
 	case BMA4XX_REG_INT_LATCH:
 		if ((val & ~1) != 0) {
-			LOG_ERR("reserved bits set in INT_LATCH: %#x", val);
+			LOG_ERROR("reserved bits set in INT_LATCH: %#x", val);
 			return -EINVAL;
 		}
 		data->regs[reg] = (val & 1) == 1;
@@ -115,7 +115,7 @@ static int bma4xx_emul_write_byte(const struct emul *target, int reg, uint8_t va
 		return 0;
 	case BMA4XX_REG_NV_CONFIG:
 		if (val & GENMASK(7, 4)) {
-			LOG_ERR("reserved bits set in NV_CONF write: %#x", val);
+			LOG_ERROR("reserved bits set in NV_CONF write: %#x", val);
 			return -EINVAL;
 		}
 		data->regs[reg] = val;
@@ -127,7 +127,7 @@ static int bma4xx_emul_write_byte(const struct emul *target, int reg, uint8_t va
 		return 0;
 	case BMA4XX_REG_POWER_CTRL:
 		if ((val & ~BMA4XX_BIT_POWER_CTRL_ACC_EN) != 0) {
-			LOG_ERR("unhandled bits in POWER_CTRL write: %#x", val);
+			LOG_ERROR("unhandled bits in POWER_CTRL write: %#x", val);
 			return -ENOTSUP;
 		}
 		data->regs[reg] = (val & BMA4XX_BIT_POWER_CTRL_ACC_EN) != 0;
@@ -168,11 +168,11 @@ static int bma4xx_emul_transfer_i2c(const struct emul *target, struct i2c_msg *m
 	i2c_dump_msgs_rw(target->dev, msgs, num_msgs, addr, false);
 
 	if (msgs->flags & I2C_MSG_READ) {
-		LOG_ERR("Unexpected read");
+		LOG_ERROR("Unexpected read");
 		return -EIO;
 	}
 	if (msgs->len != 1) {
-		LOG_ERR("Unexpected msg0 length %d", msgs->len);
+		LOG_ERROR("Unexpected msg0 length %d", msgs->len);
 		return -EIO;
 	}
 

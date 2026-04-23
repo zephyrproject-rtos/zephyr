@@ -126,13 +126,13 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	ret = pm_device_runtime_get(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to resume DMA (%d)", ret);
+		LOG_ERROR("Failed to resume DMA (%d)", ret);
 		return;
 	}
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
 	if (ret) {
-		LOG_ERR("Failed to configure DMA (%d)", ret);
+		LOG_ERROR("Failed to configure DMA (%d)", ret);
 		return;
 	}
 
@@ -180,7 +180,7 @@ static void adc_cc23x0_isr(const struct device *dev)
 
 	ret = pm_device_runtime_put(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to suspend DMA (%d)", ret);
+		LOG_ERROR("Failed to suspend DMA (%d)", ret);
 		return;
 	}
 
@@ -249,7 +249,7 @@ static int adc_cc23x0_read_common(const struct device *dev,
 		data->res = ADC_RESOLUTION_12_BIT;
 		break;
 	default:
-		LOG_ERR("Resolution is not valid");
+		LOG_ERROR("Resolution is not valid");
 		return -EINVAL;
 	}
 
@@ -313,7 +313,7 @@ static int adc_cc23x0_read_common(const struct device *dev,
 		ADCEnableDMAInterrupt(ADC_CC23X0_INT_MEMRES(mem_index - 1));
 #endif
 	} else {
-		LOG_ERR("Too many channels in the sequence, max %u", ADC_CC23X0_MEM_COUNT);
+		LOG_ERROR("Too many channels in the sequence, max %u", ADC_CC23X0_MEM_COUNT);
 		return -EINVAL;
 	}
 
@@ -323,7 +323,7 @@ static int adc_cc23x0_read_common(const struct device *dev,
 	}
 
 	if (sequence->buffer_size < exp_size) {
-		LOG_ERR("Required buffer size is %u but got %u", exp_size, sequence->buffer_size);
+		LOG_ERROR("Required buffer size is %u but got %u", exp_size, sequence->buffer_size);
 		return -ENOMEM;
 	}
 
@@ -436,17 +436,17 @@ static int adc_cc23x0_channel_setup(const struct device *dev,
 	LOG_DBG("Channel %u", ch);
 
 	if (ch > ADC_CC23X0_CH_MAX) {
-		LOG_ERR("Channel %u is not supported, max %u", ch, ADC_CC23X0_CH_MAX);
+		LOG_ERROR("Channel %u is not supported, max %u", ch, ADC_CC23X0_CH_MAX);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Gain is not valid");
+		LOG_ERROR("Gain is not valid");
 		return -EINVAL;
 	}
 
@@ -462,7 +462,7 @@ static int adc_cc23x0_channel_setup(const struct device *dev,
 		ref = ADC_VDDS_REFERENCE;
 		break;
 	default:
-		LOG_ERR("Reference is not valid");
+		LOG_ERROR("Reference is not valid");
 		return -EINVAL;
 	}
 
@@ -500,7 +500,7 @@ static int adc_cc23x0_channel_setup(const struct device *dev,
 		data->clk_cycles = clk_cycles;
 		ADCSetSampleDuration(adc_cc23x0_clkdiv_to_field(clk_div), data->clk_cycles);
 	} else if (clk_div != data->clk_div || clk_cycles != data->clk_cycles) {
-		LOG_ERR("Multiple sample durations are not supported");
+		LOG_ERROR("Multiple sample durations are not supported");
 		return -EINVAL;
 	}
 
@@ -519,7 +519,7 @@ static int adc_cc23x0_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Failed to apply ADC pinctrl state");
+		LOG_ERROR("Failed to apply ADC pinctrl state");
 		return ret;
 	}
 
@@ -539,7 +539,7 @@ static int adc_cc23x0_init(const struct device *dev)
 
 	ret = pm_device_runtime_enable(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to enable DMA runtime PM");
+		LOG_ERROR("Failed to enable DMA runtime PM");
 		return ret;
 	}
 #endif

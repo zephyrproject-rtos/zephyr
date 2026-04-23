@@ -103,7 +103,7 @@ static int gpio_hogs_init(void)
 		hogs = &gpio_hogs[i];
 
 		if (!device_is_ready(hogs->port)) {
-			LOG_ERR("GPIO port %s not ready", hogs->port->name);
+			LOG_ERROR("GPIO port %s not ready", hogs->port->name);
 			return -ENODEV;
 		}
 
@@ -112,7 +112,8 @@ static int gpio_hogs_init(void)
 
 			err = gpio_pin_configure(hogs->port, spec->pin, spec->flags);
 			if (err < 0) {
-				LOG_ERR("failed to configure GPIO hog for port %s pin %u (err %d)",
+				LOG_ERROR(
+					"failed to configure GPIO hog for port %s pin %u (err %d)",
 					hogs->port->name, spec->pin, err);
 				return err;
 			}

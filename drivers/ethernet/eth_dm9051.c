@@ -315,7 +315,7 @@ static int eth_dm9051_check_id(const struct device *dev)
 
 	/* Check product ID */
 	if (sys_le16_to_cpu(pid) != DM9051_ID) {
-		LOG_ERR("%s: Found ID: %04x, Expected ID: %04x\n", dev->name, pid, DM9051_ID);
+		LOG_ERROR("%s: Found ID: %04x, Expected ID: %04x\n", dev->name, pid, DM9051_ID);
 		return -EIO;
 	}
 
@@ -916,18 +916,18 @@ static int eth_dm9051_init(const struct device *dev)
 	k_mutex_init(&data->spi_lock);
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("%s: SPI master port %s is not ready", dev->name, config->spi.bus->name);
+		LOG_ERROR("%s: SPI master port %s is not ready", dev->name, config->spi.bus->name);
 		return -EINVAL;
 	}
 
 	if (!gpio_is_ready_dt(&config->gpio_int)) {
-		LOG_ERR("%s: GPIO port %s is not ready", dev->name, config->gpio_int.port->name);
+		LOG_ERROR("%s: GPIO port %s is not ready", dev->name, config->gpio_int.port->name);
 		return -EINVAL;
 	}
 
 	ret = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("%s: Unable to configure GPIO pin (%d)", dev->name, ret);
+		LOG_ERROR("%s: Unable to configure GPIO pin (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -935,13 +935,13 @@ static int eth_dm9051_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->gpio_int.port, &data->gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("%s: Unable to add GPIO callback (%d)", dev->name, ret);
+		LOG_ERROR("%s: Unable to add GPIO callback (%d)", dev->name, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("%s: Unable to enable GPIO interrupt (%d)", dev->name, ret);
+		LOG_ERROR("%s: Unable to enable GPIO interrupt (%d)", dev->name, ret);
 		return ret;
 	}
 

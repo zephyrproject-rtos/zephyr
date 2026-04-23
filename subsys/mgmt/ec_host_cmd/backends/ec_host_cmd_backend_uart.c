@@ -124,7 +124,7 @@ static void rx_timeout(struct k_work *work)
 	struct ec_host_cmd_uart_ctx *hc_uart =
 		CONTAINER_OF(dwork, struct ec_host_cmd_uart_ctx, timeout_work);
 
-	LOG_ERR("Request error in state: %s", state_name[hc_uart->state]);
+	LOG_ERROR("Request error in state: %s", state_name[hc_uart->state]);
 
 	uart_rx_disable(hc_uart->uart_dev);
 	uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size, 0);
@@ -146,7 +146,7 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 					  K_MSEC(CONFIG_EC_HOST_CMD_BACKEND_UART_TIMEOUT));
 		} else if (hc_uart->state == UART_HOST_CMD_PROCESSING ||
 			   hc_uart->state == UART_HOST_CMD_SENDING) {
-			LOG_ERR("Received data while in state: %s", state_name[hc_uart->state]);
+			LOG_ERROR("Received data while in state: %s", state_name[hc_uart->state]);
 			return;
 		} else if (hc_uart->state == UART_HOST_CMD_RX_BAD ||
 			   hc_uart->state == UART_HOST_CMD_RX_OVERRUN) {
@@ -204,13 +204,13 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 		break;
 	case UART_TX_DONE:
 		if (hc_uart->state != UART_HOST_CMD_SENDING) {
-			LOG_ERR("Unexpected end of sending");
+			LOG_ERROR("Unexpected end of sending");
 		}
 		/* Receiving is already enabled in the send function. */
 		hc_uart->state = UART_HOST_CMD_READY_TO_RX;
 		break;
 	case UART_RX_STOPPED:
-		LOG_ERR("Receiving data stopped");
+		LOG_ERROR("Receiving data stopped");
 		break;
 	default:
 		break;
@@ -260,7 +260,7 @@ static int ec_host_cmd_uart_send(const struct ec_host_cmd_backend *backend)
 	int ret;
 
 	if (hc_uart->state != UART_HOST_CMD_PROCESSING) {
-		LOG_ERR("Unexpected state while sending");
+		LOG_ERROR("Unexpected state while sending");
 	}
 
 	/* The state is changed to UART_HOST_CMD_READY_TO_RX in the UART_TX_DONE event */
@@ -280,7 +280,7 @@ static int ec_host_cmd_uart_send(const struct ec_host_cmd_backend *backend)
 	/* If sending fails, reset the state */
 	if (ret) {
 		hc_uart->state = UART_HOST_CMD_READY_TO_RX;
-		LOG_ERR("Sending failed");
+		LOG_ERROR("Sending failed");
 	}
 
 	return ret;

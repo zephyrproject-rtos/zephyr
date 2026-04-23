@@ -35,17 +35,17 @@ static int dac_ad559x_channel_setup(const struct device *dev,
 	struct dac_ad559x_data *data = dev->data;
 
 	if (channel_cfg->channel_id >= AD559X_PIN_MAX) {
-		LOG_ERR("Invalid channel number %d", channel_cfg->channel_id);
+		LOG_ERROR("Invalid channel number %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->resolution != AD559X_DAC_RESOLUTION) {
-		LOG_ERR("Invalid resolution %d", channel_cfg->resolution);
+		LOG_ERROR("Invalid resolution %d", channel_cfg->resolution);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -60,12 +60,12 @@ static int dac_ad559x_write_value(const struct device *dev, uint8_t channel, uin
 	uint16_t msg;
 
 	if (channel >= AD559X_PIN_MAX) {
-		LOG_ERR("Invalid channel number %d", channel);
+		LOG_ERROR("Invalid channel number %d", channel);
 		return -EINVAL;
 	}
 
 	if (value >= (1 << AD559X_DAC_RESOLUTION)) {
-		LOG_ERR("Value %d out of range", value);
+		LOG_ERROR("Value %d out of range", value);
 		return -EINVAL;
 	}
 

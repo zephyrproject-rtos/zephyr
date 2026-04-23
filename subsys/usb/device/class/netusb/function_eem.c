@@ -131,7 +131,7 @@ static int eem_send(struct net_pkt *pkt)
 				tx_buf, b_idx,
 				USB_TRANS_WRITE);
 	if (ret != b_idx) {
-		LOG_ERR("Transfer failure");
+		LOG_ERROR("Transfer failure");
 		return -EIO;
 	}
 
@@ -155,7 +155,7 @@ static void eem_read_cb(uint8_t ep, int size, void *priv)
 
 		if (eem_size + sizeof(uint16_t) > size) {
 			/* eem pkt greater than transferred data */
-			LOG_ERR("pkt size error");
+			LOG_ERROR("pkt size error");
 			break;
 		}
 
@@ -179,13 +179,13 @@ static void eem_read_cb(uint8_t ep, int size, void *priv)
 						   eem_size - sizeof(sentinel),
 						   NET_AF_UNSPEC, 0, K_FOREVER);
 		if (!pkt) {
-			LOG_ERR("Unable to alloc pkt");
+			LOG_ERROR("Unable to alloc pkt");
 			break;
 		}
 
 		/* copy payload and discard 32-bit sentinel */
 		if (net_pkt_write(pkt, ptr, eem_size - sizeof(sentinel))) {
-			LOG_ERR("Unable to write into pkt");
+			LOG_ERROR("Unable to write into pkt");
 			net_pkt_unref(pkt);
 			break;
 		}

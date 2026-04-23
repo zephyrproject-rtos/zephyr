@@ -116,7 +116,7 @@ static int emul_ltc2959_reg_write(const struct emul *target, int reg, int val)
 	case LTC2959_REG_GPIO_VOLTAGE_MSB:
 	case LTC2959_REG_GPIO_VOLTAGE_LSB:
 	default:
-		LOG_ERR("Unknown or Read Only Register: 0x%x", reg);
+		LOG_ERROR("Unknown or Read Only Register: 0x%x", reg);
 		return -EIO;
 	}
 	return 0;
@@ -125,7 +125,7 @@ static int emul_ltc2959_reg_write(const struct emul *target, int reg, int val)
 static int emul_ltc2959_reg_read(const struct emul *target, int reg, int *val)
 {
 	if (reg < LTC2959_REG_STATUS || reg > LTC2959_REG_GPIO_THRESH_LOW_LSB) {
-		LOG_ERR("Unknown Register: 0x%x", reg);
+		LOG_ERROR("Unknown Register: 0x%x", reg);
 		return -EIO;
 	}
 
@@ -147,11 +147,11 @@ static int ltc2959_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 		struct i2c_msg *m = &msgs[0];
 
 		if (m->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected single-message read");
+			LOG_ERROR("Unexpected single-message read");
 			return -EIO;
 		}
 		if (m->len < 2) {
-			LOG_ERR("Single-message write must be reg+data (len=%d)", m->len);
+			LOG_ERROR("Single-message write must be reg+data (len=%d)", m->len);
 			return -EIO;
 		}
 		uint8_t reg = m->buf[0];
@@ -172,7 +172,7 @@ static int ltc2959_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 		struct i2c_msg *m1 = &msgs[1];
 
 		if ((m0->flags & I2C_MSG_READ) || m0->len != 1) {
-			LOG_ERR("Invalid first msg (flags=0x%x len=%d)", m0->flags, m0->len);
+			LOG_ERROR("Invalid first msg (flags=0x%x len=%d)", m0->flags, m0->len);
 			return -EIO;
 		}
 
@@ -194,7 +194,7 @@ static int ltc2959_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 		}
 		/* Burst WRITE: stream N bytes into reg..reg+N-1 */
 		if (!m1->len) {
-			LOG_ERR("Empty write");
+			LOG_ERROR("Empty write");
 			return -EIO;
 		}
 		for (size_t i = 0; i < m1->len; i++) {
@@ -208,7 +208,7 @@ static int ltc2959_emul_transfer_i2c(const struct emul *target, struct i2c_msg *
 	}
 
 	default:
-		LOG_ERR("Unsupported number of I2C messages: %d", num_msgs);
+		LOG_ERROR("Unsupported number of I2C messages: %d", num_msgs);
 		return -EIO;
 	}
 }

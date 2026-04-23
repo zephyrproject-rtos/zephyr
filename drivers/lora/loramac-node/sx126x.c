@@ -128,7 +128,7 @@ static int sx126x_spi_transceive(uint8_t *req_tx, uint8_t *req_rx,
 	}
 
 	if (ret < 0) {
-		LOG_ERR("SPI transaction failed: %i", ret);
+		LOG_ERROR("SPI transaction failed: %i", ret);
 	}
 
 	if (req_len >= 1 && req_tx[0] != RADIO_SET_SLEEP) {
@@ -390,7 +390,7 @@ void SX126xWakeup(void)
 	LOG_DBG("Sending GET_STATUS");
 	ret = spi_write_dt(&dev_config.bus, &tx);
 	if (ret < 0) {
-		LOG_ERR("SPI transaction failed: %i", ret);
+		LOG_ERROR("SPI transaction failed: %i", ret);
 		return;
 	}
 
@@ -445,18 +445,18 @@ static int sx126x_lora_init(const struct device *dev)
 
 	ret = sx126x_variant_init(dev);
 	if (ret) {
-		LOG_ERR("Variant initialization failed");
+		LOG_ERROR("Variant initialization failed");
 		return ret;
 	}
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI device not ready");
+		LOG_ERROR("SPI device not ready");
 		return -ENODEV;
 	}
 
 	ret = sx12xx_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize SX12xx common");
+		LOG_ERROR("Failed to initialize SX12xx common");
 		return ret;
 	}
 

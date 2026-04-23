@@ -318,7 +318,7 @@ static void dma_callback(const struct device *dev, void *arg, uint32_t channel, 
 			ret = prepare_rx(hc_spi);
 
 			if (ret) {
-				LOG_ERR("Failed to prepare RX later");
+				LOG_ERROR("Failed to prepare RX later");
 			}
 		} else {
 			const struct ec_host_cmd_spi_cfg *cfg = hc_spi->spi_config;
@@ -336,14 +336,14 @@ static int spi_init(const struct ec_host_cmd_spi_ctx *hc_spi)
 	int err;
 
 	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("Clock control device not ready");
+		LOG_ERROR("Clock control device not ready");
 		return -ENODEV;
 	}
 
 	err = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			       (clock_control_subsys_t)&hc_spi->spi_config->pclken[0]);
 	if (err < 0) {
-		LOG_ERR("Could not enable SPI clock");
+		LOG_ERROR("Could not enable SPI clock");
 		return err;
 	}
 
@@ -353,7 +353,7 @@ static int spi_init(const struct ec_host_cmd_spi_ctx *hc_spi)
 			DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			(clock_control_subsys_t)&hc_spi->spi_config->pclken[1], NULL);
 		if (err < 0) {
-			LOG_ERR("Could not select SPI domain clock");
+			LOG_ERROR("Could not select SPI domain clock");
 			return err;
 		}
 	}
@@ -361,17 +361,17 @@ static int spi_init(const struct ec_host_cmd_spi_ctx *hc_spi)
 	/* Configure dt provided device signals when available */
 	err = pinctrl_apply_state(hc_spi->spi_config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
-		LOG_ERR("SPI pinctrl setup failed (%d)", err);
+		LOG_ERROR("SPI pinctrl setup failed (%d)", err);
 		return err;
 	}
 
 	if ((hc_spi->dma_rx->dma_dev != NULL) && !device_is_ready(hc_spi->dma_rx->dma_dev)) {
-		LOG_ERR("%s device not ready", hc_spi->dma_rx->dma_dev->name);
+		LOG_ERROR("%s device not ready", hc_spi->dma_rx->dma_dev->name);
 		return -ENODEV;
 	}
 
 	if ((hc_spi->dma_tx->dma_dev != NULL) && !device_is_ready(hc_spi->dma_tx->dma_dev)) {
-		LOG_ERR("%s device not ready", hc_spi->dma_tx->dma_dev->name);
+		LOG_ERROR("%s device not ready", hc_spi->dma_tx->dma_dev->name);
 		return -ENODEV;
 	}
 
@@ -672,7 +672,7 @@ void gpio_cb_nss(const struct device *port, struct gpio_callback *cb, gpio_port_
 
 		ret = prepare_rx(hc_spi);
 		if (ret) {
-			LOG_ERR("Failed to prepare RX after CS deassertion");
+			LOG_ERROR("Failed to prepare RX after CS deassertion");
 		}
 
 		return;
@@ -798,7 +798,7 @@ static int ec_host_cmd_spi_send(const struct ec_host_cmd_backend *backend)
 
 	ret = reload_dma_tx(hc_spi, tx_size);
 	if (ret) {
-		LOG_ERR("Failed to send response");
+		LOG_ERROR("Failed to send response");
 	}
 
 	return ret;

@@ -123,7 +123,7 @@ static void seesaw_gamepad_poll(struct k_work *work)
 	/* Read the 32-bit GPIO bulk register for button state */
 	ret = seesaw_reg_read(&cfg->bus, SEESAW_GPIO_BULK, buf, sizeof(buf));
 	if (ret < 0) {
-		LOG_ERR("Failed to read GPIO bulk: %d", ret);
+		LOG_ERROR("Failed to read GPIO bulk: %d", ret);
 		goto reschedule;
 	}
 
@@ -143,7 +143,7 @@ static void seesaw_gamepad_poll(struct k_work *work)
 	/* Read joystick X axis */
 	ret = seesaw_reg_read(&cfg->bus, SEESAW_ADC_X, buf, 2);
 	if (ret < 0) {
-		LOG_ERR("Failed to read ADC X: %d", ret);
+		LOG_ERROR("Failed to read ADC X: %d", ret);
 		goto reschedule;
 	}
 	/* Hardware reads left=1023, right=0; invert so left=0, right=1023 */
@@ -152,7 +152,7 @@ static void seesaw_gamepad_poll(struct k_work *work)
 	/* Read joystick Y axis */
 	ret = seesaw_reg_read(&cfg->bus, SEESAW_ADC_Y, buf, 2);
 	if (ret < 0) {
-		LOG_ERR("Failed to read ADC Y: %d", ret);
+		LOG_ERROR("Failed to read ADC Y: %d", ret);
 		goto reschedule;
 	}
 	new_y = sys_get_be16(buf);
@@ -184,14 +184,14 @@ static int seesaw_gamepad_init(const struct device *dev)
 	data->dev = dev;
 
 	if (!i2c_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 
 	/* Software reset. Seesaw requires a delay before further access */
 	ret = seesaw_reg_write_u8(&cfg->bus, SEESAW_STATUS_SWRST, 0xFF);
 	if (ret < 0) {
-		LOG_ERR("Reset failed: %d", ret);
+		LOG_ERROR("Reset failed: %d", ret);
 		return ret;
 	}
 	k_msleep(SEESAW_RESET_DELAY_MS);
@@ -199,7 +199,7 @@ static int seesaw_gamepad_init(const struct device *dev)
 	/* Verify the chip is responding */
 	ret = seesaw_reg_read(&cfg->bus, SEESAW_STATUS_HW_ID, &hw_id, sizeof(hw_id));
 	if (ret < 0) {
-		LOG_ERR("Failed to read HW ID: %d", ret);
+		LOG_ERROR("Failed to read HW ID: %d", ret);
 		return ret;
 	}
 
@@ -208,35 +208,35 @@ static int seesaw_gamepad_init(const struct device *dev)
 	/* Read upper 2 bytes of the VERSION register to get the product code */
 	ret = seesaw_reg_read(&cfg->bus, SEESAW_STATUS_VERSION, buf, sizeof(buf));
 	if (ret < 0) {
-		LOG_ERR("Failed to read product code: %d", ret);
+		LOG_ERROR("Failed to read product code: %d", ret);
 		return ret;
 	}
 	prod_code = sys_get_be16(buf);
 
 	if (prod_code != SEESAW_PRODUCT_CODE) {
-		LOG_ERR("Unexpected product code: %u (expected %u)", prod_code,
-			SEESAW_PRODUCT_CODE);
+		LOG_ERROR("Unexpected product code: %u (expected %u)", prod_code,
+			  SEESAW_PRODUCT_CODE);
 		return -ENODEV;
 	}
 
 	/* Set button pins as inputs */
 	ret = seesaw_reg_write_u32(&cfg->bus, SEESAW_GPIO_DIRCLR_BULK, SEESAW_BUTTON_MASK);
 	if (ret < 0) {
-		LOG_ERR("Failed to set GPIO direction: %d", ret);
+		LOG_ERROR("Failed to set GPIO direction: %d", ret);
 		return ret;
 	}
 
 	/* Enable internal pull-up resistors on button pins */
 	ret = seesaw_reg_write_u32(&cfg->bus, SEESAW_GPIO_PULLENSET, SEESAW_BUTTON_MASK);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable pull-ups: %d", ret);
+		LOG_ERROR("Failed to enable pull-ups: %d", ret);
 		return ret;
 	}
 
 	/* Assert pull-ups high so buttons are idle-high / active-low */
 	ret = seesaw_reg_write_u32(&cfg->bus, SEESAW_GPIO_BULK_SET, SEESAW_BUTTON_MASK);
 	if (ret < 0) {
-		LOG_ERR("Failed to set GPIO bulk high: %d", ret);
+		LOG_ERROR("Failed to set GPIO bulk high: %d", ret);
 		return ret;
 	}
 

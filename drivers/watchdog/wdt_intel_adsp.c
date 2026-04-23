@@ -98,7 +98,7 @@ static int intel_adsp_wdt_install_timeout(const struct device *dev,
 	dev_data->callback = config->callback;
 #else
 	if (config->callback) {
-		LOG_ERR("Interrupt is not configured, can't set a callback.");
+		LOG_ERROR("Interrupt is not configured, can't set a callback.");
 		return -ENOTSUP;
 	}
 #endif

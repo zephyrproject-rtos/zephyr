@@ -52,7 +52,7 @@ int tmcm_rs485_send_command(const struct device *rs485, const struct tmcm_rs485_
 	/* Get current RS485 configuration */
 	err = uart_config_get(rs485, &rs485_cfg);
 	if (err) {
-		LOG_ERR("Failed to get UART configuration: %d", err);
+		LOG_ERROR("Failed to get UART configuration: %d", err);
 		return -EIO;
 	}
 
@@ -89,14 +89,14 @@ int tmcm_rs485_send_command(const struct device *rs485, const struct tmcm_rs485_
 		} while (err == -1 && !sys_timepoint_expired(end));
 
 		if (err == -1) {
-			LOG_ERR("Timeout waiting for echo byte %d", i);
+			LOG_ERROR("Timeout waiting for echo byte %d", i);
 			rs485_de_set(de_gpio, 0);
 			return -EAGAIN;
 		}
 
 		if (echo != write_buffer[i]) {
-			LOG_ERR("Echo mismatch byte %d: got 0x%02X expected 0x%02X", i, echo,
-				write_buffer[i]);
+			LOG_ERROR("Echo mismatch byte %d: got 0x%02X expected 0x%02X", i, echo,
+				  write_buffer[i]);
 			rs485_de_set(de_gpio, 0);
 			return -EIO;
 		}
@@ -116,11 +116,11 @@ int tmcm_rs485_send_command(const struct device *rs485, const struct tmcm_rs485_
 		} while (err == -1 && !sys_timepoint_expired(end));
 
 		if (err == -1) {
-			LOG_ERR("Timeout waiting for reply byte %d", i);
+			LOG_ERROR("Timeout waiting for reply byte %d", i);
 			return -EAGAIN;
 		}
 		if (err < 0) {
-			LOG_ERR("Error %d receiving byte %d", err, i);
+			LOG_ERROR("Error %d receiving byte %d", err, i);
 			return -EIO;
 		}
 	}
@@ -131,13 +131,14 @@ int tmcm_rs485_send_command(const struct device *rs485, const struct tmcm_rs485_
 	uint8_t checksum = tmcm_rs485_checksum(read_buffer);
 
 	if (checksum != read_buffer[8]) {
-		LOG_ERR("Checksum mismatch: got 0x%02x, expected 0x%02x", read_buffer[8], checksum);
+		LOG_ERROR("Checksum mismatch: got 0x%02x, expected 0x%02x", read_buffer[8],
+			  checksum);
 		return -EIO;
 	}
 
 	/* Check status byte (byte 2): 100 = STATUS_OK */
 	if (read_buffer[2] != 100) {
-		LOG_ERR("Command failed with status: %d", read_buffer[2]);
+		LOG_ERROR("Command failed with status: %d", read_buffer[2]);
 		return -EIO;
 	}
 

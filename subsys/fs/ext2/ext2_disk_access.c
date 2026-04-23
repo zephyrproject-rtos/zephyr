@@ -72,15 +72,15 @@ static int disk_prepare_range(struct disk_data *disk, uint32_t addr, uint32_t si
 
 	/* Check for overflow. */
 	if (*s_count > UINT32_MAX - *s_start) {
-		LOG_ERR("Requested range (%d:+%d) can't be accessed due to overflow.",
-				*s_start, *s_count);
+		LOG_ERROR("Requested range (%d:+%d) can't be accessed due to overflow.", *s_start,
+			  *s_count);
 		return -ENOSPC;
 	}
 
 	/* Cannot read or write outside the disk. */
 	if (*s_start + *s_count > disk->sector_count) {
-		LOG_ERR("Requested sectors: %d-%d are outside of disk (num_sectors: %d)",
-			*s_start, *s_start + *s_count, disk->sector_count);
+		LOG_ERROR("Requested sectors: %d-%d are outside of disk (num_sectors: %d)",
+			  *s_start, *s_start + *s_count, disk->sector_count);
 		return -ENOSPC;
 	}
 	return 0;
@@ -153,19 +153,19 @@ int ext2_init_disk_access_backend(struct ext2_data *fs, const void *storage_dev,
 
 	rc = disk_access_init(name);
 	if (rc < 0) {
-		LOG_ERR("FAIL: unable to find disk %s: %d\n", name, rc);
+		LOG_ERROR("FAIL: unable to find disk %s: %d\n", name, rc);
 		return rc;
 	}
 
 	rc = disk_access_ioctl(name, DISK_IOCTL_GET_SECTOR_COUNT, &sector_count);
 	if (rc < 0) {
-		LOG_ERR("Disk access (sector count) error: %d", rc);
+		LOG_ERROR("Disk access (sector count) error: %d", rc);
 		return rc;
 	}
 
 	rc = disk_access_ioctl(name, DISK_IOCTL_GET_SECTOR_SIZE, &sector_size);
 	if (rc < 0) {
-		LOG_ERR("Disk access (sector size) error: %d", rc);
+		LOG_ERROR("Disk access (sector size) error: %d", rc);
 		return rc;
 	}
 

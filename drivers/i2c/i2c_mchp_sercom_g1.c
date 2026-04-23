@@ -134,7 +134,7 @@ static void i2c_reset(const struct device *dev)
 	I2CM(dev).SERCOM_CTRLA = SERCOM_I2CM_CTRLA_SWRST(1);
 
 	if (!I2C_WAIT_SYNC_M(dev, SERCOM_I2CM_SYNCBUSY_SWRST_Msk)) {
-		LOG_ERR("SWRST sync timeout");
+		LOG_ERROR("SWRST sync timeout");
 	}
 }
 
@@ -158,7 +158,7 @@ static void i2c_enable(const struct device *dev, bool enable)
 	}
 
 	if (!sync_ok) {
-		LOG_ERR("ENABLE sync timeout");
+		LOG_ERROR("ENABLE sync timeout");
 	}
 }
 
@@ -189,7 +189,7 @@ static void i2c_set_bus_idle(const struct device *dev)
 				  SERCOM_I2CM_STATUS_BUSSTATE(SERCOM_I2CM_STATUS_BUSSTATE_IDLE_Val);
 
 	if (!I2C_WAIT_SYNC_M(dev, SERCOM_I2CM_SYNCBUSY_SYSOP_Msk)) {
-		LOG_ERR("Bus idle sync timeout");
+		LOG_ERROR("Bus idle sync timeout");
 	}
 }
 
@@ -200,7 +200,7 @@ static void i2c_send_stop(const struct device *dev)
 				 SERCOM_I2CM_CTRLB_CMD(I2C_CMD_STOP);
 
 	if (!I2C_WAIT_SYNC_M(dev, SERCOM_I2CM_SYNCBUSY_SYSOP_Msk)) {
-		LOG_ERR("STOP sync timeout");
+		LOG_ERROR("STOP sync timeout");
 	}
 }
 
@@ -231,7 +231,7 @@ static void i2c_write_addr(const struct device *dev, uint16_t addr, bool is_read
 		(I2CM(dev).SERCOM_ADDR & ~SERCOM_I2CM_ADDR_ADDR_Msk) | SERCOM_I2CM_ADDR_ADDR(addr);
 
 	if (!I2C_WAIT_SYNC_M(dev, SERCOM_I2CM_SYNCBUSY_SYSOP_Msk)) {
-		LOG_ERR("ADDR write sync timeout");
+		LOG_ERROR("ADDR write sync timeout");
 	}
 }
 
@@ -242,8 +242,8 @@ static bool i2c_baudrate_calc(uint32_t bitrate, uint32_t sys_clock_rate, uint32_
 
 	/* Reference clock frequency must be at least two times the baud rate */
 	if (sys_clock_rate < (2U * bitrate)) {
-		LOG_ERR("Invalid I2C clock configuration: sys_clk=%u Hz, bitrate=%u Hz",
-			sys_clock_rate, bitrate);
+		LOG_ERROR("Invalid I2C clock configuration: sys_clk=%u Hz, bitrate=%u Hz",
+			  sys_clock_rate, bitrate);
 		return false;
 	}
 
@@ -369,18 +369,18 @@ static int i2c_apply_speed(const struct device *dev, uint32_t config)
 		f_scl = I2C_BITRATE_HIGH;
 		break;
 	default:
-		LOG_ERR("Unsupported speed: %d", I2C_SPEED_GET(config));
+		LOG_ERROR("Unsupported speed: %d", I2C_SPEED_GET(config));
 		return -ENOTSUP;
 	}
 
 	clock_control_get_rate(DEVICE_DT_GET(DT_NODELABEL(clock)), cfg->clk.gclk_sys, &f_ref);
 	if (f_ref == 0) {
-		LOG_ERR("Failed to get clock rate");
+		LOG_ERROR("Failed to get clock rate");
 		return -EIO;
 	}
 
 	if (!i2c_set_baudrate(dev, f_scl, f_ref)) {
-		LOG_ERR("Failed to set baudrate");
+		LOG_ERROR("Failed to set baudrate");
 		return -EIO;
 	}
 
@@ -463,7 +463,7 @@ static void i2c_handle_error(const struct device *dev, int error_status)
 {
 	uint16_t hw_status = I2CM(dev).SERCOM_STATUS;
 
-	LOG_ERR("I2C error: status=0x%04X", hw_status);
+	LOG_ERROR("I2C error: status=0x%04X", hw_status);
 
 #if defined(CONFIG_I2C_MCHP_DMA_DRIVEN)
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
@@ -548,7 +548,7 @@ static void i2c_write_byte(const struct device *dev, uint8_t byte)
 {
 	I2CM(dev).SERCOM_DATA = byte;
 	if (!I2C_WAIT_SYNC_M(dev, SERCOM_I2CM_SYNCBUSY_SYSOP_Msk)) {
-		LOG_ERR("DATA write sync timeout");
+		LOG_ERROR("DATA write sync timeout");
 	}
 }
 #endif /*(!CONFIG_I2C_MCHP_DMA_DRIVEN)*/
@@ -644,7 +644,7 @@ static int i2c_transfer_internal(const struct device *dev, struct i2c_msg *msgs,
 
 	ret = i2c_validate_msgs(msgs, num_msgs);
 	if (ret != 0) {
-		LOG_ERR("Message validation failed: %d", ret);
+		LOG_ERROR("Message validation failed: %d", ret);
 		return ret;
 	}
 
@@ -687,7 +687,7 @@ static int i2c_transfer_internal(const struct device *dev, struct i2c_msg *msgs,
 	if (cb == NULL) {
 		ret = k_sem_take(&data->sync_sem, I2C_TRANSFER_TIMEOUT_MSEC);
 		if (ret != 0) {
-			LOG_ERR("Transfer timeout");
+			LOG_ERROR("Transfer timeout");
 			i2c_handle_error(dev, -ETIMEDOUT);
 		}
 
@@ -797,7 +797,7 @@ static int i2c_dma_setup(const struct device *dev, bool is_read)
 	ret = dma_config(cfg->dma.dma_dev, ch, &dma_cfg);
 
 	if (ret != 0) {
-		LOG_ERR("DMA config failed: %d", ret);
+		LOG_ERROR("DMA config failed: %d", ret);
 	}
 	return ret;
 }
@@ -985,7 +985,7 @@ static void i2c_target_isr(const struct device *dev)
 
 	if ((intflags & SERCOM_I2CS_INTFLAG_ERROR_Msk) != 0) {
 		i2c_target_clear_intflags(dev, SERCOM_I2CS_INTFLAG_ERROR_Msk);
-		LOG_ERR("Target error");
+		LOG_ERROR("Target error");
 		if (data->tgt_cb.stop != NULL) {
 			data->tgt_cb.stop(&data->tgt_cfg);
 		}
@@ -1064,7 +1064,7 @@ static int i2c_mchp_recover(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("Failed to apply pinctrl: %d", ret);
+		LOG_ERROR("Failed to apply pinctrl: %d", ret);
 		return ret;
 	}
 
@@ -1083,12 +1083,12 @@ static int i2c_mchp_get_config(const struct device *dev, uint32_t *config)
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
 
 	if (config == NULL) {
-		LOG_ERR("NULL config pointer");
+		LOG_ERROR("NULL config pointer");
 		return -EINVAL;
 	}
 
 	if (I2C_SPEED_GET(data->dev_config) == 0) {
-		LOG_ERR("Device not configured");
+		LOG_ERROR("Device not configured");
 		return -ENODATA;
 	}
 
@@ -1103,7 +1103,7 @@ static int i2c_mchp_configure(const struct device *dev, uint32_t config)
 	int ret;
 
 	if (data->target_mode) {
-		LOG_ERR("Cannot configure in target mode");
+		LOG_ERROR("Cannot configure in target mode");
 		return -EBUSY;
 	}
 
@@ -1136,15 +1136,15 @@ static int i2c_mchp_target_register(const struct device *dev, struct i2c_target_
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
 
 	if (data->target_mode) {
-		LOG_ERR("Already in target mode");
+		LOG_ERROR("Already in target mode");
 		return -EBUSY;
 	}
 	if ((cfg == NULL) || (cfg->callbacks == NULL)) {
-		LOG_ERR("Invalid config");
+		LOG_ERROR("Invalid config");
 		return -EINVAL;
 	}
 	if (cfg->address == 0) {
-		LOG_ERR("Invalid address 0x00");
+		LOG_ERROR("Invalid address 0x00");
 		return -EINVAL;
 	}
 
@@ -1173,15 +1173,15 @@ static int i2c_mchp_target_unregister(const struct device *dev, struct i2c_targe
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
 
 	if (cfg == NULL) {
-		LOG_ERR("NULL config");
+		LOG_ERROR("NULL config");
 		return -EINVAL;
 	}
 	if (!data->target_mode) {
-		LOG_ERR("Not in target mode");
+		LOG_ERROR("Not in target mode");
 		return -EBUSY;
 	}
 	if (data->tgt_cfg.address != cfg->address) {
-		LOG_ERR("Address mismatch");
+		LOG_ERROR("Address mismatch");
 		return -EINVAL;
 	}
 
@@ -1216,13 +1216,13 @@ static int i2c_mchp_init(const struct device *dev)
 
 	ret = clock_control_on(DEVICE_DT_GET(DT_NODELABEL(clock)), cfg->clk.gclk_sys);
 	if ((ret != 0) && (ret != -EALREADY)) {
-		LOG_ERR("Failed to enable GCLK: %d", ret);
+		LOG_ERROR("Failed to enable GCLK: %d", ret);
 		return ret;
 	}
 
 	ret = clock_control_on(DEVICE_DT_GET(DT_NODELABEL(clock)), cfg->clk.mclk_sys);
 	if ((ret != 0) && (ret != -EALREADY)) {
-		LOG_ERR("Failed to enable MCLK: %d", ret);
+		LOG_ERROR("Failed to enable MCLK: %d", ret);
 		return ret;
 	}
 
@@ -1233,13 +1233,13 @@ static int i2c_mchp_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("Failed to apply pinctrl: %d", ret);
+		LOG_ERROR("Failed to apply pinctrl: %d", ret);
 		return ret;
 	}
 
 	ret = i2c_configure(dev, I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(cfg->bitrate));
 	if (ret != 0) {
-		LOG_ERR("Failed to configure: %d", ret);
+		LOG_ERROR("Failed to configure: %d", ret);
 		return ret;
 	}
 
@@ -1247,12 +1247,12 @@ static int i2c_mchp_init(const struct device *dev)
 	data->dev = dev;
 
 	if (cfg->dma.tx_dma_channel == 0xFF || cfg->dma.rx_dma_channel == 0xFF) {
-		LOG_ERR("Invalid DMA channel configuration");
+		LOG_ERROR("Invalid DMA channel configuration");
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(cfg->dma.dma_dev)) {
-		LOG_ERR("DMA device not ready");
+		LOG_ERROR("DMA device not ready");
 		return -ENODEV;
 	}
 
@@ -1260,14 +1260,14 @@ static int i2c_mchp_init(const struct device *dev)
 
 	ret = dma_request_channel(cfg->dma.dma_dev, &ch);
 	if (ret < 0) {
-		LOG_ERR("TX DMA channel %d request failed: %d", cfg->dma.tx_dma_channel, ret);
+		LOG_ERROR("TX DMA channel %d request failed: %d", cfg->dma.tx_dma_channel, ret);
 		return ret;
 	}
 
 	ch = cfg->dma.rx_dma_channel;
 	ret = dma_request_channel(cfg->dma.dma_dev, &ch);
 	if (ret < 0) {
-		LOG_ERR("RX DMA channel %d request failed: %d", cfg->dma.rx_dma_channel, ret);
+		LOG_ERROR("RX DMA channel %d request failed: %d", cfg->dma.rx_dma_channel, ret);
 		return ret;
 	}
 #endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/

@@ -328,7 +328,7 @@ rf_install_settings(const struct device *dev,
 				 + CC1200_RF_NON_EXT_SPACE_REGS,
 				 CC1200_RF_EXT_SPACE_REGS, true, true) ||
 	    !write_reg_pkt_len(dev, 0xFF)) {
-		LOG_ERR("Could not install RF settings");
+		LOG_ERROR("Could not install RF settings");
 		return false;
 	}
 
@@ -340,17 +340,15 @@ rf_install_settings(const struct device *dev,
 static int rf_calibrate(const struct device *dev)
 {
 	if (!instruct_scal(dev)) {
-		LOG_ERR("Could not calibrate RF");
+		LOG_ERROR("Could not calibrate RF");
 		return -EIO;
 	}
 
 	k_busy_wait(USEC_PER_MSEC * 5U);
 
 	/* We need to re-enable RX as SCAL shuts off the freq synth */
-	if (!instruct_sidle(dev) ||
-	    !instruct_sfrx(dev) ||
-	    !instruct_srx(dev)) {
-		LOG_ERR("Could not switch to RX");
+	if (!instruct_sidle(dev) || !instruct_sfrx(dev) || !instruct_srx(dev)) {
+		LOG_ERROR("Could not switch to RX");
 		return -EIO;
 	}
 
@@ -460,30 +458,30 @@ static void cc1200_rx(void *p1, void *p2, void *p3)
 		k_sem_take(&cc1200->rx_lock, K_FOREVER);
 
 		if (get_status(dev) == CC1200_STATUS_RX_FIFO_ERROR) {
-			LOG_ERR("Fifo error");
+			LOG_ERROR("Fifo error");
 			goto flush;
 		}
 
 		pkt_len = get_packet_length(dev);
 		if (!verify_rxfifo_validity(dev, pkt_len)) {
-			LOG_ERR("Invalid frame");
+			LOG_ERROR("Invalid frame");
 			goto flush;
 		}
 
 		pkt = net_pkt_rx_alloc_with_buffer(cc1200->iface, pkt_len,
 						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
-			LOG_ERR("No free pkt available");
+			LOG_ERROR("No free pkt available");
 			goto flush;
 		}
 
 		if (!read_rxfifo_content(dev, pkt->buffer, pkt_len)) {
-			LOG_ERR("No content read");
+			LOG_ERROR("No content read");
 			goto flush;
 		}
 
 		if (!verify_crc(dev, pkt)) {
-			LOG_ERR("Bad packet CRC");
+			LOG_ERROR("Bad packet CRC");
 			goto out;
 		}
 
@@ -568,9 +566,8 @@ static int cc1200_set_channel(const struct device *dev, uint16_t channel)
 
 	freq = rf_evaluate_freq_setting(dev, channel);
 
-	if (!write_reg_freq(dev, freq) ||
-		rf_calibrate(dev)) {
-		LOG_ERR("Could not set channel %u", channel);
+	if (!write_reg_freq(dev, freq) || rf_calibrate(dev)) {
+		LOG_ERROR("Could not set channel %u", channel);
 		return -EIO;
 	}
 
@@ -586,7 +583,7 @@ static int cc1200_set_txpower(const struct device *dev, int16_t dbm)
 	/* See Section 7.1 */
 	dbm = ((dbm + 18) * 2) - 1;
 	if ((dbm <= 3) || (dbm >= 64)) {
-		LOG_ERR("Unhandled value");
+		LOG_ERROR("Unhandled value");
 		return -EINVAL;
 	}
 
@@ -594,7 +591,7 @@ static int cc1200_set_txpower(const struct device *dev, int16_t dbm)
 	pa_power_ramp |= ((uint8_t) dbm) & PA_POWER_RAMP_MASK;
 
 	if (!write_reg_pa_cfg1(dev, pa_power_ramp)) {
-		LOG_ERR("Could not proceed");
+		LOG_ERROR("Could not proceed");
 		return -EIO;
 	}
 
@@ -612,7 +609,7 @@ static int cc1200_tx(const struct device *dev,
 	bool status = false;
 
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
-		LOG_ERR("TX mode %d not supported", mode);
+		LOG_ERROR("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 
@@ -627,14 +624,14 @@ static int cc1200_tx(const struct device *dev,
 	    !instruct_sfrx(dev) ||
 	    !instruct_sftx(dev) ||
 	    !instruct_sfstxon(dev)) {
-		LOG_ERR("Cannot switch to TX mode");
+		LOG_ERROR("Cannot switch to TX mode");
 		goto out;
 	}
 
 	if (!write_txfifo(dev, &len, CC1200_PHY_HDR_LEN) ||
 	    !write_txfifo(dev, frame, len) ||
 	    read_reg_num_txbytes(dev) != (len + CC1200_PHY_HDR_LEN)) {
-		LOG_ERR("Cannot fill-in TX fifo");
+		LOG_ERROR("Cannot fill-in TX fifo");
 		goto out;
 	}
 
@@ -642,7 +639,7 @@ static int cc1200_tx(const struct device *dev,
 	atomic_set(&cc1200->tx_start, 0);
 
 	if (!instruct_stx(dev)) {
-		LOG_ERR("Cannot start transmission");
+		LOG_ERROR("Cannot start transmission");
 		goto out;
 	}
 
@@ -656,9 +653,8 @@ static int cc1200_tx(const struct device *dev,
 out:
 	cc1200_print_status(get_status(dev));
 
-	if (atomic_get(&cc1200->tx) == 1 &&
-	    read_reg_num_txbytes(dev) != 0) {
-		LOG_ERR("TX Failed");
+	if (atomic_get(&cc1200->tx) == 1 && read_reg_num_txbytes(dev) != 0) {
+		LOG_ERROR("TX Failed");
 
 		atomic_set(&cc1200->tx_start, 0);
 		instruct_sftx(dev);
@@ -681,7 +677,7 @@ static int cc1200_start(const struct device *dev)
 	    !instruct_sftx(dev) ||
 	    !instruct_sfrx(dev) ||
 	    rf_calibrate(dev)) {
-		LOG_ERR("Could not proceed");
+		LOG_ERROR("Could not proceed");
 		return -EIO;
 	}
 
@@ -697,7 +693,7 @@ static int cc1200_stop(const struct device *dev)
 	enable_gpio0_interrupt(dev, false);
 
 	if (!instruct_spwd(dev)) {
-		LOG_ERR("Could not proceed");
+		LOG_ERROR("Could not proceed");
 		return -EIO;
 	}
 
@@ -726,7 +722,7 @@ static int cc1200_attr_get(const struct device *dev, enum ieee802154_attr attr,
 static int power_on_and_setup(const struct device *dev)
 {
 	if (!instruct_sres(dev)) {
-		LOG_ERR("Cannot reset");
+		LOG_ERROR("Cannot reset");
 		return -EIO;
 	}
 
@@ -737,7 +733,7 @@ static int power_on_and_setup(const struct device *dev)
 	if (!write_reg_iocfg3(dev, CC1200_IOCFG3) ||
 	    !write_reg_iocfg2(dev, CC1200_IOCFG2) ||
 	    !write_reg_iocfg0(dev, CC1200_IOCFG0)) {
-		LOG_ERR("Cannot configure GPIOs");
+		LOG_ERROR("Cannot configure GPIOs");
 		return -EIO;
 	}
 
@@ -761,20 +757,19 @@ static int cc1200_init(const struct device *dev)
 
 	/* Configure GPIOs */
 	if (!gpio_is_ready_dt(&config->interrupt)) {
-		LOG_ERR("GPIO port %s is not ready",
-			config->interrupt.port->name);
+		LOG_ERROR("GPIO port %s is not ready", config->interrupt.port->name);
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT);
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s is not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s is not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
 	LOG_DBG("GPIO and SPI configured");
 	if (power_on_and_setup(dev) != 0) {
-		LOG_ERR("Configuring CC1200 failed");
+		LOG_ERROR("Configuring CC1200 failed");
 		return -EIO;
 	}
 

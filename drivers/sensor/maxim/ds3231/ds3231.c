@@ -70,7 +70,7 @@ int sensor_ds3231_sample_fetch(const struct device *dev, enum sensor_channel cha
 	int err = sensor_ds3231_read_temp(dev, &(data->raw_temp));
 
 	if (err != 0) {
-		LOG_ERR("ds3231 sample fetch failed %d", err);
+		LOG_ERROR("ds3231 sample fetch failed %d", err);
 		return err;
 	}
 
@@ -117,7 +117,7 @@ void sensor_ds3231_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -134,7 +134,7 @@ void sensor_ds3231_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 
 	rc = sensor_ds3231_read_temp(dev, &raw_temp);
 	if (rc != 0) {
-		LOG_ERR("Failed to fetch samples");
+		LOG_ERROR("Failed to fetch samples");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -149,8 +149,8 @@ void sensor_ds3231_submit(const struct device *dev, struct rtio_iodev_sqe *iodev
 	struct rtio_work_req *req = rtio_work_req_alloc();
 
 	if (req == NULL) {
-		LOG_ERR("RTIO work item allocation failed."
-			"Consider to increase CONFIG_RTIO_WORKQ_POOL_ITEMS.");
+		LOG_ERROR("RTIO work item allocation failed."
+			  "Consider to increase CONFIG_RTIO_WORKQ_POOL_ITEMS.");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}

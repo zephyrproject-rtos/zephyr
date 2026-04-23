@@ -65,7 +65,7 @@ static void gpio_keys_poll_pin(const struct device *dev, int key_index)
 
 	ret = gpio_pin_get_dt(&pin_cfg->spec);
 	if (ret < 0) {
-		LOG_ERR("key_index %d get failed: %d", key_index, ret);
+		LOG_ERROR("key_index %d get failed: %d", key_index, ret);
 		return;
 	}
 
@@ -148,7 +148,7 @@ static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
 
 	ret = gpio_add_callback(gpio_spec->port, &cb->gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Could not set gpio callback");
+		LOG_ERROR("Could not set gpio callback");
 		return ret;
 	}
 
@@ -158,7 +158,7 @@ static int gpio_keys_interrupt_configure(const struct gpio_dt_spec *gpio_spec,
 
 	ret = gpio_pin_interrupt_configure_dt(gpio_spec, GPIO_INT_EDGE_BOTH);
 	if (ret < 0) {
-		LOG_ERR("interrupt configuration failed: %d", ret);
+		LOG_ERROR("interrupt configuration failed: %d", ret);
 		return ret;
 	}
 
@@ -175,13 +175,13 @@ static int gpio_keys_init(const struct device *dev)
 		const struct gpio_dt_spec *gpio = &cfg->pin_cfg[i].spec;
 
 		if (!gpio_is_ready_dt(gpio)) {
-			LOG_ERR("%s is not ready", gpio->port->name);
+			LOG_ERROR("%s is not ready", gpio->port->name);
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
 		if (ret != 0) {
-			LOG_ERR("Pin %d configuration failed: %d", i, ret);
+			LOG_ERROR("Pin %d configuration failed: %d", i, ret);
 			return ret;
 		}
 
@@ -196,7 +196,7 @@ static int gpio_keys_init(const struct device *dev)
 						    &pin_data[i].cb_data,
 						    cfg->pin_cfg[i].zephyr_code);
 		if (ret != 0) {
-			LOG_ERR("Pin %d interrupt configuration failed: %d", i, ret);
+			LOG_ERROR("Pin %d interrupt configuration failed: %d", i, ret);
 			return ret;
 		}
 	}
@@ -208,7 +208,7 @@ static int gpio_keys_init(const struct device *dev)
 
 	ret = pm_device_runtime_enable(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable runtime power management");
+		LOG_ERROR("Failed to enable runtime power management");
 		return ret;
 	}
 
@@ -234,7 +234,7 @@ static int gpio_keys_pm_action(const struct device *dev,
 			if (!cfg->polling_mode) {
 				ret = gpio_pin_interrupt_configure_dt(gpio, GPIO_INT_DISABLE);
 				if (ret < 0) {
-					LOG_ERR("interrupt configuration failed: %d", ret);
+					LOG_ERROR("interrupt configuration failed: %d", ret);
 					return ret;
 				}
 			}
@@ -242,7 +242,7 @@ static int gpio_keys_pm_action(const struct device *dev,
 			if (!cfg->no_disconnect) {
 				ret = gpio_pin_configure_dt(gpio, GPIO_DISCONNECTED);
 				if (ret != 0) {
-					LOG_ERR("Pin %d configuration failed: %d", i, ret);
+					LOG_ERROR("Pin %d configuration failed: %d", i, ret);
 					return ret;
 				}
 			}
@@ -258,7 +258,7 @@ static int gpio_keys_pm_action(const struct device *dev,
 			if (!cfg->no_disconnect) {
 				ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
 				if (ret != 0) {
-					LOG_ERR("Pin %d configuration failed: %d", i, ret);
+					LOG_ERROR("Pin %d configuration failed: %d", i, ret);
 					return ret;
 				}
 			}
@@ -270,7 +270,7 @@ static int gpio_keys_pm_action(const struct device *dev,
 				pin_data[i].cb_data.pin_state = gpio_pin_get_dt(gpio);
 				ret = gpio_pin_interrupt_configure_dt(gpio, GPIO_INT_EDGE_BOTH);
 				if (ret < 0) {
-					LOG_ERR("interrupt configuration failed: %d", ret);
+					LOG_ERROR("interrupt configuration failed: %d", ret);
 					return ret;
 				}
 			}

@@ -138,13 +138,13 @@ static int flash_sam0_check_status(off_t offset)
 #endif
 
 	if (status.bit.PROGE) {
-		LOG_ERR("programming error at 0x%lx", (long)offset);
+		LOG_ERROR("programming error at 0x%lx", (long)offset);
 		return -EIO;
 	} else if (status.bit.LOCKE) {
-		LOG_ERR("lock error at 0x%lx", (long)offset);
+		LOG_ERROR("lock error at 0x%lx", (long)offset);
 		return -EROFS;
 	} else if (status.bit.NVME) {
-		LOG_ERR("NVM error at 0x%lx", (long)offset);
+		LOG_ERROR("NVM error at 0x%lx", (long)offset);
 		return -EIO;
 	}
 
@@ -190,7 +190,7 @@ static int flash_sam0_write_page(const struct device *dev, off_t offset,
 	}
 
 	if (memcmp(data, FLASH_MEM(offset), len) != 0) {
-		LOG_ERR("verify error at offset 0x%lx", (long)offset);
+		LOG_ERROR("verify error at offset 0x%lx", (long)offset);
 		return -EIO;
 	}
 

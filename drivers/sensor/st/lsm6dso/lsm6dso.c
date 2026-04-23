@@ -277,7 +277,7 @@ static int lsm6dso_attr_set(const struct device *dev,
 	case SENSOR_CHAN_PRESS:
 	case SENSOR_CHAN_HUMIDITY:
 		if (!data->shub_inited) {
-			LOG_ERR("shub not inited.");
+			LOG_ERROR("shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -654,7 +654,7 @@ static int lsm6dso_channel_get(const struct device *dev,
 	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -663,7 +663,7 @@ static int lsm6dso_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_HUMIDITY:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -672,7 +672,7 @@ static int lsm6dso_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_PRESS:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -681,7 +681,7 @@ static int lsm6dso_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -718,25 +718,25 @@ static int lsm6dso_init_chip(const struct device *dev)
 	 * set the bank now.
 	 */
 	if (lsm6dso_mem_bank_set(ctx, LSM6DSO_USER_BANK) < 0) {
-		LOG_ERR("Failed to set user bank");
+		LOG_ERROR("Failed to set user bank");
 		return -EIO;
 	}
 
 	if (lsm6dso_device_id_get(ctx, &chip_id) < 0) {
-		LOG_ERR("Failed reading chip id");
+		LOG_ERROR("Failed reading chip id");
 		return -EIO;
 	}
 
 	LOG_INF("chip id 0x%x", chip_id);
 
 	if (chip_id != LSM6DSO_ID) {
-		LOG_ERR("Invalid chip id 0x%x", chip_id);
+		LOG_ERROR("Invalid chip id 0x%x", chip_id);
 		return -EIO;
 	}
 
 	/* I3C disable stay preserved after s/w reset */
 	if (lsm6dso_i3c_disable_set(ctx, LSM6DSO_I3C_DISABLE) < 0) {
-		LOG_ERR("Failed to disable I3C");
+		LOG_ERROR("Failed to disable I3C");
 		return -EIO;
 	}
 
@@ -744,7 +744,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 	 * must be disabled, followed by a 300 μs wait."
 	 */
 	if (lsm6dso_sh_master_get(ctx, &master_on) < 0) {
-		LOG_ERR("Failed to get I2C_MASTER status");
+		LOG_ERROR("Failed to get I2C_MASTER status");
 		return -EIO;
 	}
 	if (master_on) {
@@ -755,7 +755,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 
 	/* reset device */
 	if (lsm6dso_reset_set(ctx, 1) < 0) {
-		LOG_ERR("Failed to reset device");
+		LOG_ERROR("Failed to reset device");
 		return -EIO;
 	}
 
@@ -779,7 +779,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 	fs = cfg->accel_range & ACCEL_RANGE_MASK;
 	LOG_DBG("accel range is %d", fs);
 	if (lsm6dso_accel_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set accelerometer range %d", fs);
+		LOG_ERROR("failed to set accelerometer range %d", fs);
 		return -EIO;
 	}
 	lsm6dso->acc_gain = lsm6dso_accel_fs_val_to_gain(fs, cfg->accel_range & ACCEL_RANGE_DOUBLE);
@@ -788,7 +788,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 	LOG_DBG("accel odr is %d", odr);
 	lsm6dso->accel_freq = lsm6dso_odr_to_freq_val(odr);
 	if (lsm6dso_accel_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set accelerometer odr %d", odr);
+		LOG_ERROR("failed to set accelerometer odr %d", odr);
 		return -EIO;
 	}
 
@@ -807,7 +807,7 @@ static int lsm6dso_init_chip(const struct device *dev)
 	fs = cfg->gyro_range;
 	LOG_DBG("gyro range is %d", fs);
 	if (lsm6dso_gyro_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set gyroscope range %d", fs);
+		LOG_ERROR("failed to set gyroscope range %d", fs);
 		return -EIO;
 	}
 	lsm6dso->gyro_gain = (lsm6dso_gyro_fs_sens[fs] * GAIN_UNIT_G);
@@ -816,30 +816,30 @@ static int lsm6dso_init_chip(const struct device *dev)
 	LOG_DBG("gyro odr is %d", odr);
 	lsm6dso->gyro_freq = lsm6dso_odr_to_freq_val(odr);
 	if (lsm6dso_gyro_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set gyroscope odr %d", odr);
+		LOG_ERROR("failed to set gyroscope odr %d", odr);
 		return -EIO;
 	}
 
 	/* Set FIFO bypass mode */
 	if (lsm6dso_fifo_mode_set(ctx, LSM6DSO_BYPASS_MODE) < 0) {
-		LOG_ERR("failed to set FIFO mode");
+		LOG_ERROR("failed to set FIFO mode");
 		return -EIO;
 	}
 
 	if (lsm6dso_block_data_update_set(ctx, 1) < 0) {
-		LOG_ERR("failed to set BDU mode");
+		LOG_ERROR("failed to set BDU mode");
 		return -EIO;
 	}
 
 	if (cfg->accel_lp_filter) {
 		if (lsm6dso_xl_filter_lp2_set(ctx, 1)) {
-			LOG_ERR("failed to enable low pass filter (LPF2)");
+			LOG_ERROR("failed to enable low pass filter (LPF2)");
 			return -EIO;
 		}
 
 		if (lsm6dso_xl_hp_path_on_out_set(ctx,
 				lsm6dso_lp_filter_map[cfg->accel_lp_filter])) {
-			LOG_ERR("failed to configure low pass filter (LPF2)");
+			LOG_ERROR("failed to configure low pass filter (LPF2)");
 			return -EIO;
 		}
 	}
@@ -858,14 +858,14 @@ static int lsm6dso_init(const struct device *dev)
 	data->dev = dev;
 
 	if (lsm6dso_init_chip(dev) < 0) {
-		LOG_ERR("failed to initialize chip");
+		LOG_ERROR("failed to initialize chip");
 		return -EIO;
 	}
 
 #ifdef CONFIG_LSM6DSO_TRIGGER
 	if (cfg->trig_enabled) {
 		if (lsm6dso_init_interrupt(dev) < 0) {
-			LOG_ERR("Failed to initialize interrupt.");
+			LOG_ERROR("Failed to initialize interrupt.");
 			return -EIO;
 		}
 	}

@@ -24,17 +24,17 @@ static int storage_erase(void)
 	int rc = flash_area_open(ERASE_TARGET_ID, &fa);
 
 	if (rc < 0) {
-		LOG_ERR("Failed to open flash area");
+		LOG_ERROR("Failed to open flash area");
 		rc = ZEPHYRBASIC_MGMT_ERR_FLASH_OPEN_FAILED;
 	} else {
 		if (flash_area_get_device(fa) == NULL) {
-			LOG_ERR("Failed to get flash area device");
+			LOG_ERROR("Failed to get flash area device");
 			rc = ZEPHYRBASIC_MGMT_ERR_FLASH_CONFIG_QUERY_FAIL;
 		} else {
 			rc = flash_area_flatten(fa, 0, fa->fa_size);
 
 			if (rc < 0) {
-				LOG_ERR("Failed to erase flash area");
+				LOG_ERROR("Failed to erase flash area");
 				rc = ZEPHYRBASIC_MGMT_ERR_FLASH_ERASE_FAILED;
 			}
 		}

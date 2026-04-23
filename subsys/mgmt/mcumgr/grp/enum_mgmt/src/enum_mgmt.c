@@ -319,7 +319,7 @@ static int enum_mgmt_details(struct smp_streamer *ctxt)
 	};
 
 	if (!zcbor_new_backup(zsd, backup_element_count_reader)) {
-		LOG_ERR("Failed to create zcbor backup");
+		LOG_ERROR("Failed to create zcbor backup");
 		return MGMT_ERR_ENOMEM;
 	}
 
@@ -336,7 +336,7 @@ static int enum_mgmt_details(struct smp_streamer *ctxt)
 
 	if (!zcbor_process_backup(zsd, (ZCBOR_FLAG_RESTORE | ZCBOR_FLAG_CONSUME),
 				  backup_element_count_reader)) {
-		LOG_ERR("Failed to restore zcbor reader backup");
+		LOG_ERROR("Failed to restore zcbor reader backup");
 		return MGMT_ERR_ENOMEM;
 	}
 

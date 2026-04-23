@@ -133,7 +133,7 @@ static int ambiq_ctimer_pwm_set_cycles(const struct device *dev, uint32_t channe
 	const struct pwm_ambiq_ctimer_config *config = dev->config;
 
 	if (period_cycles == 0) {
-		LOG_ERR("period_cycles can not be set to zero");
+		LOG_ERROR("period_cycles can not be set to zero");
 		return -ENOTSUP;
 	}
 

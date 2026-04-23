@@ -205,7 +205,7 @@ static int rv8263c8_time_set(const struct device *dev, const struct rtc_time *ti
 	const struct rv8263c8_config *config = dev->config;
 
 	if (timeptr == NULL || (timeptr->tm_year < RV8263_YEAR_OFFSET)) {
-		LOG_ERR("invalid time");
+		LOG_ERROR("invalid time");
 		return -EINVAL;
 	}
 
@@ -286,7 +286,7 @@ static int rv8263c8_init(const struct device *dev)
 #endif
 
 	if (!i2c_is_ready_dt(&config->i2c_bus)) {
-		LOG_ERR("I2C bus not ready!");
+		LOG_ERROR("I2C bus not ready!");
 		return -ENODEV;
 	}
 
@@ -294,14 +294,14 @@ static int rv8263c8_init(const struct device *dev)
 
 	err = rv8263c8_update_disable_timer(dev);
 	if (err < 0) {
-		LOG_ERR("Error while disabling the timer! Error: %i", err);
+		LOG_ERROR("Error while disabling the timer! Error: %i", err);
 		return err;
 	}
 
 	err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_1,
 				    RV8263C8_BM_24H_MODE_DISABLE | RV8263C8_BM_CLOCK_ENABLE);
 	if (err < 0) {
-		LOG_ERR("Error while writing CONTROL_1! Error: %i", err);
+		LOG_ERROR("Error while writing CONTROL_1! Error: %i", err);
 		return err;
 	}
 
@@ -311,7 +311,7 @@ static int rv8263c8_init(const struct device *dev)
 	err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2,
 				    RV8263C8_BM_AF | temp);
 	if (err < 0) {
-		LOG_ERR("Error while writing CONTROL_2! Error: %i", err);
+		LOG_ERROR("Error while writing CONTROL_2! Error: %i", err);
 		return err;
 	}
 
@@ -324,7 +324,7 @@ static int rv8263c8_init(const struct device *dev)
 	buf[1] = 0;
 	err = i2c_write_dt(&config->i2c_bus, buf, 2);
 	if (err < 0) {
-		LOG_ERR("Error while writing CONTROL2! Error: %i", err);
+		LOG_ERROR("Error while writing CONTROL2! Error: %i", err);
 		return err;
 	}
 #endif
@@ -332,19 +332,19 @@ static int rv8263c8_init(const struct device *dev)
 #if (CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE) && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	LOG_DBG("Configure interrupt pin");
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO not ready!");
+		LOG_ERROR("GPIO not ready!");
 		return err;
 	}
 
 	err = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure GPIO! Error: %u", err);
+		LOG_ERROR("Failed to configure GPIO! Error: %u", err);
 		return err;
 	}
 
 	err = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_FALLING);
 	if (err < 0) {
-		LOG_ERR("Failed to configure interrupt! Error: %u", err);
+		LOG_ERROR("Failed to configure interrupt! Error: %u", err);
 		return err;
 	}
 
@@ -353,7 +353,7 @@ static int rv8263c8_init(const struct device *dev)
 
 	err = gpio_add_callback_dt(&config->int_gpio, &data->gpio_cb);
 	if (err < 0) {
-		LOG_ERR("Failed to add GPIO callback! Error: %u", err);
+		LOG_ERROR("Failed to add GPIO callback! Error: %u", err);
 		return err;
 	}
 #endif
@@ -400,7 +400,7 @@ static int rv8263c8_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	}
 
 	if (!rtc_utils_validate_rtc_time(timeptr, mask)) {
-		LOG_ERR("Invalid mask!");
+		LOG_ERROR("Invalid mask!");
 		return -EINVAL;
 	}
 
@@ -415,7 +415,7 @@ static int rv8263c8_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	}
 
 	if (err < 0) {
-		LOG_ERR("Error while enabling alarm! Error: %i", err);
+		LOG_ERROR("Error while enabling alarm! Error: %i", err);
 		return err;
 	}
 
@@ -453,7 +453,7 @@ static int rv8263c8_alarm_set_time(const struct device *dev, uint16_t id, uint16
 
 	err = i2c_write_dt(&config->i2c_bus, regs, sizeof(regs));
 	if (err < 0) {
-		LOG_ERR("Error while setting alarm time! Error: %i", err);
+		LOG_ERROR("Error while setting alarm time! Error: %i", err);
 		return err;
 	}
 
@@ -485,7 +485,7 @@ static int rv8263c8_alarm_get_time(const struct device *dev, uint16_t id, uint16
 	err = i2c_burst_read_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS_ALARM, value,
 				sizeof(value));
 	if (err < 0) {
-		LOG_ERR("Error while reading alarm! Error: %i", err);
+		LOG_ERROR("Error while reading alarm! Error: %i", err);
 		return err;
 	}
 

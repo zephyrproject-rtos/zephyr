@@ -132,13 +132,13 @@ static int sdhc_max32_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(sdhc_config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Pinctrl apply error:%d", ret);
+		LOG_ERROR("Pinctrl apply error:%d", ret);
 		return ret;
 	}
 
 	ret = clock_control_on(sdhc_config->clock, (clock_control_subsys_t)&sdhc_config->perclk);
 	if (ret) {
-		LOG_ERR("Clock control on error:%d", ret);
+		LOG_ERROR("Clock control on error:%d", ret);
 		return ret;
 	}
 
@@ -149,7 +149,7 @@ static int sdhc_max32_init(const struct device *dev)
 
 	ret = MXC_SDHC_Init(&cfg);
 	if (ret != E_NO_ERROR) {
-		LOG_ERR("MXC_SDHC_Init error:%d", ret);
+		LOG_ERROR("MXC_SDHC_Init error:%d", ret);
 		return ret;
 	}
 
@@ -229,7 +229,7 @@ static int sdhc_max32_request(const struct device *dev, struct sdhc_command *cmd
 	k_sleep(K_MSEC(1));
 	ret = MXC_SDHC_SendCommand(&sd_cmd_cfg);
 	if (ret) {
-		LOG_ERR("MXC_SDHC_SendCommand error:%d, SD opcode: %d", ret, cmd->opcode);
+		LOG_ERROR("MXC_SDHC_SendCommand error:%d, SD opcode: %d", ret, cmd->opcode);
 		return ret;
 	}
 
@@ -270,7 +270,7 @@ static int sdhc_max32_set_io(const struct device *dev, struct sdhc_io *ios)
 
 	if (speed) {
 		if (speed < props->f_min || speed > props->f_max) {
-			LOG_ERR("Speed range error %d", speed);
+			LOG_ERROR("Speed range error %d", speed);
 			return -ENOTSUP;
 		}
 		clk_div = convert_freq_to_divider(speed);
@@ -376,7 +376,7 @@ static int cmd_opcode_converter(int opcode, unsigned int *cmd)
 	case SD_GO_INACTIVE_STATE:
 	case SDIO_RW_EXTENDED:
 	default:
-		LOG_ERR("Opcode convert error %d", opcode);
+		LOG_ERROR("Opcode convert error %d", opcode);
 		return -EINVAL;
 	}
 

@@ -113,7 +113,7 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 	LOG_INF("[Memory] available:%lld requested:%d", fs->device_size, fs_memory);
 
 	if (fs_memory > fs->device_size) {
-		LOG_ERR("No enough space on storage device");
+		LOG_ERROR("No enough space on storage device");
 		return -ENOSPC;
 	}
 
@@ -127,7 +127,7 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 
 	/* 24 block should be enough to fit minimal file system. */
 	if (blocks_count < 24) {
-		LOG_ERR("Storage device too small to fit ext2 file system");
+		LOG_ERROR("Storage device too small to fit ext2 file system");
 		return -ENOSPC;
 	}
 
@@ -154,7 +154,7 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 
 	/* We want to have only 1 block group (that starts with first data block) */
 	if (blocks_count > blocks_per_group + first_data_block) {
-		LOG_ERR("File systems with more than 1 block group are not supported.");
+		LOG_ERROR("File systems with more than 1 block group are not supported.");
 		return -ENOTSUP;
 	}
 

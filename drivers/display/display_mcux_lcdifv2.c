@@ -79,7 +79,7 @@ static int mcux_lcdifv2_write(const struct device *dev, const uint16_t x, const 
 	} else {
 		/* We must use partial framebuffer copy */
 		if (CONFIG_MCUX_LCDIFV2_FB_NUM == 0) {
-			LOG_ERR("Partial display refresh requires driver framebuffers");
+			LOG_ERROR("Partial display refresh requires driver framebuffers");
 			return -ENOTSUP;
 		} else if (dev_data->active_fb != dev_data->fb[dev_data->next_idx]) {
 			/*
@@ -161,7 +161,7 @@ static int mcux_lcdifv2_set_pixel_format(const struct device *dev,
 	const struct mcux_lcdifv2_config *config = dev->config;
 
 	if (!(pixel_format & mcux_lcdifv2_supported_fmts)) {
-		LOG_ERR("Unsupported pixel format");
+		LOG_ERROR("Unsupported pixel format");
 		return -ENOTSUP;
 	}
 
@@ -177,7 +177,7 @@ static int mcux_lcdifv2_set_pixel_format(const struct device *dev,
 			k_heap_aligned_alloc(&display_heap, LCDIFV2_FB_ALIGN,
 				dev_data->fb_bytes, K_FOREVER);
 		if (dev_data->fb[i] == NULL) {
-			LOG_ERR("Could not allocate memory for framebuffers");
+			LOG_ERROR("Could not allocate memory for framebuffers");
 			return -ENOMEM;
 		}
 		memset(dev_data->fb[i], 0, dev_data->fb_bytes);
@@ -207,7 +207,7 @@ static int mcux_lcdifv2_set_orientation(const struct device *dev,
 	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
 		return 0;
 	}
-	LOG_ERR("Changing display orientation not implemented");
+	LOG_ERROR("Changing display orientation not implemented");
 	return -ENOTSUP;
 }
 

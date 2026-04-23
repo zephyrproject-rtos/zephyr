@@ -54,19 +54,19 @@ static int configure_measurement_hardware(void)
 	int ret = 0;
 
 	if (!gpio_is_ready_dt(&pulse) || !gpio_is_ready_dt(&ack)) {
-		LOG_ERR("GPIO device not ready");
+		LOG_ERROR("GPIO device not ready");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&pulse, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
-		LOG_ERR("failed configuring pulse pin");
+		LOG_ERROR("failed configuring pulse pin");
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&ack, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("failed configuring ack pin");
+		LOG_ERROR("failed configuring ack pin");
 		return ret;
 	}
 
@@ -83,7 +83,7 @@ static int configure_measurement_hardware(void)
 	ret = gpio_pin_interrupt_configure_dt(&ack, GPIO_INT_EDGE_RISING);
 #endif
 	if (ret < 0) {
-		LOG_ERR("failed configuring ack pin interrupt");
+		LOG_ERROR("failed configuring ack pin interrupt");
 		return ret;
 	}
 
@@ -91,7 +91,7 @@ static int configure_measurement_hardware(void)
 
 	ret = gpio_add_callback_dt(&ack, &gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("failed adding ack pin callback");
+		LOG_ERROR("failed adding ack pin callback");
 		return ret;
 	}
 
@@ -177,7 +177,7 @@ static int measure_latency_cycles(uint32_t *delta)
 	key = k_spin_lock(&lock);
 	if (gpio_pin_set_dt(&pulse, 0)) {
 		k_spin_unlock(&lock, key);
-		LOG_ERR("Failed to set pulse pin");
+		LOG_ERROR("Failed to set pulse pin");
 		ret = -1;
 		goto out;
 	}
@@ -194,7 +194,7 @@ static int measure_latency_cycles(uint32_t *delta)
 	}
 out:
 	if (gpio_pin_set_dt(&pulse, 1)) {
-		LOG_ERR("Failed to clear pulse pin");
+		LOG_ERROR("Failed to clear pulse pin");
 		ret = -1;
 	}
 
@@ -211,7 +211,7 @@ int main(void)
 
 	/* Prepare the instrumentation */
 	if (configure_measurement_hardware() < 0) {
-		LOG_ERR("Failed to configure the measurement hardware");
+		LOG_ERROR("Failed to configure the measurement hardware");
 		return -1;
 	}
 
@@ -232,7 +232,7 @@ int main(void)
 			continue;
 		}
 		if (ret < 0) {
-			LOG_ERR("DHCPv4: binding failed, aborting...");
+			LOG_ERROR("DHCPv4: binding failed, aborting...");
 			goto out;
 		}
 		break;
@@ -243,7 +243,7 @@ int main(void)
 	/* Get a socket to the Latmus port */
 	socket = net_latmon_get_socket(NULL);
 	if (socket < 0) {
-		LOG_ERR("Failed to get a socket to latmon (errno %d)", socket);
+		LOG_ERROR("Failed to get a socket to latmon (errno %d)", socket);
 		ret = -1;
 		goto out;
 	}
@@ -256,7 +256,7 @@ int main(void)
 			if (client == -EAGAIN) {
 				continue;
 			}
-			LOG_ERR("Failed to connect to latmon");
+			LOG_ERROR("Failed to connect to latmon");
 			ret = -1;
 			goto out;
 		}

@@ -43,8 +43,8 @@ static int emul_bq27z746_read_altmac(const struct emul *target, uint8_t *buf, si
 	const struct bq27z746_emul_data *data = target->data;
 
 	if (len < BQ27Z746_MAC_COMPLETE_LEN) {
-		LOG_ERR("When reading the ALTMAC, one must read the full %u byte",
-			BQ27Z746_MAC_COMPLETE_LEN);
+		LOG_ERROR("When reading the ALTMAC, one must read the full %u byte",
+			  BQ27Z746_MAC_COMPLETE_LEN);
 		return -EIO;
 	}
 
@@ -77,7 +77,7 @@ static int emul_bq27z746_read_altmac(const struct emul *target, uint8_t *buf, si
 		buf[35] = sizeof(device_chemistry) - 1 + BQ27Z746_MAC_OVERHEAD_LEN;
 		break;
 	default:
-		LOG_ERR("ALTMAC command 0x%x is not supported", data->mac_cmd);
+		LOG_ERROR("ALTMAC command 0x%x is not supported", data->mac_cmd);
 		return -EIO;
 	}
 
@@ -102,7 +102,7 @@ static int emul_bq27z746_write(const struct emul *target, uint8_t *buf, size_t l
 		data->mac_cmd = sys_get_le16(&buf[1]);
 		return 0;
 	default:
-		LOG_ERR("Writing is only supported to ALTMAC currently");
+		LOG_ERROR("Writing is only supported to ALTMAC currently");
 		return -EIO;
 	}
 }
@@ -237,7 +237,7 @@ static int emul_bq27z746_reg_read(const struct emul *target, int reg, int *val)
 		*val = 1;
 		break;
 	default:
-		LOG_ERR("Unknown register 0x%x read", reg);
+		LOG_ERROR("Unknown register 0x%x read", reg);
 		return -EIO;
 	}
 	LOG_INF("read 0x%x = 0x%x", reg, *val);
@@ -263,7 +263,7 @@ static int emul_bq27z746_read(const struct emul *target, int reg, uint8_t *buf, 
 			emul_bq27z746_read_altmac(target, buf, len);
 			break;
 		default:
-			LOG_ERR("Reading is only supported from ALTMAC currently");
+			LOG_ERROR("Reading is only supported from ALTMAC currently");
 			return -EIO;
 		}
 	}
@@ -283,18 +283,18 @@ static int bq27z746_emul_transfer_i2c(const struct emul *target, struct i2c_msg 
 	switch (num_msgs) {
 	case 1:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 
 		return emul_bq27z746_write(target, msgs->buf, msgs->len);
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 		if (msgs->len != 1) {
-			LOG_ERR("Unexpected msg0 length %d", msgs->len);
+			LOG_ERROR("Unexpected msg0 length %d", msgs->len);
 			return -EIO;
 		}
 		reg = msgs->buf[0];
@@ -307,12 +307,12 @@ static int bq27z746_emul_transfer_i2c(const struct emul *target, struct i2c_msg 
 				return rc;
 			}
 		} else {
-			LOG_ERR("Second message must be an I2C write");
+			LOG_ERROR("Second message must be an I2C write");
 			return -EIO;
 		}
 		return rc;
 	default:
-		LOG_ERR("Invalid number of messages: %d", num_msgs);
+		LOG_ERROR("Invalid number of messages: %d", num_msgs);
 		return -EIO;
 	}
 

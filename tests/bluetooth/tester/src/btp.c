@@ -111,13 +111,14 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 
 			if (len > BTP_DATA_MAX_SIZE) {
 				status = BTP_STATUS_FAILED;
-				LOG_ERR("Data len exceeds BTP MTU %u > %u", len, BTP_DATA_MAX_SIZE);
+				LOG_ERROR("Data len exceeds BTP MTU %u > %u", len,
+					  BTP_DATA_MAX_SIZE);
 			} else if (btp->index != hdr->index) {
 				status = BTP_STATUS_FAILED;
-				LOG_ERR("Index mismatch %u != %u", btp->index, hdr->index);
+				LOG_ERROR("Index mismatch %u != %u", btp->index, hdr->index);
 			} else if ((btp->expect_len >= 0) && (btp->expect_len != len)) {
 				status = BTP_STATUS_FAILED;
-				LOG_ERR("len mismatch %u != %u", btp->expect_len, len);
+				LOG_ERROR("len mismatch %u != %u", btp->expect_len, len);
 			} else {
 				status = btp->func(hdr->data, len,
 						   cmd->rsp, &rsp_len);
@@ -164,7 +165,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 
 	len = sys_le16_to_cpu(cmd->len);
 	if (len > BTP_MTU - sizeof(*cmd)) {
-		LOG_ERR("BT tester: invalid packet length");
+		LOG_ERROR("BT tester: invalid packet length");
 		*off = 0;
 		return buf;
 	}
@@ -175,7 +176,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 
 	new_buf =  k_fifo_get(&avail_queue, K_NO_WAIT);
 	if (!new_buf) {
-		LOG_ERR("BT tester: RX overflow");
+		LOG_ERROR("BT tester: RX overflow");
 		*off = 0;
 		return buf;
 	}
@@ -263,7 +264,7 @@ void tester_init(void)
 int tester_rsp_buffer_lock(void)
 {
 	if (k_mutex_lock(&rsp_buf_mutex, Z_FOREVER) != 0) {
-		LOG_ERR("Cannot lock rsp_ring_buf");
+		LOG_ERROR("Cannot lock rsp_ring_buf");
 
 		return -EACCES;
 	}

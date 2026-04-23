@@ -50,7 +50,7 @@ static int as5600_fetch(const struct device *dev, enum sensor_channel chan)
 					&status);
 
 	if (err != 0) {
-		LOG_ERR("Failed to read status register: %d", err);
+		LOG_ERROR("Failed to read status register: %d", err);
 		return err;
 	}
 

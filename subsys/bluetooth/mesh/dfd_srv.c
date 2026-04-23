@@ -533,7 +533,7 @@ static int handle_upload_start(const struct bt_mesh_model *mod, struct bt_mesh_m
 	srv->io = NULL;
 	err = srv->cb->recv(srv, srv->upload.slot, &srv->io);
 	if (err || !srv->io) {
-		LOG_ERR("App rejected upload. err: %d io: %p", err, srv->io);
+		LOG_ERROR("App rejected upload. err: %d io: %p", err, srv->io);
 		bt_mesh_dfu_slot_release(srv->upload.slot);
 		upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_INTERNAL);
 		return 0;
@@ -542,7 +542,7 @@ static int handle_upload_start(const struct bt_mesh_model *mod, struct bt_mesh_m
 	err = bt_mesh_blob_srv_recv(&srv->upload.blob, blob_id, srv->io, ttl,
 				    timeout_base);
 	if (err) {
-		LOG_ERR("BLOB Server rejected upload (err: %d)", err);
+		LOG_ERROR("BLOB Server rejected upload (err: %d)", err);
 		bt_mesh_dfu_slot_release(srv->upload.slot);
 		upload_status_rsp(srv, ctx, BT_MESH_DFD_ERR_INTERNAL);
 		return 0;
@@ -832,7 +832,7 @@ static void dfu_ended(struct bt_mesh_dfu_cli *cli,
 
 	err = bt_mesh_dfu_cli_apply(cli);
 	if (err) {
-		LOG_ERR("Apply failed: %d", err);
+		LOG_ERROR("Apply failed: %d", err);
 		dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
 	}
 }
@@ -854,7 +854,7 @@ static void dfu_applied(struct bt_mesh_dfu_cli *cli)
 
 	err = bt_mesh_dfu_cli_confirm(cli);
 	if (err) {
-		LOG_ERR("Confirm failed: %d", err);
+		LOG_ERROR("Confirm failed: %d", err);
 		dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
 	}
 }
@@ -930,7 +930,7 @@ static int dfd_srv_init(const struct bt_mesh_model *mod)
 		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_BLOB_SRV);
 
 	if (blob_srv == NULL) {
-		LOG_ERR("Missing BLOB Srv.");
+		LOG_ERROR("Missing BLOB Srv.");
 		return -EINVAL;
 	}
 
@@ -941,7 +941,7 @@ static int dfd_srv_init(const struct bt_mesh_model *mod)
 		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_DFU_CLI);
 
 	if (dfu_cli == NULL) {
-		LOG_ERR("Missing FU Cli.");
+		LOG_ERROR("Missing FU Cli.");
 		return -EINVAL;
 	}
 

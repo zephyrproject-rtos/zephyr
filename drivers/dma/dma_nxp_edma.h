@@ -275,7 +275,7 @@ static inline bool channel_allows_transition(struct edma_channel *chan,
 		}
 		break;
 	default:
-		LOG_ERR("invalid channel previous state: %d", prev);
+		LOG_ERROR("invalid channel previous state: %d", prev);
 		return false;
 	}
 
@@ -295,7 +295,7 @@ static inline int get_transfer_type(enum dma_channel_direction dir, uint32_t *ty
 		*type = kEDMA_TransferTypeP2M;
 		break;
 	default:
-		LOG_ERR("invalid channel direction: %d", dir);
+		LOG_ERROR("invalid channel direction: %d", dir);
 		return -EINVAL;
 	}
 
@@ -336,7 +336,7 @@ static inline int edma_set_channel_type(struct edma_channel *chan,
 		chan->type = CHAN_TYPE_PRODUCER;
 		break;
 	default:
-		LOG_ERR("unsupported transfer direction: %d", dir);
+		LOG_ERROR("unsupported transfer direction: %d", dir);
 		return -ENOTSUP;
 	}
 
@@ -492,8 +492,8 @@ static inline int set_slast_dlast(struct dma_config *dma_cfg,
 			slast = (-1) * (int32_t)dma_cfg->head_block->block_size;
 			break;
 		default:
-			LOG_ERR("unsupported SADDR adjustment: %d",
-				dma_cfg->head_block->source_addr_adj);
+			LOG_ERROR("unsupported SADDR adjustment: %d",
+				  dma_cfg->head_block->source_addr_adj);
 			return -EINVAL;
 		}
 	}
@@ -509,8 +509,8 @@ static inline int set_slast_dlast(struct dma_config *dma_cfg,
 			dlast = (-1) * (int32_t)dma_cfg->head_block->block_size;
 			break;
 		default:
-			LOG_ERR("unsupported DADDR adjustment: %d",
-				dma_cfg->head_block->dest_addr_adj);
+			LOG_ERROR("unsupported DADDR adjustment: %d",
+				  dma_cfg->head_block->dest_addr_adj);
 			return -EINVAL;
 		}
 	}
@@ -545,7 +545,7 @@ static inline int to_std_error(int edma_err)
 	case kStatus_Busy:
 		return -EBUSY;
 	default:
-		LOG_ERR("unknown EDMA error code: %d", edma_err);
+		LOG_ERROR("unknown EDMA error code: %d", edma_err);
 		return -EINVAL;
 	}
 }

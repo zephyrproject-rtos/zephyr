@@ -172,7 +172,7 @@ static void shi_ite_bad_received_data(const struct device *dev, int count)
 	/* End CPU access Rx FIFO, so it can clock in bytes from AP again. */
 	IT83XX_SPI_TXRXFAR = 0;
 
-	LOG_ERR("SPI rx bad data");
+	LOG_ERROR("SPI rx bad data");
 	LOG_HEXDUMP_DBG(data->in_msg, count, "in_msg=");
 }
 
@@ -228,7 +228,7 @@ static int shi_ite_backend_send(const struct ec_host_cmd_backend *backend)
 	int tx_size;
 
 	if (data->shi_state != SHI_STATE_PROCESSING) {
-		LOG_ERR("The request data is not processing (state=%d)", data->shi_state);
+		LOG_ERROR("The request data is not processing (state=%d)", data->shi_state);
 		return -EBUSY;
 	}
 
@@ -308,7 +308,7 @@ static void shi_ite_parse_header(const struct device *dev)
 		ec_host_cmd_rx_notify();
 	} else {
 		/* Invalid version number */
-		LOG_ERR("Invalid version number");
+		LOG_ERROR("Invalid version number");
 		shi_ite_bad_received_data(dev, 1);
 	}
 }
@@ -434,7 +434,7 @@ static int shi_ite_init_registers(const struct device *dev)
 	/* Set the pin to SHI alternate function. */
 	status = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure SHI pins");
+		LOG_ERROR("Failed to configure SHI pins");
 		return status;
 	}
 
@@ -460,7 +460,7 @@ static int shi_ite_init(const struct device *dev)
 	/* Configure the SPI chip select */
 	ret = gpio_pin_configure(cfg->cs.port, cfg->cs.pin, GPIO_INPUT | cfg->cs.dt_flags);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure SHI CS pin");
+		LOG_ERROR("Failed to configure SHI CS pin");
 		return ret;
 	}
 
@@ -473,7 +473,7 @@ static int shi_ite_init(const struct device *dev)
 
 	ret = gpio_pin_interrupt_configure(cfg->cs.port, cfg->cs.pin, GPIO_INT_EDGE_FALLING);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure SHI CS interrupt");
+		LOG_ERROR("Failed to configure SHI CS interrupt");
 		return -EINVAL;
 	}
 

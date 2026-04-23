@@ -315,7 +315,7 @@ void rt1718s_gpio_alert_handler(const struct device *dev)
 	if (rt1718s_reg_read_byte(dev, RT1718S_REG_RT_INT8, &reg_int8) ||
 	    rt1718s_reg_read_byte(dev, RT1718S_REG_RT_MASK8, &reg_mask8)) {
 		k_sem_give(&data_port->lock);
-		LOG_ERR("i2c access failed");
+		LOG_ERROR("i2c access failed");
 		return;
 	}
 
@@ -324,7 +324,7 @@ void rt1718s_gpio_alert_handler(const struct device *dev)
 	if (reg_int8) {
 		if (rt1718s_reg_write_byte(dev, RT1718S_REG_RT_INT8, reg_int8)) {
 			k_sem_give(&data_port->lock);
-			LOG_ERR("i2c access failed");
+			LOG_ERROR("i2c access failed");
 			return;
 		}
 	}
@@ -355,7 +355,7 @@ static int gpio_rt1718s_port_init(const struct device *dev)
 	struct gpio_rt1718s_port_data *const data = dev->data;
 
 	if (!device_is_ready(config->rt1718s_dev)) {
-		LOG_ERR("%s is not ready", config->rt1718s_dev->name);
+		LOG_ERROR("%s is not ready", config->rt1718s_dev->name);
 		return -ENODEV;
 	}
 

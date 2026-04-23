@@ -122,7 +122,7 @@ static inline void dmac_controller_reset(dmac_registers_t *dmac_reg)
 
 	if (!WAIT_FOR(((dmac_reg->DMAC_CTRL & DMAC_CTRL_SWRST_Msk) == 0), TIMEOUT_VALUE_US,
 		      k_busy_wait(DELAY_US))) {
-		LOG_ERR("DMAC reset timed out");
+		LOG_ERROR("DMAC reset timed out");
 	}
 }
 
@@ -148,7 +148,7 @@ static int8_t dmac_ch_set_trig_src_n_dir(dmac_registers_t *dmac_reg, uint8_t cha
 {
 	/* Validate trigger source */
 	if (trig_src >= DMAC_TRIG_NUM) {
-		LOG_ERR("Invalid parameter for DMA trigger source : %d", trig_src);
+		LOG_ERROR("Invalid parameter for DMA trigger source : %d", trig_src);
 		return -EINVAL;
 	}
 
@@ -164,7 +164,7 @@ static int8_t dmac_ch_set_trig_src_n_dir(dmac_registers_t *dmac_reg, uint8_t cha
 			DMAC_CHCTRLA_TRIGACT_BURST | DMAC_CHCTRLA_TRIGSRC(trig_src);
 
 	} else {
-		LOG_ERR("Invalid parameter for DMA channel direction");
+		LOG_ERROR("Invalid parameter for DMA channel direction");
 		return -EINVAL;
 	}
 
@@ -175,7 +175,7 @@ static inline int8_t dmac_ch_set_priority(dmac_registers_t *dmac_reg, uint8_t ch
 					  uint8_t priority)
 {
 	if (priority >= DMAC_LVL_NUM) {
-		LOG_ERR("Invalid parameter for DMA priority level : %d", priority);
+		LOG_ERROR("Invalid parameter for DMA priority level : %d", priority);
 		return -EINVAL;
 	}
 
@@ -189,13 +189,13 @@ static int8_t dmac_ch_set_burst_length(dmac_registers_t *dmac_reg, uint8_t chann
 {
 	/* Validate source and destination burst lengths */
 	if (source_burst_length != dest_burst_length) {
-		LOG_ERR("Source and destination burst lengths do not match");
+		LOG_ERROR("Source and destination burst lengths do not match");
 		return -EINVAL;
 	}
 
 	/* Validate burst length limit */
 	if (source_burst_length > 16U) {
-		LOG_ERR("Burst length exceeds maximum allowed value : %d", source_burst_length);
+		LOG_ERROR("Burst length exceeds maximum allowed value : %d", source_burst_length);
 		return -EINVAL;
 	}
 
@@ -325,7 +325,7 @@ static int8_t dmac_ch_get_status(dmac_registers_t *dmac_reg, struct dma_mchp_dma
 		stat->pending_length *= 4U;
 		break;
 	default:
-		LOG_ERR("Invalid configuration beat size");
+		LOG_ERROR("Invalid configuration beat size");
 		return -EINVAL;
 	}
 
@@ -362,7 +362,7 @@ static int8_t dmac_desc_block_config(struct dma_block_config *block, void *desc_
 		btctrl |= DMAC_BTCTRL_BEATSIZE_WORD;
 		break;
 	default:
-		LOG_ERR("Invalid parameter for DMA source data size");
+		LOG_ERROR("Invalid parameter for DMA source data size");
 		return -EINVAL;
 	}
 
@@ -380,7 +380,7 @@ static int8_t dmac_desc_block_config(struct dma_block_config *block, void *desc_
 		desc->DMAC_SRCADDR = block->source_address;
 		break;
 	default:
-		LOG_ERR("Invalid parameter for DMA source address");
+		LOG_ERROR("Invalid parameter for DMA source address");
 		return -EINVAL;
 	}
 
@@ -394,7 +394,7 @@ static int8_t dmac_desc_block_config(struct dma_block_config *block, void *desc_
 		desc->DMAC_DSTADDR = block->dest_address;
 		break;
 	default:
-		LOG_ERR("Invalid parameter for DMA destination address");
+		LOG_ERROR("Invalid parameter for DMA destination address");
 		return -EINVAL;
 	}
 
@@ -431,7 +431,7 @@ static int8_t dmac_desc_reload_block(struct dma_mchp_dmac *data, uint32_t channe
 		desc->DMAC_BTCNT = (uint16_t)(size / 4U);
 		break;
 	default:
-		LOG_ERR("Invalid configuration beat size");
+		LOG_ERROR("Invalid configuration beat size");
 		return -EINVAL;
 	}
 
@@ -485,17 +485,17 @@ static int dma_mchp_validate(const struct device *dev, uint32_t channel, struct 
 	struct dma_mchp_dev_data *const dev_data = dev->data;
 
 	if (channel >= dev_data->dma_ctx.dma_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
 	if (dmac_ch_get_state(DMAC_REG, channel) == DMA_MCHP_CH_ACTIVE) {
-		LOG_ERR("DMA channel %d is already in use", channel);
+		LOG_ERROR("DMA channel %d is already in use", channel);
 		return -EBUSY;
 	}
 
 	if (config->source_data_size != config->dest_data_size) {
-		LOG_ERR("Source and destination data sizes do not match");
+		LOG_ERROR("Source and destination data sizes do not match");
 		return -EINVAL;
 	}
 
@@ -511,14 +511,14 @@ static int dma_mchp_setup_channel(const struct device *dev, uint32_t channel,
 	ret = dmac_ch_set_trig_src_n_dir(DMAC_REG, channel, config->dma_slot,
 					 config->channel_direction);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure trigger source/direction for channel %u", channel);
+		LOG_ERROR("Failed to configure trigger source/direction for channel %u", channel);
 		return ret;
 	}
 
 	/* Set channel priority */
 	ret = dmac_ch_set_priority(DMAC_REG, channel, config->channel_priority);
 	if (ret != 0) {
-		LOG_ERR("Failed to set priority for channel %u", channel);
+		LOG_ERROR("Failed to set priority for channel %u", channel);
 		return ret;
 	}
 
@@ -526,7 +526,7 @@ static int dma_mchp_setup_channel(const struct device *dev, uint32_t channel,
 	ret = dmac_ch_set_burst_length(DMAC_REG, channel, config->source_burst_length,
 				       config->dest_burst_length);
 	if (ret != 0) {
-		LOG_ERR("Failed to set burst length for channel %u", channel);
+		LOG_ERROR("Failed to set burst length for channel %u", channel);
 		return ret;
 	}
 
@@ -547,7 +547,7 @@ static int dma_mchp_desc_setup(struct dma_mchp_dev_data *dev_data, struct dma_co
 	/* Configure head block */
 	ret = dmac_desc_block_config(block, desc, NULL, config->source_data_size);
 	if (ret < 0) {
-		LOG_ERR("DMA Error: Block 1 configuration failed!");
+		LOG_ERROR("DMA Error: Block 1 configuration failed!");
 	}
 
 	return ret;
@@ -651,19 +651,19 @@ static int dma_mchp_start(const struct device *dev, uint32_t channel)
 
 	/* Validate channel number */
 	if (channel >= dev_data->dma_ctx.dma_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
 	/* Check if the channel is already in use */
 	if (dmac_ch_get_state(DMAC_REG, channel) == DMA_MCHP_CH_ACTIVE) {
-		LOG_ERR("DMA channel:%d is currently busy", channel);
+		LOG_ERROR("DMA channel:%d is currently busy", channel);
 		return -EBUSY;
 	}
 
 	/* Check if the channel is configured */
 	if (dev_data->dma_channel_config[channel].is_configured != true) {
-		LOG_ERR("DMA descriptors not configured for channel : %d", channel);
+		LOG_ERROR("DMA descriptors not configured for channel : %d", channel);
 		return -EINVAL;
 	}
 
@@ -693,7 +693,7 @@ static int dma_mchp_stop(const struct device *dev, uint32_t channel)
 
 	/* Validate the DMA channel */
 	if (channel >= dev_data->dma_ctx.dma_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -726,17 +726,17 @@ static int dma_mchp_reload(const struct device *dev, uint32_t channel, uint32_t 
 
 	/* Validate channel number */
 	if (channel >= dev_data->dma_ctx.dma_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 	/* Check if the channel is already in use */
 	if (dmac_ch_get_state(DMAC_REG, channel) == DMA_MCHP_CH_ACTIVE) {
-		LOG_ERR("DMA channel:%d is currently busy", channel);
+		LOG_ERROR("DMA channel:%d is currently busy", channel);
 		return -EBUSY;
 	}
 	/* Check if the channel is configured */
 	if (dev_data->dma_channel_config[channel].is_configured != true) {
-		LOG_ERR("DMA descriptors not configured for channel : %d", channel);
+		LOG_ERROR("DMA descriptors not configured for channel : %d", channel);
 		return -EINVAL;
 	}
 
@@ -772,7 +772,7 @@ static int dma_mchp_suspend(const struct device *dev, uint32_t channel)
 
 	/* Validate the DMA channel */
 	if (channel >= dev_data->dma_ctx.dma_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -808,7 +808,7 @@ static int dma_mchp_resume(const struct device *dev, uint32_t channel)
 
 	/* Validate the DMA channel */
 	if (channel >= dev_data->dma_ctx.dma_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -847,7 +847,7 @@ static int dma_mchp_get_status(const struct device *dev, uint32_t channel, struc
 
 	/* Validate the DMA channel */
 	if (channel >= dev_data->dma_ctx.dma_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -937,7 +937,7 @@ static int dma_mchp_init(const struct device *dev)
 	ret = clock_control_on(dev_cfg->clock_dev, dev_cfg->mclk_sys);
 
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to enable MCLK for DMA: %d", ret);
+		LOG_ERROR("Failed to enable MCLK for DMA: %d", ret);
 		return ret;
 	}
 

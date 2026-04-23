@@ -80,7 +80,7 @@ static int commit_optb(const struct device *dev)
 	barrier_dsync_fence_full();
 	while (regs->OPTSR_CUR & FLASH_OPTSR_OPT_BUSY) {
 		if (k_uptime_get() > timeout_time) {
-			LOG_ERR("Timeout writing option bytes.");
+			LOG_ERROR("Timeout writing option bytes.");
 			return -ETIMEDOUT;
 		}
 	}
@@ -98,13 +98,13 @@ static int write_opt(const struct device *dev, uint32_t mask, uint32_t value, ui
 	int rc = 0;
 
 	if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
-		LOG_ERR("Option bytes locked");
+		LOG_ERROR("Option bytes locked");
 		return -EIO;
 	}
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	if (rc < 0) {
-		LOG_ERR("Err flash no idle");
+		LOG_ERROR("Err flash no idle");
 		return rc;
 	}
 
@@ -319,7 +319,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t le
 		 * Locations beyond bank2 are caught by flash_stm32_range_exists
 		 */
 		if ((offset < BANK2_OFFSET) && (offset + len > REAL_FLASH_SIZE_KB / 2)) {
-			LOG_ERR("Range overlaps flash bank discontinuity");
+			LOG_ERROR("Range overlaps flash bank discontinuity");
 			return false;
 		}
 	}
@@ -327,9 +327,9 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t le
 
 	if (write) {
 		if ((offset % (FLASH_NB_32BITWORD_IN_FLASHWORD * 4)) != 0) {
-			LOG_ERR("Write offset not aligned on flashword length. "
-				"Offset: 0x%lx, flashword length: %d",
-				(unsigned long)offset, FLASH_NB_32BITWORD_IN_FLASHWORD * 4);
+			LOG_ERROR("Write offset not aligned on flashword length. "
+				  "Offset: 0x%lx, flashword length: %d",
+				  (unsigned long)offset, FLASH_NB_32BITWORD_IN_FLASHWORD * 4);
 			return false;
 		}
 	}
@@ -387,7 +387,7 @@ static int flash_stm32_check_status(const struct device *dev)
 
 	if (sr & error_bank1) {
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-		LOG_ERR("Status Bank%d: 0x%08x", 1, sr);
+		LOG_ERROR("Status Bank%d: 0x%08x", 1, sr);
 		return -EIO;
 	}
 
@@ -413,7 +413,7 @@ static int flash_stm32_check_status(const struct device *dev)
 			regs->CCR2 |= FLASH_FLAG_STRBERR_BANK2;
 			return 0;
 		}
-		LOG_ERR("Status Bank%d: 0x%08x", 2, sr);
+		LOG_ERROR("Status Bank%d: 0x%08x", 2, sr);
 		return -EIO;
 	}
 #endif
@@ -439,7 +439,7 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 #endif
 	{
 		if (expired) {
-			LOG_ERR("Timeout! val: %d ms", STM32H7_FLASH_TIMEOUT);
+			LOG_ERROR("Timeout! val: %d ms", STM32H7_FLASH_TIMEOUT);
 			return -EIO;
 		}
 
@@ -514,7 +514,7 @@ static int erase_sector(const struct device *dev, int offset)
 
 	if (sector.bank == 0) {
 
-		LOG_ERR("Offset %ld does not exist", (long)offset);
+		LOG_ERROR("Offset %ld does not exist", (long)offset);
 		return -EINVAL;
 	}
 
@@ -560,7 +560,7 @@ static int wait_write_queue(const struct flash_stm32_sector_t *sector)
 
 	while (*(sector->sr) & FLASH_SR_QW) {
 		if (k_uptime_get() > timeout_time) {
-			LOG_ERR("Timeout! val: %d", 100);
+			LOG_ERROR("Timeout! val: %d", 100);
 			return -EIO;
 		}
 	}
@@ -576,7 +576,7 @@ static int write_ndwords(const struct device *dev, off_t offset, const uint64_t 
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
 	if (sector.bank == 0) {
-		LOG_ERR("Offset %ld does not exist", (long)offset);
+		LOG_ERROR("Offset %ld does not exist", (long)offset);
 		return -EINVAL;
 	}
 
@@ -724,7 +724,7 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset, size_t le
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Erase range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERROR("Erase range invalid. Offset: %ld, len: %zu", (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -748,7 +748,7 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset, size_t le
 	flash_stm32h7_flush_caches(dev, flush_offset, flush_len);
 #elif CONFIG_CPU_CORTEX_M4
 	if (LL_AHB1_GRP1_IsEnabledClock(LL_AHB1_GRP1_PERIPH_ART) && LL_ART_IsEnabled()) {
-		LOG_ERR("Cortex M4: ART enabled not supported by flash driver");
+		LOG_ERROR("Cortex M4: ART enabled not supported by flash driver");
 	}
 #endif /* CONFIG_CPU_CORTEX_M7 */
 done:
@@ -768,7 +768,7 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset, const voi
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Write range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERROR("Write range invalid. Offset: %ld, len: %zu", (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -802,7 +802,7 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset, const voi
 static int flash_stm32h7_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	if (!flash_stm32_valid_range(dev, offset, len, false)) {
-		LOG_ERR("Read range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERROR("Read range invalid. Offset: %ld, len: %zu", (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -936,7 +936,7 @@ static int stm32h7_flash_init(const struct device *dev)
 
 	/* enable clock : enable the RCC_AHB3ENR_FLASHEN bit */
 	if (clock_control_on(clk, (clock_control_subsys_t)&p->pclken) != 0) {
-		LOG_ERR("Failed to enable clock");
+		LOG_ERROR("Failed to enable clock");
 		return -EIO;
 	}
 #endif

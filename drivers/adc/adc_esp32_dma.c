@@ -73,13 +73,13 @@ static int adc_esp32_dma_start(const struct device *dev, uint8_t *buf, size_t le
 
 	err = dma_get_status(conf->dma_dev, conf->dma_channel, &dma_status);
 	if (err) {
-		LOG_ERR("Unable to get dma channel[%u] status (%d)",
-			(unsigned int)conf->dma_channel, err);
+		LOG_ERROR("Unable to get dma channel[%u] status (%d)",
+			  (unsigned int)conf->dma_channel, err);
 		return -EINVAL;
 	}
 
 	if (dma_status.busy) {
-		LOG_ERR("dma channel[%u] is busy!", (unsigned int)conf->dma_channel);
+		LOG_ERROR("dma channel[%u] is busy!", (unsigned int)conf->dma_channel);
 		return -EBUSY;
 	}
 
@@ -94,13 +94,13 @@ static int adc_esp32_dma_start(const struct device *dev, uint8_t *buf, size_t le
 
 	err = dma_config(conf->dma_dev, conf->dma_channel, &dma_cfg);
 	if (err) {
-		LOG_ERR("Error configuring dma (%d)", err);
+		LOG_ERROR("Error configuring dma (%d)", err);
 		return err;
 	}
 
 	err = dma_start(conf->dma_dev, conf->dma_channel);
 	if (err) {
-		LOG_ERR("Error starting dma (%d)", err);
+		LOG_ERROR("Error starting dma (%d)", err);
 		return err;
 	}
 
@@ -114,7 +114,7 @@ static int adc_esp32_dma_stop(const struct device *dev)
 
 	err = dma_stop(conf->dma_dev, conf->dma_channel);
 	if (err) {
-		LOG_ERR("Error stopping dma (%d)", err);
+		LOG_ERROR("Error stopping dma (%d)", err);
 	}
 
 	return err;
@@ -165,7 +165,8 @@ static int adc_esp32_fill_digi_ctrlr_cfg(const struct device *dev, const struct 
 			}
 
 			if (*unit_attenuation != data->attenuation[channel_id]) {
-				LOG_ERR("Channel[%u] attenuation different of unit[%u] attenuation",
+				LOG_ERROR(
+					"Channel[%u] attenuation different of unit[%u] attenuation",
 					(unsigned int)channel_id, (unsigned int)conf->unit);
 				return -EINVAL;
 			}
@@ -178,7 +179,7 @@ static int adc_esp32_fill_digi_ctrlr_cfg(const struct device *dev, const struct 
 
 			*pattern_len += 1;
 			if (*pattern_len > SOC_ADC_PATT_LEN_MAX) {
-				LOG_ERR("Max pattern len is %d", SOC_ADC_PATT_LEN_MAX);
+				LOG_ERROR("Max pattern len is %d", SOC_ADC_PATT_LEN_MAX);
 				return -EINVAL;
 			}
 
@@ -347,7 +348,7 @@ static int adc_esp32_wait_for_dma_conv_done(const struct device *dev)
 
 	err = k_sem_take(&data->dma_conv_wait_lock, K_MSEC(ADC_DMA_MAX_CONV_DONE_TIME));
 	if (err) {
-		LOG_ERR("Error taking dma_conv_wait_lock (%d)", err);
+		LOG_ERROR("Error taking dma_conv_wait_lock (%d)", err);
 	}
 
 	return err;
@@ -372,7 +373,7 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 		sample_freq_hz = MHZ(1) / options->interval_us;
 		if (sample_freq_hz < SOC_ADC_SAMPLE_FREQ_THRES_LOW ||
 		    sample_freq_hz > SOC_ADC_SAMPLE_FREQ_THRES_HIGH) {
-			LOG_ERR("ADC sampling frequency out of range: %uHz", sample_freq_hz);
+			LOG_ERROR("ADC sampling frequency out of range: %uHz", sample_freq_hz);
 			return -EINVAL;
 		}
 	}
@@ -389,7 +390,7 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 	}
 
 	if (seq->buffer_size < (number_of_samplings * sizeof(uint16_t))) {
-		LOG_ERR("buffer size is not enough to store all samples!");
+		LOG_ERROR("buffer size is not enough to store all samples!");
 		return -EINVAL;
 	}
 
@@ -398,7 +399,7 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 		number_of_adc_samples * SOC_ADC_DIGI_DATA_BYTES_PER_CONV;
 
 	if (number_of_adc_dma_data_bytes > ADC_DMA_BUFFER_SIZE) {
-		LOG_ERR("dma buffer size insufficient to store a complete sequence!");
+		LOG_ERROR("dma buffer size insufficient to store a complete sequence!");
 		return -EINVAL;
 	}
 
@@ -442,7 +443,7 @@ int adc_esp32_dma_channel_setup(const struct device *dev, const struct adc_chann
 		(const struct adc_esp32_conf *)dev->config;
 
 	if (!SOC_ADC_DIG_SUPPORTED_UNIT(conf->unit)) {
-		LOG_ERR("ADC2 dma mode is no longer supported, please use ADC1!");
+		LOG_ERROR("ADC2 dma mode is no longer supported, please use ADC1!");
 		return -EINVAL;
 	}
 
@@ -454,20 +455,20 @@ int adc_esp32_dma_init(const struct device *dev)
 	struct adc_esp32_data *data = (struct adc_esp32_data *)dev->data;
 
 	if (k_sem_init(&data->dma_conv_wait_lock, 0, 1)) {
-		LOG_ERR("dma_conv_wait_lock initialization failed!");
+		LOG_ERROR("dma_conv_wait_lock initialization failed!");
 		return -EINVAL;
 	}
 
 	data->adc_hal_dma_ctx.rx_desc = k_aligned_alloc(sizeof(uint32_t), sizeof(dma_descriptor_t));
 	if (!data->adc_hal_dma_ctx.rx_desc) {
-		LOG_ERR("rx_desc allocation failed!");
+		LOG_ERROR("rx_desc allocation failed!");
 		return -ENOMEM;
 	}
 	LOG_DBG("rx_desc = 0x%08X", (unsigned int)data->adc_hal_dma_ctx.rx_desc);
 
 	data->dma_buffer = k_aligned_alloc(sizeof(uint32_t), ADC_DMA_BUFFER_SIZE);
 	if (!data->dma_buffer) {
-		LOG_ERR("dma buffer allocation failed!");
+		LOG_ERROR("dma buffer allocation failed!");
 		k_free(data->adc_hal_dma_ctx.rx_desc);
 		return -ENOMEM;
 	}
@@ -483,7 +484,7 @@ int adc_esp32_dma_init(const struct device *dev)
 	int err = esp_intr_alloc(I2S0_INTR_SOURCE, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED,
 				 adc_esp32_dma_intr_handler, (void *)dev, &(data->irq_handle));
 	if (err != 0) {
-		LOG_ERR("Could not allocate interrupt (err %d)", err);
+		LOG_ERROR("Could not allocate interrupt (err %d)", err);
 		k_free(data->adc_hal_dma_ctx.rx_desc);
 		k_free(data->dma_buffer);
 		return err;
@@ -505,7 +506,7 @@ int adc_esp32_dma_init(const struct device *dev)
 				 ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED,
 				 adc_esp32_dma_intr_handler, (void *)dev, &(data->irq_handle));
 	if (err != 0) {
-		LOG_ERR("Could not allocate interrupt (err %d)", err);
+		LOG_ERROR("Could not allocate interrupt (err %d)", err);
 		k_free(data->adc_hal_dma_ctx.rx_desc);
 		k_free(data->dma_buffer);
 		return err;

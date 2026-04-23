@@ -94,13 +94,13 @@ static int espi_emul_read_lpc_request(const struct device *dev, enum lpc_periphe
 	ARG_UNUSED(data);
 
 	if (!(emul_data->cfg.channel_caps & ESPI_CHANNEL_VWIRE)) {
-		LOG_ERR("bad channel vwire");
+		LOG_ERROR("bad channel vwire");
 		return -EINVAL;
 	}
 
 	emul = espi_emul_find(dev, EMUL_ESPI_HOST_CHIPSEL);
 	if (!emul) {
-		LOG_ERR("espi_emul not found");
+		LOG_ERROR("espi_emul not found");
 		return -ENOTSUP;
 	}
 

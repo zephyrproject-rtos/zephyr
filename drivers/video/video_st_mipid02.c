@@ -190,7 +190,7 @@ static int mipid02_get_fmt(const struct device *dev, struct video_format *fmt)
 
 		desc = mipid02_get_format_desc(fmt->pixelformat);
 		if (desc == NULL) {
-			LOG_ERR("Sensor format not supported by the ST-MIPID02");
+			LOG_ERROR("Sensor format not supported by the ST-MIPID02");
 			return -EIO;
 		}
 
@@ -293,7 +293,7 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 
 	desc = mipid02_get_format_desc(drv_data->fmt.pixelformat);
 	if (!desc) {
-		LOG_ERR("No valid format desc available, should get/set_fmt prior to set_stream");
+		LOG_ERROR("No valid format desc available, should get/set_fmt prior to set_stream");
 		return -EIO;
 	}
 
@@ -302,7 +302,7 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 					    video_bits_per_pixel(desc->csi_pixelformat),
 					    cfg->csi.nb_lanes);
 	if (link_freq < 0) {
-		LOG_ERR("Failed to retrieve source link-frequency");
+		LOG_ERROR("Failed to retrieve source link-frequency");
 		return -EIO;
 	}
 
@@ -368,12 +368,12 @@ static int mipid02_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
+		LOG_ERROR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
 		return -ENODEV;
 	}
 

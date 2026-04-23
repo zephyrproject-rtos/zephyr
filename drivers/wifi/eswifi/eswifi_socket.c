@@ -59,7 +59,7 @@ static int __read_data(struct eswifi_dev *eswifi, size_t len, char **data)
 	snprintk(size, sizeof(size), "R1=%u\r", len);
 	ret = eswifi_at_cmd(eswifi, size);
 	if (ret < 0) {
-		LOG_ERR("Unable to set read size");
+		LOG_ERROR("Unable to set read size");
 		return -EIO;
 	}
 
@@ -67,7 +67,7 @@ static int __read_data(struct eswifi_dev *eswifi, size_t len, char **data)
 	snprintk(timeout, sizeof(timeout), "R2=%u\r", 30); /* 30 ms */
 	ret = eswifi_at_cmd(eswifi, timeout);
 	if (ret < 0) {
-		LOG_ERR("Unable to set timeout");
+		LOG_ERROR("Unable to set timeout");
 		return -EIO;
 	}
 
@@ -80,7 +80,7 @@ int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 	int err;
 
 	if (addr->sa_family != NET_AF_INET) {
-		LOG_ERR("Only NET_AF_INET is supported!");
+		LOG_ERROR("Only NET_AF_INET is supported!");
 		return -EPFNOSUPPORT;
 	}
 
@@ -91,7 +91,7 @@ int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P2=%d\r", socket->port);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to set local port");
+		LOG_ERROR("Unable to set local port");
 		return -EIO;
 	}
 
@@ -100,7 +100,7 @@ int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 		snprintk(eswifi->buf, sizeof(eswifi->buf), "P5=1\r");
 		err = eswifi_at_cmd(eswifi, eswifi->buf);
 		if (err < 0) {
-			LOG_ERR("Unable to start UDP server");
+			LOG_ERROR("Unable to start UDP server");
 			return -EIO;
 		}
 	}
@@ -137,7 +137,7 @@ static void eswifi_off_read_work(struct k_work *work)
 	pkt = net_pkt_rx_alloc_with_buffer(eswifi->iface, 1460,
 					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		LOG_ERR("Cannot allocate rx packet");
+		LOG_ERROR("Cannot allocate rx packet");
 		goto done;
 	}
 
@@ -186,7 +186,7 @@ done:
 	err = k_work_reschedule_for_queue(&eswifi->work_q, &socket->read_work,
 					  K_MSEC(next_timeout_ms));
 	if (err < 0) {
-		LOG_ERR("Rescheduling socket read error");
+		LOG_ERROR("Rescheduling socket read error");
 	}
 
 	eswifi_unlock(eswifi);
@@ -207,7 +207,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P6=0\r");
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to stop running client");
+		LOG_ERROR("Unable to stop running client");
 		return -EIO;
 	}
 
@@ -215,7 +215,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P5=0\r");
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to stop running client");
+		LOG_ERROR("Unable to stop running client");
 		return -EIO;
 	}
 
@@ -223,7 +223,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P2=0\r");
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to stop running client");
+		LOG_ERROR("Unable to stop running client");
 		return -EIO;
 	}
 
@@ -234,7 +234,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to set remote ip");
+		LOG_ERROR("Unable to set remote ip");
 		return -EIO;
 	}
 
@@ -243,7 +243,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 		(uint16_t)sys_be16_to_cpu(net_sin(addr)->sin_port));
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to set remote port");
+		LOG_ERROR("Unable to set remote port");
 		return -EIO;
 	}
 
@@ -251,7 +251,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P6=1\r");
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to start TCP/UDP client");
+		LOG_ERROR("Unable to start TCP/UDP client");
 		return -EIO;
 	}
 
@@ -272,7 +272,7 @@ int __eswifi_listen(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P8=%d\r", backlog);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to start set listen backlog");
+		LOG_ERROR("Unable to start set listen backlog");
 		return -EIO;
 	}
 
@@ -294,7 +294,7 @@ int __eswifi_accept(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket)
 
 	/* Start TCP Server */
 	if (eswifi_at_cmd(eswifi, cmd) < 0) {
-		LOG_ERR("Unable to start TCP server");
+		LOG_ERROR("Unable to start TCP server");
 		return -EIO;
 	}
 
@@ -325,7 +325,7 @@ int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
 	LOG_DBG("");
 
 	if (family != NET_AF_INET) {
-		LOG_ERR("Only NET_AF_INET is supported!");
+		LOG_ERROR("Only NET_AF_INET is supported!");
 		return -EPFNOSUPPORT;
 	}
 
@@ -340,26 +340,26 @@ int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
 	}
 
 	if (!socket) {
-		LOG_ERR("No socket resource available");
+		LOG_ERROR("No socket resource available");
 		return -ENOMEM;
 	}
 
 	err = eswifi_socket_type_from_zephyr(proto, &socket->type);
 	if (err) {
-		LOG_ERR("Only TCP & UDP is supported");
+		LOG_ERROR("Only TCP & UDP is supported");
 		return err;
 	}
 
 	err = __select_socket(eswifi, socket->index);
 	if (err < 0) {
-		LOG_ERR("Unable to select socket %u", socket->index);
+		LOG_ERROR("Unable to select socket %u", socket->index);
 		return -EIO;
 	}
 
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P1=%d\r", socket->type);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to set transport protocol");
+		LOG_ERROR("Unable to set transport protocol");
 		return -EIO;
 	}
 

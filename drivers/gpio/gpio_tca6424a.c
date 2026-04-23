@@ -75,8 +75,7 @@ static int read_port_regs(const struct device *dev, uint8_t reg, uint32_t *buf)
 
 	ret = i2c_burst_read_dt(&config->i2c_spec, reg, (uint8_t *)&port_data, 3);
 	if (ret != 0) {
-		LOG_ERR("%s: error reading register 0x%X (%d)", dev->name,
-			reg, ret);
+		LOG_ERROR("%s: error reading register 0x%X (%d)", dev->name, reg, ret);
 		return ret;
 	}
 
@@ -117,9 +116,9 @@ static int write_port_regs(const struct device *dev, uint8_t reg, uint32_t value
 	sys_put_le24(value, &buf[1]);
 	ret = i2c_write_dt(&config->i2c_spec, buf, sizeof(buf));
 	if (ret != 0) {
-		LOG_ERR("%s: error writing to register 0x%X "
-			"(%d)",
-			dev->name, reg, ret);
+		LOG_ERROR("%s: error writing to register 0x%X "
+			  "(%d)",
+			  dev->name, reg, ret);
 	}
 	return ret;
 }
@@ -309,7 +308,7 @@ static int tca6424a_pin_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 
 	ret = tca6424a_setup_pin(dev, pin, flags);
 	if (ret != 0) {
-		LOG_ERR("%s: error setting pin direction (%d)", dev->name, ret);
+		LOG_ERROR("%s: error setting pin direction (%d)", dev->name, ret);
 	}
 
 	k_sem_give(&drv_data->lock);
@@ -462,7 +461,7 @@ static int tca6424a_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(drv_cfg->i2c_spec.bus)) {
-		LOG_ERR("I2C device not found");
+		LOG_ERROR("I2C device not found");
 		return -ENODEV;
 	}
 	/* If the RESET line is available, use it to reset the expander.
@@ -471,12 +470,12 @@ static int tca6424a_init(const struct device *dev)
 	 */
 	if (drv_cfg->reset_gpio.port) {
 		if (!gpio_is_ready_dt(&drv_cfg->reset_gpio)) {
-			LOG_ERR("%s is not ready", drv_cfg->reset_gpio.port->name);
+			LOG_ERROR("%s is not ready", drv_cfg->reset_gpio.port->name);
 			return -ENODEV;
 		}
 		ret = gpio_pin_configure_dt(&drv_cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s: failed to configure RESET line: %d", dev->name, ret);
+			LOG_ERROR("%s: failed to configure RESET line: %d", dev->name, ret);
 			return ret;
 		}
 		/* RESET signal needs to be active for a minimum of 30 ns. */
@@ -484,7 +483,7 @@ static int tca6424a_init(const struct device *dev)
 
 		ret = gpio_pin_set_dt(&drv_cfg->reset_gpio, 0);
 		if (ret != 0) {
-			LOG_ERR("%s: failed to deactivate RESET line: %d", dev->name, ret);
+			LOG_ERROR("%s: failed to deactivate RESET line: %d", dev->name, ret);
 			return ret;
 		}
 		/* Give the expander at least 200 ns to recover after reset. */
@@ -492,7 +491,7 @@ static int tca6424a_init(const struct device *dev)
 	} else {
 		ret = update_invers_regs(dev, 0x0);
 		if (ret != 0) {
-			LOG_ERR("%s: failed to reset inversion register: %d", dev->name, ret);
+			LOG_ERROR("%s: failed to reset inversion register: %d", dev->name, ret);
 			return ret;
 		}
 	}
@@ -510,15 +509,16 @@ static int tca6424a_init(const struct device *dev)
 	/* Read initial state of the input port register. */
 	ret = update_input_regs(dev, &drv_data->pins_state.input);
 	if (ret != 0) {
-		LOG_ERR("%s: failed to initially read input port: %d", dev->name, ret);
+		LOG_ERROR("%s: failed to initially read input port: %d", dev->name, ret);
 		return ret;
 	}
 
 	/* If the INT line is available, configure the callback for it. */
 	if (drv_cfg->int_gpio.port) {
 		if (!gpio_is_ready_dt(&drv_cfg->int_gpio)) {
-			LOG_ERR("Cannot get pointer to gpio interrupt device "
-				"%s init failed", dev->name);
+			LOG_ERROR("Cannot get pointer to gpio interrupt device "
+				  "%s init failed",
+				  dev->name);
 			return -EINVAL;
 		}
 
@@ -528,13 +528,13 @@ static int tca6424a_init(const struct device *dev)
 
 		ret = gpio_pin_configure_dt(&drv_cfg->int_gpio, GPIO_INPUT);
 		if (ret != 0) {
-			LOG_ERR("%s init failed: %d", dev->name, ret);
+			LOG_ERROR("%s init failed: %d", dev->name, ret);
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&drv_cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s init failed: %d", dev->name, ret);
+			LOG_ERROR("%s init failed: %d", dev->name, ret);
 			return ret;
 		}
 
@@ -543,7 +543,7 @@ static int tca6424a_init(const struct device *dev)
 
 		ret = gpio_add_callback(drv_cfg->int_gpio.port, &drv_data->int_gpio_cb);
 		if (ret != 0) {
-			LOG_ERR("%s init failed: %d", dev->name, ret);
+			LOG_ERROR("%s init failed: %d", dev->name, ret);
 			return ret;
 		}
 	}

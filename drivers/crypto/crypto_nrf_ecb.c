@@ -34,11 +34,11 @@ static int do_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 	ARG_UNUSED(ctx);
 
 	if (pkt->in_len != ECB_AES_BLOCK_SIZE) {
-		LOG_ERR("only 16-byte blocks are supported");
+		LOG_ERROR("only 16-byte blocks are supported");
 		return -EINVAL;
 	}
 	if (pkt->out_buf_max < pkt->in_len) {
-		LOG_ERR("output buffer too small");
+		LOG_ERROR("output buffer too small");
 		return -EINVAL;
 	}
 
@@ -54,7 +54,7 @@ static int do_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 		 nrf_ecb_event_check(NRF_ECB, NRF_ECB_EVENT_ERRORECB))) {
 	}
 	if (nrf_ecb_event_check(NRF_ECB, NRF_ECB_EVENT_ERRORECB)) {
-		LOG_ERR("ECB operation error");
+		LOG_ERROR("ECB operation error");
 		return -EIO;
 	}
 	if (pkt->out_buf != drv_state.data.ciphertext) {
@@ -93,18 +93,18 @@ static int nrf_ecb_session_setup(const struct device *dev,
 	    (ctx->keylen != ECB_AES_KEY_SIZE) ||
 	    (op_type != CRYPTO_CIPHER_OP_ENCRYPT) ||
 	    (mode != CRYPTO_CIPHER_MODE_ECB)) {
-		LOG_ERR("This driver only supports 128-bit AES ECB encryption"
-			" in synchronous mode");
+		LOG_ERROR("This driver only supports 128-bit AES ECB encryption"
+			  " in synchronous mode");
 		return -EINVAL;
 	}
 
 	if (ctx->key.bit_stream == NULL) {
-		LOG_ERR("No key provided");
+		LOG_ERROR("No key provided");
 		return -EINVAL;
 	}
 
 	if (drv_state.in_use) {
-		LOG_ERR("Peripheral in use");
+		LOG_ERROR("Peripheral in use");
 		return -EBUSY;
 	}
 

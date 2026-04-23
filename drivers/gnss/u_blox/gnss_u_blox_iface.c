@@ -79,14 +79,14 @@ static int configure_baudrate(const struct device *dev, bool valset_supported)
 
 	err = uart_config_get(cfg->bus, &uart_cfg);
 	if (err < 0) {
-		LOG_ERR("Failed to get UART config: %d", err);
+		LOG_ERROR("Failed to get UART config: %d", err);
 		return err;
 	}
 
 	uart_cfg.baudrate = cfg->baudrate.initial;
 	err = uart_configure(cfg->bus, &uart_cfg);
 	if (err < 0) {
-		LOG_ERR("Failed to configure UART: %d", err);
+		LOG_ERROR("Failed to configure UART: %d", err);
 	}
 
 	if (valset_supported) {
@@ -99,7 +99,7 @@ static int configure_baudrate(const struct device *dev, bool valset_supported)
 
 	err = uart_configure(cfg->bus, &uart_cfg);
 	if (err < 0) {
-		LOG_ERR("Failed to configure UART: %d", err);
+		LOG_ERROR("Failed to configure UART: %d", err);
 	}
 
 	return err;
@@ -134,13 +134,13 @@ static int init_modem(struct u_blox_iface_data *data, const struct u_blox_iface_
 						     &uart_backend_config);
 	err = modem_pipe_open(data->backend.pipe, K_SECONDS(1));
 	if (err != 0) {
-		LOG_ERR("Failed to open Modem pipe: %d", err);
+		LOG_ERROR("Failed to open Modem pipe: %d", err);
 		return err;
 	}
 
 	err = modem_ubx_attach(&data->ubx.inst, data->backend.pipe);
 	if (err != 0) {
-		LOG_ERR("Failed to attach UBX inst to modem pipe: %d", err);
+		LOG_ERROR("Failed to attach UBX inst to modem pipe: %d", err);
 		return err;
 	}
 
@@ -162,13 +162,13 @@ static int reattach_modem(struct u_blox_iface_data *data)
 
 	err = modem_pipe_open(data->backend.pipe, K_SECONDS(1));
 	if (err != 0) {
-		LOG_ERR("Failed to re-open modem pipe: %d", err);
+		LOG_ERROR("Failed to re-open modem pipe: %d", err);
 		return err;
 	}
 
 	err = modem_ubx_attach(&data->ubx.inst, data->backend.pipe);
 	if (err != 0) {
-		LOG_ERR("Failed to re-attach modem pipe to UBX inst: %d", err);
+		LOG_ERROR("Failed to re-attach modem pipe to UBX inst: %d", err);
 	}
 
 	return 0;
@@ -184,7 +184,7 @@ static int msg_get(const struct device *dev, const struct ubx_frame *req,
 
 	err = k_sem_take(&data->script.lock, K_SECONDS(3));
 	if (err != 0) {
-		LOG_ERR("Failed to take script lock: %d", err);
+		LOG_ERROR("Failed to take script lock: %d", err);
 		return err;
 	}
 
@@ -242,7 +242,7 @@ int u_blox_iface_init(const struct device *dev, const struct modem_ubx_match *un
 
 	err = init_modem(data, cfg, unsol, unsol_size);
 	if (err < 0) {
-		LOG_ERR("Failed to initialize modem: %d", err);
+		LOG_ERROR("Failed to initialize modem: %d", err);
 		return err;
 	}
 
@@ -263,13 +263,13 @@ int u_blox_iface_init(const struct device *dev, const struct modem_ubx_match *un
 
 	err = configure_baudrate(dev, valset_supported);
 	if (err < 0) {
-		LOG_ERR("Failed to configure baud-rate: %d", err);
+		LOG_ERROR("Failed to configure baud-rate: %d", err);
 		return err;
 	}
 
 	err = reattach_modem(data);
 	if (err < 0) {
-		LOG_ERR("Failed to re-attach modem: %d", err);
+		LOG_ERROR("Failed to re-attach modem: %d", err);
 		return err;
 	}
 
@@ -290,7 +290,7 @@ int u_blox_iface_msg_send(const struct device *dev, const struct ubx_frame *req,
 
 	err = k_sem_take(&data->script.lock, K_SECONDS(3));
 	if (err != 0) {
-		LOG_ERR("Failed to take script lock: %d", err);
+		LOG_ERROR("Failed to take script lock: %d", err);
 		return err;
 	}
 
@@ -317,7 +317,7 @@ int u_blox_iface_msg_payload_send(const struct device *dev, uint8_t class_id, ui
 
 	err = k_sem_take(&data->script.req_buf_lock, K_SECONDS(3));
 	if (err != 0) {
-		LOG_ERR("Failed to take script lock: %d", err);
+		LOG_ERROR("Failed to take script lock: %d", err);
 		return err;
 	}
 

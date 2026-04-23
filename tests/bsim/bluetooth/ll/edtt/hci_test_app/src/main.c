@@ -68,7 +68,7 @@ static void read_excess_bytes(uint16_t size)
 		uint8_t buffer[size];
 
 		edtt_read((uint8_t *)buffer, size, EDTTT_BLOCK);
-		LOG_ERR("command size wrong! (%u extra bytes removed)", size);
+		LOG_ERROR("command size wrong! (%u extra bytes removed)", size);
 	}
 }
 
@@ -161,13 +161,11 @@ static int send_hci_command(uint16_t opcode, uint8_t param_len, uint16_t respons
 		}
 		err = bt_send(buf);
 		if (err) {
-			LOG_ERR("Failed to send HCI command %d (err %d)",
-				opcode, err);
+			LOG_ERROR("Failed to send HCI command %d (err %d)", opcode, err);
 			error_response(err);
 		}
 	} else {
-		LOG_ERR("Failed to create buffer for HCI command 0x%04x",
-			opcode);
+		LOG_ERROR("Failed to create buffer for HCI command 0x%04x", opcode);
 		error_response(-1);
 	}
 	return err;
@@ -555,12 +553,11 @@ static void le_data_write(uint16_t size)
 			}
 			err = bt_send(buf);
 			if (err) {
-				LOG_ERR("Failed to send ACL Data (err %d)",
-					err);
+				LOG_ERROR("Failed to send ACL Data (err %d)", err);
 			}
 		} else {
 			err = -2; /* Failed to allocate data buffer */
-			LOG_ERR("Failed to create buffer for ACL Data.");
+			LOG_ERROR("Failed to create buffer for ACL Data.");
 		}
 	} else {
 		/* Size too small for header (handle and data length) */
@@ -672,12 +669,11 @@ static void le_iso_data_write(uint16_t size)
 			}
 			err = bt_send(buf);
 			if (err) {
-				LOG_ERR("Failed to send ISO Data (err %d)",
-					err);
+				LOG_ERROR("Failed to send ISO Data (err %d)", err);
 			}
 		} else {
 			err = -2; /* Failed to allocate data buffer */
-			LOG_ERR("Failed to create buffer for ISO Data.");
+			LOG_ERROR("Failed to create buffer for ISO Data.");
 		}
 	} else {
 		/* Size too small for header (handle and data length) */
@@ -769,7 +765,7 @@ int main(void)
 	 */
 	err = bt_enable_raw(&rx_queue);
 	if (err) {
-		LOG_ERR("Bluetooth initialization failed (err %d)", err);
+		LOG_ERROR("Bluetooth initialization failed (err %d)", err);
 		return 0;
 	}
 	/**

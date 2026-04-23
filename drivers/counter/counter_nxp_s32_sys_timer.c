@@ -243,7 +243,7 @@ static int nxp_s32_sys_timer_set_alarm(const struct device *dev, uint8_t channel
 	}
 
 	if (alarm_cfg->ticks > config->info.max_top_value) {
-		LOG_ERR("Invalid ticks value %d", alarm_cfg->ticks);
+		LOG_ERROR("Invalid ticks value %d", alarm_cfg->ticks);
 		return -EINVAL;
 	}
 
@@ -325,7 +325,7 @@ static uint32_t nxp_s32_sys_timer_get_frequency(const struct device *dev)
 	uint32_t clock_rate;
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_rate)) {
-		LOG_ERR("Failed to get clock frequency");
+		LOG_ERROR("Failed to get clock frequency");
 		return 0;
 	}
 
@@ -341,13 +341,13 @@ static int nxp_s32_sys_timer_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock control device not ready");
+		LOG_ERROR("Clock control device not ready");
 		return -ENODEV;
 	}
 
 	err = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (err) {
-		LOG_ERR("Failed to enable clock");
+		LOG_ERROR("Failed to enable clock");
 		return err;
 	}
 

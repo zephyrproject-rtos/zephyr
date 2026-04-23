@@ -73,7 +73,7 @@ static int pca9633_led_blink(const struct device *dev, uint32_t led,
 	if (i2c_reg_write_byte_dt(&config->i2c,
 			       PCA9633_GRPPWM,
 			       gdc)) {
-		LOG_ERR("LED reg write failed");
+		LOG_ERROR("LED reg write failed");
 		return -EIO;
 	}
 
@@ -87,7 +87,7 @@ static int pca9633_led_blink(const struct device *dev, uint32_t led,
 	if (i2c_reg_write_byte_dt(&config->i2c,
 			       PCA9633_GRPFREQ,
 			       gfrq)) {
-		LOG_ERR("LED reg write failed");
+		LOG_ERROR("LED reg write failed");
 		return -EIO;
 	}
 
@@ -96,7 +96,7 @@ static int pca9633_led_blink(const struct device *dev, uint32_t led,
 				PCA9633_MODE2,
 				PCA9633_MODE2_DMBLNK,
 				PCA9633_MODE2_DMBLNK)) {
-		LOG_ERR("LED reg update failed");
+		LOG_ERROR("LED reg update failed");
 		return -EIO;
 	}
 
@@ -105,7 +105,7 @@ static int pca9633_led_blink(const struct device *dev, uint32_t led,
 				PCA9633_LEDOUT,
 				PCA9633_MASK << (led << 1),
 				PCA9633_LED_GRP_PWM << (led << 1))) {
-		LOG_ERR("LED reg update failed");
+		LOG_ERROR("LED reg update failed");
 		return -EIO;
 	}
 
@@ -123,7 +123,7 @@ static int pca9633_led_set_brightness(const struct device *dev, uint32_t led,
 	if (i2c_reg_write_byte_dt(&config->i2c,
 			       PCA9633_PWM_BASE + led,
 			       val)) {
-		LOG_ERR("LED reg write failed");
+		LOG_ERROR("LED reg write failed");
 		return -EIO;
 	}
 
@@ -132,7 +132,7 @@ static int pca9633_led_set_brightness(const struct device *dev, uint32_t led,
 				PCA9633_LEDOUT,
 				PCA9633_MASK << (led << 1),
 				PCA9633_LED_PWM << (led << 1))) {
-		LOG_ERR("LED reg update failed");
+		LOG_ERROR("LED reg update failed");
 		return -EIO;
 	}
 
@@ -148,7 +148,7 @@ static inline int pca9633_led_on(const struct device *dev, uint32_t led)
 				PCA9633_LEDOUT,
 				PCA9633_MASK << (led << 1),
 				PCA9633_LED_ON << (led << 1))) {
-		LOG_ERR("LED reg update failed");
+		LOG_ERROR("LED reg update failed");
 		return -EIO;
 	}
 
@@ -164,7 +164,7 @@ static inline int pca9633_led_off(const struct device *dev, uint32_t led)
 				PCA9633_LEDOUT,
 				PCA9633_MASK << (led << 1),
 				PCA9633_LED_OFF)) {
-		LOG_ERR("LED reg update failed");
+		LOG_ERROR("LED reg update failed");
 		return -EIO;
 	}
 
@@ -176,7 +176,7 @@ static int pca9633_led_init(const struct device *dev)
 	const struct pca9633_config *config = dev->config;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus is not ready");
+		LOG_ERROR("I2C bus is not ready");
 		return -ENODEV;
 	}
 
@@ -190,7 +190,7 @@ static int pca9633_led_init(const struct device *dev)
 					    : PCA9633_MODE1_SLEEP,
 		    config->disable_allcall ? ~(PCA9633_MODE1_SLEEP | PCA9633_MODE1_ALLCAL)
 					    : ~PCA9633_MODE1_SLEEP)) {
-		LOG_ERR("LED reg update failed");
+		LOG_ERROR("LED reg update failed");
 		return -EIO;
 	}
 

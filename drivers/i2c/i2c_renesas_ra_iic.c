@@ -105,7 +105,8 @@ static int i2c_ra_iic_configure(const struct device *dev, uint32_t dev_config)
 	int err;
 
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Please configure I2C in Controller mode, target should be registered via "
+		LOG_ERROR(
+			"Please configure I2C in Controller mode, target should be registered via "
 			"i2c_target_register API");
 		return -EIO;
 	}
@@ -121,15 +122,16 @@ static int i2c_ra_iic_configure(const struct device *dev, uint32_t dev_config)
 		desire_bitrate = I2C_MASTER_RATE_FASTPLUS;
 		break;
 	default:
-		LOG_ERR("%s: Invalid I2C speed rate flag: %d", __func__, I2C_SPEED_GET(dev_config));
+		LOG_ERROR("%s: Invalid I2C speed rate flag: %d", __func__,
+			  I2C_SPEED_GET(dev_config));
 		return -EIO;
 	}
 
 	if (desire_bitrate <= config->max_bitrate_supported) {
 		data->ctrl_fconfig.rate = desire_bitrate;
 	} else {
-		LOG_ERR("%s: Requested bitrate %u exceeds max supported bitrate %u", __func__,
-			desire_bitrate, config->max_bitrate_supported);
+		LOG_ERROR("%s: Requested bitrate %u exceeds max supported bitrate %u", __func__,
+			  desire_bitrate, config->max_bitrate_supported);
 		return -EIO;
 	}
 
@@ -137,18 +139,18 @@ static int i2c_ra_iic_configure(const struct device *dev, uint32_t dev_config)
 	err = calc_iic_ctrl_clock_setting(dev, data->ctrl_fconfig.rate,
 					  &data->iic_ctrl_ext_cfg.clock_settings);
 	if (err != 0) {
-		LOG_ERR("Failed to calculate I2C clock settings");
+		LOG_ERROR("Failed to calculate I2C clock settings");
 		return err;
 	}
 
 	fsp_err = R_IIC_MASTER_Close(&data->control_ctrl);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to close I2C master instance. FSP_ERR=%d", fsp_err);
+		LOG_ERROR("Failed to close I2C master instance. FSP_ERR=%d", fsp_err);
 		return -EIO;
 	}
 	fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to open I2C master instance. FSP_ERR=%d", fsp_err);
+		LOG_ERROR("Failed to open I2C master instance. FSP_ERR=%d", fsp_err);
 		return -EIO;
 	}
 
@@ -197,7 +199,8 @@ static int i2c_ra_iic_transfer(const struct device *dev, struct i2c_msg *msgs, u
 			 */
 			if (OPERATION(current) != OPERATION(next)) {
 				if (!(next->flags & I2C_MSG_RESTART)) {
-					LOG_ERR("%s: Restart condition between messages of "
+					LOG_ERROR(
+						"%s: Restart condition between messages of "
 						"different directions is required. Current/Total: "
 						"[%d/%d]",
 						__func__, i, num_msgs);
@@ -208,7 +211,8 @@ static int i2c_ra_iic_transfer(const struct device *dev, struct i2c_msg *msgs, u
 
 			/* Stop condition is only allowed on last message */
 			if (current->flags & I2C_MSG_STOP) {
-				LOG_ERR("%s: Invalid stop flag. Stop condition is only allowed on "
+				LOG_ERROR(
+					"%s: Invalid stop flag. Stop condition is only allowed on "
 					"last message. Current/Total: [%d/%d]",
 					__func__, i, num_msgs);
 				ret = -EIO;
@@ -263,17 +267,18 @@ static int i2c_ra_iic_transfer(const struct device *dev, struct i2c_msg *msgs, u
 		if (fsp_err != FSP_SUCCESS) {
 			switch (fsp_err) {
 			case FSP_ERR_INVALID_SIZE:
-				LOG_ERR("%s: Provided number of bytes more than uint16_t size "
-					"(65535) while DTC is used for data transfer.",
-					__func__);
+				LOG_ERROR("%s: Provided number of bytes more than uint16_t size "
+					  "(65535) while DTC is used for data transfer.",
+					  __func__);
 				break;
 			case FSP_ERR_IN_USE:
-				LOG_ERR("%s: Bus busy condition. Another transfer was in progress.",
+				LOG_ERROR(
+					"%s: Bus busy condition. Another transfer was in progress.",
 					__func__);
 				break;
 			default:
 				/* Should not reach here. */
-				LOG_ERR("%s: Unknown error. FSP_ERR=%d\n", __func__, fsp_err);
+				LOG_ERROR("%s: Unknown error. FSP_ERR=%d\n", __func__, fsp_err);
 				break;
 			}
 
@@ -287,8 +292,8 @@ static int i2c_ra_iic_transfer(const struct device *dev, struct i2c_msg *msgs, u
 		/* Handle event msg from callback. */
 		switch (data->ctrl_event) {
 		case I2C_MASTER_EVENT_ABORTED:
-			LOG_ERR("%s: %s failed.", __func__,
-				(current->flags & I2C_MSG_READ) ? "Read" : "Write");
+			LOG_ERROR("%s: %s failed.", __func__,
+				  (current->flags & I2C_MSG_READ) ? "Read" : "Write");
 			ret = -EIO;
 			goto RELEASE_BUS;
 		case I2C_MASTER_EVENT_RX_COMPLETE:
@@ -368,7 +373,8 @@ static void i2c_ra_iic_target_callback(i2c_slave_callback_args_t *p_args)
 				fsp_err = R_IIC_SLAVE_Write(&data->target_ctrl, buf, len);
 				__ASSERT_NO_MSG(fsp_err == FSP_SUCCESS);
 			} else {
-				LOG_ERR("buf is NULL or len is 0, Controller device will read 0xFF "
+				LOG_ERROR(
+					"buf is NULL or len is 0, Controller device will read 0xFF "
 					"for the remaining bytes");
 			}
 		} else {
@@ -381,12 +387,13 @@ static void i2c_ra_iic_target_callback(i2c_slave_callback_args_t *p_args)
 	case I2C_SLAVE_EVENT_RX_MORE_REQUEST:
 		fsp_err = R_IIC_SLAVE_Read(&data->target_ctrl, data->target_buf, 0);
 		__ASSERT_NO_MSG(fsp_err == FSP_SUCCESS);
-		LOG_ERR("The buffer is full, target device cannot receive more data. Please "
-			"increase I2C_TARGET_RENESAS_RA_IIC_BUFFER_SIZE");
+		LOG_ERROR("The buffer is full, target device cannot receive more data. Please "
+			  "increase I2C_TARGET_RENESAS_RA_IIC_BUFFER_SIZE");
 		target_cb->stop(data->target_cfg);
 		break;
 	case I2C_SLAVE_EVENT_TX_MORE_REQUEST:
-		LOG_ERR("Out of data to send to the controller device, Controller device will read "
+		LOG_ERROR(
+			"Out of data to send to the controller device, Controller device will read "
 			"0xFF for the remaining bytes");
 		break;
 #else  /* !CONFIG_I2C_TARGET_BUFFER_MODE */
@@ -473,12 +480,12 @@ static int i2c_ra_iic_init(const struct device *dev)
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
-		LOG_ERR("%s: pinctrl config failed.", __func__);
+		LOG_ERROR("%s: pinctrl config failed.", __func__);
 		return ret;
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -492,7 +499,7 @@ static int i2c_ra_iic_init(const struct device *dev)
 		ret = calc_iic_ctrl_clock_setting(dev, data->ctrl_fconfig.rate,
 						  &data->iic_ctrl_ext_cfg.clock_settings);
 		if (ret != 0) {
-			LOG_ERR("Failed to calculate I2C clock settings");
+			LOG_ERROR("Failed to calculate I2C clock settings");
 			break;
 		}
 		data->iic_ctrl_ext_cfg.timeout_mode = IIC_MASTER_TIMEOUT_MODE_SHORT;
@@ -501,7 +508,7 @@ static int i2c_ra_iic_init(const struct device *dev)
 		data->ctrl_fconfig.p_extend = &data->iic_ctrl_ext_cfg;
 		break;
 	default:
-		LOG_ERR("%s: Invalid I2C speed rate: %d", __func__, data->ctrl_fconfig.rate);
+		LOG_ERROR("%s: Invalid I2C speed rate: %d", __func__, data->ctrl_fconfig.rate);
 		return -ENOTSUP;
 	}
 
@@ -583,7 +590,7 @@ static int calc_iic_ctrl_clock_setting(const struct device *dev, const uint32_t 
 		requested_bitrate = ctrl_rate;
 		break;
 	default:
-		LOG_ERR("%s: Invalid I2C speed rate: %d", __func__, ctrl_rate);
+		LOG_ERROR("%s: Invalid I2C speed rate: %d", __func__, ctrl_rate);
 		return -EINVAL;
 	}
 
@@ -751,15 +758,15 @@ static int i2c_ra_iic_target_register(const struct device *dev, struct i2c_targe
 	k_mutex_lock(&data->bus_mutex, K_FOREVER);
 
 	if (data->control_ctrl.open == 0) {
-		LOG_ERR("%s: I2C Controller instance is not opened.", __func__);
+		LOG_ERROR("%s: I2C Controller instance is not opened.", __func__);
 		ret = -EIO;
 		goto RELEASE_BUS;
 	}
 
 	fsp_err = R_IIC_MASTER_Close(&data->control_ctrl);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("%s: Failed to close I2C Controller instance. FSP_ERR=%d", __func__,
-			fsp_err);
+		LOG_ERROR("%s: Failed to close I2C Controller instance. FSP_ERR=%d", __func__,
+			  fsp_err);
 		ret = -EIO;
 		goto RELEASE_BUS;
 	}
@@ -776,7 +783,7 @@ static int i2c_ra_iic_target_register(const struct device *dev, struct i2c_targe
 	ret = calc_iic_target_clock_setting(dev, data->target_fconfig.rate,
 					    &data->iic_target_ext_cfg.clock_settings);
 	if (ret != 0) {
-		LOG_ERR("Failed to calculate I2C Target clock settings");
+		LOG_ERROR("Failed to calculate I2C Target clock settings");
 		ret = -EIO;
 		goto RELEASE_BUS;
 	}
@@ -785,11 +792,11 @@ static int i2c_ra_iic_target_register(const struct device *dev, struct i2c_targe
 
 	fsp_err = R_IIC_SLAVE_Open(&data->target_ctrl, &data->target_fconfig);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("%s: Failed to enter I2C Target mode. Try to re-open Controller mode",
-			__func__);
+		LOG_ERROR("%s: Failed to enter I2C Target mode. Try to re-open Controller mode",
+			  __func__);
 		fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
 		if (fsp_err != FSP_SUCCESS) {
-			LOG_ERR("Failed to re-open I2C Controller instance: %s", dev->name);
+			LOG_ERROR("Failed to re-open I2C Controller instance: %s", dev->name);
 		}
 		ret = -EIO;
 	}
@@ -813,14 +820,14 @@ static int i2c_ra_iic_target_unregister(const struct device *dev, struct i2c_tar
 	k_mutex_lock(&data->bus_mutex, K_FOREVER);
 
 	if (data->target_ctrl.open == 0) {
-		LOG_ERR("%s: I2C Target instance is not opened.", __func__);
+		LOG_ERROR("%s: I2C Target instance is not opened.", __func__);
 		ret = -EINVAL;
 		goto RELEASE_BUS;
 	}
 
 	fsp_err = R_IIC_SLAVE_Close(&data->target_ctrl);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("%s: Failed to close I2C Target instance. FSP_ERR=%d", __func__, fsp_err);
+		LOG_ERROR("%s: Failed to close I2C Target instance. FSP_ERR=%d", __func__, fsp_err);
 		ret = -EIO;
 		goto RELEASE_BUS;
 	}
@@ -829,7 +836,7 @@ static int i2c_ra_iic_target_unregister(const struct device *dev, struct i2c_tar
 
 	fsp_err = R_IIC_MASTER_Open(&data->control_ctrl, &data->ctrl_fconfig);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to re-open I2C Controller instance: %s", dev->name);
+		LOG_ERROR("Failed to re-open I2C Controller instance: %s", dev->name);
 		return -EIO;
 	}
 RELEASE_BUS:
@@ -877,12 +884,12 @@ static int i2c_ra_iic_recover(const struct device *dev)
 	int ret = 0;
 
 	if (!gpio_is_ready_dt(&config->scl)) {
-		LOG_ERR("SCL GPIO device not ready");
+		LOG_ERROR("SCL GPIO device not ready");
 		return -EIO;
 	}
 
 	if (!gpio_is_ready_dt(&config->sda)) {
-		LOG_ERR("SDA GPIO device not ready");
+		LOG_ERROR("SDA GPIO device not ready");
 		return -EIO;
 	}
 
@@ -890,13 +897,13 @@ static int i2c_ra_iic_recover(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure SCL GPIO (err %d)", ret);
+		LOG_ERROR("Failed to configure SCL GPIO (err %d)", ret);
 		goto restore;
 	}
 
 	ret = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure SDA GPIO (err %d)", ret);
+		LOG_ERROR("Failed to configure SDA GPIO (err %d)", ret);
 		goto restore;
 	}
 
@@ -906,13 +913,13 @@ static int i2c_ra_iic_recover(const struct device *dev)
 
 	ret = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure I2C bitbang (err %d)", ret);
+		LOG_ERROR("Failed to configure I2C bitbang (err %d)", ret);
 		goto restore;
 	}
 
 	ret = i2c_bitbang_recover_bus(&bitbang_ctx);
 	if (ret != 0) {
-		LOG_ERR("Failed to recover bus (err %d)", ret);
+		LOG_ERROR("Failed to recover bus (err %d)", ret);
 		goto restore;
 	}
 

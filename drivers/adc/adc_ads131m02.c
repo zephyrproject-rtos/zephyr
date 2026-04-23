@@ -371,7 +371,7 @@ static int ads131m02_validate_sequence(const struct adc_sequence *sequence)
 	}
 
 	if (sequence->channels != BIT(0) && sequence->channels != BIT(1)) {
-		LOG_ERR("invalid channel");
+		LOG_ERROR("invalid channel");
 		return -EINVAL;
 	}
 
@@ -409,7 +409,7 @@ static int ads131m02_adc_start_read(const struct device *dev,
 
 	ret = ads131m02_validate_sequence(sequence);
 	if (ret != 0) {
-		LOG_ERR("sequence validation failed");
+		LOG_ERROR("sequence validation failed");
 		return ret;
 	}
 
@@ -662,7 +662,7 @@ static int ads131m02_init(const struct device *dev)
 	struct ads131m02_data *data = dev->data;
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("ADS131M02 is not ready");
+		LOG_ERROR("ADS131M02 is not ready");
 		return -ENODEV;
 	}
 
@@ -672,7 +672,7 @@ static int ads131m02_init(const struct device *dev)
 
 	ret = ads131m02_configure_gpio(dev);
 	if (ret != 0) {
-		LOG_ERR("GPIO config failed %d", ret);
+		LOG_ERROR("GPIO config failed %d", ret);
 		return ret;
 	}
 
@@ -682,7 +682,7 @@ static int ads131m02_init(const struct device *dev)
 	}
 
 	if (buf[0] != ADS131M02_DEVICE_ID) {
-		LOG_ERR("Device ID mismatch %d", buf[0]);
+		LOG_ERROR("Device ID mismatch %d", buf[0]);
 		return -ENODEV;
 	}
 

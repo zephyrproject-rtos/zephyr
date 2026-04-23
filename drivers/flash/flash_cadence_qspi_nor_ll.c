@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(flash_cadence_ll, CONFIG_FLASH_LOG_LEVEL);
 int cad_qspi_idle(struct cad_qspi_params *cad_params)
 {
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -26,7 +26,7 @@ int cad_qspi_idle(struct cad_qspi_params *cad_params)
 int cad_qspi_set_baudrate_div(struct cad_qspi_params *cad_params, uint32_t div)
 {
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -45,7 +45,7 @@ int cad_qspi_configure_dev_size(struct cad_qspi_params *cad_params, uint32_t add
 				uint32_t bytes_per_dev, uint32_t bytes_per_block)
 {
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -61,7 +61,7 @@ int cad_qspi_set_read_config(struct cad_qspi_params *cad_params, uint32_t opcode
 			     uint32_t mode_bit, uint32_t dummy_clk_cycle)
 {
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -78,7 +78,7 @@ int cad_qspi_set_write_config(struct cad_qspi_params *cad_params, uint32_t opcod
 			      uint32_t addr_type, uint32_t data_type, uint32_t dummy_clk_cycle)
 {
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -95,7 +95,7 @@ int cad_qspi_timing_config(struct cad_qspi_params *cad_params, uint32_t clkphase
 			   uint32_t rddatacap)
 {
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -118,7 +118,7 @@ int cad_qspi_stig_cmd_helper(struct cad_qspi_params *cad_params, int cs, uint32_
 	uint32_t count = 0;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -140,7 +140,7 @@ int cad_qspi_stig_cmd_helper(struct cad_qspi_params *cad_params, int cs, uint32_
 	} while (count < CAD_QSPI_COMMAND_TIMEOUT);
 
 	if (count >= CAD_QSPI_COMMAND_TIMEOUT) {
-		LOG_ERR("Error sending QSPI command %x, timed out\n", cmd);
+		LOG_ERROR("Error sending QSPI command %x, timed out\n", cmd);
 		return CAD_QSPI_ERROR;
 	}
 
@@ -151,12 +151,12 @@ int cad_qspi_stig_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, uint3
 {
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
 	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
-		LOG_ERR("Faulty dummy bytes\n");
+		LOG_ERROR("Faulty dummy bytes\n");
 		return -1;
 	}
 
@@ -169,7 +169,7 @@ int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 			   uint32_t num_bytes, uint32_t *output)
 {
 	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
-		LOG_ERR("Faulty dummy byes\n");
+		LOG_ERROR("Faulty dummy byes\n");
 		return -1;
 	}
 
@@ -178,7 +178,7 @@ int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 	}
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -189,7 +189,7 @@ int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 		       CAD_QSPI_FLASHCMD_NUMWRDATABYTES(0) | CAD_QSPI_FLASHCMD_NUMDUMMYBYTES(dummy);
 
 	if (cad_qspi_stig_cmd_helper(cad_params, cad_params->cad_qspi_cs, cmd)) {
-		LOG_ERR("failed to send stig cmd\n");
+		LOG_ERROR("failed to send stig cmd\n");
 		return -1;
 	}
 
@@ -206,7 +206,7 @@ int cad_qspi_stig_wr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, ui
 			 uint32_t num_bytes, uint32_t *input)
 {
 	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
-		LOG_ERR("Faulty dummy byes\n");
+		LOG_ERROR("Faulty dummy byes\n");
 		return -1;
 	}
 
@@ -215,7 +215,7 @@ int cad_qspi_stig_wr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, ui
 	}
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -245,7 +245,7 @@ int cad_qspi_stig_addr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 	}
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -262,7 +262,7 @@ int cad_qspi_device_bank_select(struct cad_qspi_params *cad_params, uint32_t ban
 	int status = 0;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -304,7 +304,7 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 	while (count < CAD_QSPI_COMMAND_TIMEOUT) {
 		status = cad_qspi_device_status(cad_params, &status);
 		if (status != 0) {
-			LOG_ERR("Error getting device status\n");
+			LOG_ERROR("Error getting device status\n");
 			return -1;
 		}
 		if (!CAD_QSPI_STIG_SR_BUSY(status)) {
@@ -314,7 +314,7 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 	}
 
 	if (count >= CAD_QSPI_COMMAND_TIMEOUT) {
-		LOG_ERR("Timed out waiting for idle\n");
+		LOG_ERROR("Timed out waiting for idle\n");
 		return -1;
 	}
 
@@ -324,7 +324,7 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 		status = cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDFLGSR, 0, 1,
 						&flag_sr);
 		if (status != 0) {
-			LOG_ERR("Error waiting program and erase.\n");
+			LOG_ERROR("Error waiting program and erase.\n");
 			return status;
 		}
 
@@ -335,12 +335,12 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 	}
 
 	if (count >= CAD_QSPI_COMMAND_TIMEOUT) {
-		LOG_ERR("Timed out waiting for program and erase\n");
+		LOG_ERROR("Timed out waiting for program and erase\n");
 	}
 
 	if ((program_only && CAD_QSPI_STIG_FLAGSR_PROGRAMERROR(flag_sr)) ||
 	    (!program_only && CAD_QSPI_STIG_FLAGSR_ERASEERROR(flag_sr))) {
-		LOG_ERR("Error programming/erasing flash\n");
+		LOG_ERROR("Error programming/erasing flash\n");
 		cad_qspi_stig_cmd(cad_params, CAD_QSPI_STIG_OPCODE_CLFSR, 0);
 		return -1;
 	}
@@ -353,7 +353,7 @@ int cad_qspi_indirect_read_start_bank(struct cad_qspi_params *cad_params, uint32
 				      uint32_t num_bytes)
 {
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -369,7 +369,7 @@ int cad_qspi_indirect_write_start_bank(struct cad_qspi_params *cad_params, uint3
 				       uint32_t num_bytes)
 {
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -385,7 +385,7 @@ int cad_qspi_indirect_write_finish(struct cad_qspi_params *cad_params)
 {
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -401,7 +401,7 @@ int cad_qspi_enable(struct cad_qspi_params *cad_params)
 	int status;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -421,7 +421,7 @@ int cad_qspi_enable_subsector_bank(struct cad_qspi_params *cad_params, uint32_t 
 	int status = 0;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -447,7 +447,7 @@ int cad_qspi_erase_subsector(struct cad_qspi_params *cad_params, uint32_t addr)
 	int status = 0;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -464,7 +464,7 @@ int cad_qspi_erase_sector(struct cad_qspi_params *cad_params, uint32_t addr)
 	int status = 0;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -504,7 +504,7 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 	int first_pass, last_pass;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 	}
 
 	/*1.  Set divider to bigger value (slowest SCLK)
@@ -581,7 +581,7 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 int cad_qspi_int_disable(struct cad_qspi_params *cad_params, uint32_t mask)
 {
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -601,7 +601,7 @@ void cad_qspi_set_chip_select(struct cad_qspi_params *cad_params, int cs)
 {
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 	}
 
 	cad_params->cad_qspi_cs = cs;
@@ -618,19 +618,19 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 
 	LOG_INF("Initializing Qspi");
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter");
+		LOG_ERROR("Wrong parameter");
 		return -EINVAL;
 	}
 
 	if (cad_qspi_idle(cad_params) == 0) {
-		LOG_ERR("device not idle");
+		LOG_ERROR("device not idle");
 		return -EBUSY;
 	}
 	status = cad_qspi_timing_config(cad_params, clk_phase, clk_pol, csda, csdads, cseot, cssot,
 					rddatacap);
 
 	if (status != 0) {
-		LOG_ERR("config set timing failure\n");
+		LOG_ERROR("config set timing failure\n");
 		return status;
 	}
 
@@ -638,14 +638,14 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 
 	status = cad_qspi_int_disable(cad_params, CAD_QSPI_INT_STATUS_ALL);
 	if (status != 0) {
-		LOG_ERR("failed disable\n");
+		LOG_ERROR("failed disable\n");
 		return status;
 	}
 
 	cad_qspi_set_baudrate_div(cad_params, 0xf);
 	status = cad_qspi_enable(cad_params);
 	if (status != 0) {
-		LOG_ERR("failed enable\n");
+		LOG_ERROR("failed enable\n");
 		return status;
 	}
 
@@ -655,7 +655,7 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 	status = cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDID, 0, 3, &rdid);
 
 	if (status != 0) {
-		LOG_ERR("Error reading RDID\n");
+		LOG_ERROR("Error reading RDID\n");
 		return status;
 	}
 
@@ -689,7 +689,7 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 		LOG_INF("QSPI Capacity: %x", cad_params->qspi_device_size);
 
 	} else {
-		LOG_ERR("Invalid CapacityID encountered: 0x%02x", cap_code);
+		LOG_ERROR("Invalid CapacityID encountered: 0x%02x", cap_code);
 		return -1;
 	}
 
@@ -708,7 +708,7 @@ int cad_qspi_indirect_page_bound_write(struct cad_qspi_params *cad_params, uint3
 	uint32_t write_count, write_capacity, *write_data, space, write_fill_level, sram_partition;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -746,7 +746,7 @@ int cad_qspi_read_bank(struct cad_qspi_params *cad_params, uint8_t *buffer, uint
 	int level = 1, count = 0, i;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -781,7 +781,7 @@ int cad_qspi_write_bank(struct cad_qspi_params *cad_params, uint32_t offset, uin
 	uint32_t write_size = MIN(size, CAD_QSPI_PAGE_SIZE - page_offset);
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -808,18 +808,18 @@ int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t off
 	status = 0;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
 	if ((offset >= cad_params->qspi_device_size) ||
 	    (offset + size - 1 >= cad_params->qspi_device_size) || (size == 0)) {
-		LOG_ERR("Invalid read parameter\n");
+		LOG_ERROR("Invalid read parameter\n");
 		return -EINVAL;
 	}
 
 	if (CAD_QSPI_INDRD_RD_STAT(sys_read32(cad_params->reg_base + CAD_QSPI_INDRD))) {
-		LOG_ERR("Read in progress\n");
+		LOG_ERROR("Read in progress\n");
 		return -ENOTBLK;
 	}
 
@@ -867,7 +867,7 @@ int cad_qspi_erase(struct cad_qspi_params *cad_params, uint32_t offset, uint32_t
 	uint32_t erase_size = MIN(size, CAD_QSPI_SUBSECTOR_SIZE - subsector_offset);
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -894,7 +894,7 @@ int cad_qspi_write(struct cad_qspi_params *cad_params, void *buffer, uint32_t of
 	status = 0;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 
@@ -904,7 +904,7 @@ int cad_qspi_write(struct cad_qspi_params *cad_params, void *buffer, uint32_t of
 	}
 
 	if (CAD_QSPI_INDWR_RDSTAT(sys_read32(cad_params->reg_base + CAD_QSPI_INDWR))) {
-		LOG_ERR("QSPI Error: Write in progress\n");
+		LOG_ERROR("QSPI Error: Write in progress\n");
 		return -ENOTBLK;
 	}
 
@@ -944,7 +944,7 @@ int cad_qspi_update(struct cad_qspi_params *cad_params, void *Buffer, uint32_t o
 	int status = 0;
 
 	if (cad_params == NULL) {
-		LOG_ERR("Wrong parameter\n");
+		LOG_ERROR("Wrong parameter\n");
 		return -EINVAL;
 	}
 

@@ -109,7 +109,7 @@ static void mfd_pca9422_work_handler(struct k_work *work)
 	/* Read Top level interrupt */
 	ret = mfd_pca9422_reg_read_byte(data->dev, PCA9422_REG_TOP_INT, &reg_top_int);
 	if (ret < 0) {
-		LOG_ERR("%s: REG_TOP_INT read error(%d)\n", __func__, ret);
+		LOG_ERROR("%s: REG_TOP_INT read error(%d)\n", __func__, ret);
 		goto error;
 	}
 
@@ -119,7 +119,7 @@ static void mfd_pca9422_work_handler(struct k_work *work)
 		/* Read sub level interrupt 0, 1 and mask */
 		ret = mfd_pca9422_reg_burst_read(data->dev, PCA9422_REG_SUB_INT0, reg_val, 4);
 		if (ret < 0) {
-			LOG_ERR("%s: REG_SUB_INT0 read error(%d)\n", __func__, ret);
+			LOG_ERROR("%s: REG_SUB_INT0 read error(%d)\n", __func__, ret);
 			goto error;
 		}
 		/*
@@ -145,7 +145,7 @@ static void mfd_pca9422_work_handler(struct k_work *work)
 			ret = mfd_pca9422_reg_burst_read(data->dev, PCA9422_REG_INT_DEVICE_0,
 							 reg_val, 6);
 			if (ret < 0) {
-				LOG_ERR("%s: REG_INT_DEVICE_0 read error(%d)\n", __func__, ret);
+				LOG_ERROR("%s: REG_INT_DEVICE_0 read error(%d)\n", __func__, ret);
 			} else {
 				/* Check interrupt event */
 				LOG_INF("%s: int_device[0]=0x%x,  [1]=0x%x\n", __func__, reg_val[0],
@@ -161,7 +161,7 @@ static void mfd_pca9422_work_handler(struct k_work *work)
 		/* Read sub level interrupt 2 and mask to clear flags */
 		ret = mfd_pca9422_reg_burst_read(data->dev, PCA9422_REG_SUB_INT2, reg_val, 2);
 		if (ret < 0) {
-			LOG_ERR("%s: REG_SUB_INT2 read error(%d)\n", __func__, ret);
+			LOG_ERROR("%s: REG_SUB_INT2 read error(%d)\n", __func__, ret);
 			goto error;
 		}
 		/* Check interrupt event */
@@ -170,7 +170,7 @@ static void mfd_pca9422_work_handler(struct k_work *work)
 			/* Read int1 and int1_mask registers to clear flags */
 			ret = mfd_pca9422_reg_burst_read(data->dev, PCA9422_REG_INT1, reg_val, 2);
 			if (ret < 0) {
-				LOG_ERR("%s: REG_INT1 read error(%d)\n", __func__, ret);
+				LOG_ERROR("%s: REG_INT1 read error(%d)\n", __func__, ret);
 				goto error;
 			}
 			/*

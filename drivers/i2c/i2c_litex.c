@@ -101,7 +101,7 @@ static int i2c_litex_init(const struct device *dev)
 	ret = i2c_bitbang_configure(bitbang,
 				    I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
 	if (ret != 0) {
-		LOG_ERR("failed to configure I2C bitbang: %d", ret);
+		LOG_ERROR("failed to configure I2C bitbang: %d", ret);
 	}
 
 	return ret;

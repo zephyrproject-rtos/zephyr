@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(zbus_proxy_agent, CONFIG_ZBUS_PROXY_AGENT_LOG_LEVEL);
 
 void zbus_proxy_agent_log_shadow_pub_denied(const struct zbus_proxy_agent *agent)
 {
-	LOG_ERR("Shadow channel can only be published by proxy agent '%s'", agent->name);
+	LOG_ERROR("Shadow channel can only be published by proxy agent '%s'", agent->name);
 }
 
 static bool is_shadow_channel_for_proxy(const struct zbus_channel *chan,
@@ -48,8 +48,8 @@ static void proxy_agent_thread_fn(void *p1, void *p2, void *p3)
 		 */
 		ret = zbus_chan_pub(msg.chan, msg.message, K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("Failed to publish message on channel '%s': %d",
-				_ZBUS_CHAN_NAME(msg.chan), ret);
+			LOG_ERROR("Failed to publish message on channel '%s': %d",
+				  _ZBUS_CHAN_NAME(msg.chan), ret);
 		}
 	}
 }
@@ -64,8 +64,8 @@ void zbus_proxy_agent_listener_cb(const struct zbus_channel *chan,
 	struct zbus_proxy_msg tx_msg = {0};
 
 	if (chan->message_size > CONFIG_ZBUS_PROXY_AGENT_MAX_MESSAGE_SIZE) {
-		LOG_ERR("Message size %zu exceeds maximum %d in proxy agent listener callback",
-			chan->message_size, CONFIG_ZBUS_PROXY_AGENT_MAX_MESSAGE_SIZE);
+		LOG_ERROR("Message size %zu exceeds maximum %d in proxy agent listener callback",
+			  chan->message_size, CONFIG_ZBUS_PROXY_AGENT_MAX_MESSAGE_SIZE);
 		return;
 	}
 
@@ -76,8 +76,8 @@ void zbus_proxy_agent_listener_cb(const struct zbus_channel *chan,
 	chan_name_len = strlen(chan_name) + 1; /* includes NUL terminator */
 
 	if (chan_name_len > sizeof(tx_msg.channel_name)) {
-		LOG_ERR("Channel name '%s' too long for proxy transport (%zu > %zu)", chan_name,
-			chan_name_len, sizeof(tx_msg.channel_name));
+		LOG_ERROR("Channel name '%s' too long for proxy transport (%zu > %zu)", chan_name,
+			  chan_name_len, sizeof(tx_msg.channel_name));
 		return;
 	}
 
@@ -88,8 +88,8 @@ void zbus_proxy_agent_listener_cb(const struct zbus_channel *chan,
 
 	ret = agent->backend_api->backend_send(agent, &tx_msg);
 	if (ret < 0) {
-		LOG_ERR("Failed to send message via proxy agent '%s' backend: %d", agent->name,
-			ret);
+		LOG_ERROR("Failed to send message via proxy agent '%s' backend: %d", agent->name,
+			  ret);
 	}
 }
 
@@ -101,34 +101,34 @@ static int zbus_proxy_agent_receive_cb(const struct zbus_proxy_agent *agent,
 	struct zbus_proxy_agent_rx_msg queued_msg = {0};
 
 	if (msg->message_size == 0 || msg->message_size > sizeof(msg->message)) {
-		LOG_ERR("Invalid message size %u in proxy agent receive callback",
-			msg->message_size);
+		LOG_ERROR("Invalid message size %u in proxy agent receive callback",
+			  msg->message_size);
 		return -EMSGSIZE;
 	}
 
 	if (msg->channel_name_len == 0 ||
 	    msg->channel_name_len > CONFIG_ZBUS_PROXY_AGENT_MAX_CHANNEL_NAME_SIZE ||
 	    msg->channel_name[msg->channel_name_len - 1] != '\0') {
-		LOG_ERR("Invalid channel name length or missing NUL terminator in received proxy "
-			"message");
+		LOG_ERROR("Invalid channel name length or missing NUL terminator in received proxy "
+			  "message");
 		return -EINVAL;
 	}
 
 	chan = zbus_chan_from_name(msg->channel_name);
 	if (chan == NULL) {
-		LOG_ERR("Channel '%s' not found for received message", msg->channel_name);
+		LOG_ERROR("Channel '%s' not found for received message", msg->channel_name);
 		return -ENOENT;
 	}
 
 	if (!is_shadow_channel_for_proxy(chan, agent)) {
-		LOG_ERR("Channel '%s' is not a shadow channel for proxy agent '%s'",
-			msg->channel_name, agent->name);
+		LOG_ERROR("Channel '%s' is not a shadow channel for proxy agent '%s'",
+			  msg->channel_name, agent->name);
 		return -EINVAL;
 	}
 
 	if (msg->message_size != chan->message_size) {
-		LOG_ERR("Size mismatch for channel '%s': got %u expected %zu", msg->channel_name,
-			msg->message_size, chan->message_size);
+		LOG_ERROR("Size mismatch for channel '%s': got %u expected %zu", msg->channel_name,
+			  msg->message_size, chan->message_size);
 		return -EMSGSIZE;
 	}
 
@@ -164,7 +164,8 @@ int zbus_init_proxy_agent(const struct zbus_proxy_agent *agent)
 
 	ret = agent->backend_api->backend_set_recv_cb(agent, zbus_proxy_agent_receive_cb);
 	if (ret < 0) {
-		LOG_ERR("Failed to set receive callback for proxy agent %s: %d", agent->name, ret);
+		LOG_ERROR("Failed to set receive callback for proxy agent %s: %d", agent->name,
+			  ret);
 		k_thread_abort(*agent->thread_id);
 		*agent->thread_id = NULL;
 		return ret;
@@ -172,7 +173,7 @@ int zbus_init_proxy_agent(const struct zbus_proxy_agent *agent)
 
 	ret = agent->backend_api->backend_init(agent);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize backend for proxy agent %s: %d", agent->name, ret);
+		LOG_ERROR("Failed to initialize backend for proxy agent %s: %d", agent->name, ret);
 		k_thread_abort(*agent->thread_id);
 		*agent->thread_id = NULL;
 		return ret;

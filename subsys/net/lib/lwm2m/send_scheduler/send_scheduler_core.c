@@ -447,7 +447,7 @@ int send_sched_flush_all(void)
 
 	ret = lwm2m_send_cb(ctx, path_list, (uint8_t)path_count, NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to flush cached data (%d)", ret);
+		LOG_ERROR("Failed to flush cached data (%d)", ret);
 	} else {
 		LOG_INF("Triggered LwM2M send for %d cached path(s)", path_count);
 	}

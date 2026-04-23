@@ -73,7 +73,7 @@ int main(void)
 	hs_dev = DEVICE_DT_GET_ONE(usb_audio_hs);
 
 	if (!device_is_ready(hs_dev)) {
-		LOG_ERR("Device USB Headset is not ready");
+		LOG_ERROR("Device USB Headset is not ready");
 		return 0;
 	}
 
@@ -83,7 +83,7 @@ int main(void)
 
 	ret = usb_enable(NULL);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
+		LOG_ERROR("Failed to enable USB");
 		return 0;
 	}
 

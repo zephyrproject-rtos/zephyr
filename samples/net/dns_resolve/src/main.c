@@ -71,7 +71,7 @@ void dns_result_cb(enum dns_resolve_status status,
 		hr_family = "IPv6";
 		addr = &net_sin6(&info->ai_addr)->sin6_addr;
 	} else {
-		LOG_ERR("Invalid IP address family %d", info->ai_family);
+		LOG_ERROR("Invalid IP address family %d", info->ai_family);
 		return;
 	}
 
@@ -120,7 +120,7 @@ void mdns_result_cb(enum dns_resolve_status status,
 		hr_family = "IPv6";
 		addr = &net_sin6(&info->ai_addr)->sin6_addr;
 	} else {
-		LOG_ERR("Invalid IP address family %d", info->ai_family);
+		LOG_ERROR("Invalid IP address family %d", info->ai_family);
 		return;
 	}
 
@@ -147,7 +147,7 @@ static void do_ipv4_lookup(struct k_work *work)
 				(void *)query,
 				DNS_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Cannot resolve IPv4 address (%d)", ret);
+		LOG_ERROR("Cannot resolve IPv4 address (%d)", ret);
 		return;
 	}
 
@@ -275,7 +275,7 @@ static void do_mdns_ipv4_lookup(struct k_work *work)
 				(void *)query,
 				DNS_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Cannot resolve mDNS IPv4 address (%d)", ret);
+		LOG_ERROR("Cannot resolve mDNS IPv4 address (%d)", ret);
 		return;
 	}
 
@@ -303,7 +303,7 @@ static void do_ipv4_lookup(void)
 				(void *)query,
 				DNS_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Cannot resolve IPv4 address (%d)", ret);
+		LOG_ERROR("Cannot resolve IPv4 address (%d)", ret);
 		return;
 	}
 
@@ -345,7 +345,7 @@ static void do_ipv6_lookup(void)
 				(void *)query,
 				DNS_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Cannot resolve IPv6 address (%d)", ret);
+		LOG_ERROR("Cannot resolve IPv6 address (%d)", ret);
 		return;
 	}
 
@@ -379,7 +379,7 @@ static void do_mdns_ipv6_lookup(struct k_work *work)
 				(void *)query,
 				DNS_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Cannot resolve mDNS IPv6 address (%d)", ret);
+		LOG_ERROR("Cannot resolve mDNS IPv6 address (%d)", ret);
 		return;
 	}
 

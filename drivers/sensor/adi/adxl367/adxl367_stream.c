@@ -126,7 +126,7 @@ void adxl367_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 		enum adxl367_fifo_mode current_fifo_mode = data->fifo_config.fifo_mode;
 
 		if (current_fifo_mode == ADXL367_FIFO_DISABLED) {
-			LOG_ERR("ERROR: FIFO DISABLED");
+			LOG_ERROR("ERROR: FIFO DISABLED");
 			return;
 		}
 
@@ -232,7 +232,7 @@ static void adxl367_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 			if (fifo_bits) {
 				fifo_bytes = fifo_bits / 8;
 			} else {
-				LOG_ERR("fifo_bytes error: %d", fifo_bytes);
+				LOG_ERROR("fifo_bytes error: %d", fifo_bytes);
 				adxl367_sqe_done(cfg, current_sqe, -1);
 				return;
 			}
@@ -254,7 +254,7 @@ static void adxl367_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	/* Not inherently an underrun/overrun as we may have a buffer to fill next time */
 	if (current_sqe == NULL) {
-		LOG_ERR("No pending SQE");
+		LOG_ERROR("No pending SQE");
 		gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 		return;
 	}
@@ -266,7 +266,7 @@ static void adxl367_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	uint32_t buf_len;
 
 	if (rtio_sqe_rx_buf(current_sqe, min_read_size, ideal_read_size, &buf, &buf_len) != 0) {
-		LOG_ERR("Failed to get buffer");
+		LOG_ERROR("Failed to get buffer");
 		adxl367_sqe_done(cfg, current_sqe, -ENOMEM);
 		return;
 	}
@@ -358,7 +358,7 @@ static void adxl367_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 			if (read_len_bits) {
 				read_len = read_len_bits / 8;
 			} else {
-				LOG_ERR("read_len error");
+				LOG_ERROR("read_len error");
 				adxl367_sqe_done(cfg, current_sqe, -ENOMEM);
 				return;
 			}
@@ -383,7 +383,7 @@ static void adxl367_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 		cqe = rtio_cqe_consume(data->rtio_ctx);
 		if (cqe != NULL) {
 			if ((cqe->result < 0 && res == 0)) {
-				LOG_ERR("Bus error: %d", cqe->result);
+				LOG_ERROR("Bus error: %d", cqe->result);
 				res = cqe->result;
 			}
 			rtio_cqe_release(data->rtio_ctx, cqe);
@@ -476,7 +476,7 @@ static void adxl367_process_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 		cqe = rtio_cqe_consume(data->rtio_ctx);
 		if (cqe != NULL) {
 			if ((cqe->result < 0 && res == 0)) {
-				LOG_ERR("Bus error: %d", cqe->result);
+				LOG_ERROR("Bus error: %d", cqe->result);
 				res = cqe->result;
 			}
 			rtio_cqe_release(data->rtio_ctx, cqe);
@@ -556,7 +556,7 @@ void adxl367_stream_irq_handler(const struct device *dev)
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(data->sqe, rc);
 		return;
 	}

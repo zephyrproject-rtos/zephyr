@@ -319,7 +319,7 @@ static int rv3032_configure_clkout(const struct device *dev, uint32_t freq)
 	/* Configure PMU register NCLKE bit */
 	err = rv3032_update_cfg(dev, RV3032_REG_EEPROM_PMU, RV3032_EEPROM_PMU_NCLKE, pmu_reg);
 	if (err) {
-		LOG_ERR("Failed to configure PMU NCLKE: %d", err);
+		LOG_ERROR("Failed to configure PMU NCLKE: %d", err);
 		return err;
 	}
 
@@ -333,7 +333,7 @@ static int rv3032_configure_clkout(const struct device *dev, uint32_t freq)
 	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_EEPROM_CLKOUT1, clkout1_reg);
 	if (err) {
 		rv3032_exit_eerd(dev);
-		LOG_ERR("Failed to configure CLKOUT1 register: %d", err);
+		LOG_ERROR("Failed to configure CLKOUT1 register: %d", err);
 		return err;
 	}
 
@@ -341,13 +341,13 @@ static int rv3032_configure_clkout(const struct device *dev, uint32_t freq)
 	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_EEPROM_CLKOUT2, clkout2_reg);
 	if (err) {
 		rv3032_exit_eerd(dev);
-		LOG_ERR("Failed to configure CLKOUT2 register: %d", err);
+		LOG_ERROR("Failed to configure CLKOUT2 register: %d", err);
 		return err;
 	}
 
 	err = rv3032_update(dev);
 	if (err) {
-		LOG_ERR("Failed to update CLKOUT configuration: %d", err);
+		LOG_ERROR("Failed to update CLKOUT configuration: %d", err);
 		return err;
 	}
 
@@ -369,7 +369,7 @@ static int rv3032_set_time(const struct device *dev, const struct rtc_time *time
 
 	if (!timeptr || !rtc_utils_validate_rtc_time(timeptr, RV3032_RTC_TIME_MASK) ||
 	    (timeptr->tm_year < RV3032_YEAR_OFFSET)) {
-		LOG_ERR("invalid time");
+		LOG_ERROR("invalid time");
 		return -EINVAL;
 	}
 
@@ -462,7 +462,7 @@ static int rv3032_alarm_get_supported_fields(const struct device *dev, uint16_t 
 	ARG_UNUSED(dev);
 
 	if (id != 0U) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -478,17 +478,17 @@ static int rv3032_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	uint8_t regs[3];
 
 	if (id != 0U) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
 	if (mask & ~(RV3032_RTC_ALARM_TIME_MASK)) {
-		LOG_ERR("unsupported alarm field mask 0x%04x", mask);
+		LOG_ERROR("unsupported alarm field mask 0x%04x", mask);
 		return -EINVAL;
 	}
 
 	if (!rtc_utils_validate_rtc_time(timeptr, mask)) {
-		LOG_ERR("invalid alarm time");
+		LOG_ERROR("invalid alarm time");
 		return -EINVAL;
 	}
 
@@ -526,7 +526,7 @@ static int rv3032_alarm_get_time(const struct device *dev, uint16_t id, uint16_t
 	int err;
 
 	if (id != 0U) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -567,7 +567,7 @@ static int rv3032_alarm_is_pending(const struct device *dev, uint16_t id)
 	int err;
 
 	if (id != 0U) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -627,7 +627,7 @@ static int rv3032_alarm_set_callback(const struct device *dev, uint16_t id,
 	int err;
 
 	if (id != 0U) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -702,7 +702,7 @@ static int rv3032_init(const struct device *dev)
 	/* Now read status register */
 	err = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_STATUS, &val);
 	if (err) {
-		LOG_ERR("Status register read failed after EEPROM refresh: %d", err);
+		LOG_ERROR("Status register read failed after EEPROM refresh: %d", err);
 		return err; /* Return actual I2C error code */
 	}
 
@@ -713,13 +713,13 @@ static int rv3032_init(const struct device *dev)
 	/* Refresh the settings in the RAM with the settings from the EEPROM */
 	err = rv3032_enter_eerd(dev);
 	if (err) {
-		LOG_ERR("Failed to enter EERD mode: %d", err);
+		LOG_ERROR("Failed to enter EERD mode: %d", err);
 		return err;
 	}
 
 	err = rv3032_refresh(dev);
 	if (err) {
-		LOG_ERR("Failed to refresh EEPROM settings: %d", err);
+		LOG_ERROR("Failed to refresh EEPROM settings: %d", err);
 		return err;
 	}
 
@@ -729,14 +729,14 @@ static int rv3032_init(const struct device *dev)
 					RV3032_EEPROM_PMU_BSM,
 				config->backup);
 	if (err) {
-		LOG_ERR("Failed to configure PMU register: %d", err);
+		LOG_ERROR("Failed to configure PMU register: %d", err);
 		return err;
 	}
 
 	/* Configure CLKOUT frequency */
 	err = rv3032_configure_clkout(dev, config->clkout_freq);
 	if (err) {
-		LOG_ERR("Failed to configure CLKOUT: %d", err);
+		LOG_ERROR("Failed to configure CLKOUT: %d", err);
 		return err;
 	}
 

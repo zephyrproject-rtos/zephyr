@@ -59,7 +59,7 @@ static uint8_t att_read_cb(struct bt_conn *conn, uint8_t att_err,
 		LOG_DBG("Adding %u bytes to result", read_len);
 		*ctx->result_size += read_len;
 		if (*ctx->result_size > BT_ATT_MAX_ATTRIBUTE_LEN) {
-			LOG_ERR("result_size > 512");
+			LOG_ERROR("result_size > 512");
 		}
 	}
 

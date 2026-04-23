@@ -229,7 +229,7 @@ static int can_nxp_s32_start(const struct device *dev)
 	if (config->common.phy != NULL) {
 		err = can_transceiver_enable(config->common.phy, data->common.mode);
 		if (err != 0) {
-			LOG_ERR("failed to enable CAN transceiver (err %d)", err);
+			LOG_ERROR("failed to enable CAN transceiver (err %d)", err);
 			return err;
 		}
 	}
@@ -281,7 +281,7 @@ static int can_nxp_s32_stop(const struct device *dev)
 
 		if (atomic_test_and_clear_bit(data->tx_allocs, alloc)) {
 			if (can_nxp_s32_abort_msg(config->instance, ALLOC_IDX_TO_TXMB_IDX(alloc))) {
-				LOG_ERR("Can't abort message !");
+				LOG_ERROR("Can't abort message !");
 			};
 
 			function(dev, -ENETDOWN, arg);
@@ -292,7 +292,7 @@ static int can_nxp_s32_stop(const struct device *dev)
 	if (config->common.phy != NULL) {
 		err = can_transceiver_disable(config->common.phy);
 		if (err != 0) {
-			LOG_ERR("failed to disable CAN transceiver (err %d)", err);
+			LOG_ERROR("failed to disable CAN transceiver (err %d)", err);
 			return err;
 		}
 	}
@@ -334,14 +334,15 @@ static int can_nxp_s32_set_mode(const struct device *dev, can_mode_t mode)
 	}
 
 	if ((mode & ~(supported)) != 0) {
-		LOG_ERR("unsupported mode: 0x%08x", mode);
+		LOG_ERROR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
 
-	if ((mode & (CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY))
-				== (CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) {
-		LOG_ERR("unsupported mode loopback and "
-			"mode listen-only at the same time: 0x%08x", mode);
+	if ((mode & (CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) ==
+	    (CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY)) {
+		LOG_ERROR("unsupported mode loopback and "
+			  "mode listen-only at the same time: 0x%08x",
+			  mode);
 		return -ENOTSUP;
 	}
 
@@ -491,7 +492,7 @@ static void can_nxp_s32_remove_rx_filter(const struct device *dev, int filter_id
 	int mb_indx = ALLOC_IDX_TO_RXMB_IDX(filter_id);
 
 	if (filter_id < 0 || filter_id >= CONFIG_CAN_NXP_S32_MAX_RX) {
-		LOG_ERR("filter ID %d out of bounds", filter_id);
+		LOG_ERROR("filter ID %d out of bounds", filter_id);
 		return;
 	}
 
@@ -509,7 +510,7 @@ static void can_nxp_s32_remove_rx_filter(const struct device *dev, int filter_id
 		Canexcel_Ip_ExitFreezeMode(config->instance);
 #else
 		if (can_nxp_s32_abort_msg(config->instance, mb_indx)) {
-			LOG_ERR("Can't abort message !");
+			LOG_ERROR("Can't abort message !");
 		};
 #endif
 		data->rx_cbs[filter_id].function = NULL;
@@ -533,7 +534,7 @@ static int can_nxp_s32_add_rx_filter(const struct device *dev,
 	int mb_indx;
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
-		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		LOG_ERROR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
@@ -548,7 +549,7 @@ static int can_nxp_s32_add_rx_filter(const struct device *dev,
 	}
 
 	if (alloc == -ENOSPC) {
-		LOG_ERR("No free filter bank found");
+		LOG_ERROR("No free filter bank found");
 		goto unlock;
 	}
 
@@ -653,43 +654,43 @@ static int can_nxp_s32_send(const struct device *dev,
 
 #ifdef CAN_NXP_S32_FD_MODE
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 
 	if ((frame->flags & CAN_FRAME_FDF) != 0 &&
-			(config->base_sic->BCFG2 & CANXL_SIC_BCFG2_FDEN_MASK) == 0) {
-		LOG_ERR("CAN FD format not supported in non-FD mode");
+	    (config->base_sic->BCFG2 & CANXL_SIC_BCFG2_FDEN_MASK) == 0) {
+		LOG_ERROR("CAN FD format not supported in non-FD mode");
 		return -ENOTSUP;
 	}
 
 	if ((frame->flags & CAN_FRAME_BRS) != 0 &&
-			~(config->base_sic->BCFG1 & CANXL_SIC_BCFG1_FDRSDIS_MASK) == 0) {
-		LOG_ERR("CAN FD BRS not supported in non-FD mode");
+	    ~(config->base_sic->BCFG1 & CANXL_SIC_BCFG1_FDRSDIS_MASK) == 0) {
+		LOG_ERROR("CAN FD BRS not supported in non-FD mode");
 		return -ENOTSUP;
 	}
 #else
 	if ((frame->flags & ~CAN_FRAME_IDE) != 0) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 #endif
 
 	if (data_length > sizeof(frame->data)) {
-		LOG_ERR("data length (%d) > max frame data length (%d)",
-			data_length, sizeof(frame->data));
+		LOG_ERROR("data length (%d) > max frame data length (%d)", data_length,
+			  sizeof(frame->data));
 		return -EINVAL;
 	}
 
 	if ((frame->flags & CAN_FRAME_FDF) == 0) {
 		if (frame->dlc > CAN_MAX_DLC) {
-			LOG_ERR("DLC of %d for non-FD format frame", frame->dlc);
+			LOG_ERROR("DLC of %d for non-FD format frame", frame->dlc);
 			return -EINVAL;
 		}
 #ifdef CAN_NXP_S32_FD_MODE
 	} else {
 		if (frame->dlc > CANFD_MAX_DLC) {
-			LOG_ERR("DLC of %d for CAN FD format frame", frame->dlc);
+			LOG_ERROR("DLC of %d for CAN FD format frame", frame->dlc);
 			return -EINVAL;
 		}
 #endif
@@ -701,7 +702,7 @@ static int can_nxp_s32_send(const struct device *dev,
 
 	can_nxp_s32_get_state(dev, &state, NULL);
 	if (state == CAN_STATE_BUS_OFF) {
-		LOG_ERR("Transmit failed, bus-off");
+		LOG_ERROR("Transmit failed, bus-off");
 		return -ENETUNREACH;
 	}
 
@@ -906,8 +907,8 @@ static void can_nxp_s32_err_callback(const struct device *dev,
 
 			if (atomic_test_and_clear_bit(data->tx_allocs, alloc)) {
 				if (can_nxp_s32_abort_msg(config->instance,
-						ALLOC_IDX_TO_TXMB_IDX(alloc))) {
-					LOG_ERR("Can't abort message !");
+							  ALLOC_IDX_TO_TXMB_IDX(alloc))) {
+					LOG_ERROR("Can't abort message !");
 				};
 
 				function(dev, -ENETUNREACH, arg);
@@ -1099,7 +1100,7 @@ static void can_nxp_s32_ctrl_callback(const struct device *dev,
 			if (Canexcel_Ip_ReceiveFD(config->instance, buffidx,
 					&data->rx_msg[alloc][0]) != CANEXCEL_STATUS_SUCCESS) {
 #endif
-				LOG_ERR("MB %d is not ready for receiving next message", buffidx);
+				LOG_ERROR("MB %d is not ready for receiving next message", buffidx);
 			}
 		}
 #endif
@@ -1121,19 +1122,19 @@ static int can_nxp_s32_init(const struct device *dev)
 
 	if (config->common.phy != NULL) {
 		if (!device_is_ready(config->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
+			LOG_ERROR("CAN transceiver not ready");
 			return -ENODEV;
 		}
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock control device not ready");
+		LOG_ERROR("Clock control device not ready");
 		return -ENODEV;
 	}
 
 	err = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (err) {
-		LOG_ERR("Failed to enable clock");
+		LOG_ERROR("Failed to enable clock");
 		return err;
 	}
 
@@ -1157,7 +1158,7 @@ static int can_nxp_s32_init(const struct device *dev)
 	err = can_calc_timing(dev, &data->timing, config->common.bitrate,
 			      config->common.sample_point);
 	if (err == -EINVAL) {
-		LOG_ERR("Can't find timing for given param");
+		LOG_ERROR("Can't find timing for given param");
 		return -EIO;
 	}
 
@@ -1172,7 +1173,7 @@ static int can_nxp_s32_init(const struct device *dev)
 	err = can_calc_timing_data(dev, &data->timing_data, config->common.bitrate_data,
 				   config->common.sample_point_data);
 	if (err == -EINVAL) {
-		LOG_ERR("Can't find timing data for given param");
+		LOG_ERROR("Can't find timing data for given param");
 		return -EIO;
 	}
 

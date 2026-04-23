@@ -343,10 +343,8 @@ static int parse_peer_add_args_to_params(const struct shell *sh,
 			}
 			break;
 		case 'e':
-			if (!net_ipaddr_parse(state->optarg, strlen(state->optarg),
-					      *paddr)) {
-				LOG_ERR("Cannot parse peer IP address \"%s\"",
-					state->optarg);
+			if (!net_ipaddr_parse(state->optarg, strlen(state->optarg), *paddr)) {
+				LOG_ERROR("Cannot parse peer IP address \"%s\"", state->optarg);
 				return -EINVAL;
 			}
 
@@ -803,7 +801,7 @@ static int cmd_wg_setup(const struct shell *sh, size_t argc, char *argv[])
 	crypto_zero(my_private_key, sizeof(my_private_key));
 
 	if (ret < 0) {
-		LOG_ERR("Cannot set private key (%d)", ret);
+		LOG_ERROR("Cannot set private key (%d)", ret);
 		return ret;
 	}
 

@@ -78,27 +78,25 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 	}
 
 	if (cfg->size < (sizeof(*layout) + msg->len)) {
-		LOG_ERR("message doesn't fit in shmem area");
+		LOG_ERROR("message doesn't fit in shmem area");
 		return -EINVAL;
 	}
 
 	/* mismatch between expected reply size and actual size? */
 	if (msg->len != (layout->len - sizeof(layout->msg_hdr))) {
-		LOG_ERR("bad message len. Expected 0x%x, got 0x%x",
-			msg->len,
-			(uint32_t)(layout->len - sizeof(layout->msg_hdr)));
+		LOG_ERROR("bad message len. Expected 0x%x, got 0x%x", msg->len,
+			  (uint32_t)(layout->len - sizeof(layout->msg_hdr)));
 		return -EINVAL;
 	}
 
 	/* header match? */
 	if (layout->msg_hdr != msg->hdr) {
-		LOG_ERR("bad message header. Expected 0x%x, got 0x%x",
-			msg->hdr, layout->msg_hdr);
+		LOG_ERROR("bad message header. Expected 0x%x, got 0x%x", msg->hdr, layout->msg_hdr);
 		return -EINVAL;
 	}
 
 	if (scmi_shmem_vendor_read_message(layout) < 0) {
-		LOG_ERR("vendor specific validation failed");
+		LOG_ERROR("vendor specific validation failed");
 		return -EINVAL;
 	}
 

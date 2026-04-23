@@ -40,7 +40,7 @@ static void iface_uart_async_callback(const struct device *dev,
 			/* Major problems, UART_RX_BUF_RELEASED event is not being generated, or
 			 * CONFIG_MODEM_IFACE_UART_ASYNC_RX_NUM_BUFFERS is not large enough.
 			 */
-			LOG_ERR("RX buffer starvation");
+			LOG_ERROR("RX buffer starvation");
 			break;
 		}
 		/* Provide the buffer to the UART driver */
@@ -67,13 +67,13 @@ static void iface_uart_async_callback(const struct device *dev,
 		/* RX stopped (likely due to line error), re-enable it */
 		rc = k_mem_slab_alloc(&uart_modem_async_rx_slab, (void **)&buf, K_FOREVER);
 		if (rc < 0) {
-			LOG_ERR("RX disabled and buffer starvation");
+			LOG_ERROR("RX disabled and buffer starvation");
 			break;
 		}
 		rc = uart_rx_enable(dev, buf, RX_BUFFER_SIZE,
 				    CONFIG_MODEM_IFACE_UART_ASYNC_RX_TIMEOUT_US);
 		if (rc < 0) {
-			LOG_ERR("Failed to re-enable UART");
+			LOG_ERROR("Failed to re-enable UART");
 		}
 		break;
 	default:
@@ -151,14 +151,14 @@ int modem_iface_uart_init_dev(struct modem_iface *iface,
 	/* Configure async UART callback */
 	rc = uart_callback_set(dev, iface_uart_async_callback, iface);
 	if (rc < 0) {
-		LOG_ERR("Failed to set UART callback");
+		LOG_ERROR("Failed to set UART callback");
 		return rc;
 	}
 	/* Enable reception permanently on the interface */
 	k_mem_slab_alloc(&uart_modem_async_rx_slab, (void **)&buf, K_FOREVER);
 	rc = uart_rx_enable(dev, buf, RX_BUFFER_SIZE, CONFIG_MODEM_IFACE_UART_ASYNC_RX_TIMEOUT_US);
 	if (rc < 0) {
-		LOG_ERR("Failed to enable UART RX");
+		LOG_ERROR("Failed to enable UART RX");
 	}
 	return rc;
 }

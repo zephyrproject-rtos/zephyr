@@ -112,7 +112,7 @@ bool bt_pub_key_is_valid(const uint8_t key[BT_PUB_KEY_LEN])
 		return true;
 	}
 
-	LOG_ERR("psa_import_key() returned status %d", ret);
+	LOG_ERROR("psa_import_key() returned status %d", ret);
 	return false;
 }
 
@@ -138,14 +138,14 @@ static void generate_pub_key(struct k_work *work)
 
 	ret = psa_generate_key(&attr, &key_id);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to generate ECC key %d", ret);
+		LOG_ERROR("Failed to generate ECC key %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
 		goto done;
 	}
 
 	ret = psa_export_public_key(key_id, tmp_pub_key_buf, sizeof(tmp_pub_key_buf), &tmp_len);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to export ECC public key %d", ret);
+		LOG_ERROR("Failed to export ECC public key %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
 		goto done;
 	}
@@ -157,14 +157,14 @@ static void generate_pub_key(struct k_work *work)
 
 	ret = psa_export_key(key_id, ecc.private_key_be, BT_PRIV_KEY_LEN, &tmp_len);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to export ECC private key %d", ret);
+		LOG_ERROR("Failed to export ECC private key %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
 		goto done;
 	}
 
 	ret = psa_destroy_key(key_id);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to destroy ECC key ID %d", ret);
+		LOG_ERROR("Failed to destroy ECC key ID %d", ret);
 		err = BT_HCI_ERR_UNSPECIFIED;
 		goto done;
 	}
@@ -214,7 +214,7 @@ static void generate_dh_key(struct k_work *work)
 	ret = psa_import_key(&attr, priv_key, BT_PRIV_KEY_LEN, &key_id);
 	if (ret != PSA_SUCCESS) {
 		err = -EIO;
-		LOG_ERR("Failed to import the private key for key agreement %d", ret);
+		LOG_ERROR("Failed to import the private key for key agreement %d", ret);
 		goto exit;
 	}
 
@@ -223,13 +223,13 @@ static void generate_dh_key(struct k_work *work)
 				    ecc.dhkey_be, BT_DH_KEY_LEN, &tmp_len);
 	if (ret != PSA_SUCCESS) {
 		err = -EIO;
-		LOG_ERR("Raw key agreement failed %d", ret);
+		LOG_ERROR("Raw key agreement failed %d", ret);
 		goto exit;
 	}
 
 	ret = psa_destroy_key(key_id);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to destroy the key %d", ret);
+		LOG_ERROR("Failed to destroy the key %d", ret);
 		err = -EIO;
 		goto exit;
 	}

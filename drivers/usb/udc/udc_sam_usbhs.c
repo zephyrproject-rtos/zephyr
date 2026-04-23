@@ -490,7 +490,7 @@ static int sam_usbhs_handle_evt_din(const struct device *dev,
 
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for ep 0x%02x", ep_cfg->addr);
+		LOG_ERROR("No buffer for ep 0x%02x", ep_cfg->addr);
 		return -ENOBUFS;
 	}
 
@@ -506,7 +506,7 @@ static int sam_usbhs_handle_evt_dout(const struct device *dev,
 
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for OUT ep 0x%02x", ep_cfg->addr);
+		LOG_ERROR("No buffer for OUT ep 0x%02x", ep_cfg->addr);
 		return -ENODATA;
 	}
 
@@ -583,7 +583,7 @@ static ALWAYS_INLINE void sam_usbhs_thread_handler(const struct device *const de
 			if (!udc_ep_is_busy(ep_cfg)) {
 				sam_usbhs_handle_xfer_next(dev, ep_cfg);
 			} else {
-				LOG_ERR("Endpoint 0x%02x busy", ep);
+				LOG_ERROR("Endpoint 0x%02x busy", ep);
 			}
 		}
 	}
@@ -601,7 +601,7 @@ static ALWAYS_INLINE void sam_usbhs_thread_handler(const struct device *const de
 			if (!udc_ep_is_busy(ep_cfg)) {
 				sam_usbhs_handle_xfer_next(dev, ep_cfg);
 			} else {
-				LOG_ERR("Endpoint 0x%02x busy", ep);
+				LOG_ERROR("Endpoint 0x%02x busy", ep);
 			}
 		}
 	}
@@ -649,7 +649,7 @@ static void sam_usbhs_handle_setup_isr(const struct device *dev)
 		     >> USBHS_DEVEPTISR_BYCT_Pos;
 
 	if (byte_count != 8) {
-		LOG_ERR("Wrong byte count %u for setup packet", byte_count);
+		LOG_ERROR("Wrong byte count %u for setup packet", byte_count);
 	}
 
 	for (int i = 0; i < 8; i++) {
@@ -856,7 +856,7 @@ static void sam_usbhs_handle_in_isr(const struct device *dev,
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for ep 0x%02x", ep_addr);
+		LOG_ERROR("No buffer for ep 0x%02x", ep_addr);
 		base->USBHS_DEVEPTIDR[ep_idx] = USBHS_DEVEPTIDR_TXINEC;
 		return;
 	}
@@ -1122,9 +1122,8 @@ static int udc_sam_usbhs_ep_enable(const struct device *dev,
 	 */
 	max_mps = sam_usbhs_get_max_mps(ep_type, data->caps.hs);
 	if (ep_cfg->mps > max_mps) {
-		LOG_ERR("EP 0x%02x mps %d exceeds USB spec max %d for type %d (%s)",
-			ep_cfg->addr, ep_cfg->mps, max_mps, ep_type,
-			data->caps.hs ? "HS" : "FS");
+		LOG_ERROR("EP 0x%02x mps %d exceeds USB spec max %d for type %d (%s)", ep_cfg->addr,
+			  ep_cfg->mps, max_mps, ep_type, data->caps.hs ? "HS" : "FS");
 		return -EINVAL;
 	}
 
@@ -1140,13 +1139,11 @@ static int udc_sam_usbhs_ep_enable(const struct device *dev,
 		bool is_in = USB_EP_DIR_IS_IN(ep_cfg->addr);
 
 		if (is_odd && !is_in) {
-			LOG_ERR("EP%d is odd, must be IN (got 0x%02x)",
-				ep_idx, ep_cfg->addr);
+			LOG_ERROR("EP%d is odd, must be IN (got 0x%02x)", ep_idx, ep_cfg->addr);
 			return -EINVAL;
 		}
 		if (!is_odd && is_in) {
-			LOG_ERR("EP%d is even, must be OUT (got 0x%02x)",
-				ep_idx, ep_cfg->addr);
+			LOG_ERROR("EP%d is even, must be OUT (got 0x%02x)", ep_idx, ep_cfg->addr);
 			return -EINVAL;
 		}
 	}
@@ -1216,8 +1213,8 @@ static int udc_sam_usbhs_ep_enable(const struct device *dev,
 	base->USBHS_DEVEPTCFG[ep_idx] = regval;
 
 	if (!sam_usbhs_ep_is_configured(dev, ep_idx)) {
-		LOG_ERR("Endpoint %d configuration failed (CFG=0x%08x)",
-			ep_idx, base->USBHS_DEVEPTCFG[ep_idx]);
+		LOG_ERROR("Endpoint %d configuration failed (CFG=0x%08x)", ep_idx,
+			  base->USBHS_DEVEPTCFG[ep_idx]);
 		return -EINVAL;
 	}
 
@@ -1458,7 +1455,7 @@ static int udc_sam_usbhs_enable(const struct device *dev)
 	ret = clock_control_on(SAM_DT_PMC_CONTROLLER,
 			       (clock_control_subsys_t)&config->clock_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable USBHS clock");
+		LOG_ERROR("Failed to enable USBHS clock");
 		return ret;
 	}
 
@@ -1482,14 +1479,14 @@ static int udc_sam_usbhs_enable(const struct device *dev)
 	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
 				     USB_EP_TYPE_CONTROL, 64, 0);
 	if (ret) {
-		LOG_ERR("Failed to enable control OUT endpoint");
+		LOG_ERROR("Failed to enable control OUT endpoint");
 		return ret;
 	}
 
 	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
 				     USB_EP_TYPE_CONTROL, 64, 0);
 	if (ret) {
-		LOG_ERR("Failed to enable control IN endpoint");
+		LOG_ERROR("Failed to enable control IN endpoint");
 		return ret;
 	}
 
@@ -1519,11 +1516,11 @@ static int udc_sam_usbhs_disable(const struct device *dev)
 	base->USBHS_DEVCTRL |= USBHS_DEVCTRL_DETACH;
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control OUT endpoint");
+		LOG_ERROR("Failed to disable control OUT endpoint");
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control IN endpoint");
+		LOG_ERROR("Failed to disable control IN endpoint");
 	}
 
 	sam_usbhs_disable_clock();
@@ -1593,7 +1590,7 @@ static int udc_sam_usbhs_driver_preinit(const struct device *dev)
 	config->ep_cfg_out[0].addr = USB_EP_DIR_OUT;
 	err = udc_register_ep(dev, &config->ep_cfg_out[0]);
 	if (err != 0) {
-		LOG_ERR("Failed to register EP0 OUT");
+		LOG_ERROR("Failed to register EP0 OUT");
 		return err;
 	}
 
@@ -1610,8 +1607,8 @@ static int udc_sam_usbhs_driver_preinit(const struct device *dev)
 		config->ep_cfg_out[out_idx].addr = USB_EP_DIR_OUT | hw_ep;
 		err = udc_register_ep(dev, &config->ep_cfg_out[out_idx]);
 		if (err != 0) {
-			LOG_ERR("Failed to register OUT endpoint 0x%02x",
-				config->ep_cfg_out[out_idx].addr);
+			LOG_ERROR("Failed to register OUT endpoint 0x%02x",
+				  config->ep_cfg_out[out_idx].addr);
 			return err;
 		}
 		out_idx++;
@@ -1624,7 +1621,7 @@ static int udc_sam_usbhs_driver_preinit(const struct device *dev)
 	config->ep_cfg_in[0].addr = USB_EP_DIR_IN;
 	err = udc_register_ep(dev, &config->ep_cfg_in[0]);
 	if (err != 0) {
-		LOG_ERR("Failed to register EP0 IN");
+		LOG_ERROR("Failed to register EP0 IN");
 		return err;
 	}
 
@@ -1640,8 +1637,8 @@ static int udc_sam_usbhs_driver_preinit(const struct device *dev)
 		config->ep_cfg_in[in_idx].addr = USB_EP_DIR_IN | hw_ep;
 		err = udc_register_ep(dev, &config->ep_cfg_in[in_idx]);
 		if (err != 0) {
-			LOG_ERR("Failed to register IN endpoint 0x%02x",
-				config->ep_cfg_in[in_idx].addr);
+			LOG_ERROR("Failed to register IN endpoint 0x%02x",
+				  config->ep_cfg_in[in_idx].addr);
 			return err;
 		}
 		in_idx++;

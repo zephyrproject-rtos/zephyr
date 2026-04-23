@@ -129,7 +129,7 @@ static int tmcm3216_stepper_ctrl_move_by(const struct device *dev, const int32_t
 
 	err = tmcm3216_send_command(dev, &cmd, &reply);
 	if (err != 0) {
-		LOG_ERR("Failed to move by %d steps", micro_steps);
+		LOG_ERROR("Failed to move by %d steps", micro_steps);
 		return -EIO;
 	}
 
@@ -157,7 +157,7 @@ static int tmcm3216_stepper_ctrl_move_to(const struct device *dev, const int32_t
 
 	err = tmcm3216_send_command(dev, &cmd, &reply);
 	if (err != 0) {
-		LOG_ERR("Failed to move to position %d", micro_steps);
+		LOG_ERROR("Failed to move to position %d", micro_steps);
 		return -EIO;
 	}
 
@@ -181,7 +181,7 @@ static int tmcm3216_stepper_ctrl_run(const struct device *dev,
 	/* Get max velocity */
 	err = tmcm3216_gap(dev, config->motor_index, TMCL_AP_MAX_VELOCITY, &velocity);
 	if (err != 0) {
-		LOG_ERR("Failed to read max velocity");
+		LOG_ERROR("Failed to read max velocity");
 		return err;
 	}
 
@@ -198,7 +198,7 @@ static int tmcm3216_stepper_ctrl_run(const struct device *dev,
 
 	err = tmcm3216_send_command(dev, &cmd, &reply);
 	if (err != 0) {
-		LOG_ERR("Failed to run motor");
+		LOG_ERROR("Failed to run motor");
 		return -EIO;
 	}
 
@@ -221,7 +221,7 @@ static int tmcm3216_stepper_ctrl_stop(const struct device *dev)
 
 	err = tmcm3216_send_command(dev, &cmd, &reply);
 	if (err != 0) {
-		LOG_ERR("Failed to stop motor");
+		LOG_ERROR("Failed to stop motor");
 		return -EIO;
 	}
 
@@ -283,7 +283,7 @@ static void tmcm3216_callback_work_handler(struct k_work *work)
 	/* Check if motor is still moving */
 	err = tmcm3216_stepper_ctrl_is_moving(dev, &is_moving);
 	if (err != 0) {
-		LOG_ERR("Failed to check motor status in callback");
+		LOG_ERROR("Failed to check motor status in callback");
 		return;
 	}
 
@@ -308,7 +308,7 @@ static int tmcm3216_stepper_ctrl_init(const struct device *dev)
 
 	/* Verify parent controller is ready */
 	if (!device_is_ready(config->controller)) {
-		LOG_ERR("Parent controller not ready");
+		LOG_ERROR("Parent controller not ready");
 		return -ENODEV;
 	}
 

@@ -20,83 +20,83 @@ psa_status_t al_psa_status(psa_status_t status, const char *func_name)
 
 	/* Generic PSA errors (psa/error.h). */
 	case PSA_ERROR_PROGRAMMER_ERROR:
-		LOG_ERR("Programmer error");
+		LOG_ERROR("Programmer error");
 		break;
 	case PSA_ERROR_CONNECTION_REFUSED:
-		LOG_ERR("Connection refused");
+		LOG_ERROR("Connection refused");
 		break;
 	case PSA_ERROR_CONNECTION_BUSY:
-		LOG_ERR("Connection busy");
+		LOG_ERROR("Connection busy");
 		break;
 	case PSA_ERROR_GENERIC_ERROR:
-		LOG_ERR("Generic error");
+		LOG_ERROR("Generic error");
 		break;
 	case PSA_ERROR_NOT_PERMITTED:
-		LOG_ERR("Not permitted");
+		LOG_ERROR("Not permitted");
 		break;
 	case PSA_ERROR_NOT_SUPPORTED:
-		LOG_ERR("Unsupported operation");
+		LOG_ERROR("Unsupported operation");
 		break;
 	case PSA_ERROR_INVALID_ARGUMENT:
-		LOG_ERR("Invalid argument");
+		LOG_ERROR("Invalid argument");
 		break;
 	case PSA_ERROR_INVALID_HANDLE:
-		LOG_ERR("Invalid handle");
+		LOG_ERROR("Invalid handle");
 		break;
 	case PSA_ERROR_BAD_STATE:
-		LOG_ERR("Bad state");
+		LOG_ERROR("Bad state");
 		break;
 	case PSA_ERROR_BUFFER_TOO_SMALL:
-		LOG_ERR("Buffer too small");
+		LOG_ERROR("Buffer too small");
 		break;
 	case PSA_ERROR_ALREADY_EXISTS:
-		LOG_ERR("Already exists");
+		LOG_ERROR("Already exists");
 		break;
 	case PSA_ERROR_DOES_NOT_EXIST:
-		LOG_ERR("Does not exist");
+		LOG_ERROR("Does not exist");
 		break;
 	case PSA_ERROR_INSUFFICIENT_MEMORY:
-		LOG_ERR("Insufficient memory");
+		LOG_ERROR("Insufficient memory");
 		break;
 	case PSA_ERROR_INSUFFICIENT_STORAGE:
-		LOG_ERR("Insufficient storage");
+		LOG_ERROR("Insufficient storage");
 		break;
 	case PSA_ERROR_INSUFFICIENT_DATA:
-		LOG_ERR("Insufficient memory data");
+		LOG_ERROR("Insufficient memory data");
 		break;
 	case PSA_ERROR_SERVICE_FAILURE:
-		LOG_ERR("Service failure");
+		LOG_ERROR("Service failure");
 		break;
 	case PSA_ERROR_COMMUNICATION_FAILURE:
-		LOG_ERR("Communication failure");
+		LOG_ERROR("Communication failure");
 		break;
 	case PSA_ERROR_STORAGE_FAILURE:
-		LOG_ERR("Storage failure");
+		LOG_ERROR("Storage failure");
 		break;
 	case PSA_ERROR_HARDWARE_FAILURE:
-		LOG_ERR("Hardware failure");
+		LOG_ERROR("Hardware failure");
 		break;
 	case PSA_ERROR_INVALID_SIGNATURE:
-		LOG_ERR("Invalid signature");
+		LOG_ERROR("Invalid signature");
 		break;
 
 	/* PSA crypto errors (psa/crypto_values.h). */
 	case PSA_ERROR_INSUFFICIENT_ENTROPY:
-		LOG_ERR("CRYPTO: Insufficient entropy");
+		LOG_ERROR("CRYPTO: Insufficient entropy");
 		break;
 	case PSA_ERROR_CORRUPTION_DETECTED:
-		LOG_ERR("CRYPTO: Tampering detected");
+		LOG_ERROR("CRYPTO: Tampering detected");
 		break;
 
 	/* Catch-all error handler. */
 	default:
-		LOG_ERR("Unhandled status response: %d", status);
+		LOG_ERROR("Unhandled status response: %d", status);
 		break;
 	}
 
 	/* Display the calling function name for debug purposes. */
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Function: '%s'", func_name);
+		LOG_ERROR("Function: '%s'", func_name);
 	}
 
 	return status;

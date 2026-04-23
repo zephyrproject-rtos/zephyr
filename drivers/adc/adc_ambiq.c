@@ -102,7 +102,7 @@ static int adc_ambiq_config(const struct device *dev)
 	}
 
 	if (AM_HAL_STATUS_SUCCESS != am_hal_adc_configure(data->adcHandle, &ADCConfig)) {
-		LOG_ERR("configuring ADC failed.\n");
+		LOG_ERROR("configuring ADC failed.\n");
 		return -ENODEV;
 	}
 
@@ -116,7 +116,7 @@ static int adc_ambiq_slot_config(const struct device *dev, const struct adc_sequ
 	am_hal_adc_slot_config_t ADCSlotConfig;
 
 	if (adc_ambiq_set_resolution(&ADCSlotConfig.ePrecisionMode, sequence->resolution) != 0) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
@@ -130,7 +130,7 @@ static int adc_ambiq_slot_config(const struct device *dev, const struct adc_sequ
 #endif
 	if (AM_HAL_STATUS_SUCCESS !=
 	    am_hal_adc_configure_slot(data->adcHandle, ui32SlotNumber, &ADCSlotConfig)) {
-		LOG_ERR("configuring ADC Slot 0 failed.\n");
+		LOG_ERROR("configuring ADC Slot 0 failed.\n");
 		return -ENODEV;
 	}
 
@@ -225,12 +225,12 @@ static int adc_ambiq_start_read(const struct device *dev, const struct adc_seque
 	int error = 0;
 
 	if (sequence->channels & ~BIT_MASK(cfg->num_channels)) {
-		LOG_ERR("Incorrect channels, bitmask 0x%x", sequence->channels);
+		LOG_ERROR("Incorrect channels, bitmask 0x%x", sequence->channels);
 		return -EINVAL;
 	}
 
 	if (sequence->channels == 0UL) {
-		LOG_ERR("No channel selected");
+		LOG_ERROR("No channel selected");
 		return -EINVAL;
 	}
 
@@ -241,7 +241,7 @@ static int adc_ambiq_start_read(const struct device *dev, const struct adc_seque
 
 	active_channels = POPCOUNT(sequence->channels);
 	if (active_channels > AMBIQ_ADC_SLOT_NUMBER) {
-		LOG_ERR("Too many channels for sequencer. Max: %d", AMBIQ_ADC_SLOT_NUMBER);
+		LOG_ERROR("Too many channels for sequencer. Max: %d", AMBIQ_ADC_SLOT_NUMBER);
 		return -ENOTSUP;
 	}
 
@@ -265,7 +265,7 @@ static int adc_ambiq_start_read(const struct device *dev, const struct adc_seque
 		am_hal_adc_dma_config_t ADCDmaConfig = data->dma_cfg;
 
 		if (data->dma_cfg.ui32SampleCount < active_channels) {
-			LOG_ERR("Not enough DMA buffer.\n");
+			LOG_ERROR("Not enough DMA buffer.\n");
 			return -EOVERFLOW;
 		}
 		ADCDmaConfig.ui32SampleCount = active_channels;
@@ -289,7 +289,7 @@ static int adc_ambiq_start_read(const struct device *dev, const struct adc_seque
 		/* Configure DMA.*/
 		if (AM_HAL_STATUS_SUCCESS !=
 		    am_hal_adc_configure_dma(data->adcHandle, &ADCDmaConfig)) {
-			LOG_ERR("Error - configuring DMA failed.\n");
+			LOG_ERROR("Error - configuring DMA failed.\n");
 			return -EINVAL;
 		}
 
@@ -306,7 +306,7 @@ static int adc_ambiq_start_read(const struct device *dev, const struct adc_seque
 
 	if (data->dma_mode) {
 		if (k_sem_take(&data->dma_done_sem, K_MSEC(ADC_TRANSFER_TIMEOUT_MSEC))) {
-			LOG_ERR("Timeout waiting for transfer complete");
+			LOG_ERROR("Timeout waiting for transfer complete");
 			/* cancel timed out transaction */
 			adc_ambiq_disable(dev);
 			/* clean up for next xfer */
@@ -347,7 +347,7 @@ static int adc_ambiq_read(const struct device *dev, const struct adc_sequence *s
 
 	error = pm_device_runtime_get(dev);
 	if (error < 0) {
-		LOG_ERR("Failed to get device runtime PM state");
+		LOG_ERROR("Failed to get device runtime PM state");
 		adc_context_release(&data->ctx, error);
 		return error;
 	}
@@ -364,27 +364,27 @@ static int adc_ambiq_channel_setup(const struct device *dev, const struct adc_ch
 	const struct adc_ambiq_config *cfg = dev->config;
 
 	if (chan_cfg->channel_id >= cfg->num_channels) {
-		LOG_ERR("unsupported channel id '%d'", chan_cfg->channel_id);
+		LOG_ERROR("unsupported channel id '%d'", chan_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (chan_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Gain is not valid");
+		LOG_ERROR("Gain is not valid");
 		return -ENOTSUP;
 	}
 
 	if (chan_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Reference is not valid");
+		LOG_ERROR("Reference is not valid");
 		return -ENOTSUP;
 	}
 
 	if (chan_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("unsupported acquisition_time '%d'", chan_cfg->acquisition_time);
+		LOG_ERROR("unsupported acquisition_time '%d'", chan_cfg->acquisition_time);
 		return -ENOTSUP;
 	}
 
 	if (chan_cfg->differential) {
-		LOG_ERR("Differential sampling not supported");
+		LOG_ERROR("Differential sampling not supported");
 		return -ENOTSUP;
 	}
 
@@ -430,7 +430,7 @@ static int adc_ambiq_init(const struct device *dev)
 	/* Initialize the ADC and get the handle*/
 	if (AM_HAL_STATUS_SUCCESS != am_hal_adc_initialize(0, &data->adcHandle)) {
 		ret = -ENODEV;
-		LOG_ERR("Failed to initialize ADC, code:%d", ret);
+		LOG_ERROR("Failed to initialize ADC, code:%d", ret);
 		return ret;
 	}
 
@@ -438,7 +438,7 @@ static int adc_ambiq_init(const struct device *dev)
 	ret = am_hal_adc_power_control(data->adcHandle, AM_HAL_SYSCTRL_WAKE, false);
 
 	if (ret != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("Failed to power on ADC, code: %d", ret);
+		LOG_ERROR("Failed to power on ADC, code: %d", ret);
 		return -EIO;
 	}
 

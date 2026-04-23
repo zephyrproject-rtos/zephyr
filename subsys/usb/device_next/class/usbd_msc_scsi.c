@@ -779,7 +779,7 @@ static size_t store_write_10(struct scsi_ctx *ctx, const uint8_t *buf, size_t le
 	/* Flush cache if this is the last sector in transfer */
 	if (remaining_sectors - sectors == 0) {
 		if (disk_access_ioctl(ctx->disk, DISK_IOCTL_CTRL_SYNC, NULL)) {
-			LOG_ERR("Disk cache sync failed");
+			LOG_ERROR("Disk cache sync failed");
 			error = true;
 		}
 	}
@@ -896,7 +896,7 @@ size_t scsi_cmd(struct scsi_ctx *ctx, const uint8_t *cb, int len,
 	SCSI_CMD(WRITE_10);
 	SCSI_CMD(MODE_SENSE_10);
 
-	LOG_ERR("Unknown SCSI opcode 0x%02x", cb[0]);
+	LOG_ERROR("Unknown SCSI opcode 0x%02x", cb[0]);
 	return illegal_request(ctx, INVALID_FIELD_IN_CDB);
 }
 

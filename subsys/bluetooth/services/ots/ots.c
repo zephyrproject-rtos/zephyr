@@ -309,7 +309,7 @@ int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
 
 	err = bt_gatt_ots_obj_manager_obj_add(ots->obj_manager, &new_obj);
 	if (err) {
-		LOG_ERR("No space available in the object manager");
+		LOG_ERROR("No space available in the object manager");
 		return err;
 	}
 
@@ -325,22 +325,22 @@ int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
 		}
 
 		if (!ots_obj_validate_prop_against_oacp(created_desc.props, ots->features.oacp)) {
-			LOG_ERR("Object properties (0x%04X) are not a subset of OACP (0x%04X)",
-				created_desc.props, ots->features.oacp);
+			LOG_ERROR("Object properties (0x%04X) are not a subset of OACP (0x%04X)",
+				  created_desc.props, ots->features.oacp);
 
 			(void)bt_ots_obj_delete(ots, new_obj->id);
 			return -ECANCELED;
 		}
 
 		if (created_desc.name == NULL) {
-			LOG_ERR("Object name must be set by application after object creation.");
+			LOG_ERROR("Object name must be set by application after object creation.");
 
 			(void)bt_ots_obj_delete(ots, new_obj->id);
 			return -ECANCELED;
 		}
 
 		if (created_desc.size.alloc < param->size) {
-			LOG_ERR("Object allocated size must >= requested size.");
+			LOG_ERROR("Object allocated size must >= requested size.");
 
 			(void)bt_ots_obj_delete(ots, new_obj->id);
 			return -ECANCELED;
@@ -372,14 +372,14 @@ int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param)
 
 	name_len = strlen(obj->metadata.name);
 	if (name_len == 0 || name_len > CONFIG_BT_OTS_OBJ_MAX_NAME_LEN) {
-		LOG_ERR("Invalid name length %zu", name_len);
+		LOG_ERROR("Invalid name length %zu", name_len);
 
 		(void)bt_ots_obj_delete(ots, obj->id);
 		return -ECANCELED;
 	}
 
 	if (obj->metadata.size.cur > param->size) {
-		LOG_ERR("Object current size must be less than or equal to requested size.");
+		LOG_ERROR("Object current size must be less than or equal to requested size.");
 
 		(void)bt_ots_obj_delete(ots, obj->id);
 		return -ECANCELED;
@@ -614,8 +614,8 @@ static void ots_delete_empty_name_objects(struct bt_ots *ots, struct bt_conn *co
 			}
 
 			if (bt_gatt_ots_obj_manager_obj_delete(obj)) {
-				LOG_ERR("Failed to remove object with %s ID from object manager",
-					id_str);
+				LOG_ERROR("Failed to remove object with %s ID from object manager",
+					  id_str);
 			}
 		}
 	}
@@ -668,7 +668,7 @@ static int bt_gatt_ots_instances_prepare(void)
 		instance->obj_manager = bt_gatt_ots_obj_manager_assign();
 
 		if (!instance->obj_manager) {
-			LOG_ERR("OTS Object manager instance not available");
+			LOG_ERROR("OTS Object manager instance not available");
 			return -ENOMEM;
 		}
 

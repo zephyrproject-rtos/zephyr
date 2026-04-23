@@ -299,14 +299,14 @@ int main(void)
 	int error;
 
 	if (!cs40l5x || !device_is_ready(cs40l5x)) {
-		LOG_ERR("device not available: %s", cs40l5x->name);
+		LOG_ERROR("device not available: %s", cs40l5x->name);
 		return -ENODEV;
 	}
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		error = pm_device_runtime_enable(cs40l5x);
 		if (error < 0) {
-			LOG_ERR("PM runtime disabled for %s (%d)", cs40l5x->name, error);
+			LOG_ERROR("PM runtime disabled for %s (%d)", cs40l5x->name, error);
 			return -EIO;
 		}
 	}

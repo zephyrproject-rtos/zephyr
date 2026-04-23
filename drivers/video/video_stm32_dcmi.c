@@ -135,7 +135,7 @@ static int stm32_dma_init(const struct device *dev)
 
 	/* Check if the DMA device is ready */
 	if (!device_is_ready(dma->dma_dev)) {
-		LOG_ERR("%s DMA device not ready", dma->dma_dev->name);
+		LOG_ERROR("%s DMA device not ready", dma->dma_dev->name);
 		return -ENODEV;
 	}
 
@@ -156,7 +156,7 @@ static int stm32_dma_init(const struct device *dev)
 	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
 	ret = dma_config(dma->dma_dev, dma->channel, dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d", dma->channel);
+		LOG_ERROR("Failed to configure DMA channel %d", dma->channel);
 		return ret;
 	}
 
@@ -179,7 +179,7 @@ static int stm32_dma_init(const struct device *dev)
 	__HAL_LINKDMA(&data->hdcmi, DMA_Handle, hdma);
 
 	if (HAL_DMA_Init(&hdma) != HAL_OK) {
-		LOG_ERR("DCMI DMA Init failed");
+		LOG_ERROR("DCMI DMA Init failed");
 		return -EIO;
 	}
 
@@ -260,7 +260,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 
 		hal_ret = HAL_DCMI_Stop(&data->hdcmi);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to stop DCMI");
+			LOG_ERROR("Failed to stop DCMI");
 			return -EIO;
 		}
 
@@ -273,7 +273,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 	data->vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
 
 	if (data->vbuf == NULL) {
-		LOG_ERR("Failed to dequeue a DCMI buffer.");
+		LOG_ERROR("Failed to dequeue a DCMI buffer.");
 		return -ENOMEM;
 	}
 
@@ -284,7 +284,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 	hal_ret = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
 				     (uint32_t)data->vbuf->buffer, data->vbuf->bytesused / 4);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to start DCMI DMA");
+		LOG_ERROR("Failed to start DCMI DMA");
 		return -EIO;
 	}
 
@@ -553,21 +553,21 @@ static int video_stm32_dcmi_init(const struct device *dev)
 	/* Configure DT provided pins */
 	err = pinctrl_apply_state(config->pctrl, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
-		LOG_ERR("pinctrl setup failed. Error %d.", err);
+		LOG_ERROR("pinctrl setup failed. Error %d.", err);
 		return err;
 	}
 
 	/* Initialize DMA peripheral */
 	err = stm32_dma_init(dev);
 	if (err < 0) {
-		LOG_ERR("DMA initialization failed.");
+		LOG_ERROR("DMA initialization failed.");
 		return err;
 	}
 
 	/* Enable DCMI clock */
 	err = stm32_dcmi_enable_clock(dev);
 	if (err < 0) {
-		LOG_ERR("Clock enabling failed.");
+		LOG_ERROR("Clock enabling failed.");
 		return err;
 	}
 
@@ -581,7 +581,7 @@ static int video_stm32_dcmi_init(const struct device *dev)
 
 	/* Initialize DCMI peripheral */
 	if (HAL_DCMI_Init(&data->hdcmi) != HAL_OK) {
-		LOG_ERR("DCMI initialization failed.");
+		LOG_ERROR("DCMI initialization failed.");
 		return -EIO;
 	}
 

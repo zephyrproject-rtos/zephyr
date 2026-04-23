@@ -27,7 +27,7 @@ static int nxp_s32_emios_init(const struct device *dev)
 	const struct nxp_s32_emios_config *config = dev->config;
 
 	if (Emios_Mcl_Ip_Init(config->instance, config->mcl_info)) {
-		LOG_ERR("Could not initialize eMIOS");
+		LOG_ERROR("Could not initialize eMIOS");
 		return -EINVAL;
 	}
 

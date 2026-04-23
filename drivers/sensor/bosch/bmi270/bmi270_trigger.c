@@ -57,7 +57,7 @@ static void bmi270_thread_cb(const struct device *dev)
 		ret = bmi270_reg_read(dev, BMI270_REG_INT_STATUS_0,
 			(uint8_t *)&int_status, sizeof(int_status));
 		if (ret < 0) {
-			LOG_ERR("read interrupt status returned %d", ret);
+			LOG_ERROR("read interrupt status returned %d", ret);
 			return;
 		}
 
@@ -118,7 +118,7 @@ static int bmi270_feature_reg_write(const struct device *dev,
 
 	ret = bmi270_reg_write(dev, BMI270_REG_FEAT_PAGE, &feat_page, 1);
 	if (ret < 0) {
-		LOG_ERR("bmi270_reg_write (0x%02x) failed: %d", BMI270_REG_FEAT_PAGE, ret);
+		LOG_ERROR("bmi270_reg_write (0x%02x) failed: %d", BMI270_REG_FEAT_PAGE, ret);
 		return ret;
 	}
 
@@ -126,7 +126,7 @@ static int bmi270_feature_reg_write(const struct device *dev,
 
 	ret = bmi270_reg_write(dev, reg->addr, (uint8_t *)&value, 2);
 	if (ret < 0) {
-		LOG_ERR("bmi270_reg_write (0x%02x) failed: %d", reg->addr, ret);
+		LOG_ERROR("bmi270_reg_write (0x%02x) failed: %d", reg->addr, ret);
 		return ret;
 	}
 
@@ -187,14 +187,14 @@ int bmi270_init_interrupts(const struct device *dev)
 	ret = bmi270_init_int_pin(&cfg->int1, &data->int1_cb,
 				  bmi270_int1_callback);
 	if (ret) {
-		LOG_ERR("Failed to initialize INT1");
+		LOG_ERROR("Failed to initialize INT1");
 		return -EINVAL;
 	}
 
 	ret = bmi270_init_int_pin(&cfg->int2, &data->int2_cb,
 				  bmi270_int2_callback);
 	if (ret) {
-		LOG_ERR("Failed to initialize INT2");
+		LOG_ERROR("Failed to initialize INT2");
 		return -EINVAL;
 	}
 
@@ -203,7 +203,7 @@ int bmi270_init_interrupts(const struct device *dev)
 
 		ret = bmi270_reg_write(dev, BMI270_REG_INT1_IO_CTRL, &int1_io_ctrl, 1);
 		if (ret < 0) {
-			LOG_ERR("failed configuring INT1_IO_CTRL (%d)", ret);
+			LOG_ERROR("failed configuring INT1_IO_CTRL (%d)", ret);
 			return ret;
 		}
 	}
@@ -213,7 +213,7 @@ int bmi270_init_interrupts(const struct device *dev)
 
 		ret = bmi270_reg_write(dev, BMI270_REG_INT2_IO_CTRL, &int2_io_ctrl, 1);
 		if (ret < 0) {
-			LOG_ERR("failed configuring INT2_IO_CTRL (%d)", ret);
+			LOG_ERROR("failed configuring INT2_IO_CTRL (%d)", ret);
 			return ret;
 		}
 	}
@@ -254,7 +254,7 @@ static int bmi270_anymo_config(const struct device *dev, bool enable)
 
 	ret = bmi270_reg_write(dev, BMI270_REG_INT1_MAP_FEAT, &int1_map_feat, 1);
 	if (ret < 0) {
-		LOG_ERR("failed configuring INT1_MAP_FEAT (%d)", ret);
+		LOG_ERROR("failed configuring INT1_MAP_FEAT (%d)", ret);
 		return ret;
 	}
 
@@ -273,7 +273,7 @@ static int bmi270_drdy_config(const struct device *dev, bool enable)
 
 	ret = bmi270_reg_write(dev, BMI270_REG_INT_MAP_DATA, &int_map_data, 1);
 	if (ret < 0) {
-		LOG_ERR("failed configuring INT_MAP_DATA (%d)", ret);
+		LOG_ERROR("failed configuring INT_MAP_DATA (%d)", ret);
 		return ret;
 	}
 

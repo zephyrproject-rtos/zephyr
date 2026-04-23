@@ -16,7 +16,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 {
 	ARG_UNUSED(unused);
 
-	LOG_ERR("Spurious interrupt detected!");
+	LOG_ERROR("Spurious interrupt detected!");
 
 	z_openrisc_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }

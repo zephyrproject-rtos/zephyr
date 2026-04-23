@@ -59,7 +59,7 @@ static int lvd_renesas_rx_get_output(const struct device *dev)
 
 	err = R_LVD_GetStatus(config->channel, &status_position, &unused_status_cross);
 	if (err != 0) {
-		LOG_ERR("Failed to get status");
+		LOG_ERROR("Failed to get status");
 		return -EIO;
 	}
 
@@ -71,7 +71,7 @@ static int lvd_renesas_rx_get_output(const struct device *dev)
 		return 0;
 
 	default:
-		LOG_ERR("Invalid status, please check the configuration");
+		LOG_ERROR("Invalid status, please check the configuration");
 		return -EIO;
 	}
 }
@@ -99,11 +99,11 @@ static int lvd_renesas_rx_set_trigger(const struct device *dev, enum comparator_
 		break;
 
 	case COMPARATOR_TRIGGER_NONE:
-		LOG_ERR("Trigger NONE is not supported");
+		LOG_ERROR("Trigger NONE is not supported");
 		return -ENOTSUP;
 
 	default:
-		LOG_ERR("Invalid trigger type.");
+		LOG_ERROR("Invalid trigger type.");
 		return -EINVAL;
 	}
 
@@ -121,7 +121,7 @@ static int lvd_renesas_rx_set_trigger_callback(const struct device *dev,
 	const struct lvd_renesas_rx_config *config = dev->config;
 
 	if ((config->lvd_action == 0) || (config->lvd_action == 3)) {
-		LOG_ERR("Callback function is not supported with the current action");
+		LOG_ERROR("Callback function is not supported with the current action");
 		return -ENOTSUP;
 	}
 
@@ -161,7 +161,7 @@ static int renesas_rx_pin_set_cmpa(const struct device *dev)
 			PINCTRL_DT_DEFINE(LVD0_NODE);
 			pcfg = PINCTRL_DT_DEV_CONFIG_GET(LVD0_NODE);
 		} else {
-			LOG_ERR("No pinctrl-0 property found in the device tree");
+			LOG_ERROR("No pinctrl-0 property found in the device tree");
 			return -EINVAL;
 		}
 	} else {
@@ -169,7 +169,7 @@ static int renesas_rx_pin_set_cmpa(const struct device *dev)
 			PINCTRL_DT_DEFINE(LVD1_NODE);
 			pcfg = PINCTRL_DT_DEV_CONFIG_GET(LVD1_NODE);
 		} else {
-			LOG_ERR("No pinctrl_0 property found in the device tree");
+			LOG_ERROR("No pinctrl_0 property found in the device tree");
 			return -EINVAL;
 		}
 	}
@@ -177,7 +177,7 @@ static int renesas_rx_pin_set_cmpa(const struct device *dev)
 	/* In the case of monitoring the CMPA pin, set the CMPA pin. */
 	ret = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to apply pinctrl state: %d\n", ret);
+		LOG_ERROR("Failed to apply pinctrl state: %d\n", ret);
 		return -EINVAL;
 	}
 
@@ -210,7 +210,7 @@ static int lvd_renesas_rx_init(const struct device *dev)
 	/* In reset or no-action when LVD is detected, callback will not be triggered. */
 	err = R_LVD_Open(config->channel, &data->lvd_config, data->callback);
 	if (err != 0) {
-		LOG_ERR("Failed to initialize LVD channel %d", config->channel);
+		LOG_ERROR("Failed to initialize LVD channel %d", config->channel);
 		return -EIO;
 	}
 

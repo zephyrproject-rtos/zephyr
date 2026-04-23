@@ -119,7 +119,7 @@ static int gd32_fmc_v2_bank0_write(off_t offset, const void *data, size_t len)
 	if (FMC_STAT0 & GD32_FMC_V2_BANK0_WRITE_ERR) {
 		ret = -EIO;
 		FMC_STAT0 |= GD32_FMC_V2_BANK0_WRITE_ERR;
-		LOG_ERR("FMC bank0 programming failed");
+		LOG_ERROR("FMC bank0 programming failed");
 	}
 
 expired_out:
@@ -154,7 +154,7 @@ static int gd32_fmc_v2_bank0_page_erase(uint32_t page_addr)
 	if (FMC_STAT0 & GD32_FMC_V2_BANK0_ERASE_ERR) {
 		ret = -EIO;
 		FMC_STAT0 |= GD32_FMC_V2_BANK0_ERASE_ERR;
-		LOG_ERR("FMC bank0 page %u erase failed", page_addr);
+		LOG_ERROR("FMC bank0 page %u erase failed", page_addr);
 	}
 
 expired_out:
@@ -234,7 +234,7 @@ static int gd32_fmc_v2_bank1_write(off_t offset, const void *data, size_t len)
 	if (FMC_STAT1 & GD32_FMC_V2_BANK1_WRITE_ERR) {
 		ret = -EIO;
 		FMC_STAT1 |= GD32_FMC_V2_BANK1_WRITE_ERR;
-		LOG_ERR("FMC bank1 programming failed");
+		LOG_ERROR("FMC bank1 programming failed");
 	}
 
 expired_out:
@@ -269,7 +269,7 @@ static int gd32_fmc_v2_bank1_page_erase(uint32_t page_addr)
 	if (FMC_STAT1 & GD32_FMC_V2_BANK1_ERASE_ERR) {
 		ret = -EIO;
 		FMC_STAT1 |= GD32_FMC_V2_BANK1_ERASE_ERR;
-		LOG_ERR("FMC bank1 page %u erase failed", page_addr);
+		LOG_ERROR("FMC bank1 page %u erase failed", page_addr);
 	}
 
 expired_out:

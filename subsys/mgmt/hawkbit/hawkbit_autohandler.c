@@ -29,10 +29,10 @@ static void autohandler(struct k_work *work)
 
 	switch (response) {
 	case HAWKBIT_UNCONFIRMED_IMAGE:
-		LOG_ERR("Current image is not confirmed");
-		LOG_ERR("Rebooting to previous confirmed image");
-		LOG_ERR("If this image is flashed using a hardware tool");
-		LOG_ERR("Make sure that it is a confirmed image");
+		LOG_ERROR("Current image is not confirmed");
+		LOG_ERROR("Rebooting to previous confirmed image");
+		LOG_ERROR("If this image is flashed using a hardware tool");
+		LOG_ERROR("Make sure that it is a confirmed image");
 		hawkbit_reboot();
 		break;
 
@@ -74,7 +74,7 @@ static void autohandler(struct k_work *work)
 		break;
 
 	default:
-		LOG_ERR("Invalid response: %d", response);
+		LOG_ERROR("Invalid response: %d", response);
 		break;
 	}
 

@@ -522,8 +522,8 @@ static void setup_shadow_stack(struct k_thread *new_thread,
 							      stk_to_hw_shstk->shstk_addr,
 							      stk_to_hw_shstk->size);
 			if (ret != 0) {
-				LOG_ERR("Could not set thread %p shadow stack %p, got error %d",
-					new_thread, stk_to_hw_shstk->shstk_addr, ret);
+				LOG_ERROR("Could not set thread %p shadow stack %p, got error %d",
+					  new_thread, stk_to_hw_shstk->shstk_addr, ret);
 				k_panic();
 			}
 			break;
@@ -547,8 +547,8 @@ static void setup_shadow_stack(struct k_thread *new_thread,
 			uintptr_t addr;
 
 			if (stack_index >= stk_to_hw_shstk->nmemb) {
-				LOG_ERR("Could not find shadow stack for thread %p, stack %p",
-					new_thread, stack);
+				LOG_ERROR("Could not find shadow stack for thread %p, stack %p",
+					  new_thread, stack);
 				k_panic();
 			}
 
@@ -558,7 +558,8 @@ static void setup_shadow_stack(struct k_thread *new_thread,
 							      (arch_thread_hw_shadow_stack_t *)addr,
 							      stk_to_hw_shstk->shstk_size);
 			if (ret != 0) {
-				LOG_ERR("Could not set thread %p shadow stack 0x%lx, got error %d",
+				LOG_ERROR(
+					"Could not set thread %p shadow stack 0x%lx, got error %d",
 					new_thread, stk_to_hw_shstk->shstk_addr, ret);
 				k_panic();
 			}
@@ -567,8 +568,7 @@ static void setup_shadow_stack(struct k_thread *new_thread,
 	}
 
 	if (ret == -ENOENT) {
-		LOG_ERR("Could not find shadow stack for thread %p, stack %p",
-			new_thread, stack);
+		LOG_ERROR("Could not find shadow stack for thread %p, stack %p", new_thread, stack);
 		k_panic();
 	}
 }

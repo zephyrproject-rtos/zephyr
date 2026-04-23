@@ -48,7 +48,7 @@ static int memc_stm32_init(const struct device *dev)
 	/* configure pinmux */
 	r = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (r < 0) {
-		LOG_ERR("FMC pinctrl setup failed (%d)", r);
+		LOG_ERROR("FMC pinctrl setup failed (%d)", r);
 		return r;
 	}
 
@@ -56,7 +56,7 @@ static int memc_stm32_init(const struct device *dev)
 	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	r = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
 	if (r < 0) {
-		LOG_ERR("Could not initialize FMC clock (%d)", r);
+		LOG_ERROR("Could not initialize FMC clock (%d)", r);
 		return r;
 	}
 
@@ -64,7 +64,7 @@ static int memc_stm32_init(const struct device *dev)
 		/* Enable FMC clock source */
 		r = clock_control_configure(clk, (clock_control_subsys_t)&config->pclken[1], NULL);
 		if (r < 0) {
-			LOG_ERR("Could not select FMC clock (%d)", r);
+			LOG_ERROR("Could not select FMC clock (%d)", r);
 			return r;
 		}
 	}

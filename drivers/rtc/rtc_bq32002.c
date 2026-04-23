@@ -262,7 +262,7 @@ static int bq32002_set_calibration(const struct device *dev, int32_t freq_ppb)
 	uint8_t reg_val;
 
 	if ((freq_ppb < BQ32002_CAL_PPB_MIN) || (freq_ppb > BQ32002_CAL_PPB_MAX)) {
-		LOG_ERR("Calibration value %d ppb out of range", freq_ppb);
+		LOG_ERROR("Calibration value %d ppb out of range", freq_ppb);
 		return -EINVAL;
 	}
 
@@ -340,7 +340,7 @@ static int bq32002_init(const struct device *dev)
 	(void)k_sem_init(&data->lock, 1, 1);
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 

@@ -69,7 +69,7 @@ static ssize_t gatt_recv(struct bt_conn *conn,
 	const uint8_t *data = buf;
 
 	if (cli->conn != conn) {
-		LOG_ERR("No PB-GATT Client found");
+		LOG_ERROR("No PB-GATT Client found");
 		return -ENOTCONN;
 	}
 
@@ -132,7 +132,7 @@ static ssize_t prov_ccc_write(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, uint16_t value)
 {
 	if (cli->conn != conn) {
-		LOG_ERR("No PB-GATT Client found");
+		LOG_ERROR("No PB-GATT Client found");
 		return -ENOTCONN;
 	}
 

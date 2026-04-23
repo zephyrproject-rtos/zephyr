@@ -41,21 +41,21 @@ static int ist8310_sample_fetch(const struct device *dev, enum sensor_channel ch
 	uint8_t buff[6];
 
 	if (ist8310_reg_read(dev, IST8310_STATUS_REGISTER1, (uint8_t *)buff, 1) < 0) {
-		LOG_ERR("failed to read status register 1");
+		LOG_ERROR("failed to read status register 1");
 		return -EIO;
 	}
 
 	if ((buff[0] & STAT1_DRDY) == 0) {
-		LOG_ERR("Data not ready");
+		LOG_ERROR("Data not ready");
 		if (ist8310_reg_write(dev, IST8310_CONTROL_REGISTER1, CTRL1_MODE_SINGLE) < 0) {
-			LOG_ERR("failed to set single");
+			LOG_ERROR("failed to set single");
 			return -EIO;
 		}
 		return -EIO;
 	}
 
 	if (ist8310_reg_read(dev, IST8310_OUTPUT_VALUE_X_L, (uint8_t *)buff, 6) < 0) {
-		LOG_ERR("failed to read mag values");
+		LOG_ERROR("failed to read mag values");
 		return -EIO;
 	}
 
@@ -64,7 +64,7 @@ static int ist8310_sample_fetch(const struct device *dev, enum sensor_channel ch
 	drv_data->sample_z = (sys_le16_to_cpu(*(uint16_t *)&buff[4]));
 
 	if (ist8310_reg_write(dev, IST8310_CONTROL_REGISTER1, CTRL1_MODE_SINGLE) < 0) {
-		LOG_ERR("failed to set single");
+		LOG_ERROR("failed to set single");
 		return -EIO;
 	}
 
@@ -109,70 +109,70 @@ static int ist8310_init_chip(const struct device *dev)
 
 	/* Read chip ID (can only be read in sleep mode)*/
 	if (ist8310_reg_read(dev, IST8310_WHO_AM_I, &reg, 1) < 0) {
-		LOG_ERR("failed reading chip id");
+		LOG_ERROR("failed reading chip id");
 		return -EIO;
 	}
 
 	if (ist8310_reg_read(dev, IST8310_WHO_AM_I, &reg, 1) < 0) {
-		LOG_ERR("failed reading chip id");
+		LOG_ERROR("failed reading chip id");
 		return -EIO;
 	}
 
 	if (ist8310_reg_read(dev, IST8310_WHO_AM_I, &reg, 1) < 0) {
-		LOG_ERR("failed reading chip id");
+		LOG_ERROR("failed reading chip id");
 		return -EIO;
 	}
 
 	if (reg != IST8310_WHO_AM_I_VALUE) {
-		LOG_ERR("invalid chip id 0x%x", reg);
+		LOG_ERROR("invalid chip id 0x%x", reg);
 		return -EIO;
 	}
 
 	if (ist8310_reg_read(dev, IST8310_CONTROL_REGISTER2, &reg, 1) < 0) {
-		LOG_ERR("failed reading chip reg2");
+		LOG_ERROR("failed reading chip reg2");
 		return -EIO;
 	}
 
 	reg &= ~CTRL2_SRST;
 
 	if (ist8310_reg_write(dev, IST8310_CONTROL_REGISTER2, reg) < 0) {
-		LOG_ERR("failed to set REG2 to %d", reg);
+		LOG_ERROR("failed to set REG2 to %d", reg);
 		return -EIO;
 	}
 
 	k_sleep(K_MSEC(3));
 
 	if (ist8310_reg_read(dev, IST8310_CONTROL_REGISTER3, &reg, 1) < 0) {
-		LOG_ERR("failed reading chip reg3");
+		LOG_ERROR("failed reading chip reg3");
 		return -EIO;
 	}
 
 	reg |= X_16BIT | Y_16BIT | Z_16BIT;
 
 	if (ist8310_reg_write(dev, IST8310_CONTROL_REGISTER3, reg) < 0) {
-		LOG_ERR("failed to set REG3 to %d", reg);
+		LOG_ERROR("failed to set REG3 to %d", reg);
 		return -EIO;
 	}
 
 	if (ist8310_reg_write(dev, IST8310_AVG_REGISTER, XZ_16TIMES_CLEAR | Y_16TIMES_CLEAR) < 0) {
-		LOG_ERR("failed to set AVG");
+		LOG_ERROR("failed to set AVG");
 		return -EIO;
 	}
 
 	if (ist8310_reg_write(dev, IST8310_AVG_REGISTER, XZ_16TIMES_SET | Y_16TIMES_SET) < 0) {
-		LOG_ERR("failed to set AVG");
+		LOG_ERROR("failed to set AVG");
 		return -EIO;
 	}
 
 	if (ist8310_reg_write(dev, IST8310_PDCNTL_REGISTER, PULSE_NORMAL) < 0) {
-		LOG_ERR("failed to set AVG");
+		LOG_ERROR("failed to set AVG");
 		return -EIO;
 	}
 
 	k_sleep(K_MSEC(3));
 
 	if (ist8310_reg_write(dev, IST8310_CONTROL_REGISTER1, CTRL1_MODE_SINGLE) < 0) {
-		LOG_ERR("failed to set single");
+		LOG_ERROR("failed to set single");
 		return -EIO;
 	}
 
@@ -190,7 +190,7 @@ static int ist8310_init(const struct device *dev)
 	}
 
 	if (ist8310_init_chip(dev) < 0) {
-		LOG_ERR("failed to initialize chip");
+		LOG_ERROR("failed to initialize chip");
 		return -EIO;
 	}
 

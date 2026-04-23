@@ -143,14 +143,14 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) > IFX_CAT1_SPI_MAX_DATA_WIDTH) {
-		LOG_ERR("Word size %d is greater than %d", SPI_WORD_SIZE_GET(spi_cfg->operation),
-			IFX_CAT1_SPI_MAX_DATA_WIDTH);
+		LOG_ERROR("Word size %d is greater than %d", SPI_WORD_SIZE_GET(spi_cfg->operation),
+			  IFX_CAT1_SPI_MAX_DATA_WIDTH);
 		return -EINVAL;
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) < IFX_CAT1_SPI_MIN_DATA_WIDTH) {
-		LOG_ERR("Word size %d is less than %d", SPI_WORD_SIZE_GET(spi_cfg->operation),
-			IFX_CAT1_SPI_MIN_DATA_WIDTH);
+		LOG_ERROR("Word size %d is less than %d", SPI_WORD_SIZE_GET(spi_cfg->operation),
+			  IFX_CAT1_SPI_MIN_DATA_WIDTH);
 		return -EINVAL;
 	}
 
@@ -247,7 +247,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	result = spi_config(dev, spi_cfg);
 	if (result) {
-		LOG_ERR("Error in SPI Configuration (result: 0x%x)", result);
+		LOG_ERROR("Error in SPI Configuration (result: 0x%x)", result);
 		return result;
 	}
 

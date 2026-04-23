@@ -45,7 +45,7 @@ int main(void)
 	rc = fs_mkfs(MKFS_FS_TYPE, (uintptr_t)MKFS_DEV_ID, NULL, MKFS_FLAGS);
 
 	if (rc < 0) {
-		LOG_ERR("Format failed");
+		LOG_ERROR("Format failed");
 		return 0;
 	}
 

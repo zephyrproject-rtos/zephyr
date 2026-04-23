@@ -110,7 +110,7 @@ static int psci_features_check(unsigned long function_id)
 {
 	/* PSCI_FEATURES function ID is supported from PSCI 1.0 onwards. */
 	if (!(PSCI_VERSION_MAJOR(psci_data.ver) >= 1)) {
-		LOG_ERR("Function ID %lu not supported", function_id);
+		LOG_ERROR("Function ID %lu not supported", function_id);
 		return -ENOTSUP;
 	}
 
@@ -131,7 +131,7 @@ int pm_system_reset(unsigned char reset_type)
 	} else if (reset_type == SYS_COLD_RESET) {
 		ret = psci_data.invoke_psci_fn(PSCI_FN_NATIVE(0_2, SYSTEM_RESET), 0, 0, 0);
 	} else {
-		LOG_ERR("Invalid system reset type issued");
+		LOG_ERROR("Invalid system reset type issued");
 		return -EINVAL;
 	}
 
@@ -177,7 +177,7 @@ static int set_conduit_method(const struct device *dev)
 		psci_data.conduit = SMCCC_CONDUIT_SMC;
 		psci_data.invoke_psci_fn = __invoke_psci_fn_smc;
 	} else {
-		LOG_ERR("Invalid conduit method");
+		LOG_ERROR("Invalid conduit method");
 		return -EINVAL;
 	}
 
@@ -193,7 +193,7 @@ static int psci_detect(void)
 		PSCI_VERSION_MINOR(ver));
 
 	if (PSCI_VERSION_MAJOR(ver) == 0 && PSCI_VERSION_MINOR(ver) < 2) {
-		LOG_ERR("PSCI unsupported version");
+		LOG_ERROR("PSCI unsupported version");
 		return -ENOTSUP;
 	}
 

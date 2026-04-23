@@ -423,7 +423,7 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	uint32_t req_len = fifo_read_size + sizeof(struct lsm6dsv16x_fifo_data);
 
 	if (rtio_sqe_rx_buf(lsm6dsv16x->streaming_sqe, req_len, req_len, &buf, &buf_len) != 0) {
-		LOG_ERR("Failed to get buffer");
+		LOG_ERROR("Failed to get buffer");
 		rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, -ENOMEM);
 		lsm6dsv16x->streaming_sqe = NULL;
 		if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
@@ -582,7 +582,7 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 
 		if (rtio_sqe_rx_buf(lsm6dsv16x->streaming_sqe,
 				    req_len, req_len, &buf, &buf_len) != 0) {
-			LOG_ERR("Failed to get buffer");
+			LOG_ERROR("Failed to get buffer");
 			rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, -ENOMEM);
 			lsm6dsv16x->streaming_sqe = NULL;
 			if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
@@ -659,7 +659,7 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, rc);
 		return;
 	}

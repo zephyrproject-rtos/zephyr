@@ -367,7 +367,7 @@ static int ssd1306_write_default(const struct device *dev, const uint16_t x, con
 
 	ret = ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 	if (ret < 0) {
-		LOG_ERR("Failed to write command: %d", ret);
+		LOG_ERROR("Failed to write command: %d", ret);
 		return ret;
 	}
 
@@ -397,13 +397,13 @@ static int ssd1306_write_sh1106(const struct device *dev, const uint16_t x, cons
 
 		ret = ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 		if (ret < 0) {
-			LOG_ERR("Failed to write position");
+			LOG_ERROR("Failed to write position");
 			return ret;
 		}
 
 		ret = ssd1306_write_bus(dev, &(buf[y_o * desc->width]), desc->width, false);
 		if (ret < 0) {
-			LOG_ERR("Failed to write pixel data");
+			LOG_ERROR("Failed to write pixel data");
 			return ret;
 		}
 	}
@@ -418,27 +418,27 @@ static int ssd1306_write(const struct device *dev, const uint16_t x, const uint1
 	const size_t buf_len = (desc->height * desc->width) >> SSD1306_PPB_SHIFT;
 
 	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is not width");
+		LOG_ERROR("Pitch is not width");
 		return -EINVAL;
 	}
 
 	if (buf == NULL) {
-		LOG_ERR("Display buffer is invalid");
+		LOG_ERROR("Display buffer is invalid");
 		return -ENODATA;
 	}
 
 	if (buf_len > desc->buf_size) {
-		LOG_ERR("Display buffer is too small");
+		LOG_ERROR("Display buffer is too small");
 		return -ENODATA;
 	}
 
 	if ((y & 0x7) != 0U) {
-		LOG_ERR("Unsupported origin");
+		LOG_ERROR("Unsupported origin");
 		return -EINVAL;
 	}
 
 	if ((desc->height & 0x7) != 0U) {
-		LOG_ERR("Unsupported height");
+		LOG_ERROR("Unsupported height");
 		return -EINVAL;
 	}
 
@@ -530,7 +530,7 @@ static int ssd1306_set_pixel_format(const struct device *dev,
 
 	ret = ssd1306_write_bus(dev, &cmd, 1, true);
 	if (ret < 0) {
-		LOG_ERR("Failed to set pixel format");
+		LOG_ERROR("Failed to set pixel format");
 		return ret;
 	}
 
@@ -569,25 +569,25 @@ static int ssd1306_init_device(const struct device *dev)
 	/* Turn display off */
 	ret = ssd1306_suspend(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to suspend: %d", ret);
+		LOG_ERROR("Failed to suspend: %d", ret);
 		return ret;
 	}
 
 	ret = ssd1306_set_timing_setting(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to set timings: %d", ret);
+		LOG_ERROR("Failed to set timings: %d", ret);
 		return ret;
 	}
 
 	ret = ssd1306_set_hardware_config(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to set hardware configuration: %d", ret);
+		LOG_ERROR("Failed to set hardware configuration: %d", ret);
 		return ret;
 	}
 
 	ret = ssd1306_set_panel_orientation(dev, false);
 	if (ret < 0) {
-		LOG_ERR("Failed to set panel orientation: %d", ret);
+		LOG_ERROR("Failed to set panel orientation: %d", ret);
 		return ret;
 	}
 	data->orientation = DISPLAY_ORIENTATION_NORMAL;
@@ -595,26 +595,26 @@ static int ssd1306_init_device(const struct device *dev)
 	if (!config->ssd1309_compatible) {
 		ret = ssd1306_set_charge_pump(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to apply charge pump settings: %d", ret);
+			LOG_ERROR("Failed to apply charge pump settings: %d", ret);
 			return ret;
 		}
 
 		ret = ssd1306_set_iref_mode(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to set reference settings: %d", ret);
+			LOG_ERROR("Failed to set reference settings: %d", ret);
 			return ret;
 		}
 	}
 
 	ret = ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 	if (ret < 0) {
-		LOG_ERR("Failed to set inversion: %d", ret);
+		LOG_ERROR("Failed to set inversion: %d", ret);
 		return ret;
 	}
 
 	ret = ssd1306_set_contrast(dev, CONFIG_SSD1306_DEFAULT_CONTRAST);
 	if (ret < 0) {
-		LOG_ERR("Failed to set default contrast: %d", ret);
+		LOG_ERROR("Failed to set default contrast: %d", ret);
 		return ret;
 	}
 
@@ -629,7 +629,7 @@ static int ssd1306_init(const struct device *dev)
 	k_sleep(K_TIMEOUT_ABS_MS(config->ready_time_ms));
 
 	if (!ssd1306_bus_ready(dev)) {
-		LOG_ERR("Bus device %s not ready!", config->bus_name(dev));
+		LOG_ERROR("Bus device %s not ready!", config->bus_name(dev));
 		return -EINVAL;
 	}
 
@@ -640,7 +640,7 @@ static int ssd1306_init(const struct device *dev)
 			return ret;
 		}
 		if (!gpio_is_ready_dt(&config->supply)) {
-			LOG_ERR("Supply GPIO device not ready");
+			LOG_ERROR("Supply GPIO device not ready");
 			return -ENODEV;
 		}
 	}
@@ -652,13 +652,13 @@ static int ssd1306_init(const struct device *dev)
 			return ret;
 		}
 		if (!gpio_is_ready_dt(&config->reset)) {
-			LOG_ERR("Reset GPIO device not ready");
+			LOG_ERROR("Reset GPIO device not ready");
 			return -ENODEV;
 		}
 	}
 
 	if (ssd1306_init_device(dev)) {
-		LOG_ERR("Failed to initialize device!");
+		LOG_ERROR("Failed to initialize device!");
 		return -EIO;
 	}
 

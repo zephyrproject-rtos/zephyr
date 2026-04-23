@@ -69,7 +69,7 @@ int tmc50xx_write(const struct device *dev, const uint8_t reg_addr, const uint32
 	k_sem_give(&data->sem);
 
 	if (err < 0) {
-		LOG_ERR("Failed to write register 0x%x with value 0x%x", reg_addr, reg_val);
+		LOG_ERROR("Failed to write register 0x%x with value 0x%x", reg_addr, reg_val);
 		return err;
 	}
 
@@ -90,7 +90,7 @@ int tmc50xx_read(const struct device *dev, const uint8_t reg_addr, uint32_t *reg
 	k_sem_give(&data->sem);
 
 	if (err < 0) {
-		LOG_ERR("Failed to read register 0x%x", reg_addr);
+		LOG_ERROR("Failed to read register 0x%x", reg_addr);
 		return err;
 	}
 
@@ -106,7 +106,7 @@ static void log_stallguard(const struct device *dev, const uint32_t drv_status)
 
 	err = tmc50xx_read_actual_position(dev, &position);
 	if (err != 0) {
-		LOG_ERR("%s: Failed to read XACTUAL register", dev->name);
+		LOG_ERROR("%s: Failed to read XACTUAL register", dev->name);
 		return;
 	}
 
@@ -138,7 +138,7 @@ static void rampstat_work(const struct device *dev)
 
 	err = tmc50xx_read(dev, TMC50XX_DRVSTATUS(data->work_index), &drv_status);
 	if (err != 0) {
-		LOG_ERR("%s: Failed to read DRVSTATUS register", data->dev->name);
+		LOG_ERROR("%s: Failed to read DRVSTATUS register", data->dev->name);
 		return;
 	}
 #ifdef CONFIG_STEPPER_ADI_TMC50XX_RAMPSTAT_POLL_STALLGUARD_LOG
@@ -149,7 +149,7 @@ static void rampstat_work(const struct device *dev)
 		err = tmc50xx_write(dev, TMC50XX_RAMPMODE(data->work_index),
 				    TMC5XXX_RAMPMODE_HOLD_MODE);
 		if (err != 0) {
-			LOG_ERR("%s: Failed to stop motor", data->dev->name);
+			LOG_ERROR("%s: Failed to stop motor", data->dev->name);
 			return;
 		}
 	}
@@ -158,7 +158,7 @@ static void rampstat_work(const struct device *dev)
 
 	err = tmc50xx_read(dev, TMC50XX_RAMPSTAT(data->work_index), &rampstat_value);
 	if (err != 0) {
-		LOG_ERR("%s: Failed to read RAMPSTAT register", data->dev->name);
+		LOG_ERROR("%s: Failed to read RAMPSTAT register", data->dev->name);
 		return;
 	}
 
@@ -199,7 +199,7 @@ static void rampstat_work(const struct device *dev)
 			break;
 #endif
 		default:
-			LOG_ERR("Illegal ramp stat bit field 0x%x", ramp_stat_values);
+			LOG_ERROR("Illegal ramp stat bit field 0x%x", ramp_stat_values);
 			break;
 		}
 	} else {
@@ -231,7 +231,7 @@ static int tmc50xx_init(const struct device *dev)
 	k_sem_init(&data->sem, 1, 1);
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus is not ready");
+		LOG_ERROR("SPI bus is not ready");
 		return -ENODEV;
 	}
 

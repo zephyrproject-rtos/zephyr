@@ -29,19 +29,19 @@ static int wifi_on(void *state)
 
 	ret = rpu_init();
 	if (ret) {
-		LOG_ERR("%s: RPU init failed with error %d", __func__, ret);
+		LOG_ERROR("%s: RPU init failed with error %d", __func__, ret);
 		return -1;
 	}
 
 	ret = dev->init(qspi_defconfig());
 	if (ret) {
-		LOG_ERR("%s: QSPI device init failed", __func__);
+		LOG_ERROR("%s: QSPI device init failed", __func__);
 		return -1;
 	}
 
 	ret = rpu_enable();
 	if (ret) {
-		LOG_ERR("%s: RPU enable failed with error %d", __func__, ret);
+		LOG_ERROR("%s: RPU enable failed with error %d", __func__, ret);
 		return -1;
 	}
 	k_sleep(K_MSEC(10));
@@ -57,12 +57,12 @@ static void wifi_off(void *state)
 
 	ret = rpu_disable();
 	if (ret) {
-		LOG_ERR("%s: RPU disable failed with error %d", __func__, ret);
+		LOG_ERROR("%s: RPU disable failed with error %d", __func__, ret);
 	}
 
 	ret = dev->deinit();
 	if (ret) {
-		LOG_ERR("%s: QSPI device de-init failed", __func__);
+		LOG_ERROR("%s: QSPI device de-init failed", __func__);
 	}
 	k_sleep(K_MSEC(10));
 	LOG_INF("Wi-Fi OFF done");
@@ -83,13 +83,13 @@ static int memtest(uint32_t addr, char *memblock_name)
 
 	buff = k_malloc(CONFIG_NRF70BUS_MEMTEST_LENGTH * 4);
 	if (buff == NULL) {
-		LOG_ERR("Failed to allocate memory for buff");
+		LOG_ERROR("Failed to allocate memory for buff");
 		return -1;
 	}
 
 	rxbuff = k_malloc(CONFIG_NRF70BUS_MEMTEST_LENGTH * 4);
 	if (rxbuff == NULL) {
-		LOG_ERR("Failed to allocate memory for rxbuff");
+		LOG_ERROR("Failed to allocate memory for rxbuff");
 		k_free(buff);
 		return -1;
 	}
@@ -114,9 +114,9 @@ static int memtest(uint32_t addr, char *memblock_name)
 		for (i = 0; i < test_chunk; i++) {
 			if (buff[i] != rxbuff[i]) {
 				err_count++;
-				LOG_ERR("%s: failed (%d), Expected 0x%x, Read 0x%x",
-						__func__, i, buff[i], rxbuff[i]);
-				if (err_count > 4)
+				LOG_ERROR("%s: failed (%d), Expected 0x%x, Read 0x%x", __func__, i,
+					  buff[i], rxbuff[i]);
+				if (err_count > 4) {
 					goto err;
 			}
 		}
@@ -148,8 +148,8 @@ static int test_sysbus(void)
 	for (i = 0; i < ARRAY_SIZE(addr); i++) {
 		rpu_read(addr[i], &val, 4);
 		if (val != val_arr[i]) {
-			LOG_ERR("%s: SYSBUS R/W failed (%d) : read = 0x%x, expected = 0x%x",
-						 __func__, i, val, val_arr[i]);
+			LOG_ERROR("%s: SYSBUS R/W failed (%d) : read = 0x%x, expected = 0x%x",
+				  __func__, i, val, val_arr[i]);
 			return -1;
 		}
 	}
@@ -172,8 +172,8 @@ static int test_peripbus(void)
 		 * in the check
 		 */
 		if (val >> 8 != 0xA5A5A5) {
-			LOG_ERR("%s: PERIP BUS R/W failed (%d): read = 0x%x",
-						__func__, i, val >> 8);
+			LOG_ERROR("%s: PERIP BUS R/W failed (%d): read = 0x%x", __func__, i,
+				  val >> 8);
 			return -1;
 		}
 	}
@@ -195,7 +195,7 @@ static int test_rdsr0(void)
 
 	ret = rpu_read_reg(RDSR0_ADDR, &val);
 	if (ret) {
-		LOG_ERR("Failed to read RDSR0: %d", ret);
+		LOG_ERROR("Failed to read RDSR0: %d", ret);
 		return -1;
 	}
 
@@ -204,7 +204,7 @@ static int test_rdsr0(void)
 	if (val == 0x42) {
 		return 0;
 	}
-	LOG_ERR("RDSR0 test failed: expected 0x42, got 0x%x", val);
+	LOG_ERROR("RDSR0 test failed: expected 0x42, got 0x%x", val);
 	return -1;
 }
 
@@ -219,20 +219,20 @@ static int test_rdsr2_pattern(uint8_t test_pattern, const char *pattern_name)
 
 	ret = rpu_write_reg(WRSR2_ADDR, masked_pattern);
 	if (ret) {
-		LOG_ERR("Failed to write RDSR2 pattern %s", pattern_name);
+		LOG_ERROR("Failed to write RDSR2 pattern %s", pattern_name);
 		return -1;
 	}
 
 	ret = rpu_read_reg(RDSR2_ADDR, &read_val);
 	if (ret) {
-		LOG_ERR("Failed to read RDSR2 after writing pattern %s", pattern_name);
+		LOG_ERROR("Failed to read RDSR2 after writing pattern %s", pattern_name);
 		return -1;
 	}
 
 	/* Compare only bits 7:1 */
 	if ((read_val & 0xFE) != masked_pattern) {
-		LOG_ERR("RDSR2 pattern %s test failed: wrote 0x%02x, read 0x%02x (bits 7:1)",
-				pattern_name, masked_pattern, read_val & 0xFE);
+		LOG_ERROR("RDSR2 pattern %s test failed: wrote 0x%02x, read 0x%02x (bits 7:1)",
+			  pattern_name, masked_pattern, read_val & 0xFE);
 		return -1;
 	}
 
@@ -271,20 +271,21 @@ static int test_rdsr2_walking_pattern(bool walking_ones, const char *test_name)
 		ret = rpu_write_reg(WRSR2_ADDR, test_val & 0xFE);
 		/* Ensure bit 0 is 0 when writing */
 		if (ret) {
-			LOG_ERR("Failed to write RDSR2 %s bit %d", test_name, i);
+			LOG_ERROR("Failed to write RDSR2 %s bit %d", test_name, i);
 			return -1;
 		}
 
 		ret = rpu_read_reg(RDSR2_ADDR, &read_val);
 		if (ret) {
-			LOG_ERR("Failed to read RDSR2 after writing %s bit %d", test_name, i);
+			LOG_ERROR("Failed to read RDSR2 after writing %s bit %d", test_name, i);
 			return -1;
 		}
 
 		/* Compare only bits 7:1 */
 		if ((read_val & 0xFE) != (test_val & 0xFE)) {
-			LOG_ERR("RDSR2 %s bit %d test failed: wrote 0x%02x, read 0x%02x (bits 7:1)",
-					test_name, i, test_val & 0xFE, read_val & 0xFE);
+			LOG_ERROR(
+				"RDSR2 %s bit %d test failed: wrote 0x%02x, read 0x%02x (bits 7:1)",
+				test_name, i, test_val & 0xFE, read_val & 0xFE);
 			return -1;
 		}
 		LOG_DBG("RDSR2 %s bit %d passed: wrote 0x%02x, read 0x%02x",
@@ -317,7 +318,7 @@ static int test_rdsr1(void)
 
 	ret = rpu_read_reg(RDSR1_ADDR, &val);
 	if (ret) {
-		LOG_ERR("Failed to read RDSR1: %d", ret);
+		LOG_ERROR("Failed to read RDSR1: %d", ret);
 		return -1;
 	}
 
@@ -328,7 +329,7 @@ static int test_rdsr1(void)
 		LOG_INF("RDSR1 test passed: RPU is awake");
 		return 0;
 	}
-	LOG_ERR("RDSR1 test failed: RPU is not awake (0x%x)", val);
+	LOG_ERROR("RDSR1 test failed: RPU is not awake (0x%x)", val);
 	return -1;
 }
 

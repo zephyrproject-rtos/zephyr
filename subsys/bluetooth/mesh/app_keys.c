@@ -74,7 +74,7 @@ static void clear_app_key(uint16_t app_idx)
 	snprintk(path, sizeof(path), "bt/mesh/AppKey/%x", app_idx);
 	err = settings_delete(path);
 	if (err) {
-		LOG_ERR("Failed to clear AppKeyIndex 0x%03x", app_idx);
+		LOG_ERROR("Failed to clear AppKeyIndex 0x%03x", app_idx);
 	} else {
 		LOG_DBG("Cleared AppKeyIndex 0x%03x", app_idx);
 	}
@@ -103,7 +103,7 @@ static void store_app_key(uint16_t app_idx)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		LOG_ERR("Failed to store AppKey %s value", path);
+		LOG_ERROR("Failed to store AppKey %s value", path);
 	} else {
 		LOG_DBG("Stored AppKey %s value", path);
 	}
@@ -263,7 +263,7 @@ uint8_t bt_mesh_app_key_add(uint16_t app_idx, uint16_t net_idx,
 	app->app_idx = app_idx;
 	app->updated = false;
 	if (bt_mesh_key_import(BT_MESH_KEY_TYPE_APP, key, &app->keys[0].val)) {
-		LOG_ERR("Unable to import application key");
+		LOG_ERROR("Unable to import application key");
 		return STATUS_CANNOT_SET;
 	}
 
@@ -324,7 +324,7 @@ uint8_t bt_mesh_app_key_update(uint16_t app_idx, uint16_t net_idx,
 
 	app->updated = true;
 	if (bt_mesh_key_import(BT_MESH_KEY_TYPE_APP, key, &app->keys[1].val)) {
-		LOG_ERR("Unable to import application key");
+		LOG_ERROR("Unable to import application key");
 		return STATUS_CANNOT_UPDATE;
 	}
 
@@ -660,7 +660,7 @@ static int app_key_set(const char *name, size_t len_rd,
 	}
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -683,7 +683,7 @@ static int app_key_set(const char *name, size_t len_rd,
 	err = bt_mesh_app_key_set(app_idx, key.net_idx, &val[0],
 			      key.updated ? &val[1] : NULL);
 	if (err) {
-		LOG_ERR("Failed to set \'app-key\'");
+		LOG_ERROR("Failed to set \'app-key\'");
 		return err;
 	}
 

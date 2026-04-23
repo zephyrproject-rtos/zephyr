@@ -101,24 +101,24 @@ int fpga_ice40_init(const struct device *dev)
 	k_sem_init(&data->work_item.finished, 0, 1);
 
 	if (!device_is_ready(config->creset.port)) {
-		LOG_ERR("%s: GPIO for creset is not ready", dev->name);
+		LOG_ERROR("%s: GPIO for creset is not ready", dev->name);
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(config->cdone.port)) {
-		LOG_ERR("%s: GPIO for cdone is not ready", dev->name);
+		LOG_ERROR("%s: GPIO for cdone is not ready", dev->name);
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
-		LOG_ERR("failed to configure CRESET: %d", ret);
+		LOG_ERROR("failed to configure CRESET: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&config->cdone, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize CDONE: %d", ret);
+		LOG_ERROR("Failed to initialize CDONE: %d", ret);
 		return ret;
 	}
 

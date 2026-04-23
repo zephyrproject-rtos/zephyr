@@ -121,13 +121,13 @@ static int pwm_rz_gpt_set_cycles(const struct device *dev, uint32_t channel, uin
 		pin = GPT_IO_PIN_GTIOCB;
 		fsp_cfg_extend->gtiocb.output_enabled = true;
 	} else {
-		LOG_ERR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
+		LOG_ERROR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
 		return -EINVAL;
 	}
 
 	if ((data->fsp_ctrl->variant == TIMER_VARIANT_16_BIT && period_cycles > UINT16_MAX) ||
 	    (data->fsp_ctrl->variant == TIMER_VARIANT_32_BIT && period_cycles > UINT32_MAX)) {
-		LOG_ERR("Out of range period cycles are not valid");
+		LOG_ERROR("Out of range period cycles are not valid");
 		return -EINVAL;
 	}
 
@@ -172,7 +172,7 @@ static int pwm_rz_gpt_get_cycles_per_sec(const struct device *dev, uint32_t chan
 	fsp_err_t err;
 
 	if (!(channel == RZ_PWM_GPT_IO_A || channel == RZ_PWM_GPT_IO_B)) {
-		LOG_ERR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
+		LOG_ERROR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
 		return -EINVAL;
 	}
 
@@ -194,13 +194,13 @@ static int pwm_rz_gpt_configure_capture(const struct device *dev, uint32_t chann
 	gpt_extended_cfg_t *fsp_cfg_extend = (gpt_extended_cfg_t *)data->fsp_cfg->p_extend;
 
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
-		LOG_ERR("No PWWM capture type specified");
+		LOG_ERROR("No PWWM capture type specified");
 		return -EINVAL;
 	}
 	data->capture.capture_type_flag = flags & PWM_CAPTURE_TYPE_MASK;
 	data->capture.capture_channel = channel;
 	if (data->capture.is_busy) {
-		LOG_ERR("Capture already active on this pin");
+		LOG_ERROR("Capture already active on this pin");
 		return -EBUSY;
 	}
 	if (channel == RZ_PWM_GPT_IO_A) {
@@ -350,12 +350,12 @@ static int pwm_rz_gpt_enable_capture(const struct device *dev, uint32_t channel)
 	data->capture.capture_channel = channel;
 
 	if (data->capture.is_busy) {
-		LOG_ERR("Capture already active on this pin");
+		LOG_ERROR("Capture already active on this pin");
 		return -EBUSY;
 	}
 
 	if (!data->capture.callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
@@ -565,7 +565,7 @@ static int pwm_rz_gpt_init(const struct device *dev)
 
 	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
-		LOG_ERR("Failed to configure pins for PWM (%d)", err);
+		LOG_ERROR("Failed to configure pins for PWM (%d)", err);
 		return err;
 	}
 

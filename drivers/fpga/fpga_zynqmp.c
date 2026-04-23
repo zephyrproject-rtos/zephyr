@@ -132,7 +132,7 @@ static uint32_t *parse_header(const struct device *dev, uint32_t *image_ptr,
 	header += 0x4U + length;
 
 	if (*header++ != 'a') {
-		LOG_ERR("Incorrect bitstream format");
+		LOG_ERROR("Incorrect bitstream format");
 		return NULL;
 	}
 
@@ -145,7 +145,7 @@ static uint32_t *parse_header(const struct device *dev, uint32_t *image_ptr,
 	header += length;
 
 	if (*header++ != 'b') {
-		LOG_ERR("Incorrect bitstream format");
+		LOG_ERROR("Incorrect bitstream format");
 		return NULL;
 	}
 
@@ -157,7 +157,7 @@ static uint32_t *parse_header(const struct device *dev, uint32_t *image_ptr,
 	header += length;
 
 	if (*header++ != 'c') {
-		LOG_ERR("Incorrect bitstream format");
+		LOG_ERROR("Incorrect bitstream format");
 		return NULL;
 	}
 
@@ -170,7 +170,7 @@ static uint32_t *parse_header(const struct device *dev, uint32_t *image_ptr,
 	header += length;
 
 	if (*header++ != 'd') {
-		LOG_ERR("Incorrect bitstream format");
+		LOG_ERROR("Incorrect bitstream format");
 		return NULL;
 	}
 
@@ -183,7 +183,7 @@ static uint32_t *parse_header(const struct device *dev, uint32_t *image_ptr,
 	header += length;
 
 	if (*header++ != 'e') {
-		LOG_ERR("Incorrect bitstream format");
+		LOG_ERROR("Incorrect bitstream format");
 		return NULL;
 	}
 
@@ -288,7 +288,7 @@ static int zynqmp_fpga_load(const struct device *dev, uint32_t *image_ptr,
 	uint32_t *addr = parse_header(dev, image_ptr, &img_size);
 
 	if (addr == NULL) {
-		LOG_ERR("Failed to read bitstream");
+		LOG_ERROR("Failed to read bitstream");
 		return -EINVAL;
 	}
 

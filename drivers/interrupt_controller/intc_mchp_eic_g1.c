@@ -156,7 +156,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported port id provided");
+		LOG_ERROR("Unsupported port id provided");
 		break;
 	}
 
@@ -167,7 +167,7 @@ static inline void eic_sync_wait(eic_registers_t *eic_reg)
 {
 	if (WAIT_FOR((eic_reg->EIC_SYNCBUSY == 0), TIMEOUT_VALUE_US, k_busy_wait(DELAY_US)) ==
 	    false) {
-		LOG_ERR("Timeout waiting for EIC_SYNCBUSY bits to clear");
+		LOG_ERROR("Timeout waiting for EIC_SYNCBUSY bits to clear");
 	}
 }
 
@@ -206,7 +206,7 @@ int eic_mchp_disable_interrupt(struct eic_config_params *eic_pin_config)
 	if ((eic_data->line_busy & BIT(eic_line)) != 0) {
 		disable_interrupt_line(eic_cfg->regs, eic_line);
 	} else {
-		LOG_ERR("EIC Line is already free");
+		LOG_ERROR("EIC Line is already free");
 		return 0;
 	}
 
@@ -242,7 +242,7 @@ uint32_t eic_mchp_interrupt_pending(uint8_t port_id)
 	uint32_t ret_val = 0;
 
 	if (port_id >= MCHP_PORT_ID_MAX) {
-		LOG_ERR("Invalid port id passed");
+		LOG_ERROR("Invalid port id passed");
 		return ret_val;
 	}
 	eic_data->lock = irq_lock();
@@ -294,14 +294,14 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	LOG_DBG("eic line of port %d pin %d = %d", eic_pin_config->port_id, pin, eic_line);
 
 	if (eic_line == INTC_LINE_FREE) {
-		LOG_ERR("no associated eic line found");
+		LOG_ERROR("no associated eic line found");
 		return -ENOTSUP;
 	}
 
 	eic_data->lock = irq_lock();
 	if ((eic_data->line_busy & BIT(eic_line)) != 0) {
 		irq_unlock(eic_data->lock);
-		LOG_ERR("EIC Line for port %d : %d is busy", eic_pin_config->port_id, pin);
+		LOG_ERROR("EIC Line for port %d : %d is busy", eic_pin_config->port_id, pin);
 		return -EBUSY;
 	}
 	eic_disable(eic_cfg->regs);
@@ -367,12 +367,12 @@ static int eic_mchp_init(const struct device *dev)
 
 	ret_val = clock_control_on(eic_cfg->eic_clock.clock_dev, eic_cfg->eic_clock.mclk_sys);
 	if ((ret_val < 0) && (ret_val != -EALREADY)) {
-		LOG_ERR("Clock control on failed for mclk %d", ret_val);
+		LOG_ERROR("Clock control on failed for mclk %d", ret_val);
 		return ret_val;
 	}
 	ret_val = clock_control_on(eic_cfg->eic_clock.clock_dev, eic_cfg->eic_clock.gclk_sys);
 	if ((ret_val < 0) && (ret_val != -EALREADY)) {
-		LOG_ERR("Clock control on failed for gclk %d", ret_val);
+		LOG_ERROR("Clock control on failed for gclk %d", ret_val);
 		return ret_val;
 	}
 	eic_cfg->irq_config();

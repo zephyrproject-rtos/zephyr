@@ -229,26 +229,25 @@ static int validate_adc_sequence(const struct adc_sequence *sequence)
 	const size_t round_size = sizeof(uint16_t) * POPCOUNT(sequence->channels);
 	size_t needed_buf_size;
 
-	if (sequence->channels == 0 ||
-		(sequence->channels & ~BIT_MASK(LL_ADC_CHANNEL_MAX)) != 0) {
-		LOG_ERR("invalid channels selection");
+	if (sequence->channels == 0 || (sequence->channels & ~BIT_MASK(LL_ADC_CHANNEL_MAX)) != 0) {
+		LOG_ERROR("invalid channels selection");
 		return -EINVAL;
 	}
 
 	CHECKIF(!sequence->buffer) {
-		LOG_ERR("storage buffer pointer is NULL");
+		LOG_ERROR("storage buffer pointer is NULL");
 		return -EINVAL;
 	}
 
 	if (!IN_RANGE(sequence->resolution, ADC_MIN_RESOLUTION, ADC_MAX_RESOLUTION)) {
-		LOG_ERR("invalid resolution %u (must be between %u and %u)",
-			sequence->resolution, ADC_MIN_RESOLUTION, ADC_MAX_RESOLUTION);
+		LOG_ERROR("invalid resolution %u (must be between %u and %u)", sequence->resolution,
+			  ADC_MIN_RESOLUTION, ADC_MAX_RESOLUTION);
 		return -EINVAL;
 	}
 
 	/* N.B.: LL define is in the same log2(x) format as the Zephyr variable */
 	if (sequence->oversampling > LL_ADC_DS_RATIO_128) {
-		LOG_ERR("oversampling unsupported by hardware (max: %lu)", LL_ADC_DS_RATIO_128);
+		LOG_ERROR("oversampling unsupported by hardware (max: %lu)", LL_ADC_DS_RATIO_128);
 		return -ENOTSUP;
 	}
 
@@ -526,7 +525,7 @@ static int adc_exit_idle_mode(ADC_TypeDef *adc, const struct stm32_pclken *ana_c
 	err = clock_control_on(clk,
 		(clock_control_subsys_t)ana_clk);
 	if (err < 0) {
-		LOG_ERR("failed to turn on ADC analog clock: %d", err);
+		LOG_ERROR("failed to turn on ADC analog clock: %d", err);
 		adc_release_pm_locks();
 		return err;
 	}
@@ -727,14 +726,14 @@ static void schedule_and_start_adc_sequence(ADC_TypeDef *adc, struct adc_stm32wb
 
 	err = dma_config(config->dmac, config->dma_channel, &data->dmac_config);
 	if (err < 0) {
-		LOG_ERR("%s: FAIL - dma_config returns %d", __func__, err);
+		LOG_ERROR("%s: FAIL - dma_config returns %d", __func__, err);
 		adc_context_complete(&data->ctx, err);
 		return;
 	}
 
 	err = dma_start(config->dmac, config->dma_channel);
 	if (err < 0) {
-		LOG_ERR("%s: FAIL - dma_start returns %d", __func__, err);
+		LOG_ERROR("%s: FAIL - dma_start returns %d", __func__, err);
 		adc_context_complete(&data->ctx, err);
 		return;
 	}
@@ -812,7 +811,7 @@ void adc_stm32wb0_isr(const struct device *dev)
 	if (LL_ADC_IsActiveFlag_OVRDS(adc)) {
 		LL_ADC_ClearFlag_OVRDS(adc);
 
-		LOG_ERR("ADC overflow\n");
+		LOG_ERROR("ADC overflow\n");
 
 		adc_context_complete(&data->ctx, -EIO);
 		return;
@@ -856,7 +855,7 @@ static void adc_stm32wb0_dma_callback(const struct device *dma, void *user_data,
 			/* Execute the common end-of-sequence logic */
 			handle_end_of_sequence(adc, data);
 		} else { /* dma_status < 0 */
-			LOG_ERR("%s: dma error %d", __func__, dma_status);
+			LOG_ERROR("%s: dma error %d", __func__, dma_status);
 			LL_ADC_StopConversion(adc);
 
 			err = dma_stop(config->dmac, config->dma_channel);
@@ -944,43 +943,43 @@ int adc_stm32wb0_channel_setup(const struct device *dev,
 
 	/* Validate channel configuration parameters */
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("gain unsupported by hardware");
+		LOG_ERROR("gain unsupported by hardware");
 		res = -ENOTSUP;
 		goto unlock_and_return;
 	}
 
 	if (vin_range == LL_ADC_VIN_RANGE_INVALID) {
-		LOG_ERR("invalid channel voltage reference");
+		LOG_ERROR("invalid channel voltage reference");
 		res = -EINVAL;
 		goto unlock_and_return;
 	}
 
 	if (channel_id >= LL_ADC_CHANNEL_MAX) {
-		LOG_ERR("invalid channel id %d", channel_cfg->channel_id);
+		LOG_ERROR("invalid channel id %d", channel_cfg->channel_id);
 		res = -EINVAL;
 		goto unlock_and_return;
 	} else if (is_diff_channel != channel_cfg->differential) {
 		/* channel_cfg->differential flag does not match
 		 * with the selected channel's type
 		 */
-		LOG_ERR("differential flag does not match channel type");
+		LOG_ERROR("differential flag does not match channel type");
 		res = -EINVAL;
 		goto unlock_and_return;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("acquisition time unsupported by hardware");
+		LOG_ERROR("acquisition time unsupported by hardware");
 		res = -ENOTSUP;
 		goto unlock_and_return;
 	}
 
 	/* Verify that the correct reference is selected for special channels */
 	if (channel_id == LL_ADC_CHANNEL_VBAT && vin_range != LL_ADC_VIN_RANGE_3V6) {
-		LOG_ERR("invalid reference for Vbat channel");
+		LOG_ERROR("invalid reference for Vbat channel");
 		res = -EINVAL;
 		goto unlock_and_return;
 	} else if (channel_id == LL_ADC_CHANNEL_TEMPSENSOR && vin_range != LL_ADC_VIN_RANGE_1V2) {
-		LOG_ERR("invalid reference for temperature sensor channel");
+		LOG_ERROR("invalid reference for temperature sensor channel");
 		res = -EINVAL;
 		goto unlock_and_return;
 	}
@@ -1068,7 +1067,7 @@ int adc_stm32wb0_init(const struct device *dev)
 	err = clock_control_on(clk,
 		(clock_control_subsys_t)&config->dig_clk);
 	if (err < 0) {
-		LOG_ERR("failed to turn on ADC digital clock (%d)", err);
+		LOG_ERROR("failed to turn on ADC digital clock (%d)", err);
 		return err;
 	}
 
@@ -1076,7 +1075,7 @@ int adc_stm32wb0_init(const struct device *dev)
 	err = pinctrl_apply_state(config->pinctrl_cfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0 && err != -ENOENT) {
 		/* ENOENT indicates no entry - should not be treated as failure */
-		LOG_ERR("fail to apply ADC pinctrl state (%d)", err);
+		LOG_ERROR("fail to apply ADC pinctrl state (%d)", err);
 		return err;
 	}
 
@@ -1111,12 +1110,12 @@ int adc_stm32wb0_init(const struct device *dev)
 #else
 	/* Check that DMA controller exists and is ready to be used */
 	if (!config->dmac) {
-		LOG_ERR("no DMA assigned to ADC in DMA driver mode!");
+		LOG_ERROR("no DMA assigned to ADC in DMA driver mode!");
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(config->dmac)) {
-		LOG_ERR("DMA controller '%s' for ADC not ready", config->dmac->name);
+		LOG_ERROR("DMA controller '%s' for ADC not ready", config->dmac->name);
 		return -ENODEV;
 	}
 

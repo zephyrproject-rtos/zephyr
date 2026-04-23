@@ -96,7 +96,7 @@ static int copy_words_adjust_endianness(uint8_t *dst_buf, int dst_len, const uin
 					int src_len)
 {
 	if ((dst_len < src_len) || ((dst_len % 4) != 0)) {
-		LOG_ERR("Buffer length error");
+		LOG_ERROR("Buffer length error");
 		return -EINVAL;
 	}
 
@@ -129,7 +129,7 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 #else
 	status = HAL_CRYP_SetConfig(&data->hcryp, &session->config);
 	if (status != HAL_OK) {
-		LOG_ERR("Configuration error");
+		LOG_ERROR("Configuration error");
 		k_sem_give(&data->device_sem);
 		return -EIO;
 	}
@@ -137,7 +137,7 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 
 	status = fn(&data->hcryp, in_buf, in_len, out_buf, HAL_MAX_DELAY);
 	if (status != HAL_OK) {
-		LOG_ERR("Encryption/decryption error");
+		LOG_ERROR("Encryption/decryption error");
 		k_sem_give(&data->device_sem);
 		return -EIO;
 	}
@@ -172,7 +172,7 @@ static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 	 * more than one block. Use CBC mode instead.
 	 */
 	if (pkt->in_len > 16) {
-		LOG_ERR("Cannot encrypt more than 1 block");
+		LOG_ERROR("Cannot encrypt more than 1 block");
 		return -EINVAL;
 	}
 
@@ -193,7 +193,7 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 	 * more than one block. Use CBC mode instead.
 	 */
 	if (pkt->in_len > 16) {
-		LOG_ERR("Cannot encrypt more than 1 block");
+		LOG_ERROR("Cannot encrypt more than 1 block");
 		return -EINVAL;
 	}
 
@@ -334,12 +334,12 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	struct crypto_stm32_session *session;
 
 	if (ctx->flags & ~(CRYP_SUPPORT)) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -ENOTSUP;
 	}
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		LOG_ERR("Unsupported algo");
+		LOG_ERROR("Unsupported algo");
 		return -ENOTSUP;
 	}
 
@@ -355,7 +355,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	if ((mode != CRYPTO_CIPHER_MODE_ECB) &&
 	    (mode != CRYPTO_CIPHER_MODE_CBC) &&
 	    (mode != CRYPTO_CIPHER_MODE_CTR)) {
-		LOG_ERR("Unsupported mode");
+		LOG_ERROR("Unsupported mode");
 		return -ENOTSUP;
 	}
 
@@ -367,13 +367,13 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	    (ctx->keylen != 24U) &&
 #endif
 	    (ctx->keylen != 32U)) {
-		LOG_ERR("%u key size is not supported", ctx->keylen);
+		LOG_ERROR("%u key size is not supported", ctx->keylen);
 		return -ENOTSUP;
 	}
 
 	ctx_idx = crypto_stm32_get_unused_session_index(dev);
 	if (ctx_idx < 0) {
-		LOG_ERR("No free session for now");
+		LOG_ERROR("No free session for now");
 		return -ENOSPC;
 	}
 	session = &crypto_stm32_sessions[ctx_idx];
@@ -384,7 +384,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 
 	if (data->hcryp.State == HAL_CRYP_STATE_RESET) {
 		if (HAL_CRYP_Init(&data->hcryp) != HAL_OK) {
-			LOG_ERR("Initialization error");
+			LOG_ERROR("Initialization error");
 			session->in_use = false;
 			return -EIO;
 		}
@@ -496,7 +496,7 @@ static int crypto_stm32_session_free(const struct device *dev,
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
 	/* Deinitialize and reset peripheral. */
 	if (HAL_CRYP_DeInit(&data->hcryp) != HAL_OK) {
-		LOG_ERR("Deinitialization error");
+		LOG_ERROR("Deinitialization error");
 		k_sem_give(&data->session_sem);
 		return -EIO;
 	}
@@ -521,7 +521,7 @@ static int crypto_stm32_init(const struct device *dev)
 	const struct crypto_stm32_config *cfg = CRYPTO_STM32_CFG(dev);
 
 	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
-		LOG_ERR("clock op failed\n");
+		LOG_ERROR("clock op failed\n");
 		return -EIO;
 	}
 
@@ -529,7 +529,7 @@ static int crypto_stm32_init(const struct device *dev)
 	k_sem_init(&data->session_sem, 1, 1);
 
 	if (HAL_CRYP_DeInit(&data->hcryp) != HAL_OK) {
-		LOG_ERR("Peripheral reset error");
+		LOG_ERROR("Peripheral reset error");
 		return -EIO;
 	}
 

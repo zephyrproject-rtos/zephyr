@@ -95,7 +95,7 @@ static uint32_t wwdg_stm32_get_pclk(const struct device *dev)
 
 	if (clock_control_get_rate(clk, (clock_control_subsys_t) &cfg->pclken,
 			       &pclk_rate) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate");
+		LOG_ERROR("Failed call clock_control_get_rate");
 		return -EIO;
 	}
 
@@ -289,7 +289,7 @@ static int wwdg_stm32_init(const struct device *dev)
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
 
 	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
-		LOG_ERR("clock control on failed");
+		LOG_ERROR("clock control on failed");
 		return -EIO;
 	}
 

@@ -876,7 +876,7 @@ static int i2c_xec_v2_transfer(const struct device *dev, struct i2c_msg *msgs, u
 
 #ifdef CONFIG_I2C_TARGET
 	if (data->target_attached == true) {
-		LOG_ERR("Device is registered as target");
+		LOG_ERROR("Device is registered as target");
 		return -EBUSY;
 	}
 #endif
@@ -897,7 +897,7 @@ static int i2c_xec_v2_transfer(const struct device *dev, struct i2c_msg *msgs, u
 		if (ret != 0) {
 			data->state = I2C_XEC_STATE_STOPPED;
 			data->read_discard = 0;
-			LOG_ERR("i2x_xfr: flags: %x error: %d", m->flags, ret);
+			LOG_ERROR("i2x_xfr: flags: %x error: %d", m->flags, ret);
 			break;
 		}
 	}
@@ -1172,7 +1172,7 @@ static int i2c_xec_v2_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(drvcfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("XEC I2C pinctrl setup failed (%d)", ret);
+		LOG_ERROR("XEC I2C pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

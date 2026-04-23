@@ -64,7 +64,7 @@ static int tls_init(void)
 	rc = tls_credential_add(APP_CA_CERT_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
 				 ca_certificate, sizeof(ca_certificate));
 	if (rc < 0) {
-		LOG_ERR("Failed to register public certificate: %d", rc);
+		LOG_ERROR("Failed to register public certificate: %d", rc);
 		return rc;
 	}
 
@@ -131,7 +131,7 @@ static void on_mqtt_publish(struct mqtt_client *const client, const struct mqtt_
 	rc = mqtt_read_publish_payload(client, payload,
 					CONFIG_NET_SAMPLE_MQTT_PAYLOAD_SIZE);
 	if (rc < 0) {
-		LOG_ERR("Failed to read received MQTT payload [%d]", rc);
+		LOG_ERROR("Failed to read received MQTT payload [%d]", rc);
 		return;
 	}
 	/* Place null terminator at end of payload buffer */
@@ -154,7 +154,7 @@ static void mqtt_event_handler(struct mqtt_client *const client, const struct mq
 	switch (evt->type) {
 	case MQTT_EVT_CONNACK:
 		if (evt->result != 0) {
-			LOG_ERR("MQTT Event Connect failed [%d]", evt->result);
+			LOG_ERROR("MQTT Event Connect failed [%d]", evt->result);
 			break;
 		}
 		on_mqtt_connect();
@@ -170,7 +170,7 @@ static void mqtt_event_handler(struct mqtt_client *const client, const struct mq
 
 	case MQTT_EVT_PUBACK:
 		if (evt->result != 0) {
-			LOG_ERR("MQTT PUBACK error [%d]", evt->result);
+			LOG_ERROR("MQTT PUBACK error [%d]", evt->result);
 			break;
 		}
 
@@ -179,7 +179,7 @@ static void mqtt_event_handler(struct mqtt_client *const client, const struct mq
 
 	case MQTT_EVT_PUBREC:
 		if (evt->result != 0) {
-			LOG_ERR("MQTT PUBREC error [%d]", evt->result);
+			LOG_ERROR("MQTT PUBREC error [%d]", evt->result);
 			break;
 		}
 
@@ -194,7 +194,7 @@ static void mqtt_event_handler(struct mqtt_client *const client, const struct mq
 
 	case MQTT_EVT_PUBREL:
 		if (evt->result != 0) {
-			LOG_ERR("MQTT PUBREL error [%d]", evt->result);
+			LOG_ERROR("MQTT PUBREL error [%d]", evt->result);
 			break;
 		}
 
@@ -209,7 +209,7 @@ static void mqtt_event_handler(struct mqtt_client *const client, const struct mq
 
 	case MQTT_EVT_PUBCOMP:
 		if (evt->result != 0) {
-			LOG_ERR("MQTT PUBCOMP error %d", evt->result);
+			LOG_ERROR("MQTT PUBCOMP error %d", evt->result);
 			break;
 		}
 
@@ -218,7 +218,7 @@ static void mqtt_event_handler(struct mqtt_client *const client, const struct mq
 
 	case MQTT_EVT_SUBACK:
 		if (evt->result == MQTT_SUBACK_FAILURE) {
-			LOG_ERR("MQTT SUBACK error [%d]", evt->result);
+			LOG_ERROR("MQTT SUBACK error [%d]", evt->result);
 			break;
 		}
 
@@ -260,7 +260,7 @@ static int poll_mqtt_socket(struct mqtt_client *client, int timeout)
 
 	rc = poll(fds, nfds, timeout);
 	if (rc < 0) {
-		LOG_ERR("Socket poll error [%d]", rc);
+		LOG_ERROR("Socket poll error [%d]", rc);
 	}
 
 	return rc;
@@ -274,14 +274,14 @@ static int get_mqtt_payload(struct mqtt_binstr *payload)
 
 	rc = device_read_sensor(&sample);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor sample [%d]", rc);
+		LOG_ERROR("Failed to get sensor sample [%d]", rc);
 		return rc;
 	}
 
 	rc = json_obj_encode_buf(sensor_sample_descr, ARRAY_SIZE(sensor_sample_descr),
 					&sample, payload_buf, CONFIG_NET_SAMPLE_MQTT_PAYLOAD_SIZE);
 	if (rc != 0) {
-		LOG_ERR("Failed to encode JSON object [%d]", rc);
+		LOG_ERROR("Failed to encode JSON object [%d]", rc);
 		return rc;
 	}
 
@@ -308,7 +308,7 @@ int app_mqtt_publish(struct mqtt_client *client)
 
 	rc = get_mqtt_payload(&payload);
 	if (rc != 0) {
-		LOG_ERR("Failed to get MQTT payload [%d]", rc);
+		LOG_ERROR("Failed to get MQTT payload [%d]", rc);
 	}
 
 	param.message.topic = topic;
@@ -319,7 +319,7 @@ int app_mqtt_publish(struct mqtt_client *client)
 
 	rc = mqtt_publish(client, &param);
 	if (rc != 0) {
-		LOG_ERR("MQTT Publish failed [%d]", rc);
+		LOG_ERROR("MQTT Publish failed [%d]", rc);
 	}
 
 	LOG_INF("Published to topic '%s', QoS %d",
@@ -352,7 +352,7 @@ int app_mqtt_subscribe(struct mqtt_client *client)
 
 	rc = mqtt_subscribe(client, &sub_list);
 	if (rc != 0) {
-		LOG_ERR("MQTT Subscribe failed [%d]", rc);
+		LOG_ERROR("MQTT Subscribe failed [%d]", rc);
 	}
 
 	return rc;
@@ -369,12 +369,12 @@ int app_mqtt_process(struct mqtt_client *client)
 			/* MQTT data received */
 			rc = mqtt_input(client);
 			if (rc != 0) {
-				LOG_ERR("MQTT Input failed [%d]", rc);
+				LOG_ERROR("MQTT Input failed [%d]", rc);
 				return rc;
 			}
 			/* Socket error */
 			if (fds[0].revents & (POLLHUP | POLLERR)) {
-				LOG_ERR("MQTT socket closed / error");
+				LOG_ERROR("MQTT socket closed / error");
 				return -ENOTCONN;
 			}
 		}
@@ -382,7 +382,7 @@ int app_mqtt_process(struct mqtt_client *client)
 		/* Socket poll timed out, time to call mqtt_live() */
 		rc = mqtt_live(client);
 		if (rc != 0) {
-			LOG_ERR("MQTT Live failed [%d]", rc);
+			LOG_ERROR("MQTT Live failed [%d]", rc);
 			return rc;
 		}
 	}
@@ -418,7 +418,7 @@ void app_mqtt_connect(struct mqtt_client *client)
 	while (!mqtt_connected) {
 		rc = mqtt_connect(client);
 		if (rc != 0) {
-			LOG_ERR("MQTT Connect failed [%d]", rc);
+			LOG_ERROR("MQTT Connect failed [%d]", rc);
 			k_msleep(MSECS_WAIT_RECONNECT);
 			continue;
 		}
@@ -450,11 +450,11 @@ int app_mqtt_init(struct mqtt_client *client)
 	rc = getaddrinfo(CONFIG_NET_SAMPLE_MQTT_BROKER_HOSTNAME,
 				CONFIG_NET_SAMPLE_MQTT_BROKER_PORT, &hints, &result);
 	if (rc != 0) {
-		LOG_ERR("Failed to resolve broker hostname [%s]", gai_strerror(rc));
+		LOG_ERROR("Failed to resolve broker hostname [%s]", gai_strerror(rc));
 		return -EIO;
 	}
 	if (result == NULL) {
-		LOG_ERR("Broker address not found");
+		LOG_ERROR("Broker address not found");
 		return -ENOENT;
 	}
 
@@ -493,7 +493,7 @@ int app_mqtt_init(struct mqtt_client *client)
 
 	rc = tls_init();
 	if (rc != 0) {
-		LOG_ERR("TLS init error");
+		LOG_ERROR("TLS init error");
 		return rc;
 	}
 

@@ -167,7 +167,7 @@ static int usbd_dfu_preinit(void)
 
 	STRUCT_SECTION_FOREACH(usbd_dfu_image, image) {
 		if (n >= CONFIG_USBD_DFU_NUMOF_IMAGES) {
-			LOG_ERR("Cannot register USB DFU image %s", image->name);
+			LOG_ERROR("Cannot register USB DFU image %s", image->name);
 			return -ENOMEM;
 		}
 
@@ -772,7 +772,7 @@ static int dfu_mode_init(struct usbd_class_data *const c_data)
 		}
 
 		if (usbd_add_descriptor(uds_ctx, image->sd_nd)) {
-			LOG_ERR("Failed to add string descriptor");
+			LOG_ERROR("Failed to add string descriptor");
 		} else {
 			image->if_desc->iInterface = usbd_str_desc_get_idx(image->sd_nd);
 		}

@@ -82,7 +82,7 @@ nrf_802154_spinel_notify_buff_t *nrf_802154_spinel_response_notifier_property_aw
 	if (k_sem_take(&notify_sem, k_timeout) == 0) {
 		result = &notify_buff.buff;
 	} else {
-		LOG_ERR("No response within timeout %u", timeout);
+		LOG_ERROR("No response within timeout %u", timeout);
 	}
 
 	return result;

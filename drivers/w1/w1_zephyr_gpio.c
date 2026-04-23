@@ -291,12 +291,12 @@ static int w1_gpio_init(const struct device *dev)
 		int ret = gpio_pin_configure_dt(spec, GPIO_OUTPUT_INACTIVE | GPIO_OPEN_DRAIN |
 							      GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure GPIO port %s pin %d", spec->port->name,
-				spec->pin);
+			LOG_ERROR("Failed to configure GPIO port %s pin %d", spec->port->name,
+				  spec->pin);
 			return ret;
 		}
 	} else {
-		LOG_ERR("GPIO port %s is not ready", spec->port->name);
+		LOG_ERROR("GPIO port %s is not ready", spec->port->name);
 		return -ENODEV;
 	}
 

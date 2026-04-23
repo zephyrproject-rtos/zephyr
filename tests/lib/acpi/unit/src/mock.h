@@ -13,7 +13,7 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_H_
 #define LOG_MODULE_REGISTER(...)
 #define LOG_DBG(...)
-#define LOG_ERR(...)
+#define LOG_ERROR(...)
 #define LOG_WRN(...)
 
 #define CONFIG_ACPI_IRQ_VECTOR_MAX 32

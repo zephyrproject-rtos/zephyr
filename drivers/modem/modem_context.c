@@ -47,7 +47,7 @@ int modem_context_sprint_ip_addr(const struct net_sockaddr *addr, char *buf, siz
 		return 0;
 	}
 
-	LOG_ERR("Unknown IP address family:%d", addr->sa_family);
+	LOG_ERROR("Unknown IP address family:%d", addr->sa_family);
 
 	if (buf_size < sizeof(unknown_str)) {
 		return -ENOMEM;

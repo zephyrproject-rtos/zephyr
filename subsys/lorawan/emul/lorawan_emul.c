@@ -60,7 +60,7 @@ int lorawan_set_class(enum lorawan_class dev_class)
 		current_class = CLASS_A;
 		break;
 	case LORAWAN_CLASS_B:
-		LOG_ERR("Class B not supported yet!");
+		LOG_ERROR("Class B not supported yet!");
 		return -ENOTSUP;
 	case LORAWAN_CLASS_C:
 		current_class = CLASS_C;

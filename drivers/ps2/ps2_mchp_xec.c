@@ -246,7 +246,8 @@ static int ps2_xec_pm_action(const struct device *dev, enum pm_device_action act
 						&devcfg->wakerx_gpio,
 						GPIO_INT_DISABLE);
 				if (ret < 0) {
-					LOG_ERR("Fail to disable PS2 wake interrupt (ret %d)", ret);
+					LOG_ERROR("Fail to disable PS2 wake interrupt (ret %d)",
+						  ret);
 					return ret;
 				}
 			}
@@ -269,7 +270,7 @@ static int ps2_xec_pm_action(const struct device *dev, enum pm_device_action act
 					&devcfg->wakerx_gpio,
 					GPIO_INT_MODE_EDGE | GPIO_INT_TRIG_LOW);
 				if (ret < 0) {
-					LOG_ERR("Fail to enable PS2 wake interrupt(ret %d)", ret);
+					LOG_ERROR("Fail to enable PS2 wake interrupt(ret %d)", ret);
 					return ret;
 				}
 			}
@@ -318,7 +319,7 @@ static void ps2_xec_isr(const struct device *dev)
 		    (MCHP_PS2_STATUS_TX_TMOUT | MCHP_PS2_STATUS_TX_ST_TMOUT)) {
 		/* Clear sticky bits and go to read mode */
 		regs->STATUS = MCHP_PS2_STATUS_RW1C_MASK;
-		LOG_ERR("TX time out: %0x", status);
+		LOG_ERROR("TX time out: %0x", status);
 
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	} else if (status &
@@ -351,7 +352,7 @@ static int ps2_xec_init(const struct device *dev)
 	struct ps2_xec_data * const data = dev->data;
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("XEC PS2 pinctrl init failed (%d)", ret);
+		LOG_ERROR("XEC PS2 pinctrl init failed (%d)", ret);
 		return ret;
 	}
 

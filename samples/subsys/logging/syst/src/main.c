@@ -44,7 +44,7 @@ void log_msgs(void)
 	char vs1[32];
 
 	/* standard print */
-	LOG_ERR("Error message example.");
+	LOG_ERROR("Error message example.");
 	LOG_WRN("Warning message example.");
 	LOG_INF("Info message example.");
 	LOG_DBG("Debug message example.");

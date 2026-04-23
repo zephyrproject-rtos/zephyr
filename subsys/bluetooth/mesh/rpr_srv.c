@@ -517,7 +517,7 @@ static void pb_rx(const struct prov_bearer *bearer, void *cb_data,
 
 	err = inbound_pdu_send(buf, NULL);
 	if (err) {
-		LOG_ERR("PDU send fail: %d", err);
+		LOG_ERROR("PDU send fail: %d", err);
 		link_close(BT_MESH_RPR_ERR_LINK_CLOSED_AS_CANNOT_SEND_PDU,
 			   PROV_BEARER_LINK_STATUS_FAIL);
 		bt_mesh_pb_adv.link_close(PROV_ERR_RESOURCES);
@@ -711,9 +711,8 @@ static int handle_extended_scan_start(const struct bt_mesh_model *mod, struct bt
 			bt_hex(ad, ad_count));
 	}
 
-	if (timeout < BT_MESH_RPR_EXT_SCAN_TIME_MIN ||
-	    timeout > BT_MESH_RPR_EXT_SCAN_TIME_MAX) {
-		LOG_ERR("Invalid extended scan timeout %u", timeout);
+	if (timeout < BT_MESH_RPR_EXT_SCAN_TIME_MIN || timeout > BT_MESH_RPR_EXT_SCAN_TIME_MAX) {
+		LOG_ERROR("Invalid extended scan timeout %u", timeout);
 		return -EINVAL;
 	}
 
@@ -824,7 +823,7 @@ static int handle_link_open(const struct bt_mesh_model *mod, struct bt_mesh_msg_
 	if (srv.link.state == BT_MESH_RPR_LINK_CLOSING ||
 	    srv.link.state == BT_MESH_RPR_LINK_SENDING) {
 		status = BT_MESH_RPR_ERR_INVALID_STATE;
-		LOG_ERR("Invalid state: %u", srv.link.state);
+		LOG_ERROR("Invalid state: %u", srv.link.state);
 		goto rsp;
 	}
 
@@ -869,7 +868,7 @@ static int handle_link_open(const struct bt_mesh_model *mod, struct bt_mesh_msg_
 	if (is_refresh_procedure) {
 		refresh = net_buf_simple_pull_u8(buf);
 		if (refresh > BT_MESH_RPR_NODE_REFRESH_COMPOSITION) {
-			LOG_ERR("Invalid refresh: %u", refresh);
+			LOG_ERROR("Invalid refresh: %u", refresh);
 			return -EINVAL;
 		}
 
@@ -905,7 +904,7 @@ static int handle_link_open(const struct bt_mesh_model *mod, struct bt_mesh_msg_
 	if (buf->len) {
 		timeout = net_buf_simple_pull_u8(buf);
 		if (!timeout || timeout > 0x3c) {
-			LOG_ERR("Invalid timeout: %u", timeout);
+			LOG_ERROR("Invalid timeout: %u", timeout);
 			return -EINVAL;
 		}
 	}
@@ -1317,8 +1316,8 @@ static struct bt_le_scan_cb scan_cb = {
 static int rpr_srv_init(const struct bt_mesh_model *mod)
 {
 	if (mod->rt->elem_idx || srv.mod) {
-		LOG_ERR("Remote provisioning server must be initialized "
-			"on first element");
+		LOG_ERROR("Remote provisioning server must be initialized "
+			  "on first element");
 		return -EINVAL;
 	}
 

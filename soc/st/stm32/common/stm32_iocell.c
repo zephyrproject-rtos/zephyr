@@ -162,8 +162,8 @@ static int iocell_config_domain_auto(uint16_t domain, const char *domain_name)
 	int is_allowed = iocell_is_hslv_allowed(domain);
 
 	if (is_allowed < 0) {
-		LOG_ERR("Failed to read " IOCELL_FUSE_NAME " value of HSLV: \"%s\" (%d)",
-			domain_name, domain);
+		LOG_ERROR("Failed to read " IOCELL_FUSE_NAME " value of HSLV: \"%s\" (%d)",
+			  domain_name, domain);
 		return is_allowed;
 	} else if (is_allowed > 0) {
 		return iocell_enable_hslv_runtime(domain);
@@ -261,11 +261,12 @@ __maybe_unused static void iocell_hslv_check_log(int domain_id, int is_allowed, 
 {
 	if (is_allowed < 0) {
 		/* This shouldn't happen with proper implementation */
-		LOG_ERR("Failed to read " IOCELL_FUSE_NAME " value of HSLV: \"%s\" (%d)",
-			domain_name, domain_id);
+		LOG_ERROR("Failed to read " IOCELL_FUSE_NAME " value of HSLV: \"%s\" (%d)",
+			  domain_name, domain_id);
 	} else if (!is_allowed && hslv) {
-		LOG_ERR("HSLV configuration for \"%s\" blocked by " IOCELL_FUSE_NAME, domain_name);
-		LOG_ERR(IOCELL_HSLV_DISCLAIMER);
+		LOG_ERROR("HSLV configuration for \"%s\" blocked by " IOCELL_FUSE_NAME,
+			  domain_name);
+		LOG_ERROR(IOCELL_HSLV_DISCLAIMER);
 	} else if (is_allowed && !hslv) {
 		LOG_WRN("HSLV allowed in " IOCELL_FUSE_NAME " for domain \"%s\", but not enabled",
 			domain_name);

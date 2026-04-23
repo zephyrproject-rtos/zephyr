@@ -111,7 +111,7 @@ static int ds2482_change_bus_lock(const struct device *dev, bool lock)
 
 	ret = ds2482_change_bus_lock_impl(config->parent, lock);
 	if (ret < 0) {
-		LOG_ERR("Failed to acquire bus lock: %d", ret);
+		LOG_ERROR("Failed to acquire bus lock: %d", ret);
 		return ret;
 	}
 

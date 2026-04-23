@@ -98,7 +98,7 @@ static bool tach_ch_is_valid(const struct device *dev, int input_pin)
 	uint8_t reg_val;
 
 	if (input_pin > IT51XXX_TACH_INPUT_PIN_B) {
-		LOG_ERR("Tach input pin %d invalid, only support 0(A) or 1(B)", input_pin);
+		LOG_ERROR("Tach input pin %d invalid, only support 0(A) or 1(B)", input_pin);
 		return false;
 	}
 
@@ -147,7 +147,7 @@ static int tach_it51xxx_channel_get(const struct device *dev, enum sensor_channe
 	__ASSERT(p > 0, "pulses_per_round must be bigger than 0");
 
 	if (chan != SENSOR_CHAN_RPM) {
-		LOG_ERR("Sensor chan %d, only support SENSOR_CHAN_RPM", chan);
+		LOG_ERROR("Sensor chan %d, only support SENSOR_CHAN_RPM", chan);
 		return -ENOTSUP;
 	}
 
@@ -178,14 +178,14 @@ static int tach_it51xxx_init(const struct device *dev)
 	uint8_t reg_val;
 
 	if (input_pin > IT51XXX_TACH_INPUT_PIN_B) {
-		LOG_ERR("Tach input pin %d invalid, only support 0(A) or 1(B)", input_pin);
+		LOG_ERROR("Tach input pin %d invalid, only support 0(A) or 1(B)", input_pin);
 		return -EINVAL;
 	}
 
 	/* Select input pin to tachometer alternate mode */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure TACH pins");
+		LOG_ERROR("Failed to configure TACH pins");
 		return status;
 	}
 

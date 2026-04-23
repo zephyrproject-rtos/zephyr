@@ -301,7 +301,7 @@ static int stmpe811_ts_init(const struct device *dev)
 	err = i2c_reg_write_byte_dt(&config->bus, STMPE811_INT_EN_REG,
 				    STMPE811_INT_BIT_TOUCH | STMPE811_INT_BIT_FIFO_THRESHOLD);
 	if (err < 0) {
-		LOG_ERR("Could not enable interrupt types (%d)", err);
+		LOG_ERROR("Could not enable interrupt types (%d)", err);
 		return err;
 	}
 
@@ -473,14 +473,14 @@ static int stmpe811_init(const struct device *dev)
 	/* Verify CHIP_ID */
 	err = stmpe811_verify_chip_id(dev);
 	if (err) {
-		LOG_ERR("CHIP ID verification failed (%d)", err);
+		LOG_ERROR("CHIP ID verification failed (%d)", err);
 		return err;
 	}
 
 	/* Initialize */
 	err = stmpe811_ts_init(dev);
 	if (err) {
-		LOG_ERR("Touch screen controller initialization failed (%d)", err);
+		LOG_ERROR("Touch screen controller initialization failed (%d)", err);
 		return err;
 	}
 
@@ -492,13 +492,13 @@ static int stmpe811_init(const struct device *dev)
 
 	err = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (err < 0) {
-		LOG_ERR("Could not configure interrupt GPIO pin (%d)", err);
+		LOG_ERROR("Could not configure interrupt GPIO pin (%d)", err);
 		return err;
 	}
 
 	err = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (err < 0) {
-		LOG_ERR("Could not configure GPIO interrupt (%d)", err);
+		LOG_ERROR("Could not configure GPIO interrupt (%d)", err);
 		return err;
 	}
 
@@ -506,7 +506,7 @@ static int stmpe811_init(const struct device *dev)
 			   BIT(config->int_gpio.pin));
 	err = gpio_add_callback_dt(&config->int_gpio, &data->int_gpio_cb);
 	if (err < 0) {
-		LOG_ERR("Could not set GPIO callback (%d)", err);
+		LOG_ERROR("Could not set GPIO callback (%d)", err);
 		return err;
 	}
 
@@ -514,7 +514,7 @@ static int stmpe811_init(const struct device *dev)
 	err = i2c_reg_write_byte_dt(&config->bus, STMPE811_INT_CTRL_REG,
 				    STMPE811_INT_CTRL_BIT_GLOBAL_INT);
 	if (err < 0) {
-		LOG_ERR("Could not enable global interrupts (%d)", err);
+		LOG_ERROR("Could not enable global interrupts (%d)", err);
 		return err;
 	}
 

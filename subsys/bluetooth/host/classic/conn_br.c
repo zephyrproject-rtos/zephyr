@@ -156,14 +156,14 @@ void bt_br_acl_recv(struct bt_conn *conn, struct net_buf *buf, bool complete)
 		hdr = (void *)buf->data;
 		if (u16_add_overflow(sys_le16_to_cpu(hdr->len),
 				     sizeof(*hdr), &acl_total_len)) {
-			LOG_ERR("L2CAP PDU length overflow");
+			LOG_ERROR("L2CAP PDU length overflow");
 			break;
 		}
 		if (buf->len > acl_total_len) {
 			LOG_DBG("Multiple L2CAP packet (%u > %u)", buf->len, acl_total_len);
 			buf->len = acl_total_len;
 		} else if (buf->len < acl_total_len) {
-			LOG_ERR("Short packet (%u < %u)", buf->len, acl_total_len);
+			LOG_ERROR("Short packet (%u < %u)", buf->len, acl_total_len);
 			break;
 		}
 		bt_l2cap_recv(conn, net_buf_ref(buf), complete);

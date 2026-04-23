@@ -106,13 +106,13 @@ static int lis2dux12_set_fs(const struct device *dev, int16_t fs)
 		range = LIS2DUX12_DT_FS_16G;
 		break;
 	default:
-		LOG_ERR("fs [%d] not supported.", fs);
+		LOG_ERROR("fs [%d] not supported.", fs);
 		return -EINVAL;
 	}
 
 	ret = chip_api->set_range(dev, range);
 	if (ret < 0) {
-		LOG_ERR("%s: range init error %d", dev->name, range);
+		LOG_ERROR("%s: range init error %d", dev->name, range);
 		return ret;
 	}
 
@@ -133,7 +133,7 @@ static int lis2dux12_accel_config(const struct device *dev, enum sensor_channel 
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		odr_val = lis2dux12_freq_to_odr_val(dev, val->val1);
 		if (odr_val < 0) {
-			LOG_ERR("%d Hz not supported or wrong operating mode.", val->val1);
+			LOG_ERROR("%d Hz not supported or wrong operating mode.", val->val1);
 			return odr_val;
 		}
 
@@ -141,7 +141,7 @@ static int lis2dux12_accel_config(const struct device *dev, enum sensor_channel 
 
 		return chip_api->set_odr_raw(dev, odr_val);
 	default:
-		LOG_ERR("Accel attribute not supported.");
+		LOG_ERROR("Accel attribute not supported.");
 		return -ENOTSUP;
 	}
 
@@ -155,7 +155,7 @@ static int lis2dux12_attr_set(const struct device *dev, enum sensor_channel chan
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return lis2dux12_accel_config(dev, chan, attr, val);
 	default:
-		LOG_ERR("attr_set() not supported on this channel.");
+		LOG_ERROR("attr_set() not supported on this channel.");
 		return -ENOTSUP;
 	}
 

@@ -99,14 +99,14 @@ static int icm45686_attr_set(const struct device *dev, enum sensor_channel chan,
 			} else if (val->val1 == TDK_APEX_WOM) {
 				icm45686_apex_enable_wom(&drv_data->driver);
 			} else {
-				LOG_ERR("Not supported ATTR value");
+				LOG_ERROR("Not supported ATTR value");
 			}
 		} else {
-			LOG_ERR("Not supported ATTR");
+			LOG_ERROR("Not supported ATTR");
 			return -EINVAL;
 		}
 	} else {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		(void)drv_data;
 		return -EINVAL;
 	}
@@ -129,7 +129,7 @@ static int icm45686_attr_get(const struct device *dev, enum sensor_channel chan,
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		res = -EINVAL;
 		break;
 	}
@@ -256,7 +256,7 @@ static inline void icm45686_submit_one_shot(const struct device *dev,
 
 	err = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (err != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -264,7 +264,7 @@ static inline void icm45686_submit_one_shot(const struct device *dev,
 
 	err = icm45686_encode(dev, channels, num_channels, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to encode sensor data");
+		LOG_ERROR("Failed to encode sensor data");
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -273,7 +273,7 @@ static inline void icm45686_submit_one_shot(const struct device *dev,
 						edata->payload.buf, sizeof(edata->payload.buf),
 						&read_sqe);
 	if (err < 0) {
-		LOG_ERR("Fail to prepare read: %d", err);
+		LOG_ERROR("Fail to prepare read: %d", err);
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
@@ -282,7 +282,7 @@ static inline void icm45686_submit_one_shot(const struct device *dev,
 	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->bus.rtio.ctx);
 
 	if (!complete_sqe) {
-		LOG_ERR("Failed to acquire complete read-sqe");
+		LOG_ERROR("Failed to acquire complete read-sqe");
 		rtio_sqe_drop_all(data->bus.rtio.ctx);
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
@@ -302,7 +302,7 @@ static void icm45686_submit(const struct device *dev, struct rtio_iodev_sqe *iod
 	} else if (IS_ENABLED(CONFIG_ICM45686_STREAM)) {
 		icm45686_stream_submit(dev, iodev_sqe);
 	} else {
-		LOG_ERR("Streaming not supported");
+		LOG_ERROR("Streaming not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }
@@ -339,13 +339,13 @@ static int icm45686_init(const struct device *dev)
 
 #if CONFIG_SPI_RTIO
 	if (data->bus.rtio.type == ICM45686_BUS_SPI && !spi_is_ready_iodev(data->bus.rtio.iodev)) {
-		LOG_ERR("Bus is not ready");
+		LOG_ERROR("Bus is not ready");
 		return -ENODEV;
 	}
 #endif
 #if CONFIG_I2C_RTIO
 	if (data->bus.rtio.type == ICM45686_BUS_I2C && !i2c_is_ready_iodev(data->bus.rtio.iodev)) {
-		LOG_ERR("Bus is not ready");
+		LOG_ERROR("Bus is not ready");
 		return -ENODEV;
 	}
 #endif
@@ -365,7 +365,7 @@ static int icm45686_init(const struct device *dev)
 	if (data->bus.rtio.type != ICM45686_BUS_I3C) {
 		err = icm456xx_soft_reset(&data->driver);
 		if (err < 0) {
-			LOG_ERR("Soft reset failed err %d", err);
+			LOG_ERROR("Soft reset failed err %d", err);
 			return err;
 		}
 	}
@@ -373,51 +373,51 @@ static int icm45686_init(const struct device *dev)
 	/* Confirm ID Value matches */
 	err = icm456xx_get_who_am_i(&data->driver, &read_val);
 	if (err < 0) {
-		LOG_ERR("ID read failed: %d", err);
+		LOG_ERROR("ID read failed: %d", err);
 		return err;
 	}
 
 	/* Sensor Configuration */
 	err = icm456xx_set_accel_mode(&data->driver, cfg->settings.accel.pwr_mode);
 	if (err < 0) {
-		LOG_ERR("Failed to set accel mode");
+		LOG_ERROR("Failed to set accel mode");
 		return err;
 	}
 
 	err = icm456xx_set_gyro_mode(&data->driver, cfg->settings.gyro.pwr_mode);
 	if (err < 0) {
-		LOG_ERR("Failed to set gyro mode");
+		LOG_ERROR("Failed to set gyro mode");
 		return err;
 	}
 
 	err = icm456xx_set_accel_frequency(&data->driver, cfg->settings.accel.odr);
 	if (err < 0) {
-		LOG_ERR("Failed to set Accel frequency: %d", err);
+		LOG_ERROR("Failed to set Accel frequency: %d", err);
 		return err;
 	}
 
 	err = icm456xx_set_accel_fsr(&data->driver, cfg->settings.accel.fs);
 	if (err < 0) {
-		LOG_ERR("Failed to set Accel fsr: %d", err);
+		LOG_ERROR("Failed to set Accel fsr: %d", err);
 		return err;
 	}
 
 	err = icm456xx_set_gyro_frequency(&data->driver, cfg->settings.gyro.odr);
 	if (err < 0) {
-		LOG_ERR("Failed to set Gyro frequency: %d", err);
+		LOG_ERROR("Failed to set Gyro frequency: %d", err);
 		return err;
 	}
 
 	err = icm456xx_set_gyro_fsr(&data->driver, cfg->settings.gyro.fs);
 	if (err < 0) {
-		LOG_ERR("Failed to set Gyro fsr: %d", err);
+		LOG_ERROR("Failed to set Gyro fsr: %d", err);
 		return err;
 	}
 
 	/** Write Low-pass filter settings through indirect register access */
 	err = icm456xx_set_gyro_ln_bw(&data->driver, cfg->settings.gyro.lpf);
 	if (err < 0) {
-		LOG_ERR("Failed to set Gyro BW settings: %d", err);
+		LOG_ERROR("Failed to set Gyro BW settings: %d", err);
 		return err;
 	}
 
@@ -428,20 +428,20 @@ static int icm45686_init(const struct device *dev)
 
 	icm456xx_set_accel_ln_bw(&data->driver, cfg->settings.accel.lpf);
 	if (err < 0) {
-		LOG_ERR("Failed to set Accel BW settings: %d", err);
+		LOG_ERROR("Failed to set Accel BW settings: %d", err);
 		return err;
 	}
 
 	if (IS_ENABLED(CONFIG_ICM45686_TRIGGER)) {
 		err = icm45686_trigger_init(dev);
 		if (err) {
-			LOG_ERR("Failed to initialize triggers: %d", err);
+			LOG_ERROR("Failed to initialize triggers: %d", err);
 			return err;
 		}
 	} else if (IS_ENABLED(CONFIG_ICM45686_STREAM)) {
 		err = icm45686_stream_init(dev);
 		if (err) {
-			LOG_ERR("Failed to initialize streaming: %d", err);
+			LOG_ERROR("Failed to initialize streaming: %d", err);
 			return err;
 		}
 	}
@@ -450,7 +450,7 @@ static int icm45686_init(const struct device *dev)
 	/* Initialize APEX */
 	err = icm456xx_edmp_disable(&data->driver);
 	if (err < 0) {
-		LOG_ERR("APEX Disable failed");
+		LOG_ERROR("APEX Disable failed");
 		return err;
 	}
 
@@ -464,7 +464,7 @@ static int icm45686_init(const struct device *dev)
 
 	err = icm456xx_edmp_init_apex(&data->driver);
 	if (err < 0) {
-		LOG_ERR("APEX Initialization failed");
+		LOG_ERROR("APEX Initialization failed");
 		return err;
 	}
 #endif

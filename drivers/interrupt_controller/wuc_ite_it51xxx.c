@@ -38,7 +38,7 @@ void it51xxx_wuc_enable(const struct device *dev, uint8_t mask)
 	volatile uint8_t *reg_wuenr = config->reg_wuenr;
 
 	if (!config->wakeup_ctrl) {
-		LOG_ERR("Wakeup control(enable) is not supported.");
+		LOG_ERROR("Wakeup control(enable) is not supported.");
 		return;
 	}
 	/*
@@ -59,7 +59,7 @@ void it51xxx_wuc_disable(const struct device *dev, uint8_t mask)
 	volatile uint8_t *reg_wuenr = config->reg_wuenr;
 
 	if (!config->wakeup_ctrl) {
-		LOG_ERR("Wakeup control(disable) is not supported.");
+		LOG_ERROR("Wakeup control(disable) is not supported.");
 		return;
 	}
 	/*
@@ -80,7 +80,7 @@ void it51xxx_wuc_clear_status(const struct device *dev, uint8_t mask)
 	volatile uint8_t *reg_wuesr = config->reg_wuesr;
 
 	if (!config->wakeup_ctrl) {
-		LOG_ERR("Wakeup control of clear status is not supported.");
+		LOG_ERROR("Wakeup control of clear status is not supported.");
 		return;
 	}
 
@@ -103,7 +103,7 @@ void it51xxx_wuc_set_polarity(const struct device *dev, uint8_t mask, uint32_t f
 #endif /* CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW */
 
 	if (!config->wakeup_ctrl) {
-		LOG_ERR("Wakeup control of set polarity is not supported.");
+		LOG_ERROR("Wakeup control of set polarity is not supported.");
 		return;
 	}
 
@@ -149,7 +149,7 @@ void it51xxx_wuc_set_polarity(const struct device *dev, uint8_t mask, uint32_t f
 #endif /* CONFIG_ITE_IT51XXX_WUC_EITHER_EDGE_HW */
 			break;
 		default:
-			LOG_ERR("unknown trigger mode 0x%x", flags);
+			LOG_ERROR("unknown trigger mode 0x%x", flags);
 			break;
 		}
 	}

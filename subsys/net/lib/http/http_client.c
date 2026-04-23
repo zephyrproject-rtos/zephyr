@@ -538,14 +538,14 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 				req->internal.response.recv_buf, received > 0 ? offset : 0);
 
 			if (processed > offset) {
-				LOG_ERR("HTTP parser error, too much data consumed");
+				LOG_ERROR("HTTP parser error, too much data consumed");
 				ret = -EBADMSG;
 				goto error;
 			}
 
 			if (req->internal.parser.http_errno != HPE_OK) {
-				LOG_ERR("HTTP parsing error, %d",
-					req->internal.parser.http_errno);
+				LOG_ERROR("HTTP parsing error, %d",
+					  req->internal.parser.http_errno);
 				ret = -EBADMSG;
 				goto error;
 			}
@@ -560,7 +560,7 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 				/* This means the parser did not consume any data
 				 * and we can't fit any more in the buffer.
 				 */
-				LOG_ERR("HTTP RX buffer full, cannot proceed");
+				LOG_ERROR("HTTP RX buffer full, cannot proceed");
 				ret = -ENOMEM;
 				goto error;
 			}

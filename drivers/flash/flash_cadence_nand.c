@@ -104,7 +104,7 @@ static int flash_cdns_nand_write(const struct device *nand_dev, off_t offset, co
 	int ret;
 
 	if (data == NULL) {
-		LOG_ERR("Invalid input parameter for NAND Flash Write!");
+		LOG_ERROR("Invalid input parameter for NAND Flash Write!");
 		return -EINVAL;
 	}
 
@@ -124,7 +124,7 @@ static int flash_cdns_nand_read(const struct device *nand_dev, off_t offset, voi
 	int ret;
 
 	if (data == NULL) {
-		LOG_ERR("Invalid input parameter for NAND Flash Read!");
+		LOG_ERROR("Invalid input parameter for NAND Flash Read!");
 		return -EINVAL;
 	}
 
@@ -180,7 +180,7 @@ static int flash_cdns_nand_init(const struct device *nand_dev)
 
 	status = sys_read32(DFI_SEL_CHK);
 	if ((status & 1) != 0) {
-		LOG_ERR("DFI not configured for NAND Flash controller!!!");
+		LOG_ERROR("DFI not configured for NAND Flash controller!!!");
 		return -ENODEV;
 	}
 #endif
@@ -189,20 +189,20 @@ static int flash_cdns_nand_init(const struct device *nand_dev)
 	/* Reset Combo phy and NAND only if reset controller driver is supported */
 	if ((nand_config->combo_phy_reset.dev != NULL) && (nand_config->reset.dev != NULL)) {
 		if (!device_is_ready(nand_config->reset.dev)) {
-			LOG_ERR("Reset controller device not ready");
+			LOG_ERROR("Reset controller device not ready");
 			return -ENODEV;
 		}
 
 		ret = reset_line_toggle(nand_config->combo_phy_reset.dev,
 					nand_config->combo_phy_reset.id);
 		if (ret != 0) {
-			LOG_ERR("Combo phy reset failed");
+			LOG_ERROR("Combo phy reset failed");
 			return ret;
 		}
 
 		ret = reset_line_toggle(nand_config->reset.dev, nand_config->reset.id);
 		if (ret != 0) {
-			LOG_ERR("NAND reset failed");
+			LOG_ERROR("NAND reset failed");
 			return ret;
 		}
 	}
@@ -211,20 +211,20 @@ static int flash_cdns_nand_init(const struct device *nand_dev)
 	nand_param->sdma_base = DEVICE_MMIO_NAMED_GET(nand_dev, sdma);
 	ret = k_mutex_init(&nand_data->nand_mutex);
 	if (ret != 0) {
-		LOG_ERR("Mutex creation Failed");
+		LOG_ERROR("Mutex creation Failed");
 		return ret;
 	}
 
 #if CONFIG_CDNS_NAND_INTERRUPT_SUPPORT
 
 	if (nand_config->irq_config == NULL) {
-		LOG_ERR("Interrupt function not initialized!!");
+		LOG_ERROR("Interrupt function not initialized!!");
 		return -EINVAL;
 	}
 	nand_config->irq_config();
 	ret = k_sem_init(&nand_param->interrupt_sem_t, 0, 1);
 	if (ret != 0) {
-		LOG_ERR("Semaphore creation Failed");
+		LOG_ERROR("Semaphore creation Failed");
 		return ret;
 	}
 #endif
@@ -233,7 +233,7 @@ static int flash_cdns_nand_init(const struct device *nand_dev)
 	/* NAND Memory Controller init */
 	ret = cdns_nand_init(nand_param);
 	if (ret != 0) {
-		LOG_ERR("NAND initialization Failed");
+		LOG_ERROR("NAND initialization Failed");
 		return ret;
 	}
 	return 0;

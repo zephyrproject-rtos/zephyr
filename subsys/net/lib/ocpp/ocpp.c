@@ -159,7 +159,7 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 	ui->tcpsock = zsock_socket(ui->csi.sa_family, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_3);
 	if (ui->tcpsock < 0) {
 		ret = -errno;
-		LOG_ERR("Failed to create TLS socket: %d", ret);
+		LOG_ERROR("Failed to create TLS socket: %d", ret);
 		return ret;
 	}
 
@@ -167,7 +167,7 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 			       ui->csi.creds.sec_tag_list_size);
 	if (ret < 0) {
 		ret = -errno;
-		LOG_ERR("Failed to set TLS_SEC_TAG_LIST: %d", ret);
+		LOG_ERROR("Failed to set TLS_SEC_TAG_LIST: %d", ret);
 		zsock_close(ui->tcpsock);
 		ui->tcpsock = -1;
 		return ret;
@@ -177,7 +177,7 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 			       ui->csi.creds.tls_hostname_size);
 	if (ret < 0) {
 		ret = -errno;
-		LOG_ERR("Failed to set %s: %d", ui->csi.creds.tls_hostname, ret);
+		LOG_ERROR("Failed to set %s: %d", ui->csi.creds.tls_hostname, ret);
 		zsock_close(ui->tcpsock);
 		ui->tcpsock = -1;
 		return ret;
@@ -192,7 +192,7 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 
 	ret = zsock_connect(ui->tcpsock, addr, addr_size);
 	if (ret < 0 && errno != EALREADY && errno != EISCONN) {
-		LOG_ERR("tcp socket connect fail %d %d", ret, errno);
+		LOG_ERROR("tcp socket connect fail %d %d", ret, errno);
 		return ret;
 	}
 
@@ -218,7 +218,7 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 		ret = websocket_connect(ui->tcpsock, &config,
 					OCPP_WS_TIMEOUT, ctx);
 		if (ret < 0) {
-			LOG_ERR("Websocket connect fail %d", ret);
+			LOG_ERROR("Websocket connect fail %d", ret);
 			return ret;
 		}
 		ui->wssock = ret;
@@ -540,7 +540,7 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 
 		if ((tcpfd.revents & ZSOCK_POLLERR) ||
 		    (tcpfd.revents & ZSOCK_POLLNVAL)) {
-			LOG_ERR("poll err %d", tcpfd.revents);
+			LOG_ERROR("poll err %d", tcpfd.revents);
 			ctx->is_cs_offline = true;
 			continue;
 		}
@@ -577,7 +577,7 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 		}
 
 		if (tcpfd.revents & ZSOCK_POLLHUP) {
-			LOG_ERR("poll err %d", tcpfd.revents);
+			LOG_ERROR("poll err %d", tcpfd.revents);
 			ctx->is_cs_offline = true;
 		}
 	}
@@ -773,7 +773,7 @@ int ocpp_init(struct ocpp_cp_info *cpi,
 
 	ret = ocpp_upstream_init(ctx, csi);
 	if (ret < 0) {
-		LOG_ERR("ocpp upstream init fail %d", ret);
+		LOG_ERROR("ocpp upstream init fail %d", ret);
 		goto out;
 	}
 

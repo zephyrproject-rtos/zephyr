@@ -267,7 +267,7 @@ static int ov9655_set_fmt(const struct device *dev, struct video_format *fmt)
 	int ret;
 
 	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
-		LOG_ERR("Only RGB565 and YUYV supported!");
+		LOG_ERROR("Only RGB565 and YUYV supported!");
 		return -ENOTSUP;
 	}
 
@@ -281,7 +281,7 @@ static int ov9655_set_fmt(const struct device *dev, struct video_format *fmt)
 	/* Reset the sensor registers */
 	ret = video_write_cci_reg(&config->i2c, OV9655_REG8(OV9655_COMMON_CTRL7), 0x80);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset the sensor");
+		LOG_ERROR("Failed to reset the sensor");
 		return ret;
 	}
 	k_msleep(200);
@@ -348,7 +348,7 @@ static int ov9655_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(&config->pwdn, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not clear power down pin: %d", ret);
+			LOG_ERROR("Could not clear power down pin: %d", ret);
 			return ret;
 		}
 		k_msleep(3);
@@ -362,7 +362,7 @@ static int ov9655_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT);
 		if (ret < 0) {
-			LOG_ERR("Could not set reset pin: %d", ret);
+			LOG_ERROR("Could not set reset pin: %d", ret);
 			return ret;
 		}
 		/* Reset is active low, has 1ms settling time */
@@ -376,12 +376,12 @@ static int ov9655_init(const struct device *dev)
 	/* Read Product ID & Version ID */
 	ret = video_read_cci_reg(&config->i2c, OV9655_PID, &pid);
 	if (ret < 0) {
-		LOG_ERR("Could not request product ID: %d", ret);
+		LOG_ERROR("Could not request product ID: %d", ret);
 		return ret;
 	}
 
 	if (pid != 0x9657) {
-		LOG_ERR("Incorrect product ID: 0x%04X", pid);
+		LOG_ERROR("Incorrect product ID: 0x%04X", pid);
 		return -ENODEV;
 	}
 

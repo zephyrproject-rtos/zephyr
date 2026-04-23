@@ -86,7 +86,7 @@ int lorawan_frag_encoder(const uint8_t *uncoded, size_t uncoded_len, uint8_t *co
 	memset(parity_vec, 0, sizeof(parity_vec));
 
 	if (coded_size < coded_frags * frag_size) {
-		LOG_ERR("output buffer not large enough");
+		LOG_ERROR("output buffer not large enough");
 		return -EINVAL;
 	}
 

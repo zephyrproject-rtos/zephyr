@@ -49,7 +49,7 @@ void device_command_handler(uint8_t *command)
 			return device_commands[i].handler();
 		}
 	}
-	LOG_ERR("Unknown command: %s", command);
+	LOG_ERROR("Unknown command: %s", command);
 }
 
 int device_read_sensor(struct sensor_sample *sample)
@@ -68,13 +68,13 @@ int device_read_sensor(struct sensor_sample *sample)
 
 	rc = sensor_sample_fetch(sensor);
 	if (rc) {
-		LOG_ERR("Failed to fetch sensor sample [%d]", rc);
+		LOG_ERROR("Failed to fetch sensor sample [%d]", rc);
 		return rc;
 	}
 
 	rc = sensor_channel_get(sensor, SENSOR_CHAN, &sensor_val);
 	if (rc) {
-		LOG_ERR("Failed to get sensor channel [%d]", rc);
+		LOG_ERROR("Failed to get sensor channel [%d]", rc);
 		return rc;
 	}
 
@@ -103,7 +103,7 @@ int device_write_led(enum led_id led_idx, enum led_state state)
 		led_on(leds, led_idx);
 		break;
 	default:
-		LOG_ERR("Invalid LED state setting");
+		LOG_ERROR("Invalid LED state setting");
 		rc = -EINVAL;
 		break;
 	}
@@ -118,7 +118,7 @@ bool devices_ready(void)
 	/* Check readiness only if a real sensor device is present */
 	if (sensor != NULL) {
 		if (!device_is_ready(sensor)) {
-			LOG_ERR("Device %s is not ready", sensor->name);
+			LOG_ERROR("Device %s is not ready", sensor->name);
 			rc = false;
 		} else {
 			LOG_INF("Device %s is ready", sensor->name);
@@ -127,7 +127,7 @@ bool devices_ready(void)
 
 	if (leds != NULL) {
 		if (!device_is_ready(leds)) {
-			LOG_ERR("Device %s is not ready", leds->name);
+			LOG_ERROR("Device %s is not ready", leds->name);
 			rc = false;
 		} else {
 			LOG_INF("Device %s is ready", leds->name);

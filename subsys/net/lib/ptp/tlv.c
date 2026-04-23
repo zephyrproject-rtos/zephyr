@@ -334,7 +334,7 @@ struct ptp_tlv_container *ptp_tlv_alloc(void)
 	int ret = k_mem_slab_alloc(&tlv_slab, (void **)&tlv_container, K_FOREVER);
 
 	if (ret) {
-		LOG_ERR("Couldn't allocate memory for the TLV");
+		LOG_ERROR("Couldn't allocate memory for the TLV");
 		return NULL;
 	}
 

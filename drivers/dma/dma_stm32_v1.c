@@ -305,7 +305,7 @@ bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, uint32_t id)
 {
 	if (LL_DMA_IsEnabledIT_FE(dma, dma_stm32_id_to_stream(id)) &&
 	    dma_stm32_is_fe_active(dma, id)) {
-		LOG_ERR("FiFo error.");
+		LOG_ERROR("FiFo error.");
 		return true;
 	}
 
@@ -362,8 +362,8 @@ uint32_t stm32_dma_get_mburst(struct dma_config *config, bool source_periph)
 	case 16:
 		return LL_DMA_MBURST_INC16;
 	default:
-		LOG_ERR("Memory burst size error,"
-			"using single burst as default");
+		LOG_ERROR("Memory burst size error,"
+			  "using single burst as default");
 		return LL_DMA_MBURST_SINGLE;
 	}
 }
@@ -388,8 +388,8 @@ uint32_t stm32_dma_get_pburst(struct dma_config *config, bool source_periph)
 	case 16:
 		return LL_DMA_PBURST_INC16;
 	default:
-		LOG_ERR("Peripheral burst size error,"
-			"using single burst as default");
+		LOG_ERROR("Peripheral burst size error,"
+			  "using single burst as default");
 		return LL_DMA_PBURST_SINGLE;
 	}
 }

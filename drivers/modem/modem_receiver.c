@@ -123,9 +123,9 @@ static void mdm_receiver_isr(const struct device *uart_dev, void *user_data)
 		if (rx > 0) {
 			ret = ring_buf_put(&ctx->rx_rb, read_buf, rx);
 			if (ret != rx) {
-				LOG_ERR("Rx buffer doesn't have enough space. "
-						"Bytes pending: %d, written: %d",
-						rx, ret);
+				LOG_ERROR("Rx buffer doesn't have enough space. "
+					  "Bytes pending: %d, written: %d",
+					  rx, ret);
 				mdm_receiver_flush(ctx);
 				k_sem_give(&ctx->rx_sem);
 				break;
@@ -226,8 +226,7 @@ int mdm_receiver_register(struct mdm_receiver_context *ctx,
 	}
 
 	if (!device_is_ready(uart_dev)) {
-		LOG_ERR("Device is not ready: %s",
-			uart_dev ? uart_dev->name : "<null>");
+		LOG_ERROR("Device is not ready: %s", uart_dev ? uart_dev->name : "<null>");
 		return -ENODEV;
 	}
 

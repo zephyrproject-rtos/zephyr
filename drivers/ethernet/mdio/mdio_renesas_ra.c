@@ -95,7 +95,7 @@ static int renesas_ra_mdio_initialize(const struct device *dev)
 	fsp_err = R_ETHER_PHY_Open(&data->ether_phy_ctrl, &data->ether_phy_cfg);
 
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to init mdio driver - R_ETHER_PHY_Open fail");
+		LOG_ERROR("Failed to init mdio driver - R_ETHER_PHY_Open fail");
 	}
 
 	k_mutex_init(&data->rw_mutex);

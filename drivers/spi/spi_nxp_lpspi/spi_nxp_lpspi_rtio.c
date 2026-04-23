@@ -296,7 +296,7 @@ static void lpspi_rtio_iodev_start(const struct device *dev)
 	lpspi_data->word_size_bytes =
 		DIV_ROUND_UP(SPI_WORD_SIZE_GET(spi_cfg->operation), BITS_PER_BYTE);
 	if (lpspi_data->word_size_bytes != 1) {
-		LOG_ERR("Driver only works with word size = 1 byte");
+		LOG_ERROR("Driver only works with word size = 1 byte");
 		ret = -EINVAL;
 		goto lpspi_rtio_iodev_start_on_error;
 	}

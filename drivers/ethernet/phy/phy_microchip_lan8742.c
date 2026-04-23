@@ -53,7 +53,7 @@ static int phy_lan8742_reset(const struct device *dev)
 	if (cfg->gpio_reset.port != NULL) {
 		ret = gpio_pin_configure_dt(&cfg->gpio_reset, GPIO_OUTPUT_ACTIVE);
 		if (ret != 0) {
-			LOG_ERR("failed to initialize GPIO for reset");
+			LOG_ERROR("failed to initialize GPIO for reset");
 			return ret;
 		}
 		gpio_pin_set_dt(&cfg->gpio_reset, 1);
@@ -391,13 +391,13 @@ static int phy_lan8742_init(const struct device *dev)
 
 	ret = phy_lan8742_reset(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset PHY (%d): %d", cfg->phy_addr, ret);
+		LOG_ERROR("Failed to reset PHY (%d): %d", cfg->phy_addr, ret);
 		return ret;
 	}
 
 	if (phy_lan8742_get_id(dev, &phy_id) == 0) {
 		if (phy_id == MII_INVALID_PHY_ID) {
-			LOG_ERR("No PHY found at address %d", cfg->phy_addr);
+			LOG_ERROR("No PHY found at address %d", cfg->phy_addr);
 
 			return -EINVAL;
 		}
@@ -410,7 +410,7 @@ static int phy_lan8742_init(const struct device *dev)
 	/* Advertise default speeds */
 	ret = phy_lan8742_cfg_link(dev, cfg->default_speeds, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure link (%d)", ret);
+		LOG_ERROR("Failed to configure link (%d)", ret);
 		return ret;
 	}
 

@@ -308,9 +308,9 @@ static void transfer_chunk(const struct device *dev)
 			dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length =
 				IFX_CAT1_SPI_DMA_BURST_SIZE;
 			if (chunk_len % IFX_CAT1_SPI_DMA_BURST_SIZE != 0) {
-				LOG_ERR("DMA (DW) only supports lengths is multiple of burst "
-					"length (%d)",
-					IFX_CAT1_SPI_DMA_BURST_SIZE);
+				LOG_ERROR("DMA (DW) only supports lengths is multiple of burst "
+					  "length (%d)",
+					  IFX_CAT1_SPI_DMA_BURST_SIZE);
 				goto exit;
 			}
 			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
@@ -416,7 +416,7 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 	} else if (channel == data->dma_tx.dma_channel) {
 
 	} else {
-		LOG_ERR("Unknown\n");
+		LOG_ERROR("Unknown\n");
 	}
 }
 #endif
@@ -436,14 +436,14 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) > CONFIG_IFX_SPI_MAX_DATA_WIDTH) {
-		LOG_ERR("Word size %d is greater than %d", SPI_WORD_SIZE_GET(spi_cfg->operation),
-			CONFIG_IFX_SPI_MAX_DATA_WIDTH);
+		LOG_ERROR("Word size %d is greater than %d", SPI_WORD_SIZE_GET(spi_cfg->operation),
+			  CONFIG_IFX_SPI_MAX_DATA_WIDTH);
 		return -EINVAL;
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) < CONFIG_IFX_SPI_MIN_DATA_WIDTH) {
-		LOG_ERR("Word size %d is less than %d", SPI_WORD_SIZE_GET(spi_cfg->operation),
-			CONFIG_IFX_SPI_MIN_DATA_WIDTH);
+		LOG_ERROR("Word size %d is less than %d", SPI_WORD_SIZE_GET(spi_cfg->operation),
+			  CONFIG_IFX_SPI_MIN_DATA_WIDTH);
 		return -EINVAL;
 	}
 
@@ -553,7 +553,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	result = spi_config(dev, spi_cfg);
 	if (result) {
-		LOG_ERR("Error in SPI Configuration (result: 0x%x)", result);
+		LOG_ERROR("Error in SPI Configuration (result: 0x%x)", result);
 		spi_context_release(ctx, result);
 		return result;
 	}

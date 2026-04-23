@@ -197,7 +197,7 @@ static void axi_eth_lite_iface_init(struct net_if *iface)
 	axi_eth_lite_program_mac_address(config, data);
 	if (net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
 				 NET_LINK_ETHERNET) < 0) {
-		LOG_ERR("Could not set initial link address!");
+		LOG_ERROR("Could not set initial link address!");
 	}
 	LOG_DBG("MAC address set!");
 
@@ -209,7 +209,7 @@ static void axi_eth_lite_iface_init(struct net_if *iface)
 					    iface);
 
 		if (err < 0) {
-			LOG_ERR("Could not set PHY link state changed handler: %d", err);
+			LOG_ERROR("Could not set PHY link state changed handler: %d", err);
 		}
 	} else {
 		/* fixed link - no way to know so assume it is on */
@@ -242,7 +242,7 @@ static int axi_eth_lite_set_config(const struct device *dev, enum ethernet_confi
 		LOG_DBG("MAC address set!");
 		return 0;
 	default:
-		LOG_ERR("Unsupported configuration set: %u", type);
+		LOG_ERROR("Unsupported configuration set: %u", type);
 		return -ENOTSUP;
 	}
 }
@@ -344,8 +344,8 @@ static inline int axi_eth_lite_read_to_pkt(const struct axi_eth_lite_config *con
 		ret += net_pkt_write(pkt, &current_data, bytes_to_write_now);
 
 		if (ret < 0) {
-			LOG_ERR("Write error bytes %zu/%zu (%zu)", read_bytes, bytes_to_read,
-				bytes_to_write_now);
+			LOG_ERROR("Write error bytes %zu/%zu (%zu)", read_bytes, bytes_to_read,
+				  bytes_to_write_now);
 		} else {
 			LOG_DBG("Write OK bytes %zu/%zu (%zu) cursor %p remaining %d", read_bytes,
 				bytes_to_read, bytes_to_write_now, pkt->cursor.buf,
@@ -440,11 +440,11 @@ static inline void axi_eth_lite_receive(const struct axi_eth_lite_config *config
 	    axi_eth_lite_read_to_pkt(config, pkt, buffer_addr,
 				     packet_size - HEADER_BUF_SIZE_ALIGNED) < 0) {
 		/* this should never happen, ignore it if it does but warn */
-		LOG_ERR("Could not read data to packet!");
+		LOG_ERROR("Could not read data to packet!");
 	}
 
 	if (net_recv_data(data->iface, pkt) < 0) {
-		LOG_ERR("Could not receive data!");
+		LOG_ERROR("Could not receive data!");
 		net_pkt_unref(pkt);
 	}
 
@@ -525,7 +525,7 @@ static int axi_eth_lite_init(const struct device *dev)
 		/* start with 1 for ping-pong, as we can always start 2 transactions concurrently */
 		if (k_sem_init(&data->tx_sem, config->has_tx_ping_pong ? 1 : 0, K_SEM_MAX_LIMIT) <
 		    0) {
-			LOG_ERR("Could not initialize semaphore!");
+			LOG_ERROR("Could not initialize semaphore!");
 			return -EINVAL;
 		}
 	} else {

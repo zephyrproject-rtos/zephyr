@@ -368,7 +368,7 @@ static int gpio_adi_max22017_init(const struct device *dev)
 	const struct device *parent = config->parent;
 
 	if (!device_is_ready(parent)) {
-		LOG_ERR("parent adi_max22017 MFD device '%s' not ready", config->parent->name);
+		LOG_ERROR("parent adi_max22017 MFD device '%s' not ready", config->parent->name);
 		return -EINVAL;
 	}
 

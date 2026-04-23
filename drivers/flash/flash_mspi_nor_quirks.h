@@ -194,7 +194,7 @@ static int mxicy_mx25u_pre_init(const struct device *dev)
 	dev_data->packet.num_bytes = sizeof(cfg_reg);
 	rc = perform_xfer(dev, SPI_NOR_CMD_RD_CFGREG2);
 	if (rc < 0) {
-		LOG_ERR("Failed to read Dummy Cycle from CFGREG2");
+		LOG_ERROR("Failed to read Dummy Cycle from CFGREG2");
 		return rc;
 	}
 

@@ -265,12 +265,12 @@ static int mcux_lpi2c_recover_bus(const struct device *dev)
 	int error = 0;
 
 	if (!gpio_is_ready_dt(&config->scl)) {
-		LOG_ERR("SCL GPIO device not ready");
+		LOG_ERROR("SCL GPIO device not ready");
 		return -EIO;
 	}
 
 	if (!gpio_is_ready_dt(&config->sda)) {
-		LOG_ERR("SDA GPIO device not ready");
+		LOG_ERROR("SDA GPIO device not ready");
 		return -EIO;
 	}
 
@@ -278,13 +278,13 @@ static int mcux_lpi2c_recover_bus(const struct device *dev)
 
 	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
 	if (error != 0) {
-		LOG_ERR("failed to configure SCL GPIO (err %d)", error);
+		LOG_ERROR("failed to configure SCL GPIO (err %d)", error);
 		goto restore;
 	}
 
 	error = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
 	if (error != 0) {
-		LOG_ERR("failed to configure SDA GPIO (err %d)", error);
+		LOG_ERROR("failed to configure SDA GPIO (err %d)", error);
 		goto restore;
 	}
 
@@ -293,13 +293,13 @@ static int mcux_lpi2c_recover_bus(const struct device *dev)
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
 	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
 	if (error != 0) {
-		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+		LOG_ERROR("failed to configure I2C bitbang (err %d)", error);
 		goto restore;
 	}
 
 	error = i2c_bitbang_recover_bus(&bitbang_ctx);
 	if (error != 0) {
-		LOG_ERR("failed to recover bus (err %d)", error);
+		LOG_ERROR("failed to recover bus (err %d)", error);
 		goto restore;
 	}
 
@@ -501,7 +501,7 @@ static int mcux_lpi2c_suspend(const struct device *dev)
 
 	ret = clock_control_off(config->clock_dev, config->clock_subsys);
 	if (ret < 0) {
-		LOG_ERR("failed clock off lpi2c");
+		LOG_ERROR("failed clock off lpi2c");
 		return ret;
 	}
 
@@ -515,7 +515,7 @@ static int mcux_lpi2c_resume(const struct device *dev)
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret < 0) {
-		LOG_ERR("failed clock on lpi2c");
+		LOG_ERROR("failed clock on lpi2c");
 		return ret;
 	}
 
@@ -557,7 +557,7 @@ static int mcux_lpi2c_init(const struct device *dev)
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 

@@ -51,7 +51,7 @@ static void lorawan_nvm_save_settings(uint16_t nvm_notify_flag)
 	/* Retrieve the actual context */
 	mib_req.Type = MIB_NVM_CTXS;
 	if (LoRaMacMibGetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
-		LOG_ERR("Could not get NVM context");
+		LOG_ERROR("Could not get NVM context");
 		return;
 	}
 
@@ -72,8 +72,7 @@ static void lorawan_nvm_save_settings(uint16_t nvm_notify_flag)
 						(char *)nvm + descr->offset,
 						descr->size);
 			if (err) {
-				LOG_ERR("Could not save settings %s, error %d",
-					descr->name, err);
+				LOG_ERROR("Could not save settings %s, error %d", descr->name, err);
 			}
 		}
 	}
@@ -91,20 +90,17 @@ static int load_setting(void *tgt, size_t tgt_size,
 			settings_read_cb read_cb, void *cb_arg)
 {
 	if (len != tgt_size) {
-		LOG_ERR("Can't load '%s' state, size mismatch.",
-			key);
+		LOG_ERROR("Can't load '%s' state, size mismatch.", key);
 		return -EINVAL;
 	}
 
 	if (!tgt) {
-		LOG_ERR("Can't load '%s' state, no target.",
-			key);
+		LOG_ERROR("Can't load '%s' state, no target.", key);
 		return -EINVAL;
 	}
 
 	if (read_cb(cb_arg, tgt, len) != len) {
-		LOG_ERR("Can't load '%s' state, short read.",
-			key);
+		LOG_ERROR("Can't load '%s' state, short read.", key);
 		return -EINVAL;
 	}
 
@@ -128,7 +124,7 @@ static int on_setting_loaded(const char *key, size_t len,
 			err = load_setting((char *)nvm + descr->offset,
 				descr->size, key, len, read_cb, cb_arg);
 			if (err) {
-				LOG_ERR("Could not read setting %s", descr->name);
+				LOG_ERROR("Could not read setting %s", descr->name);
 			}
 			return err;
 		}
@@ -149,7 +145,7 @@ int lorawan_nvm_data_restore(void)
 	/* Retrieve the actual context */
 	mib_req.Type = MIB_NVM_CTXS;
 	if (LoRaMacMibGetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
-		LOG_ERR("Could not get NVM context");
+		LOG_ERROR("Could not get NVM context");
 		return -EINVAL;
 	}
 
@@ -157,7 +153,7 @@ int lorawan_nvm_data_restore(void)
 					   on_setting_loaded,
 					   mib_req.Param.Contexts);
 	if (err) {
-		LOG_ERR("Could not load LoRaWAN settings, error %d", err);
+		LOG_ERROR("Could not load LoRaWAN settings, error %d", err);
 		return err;
 	}
 
@@ -169,7 +165,7 @@ int lorawan_nvm_data_restore(void)
 	mib_req.Type = MIB_NVM_CTXS;
 	status = LoRaMacMibSetRequestConfirm(&mib_req);
 	if (status != LORAMAC_STATUS_OK) {
-		LOG_ERR("Could not set the NVM context, error %d", status);
+		LOG_ERROR("Could not set the NVM context, error %d", status);
 		return -EINVAL;
 	}
 

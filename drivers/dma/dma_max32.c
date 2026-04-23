@@ -35,7 +35,7 @@ static inline bool max32_dma_ch_prio_valid(uint32_t ch_prio)
 {
 	/* mxc_dma_priority_t is limited to values 0-3 */
 	if (!(ch_prio >= 0 && ch_prio <= 3)) {
-		LOG_ERR("Invalid DMA priority - must be type mxc_dma_priority_t (0-3)");
+		LOG_ERROR("Invalid DMA priority - must be type mxc_dma_priority_t (0-3)");
 		return false;
 	}
 	return true;
@@ -51,7 +51,7 @@ static inline int max32_dma_width(uint32_t width)
 	case 4:
 		return MXC_DMA_WIDTH_WORD;
 	default:
-		LOG_ERR("Invalid DMA width - must be byte (1), halfword (2) or word (4)");
+		LOG_ERROR("Invalid DMA width - must be byte (1), halfword (2) or word (4)");
 		return -EINVAL;
 	}
 }
@@ -64,7 +64,7 @@ static inline int max32_dma_addr_adj(uint16_t addr_adj)
 	case DMA_ADDR_ADJ_INCREMENT:
 		return 1;
 	default:
-		LOG_ERR("Invalid DMA address adjust - must be NO_CHANGE (0) or INCREMENT (1)");
+		LOG_ERROR("Invalid DMA address adjust - must be NO_CHANGE (0) or INCREMENT (1)");
 		return 0;
 	}
 }
@@ -77,8 +77,8 @@ static int max32_dma_config(const struct device *dev, uint32_t channel, struct d
 	uint32_t ch;
 
 	if (channel >= cfg->channels) {
-		LOG_ERR("Invalid DMA channel - must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels,
-			channel);
+		LOG_ERROR("Invalid DMA channel - must be < %" PRIu32 " (%" PRIu32 ")",
+			  cfg->channels, channel);
 		return -EINVAL;
 	}
 
@@ -156,8 +156,8 @@ static int max32_dma_reload(const struct device *dev, uint32_t channel, uint32_t
 	int flags;
 
 	if (channel >= cfg->channels) {
-		LOG_ERR("Invalid DMA channel - must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels,
-			channel);
+		LOG_ERROR("Invalid DMA channel - must be < %" PRIu32 " (%" PRIu32 ")",
+			  cfg->channels, channel);
 		return -EINVAL;
 	}
 
@@ -180,8 +180,8 @@ static int max32_dma_start(const struct device *dev, uint32_t channel)
 	int flags;
 
 	if (channel >= cfg->channels) {
-		LOG_ERR("Invalid DMA channel - must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels,
-			channel);
+		LOG_ERROR("Invalid DMA channel - must be < %" PRIu32 " (%" PRIu32 ")",
+			  cfg->channels, channel);
 		return -EINVAL;
 	}
 
@@ -199,8 +199,8 @@ static int max32_dma_stop(const struct device *dev, uint32_t channel)
 	const struct max32_dma_config *cfg = dev->config;
 
 	if (channel >= cfg->channels) {
-		LOG_ERR("Invalid DMA channel - must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels,
-			channel);
+		LOG_ERROR("Invalid DMA channel - must be < %" PRIu32 " (%" PRIu32 ")",
+			  cfg->channels, channel);
 		return -EINVAL;
 	}
 
@@ -217,8 +217,8 @@ static int max32_dma_get_status(const struct device *dev, uint32_t channel, stru
 	mxc_dma_srcdst_t txfer;
 
 	if (channel >= cfg->channels) {
-		LOG_ERR("Invalid DMA channel - must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels,
-			channel);
+		LOG_ERROR("Invalid DMA channel - must be < %" PRIu32 " (%" PRIu32 ")",
+			  cfg->channels, channel);
 		return -EINVAL;
 	}
 

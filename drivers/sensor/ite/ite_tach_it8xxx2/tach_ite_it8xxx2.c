@@ -151,7 +151,7 @@ static int tach_it8xxx2_channel_get(const struct device *dev, enum sensor_channe
 	struct tach_it8xxx2_data *const data = dev->data;
 
 	if (chan != SENSOR_CHAN_RPM) {
-		LOG_ERR("Sensor chan %d, only support SENSOR_CHAN_RPM", chan);
+		LOG_ERROR("Sensor chan %d, only support SENSOR_CHAN_RPM", chan);
 		return -ENOTSUP;
 	}
 
@@ -190,14 +190,14 @@ static int tach_it8xxx2_init(const struct device *dev)
 	int status;
 
 	if (tach_ch > IT8XXX2_TACH_CHANNEL_B) {
-		LOG_ERR("Tach channel %d, only support 0 or 1", tach_ch);
+		LOG_ERROR("Tach channel %d, only support 0 or 1", tach_ch);
 		return -EINVAL;
 	}
 
 	/* Select pin to alternate mode for tachometer */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure TACH pins");
+		LOG_ERROR("Failed to configure TACH pins");
 		return status;
 	}
 

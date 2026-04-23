@@ -101,27 +101,27 @@ static int pwm_nxp_flexio_set_cycles(const struct device *dev,
 
 	/* Check received parameters for sanity */
 	if (channel >= config->pulse_info->pwm_pulse_channels) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
 	if (period_cycles == 0) {
-		LOG_ERR("Channel can not be set to inactive level");
+		LOG_ERROR("Channel can not be set to inactive level");
 		return -ENOTSUP;
 	}
 
 	if (FLEXIO_PWM_TIMER_CMP_MAX_VALUE <= (uint16_t)pulse_cycles) {
-		LOG_ERR("Duty cycle is out of range");
+		LOG_ERROR("Duty cycle is out of range");
 		return -EINVAL;
 	}
 
 	if (FLEXIO_PWM_TIMER_CMP_MAX_VALUE <= (uint16_t)(period_cycles - pulse_cycles)) {
-		LOG_ERR("low period of the cycle is out of range");
+		LOG_ERROR("low period of the cycle is out of range");
 		return -EINVAL;
 	}
 
 	if (pulse_cycles > period_cycles) {
-		LOG_ERR("Duty cycle cannot be greater than 100 percent");
+		LOG_ERROR("Duty cycle cannot be greater than 100 percent");
 		return -EINVAL;
 	}
 
@@ -213,7 +213,7 @@ static int mcux_flexio_pwm_init(const struct device *dev)
 		/* Check if error is due to lack of support */
 		if (err != -ENOSYS) {
 			/* Real error occurred */
-			LOG_ERR("Failed to configure clock: %d", err);
+			LOG_ERROR("Failed to configure clock: %d", err);
 			return err;
 		}
 	}

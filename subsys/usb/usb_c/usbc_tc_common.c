@@ -62,7 +62,7 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
 		ret = tc_init(dev);
 		if (ret != 0 && ret != -EAGAIN) {
 			/* Transition to Disabled State */
-			LOG_ERR("Disabling the Type-C Layer");
+			LOG_ERROR("Disabling the Type-C Layer");
 			data->tc_enabled = false;
 			tc_set_state(dev, TC_DISABLED_STATE);
 		}
@@ -150,7 +150,7 @@ static int tc_init(const struct device *dev)
 	/* Initialize the TCPC */
 	ret = tcpc_init(tcpc);
 	if (ret != 0) {
-		LOG_ERR("TCPC initialization failed: %d", ret);
+		LOG_ERROR("TCPC initialization failed: %d", ret);
 		return ret;
 	}
 
@@ -158,7 +158,7 @@ static int tc_init(const struct device *dev)
 	/* Stop sourcing VBUS by policy callback and/or TCPC */
 	ret = usbc_policy_src_en(dev, tcpc, false);
 	if (ret != 0) {
-		LOG_ERR("Couldn't disable vbus sourcing: %d", ret);
+		LOG_ERROR("Couldn't disable vbus sourcing: %d", ret);
 		return ret;
 	}
 
@@ -170,7 +170,7 @@ static int tc_init(const struct device *dev)
 	/* Stop sourcing VCONN */
 	ret = tcpc_set_vconn(tcpc, false);
 	if (ret != 0 && ret != -ENOTSUP) {
-		LOG_ERR("Couldn't disable vconn: %d", ret);
+		LOG_ERROR("Couldn't disable vconn: %d", ret);
 		return ret;
 	}
 #endif
@@ -238,7 +238,7 @@ void tc_select_src_collision_rp(const struct device *dev, enum tc_rp_value rp)
 	/* Select Rp value */
 	ret = tcpc_select_rp_value(tcpc, rp);
 	if (ret != 0 && ret != -ENOTSUP) {
-		LOG_ERR("Couldn't set Rp value to %d: %d", rp, ret);
+		LOG_ERROR("Couldn't set Rp value to %d: %d", rp, ret);
 		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
 		return;
 	}
@@ -246,7 +246,7 @@ void tc_select_src_collision_rp(const struct device *dev, enum tc_rp_value rp)
 	/* Place Rp on CC lines */
 	ret = tcpc_set_cc(tcpc, TC_CC_RP);
 	if (ret != 0) {
-		LOG_ERR("Couldn't set CC lines to Rp: %d", ret);
+		LOG_ERROR("Couldn't set CC lines to Rp: %d", ret);
 		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
 	}
 }
@@ -268,7 +268,7 @@ static void tc_cc_open_entry(void *obj)
 		/* Disable VCONN */
 		ret = tcpc_set_vconn(tcpc, false);
 		if (ret != 0 && ret != -ENOSYS) {
-			LOG_ERR("Couldn't disable vconn: %d", ret);
+			LOG_ERROR("Couldn't disable vconn: %d", ret);
 			tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
 			return;
 		}
@@ -277,7 +277,7 @@ static void tc_cc_open_entry(void *obj)
 	/* Open CC lines */
 	ret = tcpc_set_cc(tcpc, TC_CC_OPEN);
 	if (ret != 0) {
-		LOG_ERR("Couldn't set CC lines to open: %d", ret);
+		LOG_ERROR("Couldn't set CC lines to open: %d", ret);
 		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
 	}
 }

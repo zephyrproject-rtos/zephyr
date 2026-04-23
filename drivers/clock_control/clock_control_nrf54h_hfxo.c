@@ -176,7 +176,7 @@ static bool is_clock_spec_valid(const struct device *dev,
 	const struct dev_config_hfxo *dev_config = dev->config;
 
 	if (spec->frequency > dev_config->fixed_frequency) {
-		LOG_ERR("invalid frequency");
+		LOG_ERROR("invalid frequency");
 		return false;
 	}
 
@@ -184,7 +184,7 @@ static bool is_clock_spec_valid(const struct device *dev,
 	if (spec->accuracy &&
 	    spec->accuracy != NRF_CLOCK_CONTROL_ACCURACY_MAX &&
 	    spec->accuracy < dev_config->fixed_accuracy) {
-		LOG_ERR("invalid accuracy");
+		LOG_ERROR("invalid accuracy");
 		return false;
 	}
 

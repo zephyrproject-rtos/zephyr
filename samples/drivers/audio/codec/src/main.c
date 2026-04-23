@@ -82,11 +82,11 @@ int main(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(codec0))
 	dev = DEVICE_DT_GET(DT_ALIAS(codec0));
 #else
-	LOG_ERR("No audio codec on this board. Skipping audio test.\n");
+	LOG_ERROR("No audio codec on this board. Skipping audio test.\n");
 	return 0;
 #endif
 	if (!device_is_ready(dev)) {
-		LOG_ERR("codec device is not ready\n");
+		LOG_ERROR("codec device is not ready\n");
 		return -EBUSY;
 	}
 	LOG_INF("codec device is ready");
@@ -96,18 +96,18 @@ int main(void)
 	loopback = false;
 	audio_data_p = pcm_16k;
 	if (audio_codec_configure(dev, &cfg) < 0) {
-		LOG_ERR("configure codec error\n");
+		LOG_ERROR("configure codec error\n");
 		return -EIO;
 	}
 	if (audio_codec_register_done_callback(dev, tx_done, NULL, rx_done, NULL) < 0) {
-		LOG_ERR("could not register codec callbacks\n");
+		LOG_ERROR("could not register codec callbacks\n");
 		return -EIO;
 	}
 	audio_codec_start(dev, AUDIO_DAI_DIR_TX);
 	LOG_INF("playback started");
 	val.vol = SPEAKER_VOL;
 	if (audio_codec_set_property(dev, AUDIO_PROPERTY_OUTPUT_VOLUME, 0, val) < 0) {
-		LOG_ERR("could not set volume\n");
+		LOG_ERROR("could not set volume\n");
 		return -EIO;
 	}
 	k_sleep(K_MSEC(15000));
@@ -118,17 +118,17 @@ int main(void)
 	loopback = true;
 	cfg.dai_cfg.pcm.dir = AUDIO_DAI_DIR_TXRX;
 	if (audio_codec_configure(dev, &cfg) < 0) {
-		LOG_ERR("configure codec error\n");
+		LOG_ERROR("configure codec error\n");
 		return -EIO;
 	}
 	if (audio_codec_register_done_callback(dev, tx_done, NULL, rx_done, NULL) < 0) {
-		LOG_ERR("could not register codec callbacks\n");
+		LOG_ERROR("could not register codec callbacks\n");
 		return -EIO;
 	}
 	audio_codec_start(dev, AUDIO_DAI_DIR_TXRX);
 	LOG_INF("loopback started");
 	if (audio_codec_set_property(dev, AUDIO_PROPERTY_OUTPUT_VOLUME, 0, val) < 0) {
-		LOG_ERR("could not set volume\n");
+		LOG_ERROR("could not set volume\n");
 		return -EIO;
 	}
 	k_sleep(K_MSEC(15000));

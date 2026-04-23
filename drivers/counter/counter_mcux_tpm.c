@@ -88,12 +88,12 @@ static int mcux_tpm_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t ticks = alarm_cfg->ticks;
 
 	if (chan_id >= DEV_CFG(dev)->info.channels) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
 	if (data->channels[chan_id].alarm_callback != NULL) {
-		LOG_ERR("channel already in use");
+		LOG_ERROR("channel already in use");
 		return -EBUSY;
 	}
 
@@ -124,7 +124,7 @@ static int mcux_tpm_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	struct mcux_tpm_data *data = dev->data;
 
 	if (chan_id >= DEV_CFG(dev)->info.channels) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -236,7 +236,7 @@ static int mcux_tpm_init(const struct device *dev)
 	DEVICE_MMIO_NAMED_MAP(dev, tpm_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -251,19 +251,19 @@ static int mcux_tpm_init(const struct device *dev)
 		/* Check if error is due to lack of support */
 		if (err != -ENOSYS) {
 			/* Real error occurred */
-			LOG_ERR("Failed to configure clock: %d", err);
+			LOG_ERROR("Failed to configure clock: %d", err);
 			return err;
 		}
 	}
 
 	if (clock_control_on(config->clock_dev, config->clock_subsys)) {
-		LOG_ERR("Could not turn on clock");
+		LOG_ERROR("Could not turn on clock");
 		return -EINVAL;
 	}
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &input_clock_freq)) {
-		LOG_ERR("Could not get clock frequency");
+		LOG_ERROR("Could not get clock frequency");
 		return -EINVAL;
 	}
 

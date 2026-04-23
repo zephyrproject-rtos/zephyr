@@ -19,7 +19,7 @@ static int lcd_par_s035_init(void)
 	static const struct gpio_dt_spec int_gpio = INT_GPIO_DT_SPEC;
 
 	if (!gpio_is_ready_dt(&int_gpio)) {
-		LOG_ERR("GT911 INT_GPIO controller device not ready");
+		LOG_ERROR("GT911 INT_GPIO controller device not ready");
 		return -ENODEV;
 	}
 
@@ -30,7 +30,7 @@ static int lcd_par_s035_init(void)
 	 */
 	ret = gpio_pin_configure_dt(&int_gpio, GPIO_OUTPUT_INACTIVE);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure GT911 INT_GPIO: %d", ret);
+		LOG_ERROR("Failed to configure GT911 INT_GPIO: %d", ret);
 		return ret;
 	}
 #endif /* CONFIG_INPUT_GT911 */
@@ -38,7 +38,7 @@ static int lcd_par_s035_init(void)
 #ifdef CONFIG_MIPI_DBI
 	ret = device_init(DEVICE_DT_GET(DT_ALIAS(mipi_dbi)));
 	if (ret != 0) {
-		LOG_ERR("Failed to init mipi_dbi: %d", ret);
+		LOG_ERROR("Failed to init mipi_dbi: %d", ret);
 		return ret;
 	}
 #endif /* CONFIG_MIPI_DBI */
@@ -46,7 +46,7 @@ static int lcd_par_s035_init(void)
 #ifdef CONFIG_DISPLAY
 	ret = device_init(DEVICE_DT_GET(DT_NODELABEL(st7796s)));
 	if (ret != 0) {
-		LOG_ERR("Failed to init st7796s display driver: %d", ret);
+		LOG_ERROR("Failed to init st7796s display driver: %d", ret);
 		return ret;
 	}
 #endif /* CONFIG_DISPLAY */
@@ -54,7 +54,7 @@ static int lcd_par_s035_init(void)
 #ifdef CONFIG_INPUT_GT911
 	ret = device_init(DEVICE_DT_GET(DT_NODELABEL(gt911_lcd_par_s035)));
 	if (ret != 0) {
-		LOG_ERR("Failed to init gt911_lcd_par_s035 input driver: %d", ret);
+		LOG_ERROR("Failed to init gt911_lcd_par_s035 input driver: %d", ret);
 		return ret;
 	}
 #endif /* CONFIG_DISPLAY */

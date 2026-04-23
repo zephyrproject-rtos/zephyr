@@ -165,7 +165,7 @@ static void phy_link_cb(const struct device *phy_dev, struct phy_link_state *sta
 
 	fsp_err = rmac_do_link(&data->fsp_ctrl, LAYER3_SWITCH_MAGIC_PACKET_DETECTION_DISABLE);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Link MAC failed, err=%d", fsp_err);
+		LOG_ERROR("Link MAC failed, err=%d", fsp_err);
 		return;
 	}
 
@@ -455,13 +455,13 @@ static int renesas_ra_eswm_init(const struct device *dev)
 
 	/* Clock restrictions for eswm on HM */
 	if ((gwcaclk * 1.5 < eswclk) || (eswclk <= pclk) || (gwcaclk <= pclk)) {
-		LOG_ERR("ESWM clock invalid");
+		LOG_ERROR("ESWM clock invalid");
 		return -EIO;
 	}
 
 	fsp_err = R_LAYER3_SWITCH_Open(data->fsp_ctrl, data->fsp_cfg);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("ESWM open failed, err=%d", fsp_err);
+		LOG_ERROR("ESWM open failed, err=%d", fsp_err);
 		return -EIO;
 	}
 
@@ -508,7 +508,7 @@ static int renesas_ra_eth_init(const struct device *dev)
 
 	fsp_err = R_RMAC_Open(&data->fsp_ctrl, &data->fsp_cfg);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("RMAC open failed, err=%d", fsp_err);
+		LOG_ERROR("RMAC open failed, err=%d", fsp_err);
 		return -EIO;
 	}
 
@@ -517,7 +517,7 @@ static int renesas_ra_eth_init(const struct device *dev)
 	fsp_err = R_RMAC_CallbackSet(&data->fsp_ctrl, (void *)&eth_rmac_cb, (void *)dev,
 				     &data->fsp_cb);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("RMAC set cb failed, err=%d", fsp_err);
+		LOG_ERROR("RMAC set cb failed, err=%d", fsp_err);
 		return -EIO;
 	}
 

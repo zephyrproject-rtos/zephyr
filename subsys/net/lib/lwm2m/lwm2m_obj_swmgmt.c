@@ -183,7 +183,7 @@ static int (*verify_package)(void);
 
 static int callback_execute_not_defined(uint16_t obj_inst_id, uint8_t *args, uint16_t args_len)
 {
-	LOG_ERR("Callback not defined for inst %u", obj_inst_id);
+	LOG_ERROR("Callback not defined for inst %u", obj_inst_id);
 	return -EINVAL;
 }
 
@@ -192,14 +192,14 @@ static int callback_write_not_defined(uint16_t obj_inst_id, uint16_t res_id,
 				      uint16_t data_len, bool last_block,
 				      size_t total_size, size_t offset)
 {
-	LOG_ERR("Callback not defined for inst %u", obj_inst_id);
+	LOG_ERROR("Callback not defined for inst %u", obj_inst_id);
 	return -EINVAL;
 }
 
 static void *callback_read_not_defined(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
 				       size_t *data_len)
 {
-	LOG_ERR("Callback not defined for inst %u", obj_inst_id);
+	LOG_ERROR("Callback not defined for inst %u", obj_inst_id);
 	return NULL;
 }
 
@@ -212,7 +212,7 @@ static void set_sw_update_state(struct lwm2m_swmgmt_data *instance, uint8_t stat
 
 	ret = lwm2m_set_u8(&obj_path, state);
 	if (ret != 0) {
-		LOG_ERR("Could not set state");
+		LOG_ERROR("Could not set state");
 	}
 }
 
@@ -225,7 +225,7 @@ static void set_sw_update_result(struct lwm2m_swmgmt_data *instance, uint8_t res
 
 	ret = lwm2m_set_u8(&obj_path, result);
 	if (ret != 0) {
-		LOG_ERR("Could not set result");
+		LOG_ERROR("Could not set result");
 	}
 }
 
@@ -238,7 +238,7 @@ static void set_sw_update_act_state(struct lwm2m_swmgmt_data *instance, bool sta
 
 	ret = lwm2m_set_bool(&obj_path, state);
 	if (ret != 0) {
-		LOG_ERR("Could not set activation state");
+		LOG_ERROR("Could not set activation state");
 	}
 }
 
@@ -687,9 +687,9 @@ static struct lwm2m_engine_obj_inst *swmgmt_create(uint16_t obj_inst_id)
 	/* Check that there is no other instance with this ID */
 	for (index = 0; index < MAX_INSTANCE_COUNT; index++) {
 		if (inst[index].obj && inst[index].obj_inst_id == obj_inst_id) {
-			LOG_ERR("Can not create instance - "
-				"already existing: %u",
-				obj_inst_id);
+			LOG_ERROR("Can not create instance - "
+				  "already existing: %u",
+				  obj_inst_id);
 			return NULL;
 		}
 	}
@@ -701,7 +701,7 @@ static struct lwm2m_engine_obj_inst *swmgmt_create(uint16_t obj_inst_id)
 	}
 
 	if (index >= MAX_INSTANCE_COUNT) {
-		LOG_ERR("Can not create instance - no more room: %u", obj_inst_id);
+		LOG_ERROR("Can not create instance - no more room: %u", obj_inst_id);
 		return NULL;
 	}
 

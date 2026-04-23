@@ -136,13 +136,13 @@ static int settings_custom_save(struct settings_store *cs, const char *name,
 	} else {
 		fnew = fopen(SETTINGS_FILE_TMP, "w");
 		if (fnew == NULL) {
-			LOG_ERR("Failed to create temporary file %s", SETTINGS_FILE_TMP);
+			LOG_ERROR("Failed to create temporary file %s", SETTINGS_FILE_TMP);
 			return -1;
 		}
 	}
 
 	if (fcur == NULL) {
-		LOG_ERR("Failed to create settings file: %s", SETTINGS_FILE);
+		LOG_ERROR("Failed to create settings file: %s", SETTINGS_FILE);
 		return -1;
 	}
 

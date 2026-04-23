@@ -98,7 +98,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 
 	status = ECSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start");
+		LOG_ERROR("Transfer could not start");
 		spi_context_cs_control(&data->ctx, false);
 		spi_context_complete(&data->ctx, dev, -EIO);
 	}
@@ -155,28 +155,28 @@ static int spi_mcux_configure(const struct device *dev,
 	}
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (spi_cfg->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("HW byte re-ordering not supported");
+		LOG_ERROR("HW byte re-ordering not supported");
 		return -ENOTSUP;
 	}
 
 	if (!spi_cs_is_gpio(spi_cfg) && spi_cfg->slave > kECSPI_Channel3) {
-		LOG_ERR("Slave %d is greater than %d", spi_cfg->slave, kECSPI_Channel3);
+		LOG_ERROR("Slave %d is greater than %d", spi_cfg->slave, kECSPI_Channel3);
 		return -EINVAL;
 	}
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
-		LOG_ERR("Failed to get clock rate");
+		LOG_ERROR("Failed to get clock rate");
 		return -EINVAL;
 	}
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (0 == word_size || word_size > 32) {
-		LOG_ERR("Invalid word size (0 < %d <= 32)", word_size);
+		LOG_ERROR("Invalid word size (0 < %d <= 32)", word_size);
 		return -EINVAL;
 	}
 
@@ -202,7 +202,7 @@ static int spi_mcux_configure(const struct device *dev,
 			DIV_ROUND_UP(spi_cfg->cs.delay * USEC_PER_SEC, spi_cfg->frequency);
 
 		if (clock_cycles > 63U) {
-			LOG_ERR("CS delay is greater than 63 clock cycles (%u)", clock_cycles);
+			LOG_ERROR("CS delay is greater than 63 clock cycles (%u)", clock_cycles);
 			return -EINVAL;
 		}
 		master_config.chipSelectDelay = (uint8_t)clock_cycles;

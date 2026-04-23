@@ -19,7 +19,7 @@ int main(void)
 	int i;
 
 	if (!device_is_ready(led)) {
-		LOG_ERR("LED device not ready");
+		LOG_ERROR("LED device not ready");
 		return 0;
 	}
 

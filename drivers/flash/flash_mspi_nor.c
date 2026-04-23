@@ -136,7 +136,7 @@ static int perform_xfer(const struct device *dev, uint8_t cmd)
 		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
 			MSPI_DEVICE_CONFIG_IO_MODE | MSPI_DEVICE_CONFIG_FREQUENCY, cfg);
 		if (rc < 0) {
-			LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
+			LOG_ERROR("%s: dev_config() failed: %d", __func__, rc);
 			return rc;
 		}
 		dev_data->last_applied_cfg = cfg;
@@ -145,7 +145,7 @@ static int perform_xfer(const struct device *dev, uint8_t cmd)
 	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id,
 			     &dev_data->xfer);
 	if (rc < 0) {
-		LOG_ERR("%s: transceive() failed: %d", __func__, rc);
+		LOG_ERROR("%s: transceive() failed: %d", __func__, rc);
 		return rc;
 	}
 
@@ -168,7 +168,7 @@ static int cmd_rdsr(const struct device *dev, uint8_t op_code, uint8_t *sr)
 	dev_data->packet.data_buf  = sr;
 	rc = perform_xfer(dev, op_code);
 	if (rc < 0) {
-		LOG_ERR("%s 0x%02x failed: %d", __func__, op_code, rc);
+		LOG_ERROR("%s 0x%02x failed: %d", __func__, op_code, rc);
 		return rc;
 	}
 
@@ -183,7 +183,7 @@ static int wait_until_ready(const struct device *dev, k_timeout_t poll_period)
 	while (true) {
 		rc = cmd_rdsr(dev, SPI_NOR_CMD_RDSR, &status_reg);
 		if (rc < 0) {
-			LOG_ERR("%s - status xfer failed: %d", __func__, rc);
+			LOG_ERROR("%s - status xfer failed: %d", __func__, rc);
 			return rc;
 		}
 
@@ -205,7 +205,7 @@ static int cmd_wren(const struct device *dev)
 	set_up_xfer(dev, MSPI_TX, dev_config->control_xfer_mode);
 	rc = perform_xfer(dev, SPI_NOR_CMD_WREN);
 	if (rc < 0) {
-		LOG_ERR("%s failed: %d", __func__, rc);
+		LOG_ERROR("%s failed: %d", __func__, rc);
 		return rc;
 	}
 
@@ -229,7 +229,7 @@ static int cmd_wrsr(const struct device *dev, uint8_t op_code,
 	dev_data->packet.data_buf  = sr;
 	rc = perform_xfer(dev, op_code);
 	if (rc < 0) {
-		LOG_ERR("%s 0x%02x failed: %d", __func__, op_code, rc);
+		LOG_ERROR("%s 0x%02x failed: %d", __func__, op_code, rc);
 		return rc;
 	}
 
@@ -253,7 +253,7 @@ static int acquire(const struct device *dev)
 
 	rc = pm_device_runtime_get(dev_config->bus);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+		LOG_ERROR("pm_device_runtime_get() failed: %d", rc);
 	} else {
 		enum mspi_dev_cfg_mask mask;
 
@@ -269,7 +269,7 @@ static int acquire(const struct device *dev)
 		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
 				     mask, &dev_config->mspi_nor_cfg);
 		if (rc < 0) {
-			LOG_ERR("mspi_dev_config() failed: %d", rc);
+			LOG_ERROR("mspi_dev_config() failed: %d", rc);
 		} else {
 			if (dev_config->multiperipheral_bus) {
 				dev_data->last_applied_cfg = &dev_config->mspi_nor_cfg;
@@ -388,7 +388,7 @@ static int api_read(const struct device *dev, off_t addr, void *dest,
 	release(dev);
 
 	if (rc < 0) {
-		LOG_ERR("Read xfer failed: %d", rc);
+		LOG_ERROR("Read xfer failed: %d", rc);
 		return rc;
 	}
 
@@ -432,7 +432,7 @@ static int api_write(const struct device *dev, off_t addr, const void *src,
 		dev_data->packet.num_bytes = to_write;
 		rc = perform_xfer(dev, dev_data->cmd_info.pp_cmd);
 		if (rc < 0) {
-			LOG_ERR("Page program xfer failed: %d", rc);
+			LOG_ERROR("Page program xfer failed: %d", rc);
 			break;
 		}
 
@@ -518,15 +518,13 @@ static int api_erase(const struct device *dev, off_t addr, size_t size)
 				addr += BIT(best_et->exp);
 				size -= BIT(best_et->exp);
 			} else {
-				LOG_ERR("Can't erase %zu at 0x%lx",
-					size, (long)addr);
+				LOG_ERROR("Can't erase %zu at 0x%lx", size, (long)addr);
 				rc = -EINVAL;
 				break;
 			}
 		}
 		if (rc < 0) {
-			LOG_ERR("Erase command 0x%02x xfer failed: %d",
-				dev_data->packet.cmd, rc);
+			LOG_ERROR("Erase command 0x%02x xfer failed: %d", dev_data->packet.cmd, rc);
 			break;
 		}
 
@@ -582,7 +580,7 @@ static int sfdp_read(const struct device *dev, off_t addr, void *dest,
 	dev_data->packet.num_bytes = size;
 	rc = perform_xfer(dev, JESD216_CMD_READ_SFDP);
 	if (rc < 0) {
-		LOG_ERR("Read SFDP xfer failed: %d", rc);
+		LOG_ERROR("Read SFDP xfer failed: %d", rc);
 	}
 
 	return rc;
@@ -604,7 +602,7 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 	dev_data->packet.num_bytes = JESD216_READ_ID_LEN;
 	rc = perform_xfer(dev, SPI_NOR_CMD_RDID);
 	if (rc < 0) {
-		LOG_ERR("Read JEDEC ID failed: %d", rc);
+		LOG_ERROR("Read JEDEC ID failed: %d", rc);
 	}
 
 	return rc;
@@ -702,8 +700,8 @@ static int quad_enable_set(const struct device *dev, bool enable)
 		qe_bit = BIT(1);
 		break;
 	default:
-		LOG_ERR("Unknown Quad Enable Requirement: %u",
-			dev_data->switch_info.quad_enable_req);
+		LOG_ERROR("Unknown Quad Enable Requirement: %u",
+			  dev_data->switch_info.quad_enable_req);
 		return -ENOTSUP;
 	}
 
@@ -776,8 +774,8 @@ static int octal_enable_set(const struct device *dev, bool enable)
 	int rc;
 
 	if (dev_data->switch_info.octal_enable_req != OCTAL_ENABLE_REQ_S2B3) {
-		LOG_ERR("Unknown Octal Enable Requirement: %u",
-			dev_data->switch_info.octal_enable_req);
+		LOG_ERROR("Unknown Octal Enable Requirement: %u",
+			  dev_data->switch_info.octal_enable_req);
 		return -ENOTSUP;
 	}
 
@@ -795,7 +793,7 @@ static int octal_enable_set(const struct device *dev, bool enable)
 	dev_data->packet.data_buf  = &status_reg;
 	rc = perform_xfer(dev, op_code);
 	if (rc < 0) {
-		LOG_ERR("cmd_rdsr 0x%02x failed: %d", op_code, rc);
+		LOG_ERROR("cmd_rdsr 0x%02x failed: %d", op_code, rc);
 		return rc;
 	}
 
@@ -832,7 +830,7 @@ static int enter_4byte_addressing_mode(const struct device *dev)
 	set_up_xfer(dev, MSPI_TX, dev_config->control_xfer_mode);
 	rc = perform_xfer(dev, 0xB7);
 	if (rc < 0) {
-		LOG_ERR("Command 0xB7 failed: %d", rc);
+		LOG_ERROR("Command 0xB7 failed: %d", rc);
 		return rc;
 	}
 
@@ -851,7 +849,7 @@ static int switch_to_target_io_mode(const struct device *dev)
 
 		rc = quad_enable_set(dev, quad_needed);
 		if (rc < 0) {
-			LOG_ERR("Failed to modify Quad Enable bit: %d", rc);
+			LOG_ERROR("Failed to modify Quad Enable bit: %d", rc);
 			return rc;
 		}
 	}
@@ -862,7 +860,7 @@ static int switch_to_target_io_mode(const struct device *dev)
 
 		rc = octal_enable_set(dev, octal_needed);
 		if (rc < 0) {
-			LOG_ERR("Failed to modify Octal Enable bit: %d", rc);
+			LOG_ERROR("Failed to modify Octal Enable bit: %d", rc);
 			return rc;
 		}
 	}
@@ -870,7 +868,7 @@ static int switch_to_target_io_mode(const struct device *dev)
 	if (dev_data->switch_info.enter_4byte_addr != ENTER_4BYTE_ADDR_NONE) {
 		rc = enter_4byte_addressing_mode(dev);
 		if (rc < 0) {
-			LOG_ERR("Failed to enter 4-byte addressing mode: %d", rc);
+			LOG_ERROR("Failed to enter 4-byte addressing mode: %d", rc);
 			return rc;
 		}
 	}
@@ -900,14 +898,13 @@ static int power_supply(const struct device *dev)
 	int rc;
 
 	if (!gpio_is_ready_dt(&dev_config->supply)) {
-		LOG_ERR("Device %s is not ready",
-			dev_config->supply.port->name);
+		LOG_ERROR("Device %s is not ready", dev_config->supply.port->name);
 		return -ENODEV;
 	}
 
 	rc = gpio_pin_configure_dt(&dev_config->supply, GPIO_OUTPUT_ACTIVE);
 	if (rc < 0) {
-		LOG_ERR("Failed to activate power supply GPIO: %d", rc);
+		LOG_ERROR("Failed to activate power supply GPIO: %d", rc);
 		return -EIO;
 	}
 
@@ -922,14 +919,13 @@ static int gpio_reset(const struct device *dev)
 	int rc;
 
 	if (!gpio_is_ready_dt(&dev_config->reset)) {
-		LOG_ERR("Device %s is not ready",
-			dev_config->reset.port->name);
+		LOG_ERROR("Device %s is not ready", dev_config->reset.port->name);
 		return -ENODEV;
 	}
 
 	rc = gpio_pin_configure_dt(&dev_config->reset, GPIO_OUTPUT_ACTIVE);
 	if (rc < 0) {
-		LOG_ERR("Failed to activate RESET: %d", rc);
+		LOG_ERROR("Failed to activate RESET: %d", rc);
 		return -EIO;
 	}
 
@@ -939,7 +935,7 @@ static int gpio_reset(const struct device *dev)
 
 	rc = gpio_pin_set_dt(&dev_config->reset, 0);
 	if (rc < 0) {
-		LOG_ERR("Failed to deactivate RESET: %d", rc);
+		LOG_ERROR("Failed to deactivate RESET: %d", rc);
 		return -EIO;
 	}
 
@@ -956,14 +952,14 @@ static int soft_reset_66_99(const struct device *dev)
 	set_up_xfer(dev, MSPI_TX, dev_config->control_xfer_mode);
 	rc = perform_xfer(dev, SPI_NOR_CMD_RESET_EN);
 	if (rc < 0) {
-		LOG_ERR("CMD_RESET_EN failed: %d", rc);
+		LOG_ERROR("CMD_RESET_EN failed: %d", rc);
 		return rc;
 	}
 
 	set_up_xfer(dev, MSPI_TX, dev_config->control_xfer_mode);
 	rc = perform_xfer(dev, SPI_NOR_CMD_RESET_MEM);
 	if (rc < 0) {
-		LOG_ERR("CMD_RESET_MEM failed: %d", rc);
+		LOG_ERROR("CMD_RESET_MEM failed: %d", rc);
 		return rc;
 	}
 
@@ -984,7 +980,7 @@ static int soft_reset(const struct device *dev)
 				     MSPI_DEVICE_CONFIG_IO_MODE,
 				     &dev_config->mspi_nor_cfg);
 		if (rc < 0) {
-			LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
+			LOG_ERROR("%s: dev_config() failed: %d", __func__, rc);
 			return rc;
 		}
 		dev_data->last_applied_cfg = &dev_config->mspi_nor_cfg;
@@ -998,7 +994,7 @@ static int soft_reset(const struct device *dev)
 				     MSPI_DEVICE_CONFIG_IO_MODE,
 				     &dev_config->mspi_control_cfg);
 		if (rc < 0) {
-			LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
+			LOG_ERROR("%s: dev_config() failed: %d", __func__, rc);
 			return rc;
 		}
 		dev_data->last_applied_cfg = &dev_config->mspi_control_cfg;
@@ -1031,7 +1027,7 @@ static int flash_chip_init(const struct device *dev)
 			     MSPI_DEVICE_CONFIG_ALL,
 			     &mspi_nor_init_cfg);
 	if (rc < 0) {
-		LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
+		LOG_ERROR("%s: dev_config() failed: %d", __func__, rc);
 		return rc;
 	}
 
@@ -1138,24 +1134,22 @@ static int flash_chip_init(const struct device *dev)
 	if (dev_config->jedec_id_specified) {
 		rc = read_jedec_id(dev, id);
 		if (rc < 0) {
-			LOG_ERR("Failed to read JEDEC ID: %d", rc);
+			LOG_ERROR("Failed to read JEDEC ID: %d", rc);
 			return rc;
 		}
 
 		if (memcmp(id, dev_config->jedec_id, sizeof(id)) != 0) {
-			LOG_ERR("JEDEC ID mismatch, read: %02x %02x %02x, "
-				"expected: %02x %02x %02x",
-				id[0], id[1], id[2],
-				dev_config->jedec_id[0],
-				dev_config->jedec_id[1],
-				dev_config->jedec_id[2]);
+			LOG_ERROR("JEDEC ID mismatch, read: %02x %02x %02x, "
+				  "expected: %02x %02x %02x",
+				  id[0], id[1], id[2], dev_config->jedec_id[0],
+				  dev_config->jedec_id[1], dev_config->jedec_id[2]);
 			return -ENODEV;
 		}
 	}
 
 	rc = switch_to_target_io_mode(dev);
 	if (rc < 0) {
-		LOG_ERR("Failed to switch to target io mode: %d", rc);
+		LOG_ERROR("Failed to switch to target io mode: %d", rc);
 		return rc;
 	}
 	dev_data->chip_initialized = true;
@@ -1167,13 +1161,13 @@ static int flash_chip_init(const struct device *dev)
 		 */
 		rc = sfdp_read(dev, 0, &sfdp_signature, sizeof(sfdp_signature));
 		if (rc < 0) {
-			LOG_ERR("Failed to read SFDP signature: %d", rc);
+			LOG_ERROR("Failed to read SFDP signature: %d", rc);
 			return rc;
 		}
 
 		if (sfdp_signature != JESD216_SFDP_MAGIC) {
-			LOG_ERR("SFDP signature mismatch: %08x, expected: %08x",
-				sfdp_signature, JESD216_SFDP_MAGIC);
+			LOG_ERROR("SFDP signature mismatch: %08x, expected: %08x", sfdp_signature,
+				  JESD216_SFDP_MAGIC);
 			return -ENODEV;
 		}
 	}
@@ -1202,15 +1196,14 @@ static int flash_chip_init(const struct device *dev)
 		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
 				     XIP_DEV_CFG_MASK, &mspi_cfg);
 		if (rc < 0) {
-			LOG_ERR("Failed to configure controller for XIP: %d",
-				rc);
+			LOG_ERROR("Failed to configure controller for XIP: %d", rc);
 			return rc;
 		}
 
 		rc = mspi_xip_config(dev_config->bus, &dev_config->mspi_id,
 				     &dev_config->xip_cfg);
 		if (rc < 0) {
-			LOG_ERR("Failed to enable XIP: %d", rc);
+			LOG_ERROR("Failed to enable XIP: %d", rc);
 			return rc;
 		}
 	}
@@ -1226,7 +1219,7 @@ static int drv_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(dev_config->bus)) {
-		LOG_ERR("Device %s is not ready", dev_config->bus->name);
+		LOG_ERROR("Device %s is not ready", dev_config->bus->name);
 		return -ENODEV;
 	}
 
@@ -1237,7 +1230,7 @@ static int drv_init(const struct device *dev)
 
 	rc = pm_device_runtime_get(dev_config->bus);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+		LOG_ERROR("pm_device_runtime_get() failed: %d", rc);
 		return rc;
 	}
 
@@ -1255,16 +1248,16 @@ static int drv_init(const struct device *dev)
 	}
 
 	if (dev_data->cmd_info.read_cmd == 0) {
-		LOG_ERR("Read command not defined for %s, "
-			"use \"read-command\" property to specify it.",
-			dev->name);
+		LOG_ERROR("Read command not defined for %s, "
+			  "use \"read-command\" property to specify it.",
+			  dev->name);
 		return -EINVAL;
 	}
 
 	if (dev_data->cmd_info.pp_cmd == 0) {
-		LOG_ERR("Page Program command not defined for %s, "
-			"use \"write-command\" property to specify it.",
-			dev->name);
+		LOG_ERROR("Page Program command not defined for %s, "
+			  "use \"write-command\" property to specify it.",
+			  dev->name);
 		return -EINVAL;
 	}
 

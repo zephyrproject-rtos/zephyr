@@ -107,13 +107,13 @@ static int gd32_wwdgt_setup(const struct device *dev, uint8_t options)
 #if CONFIG_GD32_DBG_SUPPORT
 		dbg_periph_enable(DBG_WWDGT_HOLD);
 #else
-		LOG_ERR("Debug support not enabled");
+		LOG_ERROR("Debug support not enabled");
 		return -ENOTSUP;
 #endif
 	}
 
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		LOG_ERR("WDT_OPT_PAUSE_IN_SLEEP not supported");
+		LOG_ERROR("WDT_OPT_PAUSE_IN_SLEEP not supported");
 		return -ENOTSUP;
 	}
 
@@ -141,13 +141,13 @@ static int gd32_wwdgt_install_timeout(const struct device *dev,
 	struct gd32_wwdgt_data *data = dev->data;
 
 	if (config->window.max == 0U) {
-		LOG_ERR("window.max must be non-zero");
+		LOG_ERROR("window.max must be non-zero");
 		return -EINVAL;
 	}
 
 	if (gd32_wwdgt_calc_window(dev, &config->window, &counter, &window,
 				   &prescaler) != 0) {
-		LOG_ERR("window.max in out of range");
+		LOG_ERROR("window.max in out of range");
 		return -EINVAL;
 	}
 

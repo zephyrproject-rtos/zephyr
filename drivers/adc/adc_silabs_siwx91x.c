@@ -299,7 +299,7 @@ int16_t adc_siwx91x_read_data(const struct device *dev)
 	/* Convert the extracted integer fraction to a decimal  */
 	frac /= 1000;
 	if (frac > 1) {
-		LOG_ERR("Invalid gain value");
+		LOG_ERROR("Invalid gain value");
 	}
 
 	/* Extract the integer part from the upper bits and add the fraction */

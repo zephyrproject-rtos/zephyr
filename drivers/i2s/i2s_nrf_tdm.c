@@ -295,14 +295,14 @@ static bool get_next_rx_buffer(struct tdm_drv_data *drv_data, tdm_buffers_t *buf
 	int ret = k_mem_slab_alloc(drv_data->rx.cfg.mem_slab, &buffers->p_rx_mem_slab, K_NO_WAIT);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to allocate next RX buffer: %d", ret);
+		LOG_ERROR("Failed to allocate next RX buffer: %d", ret);
 		return false;
 	}
 	ret = dmm_buffer_in_prepare(drv_cfg->mem_reg, buffers->p_rx_mem_slab,
 				    buffers->buffer_size * sizeof(uint32_t),
 				    (void **)&buffers->p_rx_buffer);
 	if (ret < 0) {
-		LOG_ERR("Failed to prepare buffer: %d", ret);
+		LOG_ERROR("Failed to prepare buffer: %d", ret);
 		return false;
 	}
 
@@ -461,7 +461,7 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 	uint8_t max_num_of_channels = NRFX_TDM_NUM_OF_CHANNELS;
 
 	if (drv_data->state != I2S_STATE_READY) {
-		LOG_ERR("Cannot configure in state: %d", drv_data->state);
+		LOG_ERROR("Cannot configure in state: %d", drv_data->state);
 		return -EINVAL;
 	}
 
@@ -481,9 +481,9 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 	__ASSERT_NO_MSG(tdm_cfg->mem_slab != NULL && tdm_cfg->block_size != 0);
 
 	if ((tdm_cfg->block_size % sizeof(uint32_t)) != 0 ||
-		tdm_cfg->block_size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
-		LOG_ERR("This device can only transmit full 32-bit words greater than %u bytes.",
-			NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
+	    tdm_cfg->block_size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
+		LOG_ERROR("This device can only transmit full 32-bit words greater than %u bytes.",
+			  NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
 		return -EINVAL;
 	}
 
@@ -501,7 +501,7 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 		nrfx_cfg.sample_width = NRF_TDM_SWIDTH_32BIT;
 		break;
 	default:
-		LOG_ERR("Unsupported word size: %u", tdm_cfg->word_size);
+		LOG_ERROR("Unsupported word size: %u", tdm_cfg->word_size);
 		return -EINVAL;
 	}
 
@@ -545,13 +545,13 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 		nrfx_cfg.channel_delay = NRF_TDM_CHANNEL_DELAY_NONE;
 		break;
 	default:
-		LOG_ERR("Unsupported data format: 0x%02x", tdm_cfg->format);
+		LOG_ERROR("Unsupported data format: 0x%02x", tdm_cfg->format);
 		return -EINVAL;
 	}
 
 	if ((tdm_cfg->format & I2S_FMT_DATA_ORDER_LSB) || (tdm_cfg->format & I2S_FMT_BIT_CLK_INV) ||
 	    (tdm_cfg->format & I2S_FMT_FRAME_CLK_INV)) {
-		LOG_ERR("Unsupported stream format: 0x%02x", tdm_cfg->format);
+		LOG_ERROR("Unsupported stream format: 0x%02x", tdm_cfg->format);
 		return -EINVAL;
 	}
 
@@ -561,7 +561,7 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 		 */
 		extra_channels = 1;
 	} else if (tdm_cfg->channels > max_num_of_channels) {
-		LOG_ERR("Unsupported number of channels: %u", tdm_cfg->channels);
+		LOG_ERROR("Unsupported number of channels: %u", tdm_cfg->channels);
 		return -EINVAL;
 	}
 
@@ -575,7 +575,7 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 		   !(tdm_cfg->options & I2S_OPT_FRAME_CLK_TARGET)) {
 		nrfx_cfg.mode = NRF_TDM_MODE_MASTER;
 	} else {
-		LOG_ERR("Unsupported operation mode: 0x%02x", tdm_cfg->options);
+		LOG_ERROR("Unsupported operation mode: 0x%02x", tdm_cfg->options);
 		return -EINVAL;
 	}
 
@@ -601,7 +601,7 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 	drv_data->request_clock = (drv_cfg->sck_src != PCLK) || (drv_cfg->mck_src != PCLK);
 
 	if ((tdm_cfg->options & I2S_OPT_LOOPBACK) || (tdm_cfg->options & I2S_OPT_PINGPONG)) {
-		LOG_ERR("Unsupported options: 0x%02x", tdm_cfg->options);
+		LOG_ERROR("Unsupported options: 0x%02x", tdm_cfg->options);
 		return -EINVAL;
 	}
 	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
@@ -642,7 +642,7 @@ static int tdm_nrf_read(const struct device *dev, void **mem_block, size_t *size
 	int ret;
 
 	if (!drv_data->rx_configured) {
-		LOG_ERR("Device is not configured");
+		LOG_ERROR("Device is not configured");
 		return -EIO;
 	}
 	ret = k_msgq_get(&drv_data->rx_queue, &buf,
@@ -671,24 +671,24 @@ static int tdm_nrf_write(const struct device *dev, void *mem_block, size_t size)
 	int ret;
 
 	if (!drv_data->tx_configured) {
-		LOG_ERR("Device is not configured");
+		LOG_ERROR("Device is not configured");
 		return -EIO;
 	}
 
 	if (drv_data->state != I2S_STATE_RUNNING && drv_data->state != I2S_STATE_READY) {
-		LOG_ERR("Cannot write in state: %d", drv_data->state);
+		LOG_ERROR("Cannot write in state: %d", drv_data->state);
 		return -EIO;
 	}
 
 	if (size > drv_data->tx.cfg.block_size) {
-		LOG_ERR("This device can only write blocks up to %u bytes",
-			drv_data->tx.cfg.block_size);
+		LOG_ERROR("This device can only write blocks up to %u bytes",
+			  drv_data->tx.cfg.block_size);
 		return -EIO;
 	}
 
 	if ((size % sizeof(uint32_t)) != 0 || size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
-		LOG_ERR("This device can only write full 32-bit words greater than %u bytes.",
-			NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
+		LOG_ERROR("This device can only write full 32-bit words greater than %u bytes.",
+			  NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
 		return -EIO;
 	}
 
@@ -712,7 +712,7 @@ static int tdm_nrf_write(const struct device *dev, void *mem_block, size_t size)
 			 * Do not return error because the caller is no longer
 			 * responsible for releasing the buffer.
 			 */
-			LOG_ERR("Cannot reacquire queued buffer");
+			LOG_ERROR("Cannot reacquire queued buffer");
 			return 0;
 		}
 
@@ -721,7 +721,7 @@ static int tdm_nrf_write(const struct device *dev, void *mem_block, size_t size)
 		LOG_DBG("Next TX %p", next.p_tx_buffer);
 
 		if (!supply_next_buffers(drv_data, &next)) {
-			LOG_ERR("Cannot supply buffer");
+			LOG_ERROR("Cannot supply buffer");
 			return -EIO;
 		}
 	}
@@ -735,7 +735,7 @@ static int start_transfer(struct tdm_drv_data *drv_data)
 
 	if (drv_data->active_dir != I2S_DIR_RX && /* -> TX to be started */
 	    !get_next_tx_buffer(drv_data, &initial_buffers)) {
-		LOG_ERR("No TX buffer available");
+		LOG_ERROR("No TX buffer available");
 		ret = -ENOMEM;
 	} else if (drv_data->active_dir != I2S_DIR_TX && /* -> RX to be started */
 		   !get_next_rx_buffer(drv_data, &initial_buffers)) {
@@ -855,7 +855,7 @@ static int trigger_start(const struct device *dev)
 			tdm_uninit(drv_data);
 			drv_data->state = I2S_STATE_READY;
 
-			LOG_ERR("Failed to request clock: %d", ret);
+			LOG_ERROR("Failed to request clock: %d", ret);
 			return -EIO;
 		}
 	} else {
@@ -889,14 +889,14 @@ static int tdm_nrf_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 	}
 
 	if (!configured) {
-		LOG_ERR("Device is not configured");
+		LOG_ERROR("Device is not configured");
 		return -EIO;
 	}
 
 	if (dir == I2S_DIR_BOTH) {
 		if (!channels_configuration_check(drv_data->tx.nrfx_cfg.channels,
 						  drv_data->rx.nrfx_cfg.channels)) {
-			LOG_ERR("TX and RX channels configurations are different");
+			LOG_ERROR("TX and RX channels configurations are different");
 			return -EIO;
 		}
 		/* The TX and RX channel masks are to be stored in a single TDM register.
@@ -910,7 +910,7 @@ static int tdm_nrf_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		if (memcmp(&drv_data->tx.nrfx_cfg, &drv_data->rx.nrfx_cfg,
 			   sizeof(drv_data->rx.nrfx_cfg)) != 0 ||
 		    (drv_data->tx.cfg.block_size != drv_data->rx.cfg.block_size)) {
-			LOG_ERR("TX and RX configurations are different");
+			LOG_ERROR("TX and RX configurations are different");
 			return -EIO;
 		}
 	}
@@ -930,12 +930,12 @@ static int tdm_nrf_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		cmd_allowed = (drv_data->state == I2S_STATE_ERROR);
 		break;
 	default:
-		LOG_ERR("Invalid trigger: %d", cmd);
+		LOG_ERROR("Invalid trigger: %d", cmd);
 		return -EINVAL;
 	}
 
 	if (!cmd_allowed) {
-		LOG_ERR("Not allowed");
+		LOG_ERROR("Not allowed");
 		return -EIO;
 	}
 
@@ -945,8 +945,8 @@ static int tdm_nrf_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 	 * without stopping RX).
 	 */
 	if (drv_data->state == I2S_STATE_RUNNING && drv_data->active_dir != dir) {
-		LOG_ERR("Inappropriate trigger (%d/%d), active stream(s): %d", cmd, dir,
-			drv_data->active_dir);
+		LOG_ERROR("Inappropriate trigger (%d/%d), active stream(s): %d", cmd, dir,
+			  drv_data->active_dir);
 		return -EINVAL;
 	}
 
@@ -984,7 +984,7 @@ static int tdm_nrf_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		return 0;
 
 	default:
-		LOG_ERR("Invalid trigger: %d", cmd);
+		LOG_ERROR("Invalid trigger: %d", cmd);
 		return -EINVAL;
 	}
 }
@@ -1053,7 +1053,7 @@ static void data_handler(const struct device *dev, const tdm_buffers_t *released
 			int ret = k_msgq_put(&drv_data->rx_queue, &buf, K_NO_WAIT);
 
 			if (ret < 0) {
-				LOG_ERR("No room in RX queue");
+				LOG_ERROR("No room in RX queue");
 				drv_data->state = I2S_STATE_ERROR;
 				stop_transfer = true;
 

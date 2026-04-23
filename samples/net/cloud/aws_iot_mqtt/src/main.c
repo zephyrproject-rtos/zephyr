@@ -79,21 +79,21 @@ static int setup_credentials(void)
 	ret = tls_credential_add(TLS_TAG_DEVICE_CERTIFICATE, TLS_CREDENTIAL_SERVER_CERTIFICATE,
 				 public_cert, public_cert_len);
 	if (ret < 0) {
-		LOG_ERR("Failed to add device certificate: %d", ret);
+		LOG_ERROR("Failed to add device certificate: %d", ret);
 		goto exit;
 	}
 
 	ret = tls_credential_add(TLS_TAG_DEVICE_PRIVATE_KEY, TLS_CREDENTIAL_PRIVATE_KEY,
 				 private_key, private_key_len);
 	if (ret < 0) {
-		LOG_ERR("Failed to add device private key: %d", ret);
+		LOG_ERROR("Failed to add device private key: %d", ret);
 		goto exit;
 	}
 
 	ret = tls_credential_add(TLS_TAG_AWS_CA_CERTIFICATE, TLS_CREDENTIAL_CA_CERTIFICATE, ca_cert,
 				 ca_cert_len);
 	if (ret < 0) {
-		LOG_ERR("Failed to add ca certificate: %d", ret);
+		LOG_ERROR("Failed to add ca certificate: %d", ret);
 		goto exit;
 	}
 
@@ -119,7 +119,7 @@ static int subscribe_topic(void)
 
 	ret = mqtt_subscribe(&client_ctx, &sub_list);
 	if (ret != 0) {
-		LOG_ERR("Failed to subscribe to topics: %d", ret);
+		LOG_ERROR("Failed to subscribe to topics: %d", ret);
 	}
 
 	return ret;
@@ -144,7 +144,7 @@ static int publish_message(const char *topic, size_t topic_len, uint8_t *payload
 
 	ret = mqtt_publish(&client_ctx, &msg);
 	if (ret != 0) {
-		LOG_ERR("Failed to publish message: %d", ret);
+		LOG_ERROR("Failed to publish message: %d", ret);
 	}
 
 	LOG_INF("PUBLISHED on topic \"%s\" [ id: %u qos: %u ], payload: %u B", topic,
@@ -340,7 +340,7 @@ static int aws_client_try_connect(void)
 
 		backoff_get_next(&bo, &backoff_ms);
 
-		LOG_ERR("Failed to connect: %d backoff delay: %u ms", ret, backoff_ms);
+		LOG_ERROR("Failed to connect: %d backoff delay: %u ms", ret, backoff_ms);
 		k_msleep(backoff_ms);
 	}
 
@@ -389,23 +389,23 @@ void aws_client_loop(void)
 			if (fds.revents & POLLIN) {
 				rc = mqtt_input(&client_ctx);
 				if (rc != 0) {
-					LOG_ERR("Failed to read MQTT input: %d", rc);
+					LOG_ERROR("Failed to read MQTT input: %d", rc);
 					break;
 				}
 			}
 
 			if (fds.revents & (POLLHUP | POLLERR)) {
-				LOG_ERR("Socket closed/error");
+				LOG_ERROR("Socket closed/error");
 				break;
 			}
 
 			rc = mqtt_live(&client_ctx);
 			if ((rc != 0) && (rc != -EAGAIN)) {
-				LOG_ERR("Failed to live MQTT: %d", rc);
+				LOG_ERROR("Failed to live MQTT: %d", rc);
 				break;
 			}
 		} else {
-			LOG_ERR("poll failed: %d", rc);
+			LOG_ERROR("poll failed: %d", rc);
 			break;
 		}
 
@@ -449,7 +449,7 @@ static int resolve_broker_addr(struct sockaddr_in *broker)
 		inet_ntop(AF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
 		LOG_INF("Resolved: %s:%u", addr_str, htons(broker->sin_port));
 	} else {
-		LOG_ERR("failed to resolve hostname err = %d (errno = %d)", ret, errno);
+		LOG_ERROR("failed to resolve hostname err = %d (errno = %d)", ret, errno);
 	}
 
 	freeaddrinfo(ai);

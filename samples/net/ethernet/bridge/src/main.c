@@ -65,7 +65,7 @@ static void bridge_add_iface_cb(struct net_if *iface, void *user_data)
 
 	ret = eth_bridge_iface_add(u->bridge, iface);
 	if (ret < 0) {
-		LOG_ERR("eth_bridge_iface_add failed: %d", ret);
+		LOG_ERROR("eth_bridge_iface_add failed: %d", ret);
 	}
 }
 

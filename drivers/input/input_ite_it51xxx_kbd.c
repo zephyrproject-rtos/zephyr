@@ -167,7 +167,7 @@ static int it51xxx_kbd_init(const struct device *dev)
 	/* Enable keyboard scan alternate function */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to enable keyboard scan alternate function");
+		LOG_ERROR("Failed to enable keyboard scan alternate function");
 		return status;
 	}
 
@@ -190,7 +190,7 @@ static int it51xxx_kbd_init(const struct device *dev)
 		 * interrupt fire, so gather the KSI[7:0] pin mask value here.
 		 */
 		if (config->wuc_map_list[i].wucs != config->wuc_map_list[0].wucs) {
-			LOG_ERR("KSI%d pin isn't in the same wuc node!", i);
+			LOG_ERROR("KSI%d pin isn't in the same wuc node!", i);
 		}
 		data->ksi_pin_mask |= config->wuc_map_list[i].mask;
 	}

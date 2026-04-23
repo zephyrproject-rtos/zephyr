@@ -33,7 +33,7 @@ static int loopback_disk_access_read(struct disk_info *disk, uint8_t *data_buf,
 	int ret = fs_seek(&ctx->file, start_sector * LOOPBACK_SECTOR_SIZE, FS_SEEK_SET);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to seek backing file: %d", ret);
+		LOG_ERROR("Failed to seek backing file: %d", ret);
 		return ret;
 	}
 
@@ -43,7 +43,7 @@ static int loopback_disk_access_read(struct disk_info *disk, uint8_t *data_buf,
 	while (len_left > 0) {
 		ret = fs_read(&ctx->file, data_buf, len_left);
 		if (ret < 0) {
-			LOG_ERR("Failed to read from backing file: %d", ret);
+			LOG_ERROR("Failed to read from backing file: %d", ret);
 			return ret;
 		}
 		if (ret == 0) {
@@ -71,7 +71,7 @@ static int loopback_disk_access_write(struct disk_info *disk, const uint8_t *dat
 	int ret = fs_seek(&ctx->file, start_sector * LOOPBACK_SECTOR_SIZE, FS_SEEK_SET);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to seek backing file: %d", ret);
+		LOG_ERROR("Failed to seek backing file: %d", ret);
 		return ret;
 	}
 
@@ -81,11 +81,11 @@ static int loopback_disk_access_write(struct disk_info *disk, const uint8_t *dat
 	while (buf_offset < total_len) {
 		ret = fs_write(&ctx->file, &data_buf[buf_offset], total_len - buf_offset);
 		if (ret < 0) {
-			LOG_ERR("Failed to write to backing file: %d", ret);
+			LOG_ERROR("Failed to write to backing file: %d", ret);
 			return ret;
 		}
 		if (ret == 0) {
-			LOG_ERR("0-byte write to backing file");
+			LOG_ERROR("0-byte write to backing file");
 			return -EIO;
 		}
 		buf_offset += ret;
@@ -107,14 +107,14 @@ static int loopback_disk_access_erase(struct disk_info *disk, uint32_t start_sec
 	int ret = fs_seek(&ctx->file, start_sector * LOOPBACK_SECTOR_SIZE, FS_SEEK_SET);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to seek backing file: %d", ret);
+		LOG_ERROR("Failed to seek backing file: %d", ret);
 		return ret;
 	}
 
 	for (int i = 0; i < num_sector; i++) {
 		ret = fs_write(&ctx->file, erase_bytes, LOOPBACK_SECTOR_SIZE);
 		if (ret < 0) {
-			LOG_ERR("Failed to erase backing file: %d", ret);
+			LOG_ERROR("Failed to erase backing file: %d", ret);
 			return ret;
 		}
 	}
@@ -169,7 +169,7 @@ int loopback_disk_access_register(struct loopback_disk_access *ctx, const char *
 	int ret = fs_stat(ctx->file_path, &entry);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to stat backing file: %d", ret);
+		LOG_ERROR("Failed to stat backing file: %d", ret);
 		return ret;
 	}
 	if (entry.size % LOOPBACK_SECTOR_SIZE != 0) {
@@ -182,13 +182,13 @@ int loopback_disk_access_register(struct loopback_disk_access *ctx, const char *
 	fs_file_t_init(&ctx->file);
 	ret = fs_open(&ctx->file, ctx->file_path, FS_O_READ | FS_O_WRITE);
 	if (ret != 0) {
-		LOG_ERR("Failed to open backing file: %d", ret);
+		LOG_ERROR("Failed to open backing file: %d", ret);
 		return ret;
 	}
 
 	ret = disk_access_register(&ctx->info);
 	if (ret != 0) {
-		LOG_ERR("Failed to register disk access: %d", ret);
+		LOG_ERROR("Failed to register disk access: %d", ret);
 		return ret;
 	}
 
@@ -201,7 +201,7 @@ int loopback_disk_access_unregister(struct loopback_disk_access *ctx)
 
 	ret = disk_access_unregister(&ctx->info);
 	if (ret != 0) {
-		LOG_ERR("Failed to unregister disk access: %d", ret);
+		LOG_ERROR("Failed to unregister disk access: %d", ret);
 		return ret;
 	}
 	ctx->info.name = NULL;
@@ -209,7 +209,7 @@ int loopback_disk_access_unregister(struct loopback_disk_access *ctx)
 
 	ret = fs_close(&ctx->file);
 	if (ret != 0) {
-		LOG_ERR("Failed to close backing file: %d", ret);
+		LOG_ERROR("Failed to close backing file: %d", ret);
 		return ret;
 	}
 

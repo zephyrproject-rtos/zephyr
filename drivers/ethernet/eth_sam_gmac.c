@@ -435,7 +435,7 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 						     K_NO_WAIT);
 		if (rx_buf == NULL) {
 			free_rx_bufs(rx_frag_list, rx_desc_list->len);
-			LOG_ERR("Failed to reserve data net buffers");
+			LOG_ERROR("Failed to reserve data net buffers");
 			return -ENOBUFS;
 		}
 
@@ -800,7 +800,7 @@ static int get_mck_clock_divisor(uint32_t mck)
 	} else if (mck <= 240000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_96;
 	} else {
-		LOG_ERR("No valid MDC clock");
+		LOG_ERROR("No valid MDC clock");
 		mck_divisor = -ENOTSUP;
 	}
 
@@ -1039,7 +1039,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct eth_sam_d
 #endif
 	default:
 		/* Build assert in this file should catch this case */
-		LOG_ERR("The phy connection type is invalid");
+		LOG_ERROR("The phy connection type is invalid");
 
 		return -EINVAL;
 	}
@@ -1758,13 +1758,13 @@ static void eth_iface_init(struct net_if *iface)
 		| GMAC_NCFGR_RXCOEN; /* Receive Checksum Offload Enable */
 	result = gmac_init(cfg->regs, gmac_ncfgr_val, cfg);
 	if (result < 0) {
-		LOG_ERR("%s Unable to initialize ETH driver", dev->name);
+		LOG_ERROR("%s Unable to initialize ETH driver", dev->name);
 		return;
 	}
 
 	result = net_eth_mac_load(&cfg->mcfg, dev_data->mac_addr);
 	if (result < 0) {
-		LOG_ERR("Failed to load MAC (%d)", result);
+		LOG_ERROR("Failed to load MAC (%d)", result);
 		return;
 	}
 
@@ -1785,7 +1785,7 @@ static void eth_iface_init(struct net_if *iface)
 	for (i = GMAC_QUE_0; i < cfg->num_queues; i++) {
 		result = queue_init(cfg->regs, &dev_data->queue_list[i]);
 		if (result < 0) {
-			LOG_ERR("%s Unable to initialize ETH queue%d", dev->name, i);
+			LOG_ERROR("%s Unable to initialize ETH queue%d", dev->name, i);
 			return;
 		}
 	}
@@ -1837,7 +1837,7 @@ static void eth_iface_init(struct net_if *iface)
 				      (void *)dev);
 
 	} else {
-		LOG_ERR("%s PHY device not ready", dev->name);
+		LOG_ERROR("%s PHY device not ready", dev->name);
 	}
 }
 

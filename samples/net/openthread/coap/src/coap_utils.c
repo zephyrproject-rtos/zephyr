@@ -39,7 +39,7 @@ static int coap_req_send(const char *addr, const char *uri, uint8_t *buf, int le
 
 	ot = openthread_get_default_instance();
 	if (!ot) {
-		LOG_ERR("Failed to get an OpenThread instance");
+		LOG_ERROR("Failed to get an OpenThread instance");
 		return -ENODEV;
 	}
 
@@ -49,7 +49,7 @@ static int coap_req_send(const char *addr, const char *uri, uint8_t *buf, int le
 
 	msg = otCoapNewMessage(ot, NULL);
 	if (!msg) {
-		LOG_ERR("Failed to allocate a new CoAP message");
+		LOG_ERROR("Failed to allocate a new CoAP message");
 		return -ENOMEM;
 	}
 
@@ -57,28 +57,29 @@ static int coap_req_send(const char *addr, const char *uri, uint8_t *buf, int le
 
 	err = otCoapMessageAppendUriPathOptions(msg, uri);
 	if (err != OT_ERROR_NONE) {
-		LOG_ERR("Failed to append uri-path: %s", otThreadErrorToString(err));
+		LOG_ERROR("Failed to append uri-path: %s", otThreadErrorToString(err));
 		ret = -EBADMSG;
 		goto err;
 	}
 
 	err = otCoapMessageSetPayloadMarker(msg);
 	if (err != OT_ERROR_NONE) {
-		LOG_ERR("Failed to set payload marker: %s", otThreadErrorToString(err));
+		LOG_ERROR("Failed to set payload marker: %s", otThreadErrorToString(err));
 		ret = -EBADMSG;
 		goto err;
 	}
 
 	err = otMessageAppend(msg, buf, len);
 	if (err != OT_ERROR_NONE) {
-		LOG_ERR("Failed to set append payload to response: %s", otThreadErrorToString(err));
+		LOG_ERROR("Failed to set append payload to response: %s",
+			  otThreadErrorToString(err));
 		ret = -EBADMSG;
 		goto err;
 	}
 
 	err = otCoapSendRequest(ot, msg, &msg_info, handler, ctx);
 	if (err != OT_ERROR_NONE) {
-		LOG_ERR("Failed to send the request: %s", otThreadErrorToString(err));
+		LOG_ERROR("Failed to send the request: %s", otThreadErrorToString(err));
 		ret = -EIO; /* Find a better error code */
 		goto err;
 	}
@@ -113,13 +114,13 @@ int coap_resp_send(otMessage *req, const otMessageInfo *req_info, uint8_t *buf, 
 
 	ot = openthread_get_default_instance();
 	if (!ot) {
-		LOG_ERR("Failed to get an OpenThread instance");
+		LOG_ERROR("Failed to get an OpenThread instance");
 		return -ENODEV;
 	}
 
 	resp = otCoapNewMessage(ot, NULL);
 	if (!resp) {
-		LOG_ERR("Failed to allocate a new CoAP message");
+		LOG_ERROR("Failed to allocate a new CoAP message");
 		return -ENOMEM;
 	}
 
@@ -131,7 +132,7 @@ int coap_resp_send(otMessage *req, const otMessageInfo *req_info, uint8_t *buf, 
 		resp_type = OT_COAP_TYPE_NON_CONFIRMABLE;
 		break;
 	default:
-		LOG_ERR("Invalid message type");
+		LOG_ERROR("Invalid message type");
 		ret = -EINVAL;
 		goto err;
 	}
@@ -144,35 +145,36 @@ int coap_resp_send(otMessage *req, const otMessageInfo *req_info, uint8_t *buf, 
 		resp_code = OT_COAP_CODE_CHANGED;
 		break;
 	default:
-		LOG_ERR("Invalid message code");
+		LOG_ERROR("Invalid message code");
 		ret = -EINVAL;
 		goto err;
 	}
 
 	err = otCoapMessageInitResponse(resp, req, resp_type, resp_code);
 	if (err != OT_ERROR_NONE) {
-		LOG_ERR("Failed to initialize the response: %s", otThreadErrorToString(err));
+		LOG_ERROR("Failed to initialize the response: %s", otThreadErrorToString(err));
 		ret = -EBADMSG;
 		goto err;
 	}
 
 	err = otCoapMessageSetPayloadMarker(resp);
 	if (err != OT_ERROR_NONE) {
-		LOG_ERR("Failed to set payload marker: %s", otThreadErrorToString(err));
+		LOG_ERROR("Failed to set payload marker: %s", otThreadErrorToString(err));
 		ret = -EBADMSG;
 		goto err;
 	}
 
 	err = otMessageAppend(resp, buf, len);
 	if (err != OT_ERROR_NONE) {
-		LOG_ERR("Failed to set append payload to response: %s", otThreadErrorToString(err));
+		LOG_ERROR("Failed to set append payload to response: %s",
+			  otThreadErrorToString(err));
 		ret = -EBADMSG;
 		goto err;
 	}
 
 	err = otCoapSendResponse(ot, resp, req_info);
 	if (err != OT_ERROR_NONE) {
-		LOG_ERR("Failed to send the response: %s", otThreadErrorToString(err));
+		LOG_ERROR("Failed to send the response: %s", otThreadErrorToString(err));
 		ret = -EIO;
 		goto err;
 	}
@@ -267,7 +269,7 @@ int coap_init(void)
 #endif /* CONFIG_OT_COAP_SAMPLE_SERVER */
 	ot = openthread_get_default_instance();
 	if (!ot) {
-		LOG_ERR("Failed to get an OpenThread instance");
+		LOG_ERROR("Failed to get an OpenThread instance");
 		return -ENODEV;
 	}
 
@@ -277,7 +279,7 @@ int coap_init(void)
 
 	err = otCoapStart(ot, OT_DEFAULT_COAP_PORT);
 	if (err != OT_ERROR_NONE) {
-		LOG_ERR("Cannot start CoAP: %s", otThreadErrorToString(err));
+		LOG_ERROR("Cannot start CoAP: %s", otThreadErrorToString(err));
 		return -EBADMSG;
 	}
 

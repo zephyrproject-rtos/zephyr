@@ -100,9 +100,8 @@ static int send_interfaces(const uint8_t *descriptors, int connfd)
 			iface.bInterfaceProtocol = desc->bInterfaceProtocol;
 			iface.padding = 0U;
 
-			if (send(connfd, &iface, sizeof(iface), 0) !=
-			    sizeof(iface)) {
-				LOG_ERR("send() failed: %s", strerror(errno));
+			if (send(connfd, &iface, sizeof(iface), 0) != sizeof(iface)) {
+				LOG_ERROR("send() failed: %s", strerror(errno));
 				return errno;
 			}
 		}
@@ -152,7 +151,7 @@ static int send_device(const uint8_t *desc, int connfd)
 	fill_device(&dev, desc);
 
 	if (send(connfd, &dev, sizeof(dev), 0) != sizeof(dev)) {
-		LOG_ERR("send() device failed: %s", strerror(errno));
+		LOG_ERROR("send() device failed: %s", strerror(errno));
 		return errno;
 	}
 
@@ -170,7 +169,7 @@ static int handle_device_list(const uint8_t *desc, int connfd)
 	LOG_DBG("desc %p", desc);
 
 	if (send(connfd, &header, sizeof(header), 0) != sizeof(header)) {
-		LOG_ERR("send() header failed: %s", strerror(errno));
+		LOG_ERROR("send() header failed: %s", strerror(errno));
 		return errno;
 	}
 
@@ -178,7 +177,7 @@ static int handle_device_list(const uint8_t *desc, int connfd)
 	uint32_t ndev = htonl(1);
 
 	if (send(connfd, &ndev, sizeof(ndev), 0) != sizeof(ndev)) {
-		LOG_ERR("send() ndev failed: %s", strerror(errno));
+		LOG_ERROR("send() ndev failed: %s", strerror(errno));
 		return errno;
 	}
 
@@ -198,7 +197,7 @@ static void handle_usbip_submit(int connfd, struct usbip_header *hdr)
 
 	read = recv(connfd, req, sizeof(*req), 0);
 	if (read != sizeof(*req)) {
-		LOG_ERR("recv() failed: %s", strerror(errno));
+		LOG_ERROR("recv() failed: %s", strerror(errno));
 		return;
 	}
 
@@ -220,7 +219,7 @@ static void handle_usbip_unlink(int connfd, struct usbip_header *hdr)
 	/* Need to read the whole structure */
 	read = recv(connfd, &hdr->u, sizeof(hdr->u), 0);
 	if (read != sizeof(hdr->u)) {
-		LOG_ERR("recv() failed: %s", strerror(errno));
+		LOG_ERROR("recv() failed: %s", strerror(errno));
 		return;
 	}
 
@@ -241,12 +240,12 @@ static int handle_import(const uint8_t *desc, int connfd)
 	LOG_DBG("attach device");
 
 	if (recv(connfd, busid, 32, 0) != sizeof(busid)) {
-		LOG_ERR("recv() failed: %s", strerror(errno));
+		LOG_ERROR("recv() failed: %s", strerror(errno));
 		return errno;
 	}
 
 	if (send(connfd, &header, sizeof(header), 0) != sizeof(header)) {
-		LOG_ERR("send() header failed: %s", strerror(errno));
+		LOG_ERROR("send() header failed: %s", strerror(errno));
 		return errno;
 	}
 
@@ -273,13 +272,13 @@ void usbip_start(void)
 	 */
 	desc = (const uint8_t *)__usb_descriptor_start;
 	if (!desc) {
-		LOG_ERR("Descriptors are not set");
+		LOG_ERROR("Descriptors are not set");
 		posix_exit(EXIT_FAILURE);
 	}
 
 	listenfd = socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (listenfd < 0) {
-		LOG_ERR("socket() failed: %s", strerror(errno));
+		LOG_ERROR("socket() failed: %s", strerror(errno));
 		posix_exit(EXIT_FAILURE);
 	}
 
@@ -294,12 +293,12 @@ void usbip_start(void)
 	srv.sin_port = htons(USBIP_PORT);
 
 	if (bind(listenfd, (struct sockaddr *)&srv, sizeof(srv)) < 0) {
-		LOG_ERR("bind() failed: %s", strerror(errno));
+		LOG_ERROR("bind() failed: %s", strerror(errno));
 		posix_exit(EXIT_FAILURE);
 	}
 
 	if (listen(listenfd, SOMAXCONN) < 0) {
-		LOG_ERR("listen() failed: %s", strerror(errno));
+		LOG_ERROR("listen() failed: %s", strerror(errno));
 		posix_exit(EXIT_FAILURE);
 	}
 
@@ -317,7 +316,7 @@ void usbip_start(void)
 				continue;
 			}
 
-			LOG_ERR("accept() failed: %s", strerror(errno));
+			LOG_ERROR("accept() failed: %s", strerror(errno));
 			posix_exit(EXIT_FAILURE);
 		}
 
@@ -369,8 +368,7 @@ void usbip_start(void)
 					}
 					break;
 				default:
-					LOG_ERR("Unhandled code: 0x%x",
-						ntohs(req.code));
+					LOG_ERROR("Unhandled code: 0x%x", ntohs(req.code));
 					break;
 				}
 
@@ -392,7 +390,7 @@ void usbip_start(void)
 			LOG_HEXDUMP_DBG((uint8_t *)hdr, read, "Got cmd");
 
 			if (read != sizeof(*hdr)) {
-				LOG_ERR("recv wrong length: %d", read);
+				LOG_ERROR("recv wrong length: %d", read);
 
 				/* Closing connection */
 				break;
@@ -409,8 +407,7 @@ void usbip_start(void)
 				handle_usbip_unlink(connfd, &cmd);
 				break;
 			default:
-				LOG_ERR("Unknown command: 0x%x",
-					ntohl(hdr->command));
+				LOG_ERROR("Unknown command: 0x%x", ntohl(hdr->command));
 				close(connfd);
 				return;
 			}

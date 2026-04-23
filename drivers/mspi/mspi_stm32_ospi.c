@@ -149,7 +149,7 @@ static int mspi_stm32_ospi_memmap_off(const struct device *controller)
 	struct mspi_stm32_data *dev_data = controller->data;
 
 	if (HAL_OSPI_Abort(&dev_data->hmspi.ospi) != HAL_OK) {
-		LOG_ERR("MemMapped abort failed");
+		LOG_ERROR("MemMapped abort failed");
 		return -EIO;
 	}
 	return 0;
@@ -172,7 +172,7 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 	    (mspi_stm32_ospi_hal_address_size(dev_data->dev_cfg.addr_length) ==
 	     HAL_OSPI_ADDRESS_24_BITS)) {
 		/* OPI mode and 3-bytes address size not supported by memory */
-		LOG_ERR("MSPI_IO_MODE_SINGLE in 3Bytes addressing is not supported");
+		LOG_ERROR("MSPI_IO_MODE_SINGLE in 3Bytes addressing is not supported");
 		return -EIO;
 	}
 
@@ -227,7 +227,7 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 
 	if (HAL_OSPI_Command(&dev_data->hmspi.ospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) !=
 	    HAL_OK) {
-		LOG_ERR("Failed to set memory map %d", dev_data->hmspi.ospi.ErrorCode);
+		LOG_ERROR("Failed to set memory map %d", dev_data->hmspi.ospi.ErrorCode);
 		return -EIO;
 	}
 
@@ -248,7 +248,7 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 	hal_ret =
 		HAL_OSPI_Command(&dev_data->hmspi.ospi, &s_command, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to set memory mapped");
+		LOG_ERROR("Failed to set memory mapped");
 		return -EIO;
 	}
 
@@ -256,7 +256,7 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 	s_MemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_DISABLE;
 	hal_ret = HAL_OSPI_MemoryMapped(&dev_data->hmspi.ospi, &s_MemMappedCfg);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to enable memory mapped");
+		LOG_ERROR("Failed to enable memory mapped");
 		return -EIO;
 	}
 
@@ -274,7 +274,7 @@ static int mspi_stm32_ospi_memmap_read(const struct device *dev,
 	if (!mspi_stm32_ospi_is_memorymap(dev)) {
 		ret = mspi_stm32_ospi_memmap_on(dev);
 		if (ret != 0) {
-			LOG_ERR("Failed to set memory-mapped before read");
+			LOG_ERROR("Failed to set memory-mapped before read");
 			return ret;
 		}
 		k_usleep(50);
@@ -302,7 +302,7 @@ static int mspi_stm32_ospi_abort_memmap(const struct device *dev)
 	if (dev_data->xip_cfg.enable && mspi_stm32_ospi_is_memorymap(dev)) {
 		ret = mspi_stm32_ospi_memmap_off(dev);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to abort memory-mapped", dev->name);
+			LOG_ERROR("%s: Failed to abort memory-mapped", dev->name);
 		}
 	}
 
@@ -358,7 +358,7 @@ static int mspi_stm32_ospi_access(const struct device *dev, const struct mspi_xf
 	if (hal_ret != HAL_OK) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		(void)pm_device_runtime_put(dev);
-		LOG_ERR("Failed to send OSPI instruction");
+		LOG_ERROR("Failed to send OSPI instruction");
 		return -EIO;
 	}
 
@@ -412,7 +412,7 @@ static int mspi_stm32_ospi_access(const struct device *dev, const struct mspi_xf
 		(void)pm_device_runtime_put(dev);
 
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to access data");
+			LOG_ERROR("Failed to access data");
 			return -EIO;
 		}
 
@@ -423,7 +423,7 @@ static int mspi_stm32_ospi_access(const struct device *dev, const struct mspi_xf
 	if (k_sem_take(&dev_data->sync, K_FOREVER) < 0) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		(void)pm_device_runtime_put(dev);
-		LOG_ERR("Failed to access data");
+		LOG_ERROR("Failed to access data");
 		return -EIO;
 	}
 
@@ -456,14 +456,14 @@ static int mspi_stm32_ospi_wait_auto_polling(const struct device *dev, uint8_t m
 	if (HAL_OSPI_AutoPolling_IT(&dev_data->hmspi.ospi, &s_config) != HAL_OK) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		(void)pm_device_runtime_put(dev);
-		LOG_ERR("OSPI AutoPoll failed");
+		LOG_ERROR("OSPI AutoPoll failed");
 		return -EIO;
 	}
 
 	if (k_sem_take(&dev_data->sync, K_MSEC(timeout_ms)) != 0) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		(void)pm_device_runtime_put(dev);
-		LOG_ERR("OSPI AutoPoll wait failed");
+		LOG_ERROR("OSPI AutoPoll wait failed");
 		HAL_OSPI_Abort(&dev_data->hmspi.ospi);
 		k_sem_reset(&dev_data->sync);
 		return -EIO;
@@ -494,7 +494,7 @@ static int mspi_stm32_ospi_status_reg(const struct device *controller, const str
 	struct mspi_stm32_context *ctx = &dev_data->ctx;
 
 	if (xfer->num_packet == 0 || xfer->packets == NULL) {
-		LOG_ERR("Status Reg.: wrong parameters");
+		LOG_ERROR("Status Reg.: wrong parameters");
 		return -EFAULT;
 	}
 
@@ -531,7 +531,7 @@ static int mspi_stm32_ospi_status_reg(const struct device *controller, const str
 
 	if (HAL_OSPI_Command(&dev_data->hmspi.ospi, &cmd, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) !=
 	    HAL_OK) {
-		LOG_ERR("Failed to send OSPI instruction");
+		LOG_ERROR("Failed to send OSPI instruction");
 		ret = -EIO;
 		goto ctx_unlock;
 	}
@@ -633,7 +633,7 @@ static int mspi_stm32_ospi_dev_cfg_save(const struct device *controller,
 
 	if ((param_mask & MSPI_DEVICE_CONFIG_FREQUENCY) != 0) {
 		if (dev_cfg->freq > cfg->mspicfg.max_freq) {
-			LOG_ERR("%u, freq is too large.", __LINE__);
+			LOG_ERROR("%u, freq is too large.", __LINE__);
 			return -ENOTSUP;
 		}
 		data->dev_cfg.freq = dev_cfg->freq;
@@ -641,7 +641,7 @@ static int mspi_stm32_ospi_dev_cfg_save(const struct device *controller,
 
 	if ((param_mask & MSPI_DEVICE_CONFIG_IO_MODE) != 0) {
 		if (dev_cfg->io_mode >= MSPI_IO_MODE_MAX) {
-			LOG_ERR("%u, Invalid io_mode.", __LINE__);
+			LOG_ERROR("%u, Invalid io_mode.", __LINE__);
 			return -EINVAL;
 		}
 		data->dev_cfg.io_mode = dev_cfg->io_mode;
@@ -649,7 +649,7 @@ static int mspi_stm32_ospi_dev_cfg_save(const struct device *controller,
 
 	if ((param_mask & MSPI_DEVICE_CONFIG_DATA_RATE) != 0) {
 		if (dev_cfg->data_rate >= MSPI_DATA_RATE_MAX) {
-			LOG_ERR("%u, Invalid data_rate.", __LINE__);
+			LOG_ERROR("%u, Invalid data_rate.", __LINE__);
 			return -EINVAL;
 		}
 		data->dev_cfg.data_rate = dev_cfg->data_rate;
@@ -657,7 +657,7 @@ static int mspi_stm32_ospi_dev_cfg_save(const struct device *controller,
 
 	if ((param_mask & MSPI_DEVICE_CONFIG_CPP) != 0) {
 		if (dev_cfg->cpp > MSPI_CPP_MODE_3) {
-			LOG_ERR("%u, Invalid cpp.", __LINE__);
+			LOG_ERROR("%u, Invalid cpp.", __LINE__);
 			return -EINVAL;
 		}
 		data->dev_cfg.cpp = dev_cfg->cpp;
@@ -665,7 +665,7 @@ static int mspi_stm32_ospi_dev_cfg_save(const struct device *controller,
 
 	if ((param_mask & MSPI_DEVICE_CONFIG_ENDIAN) != 0) {
 		if (dev_cfg->endian > MSPI_XFER_BIG_ENDIAN) {
-			LOG_ERR("%u, Invalid endian.", __LINE__);
+			LOG_ERROR("%u, Invalid endian.", __LINE__);
 			return -EINVAL;
 		}
 		data->dev_cfg.endian = dev_cfg->endian;
@@ -673,7 +673,7 @@ static int mspi_stm32_ospi_dev_cfg_save(const struct device *controller,
 
 	if ((param_mask & MSPI_DEVICE_CONFIG_CE_POL) != 0) {
 		if (dev_cfg->ce_polarity > MSPI_CE_ACTIVE_HIGH) {
-			LOG_ERR("%u, Invalid ce_polarity.", __LINE__);
+			LOG_ERROR("%u, Invalid ce_polarity.", __LINE__);
 			return -EINVAL;
 		}
 		data->dev_cfg.ce_polarity = dev_cfg->ce_polarity;
@@ -681,7 +681,7 @@ static int mspi_stm32_ospi_dev_cfg_save(const struct device *controller,
 
 	if ((param_mask & MSPI_DEVICE_CONFIG_DQS) != 0) {
 		if (dev_cfg->dqs_enable && !cfg->mspicfg.dqs_support) {
-			LOG_ERR("%u, DQS mode not supported.", __LINE__);
+			LOG_ERROR("%u, DQS mode not supported.", __LINE__);
 			return -ENOTSUP;
 		}
 		data->dev_cfg.dqs_enable = dev_cfg->dqs_enable;
@@ -716,7 +716,7 @@ static int mspi_stm32_ospi_dev_config(const struct device *controller,
 
 	if (data->dev_id != dev_id) {
 		if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
-			LOG_ERR("MSPI config failed to access controller.");
+			LOG_ERROR("MSPI config failed to access controller.");
 			return -EBUSY;
 		}
 
@@ -741,7 +741,7 @@ static int mspi_stm32_ospi_dev_config(const struct device *controller,
 	data->dev_id = dev_id;
 	/* Go on with other parameters if supported */
 	if (mspi_stm32_ospi_dev_cfg_save(controller, param_mask, dev_cfg) != 0) {
-		LOG_ERR("failed to set device config");
+		LOG_ERROR("failed to set device config");
 		ret = -EIO;
 	}
 
@@ -772,7 +772,7 @@ static int mspi_stm32_ospi_xip_config(const struct device *controller,
 	int ret = 0;
 
 	if (dev_id != dev_data->dev_id) {
-		LOG_ERR("dev_id don't match");
+		LOG_ERROR("dev_id don't match");
 		return -ESTALE;
 	}
 
@@ -835,7 +835,7 @@ static int mspi_stm32_ospi_pio_transceive(const struct device *controller,
 
 	if (xfer->num_packet == 0 || xfer->packets == NULL ||
 	    xfer->timeout > CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE) {
-		LOG_ERR("Transfer: wrong parameters");
+		LOG_ERROR("Transfer: wrong parameters");
 		return -EFAULT;
 	}
 
@@ -876,7 +876,7 @@ static int mspi_stm32_ospi_dma_transceive(const struct device *controller,
 	const struct mspi_xfer_packet *packet;
 
 	if (!dev_conf->dma_specified) {
-		LOG_ERR("DMA configuration is missing from the device tree");
+		LOG_ERROR("DMA configuration is missing from the device tree");
 		return -EIO;
 	}
 
@@ -929,7 +929,7 @@ static int mspi_stm32_ospi_transceive(const struct device *controller,
 	struct mspi_stm32_data *dev_data = controller->data;
 
 	if (dev_id != dev_data->dev_id) {
-		LOG_ERR("transceive : dev_id don't match");
+		LOG_ERROR("transceive : dev_id don't match");
 		return -ESTALE;
 	}
 
@@ -966,7 +966,7 @@ static int mspi_stm32_ospi_dma_setup(const struct mspi_stm32_conf *dev_cfg,
 	DMA_HandleTypeDef *hdma = &dev_data->hdma;
 
 	if (!device_is_ready(dev_data->dma.dev)) {
-		LOG_ERR("%s device not ready", dev_data->dma.dev->name);
+		LOG_ERROR("%s device not ready", dev_data->dma.dev->name);
 		return -ENODEV;
 	}
 
@@ -975,12 +975,12 @@ static int mspi_stm32_ospi_dma_setup(const struct mspi_stm32_conf *dev_cfg,
 
 	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, &dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d", dev_data->dma.channel);
+		LOG_ERROR("Failed to configure DMA channel %d", dev_data->dma.channel);
 		return ret;
 	}
 
 	if (dma_cfg.source_data_size != dma_cfg.dest_data_size) {
-		LOG_ERR("Source and Destination data sizes are not aligned");
+		LOG_ERROR("Source and Destination data sizes are not aligned");
 		return -EINVAL;
 	}
 
@@ -1011,7 +1011,7 @@ static int mspi_stm32_ospi_dma_setup(const struct mspi_stm32_conf *dev_cfg,
 	hdma->Init.Request = dma_cfg.dma_slot;
 	__HAL_LINKDMA(&dev_data->hmspi.ospi, hdma, *hdma);
 	if (HAL_DMA_Init(hdma) != HAL_OK) {
-		LOG_ERR("OSPI DMA Init failed");
+		LOG_ERROR("OSPI DMA Init failed");
 		return -EIO;
 	}
 	LOG_INF("OSPI with DMA Transfer");
@@ -1028,7 +1028,7 @@ static __maybe_unused void mspi_stm32_ospi_dma_callback(const struct device *dev
 	ARG_UNUSED(channel);
 
 	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d", channel);
+		LOG_ERROR("DMA callback error with channel %d", channel);
 	}
 
 	HAL_DMA_IRQHandler(hdma);
@@ -1039,23 +1039,23 @@ static int mspi_stm32_ospi_conf_validate(const struct mspi_cfg *config, uint32_t
 {
 	/* Only Controller mode is supported */
 	if (config->op_mode != MSPI_OP_MODE_CONTROLLER) {
-		LOG_ERR("Only support MSPI controller mode.");
+		LOG_ERROR("Only support MSPI controller mode.");
 		return -ENOTSUP;
 	}
 
 	/* Check the max possible freq. */
 	if (config->max_freq > max_frequency) {
-		LOG_ERR("Max_freq %d too large.", config->max_freq);
+		LOG_ERROR("Max_freq %d too large.", config->max_freq);
 		return -ENOTSUP;
 	}
 
 	if (config->duplex != MSPI_HALF_DUPLEX) {
-		LOG_ERR("Only support half duplex mode.");
+		LOG_ERROR("Only support half duplex mode.");
 		return -ENOTSUP;
 	}
 
 	if (config->num_periph > MSPI_MAX_DEVICE) {
-		LOG_ERR("Invalid MSPI peripheral number.");
+		LOG_ERROR("Invalid MSPI peripheral number.");
 		return -ENOTSUP;
 	}
 
@@ -1076,7 +1076,7 @@ static int mspi_stm32_ospi_activate(const struct device *dev)
 		if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					    (clock_control_subsys_t)&config->pclken[1],
 					    NULL) != 0) {
-			LOG_ERR("Could not select OSPI domain clock");
+			LOG_ERROR("Could not select OSPI domain clock");
 			return -EIO;
 		}
 	}
@@ -1084,7 +1084,7 @@ static int mspi_stm32_ospi_activate(const struct device *dev)
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			     (clock_control_subsys_t)(uintptr_t)&config->pclken[0]) != 0) {
-		LOG_ERR("Could not enable OSPI clock");
+		LOG_ERROR("Could not enable OSPI clock");
 		return -EIO;
 	}
 
@@ -1099,14 +1099,14 @@ static int mspi_stm32_ospi_clock_config(struct mspi_stm32_data *dev_data,
 
 	/* Max 3 domain clock are expected */
 	if (dev_cfg->pclk_len > 3) {
-		LOG_ERR("Could not select %d OSPI domain clock", dev_cfg->pclk_len);
+		LOG_ERROR("Could not select %d OSPI domain clock", dev_cfg->pclk_len);
 		return -EIO;
 	}
 
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				   (clock_control_subsys_t)&dev_cfg->pclken[0],
 				   &ahb_clock_freq) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken)");
+		LOG_ERROR("Failed call clock_control_get_rate(pclken)");
 		return -EIO;
 	}
 
@@ -1115,7 +1115,7 @@ static int mspi_stm32_ospi_clock_config(struct mspi_stm32_data *dev_data,
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					   (clock_control_subsys_t)&dev_cfg->pclken[1],
 					   &ahb_clock_freq) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken)");
+			LOG_ERROR("Failed call clock_control_get_rate(pclken)");
 			return -EIO;
 		}
 	}
@@ -1123,7 +1123,7 @@ static int mspi_stm32_ospi_clock_config(struct mspi_stm32_data *dev_data,
 	if (dev_cfg->pclk_len > 2) {
 		if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				     (clock_control_subsys_t)&dev_cfg->pclken[2]) != 0) {
-			LOG_ERR("Could not enable OSPI Manager clock");
+			LOG_ERROR("Could not enable OSPI Manager clock");
 			return -EIO;
 		}
 	}
@@ -1169,12 +1169,12 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("MSPI pinctrl setup failed");
+		LOG_ERROR("MSPI pinctrl setup failed");
 		goto end;
 	}
 
 	if (dev_data->dev_cfg.dqs_enable && !dev_cfg->mspicfg.dqs_support) {
-		LOG_ERR("MSPI dqs mismatch (not supported but enabled)");
+		LOG_ERROR("MSPI dqs mismatch (not supported but enabled)");
 		ret = -ENOTSUP;
 		goto end;
 	}
@@ -1212,7 +1212,7 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 #endif /* MSPI_STM32_DLYB_BYPASSED */
 
 	if (HAL_OSPI_Init(&dev_data->hmspi.ospi) != HAL_OK) {
-		LOG_ERR("MSPI Init failed");
+		LOG_ERROR("MSPI Init failed");
 		ret = -EIO;
 		goto end;
 	}
@@ -1239,7 +1239,7 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 		ospi_mgr_cfg.IOHighPort = DT_OSPI_IO_PORT_PROP_OR(
 			io_high_port, HAL_OSPIM_IOPORT_2_HIGH, dev_data->dev_id);
 	} else {
-		LOG_ERR("Unknown OSPI Instance");
+		LOG_ERROR("Unknown OSPI Instance");
 		ret = -EINVAL;
 		goto end;
 	}
@@ -1248,7 +1248,7 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 #endif /* OCTOSPIM_CR_MUXEN */
 	if (HAL_OSPIM_Config(&dev_data->hmspi.ospi, &ospi_mgr_cfg,
 			     HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("OSPI M config failed");
+		LOG_ERROR("OSPI M config failed");
 		ret = -EIO;
 		goto end;
 	}
@@ -1259,7 +1259,7 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 	ospi_delay_block_cfg.Units = 56;
 	ospi_delay_block_cfg.PhaseSel = 2;
 	if (HAL_OSPI_DLYB_SetConfig(&dev_data->hmspi.ospi, &ospi_delay_block_cfg) != HAL_OK) {
-		LOG_ERR("OSPI DelayBlock failed");
+		LOG_ERROR("OSPI DelayBlock failed");
 		ret = -EIO;
 		goto end;
 	}
@@ -1324,7 +1324,7 @@ static int mspi_stm32_ospi_suspend(const struct device *dev)
 	/* Disable device clock. */
 	ret = clock_control_off(clk, (clock_control_subsys_t)(uintptr_t)&cfg->pclken[0]);
 	if (ret < 0) {
-		LOG_ERR("Failed to disable MSPI clock during PM suspend process");
+		LOG_ERROR("Failed to disable MSPI clock during PM suspend process");
 		return ret;
 	}
 
@@ -1332,7 +1332,7 @@ static int mspi_stm32_ospi_suspend(const struct device *dev)
 	if (cfg->pclk_len > 1) {
 		if (clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				      (clock_control_subsys_t)&cfg->pclken[1]) != 0) {
-			LOG_ERR("Could not enable XSPI Manager clock");
+			LOG_ERROR("Could not enable XSPI Manager clock");
 			return -EIO;
 		}
 	}
@@ -1340,7 +1340,7 @@ static int mspi_stm32_ospi_suspend(const struct device *dev)
 	if (cfg->pclk_len > 2) {
 		if (clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				      (clock_control_subsys_t)&cfg->pclken[2]) != 0) {
-			LOG_ERR("Could not enable XSPI Manager clock");
+			LOG_ERROR("Could not enable XSPI Manager clock");
 			return -EIO;
 		}
 	}

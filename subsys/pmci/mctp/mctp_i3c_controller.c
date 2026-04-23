@@ -33,7 +33,7 @@ static inline void mctp_i3c_recv_msg(struct mctp_binding_i3c_controller *binding
 	int rc = i3c_transfer(binding->endpoint_i3c_devs[endpoint_idx], &msg, 1);
 
 	if (rc != 0) {
-		LOG_ERR("Error requesting read from endpoint %d: %d", endpoint_idx, rc);
+		LOG_ERROR("Error requesting read from endpoint %d: %d", endpoint_idx, rc);
 		return;
 	}
 	LOG_DBG("Read %d bytes from endpoint %d", msg.num_xfer, endpoint_idx);
@@ -41,7 +41,8 @@ static inline void mctp_i3c_recv_msg(struct mctp_binding_i3c_controller *binding
 	struct mctp_pktbuf *pkt = mctp_pktbuf_alloc(&binding->binding, msg.num_xfer);
 
 	if (pkt == NULL) {
-		LOG_ERR("Out of memory to allocate buffer when receiving message from endpoint %d",
+		LOG_ERROR(
+			"Out of memory to allocate buffer when receiving message from endpoint %d",
 			endpoint_idx);
 		return;
 	}
@@ -107,7 +108,7 @@ int mctp_i3c_controller_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt
 	}
 
 	if (endpoint_idx == -1) {
-		LOG_ERR("Invalid endpoint id %d when sending message", hdr->dest);
+		LOG_ERROR("Invalid endpoint id %d when sending message", hdr->dest);
 		return 0;
 	}
 

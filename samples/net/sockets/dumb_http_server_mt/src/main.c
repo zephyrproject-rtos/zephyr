@@ -162,7 +162,7 @@ static int setup(int *sock, struct sockaddr *bind_addr,
 	*sock = socket(bind_addr->sa_family, SOCK_STREAM, IPPROTO_TCP);
 #endif
 	if (*sock < 0) {
-		LOG_ERR("Failed to create TCP socket: %d", errno);
+		LOG_ERROR("Failed to create TCP socket: %d", errno);
 		return -errno;
 	}
 
@@ -174,20 +174,20 @@ static int setup(int *sock, struct sockaddr *bind_addr,
 	ret = setsockopt(*sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_list, sizeof(sec_tag_list));
 	if (ret < 0) {
-		LOG_ERR("Failed to set TCP secure option %d", errno);
+		LOG_ERROR("Failed to set TCP secure option %d", errno);
 		ret = -errno;
 	}
 #endif
 
 	ret = bind(*sock, bind_addr, bind_addrlen);
 	if (ret < 0) {
-		LOG_ERR("Failed to bind TCP socket %d", errno);
+		LOG_ERROR("Failed to bind TCP socket %d", errno);
 		return -errno;
 	}
 
 	ret = listen(*sock, MAX_CLIENT_QUEUE);
 	if (ret < 0) {
-		LOG_ERR("Failed to listen on TCP socket %d", errno);
+		LOG_ERROR("Failed to listen on TCP socket %d", errno);
 		ret = -errno;
 	}
 
@@ -218,7 +218,7 @@ static void client_conn_handler(void *ptr1, void *ptr2, void *ptr3)
 		} else if (received < 0) {
 			/* Socket error */
 			ret = -errno;
-			LOG_ERR("[%d] Connection error %d", client, ret);
+			LOG_ERROR("[%d] Connection error %d", client, ret);
 			break;
 		}
 
@@ -284,7 +284,7 @@ static int process_tcp(int *sock, int *accepted)
 
 	slot = get_free_slot(accepted);
 	if (slot < 0 || slot >= CONFIG_NET_SAMPLE_NUM_HANDLERS) {
-		LOG_ERR("Cannot accept more connections");
+		LOG_ERROR("Cannot accept more connections");
 		close(client);
 		return 0;
 	}
@@ -420,14 +420,14 @@ int main(void)
 				     server_certificate,
 				     sizeof(server_certificate));
 	if (err < 0) {
-		LOG_ERR("Failed to register public certificate: %d", err);
+		LOG_ERROR("Failed to register public certificate: %d", err);
 	}
 
 	err = tls_credential_add(SERVER_CERTIFICATE_TAG,
 				 TLS_CREDENTIAL_PRIVATE_KEY,
 				 private_key, sizeof(private_key));
 	if (err < 0) {
-		LOG_ERR("Failed to register private key: %d", err);
+		LOG_ERROR("Failed to register private key: %d", err);
 	}
 #endif
 

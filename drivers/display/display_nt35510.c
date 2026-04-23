@@ -160,7 +160,7 @@ static int nt35510_write_reg(const struct device *dev, uint8_t reg, const uint8_
 
 	ret = mipi_dsi_dcs_write(cfg->mipi_dsi, cfg->channel, reg, buf, len);
 	if (ret < 0) {
-		LOG_ERR("Failed writing reg: 0x%x result: (%d)", reg, ret);
+		LOG_ERROR("Failed writing reg: 0x%x result: (%d)", reg, ret);
 		return ret;
 	}
 	return 0;
@@ -239,7 +239,7 @@ static int nt35510_blanking_on(const struct device *dev)
 	if (cfg->backlight.port != NULL) {
 		ret = gpio_pin_set_dt(&cfg->backlight, 0);
 		if (ret) {
-			LOG_ERR("Disable backlight failed! (%d)", ret);
+			LOG_ERROR("Disable backlight failed! (%d)", ret);
 			return ret;
 		}
 	}
@@ -254,7 +254,7 @@ static int nt35510_blanking_off(const struct device *dev)
 	if (cfg->backlight.port != NULL) {
 		ret = gpio_pin_set_dt(&cfg->backlight, 1);
 		if (ret) {
-			LOG_ERR("Enable backlight failed! (%d)", ret);
+			LOG_ERROR("Enable backlight failed! (%d)", ret);
 			return ret;
 		}
 	}
@@ -289,7 +289,7 @@ static int nt35510_set_pixel_format(const struct device *dev,
 		data->pixel_format = pixel_format;
 		return 0;
 	}
-	LOG_ERR("Pixel format not supported");
+	LOG_ERROR("Pixel format not supported");
 	return -ENOTSUP;
 }
 
@@ -301,12 +301,12 @@ static int nt35510_check_id(const struct device *dev)
 
 	ret = mipi_dsi_dcs_read(cfg->mipi_dsi, cfg->channel, NT35510_CMD_RDID2, &id, 1);
 	if (ret != sizeof(id)) {
-		LOG_ERR("Failed reading ID (%d)", ret);
+		LOG_ERROR("Failed reading ID (%d)", ret);
 		return -EIO;
 	}
 
 	if (id != NT35510_ID) {
-		LOG_ERR("ID 0x%x, expected: 0x%x)", id, NT35510_ID);
+		LOG_ERROR("ID 0x%x, expected: 0x%x)", id, NT35510_ID);
 		return -EINVAL;
 	}
 	return 0;
@@ -321,18 +321,18 @@ static int nt35510_init(const struct device *dev)
 
 	if (cfg->reset.port) {
 		if (!gpio_is_ready_dt(&cfg->reset)) {
-			LOG_ERR("Reset GPIO device is not ready!");
+			LOG_ERROR("Reset GPIO device is not ready!");
 			return -ENODEV;
 		}
 		ret = gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Reset display failed! (%d)", ret);
+			LOG_ERROR("Reset display failed! (%d)", ret);
 			return ret;
 		}
 		k_msleep(20);
 		ret = gpio_pin_set_dt(&cfg->reset, 1);
 		if (ret < 0) {
-			LOG_ERR("Enable display failed! (%d)", ret);
+			LOG_ERROR("Enable display failed! (%d)", ret);
 			return ret;
 		}
 		k_msleep(200);
@@ -378,31 +378,31 @@ static int nt35510_init(const struct device *dev)
 
 	ret = mipi_dsi_attach(cfg->mipi_dsi, cfg->channel, &mdev);
 	if (ret < 0) {
-		LOG_ERR("MIPI-DSI attach failed! (%d)", ret);
+		LOG_ERROR("MIPI-DSI attach failed! (%d)", ret);
 		return ret;
 	}
 
 	ret = nt35510_check_id(dev);
 	if (ret) {
-		LOG_ERR("Panel ID check failed! (%d)", ret);
+		LOG_ERROR("Panel ID check failed! (%d)", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->backlight, GPIO_OUTPUT_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Backlight pin init fail (%d)", ret);
+		LOG_ERROR("Backlight pin init fail (%d)", ret);
 		return ret;
 	}
 
 	ret = nt35510_config(dev);
 	if (ret) {
-		LOG_ERR("DSI init sequence failed! (%d)", ret);
+		LOG_ERROR("DSI init sequence failed! (%d)", ret);
 		return ret;
 	}
 
 	ret = nt35510_blanking_off(dev);
 	if (ret) {
-		LOG_ERR("Display blanking off failed! (%d)", ret);
+		LOG_ERROR("Display blanking off failed! (%d)", ret);
 		return ret;
 	}
 

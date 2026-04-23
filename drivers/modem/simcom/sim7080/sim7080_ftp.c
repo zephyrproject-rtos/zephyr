@@ -107,7 +107,7 @@ int mdm_sim7080_ftp_get_start(const char *server, const char *user, const char *
 	/* Start network. */
 	ret = mdm_sim7080_start_network();
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to start network for FTP!");
+		LOG_ERROR("Failed to start network for FTP!");
 		return -1;
 	}
 

@@ -309,15 +309,14 @@ int gpio_emul_input_set_masked_int(const struct device *port,
 	}
 
 	if (~config->common.port_pin_mask & mask) {
-		LOG_ERR("Pin not supported port_pin_mask=%x mask=%x",
-			config->common.port_pin_mask, mask);
+		LOG_ERROR("Pin not supported port_pin_mask=%x mask=%x",
+			  config->common.port_pin_mask, mask);
 		return -EINVAL;
 	}
 
 	input_mask = get_input_pins(port);
 	if (~input_mask & mask) {
-		LOG_ERR("Not input pin input_mask=%x mask=%x", input_mask,
-			mask);
+		LOG_ERROR("Not input pin input_mask=%x mask=%x", input_mask, mask);
 		return -EINVAL;
 	}
 
@@ -344,8 +343,8 @@ int gpio_emul_input_set_masked(const struct device *port, gpio_port_pins_t mask,
 	}
 
 	if ((config->common.port_pin_mask & mask) == 0) {
-		LOG_ERR("Pin not supported port_pin_mask=%x mask=%x", config->common.port_pin_mask,
-			mask);
+		LOG_ERROR("Pin not supported port_pin_mask=%x mask=%x",
+			  config->common.port_pin_mask, mask);
 		return -EINVAL;
 	}
 

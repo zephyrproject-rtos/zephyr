@@ -97,7 +97,7 @@ status_t S2PI_TransferFrame(s2pi_slave_t slave,
 	}
 
 	CHECKIF(atomic_get(&data->s2pi.mode) == STATUS_S2PI_GPIO_MODE) {
-		LOG_ERR("S2PI is in GPIO MODE");
+		LOG_ERROR("S2PI is in GPIO MODE");
 		return ERROR_S2PI_INVALID_STATE;
 	}
 
@@ -117,8 +117,8 @@ status_t S2PI_TransferFrame(s2pi_slave_t slave,
 	struct rtio_sqe *cb_sqe = rtio_sqe_acquire(ctx);
 
 	CHECKIF(!xfer_sqe || !cb_sqe) {
-		LOG_ERR("Failed to allocate SQE, please check RTIO queue "
-			"configuration on afbr_s50.c");
+		LOG_ERROR("Failed to allocate SQE, please check RTIO queue "
+			  "configuration on afbr_s50.c");
 		return ERROR_FAIL;
 	}
 
@@ -173,13 +173,13 @@ status_t S2PI_SetIrqCallback(s2pi_slave_t slave,
 	if (data->s2pi.irq.handler) {
 		err = gpio_pin_interrupt_configure_dt(data->s2pi.gpio.irq, GPIO_INT_EDGE_TO_ACTIVE);
 		CHECKIF(err) {
-			LOG_ERR("Failed to enable IRQ GPIO: %d", err);
+			LOG_ERROR("Failed to enable IRQ GPIO: %d", err);
 			return ERROR_FAIL;
 		}
 	} else {
 		err = gpio_pin_interrupt_configure_dt(data->s2pi.gpio.irq, GPIO_INT_DISABLE);
 		CHECKIF(err) {
-			LOG_ERR("Failed to disable IRQ GPIO: %d", err);
+			LOG_ERROR("Failed to disable IRQ GPIO: %d", err);
 			return ERROR_FAIL;
 		}
 	}
@@ -194,7 +194,7 @@ uint32_t S2PI_ReadIrqPin(s2pi_slave_t slave)
 
 	err = afbr_s50_platform_get_by_id(slave, &data);
 	CHECKIF(err) {
-		LOG_ERR("Error getting platform data: %d", err);
+		LOG_ERROR("Error getting platform data: %d", err);
 		return 0;
 	}
 
@@ -203,7 +203,7 @@ uint32_t S2PI_ReadIrqPin(s2pi_slave_t slave)
 
 	value =  gpio_pin_get_dt(irq);
 	CHECKIF(value < 0) {
-		LOG_ERR("Error reading IRQ pin: %d", value);
+		LOG_ERROR("Error reading IRQ pin: %d", value);
 		return 0;
 	}
 
@@ -217,7 +217,7 @@ status_t S2PI_CycleCsPin(s2pi_slave_t slave)
 
 	err = afbr_s50_platform_get_by_id(slave, &data);
 	CHECKIF(err) {
-		LOG_ERR("Error getting platform data: %d", err);
+		LOG_ERROR("Error getting platform data: %d", err);
 		return ERROR_S2PI_INVALID_SLAVE;
 	}
 
@@ -225,13 +225,13 @@ status_t S2PI_CycleCsPin(s2pi_slave_t slave)
 
 	err = gpio_pin_set_dt(cs, 1);
 	CHECKIF(err) {
-		LOG_ERR("Error setting CS pin logical high: %d", err);
+		LOG_ERROR("Error setting CS pin logical high: %d", err);
 		return ERROR_FAIL;
 	}
 
 	err = gpio_pin_set_dt(cs, 0);
 	CHECKIF(err) {
-		LOG_ERR("Error setting CS pin logical low: %d", err);
+		LOG_ERROR("Error setting CS pin logical low: %d", err);
 		return ERROR_FAIL;
 	}
 
@@ -245,13 +245,13 @@ status_t S2PI_CaptureGpioControl(s2pi_slave_t slave)
 
 	err = afbr_s50_platform_get_by_id(slave, &data);
 	CHECKIF(err) {
-		LOG_ERR("Error getting platform data: %d", err);
+		LOG_ERROR("Error getting platform data: %d", err);
 		return ERROR_S2PI_INVALID_SLAVE;
 	}
 
 	err = pinctrl_apply_state(data->s2pi.pincfg, PINCTRL_STATE_PRIV_START);
 	CHECKIF(err) {
-		LOG_ERR("Error applying gpio pinctrl state: %d", err);
+		LOG_ERROR("Error applying gpio pinctrl state: %d", err);
 		return ERROR_FAIL;
 	}
 
@@ -259,7 +259,7 @@ status_t S2PI_CaptureGpioControl(s2pi_slave_t slave)
 	err |= gpio_pin_configure_dt(data->s2pi.gpio.spi.mosi, GPIO_OUTPUT);
 	err |= gpio_pin_configure_dt(data->s2pi.gpio.spi.clk, GPIO_OUTPUT);
 	CHECKIF(err) {
-		LOG_ERR("Error configuring GPIO pins: %d", err);
+		LOG_ERROR("Error configuring GPIO pins: %d", err);
 		return ERROR_FAIL;
 	}
 
@@ -275,7 +275,7 @@ status_t S2PI_ReleaseGpioControl(s2pi_slave_t slave)
 
 	err = afbr_s50_platform_get_by_id(slave, &data);
 	CHECKIF(err) {
-		LOG_ERR("Error getting platform data: %d", err);
+		LOG_ERROR("Error getting platform data: %d", err);
 		return ERROR_S2PI_INVALID_SLAVE;
 	}
 
@@ -285,7 +285,7 @@ status_t S2PI_ReleaseGpioControl(s2pi_slave_t slave)
 
 	err = pinctrl_apply_state(data->s2pi.pincfg, PINCTRL_STATE_DEFAULT);
 	CHECKIF(err) {
-		LOG_ERR("Error applying default pinctrl state: %d", err);
+		LOG_ERROR("Error applying default pinctrl state: %d", err);
 		return ERROR_FAIL;
 	}
 
@@ -302,12 +302,12 @@ status_t S2PI_WriteGpioPin(s2pi_slave_t slave, s2pi_pin_t pin, uint32_t value)
 
 	err = afbr_s50_platform_get_by_id(slave, &data);
 	CHECKIF(err) {
-		LOG_ERR("Error getting platform data: %d", err);
+		LOG_ERROR("Error getting platform data: %d", err);
 		return ERROR_S2PI_INVALID_SLAVE;
 	}
 
 	CHECKIF(!(atomic_get(&data->s2pi.mode) == STATUS_S2PI_GPIO_MODE)) {
-		LOG_ERR("S2PI is in SPI MODE");
+		LOG_ERROR("S2PI is in SPI MODE");
 		return ERROR_S2PI_INVALID_STATE;
 	}
 
@@ -333,7 +333,7 @@ status_t S2PI_WriteGpioPin(s2pi_slave_t slave, s2pi_pin_t pin, uint32_t value)
 
 	err = gpio_pin_set_raw(gpio_pin->port, gpio_pin->pin, value);
 	CHECKIF(err) {
-		LOG_ERR("Error setting GPIO pin: %d", err);
+		LOG_ERROR("Error setting GPIO pin: %d", err);
 		return ERROR_FAIL;
 	}
 
@@ -352,12 +352,12 @@ status_t S2PI_ReadGpioPin(s2pi_slave_t slave, s2pi_pin_t pin, uint32_t *value)
 
 	err = afbr_s50_platform_get_by_id(slave, &data);
 	CHECKIF(err) {
-		LOG_ERR("Error getting platform data: %d", err);
+		LOG_ERROR("Error getting platform data: %d", err);
 		return ERROR_S2PI_INVALID_SLAVE;
 	}
 
 	CHECKIF(!(atomic_get(&data->s2pi.mode) == STATUS_S2PI_GPIO_MODE)) {
-		LOG_ERR("S2PI is in SPI MODE");
+		LOG_ERROR("S2PI is in SPI MODE");
 		return ERROR_S2PI_INVALID_STATE;
 	}
 
@@ -408,18 +408,18 @@ static int s2pi_init(struct afbr_s50_platform_data *data)
 	(void)atomic_set(&data->s2pi.mode, STATUS_IDLE);
 
 	CHECKIF(!data->s2pi.gpio.irq || !data->s2pi.gpio.spi.cs) {
-		LOG_ERR("GPIOs not supplied");
+		LOG_ERROR("GPIOs not supplied");
 		return -EIO;
 	}
 
 	if (!gpio_is_ready_dt(data->s2pi.gpio.irq)) {
-		LOG_ERR("IRQ GPIO not ready");
+		LOG_ERROR("IRQ GPIO not ready");
 		return -EIO;
 	}
 
 	err = gpio_pin_configure_dt(data->s2pi.gpio.irq, GPIO_INPUT);
 	CHECKIF(err) {
-		LOG_ERR("Failed to configure IRQ GPIO");
+		LOG_ERROR("Failed to configure IRQ GPIO");
 		return -EIO;
 	}
 
@@ -428,7 +428,7 @@ static int s2pi_init(struct afbr_s50_platform_data *data)
 
 	err = gpio_add_callback(data->s2pi.gpio.irq->port, &data->s2pi.irq.cb);
 	CHECKIF(err) {
-		LOG_ERR("Failed to add IRQ callback");
+		LOG_ERROR("Failed to add IRQ callback");
 		return -EIO;
 	}
 

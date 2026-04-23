@@ -503,7 +503,7 @@ static int ism6hg256x_init_chip(const struct device *dev)
 		 */
 		lsm6dsvxxx->i3c_dev = i3c_device_find(cfg->i3c.bus, &cfg->i3c.dev_id);
 		if (lsm6dsvxxx->i3c_dev == NULL) {
-			LOG_ERR("Cannot find I3C device descriptor");
+			LOG_ERROR("Cannot find I3C device descriptor");
 			return -ENODEV;
 		}
 	}
@@ -559,28 +559,28 @@ static int ism6hg256x_init_chip(const struct device *dev)
 	fs = cfg->accel_range;
 	LOG_DBG("accel range is %d", fs);
 	if (ism6hg256x_accel_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set accelerometer range %d", fs);
+		LOG_ERROR("failed to set accelerometer range %d", fs);
 		return -EIO;
 	}
 
 	odr = cfg->accel_odr;
 	LOG_DBG("accel odr is %d", odr);
 	if (ism6hg256x_accel_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set accelerometer odr %d", odr);
+		LOG_ERROR("failed to set accelerometer odr %d", odr);
 		return -EIO;
 	}
 
 	fs = cfg->gyro_range;
 	LOG_DBG("gyro range is %d", fs);
 	if (ism6hg256x_gyro_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set gyroscope range %d", fs);
+		LOG_ERROR("failed to set gyroscope range %d", fs);
 		return -EIO;
 	}
 
 	odr = cfg->gyro_odr;
 	LOG_DBG("gyro odr is %d", odr);
 	if (ism6hg256x_gyro_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set gyroscope odr %d", odr);
+		LOG_ERROR("failed to set gyroscope odr %d", odr);
 		return -EIO;
 	}
 
@@ -595,7 +595,7 @@ static int ism6hg256x_init_chip(const struct device *dev)
 			.ibi_len = lsm6dsvxxx->i3c_dev->data_length.max_ibi,
 		};
 		if (i3c_ccc_do_setmrl(lsm6dsvxxx->i3c_dev, &setmrl) < 0) {
-			LOG_ERR("failed to set mrl");
+			LOG_ERROR("failed to set mrl");
 			return -EIO;
 		}
 	}
@@ -622,23 +622,23 @@ static int ism6hg256x_pm_action(const struct device *dev, enum pm_device_action 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		if (ism6hg256x_xl_setup(ctx, data->accel_freq, ISM6HG256X_XL_UNCHANGED_MD) < 0) {
-			LOG_ERR("failed to set accelerometer odr %d", (int)data->accel_freq);
+			LOG_ERROR("failed to set accelerometer odr %d", (int)data->accel_freq);
 			ret = -EIO;
 		}
 		if (ism6hg256x_gy_setup(ctx, data->gyro_freq, ISM6HG256X_GY_UNCHANGED_MD) < 0) {
-			LOG_ERR("failed to set gyroscope odr %d", (int)data->gyro_freq);
+			LOG_ERROR("failed to set gyroscope odr %d", (int)data->gyro_freq);
 			ret = -EIO;
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		if (ism6hg256x_xl_setup(ctx, LSM6DSVXXX_DT_ODR_OFF,
 					ISM6HG256X_XL_UNCHANGED_MD) < 0) {
-			LOG_ERR("failed to disable accelerometer");
+			LOG_ERROR("failed to disable accelerometer");
 			ret = -EIO;
 		}
 		if (ism6hg256x_gy_setup(ctx, LSM6DSVXXX_DT_ODR_OFF,
 					ISM6HG256X_GY_UNCHANGED_MD) < 0) {
-			LOG_ERR("failed to disable gyroscope");
+			LOG_ERROR("failed to disable gyroscope");
 			ret = -EIO;
 		}
 		break;

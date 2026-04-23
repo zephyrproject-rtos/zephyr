@@ -300,7 +300,7 @@ static void qspi_acquire(const struct device *dev)
 
 	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", rc);
+		LOG_ERROR("pm_device_runtime_get failed: %d", rc);
 	}
 #if defined(CONFIG_MULTITHREADING)
 	/* In multithreading, the driver can call qspi_acquire more than once
@@ -344,7 +344,7 @@ static void qspi_release(const struct device *dev)
 
 	rc = pm_device_runtime_put_async(dev, K_MSEC(ACTIVE_DWELL_MS));
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_put failed: %d", rc);
+		LOG_ERROR("pm_device_runtime_put failed: %d", rc);
 	}
 }
 
@@ -512,7 +512,7 @@ static int qspi_wrsr(const struct device *dev, uint8_t sr_val, uint8_t sr_num)
 		/* Writing sr1 clears sr2. need to read/modify/write both. */
 		rc = qspi_rdsr(dev, 2);
 		if (rc < 0) {
-			LOG_ERR("RDSR for WRSR failed: %d", rc);
+			LOG_ERROR("RDSR for WRSR failed: %d", rc);
 			return rc;
 		}
 		sr_array[1] = rc;
@@ -527,7 +527,7 @@ static int qspi_wrsr(const struct device *dev, uint8_t sr_val, uint8_t sr_num)
 		sr_array[1] = sr_val;
 		rc = qspi_rdsr(dev, 1);
 		if (rc < 0) {
-			LOG_ERR("RDSR for WRSR failed: %d", rc);
+			LOG_ERROR("RDSR for WRSR failed: %d", rc);
 			return rc;
 		}
 		sr_array[0] = rc;
@@ -537,7 +537,7 @@ static int qspi_wrsr(const struct device *dev, uint8_t sr_val, uint8_t sr_num)
 		sr_array[0] = sr_val;
 		opcode = SPI_NOR_CMD_WRSR2;
 #else
-		LOG_ERR("Attempted to write status register 2, but no known method to write sr2");
+		LOG_ERROR("Attempted to write status register 2, but no known method to write sr2");
 		return -EINVAL;
 #endif
 	}
@@ -595,7 +595,7 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 			adj = QSPI_SECTOR_SIZE;
 		} else {
 			/* minimal erase size is at least a sector size */
-			LOG_ERR("unsupported at 0x%lx size %zu", (long)addr, size);
+			LOG_ERROR("unsupported at 0x%lx size %zu", (long)addr, size);
 			res = -EINVAL;
 		}
 
@@ -610,11 +610,11 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 			 */
 			rc = qspi_wait_while_writing(dev, K_MSEC(10));
 			if (rc < 0) {
-				LOG_ERR("wait error at 0x%lx size %zu", (long)addr, size);
+				LOG_ERROR("wait error at 0x%lx size %zu", (long)addr, size);
 				break;
 			}
 		} else {
-			LOG_ERR("erase error at 0x%lx size %zu", (long)addr, size);
+			LOG_ERROR("erase error at 0x%lx size %zu", (long)addr, size);
 			rc = res;
 			break;
 		}
@@ -655,13 +655,13 @@ static int configure_chip(const struct device *dev)
 		sr_num = 2;
 		qe_mask = BIT(1);
 #else
-		LOG_ERR("Unsupported QER type");
+		LOG_ERROR("Unsupported QER type");
 		return -EINVAL;
 #endif
 
 		rc = qspi_rdsr(dev, sr_num);
 		if (rc < 0) {
-			LOG_ERR("RDSR failed: %d", rc);
+			LOG_ERROR("RDSR failed: %d", rc);
 			return rc;
 		}
 
@@ -678,8 +678,7 @@ static int configure_chip(const struct device *dev)
 		}
 
 		if (rc < 0) {
-			LOG_ERR("QE %s failed: %d", qe_value ? "set" : "clear",
-				rc);
+			LOG_ERROR("QE %s failed: %d", qe_value ? "set" : "clear", rc);
 			return rc;
 		}
 #endif
@@ -695,7 +694,7 @@ static int configure_chip(const struct device *dev)
 		rc = qspi_send_cmd(dev, &cmd, (INST_0_4BA & 0x02));
 
 		if (rc < 0) {
-			LOG_ERR("E4BA cmd issue failed: %d.", rc);
+			LOG_ERROR("E4BA cmd issue failed: %d.", rc);
 		} else {
 			LOG_DBG("E4BA cmd issued.");
 		}
@@ -867,11 +866,11 @@ static int qspi_nor_read(const struct device *dev, off_t addr, void *dest,
 	}
 
 	/* affected region should be within device */
-	if (addr < 0 ||
-	    (addr + size) > params->size) {
-		LOG_ERR("read error: address or size "
-			"exceeds expected values."
-			"Addr: 0x%lx size %zu", (long)addr, size);
+	if (addr < 0 || (addr + size) > params->size) {
+		LOG_ERROR("read error: address or size "
+			  "exceeds expected values."
+			  "Addr: 0x%lx size %zu",
+			  (long)addr, size);
 		return -EINVAL;
 	}
 
@@ -964,11 +963,11 @@ static int qspi_nor_write(const struct device *dev, off_t addr,
 	}
 
 	/* affected region should be within device */
-	if (addr < 0 ||
-	    (addr + size) > params->size) {
-		LOG_ERR("write error: address or size "
-			"exceeds expected values."
-			"Addr: 0x%lx size %zu", (long)addr, size);
+	if (addr < 0 || (addr + size) > params->size) {
+		LOG_ERROR("write error: address or size "
+			  "exceeds expected values."
+			  "Addr: 0x%lx size %zu",
+			  (long)addr, size);
 		return -EINVAL;
 	}
 
@@ -1010,11 +1009,11 @@ static int qspi_nor_erase(const struct device *dev, off_t addr, size_t size)
 	}
 
 	/* affected region should be within device */
-	if (addr < 0 ||
-	    (addr + size) > params->size) {
-		LOG_ERR("erase error: address or size "
-			"exceeds expected values."
-			"Addr: 0x%lx size %zu", (long)addr, size);
+	if (addr < 0 || (addr + size) > params->size) {
+		LOG_ERROR("erase error: address or size "
+			  "exceeds expected values."
+			  "Addr: 0x%lx size %zu",
+			  (long)addr, size);
 		return -EINVAL;
 	}
 
@@ -1082,9 +1081,8 @@ static int qspi_init(const struct device *dev)
 	}
 
 	if (memcmp(dev_config->id, id, SPI_NOR_MAX_ID_LEN) != 0) {
-		LOG_ERR("JEDEC id [%02x %02x %02x] expect [%02x %02x %02x]",
-			id[0], id[1], id[2], dev_config->id[0],
-			dev_config->id[1], dev_config->id[2]);
+		LOG_ERROR("JEDEC id [%02x %02x %02x] expect [%02x %02x %02x]", id[0], id[1], id[2],
+			  dev_config->id[0], dev_config->id[1], dev_config->id[2]);
 		return -ENODEV;
 	}
 
@@ -1371,7 +1369,7 @@ void z_impl_nrf_qspi_nor_xip_enable(const struct device *dev, bool enable)
 
 		++dev_data->xip_users;
 	} else if (dev_data->xip_users == 0) {
-		LOG_ERR("Unbalanced XIP disabling");
+		LOG_ERROR("Unbalanced XIP disabling");
 	} else {
 		--dev_data->xip_users;
 

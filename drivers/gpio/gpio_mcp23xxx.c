@@ -196,13 +196,13 @@ static int mcp23xxx_pin_cfg(const struct device *dev, gpio_pin_t pin, gpio_flags
 
 	ret = setup_pin_dir(dev, pin, flags);
 	if (ret < 0) {
-		LOG_ERR("Error setting pin direction (%d)", ret);
+		LOG_ERROR("Error setting pin direction (%d)", ret);
 		goto done;
 	}
 
 	ret = setup_pin_pull(dev, pin, flags);
 	if (ret < 0) {
-		LOG_ERR("Error setting pin pull up/pull down (%d)", ret);
+		LOG_ERROR("Error setting pin pull up/pull down (%d)", ret);
 		goto done;
 	}
 
@@ -423,7 +423,7 @@ static void mcp23xxx_work_handler(struct k_work *work)
 
 	ret = read_port_regs(dev, REG_INTF, &intf);
 	if (ret != 0) {
-		LOG_ERR("Failed to read INTF");
+		LOG_ERROR("Failed to read INTF");
 		goto fail;
 	}
 
@@ -436,7 +436,7 @@ static void mcp23xxx_work_handler(struct k_work *work)
 		 *   low again. This causes a second ISR to be scheduled, which then won't
 		 *   find any active interrupts if the callback has disabled the level interrupt.
 		 */
-		LOG_ERR("Spurious interrupt");
+		LOG_ERROR("Spurious interrupt");
 		goto fail;
 	}
 
@@ -445,7 +445,7 @@ static void mcp23xxx_work_handler(struct k_work *work)
 	/* Read INTCAP to acknowledge the interrupt */
 	ret = read_port_regs(dev, REG_INTCAP, &intcap);
 	if (ret != 0) {
-		LOG_ERR("Failed to read INTCAP");
+		LOG_ERROR("Failed to read INTCAP");
 		goto fail;
 	}
 
@@ -496,7 +496,7 @@ int gpio_mcp23xxx_init(const struct device *dev)
 	int err;
 
 	if (config->ngpios != 8U && config->ngpios != 16U) {
-		LOG_ERR("Invalid value ngpios=%u. Expected 8 or 16!", config->ngpios);
+		LOG_ERROR("Invalid value ngpios=%u. Expected 8 or 16!", config->ngpios);
 		return -EINVAL;
 	}
 
@@ -511,7 +511,7 @@ int gpio_mcp23xxx_init(const struct device *dev)
 	if (config->gpio_reset.port) {
 		err = gpio_pin_configure_dt(&config->gpio_reset, GPIO_OUTPUT_ACTIVE);
 		if (err != 0) {
-			LOG_ERR("Failed to configure RESET line: %d", err);
+			LOG_ERROR("Failed to configure RESET line: %d", err);
 			return -EIO;
 		}
 
@@ -519,7 +519,7 @@ int gpio_mcp23xxx_init(const struct device *dev)
 
 		err = gpio_pin_set_dt(&config->gpio_reset, 0);
 		if (err != 0) {
-			LOG_ERR("Failed to deactivate RESET line: %d", err);
+			LOG_ERROR("Failed to deactivate RESET line: %d", err);
 			return -EIO;
 		}
 	}
@@ -531,13 +531,13 @@ int gpio_mcp23xxx_init(const struct device *dev)
 			err = write_iocon(dev, REG_IOCON_MIRROR);
 
 			if (err != 0) {
-				LOG_ERR("Failed to enable mirrored IRQ pins: %d", err);
+				LOG_ERROR("Failed to enable mirrored IRQ pins: %d", err);
 				return -EIO;
 			}
 		}
 
 		if (!gpio_is_ready_dt(&config->gpio_int)) {
-			LOG_ERR("INT port is not ready");
+			LOG_ERROR("INT port is not ready");
 			return -ENODEV;
 		}
 
@@ -546,7 +546,7 @@ int gpio_mcp23xxx_init(const struct device *dev)
 
 		err = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
 		if (err != 0) {
-			LOG_ERR("Failed to configure INT line: %d", err);
+			LOG_ERROR("Failed to configure INT line: %d", err);
 			return -EIO;
 		}
 
@@ -554,13 +554,13 @@ int gpio_mcp23xxx_init(const struct device *dev)
 				   BIT(config->gpio_int.pin));
 		err = gpio_add_callback(config->gpio_int.port, &drv_data->int_gpio_cb);
 		if (err != 0) {
-			LOG_ERR("Failed to add INT callback: %d", err);
+			LOG_ERROR("Failed to add INT callback: %d", err);
 			return -EIO;
 		}
 
 		err = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 		if (err != 0) {
-			LOG_ERR("Failed to configure INT interrupt: %d", err);
+			LOG_ERROR("Failed to configure INT interrupt: %d", err);
 			return -EIO;
 		}
 	}

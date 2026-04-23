@@ -521,42 +521,42 @@ static int andes_cache_init(void)
 		line_size = (csr_read(NDS_MICM_CFG) >> MICM_CFG_ISZ_SHIFT) & BIT_MASK(3);
 
 		if (line_size == 0) {
-			LOG_ERR("Platform doesn't support I-cache, "
-				"please disable CONFIG_ICACHE");
+			LOG_ERROR("Platform doesn't support I-cache, "
+				  "please disable CONFIG_ICACHE");
 		}
 #if defined(CONFIG_ICACHE_LINE_SIZE_DETECT)
 		/* Icache line size */
 		if (line_size <= 5) {
 			cache_cfg.instr_line_size = 1 << (line_size + 2);
 		} else {
-			LOG_ERR("Unknown line size of I-cache");
+			LOG_ERROR("Unknown line size of I-cache");
 		}
 #elif (CONFIG_ICACHE_LINE_SIZE != 0)
 		cache_cfg.instr_line_size = CONFIG_ICACHE_LINE_SIZE;
 #else
-		LOG_ERR("Please specific the i-cache-line-size "
-			"CPU0 property of the DT");
+		LOG_ERROR("Please specific the i-cache-line-size "
+			  "CPU0 property of the DT");
 #endif /* defined(CONFIG_ICACHE_LINE_SIZE_DETECT) */
 	}
 
 	if (IS_ENABLED(CONFIG_DCACHE)) {
 		line_size = (csr_read(NDS_MDCM_CFG) >> MDCM_CFG_DSZ_SHIFT) & BIT_MASK(3);
 		if (line_size == 0) {
-			LOG_ERR("Platform doesn't support D-cache, "
-				"please disable CONFIG_DCACHE");
+			LOG_ERROR("Platform doesn't support D-cache, "
+				  "please disable CONFIG_DCACHE");
 		}
 #if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
 		/* Dcache line size */
 		if (line_size <= 5) {
 			cache_cfg.data_line_size = 1 << (line_size + 2);
 		} else {
-			LOG_ERR("Unknown line size of D-cache");
+			LOG_ERROR("Unknown line size of D-cache");
 		}
 #elif (CONFIG_DCACHE_LINE_SIZE != 0)
 		cache_cfg.data_line_size = CONFIG_DCACHE_LINE_SIZE;
 #else
-		LOG_ERR("Please specific the d-cache-line-size "
-			"CPU0 property of the DT");
+		LOG_ERROR("Please specific the d-cache-line-size "
+			  "CPU0 property of the DT");
 #endif /* defined(CONFIG_DCACHE_LINE_SIZE_DETECT) */
 	}
 

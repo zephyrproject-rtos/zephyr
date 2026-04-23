@@ -134,7 +134,7 @@ static int sam_hsmci_set_io(const struct device *dev, struct sdhc_io *ios)
 					     &frequency);
 
 		if (ret < 0) {
-			LOG_ERR("Failed to get clock rate, err=%d", ret);
+			LOG_ERROR("Failed to get clock rate, err=%d", ret);
 			return ret;
 		}
 
@@ -196,7 +196,7 @@ static int sam_hsmci_init(const struct device *dev)
 	/* Connect pins to the peripheral */
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("pinctrl_apply_state() => %d", ret);
+		LOG_ERROR("pinctrl_apply_state() => %d", ret);
 		return ret;
 	}
 	/* Enable module's clock */
@@ -205,12 +205,12 @@ static int sam_hsmci_init(const struct device *dev)
 	/* init carrier detect (if set) */
 	if (config->carrier_detect.port != NULL) {
 		if (!gpio_is_ready_dt(&config->carrier_detect)) {
-			LOG_ERR("GPIO port for carrier-detect pin is not ready");
+			LOG_ERROR("GPIO port for carrier-detect pin is not ready");
 			return -ENODEV;
 		}
 		ret = gpio_pin_configure_dt(&config->carrier_detect, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Couldn't configure carrier-detect pin; (%d)", ret);
+			LOG_ERROR("Couldn't configure carrier-detect pin; (%d)", ret);
 			return ret;
 		}
 	}
@@ -622,7 +622,7 @@ static int sam_hsmci_request(const struct device *dev, struct sdhc_command *cmd,
 
 	ret = k_mutex_lock(&dev_data->mtx, K_MSEC(cmd->timeout_ms));
 	if (ret) {
-		LOG_ERR("Could not access card");
+		LOG_ERROR("Could not access card");
 		return -EBUSY;
 	}
 
@@ -645,7 +645,7 @@ static int sam_hsmci_request(const struct device *dev, struct sdhc_command *cmd,
 				busy_timeout -= 125;
 			}
 			if (busy_timeout <= 0) {
-				LOG_ERR("Card did not idle after CMD12");
+				LOG_ERROR("Card did not idle after CMD12");
 				ret = -ETIMEDOUT;
 			}
 		}

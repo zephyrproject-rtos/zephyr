@@ -74,7 +74,7 @@ static int can_kvaser_pci_init(const struct device *dev)
 	int err;
 
 	if (kvaser_config->pcie->bdf == PCIE_BDF_NONE) {
-		LOG_ERR("failed to find PCIe device");
+		LOG_ERROR("failed to find PCIe device");
 		return -ENODEV;
 	}
 
@@ -82,7 +82,7 @@ static int can_kvaser_pci_init(const struct device *dev)
 
 	/* AMCC S5920 registers */
 	if (!pcie_probe_iobar(kvaser_config->pcie->bdf, 0, &iobar)) {
-		LOG_ERR("failed to probe AMCC S5920 I/O BAR");
+		LOG_ERROR("failed to probe AMCC S5920 I/O BAR");
 		return -ENODEV;
 	}
 
@@ -90,7 +90,7 @@ static int can_kvaser_pci_init(const struct device *dev)
 
 	/* SJA1000 registers */
 	if (!pcie_probe_iobar(kvaser_config->pcie->bdf, 1, &iobar)) {
-		LOG_ERR("failed to probe SJA1000 I/O BAR");
+		LOG_ERROR("failed to probe SJA1000 I/O BAR");
 		return -ENODEV;
 	}
 
@@ -98,7 +98,7 @@ static int can_kvaser_pci_init(const struct device *dev)
 
 	/* Xilinx registers */
 	if (!pcie_probe_iobar(kvaser_config->pcie->bdf, 2, &iobar)) {
-		LOG_ERR("failed to probe Xilinx I/O BAR");
+		LOG_ERROR("failed to probe Xilinx I/O BAR");
 		return -ENODEV;
 	}
 
@@ -121,7 +121,7 @@ static int can_kvaser_pci_init(const struct device *dev)
 
 	err = can_sja1000_init(dev);
 	if (err != 0) {
-		LOG_ERR("failed to initialize controller (err %d)", err);
+		LOG_ERROR("failed to initialize controller (err %d)", err);
 		return err;
 	}
 

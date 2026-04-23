@@ -165,7 +165,7 @@ static int omap_mcspi_configure_clk_freq(const struct device *dev, uint32_t spee
 			clkd++;
 		}
 	} else {
-		LOG_ERR("Invalid SPI device frequency: %uHz\n", speed_hz);
+		LOG_ERROR("Invalid SPI device frequency: %uHz\n", speed_hz);
 		return -EINVAL;
 	}
 
@@ -206,22 +206,22 @@ static int omap_mcspi_configure(const struct device *dev, const struct spi_confi
 	}
 
 	if (is_peripheral && !IS_ENABLED(CONFIG_SPI_SLAVE)) {
-		LOG_ERR("Kconfig for SPI slave mode is not enabled");
+		LOG_ERROR("Kconfig for SPI slave mode is not enabled");
 		return -ENOTSUP;
 	}
 
 	if (chan >= cfg->num_cs) {
-		LOG_ERR("invalid slave selected");
+		LOG_ERROR("invalid slave selected");
 		return -EINVAL;
 	}
 
 	if ((config->operation & SPI_HALF_DUPLEX) && tx_bufs && rx_bufs) {
-		LOG_ERR("cannot transmit and receive simultaneously with half duplex");
+		LOG_ERROR("cannot transmit and receive simultaneously with half duplex");
 		return -EINVAL;
 	}
 
 	if (word_size < 4 || word_size > 32) {
-		LOG_ERR("invalid word size");
+		LOG_ERROR("invalid word size");
 		return -EINVAL;
 	}
 
@@ -392,7 +392,7 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 
 		while (count != 0) {
 			if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_RXS)) {
-				LOG_ERR("RXS timed out");
+				LOG_ERROR("RXS timed out");
 				return count;
 			}
 
@@ -404,7 +404,7 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 
 		/* Make sure RX FIFO is empty */
 		if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_RXFFE) != 0) {
-			LOG_ERR("RXFFE timed out");
+			LOG_ERROR("RXFFE timed out");
 			return count;
 		}
 
@@ -415,7 +415,7 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 
 			/* Make sure TX FIFO is empty */
 			if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_TXFFE)) {
-				LOG_ERR("TXFFE timed out");
+				LOG_ERROR("TXFFE timed out");
 				return count;
 			}
 
@@ -430,7 +430,7 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 
 		/* Make sure TX FIFO is empty */
 		if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_TXFFE)) {
-			LOG_ERR("TXFFE timed out");
+			LOG_ERROR("TXFFE timed out");
 			return count;
 		}
 
@@ -441,7 +441,7 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 
 			/* Make sure TX FIFO is empty */
 			if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_TXFFE)) {
-				LOG_ERR("TXFFE timed out");
+				LOG_ERROR("TXFFE timed out");
 				return count;
 			}
 
@@ -454,7 +454,7 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 			/* Read and empty the entire RX FIFO */
 			for (int i = 0; i < num_words; i++) {
 				if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_RXS)) {
-					LOG_ERR("RXS timed out");
+					LOG_ERROR("RXS timed out");
 					return count;
 				}
 
@@ -564,7 +564,7 @@ static int omap_mcspi_transceive_all(const struct device *dev, const struct spi_
 
 	ret = omap_mcspi_configure(dev, config, tx_bufs, rx_bufs);
 	if (ret) {
-		LOG_ERR("An error occurred in the SPI configuration");
+		LOG_ERROR("An error occurred in the SPI configuration");
 		goto cleanup;
 	}
 
@@ -575,9 +575,9 @@ static int omap_mcspi_transceive_all(const struct device *dev, const struct spi_
 	while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
 		ret = omap_mcspi_transceive_one(dev);
 		if (ret < 0) {
-			LOG_ERR("Transaction failed, TX/RX left: %zu/%zu",
-				spi_context_tx_len_left(ctx, data->dfs),
-				spi_context_rx_len_left(ctx, data->dfs));
+			LOG_ERROR("Transaction failed, TX/RX left: %zu/%zu",
+				  spi_context_tx_len_left(ctx, data->dfs),
+				  spi_context_rx_len_left(ctx, data->dfs));
 			goto cleanup;
 		}
 	}
@@ -620,13 +620,13 @@ static int omap_mcspi_init(const struct device *dev)
 	regs = DEV_REGS(dev);
 
 	if (cfg->num_cs > OMAP_MCSPI_NUM_CHANNELS) {
-		LOG_ERR("chipselect count cannot be greater than max channel count");
+		LOG_ERROR("chipselect count cannot be greater than max channel count");
 		return -EINVAL;
 	}
 
 	ret = pinctrl_apply_state(cfg->pinctrl, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("failed to apply pinctrl");
+		LOG_ERROR("failed to apply pinctrl");
 		return ret;
 	}
 
@@ -636,7 +636,7 @@ static int omap_mcspi_init(const struct device *dev)
 	/* Wait till reset is done */
 	ret = omap_mcspi_wait_for_reg_bit(&regs->SYSSTATUS, OMAP_MCSPI_SYSSTATUS_RESETDONE);
 	if (ret < 0) {
-		LOG_ERR("RESETDONE timed out");
+		LOG_ERROR("RESETDONE timed out");
 		return ret;
 	}
 

@@ -168,18 +168,17 @@ static int configure(const struct device *dev,
 	}
 
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported on %s",
-			    dev->name);
+		LOG_ERROR("Slave mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
 	if (config->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback mode is not supported");
+		LOG_ERROR("Loopback mode is not supported");
 		return -EINVAL;
 	}
 
 	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only single line mode is supported");
+		LOG_ERROR("Only single line mode is supported");
 		return -EINVAL;
 	}
 
@@ -689,12 +688,12 @@ int spi_atcspi200_init(const struct device *dev)
 
 #ifdef CONFIG_ANDES_SPI_DMA_MODE
 	if (!data->dma_tx.dma_dev) {
-		LOG_ERR("DMA device not found");
+		LOG_ERROR("DMA device not found");
 		return -ENODEV;
 	}
 
 	if (!data->dma_rx.dma_dev) {
-		LOG_ERR("DMA device not found");
+		LOG_ERROR("DMA device not found");
 		return -ENODEV;
 	}
 #endif

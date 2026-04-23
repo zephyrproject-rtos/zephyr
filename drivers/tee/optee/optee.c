@@ -117,7 +117,7 @@ static int param_to_msg_param(const struct tee_param *param, unsigned int num_pa
 
 	for (i = 0; i < num_param; i++, tp++, mtp++) {
 		if (!tp || !mtp) {
-			LOG_ERR("Wrong param on %d iteration", i);
+			LOG_ERROR("Wrong param on %d iteration", i);
 			return -EINVAL;
 		}
 
@@ -185,7 +185,7 @@ static int msg_param_to_param(struct tee_param *param, unsigned int num_param,
 		uint32_t attr = mtp->attr & OPTEE_MSG_ATTR_TYPE_MASK;
 
 		if (!tp || !mtp) {
-			LOG_ERR("Wrong param on %d iteration", i);
+			LOG_ERROR("Wrong param on %d iteration", i);
 			return -EINVAL;
 		}
 
@@ -736,7 +736,7 @@ static int optee_close_session(const struct device *dev, uint32_t session_id)
 			 OPTEE_MSG_GET_ARG_SIZE(0),
 			 TEE_SHM_ALLOC, &shm);
 	if (rc) {
-		LOG_ERR("Unable to get shared memory, rc = %d", rc);
+		LOG_ERROR("Unable to get shared memory, rc = %d", rc);
 		return rc;
 	}
 
@@ -748,7 +748,7 @@ static int optee_close_session(const struct device *dev, uint32_t session_id)
 	rc = optee_call(dev, marg);
 
 	if (tee_rm_shm(dev, shm)) {
-		LOG_ERR("Unable to free shared memory");
+		LOG_ERROR("Unable to free shared memory");
 	}
 
 	return rc;
@@ -770,7 +770,7 @@ static int optee_open_session(const struct device *dev, struct tee_open_session_
 			 OPTEE_MSG_GET_ARG_SIZE(num_param + 2),
 			 TEE_SHM_ALLOC, &shm);
 	if (rc) {
-		LOG_ERR("Unable to get shared memory, rc = %d", rc);
+		LOG_ERROR("Unable to get shared memory, rc = %d", rc);
 		return rc;
 	}
 
@@ -808,7 +808,7 @@ static int optee_open_session(const struct device *dev, struct tee_open_session_
 		 */
 		ret = optee_close_session(dev, marg->session);
 		if (ret) {
-			LOG_ERR("Unable to close session: %d", ret);
+			LOG_ERROR("Unable to close session: %d", ret);
 		}
 		goto out;
 	}
@@ -820,7 +820,7 @@ static int optee_open_session(const struct device *dev, struct tee_open_session_
 out:
 	ret = tee_rm_shm(dev, shm);
 	if (ret) {
-		LOG_ERR("Unable to free shared memory");
+		LOG_ERROR("Unable to free shared memory");
 	}
 
 	return (rc) ? rc : ret;
@@ -836,7 +836,7 @@ static int optee_cancel(const struct device *dev, uint32_t session_id, uint32_t 
 			 OPTEE_MSG_GET_ARG_SIZE(0),
 			 TEE_SHM_ALLOC, &shm);
 	if (rc) {
-		LOG_ERR("Unable to get shared memory, rc = %d", rc);
+		LOG_ERROR("Unable to get shared memory, rc = %d", rc);
 		return rc;
 	}
 
@@ -849,7 +849,7 @@ static int optee_cancel(const struct device *dev, uint32_t session_id, uint32_t 
 	rc = optee_call(dev, marg);
 
 	if (tee_rm_shm(dev, shm)) {
-		LOG_ERR("Unable to free shared memory");
+		LOG_ERROR("Unable to free shared memory");
 	}
 
 	return rc;
@@ -870,7 +870,7 @@ static int optee_invoke_func(const struct device *dev, struct tee_invoke_func_ar
 			 OPTEE_MSG_GET_ARG_SIZE(num_param),
 			 TEE_SHM_ALLOC, &shm);
 	if (rc) {
-		LOG_ERR("Unable to get shared memory, rc = %d", rc);
+		LOG_ERROR("Unable to get shared memory, rc = %d", rc);
 		return rc;
 	}
 
@@ -905,7 +905,7 @@ static int optee_invoke_func(const struct device *dev, struct tee_invoke_func_ar
 out:
 	ret = tee_rm_shm(dev, shm);
 	if (ret) {
-		LOG_ERR("Unable to free shared memory");
+		LOG_ERROR("Unable to free shared memory");
 	}
 
 	return (rc) ? rc : ret;
@@ -1049,14 +1049,14 @@ static int optee_suppl_recv(const struct device *dev, uint32_t *func, unsigned i
 
 		if (req) {
 			if (supp->current) {
-				LOG_ERR("Concurrent supp_recv calls are not supported");
+				LOG_ERROR("Concurrent supp_recv calls are not supported");
 				k_mutex_unlock(&supp->mutex);
 				return -EBUSY;
 			}
 
 			if (*num_params < req->num_params) {
-				LOG_ERR("Not enough space for params, need at least %lu",
-					req->num_params);
+				LOG_ERROR("Not enough space for params, need at least %lu",
+					  req->num_params);
 				k_mutex_unlock(&supp->mutex);
 				return -EINVAL;
 			}
@@ -1094,10 +1094,10 @@ static int optee_suppl_send(const struct device *dev, unsigned int ret, unsigned
 		supp->current = NULL;
 	} else {
 		if (supp->current) {
-			LOG_ERR("Invalid number of parameters, expected %lu or more, got %u",
-				supp->current->num_params, num_params);
+			LOG_ERROR("Invalid number of parameters, expected %lu or more, got %u",
+				  supp->current->num_params, num_params);
 		} else {
-			LOG_ERR("No current request, but called with num_params=%u", num_params);
+			LOG_ERROR("No current request, but called with num_params=%u", num_params);
 		}
 	}
 	k_mutex_unlock(&supp->mutex);
@@ -1149,7 +1149,7 @@ static int set_optee_method(const struct device *dev)
 	} else if (!strcmp("smc", conf->method)) {
 		data->smc_call = optee_smccc_smc;
 	} else {
-		LOG_ERR("Invalid smc_call method");
+		LOG_ERROR("Invalid smc_call method");
 		return -EINVAL;
 	}
 
@@ -1237,24 +1237,24 @@ static int optee_init(const struct device *dev)
 	sys_dlist_init(&data->supp.reqs);
 
 	if (!optee_check_uid(dev)) {
-		LOG_ERR("OPTEE API UID mismatch");
+		LOG_ERROR("OPTEE API UID mismatch");
 		return -EINVAL;
 	}
 
 	optee_get_revision(dev);
 
 	if (!optee_exchange_caps(dev, &data->sec_caps)) {
-		LOG_ERR("OPTEE capabilities exchange failed\n");
+		LOG_ERROR("OPTEE capabilities exchange failed\n");
 		return -EINVAL;
 	}
 
 	if (!(data->sec_caps & OPTEE_SMC_SEC_CAP_DYNAMIC_SHM)) {
-		LOG_ERR("OPTEE does not support dynamic shared memory");
+		LOG_ERROR("OPTEE does not support dynamic shared memory");
 		return -ENOTSUP;
 	}
 
 	if (!optee_get_thread_count(dev, &thread_count)) {
-		LOG_ERR("OPTEE unable to get maximum thread count");
+		LOG_ERROR("OPTEE unable to get maximum thread count");
 		return -ENOTSUP;
 	}
 

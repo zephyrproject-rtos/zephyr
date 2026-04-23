@@ -130,9 +130,8 @@ static void simplelink_scan_work_handler(struct k_work *work)
 
 	} else {
 		/* Encountered an error, or max retries exceeded: */
-		LOG_ERR("Scan failed: retries: %d; err: %d",
-			simplelink_data.scan_retries,
-			simplelink_data.num_results_or_err);
+		LOG_ERROR("Scan failed: retries: %d; err: %d", simplelink_data.scan_retries,
+			  simplelink_data.num_results_or_err);
 		simplelink_data.cb(simplelink_data.iface, -EIO, NULL);
 	}
 }
@@ -198,7 +197,7 @@ static int simplelink_dummy_get(net_sa_family_t family,
 				struct net_context **context)
 {
 
-	LOG_ERR("NET_SOCKETS_OFFLOAD must be configured for this driver");
+	LOG_ERROR("NET_SOCKETS_OFFLOAD must be configured for this driver");
 
 	return -1;
 }
@@ -234,15 +233,15 @@ static void simplelink_iface_init(struct net_if *iface)
 	/* Initialize and configure NWP to defaults: */
 	ret = z_simplelink_init(simplelink_wifi_cb);
 	if (ret) {
-		LOG_ERR("z_simplelink_init failed!");
+		LOG_ERROR("z_simplelink_init failed!");
 		return;
 	}
 
 	ret = k_sem_take(&ip_acquired, FC_TIMEOUT);
 	if (ret < 0) {
 		simplelink_data.initialized = false;
-		LOG_ERR("FastConnect timed out connecting to previous AP.");
-		LOG_ERR("Please re-establish WiFi connection.");
+		LOG_ERROR("FastConnect timed out connecting to previous AP.");
+		LOG_ERROR("Please re-establish WiFi connection.");
 	}
 
 	/* Grab our MAC address: */

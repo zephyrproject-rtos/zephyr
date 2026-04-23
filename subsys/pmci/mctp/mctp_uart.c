@@ -358,7 +358,7 @@ int mctp_uart_tx(struct mctp_binding *b, struct mctp_pktbuf *pkt)
 	int res = uart_tx(uart->dev, (const uint8_t *)uart->tx_buf, len, SYS_FOREVER_US);
 
 	if (res != 0) {
-		LOG_ERR("Failed sending data, %d", res);
+		LOG_ERROR("Failed sending data, %d", res);
 		return res;
 	}
 
@@ -377,7 +377,7 @@ int mctp_uart_start(struct mctp_binding *binding)
 	int res = uart_callback_set(uart->dev, mctp_uart_callback, uart);
 
 	if (res != 0) {
-		LOG_ERR("Failed setting callback, %d", res);
+		LOG_ERROR("Failed setting callback, %d", res);
 		return res;
 	}
 

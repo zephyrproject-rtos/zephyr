@@ -27,7 +27,7 @@ int main(void)
 	int i, len;
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("Auxdisplay device is not ready.");
+		LOG_ERROR("Auxdisplay device is not ready.");
 		return -ENODEV;
 	}
 
@@ -38,7 +38,7 @@ int main(void)
 	}
 	rc = auxdisplay_write(dev, data, strlen(data));
 	if (rc != 0) {
-		LOG_ERR("Failed to write data: %d", rc);
+		LOG_ERROR("Failed to write data: %d", rc);
 		return rc;
 	}
 
@@ -48,7 +48,7 @@ int main(void)
 
 	rc = auxdisplay_display_off(dev);
 	if (rc != 0) {
-		LOG_ERR("Failed to turn display off: %d", rc);
+		LOG_ERROR("Failed to turn display off: %d", rc);
 		return rc;
 	}
 
@@ -56,7 +56,7 @@ int main(void)
 
 	rc = auxdisplay_display_on(dev);
 	if (rc != 0) {
-		LOG_ERR("Failed to turn display on: %d", rc);
+		LOG_ERROR("Failed to turn display on: %d", rc);
 		return rc;
 	}
 
@@ -66,7 +66,7 @@ int main(void)
 
 	rc = auxdisplay_clear(dev);
 	if (rc != 0) {
-		LOG_ERR("Failed to clear display: %d", rc);
+		LOG_ERROR("Failed to clear display: %d", rc);
 		return rc;
 	}
 
@@ -78,7 +78,7 @@ int main(void)
 		snprintf(data, sizeof(data), "%d", i);
 		rc = auxdisplay_write(dev, data, strlen(data));
 		if (rc != 0) {
-			LOG_ERR("Failed to write data: %d", rc);
+			LOG_ERROR("Failed to write data: %d", rc);
 			return rc;
 		}
 
@@ -95,7 +95,7 @@ int main(void)
 
 		rc = auxdisplay_clear(dev);
 		if (rc != 0) {
-			LOG_ERR("Failed to clear display: %d", rc);
+			LOG_ERROR("Failed to clear display: %d", rc);
 			return rc;
 		}
 
@@ -103,13 +103,13 @@ int main(void)
 		rc = auxdisplay_cursor_position_set(dev, AUXDISPLAY_POSITION_ABSOLUTE,
 						    AUXDISPLAY_DIGIT_COUNT - len, 0);
 		if (rc != 0) {
-			LOG_ERR("Failed to set cursor position: %d", rc);
+			LOG_ERROR("Failed to set cursor position: %d", rc);
 			return rc;
 		}
 
 		rc = auxdisplay_write(dev, data, len);
 		if (rc != 0) {
-			LOG_ERR("Failed to write data: %d", rc);
+			LOG_ERROR("Failed to write data: %d", rc);
 			return rc;
 		}
 

@@ -260,7 +260,7 @@ static int i2c_numaker_configure(const struct device *dev, uint32_t dev_config)
 
 	/* Check address size */
 	if (dev_config & I2C_ADDR_10_BITS) {
-		LOG_ERR("10-bits address not supported");
+		LOG_ERROR("10-bits address not supported");
 		return -ENOTSUP;
 	}
 
@@ -275,7 +275,7 @@ static int i2c_numaker_configure(const struct device *dev, uint32_t dev_config)
 		bitrate = MHZ(1);
 		break;
 	default:
-		LOG_ERR("Speed code %d not supported", I2C_SPEED_GET(dev_config));
+		LOG_ERROR("Speed code %d not supported", I2C_SPEED_GET(dev_config));
 		return -ENOTSUP;
 	}
 
@@ -287,7 +287,7 @@ static int i2c_numaker_configure(const struct device *dev, uint32_t dev_config)
 
 #ifdef CONFIG_I2C_TARGET
 	if (data->slave_xfer.slave_addressed) {
-		LOG_ERR("Reconfigure with slave being busy");
+		LOG_ERROR("Reconfigure with slave being busy");
 		err = -EBUSY;
 		goto done;
 	}
@@ -342,7 +342,7 @@ static int i2c_numaker_transfer(const struct device *dev, struct i2c_msg *msgs,
 	irq_disable(config->irq_n);
 
 	if (data->slave_xfer.slave_addressed) {
-		LOG_ERR("Master transfer with slave being busy");
+		LOG_ERROR("Master transfer with slave being busy");
 		err = -EBUSY;
 		goto cleanup;
 	}
@@ -371,13 +371,13 @@ static int i2c_numaker_transfer(const struct device *dev, struct i2c_msg *msgs,
 
 		is_read = (data->master_xfer.msgs_pos->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
 		is_10bit = data->master_xfer.msgs_pos->flags & I2C_MSG_ADDR_10_BITS;
-		LOG_ERR("Failed message:");
-		LOG_ERR("MSG IDX: %d", data->master_xfer.msgs_pos - data->master_xfer.msgs_beg);
-		LOG_ERR("ADDR (%d-bit): 0x%04X", is_10bit ? 10 : 7, addr);
-		LOG_ERR("DIR: %s", is_read ? "R" : "W");
-		LOG_ERR("Expected %d bytes transferred, but actual %d",
-			data->master_xfer.msgs_pos->len,
-			data->master_xfer.buf_pos - data->master_xfer.buf_beg);
+		LOG_ERROR("Failed message:");
+		LOG_ERROR("MSG IDX: %d", data->master_xfer.msgs_pos - data->master_xfer.msgs_beg);
+		LOG_ERROR("ADDR (%d-bit): 0x%04X", is_10bit ? 10 : 7, addr);
+		LOG_ERROR("DIR: %s", is_read ? "R" : "W");
+		LOG_ERROR("Expected %d bytes transferred, but actual %d",
+			  data->master_xfer.msgs_pos->len,
+			  data->master_xfer.buf_pos - data->master_xfer.buf_beg);
 		err = -EIO;
 		goto i2c_stop;
 	}
@@ -411,7 +411,7 @@ static int i2c_numaker_slave_register(const struct device *dev,
 	}
 
 	if (slave_config->flags & I2C_ADDR_10_BITS) {
-		LOG_ERR("10-bits address not supported");
+		LOG_ERROR("10-bits address not supported");
 		return -ENOTSUP;
 	}
 
@@ -470,7 +470,7 @@ static int i2c_numaker_slave_unregister(const struct device *dev,
 	}
 
 	if (data->slave_xfer.slave_addressed) {
-		LOG_ERR("Unregister slave driver with slave being busy");
+		LOG_ERROR("Unregister slave driver with slave being busy");
 		err = -EBUSY;
 		goto cleanup;
 	}
@@ -679,7 +679,7 @@ static int i2c_numaker_init(const struct device *dev)
 
 	/* Validate this module's reset object */
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 

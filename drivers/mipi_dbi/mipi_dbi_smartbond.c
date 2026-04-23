@@ -129,13 +129,13 @@ static int mipi_dbi_smartbond_reset(const struct device *dev, k_timeout_t delay)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->reset)) {
-		LOG_ERR("Reset signal not available");
+		LOG_ERROR("Reset signal not available");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_set_dt(&config->reset, 1);
 	if (ret < 0) {
-		LOG_ERR("Cannot drive reset signal");
+		LOG_ERROR("Cannot drive reset signal");
 		return ret;
 	}
 	k_sleep(delay);
@@ -155,7 +155,7 @@ static inline uint8_t lcdc_smartbond_pixel_to_ocm(enum display_pixel_format pixf
 	case PIXEL_FORMAT_MONO10:
 		return (uint8_t)LCDC_SMARTBOND_L0_L1;
 	default:
-		LOG_ERR("Unsupported pixel format");
+		LOG_ERROR("Unsupported pixel format");
 		return 0;
 	};
 }
@@ -168,7 +168,7 @@ static inline uint8_t lcdc_smartbond_line_mode_translation(uint8_t mode)
 	case MIPI_DBI_MODE_SPI_4WIRE:
 		return (uint8_t)LCDC_SMARTBOND_MODE_SPI4;
 	default:
-		LOG_ERR("Unsupported SPI mode");
+		LOG_ERROR("Unsupported SPI mode");
 		return 0;
 	}
 }
@@ -181,7 +181,7 @@ static inline uint8_t lcdc_smartbond_pixel_to_lcm(enum display_pixel_format pixf
 	case PIXEL_FORMAT_ARGB_8888:
 		return (uint8_t)LCDC_SMARTBOND_L0_ARGB8888;
 	default:
-		LOG_ERR("Unsupported pixel format");
+		LOG_ERROR("Unsupported pixel format");
 		return 0;
 	};
 }
@@ -247,7 +247,7 @@ static int mipi_dbi_smartbond_command_read(const struct device *dev,
 		};
 
 		if (!device_is_ready(spi_dev)) {
-			LOG_ERR("SPI device is not ready");
+			LOG_ERROR("SPI device is not ready");
 			ret = -ENODEV;
 			goto _mipi_dbi_read_exit;
 		}
@@ -255,14 +255,14 @@ static int mipi_dbi_smartbond_command_read(const struct device *dev,
 		/* Overwrite CLK and enable DI lines. CS is driven forcefully. */
 		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_READ);
 		if (ret < 0) {
-			LOG_ERR("Could not apply MIPI DBI pins' SPI read state (%d)", ret);
+			LOG_ERROR("Could not apply MIPI DBI pins' SPI read state (%d)", ret);
 			goto _mipi_dbi_read_exit;
 		}
 
 		/* Get response */
 		ret = spi_read(spi_dev, &dbi_config->config, &buf_set);
 		if (ret < 0) {
-			LOG_ERR("Could not read data from SPI");
+			LOG_ERROR("Could not read data from SPI");
 			goto _mipi_dbi_read_exit;
 		}
 	}
@@ -275,7 +275,7 @@ _mipi_dbi_read_exit:
 	/* Make sure default LCDC pins are applied upon exit */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Could not apply MIPI DBI pins' default state (%d)", ret);
+		LOG_ERROR("Could not apply MIPI DBI pins' default state (%d)", ret);
 	}
 
 	mipi_dbi_smartbond_pm_policy_state_lock_put();
@@ -340,7 +340,7 @@ static int mipi_dbi_smartbond_write_display(const struct device *dev,
 
 	if (desc->width * desc->height * (DISPLAY_BITS_PER_PIXEL(pixfmt) / BITS_PER_BYTE) !=
 	    desc->buf_size) {
-		LOG_ERR("Incorrect buffer size for given width and height");
+		LOG_ERROR("Incorrect buffer size for given width and height");
 		return -EINVAL;
 	}
 
@@ -406,7 +406,7 @@ static int mipi_dbi_smartbond_configure(const struct device *dev)
 		(clk_div >= 2 ? clk_div / 2 : clk_div));
 
 	if (!da1469x_lcdc_check_id()) {
-		LOG_ERR("Mismatching LCDC ID");
+		LOG_ERROR("Mismatching LCDC ID");
 		da1469x_lcdc_set_status(false, 0, 0);
 		return -EINVAL;
 	}
@@ -445,7 +445,7 @@ static int mipi_dbi_smartbond_resume(const struct device *dev)
 	/* Select default state */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Could not apply LCDC pins' default state (%d)", ret);
+		LOG_ERROR("Could not apply LCDC pins' default state (%d)", ret);
 		return -EIO;
 	}
 
@@ -522,7 +522,7 @@ static int mipi_dbi_smartbond_init(const struct device *dev)
 	if (gpio_is_ready_dt(&config->reset)) {
 		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure reset line (%d)", ret);
+			LOG_ERROR("Could not configure reset line (%d)", ret);
 			return -EIO;
 		}
 	}

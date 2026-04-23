@@ -48,13 +48,13 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 	}
 
 	if (modem_socket_is_allocated(&mdata.socket_config, sock) == false) {
-		LOG_ERR("Invalid socket id %d from fd %d", sock->id, sock->sock_fd);
+		LOG_ERROR("Invalid socket id %d from fd %d", sock->id, sock->sock_fd);
 		errno = EINVAL;
 		return -1;
 	}
 
 	if (sock->is_connected == true) {
-		LOG_ERR("Socket is already connected! id: %d, fd: %d", sock->id, sock->sock_fd);
+		LOG_ERROR("Socket is already connected! id: %d, fd: %d", sock->id, sock->sock_fd);
 		errno = EISCONN;
 		return -1;
 	}
@@ -71,7 +71,7 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 
 	ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
 	if (ret != 0) {
-		LOG_ERR("Failed to format IP!");
+		LOG_ERROR("Failed to format IP!");
 		errno = ENOMEM;
 		return -1;
 	}
@@ -79,7 +79,8 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 	ret = snprintk(buf, sizeof(buf), "AT+CAOPEN=%d,0,\"%s\",\"%s\",%d", sock->id,
 			   protocol, ip_str, dst_port);
 	if (ret < 0) {
-		LOG_ERR("Failed to build connect command. ID: %d, FD: %d", sock->id, sock->sock_fd);
+		LOG_ERROR("Failed to build connect command. ID: %d, FD: %d", sock->id,
+			  sock->sock_fd);
 		errno = ENOMEM;
 		return -1;
 	}
@@ -87,7 +88,7 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 #if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
 	ret = sim7080_handle_ca_tls(sock);
 	if (ret != 0) {
-		LOG_ERR("Could not configure TLS for socket %d", sock->sock_fd);
+		LOG_ERROR("Could not configure TLS for socket %d", sock->sock_fd);
 		errno = -ret;
 		return -1;
 	}
@@ -97,12 +98,12 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), buf,
 				 &mdata.sem_response, MDM_CONNECT_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("%s ret: %d", buf, ret);
+		LOG_ERROR("%s ret: %d", buf, ret);
 		goto error;
 	}
 
 	if (mdata.socket_open_rc != 0) {
-		LOG_ERR("Failed to open the socket: %u", mdata.socket_open_rc);
+		LOG_ERROR("Failed to open the socket: %u", mdata.socket_open_rc);
 		ret = -ENOTCONN;
 		goto error;
 	}
@@ -142,7 +143,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
-		LOG_ERR("Modem currently not attached to the network!");
+		LOG_ERROR("Modem currently not attached to the network!");
 		return -EINVAL;
 	}
 
@@ -161,7 +162,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	/* Query the available space in send buffer */
 	ret = snprintk(send_buf, sizeof(send_buf), "AT+CASEND=%d", sock->id);
 	if (ret < 0) {
-		LOG_ERR("Failed to build send query command");
+		LOG_ERROR("Failed to build send query command");
 		errno = ENOMEM;
 		return -1;
 	}
@@ -170,7 +171,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), send_buf,
 		&mdata.sem_response, K_SECONDS(2));
 	if (ret < 0) {
-		LOG_ERR("Failed to query available tx size: %d", ret);
+		LOG_ERROR("Failed to query available tx size: %d", ret);
 		errno = EIO;
 		return -1;
 	}
@@ -188,7 +189,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 
 	ret = snprintk(send_buf, sizeof(send_buf), "AT+CASEND=%d,%zu", sock->id, len);
 	if (ret < 0) {
-		LOG_ERR("Failed to build send command");
+		LOG_ERROR("Failed to build send command");
 		errno = ENOMEM;
 		return -1;
 	}
@@ -202,14 +203,14 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler, NULL, 0U, send_buf, NULL,
 					K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to send CASEND");
+		LOG_ERROR("Failed to send CASEND");
 		goto exit;
 	}
 
 	/* Wait for '> ' */
 	ret = k_sem_take(&mdata.sem_tx_ready, K_SECONDS(2));
 	if (ret < 0) {
-		LOG_ERR("Timeout while waiting for tx");
+		LOG_ERROR("Timeout while waiting for tx");
 		goto exit;
 	}
 
@@ -220,7 +221,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	k_sem_reset(&mdata.sem_response);
 	ret = k_sem_take(&mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Timeout waiting for OK");
+		LOG_ERROR("Timeout waiting for OK");
 	}
 
 exit:
@@ -249,17 +250,17 @@ static int sockread_common(int sockfd, struct modem_cmd_handler_data *data, int 
 	int ret, packet_size;
 
 	if (!len) {
-		LOG_ERR("Invalid length, aborting");
+		LOG_ERROR("Invalid length, aborting");
 		return -EAGAIN;
 	}
 
 	if (!data->rx_buf) {
-		LOG_ERR("Incorrect format! Ignoring data!");
+		LOG_ERROR("Incorrect format! Ignoring data!");
 		return -EINVAL;
 	}
 
 	if (socket_data_length <= 0) {
-		LOG_ERR("Length error (%d)", socket_data_length);
+		LOG_ERROR("Length error (%d)", socket_data_length);
 		return -EAGAIN;
 	}
 
@@ -270,7 +271,7 @@ static int sockread_common(int sockfd, struct modem_cmd_handler_data *data, int 
 
 	sock = modem_socket_from_fd(&mdata.socket_config, sockfd);
 	if (!sock) {
-		LOG_ERR("Socket not found! (%d)", sockfd);
+		LOG_ERROR("Socket not found! (%d)", sockfd);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -279,7 +280,7 @@ static int sockread_common(int sockfd, struct modem_cmd_handler_data *data, int 
 
 	sockread_data = (struct socket_read_data *)socket_data->data;
 	if (!sockread_data) {
-		LOG_ERR("Socket data not found! (%d)", sockfd);
+		LOG_ERROR("Socket data not found! (%d)", sockfd);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -289,9 +290,9 @@ static int sockread_common(int sockfd, struct modem_cmd_handler_data *data, int 
 	data->rx_buf = net_buf_skip(data->rx_buf, ret);
 	sockread_data->recv_read_len = ret;
 	if (ret != socket_data_length) {
-		LOG_ERR("Total copied data is different then received data!"
-			" copied:%d vs. received:%d",
-			ret, socket_data_length);
+		LOG_ERROR("Total copied data is different then received data!"
+			  " copied:%d vs. received:%d",
+			  ret, socket_data_length);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -327,7 +328,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
 
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
-		LOG_ERR("Modem currently not attached to the network!");
+		LOG_ERROR("Modem currently not attached to the network!");
 		return -EINVAL;
 	}
 
@@ -399,7 +400,7 @@ static ssize_t offload_sendmsg(void *obj, const struct net_msghdr *msg, int flag
 
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
-		LOG_ERR("Modem currently not attached to the network!");
+		LOG_ERROR("Modem currently not attached to the network!");
 		return -EINVAL;
 	}
 
@@ -446,7 +447,7 @@ static void socket_close(struct modem_socket *sock)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf, &mdata.sem_response,
 				 MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("%s ret: %d", buf, ret);
+		LOG_ERROR("%s ret: %d", buf, ret);
 	}
 
 #if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
@@ -485,7 +486,7 @@ static int offload_close(void *obj)
 
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
-		LOG_ERR("Modem currently not attached to the network!");
+		LOG_ERROR("Modem currently not attached to the network!");
 		return -EINVAL;
 	}
 
@@ -509,7 +510,7 @@ static int offload_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
-		LOG_ERR("Modem currently not attached to the network!");
+		LOG_ERROR("Modem currently not attached to the network!");
 		return -EINVAL;
 	}
 

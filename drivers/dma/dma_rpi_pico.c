@@ -118,45 +118,45 @@ static int dma_rpi_pico_config(const struct device *dev, uint32_t channel,
 	struct dma_rpi_pico_data *data = dev->data;
 
 	if (channel >= cfg->channels) {
-		LOG_ERR("channel must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels, channel);
+		LOG_ERROR("channel must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels, channel);
 		return -EINVAL;
 	}
 
 	if (dma_cfg->block_count != 1) {
-		LOG_ERR("chained block transfer not supported.");
+		LOG_ERROR("chained block transfer not supported.");
 		return -ENOTSUP;
 	}
 
 	if (dma_cfg->channel_priority > 3) {
-		LOG_ERR("channel_priority must be < 4 (%" PRIu32 ")", dma_cfg->channel_priority);
+		LOG_ERROR("channel_priority must be < 4 (%" PRIu32 ")", dma_cfg->channel_priority);
 		return -EINVAL;
 	}
 
 	if (dma_cfg->head_block->source_addr_adj == DMA_ADDR_ADJ_DECREMENT) {
-		LOG_ERR("source_addr_adj not supported DMA_ADDR_ADJ_DECREMENT");
+		LOG_ERROR("source_addr_adj not supported DMA_ADDR_ADJ_DECREMENT");
 		return -ENOTSUP;
 	}
 
 	if (dma_cfg->head_block->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT) {
-		LOG_ERR("dest_addr_adj not supported DMA_ADDR_ADJ_DECREMENT");
+		LOG_ERROR("dest_addr_adj not supported DMA_ADDR_ADJ_DECREMENT");
 		return -ENOTSUP;
 	}
 
 	if (dma_cfg->head_block->source_addr_adj != DMA_ADDR_ADJ_INCREMENT &&
 	    dma_cfg->head_block->source_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
-		LOG_ERR("invalid source_addr_adj %" PRIu16, dma_cfg->head_block->source_addr_adj);
+		LOG_ERROR("invalid source_addr_adj %" PRIu16, dma_cfg->head_block->source_addr_adj);
 		return -ENOTSUP;
 	}
 	if (dma_cfg->head_block->dest_addr_adj != DMA_ADDR_ADJ_INCREMENT &&
 	    dma_cfg->head_block->dest_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
-		LOG_ERR("invalid dest_addr_adj %" PRIu16, dma_cfg->head_block->dest_addr_adj);
+		LOG_ERROR("invalid dest_addr_adj %" PRIu16, dma_cfg->head_block->dest_addr_adj);
 		return -ENOTSUP;
 	}
 
 	if (dma_cfg->source_data_size != 1 && dma_cfg->source_data_size != 2 &&
 	    dma_cfg->source_data_size != 4) {
-		LOG_ERR("source_data_size must be 1, 2, or 4 (%" PRIu32 ")",
-			dma_cfg->source_data_size);
+		LOG_ERROR("source_data_size must be 1, 2, or 4 (%" PRIu32 ")",
+			  dma_cfg->source_data_size);
 		return -EINVAL;
 	}
 
@@ -166,14 +166,15 @@ static int dma_rpi_pico_config(const struct device *dev, uint32_t channel,
 
 	if (dma_cfg->dest_data_size != 1 && dma_cfg->dest_data_size != 2 &&
 	    dma_cfg->dest_data_size != 4) {
-		LOG_ERR("dest_data_size must be 1, 2, or 4 (%" PRIu32 ")", dma_cfg->dest_data_size);
+		LOG_ERROR("dest_data_size must be 1, 2, or 4 (%" PRIu32 ")",
+			  dma_cfg->dest_data_size);
 		return -EINVAL;
 	}
 
 	if (dma_cfg->channel_direction > PERIPHERAL_TO_MEMORY) {
-		LOG_ERR("channel_direction must be MEMORY_TO_MEMORY, "
-			"MEMORY_TO_PERIPHERAL or PERIPHERAL_TO_MEMORY (%" PRIu32 ")",
-			dma_cfg->channel_direction);
+		LOG_ERROR("channel_direction must be MEMORY_TO_MEMORY, "
+			  "MEMORY_TO_PERIPHERAL or PERIPHERAL_TO_MEMORY (%" PRIu32 ")",
+			  dma_cfg->channel_direction);
 		return -ENOTSUP;
 	}
 
@@ -211,7 +212,7 @@ static int dma_rpi_pico_reload(const struct device *dev, uint32_t ch, uint32_t s
 	struct dma_rpi_pico_data *data = dev->data;
 
 	if (ch >= cfg->channels) {
-		LOG_ERR("reload channel must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels, ch);
+		LOG_ERROR("reload channel must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels, ch);
 		return -EINVAL;
 	}
 
@@ -236,7 +237,7 @@ static int dma_rpi_pico_start(const struct device *dev, uint32_t ch)
 	struct dma_rpi_pico_data *data = dev->data;
 
 	if (ch >= cfg->channels) {
-		LOG_ERR("start channel must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels, ch);
+		LOG_ERROR("start channel must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels, ch);
 		return -EINVAL;
 	}
 
@@ -256,7 +257,7 @@ static int dma_rpi_pico_stop(const struct device *dev, uint32_t ch)
 	const struct dma_rpi_pico_config *cfg = dev->config;
 
 	if (ch >= cfg->channels) {
-		LOG_ERR("stop channel must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels, ch);
+		LOG_ERROR("stop channel must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels, ch);
 		return -EINVAL;
 	}
 
@@ -280,7 +281,7 @@ static int dma_rpi_pico_get_status(const struct device *dev, uint32_t ch, struct
 	struct dma_rpi_pico_data *data = dev->data;
 
 	if (ch >= cfg->channels) {
-		LOG_ERR("channel must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels, ch);
+		LOG_ERROR("channel must be < %" PRIu32 " (%" PRIu32 ")", cfg->channels, ch);
 		return -EINVAL;
 	}
 

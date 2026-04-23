@@ -383,8 +383,8 @@ static int gpio_ite_configure(const struct device *dev,
 		if (*reg_gpcr != GPCR_PORT_PIN_MODE_TRISTATE) {
 			/* Go back to default setting (input) */
 			*reg_gpcr = GPCR_PORT_PIN_MODE_INPUT;
-			LOG_ERR("Cannot config GPIO-%c%d as tri-state",
-				(gpio_config->index + 'A'), pin);
+			LOG_ERROR("Cannot config GPIO-%c%d as tri-state",
+				  (gpio_config->index + 'A'), pin);
 			return -ENOTSUP;
 		}
 		/*
@@ -636,7 +636,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 	}
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
-		LOG_ERR("Level trigger mode not supported");
+		LOG_ERROR("Level trigger mode not supported");
 		return -ENOTSUP;
 	}
 

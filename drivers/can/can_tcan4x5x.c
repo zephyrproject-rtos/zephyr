@@ -285,7 +285,7 @@ static int tcan4x5x_read(const struct device *dev, uint16_t addr, void *dst, siz
 
 	err = spi_transceive_dt(&tcan_config->spi, &tx, &rx);
 	if (err != 0) {
-		LOG_ERR("failed to read addr %u, len %d (err %d)", addr, len, err);
+		LOG_ERROR("failed to read addr %u, len %d (err %d)", addr, len, err);
 		return err;
 	}
 
@@ -339,7 +339,7 @@ static int tcan4x5x_write(const struct device *dev, uint16_t addr, const void *s
 
 	err = spi_transceive_dt(&tcan_config->spi, &tx, &rx);
 	if (err != 0) {
-		LOG_ERR("failed to write addr %u, len %d (err %d)", addr, len, err);
+		LOG_ERROR("failed to write addr %u, len %d (err %d)", addr, len, err);
 		return err;
 	}
 
@@ -391,7 +391,7 @@ static int tcan4x5x_clear_mcan_mram(const struct device *dev, uint16_t offset, s
 
 		err = tcan4x5x_write_mcan_mram(dev, offset, &buf, pending);
 		if (err != 0) {
-			LOG_ERR("failed to clear message RAM (err %d)", err);
+			LOG_ERROR("failed to clear message RAM (err %d)", err);
 			return err;
 		}
 
@@ -436,7 +436,7 @@ static void tcan4x5x_int_thread(void *p1, void *p2, void *p3)
 
 		err = tcan4x5x_read_tcan_reg(dev, CAN_TCAN4X5X_IR, &ir);
 		if (err != 0) {
-			LOG_ERR("failed to read interrupt register (err %d)", err);
+			LOG_ERROR("failed to read interrupt register (err %d)", err);
 			continue;
 		}
 
@@ -444,23 +444,23 @@ static void tcan4x5x_int_thread(void *p1, void *p2, void *p3)
 			err = tcan4x5x_write_tcan_reg(dev, CAN_TCAN4X5X_IR,
 						      ir & CAN_TCAN4X5X_IR_CLEAR_ALL);
 			if (err != 0) {
-				LOG_ERR("failed to write interrupt register (err %d)", err);
+				LOG_ERROR("failed to write interrupt register (err %d)", err);
 				break;
 			}
 
 			if ((ir & CAN_TCAN4X5X_IR_SPIERR) != 0U) {
 				err = tcan4x5x_read_tcan_reg(dev, CAN_TCAN4X5X_STATUS, &status);
 				if (err != 0) {
-					LOG_ERR("failed to read status register (err %d)", err);
+					LOG_ERROR("failed to read status register (err %d)", err);
 					continue;
 				}
 
-				LOG_ERR("SPIERR, status = 0x%08x", status);
+				LOG_ERROR("SPIERR, status = 0x%08x", status);
 
 				err = tcan4x5x_write_tcan_reg(dev, CAN_TCAN4X5X_STATUS, status &
 							      CAN_TCAN4X5X_STATUS_CLEAR_ALL);
 				if (err != 0) {
-					LOG_ERR("failed to write status register (err %d)", err);
+					LOG_ERROR("failed to write status register (err %d)", err);
 					continue;
 				}
 			}
@@ -472,7 +472,7 @@ static void tcan4x5x_int_thread(void *p1, void *p2, void *p3)
 
 			err = tcan4x5x_read_tcan_reg(dev, CAN_TCAN4X5X_IR, &ir);
 			if (err != 0) {
-				LOG_ERR("failed to read interrupt register (err %d)", err);
+				LOG_ERROR("failed to read interrupt register (err %d)", err);
 				break;
 			}
 		}
@@ -492,7 +492,7 @@ static int tcan4x5x_wake(const struct device *dev)
 		wake_needed = gpio_pin_get_dt(&tcan_config->nwkrq_gpio);
 
 		if (wake_needed < 0) {
-			LOG_ERR("failed to get nWKRQ status (err %d)", wake_needed);
+			LOG_ERROR("failed to get nWKRQ status (err %d)", wake_needed);
 			return wake_needed;
 		};
 	}
@@ -500,7 +500,7 @@ static int tcan4x5x_wake(const struct device *dev)
 	if (tcan_config->wake_gpio.port != NULL && wake_needed != 0) {
 		err = gpio_pin_set_dt(&tcan_config->wake_gpio, 1);
 		if (err != 0) {
-			LOG_ERR("failed to assert WAKE GPIO (err %d)", err);
+			LOG_ERROR("failed to assert WAKE GPIO (err %d)", err);
 			return err;
 		}
 
@@ -508,7 +508,7 @@ static int tcan4x5x_wake(const struct device *dev)
 
 		err = gpio_pin_set_dt(&tcan_config->wake_gpio, 0);
 		if (err != 0) {
-			LOG_ERR("failed to deassert WAKE GPIO (err %d)", err);
+			LOG_ERROR("failed to deassert WAKE GPIO (err %d)", err);
 			return err;
 		}
 
@@ -536,7 +536,7 @@ static int tcan4x5x_reset(const struct device *dev)
 	if (tcan_config->rst_gpio.port != NULL) {
 		err = gpio_pin_set_dt(&tcan_config->rst_gpio, 1);
 		if (err != 0) {
-			LOG_ERR("failed to assert RST GPIO (err %d)", err);
+			LOG_ERROR("failed to assert RST GPIO (err %d)", err);
 			return err;
 		}
 
@@ -544,7 +544,7 @@ static int tcan4x5x_reset(const struct device *dev)
 
 		err = gpio_pin_set_dt(&tcan_config->rst_gpio, 0);
 		if (err != 0) {
-			LOG_ERR("failed to deassert RST GPIO (err %d)", err);
+			LOG_ERROR("failed to deassert RST GPIO (err %d)", err);
 			return err;
 		}
 	} else {
@@ -552,7 +552,7 @@ static int tcan4x5x_reset(const struct device *dev)
 		err = tcan4x5x_write_tcan_reg(dev, CAN_TCAN4X5X_MODE_CONFIG,
 					      CAN_TCAN4X5X_MODE_CONFIG_DEVICE_RESET);
 		if (err != 0) {
-			LOG_ERR("failed to initiate SW reset (err %d)", err);
+			LOG_ERROR("failed to initiate SW reset (err %d)", err);
 			return err;
 		}
 #if TCAN4X5X_RST_GPIO_SUPPORT
@@ -575,13 +575,13 @@ static int tcan4x5x_set_config_mode_sel(const struct device *dev, uint8_t mode, 
 	case CAN_TCAN4X5X_MODE_CONFIG_MODE_SEL_NORMAL:
 		break;
 	default:
-		LOG_ERR("invalid mode %u", mode);
+		LOG_ERROR("invalid mode %u", mode);
 		return -EINVAL;
 	}
 
 	err = tcan4x5x_read_tcan_reg(dev, CAN_TCAN4X5X_MODE_CONFIG, reg);
 	if (err != 0) {
-		LOG_ERR("failed to read configuration register (err %d)", err);
+		LOG_ERROR("failed to read configuration register (err %d)", err);
 		return -EIO;
 	}
 
@@ -593,7 +593,7 @@ static int tcan4x5x_set_config_mode_sel(const struct device *dev, uint8_t mode, 
 
 	err = tcan4x5x_write_tcan_reg(dev, CAN_TCAN4X5X_MODE_CONFIG, *reg);
 	if (err != 0) {
-		LOG_ERR("failed to write configuration register (err %d)", err);
+		LOG_ERROR("failed to write configuration register (err %d)", err);
 		return -EIO;
 	}
 
@@ -651,7 +651,7 @@ static int tcan4x5x_init_normal_mode(const struct device *dev)
 	/* Write remaining configuration to the device */
 	err = tcan4x5x_write_tcan_reg(dev, CAN_TCAN4X5X_MODE_CONFIG, reg);
 	if (err != 0) {
-		LOG_ERR("failed to write configuration register (err %d)", err);
+		LOG_ERROR("failed to write configuration register (err %d)", err);
 		return -EIO;
 	}
 
@@ -664,7 +664,7 @@ static int tcan4x5x_init_normal_mode(const struct device *dev)
 	/* Initialize M_CAN */
 	err = can_mcan_init(dev);
 	if (err != 0) {
-		LOG_ERR("failed to initialize mcan (err %d)", err);
+		LOG_ERROR("failed to initialize mcan (err %d)", err);
 		return err;
 	}
 
@@ -728,20 +728,20 @@ static int tcan4x5x_init(const struct device *dev)
 	k_sem_init(&tcan_data->int_sem, 1, 1);
 
 	if (!spi_is_ready_dt(&tcan_config->spi)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERROR("SPI bus not ready");
 		return -ENODEV;
 	}
 
 #if TCAN4X5X_RST_GPIO_SUPPORT
 	if (tcan_config->rst_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&tcan_config->rst_gpio)) {
-			LOG_ERR("RST GPIO not ready");
+			LOG_ERROR("RST GPIO not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&tcan_config->rst_gpio, GPIO_OUTPUT_INACTIVE);
 		if (err != 0) {
-			LOG_ERR("failed to configure RST GPIO (err %d)", err);
+			LOG_ERROR("failed to configure RST GPIO (err %d)", err);
 			return -ENODEV;
 		}
 	}
@@ -750,13 +750,13 @@ static int tcan4x5x_init(const struct device *dev)
 #if TCAN4X5X_NWKRQ_GPIO_SUPPORT
 	if (tcan_config->nwkrq_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&tcan_config->nwkrq_gpio)) {
-			LOG_ERR("nWKRQ GPIO not ready");
+			LOG_ERROR("nWKRQ GPIO not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&tcan_config->nwkrq_gpio, GPIO_INPUT);
 		if (err != 0) {
-			LOG_ERR("failed to configure nWKRQ GPIO (err %d)", err);
+			LOG_ERROR("failed to configure nWKRQ GPIO (err %d)", err);
 			return -ENODEV;
 		}
 	}
@@ -765,26 +765,26 @@ static int tcan4x5x_init(const struct device *dev)
 #if TCAN4X5X_WAKE_GPIO_SUPPORT
 	if (tcan_config->wake_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&tcan_config->wake_gpio)) {
-			LOG_ERR("WAKE GPIO not ready");
+			LOG_ERROR("WAKE GPIO not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&tcan_config->wake_gpio, GPIO_OUTPUT_INACTIVE);
 		if (err != 0) {
-			LOG_ERR("failed to configure WAKE GPIO (err %d)", err);
+			LOG_ERROR("failed to configure WAKE GPIO (err %d)", err);
 			return -ENODEV;
 		}
 	}
 #endif /* TCAN4X5X_WAKE_GPIO_SUPPORT */
 
 	if (!gpio_is_ready_dt(&tcan_config->int_gpio)) {
-		LOG_ERR("nINT GPIO not ready");
+		LOG_ERROR("nINT GPIO not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&tcan_config->int_gpio, GPIO_INPUT);
 	if (err != 0) {
-		LOG_ERR("failed to configure nINT GPIO (err %d)", err);
+		LOG_ERROR("failed to configure nINT GPIO (err %d)", err);
 		return -ENODEV;
 	}
 
@@ -793,14 +793,14 @@ static int tcan4x5x_init(const struct device *dev)
 
 	err = gpio_add_callback_dt(&tcan_config->int_gpio, &tcan_data->int_gpio_cb);
 	if (err != 0) {
-		LOG_ERR("failed to add nINT GPIO callback (err %d)", err);
+		LOG_ERROR("failed to add nINT GPIO callback (err %d)", err);
 		return -ENODEV;
 	}
 
 	/* Initialize nINT GPIO callback and interrupt handler thread to ACK any early SPIERR */
 	err = gpio_pin_interrupt_configure_dt(&tcan_config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (err != 0) {
-		LOG_ERR("failed to configure nINT GPIO interrupt (err %d)", err);
+		LOG_ERROR("failed to configure nINT GPIO interrupt (err %d)", err);
 		return -ENODEV;
 	}
 

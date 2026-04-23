@@ -152,12 +152,12 @@ static int ifx_cat1_adc_channel_setup(const struct device *dev,
 	uint32_t acquisition_ns = ADC_CAT1_DEFAULT_ACQUISITION_NS;
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Selected ADC reference is not valid");
+		LOG_ERROR("Selected ADC reference is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Selected ADC gain is not valid");
+		LOG_ERROR("Selected ADC gain is not valid");
 		return -EINVAL;
 	}
 
@@ -170,7 +170,7 @@ static int ifx_cat1_adc_channel_setup(const struct device *dev,
 			acquisition_ns = ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time);
 			break;
 		default:
-			LOG_ERR("Selected ADC acquisition time units is not valid");
+			LOG_ERROR("Selected ADC acquisition time units is not valid");
 			return -EINVAL;
 		}
 	}
@@ -190,7 +190,8 @@ static int ifx_cat1_adc_channel_setup(const struct device *dev,
 	result = cyhal_adc_channel_init_diff(&data->adc_chan_obj[channel_cfg->channel_id],
 					     &data->adc_obj, vplus, vminus, &channel_config);
 	if (result != CY_RSLT_SUCCESS) {
-		LOG_ERR("ADC channel initialization failed. Error: 0x%08X\n", (unsigned int)result);
+		LOG_ERROR("ADC channel initialization failed. Error: 0x%08X\n",
+			  (unsigned int)result);
 		return -EIO;
 	}
 
@@ -231,24 +232,24 @@ static int start_read(const struct device *dev,
 	uint32_t unconfigured_channels = channels & ~data->channels_mask;
 
 	if (sequence->resolution != ADC_CAT1_RESOLUTION) {
-		LOG_ERR("Invalid ADC resolution (%d)", sequence->resolution);
+		LOG_ERROR("Invalid ADC resolution (%d)", sequence->resolution);
 		return -EINVAL;
 	}
 
 	if (unconfigured_channels != 0) {
-		LOG_ERR("ADC channel(s) not configured: 0x%08X\n", unconfigured_channels);
+		LOG_ERROR("ADC channel(s) not configured: 0x%08X\n", unconfigured_channels);
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("Oversampling not supported");
+		LOG_ERROR("Oversampling not supported");
 		return -ENOTSUP;
 	}
 
 	int return_val = validate_buffer_size(sequence);
 
 	if (return_val < 0) {
-		LOG_ERR("Invalid sequence buffer size");
+		LOG_ERROR("Invalid sequence buffer size");
 		return return_val;
 	}
 
@@ -298,7 +299,7 @@ static int ifx_cat1_adc_init(const struct device *dev)
 	/* Initialize ADC. The ADC block which can connect to the input pin is selected */
 	result = cyhal_adc_init(&data->adc_obj, CYHAL_GET_GPIO(_ADC_PORT, 0), NULL);
 	if (result != CY_RSLT_SUCCESS) {
-		LOG_ERR("ADC initialization failed. Error: 0x%08X\n", (unsigned int)result);
+		LOG_ERROR("ADC initialization failed. Error: 0x%08X\n", (unsigned int)result);
 		return -EIO;
 	}
 

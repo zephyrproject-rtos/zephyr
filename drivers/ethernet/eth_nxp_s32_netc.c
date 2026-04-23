@@ -62,7 +62,7 @@ int nxp_s32_eth_initialize_common(const struct device *dev)
 
 	status = Netc_Eth_Ip_Init(cfg->si_idx, &cfg->netc_cfg);
 	if (status != NETC_ETH_IP_STATUS_SUCCESS) {
-		LOG_ERR("Failed to initialize SI%d (%d)", cfg->si_idx, status);
+		LOG_ERROR("Failed to initialize SI%d (%d)", cfg->si_idx, status);
 		return -EIO;
 	}
 
@@ -73,8 +73,8 @@ int nxp_s32_eth_initialize_common(const struct device *dev)
 							nxp_s32_eth_msix_wrapper,
 							(void *)msix);
 			if (err != 0) {
-				LOG_ERR("Failed to register MRU callback on channel %u",
-					msix->mbox_spec.channel_id);
+				LOG_ERROR("Failed to register MRU callback on channel %u",
+					  msix->mbox_spec.channel_id);
 				return err;
 			}
 		}
@@ -91,7 +91,7 @@ int nxp_s32_eth_initialize_common(const struct device *dev)
 
 	status = Netc_Eth_Ip_EnableController(cfg->si_idx);
 	if (status != NETC_ETH_IP_STATUS_SUCCESS) {
-		LOG_ERR("Failed to enable ENETC SI%d (%d)", cfg->si_idx, status);
+		LOG_ERROR("Failed to enable ENETC SI%d (%d)", cfg->si_idx, status);
 		return -EIO;
 	}
 
@@ -115,7 +115,7 @@ void nxp_s32_eth_mcast_filter(const struct device *dev, const struct ethernet_fi
 									  filter->mac_address.addr);
 	}
 	if (status != NETC_ETH_IP_STATUS_SUCCESS) {
-		LOG_ERR("Failed to update multicast hash table: %d", status);
+		LOG_ERROR("Failed to update multicast hash table: %d", status);
 	}
 }
 
@@ -139,7 +139,7 @@ int nxp_s32_eth_tx(const struct device *dev, struct net_pkt *pkt)
 		status = Netc_Eth_Ip_GetTxBuff(cfg->si_idx, cfg->tx_ring_idx, &buf, NULL);
 	}
 	if (status != NETC_ETH_IP_STATUS_SUCCESS) {
-		LOG_ERR("Failed to get tx buffer: %d", status);
+		LOG_ERROR("Failed to get tx buffer: %d", status);
 		res = -ENOBUFS;
 		goto error;
 	}
@@ -147,14 +147,14 @@ int nxp_s32_eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	res = net_pkt_read(pkt, buf.data, pkt_len);
 	if (res) {
-		LOG_ERR("Failed to copy packet to tx buffer: %d", res);
+		LOG_ERROR("Failed to copy packet to tx buffer: %d", res);
 		res = -ENOBUFS;
 		goto error;
 	}
 
 	status = Netc_Eth_Ip_SendFrame(cfg->si_idx, cfg->tx_ring_idx, &buf, NULL);
 	if (status != NETC_ETH_IP_STATUS_SUCCESS) {
-		LOG_ERR("Failed to tx frame: %d", status);
+		LOG_ERROR("Failed to tx frame: %d", status);
 		res = -EIO;
 		goto error;
 	}
@@ -211,7 +211,7 @@ static int nxp_s32_eth_rx(const struct device *dev)
 	if (status == NETC_ETH_IP_STATUS_RX_QUEUE_EMPTY) {
 		res = -ENOBUFS;
 	} else if (status != NETC_ETH_IP_STATUS_SUCCESS) {
-		LOG_ERR("Error on received frame: %d (0x%X)", status, info.rxStatus);
+		LOG_ERROR("Error on received frame: %d (0x%X)", status, info.rxStatus);
 		res = -EIO;
 	} else {
 		pkt = nxp_s32_eth_get_pkt(dev, &buf);
@@ -222,7 +222,7 @@ static int nxp_s32_eth_rx(const struct device *dev)
 			if (res < 0) {
 				eth_stats_update_errors_rx(get_iface(ctx));
 				net_pkt_unref(pkt);
-				LOG_ERR("Failed to enqueue frame into rx queue: %d", res);
+				LOG_ERROR("Failed to enqueue frame into rx queue: %d", res);
 			}
 		}
 	}

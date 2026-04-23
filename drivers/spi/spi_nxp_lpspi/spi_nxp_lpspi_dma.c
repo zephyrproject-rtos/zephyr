@@ -282,7 +282,7 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 		break;
 
 	default:
-		LOG_ERR("unknown spi stransfer state:%d", dma_data->state);
+		LOG_ERROR("unknown spi stransfer state:%d", dma_data->state);
 		ret = -EIO;
 		goto error;
 	}
@@ -290,7 +290,7 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	LOG_DBG("DMA %cX Block Complete", debug_char);
 	return;
 error:
-	LOG_ERR("DMA callback error with channel %d.", channel);
+	LOG_ERROR("DMA callback error with channel %d.", channel);
 	spi_context_complete(ctx, spi_dev, ret);
 	spi_context_cs_control(ctx, false);
 }
@@ -315,7 +315,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 
 	/* Check CS hold on feature for DMA mode, it is not supported on some platform. */
 	if ((spi_cfg->operation & SPI_HOLD_ON_CS) && major_ver < 2) {
-		LOG_ERR("SPI CS hold on feature is not supported on this platform.");
+		LOG_ERROR("SPI CS hold on feature is not supported on this platform.");
 		return -ENOTSUP;
 	}
 
@@ -357,7 +357,7 @@ out:
 static int lpspi_dma_dev_ready(const struct device *dma_dev)
 {
 	if (!device_is_ready(dma_dev)) {
-		LOG_ERR("%s device is not ready", dma_dev->name);
+		LOG_ERROR("%s device is not ready", dma_dev->name);
 		return false;
 	}
 

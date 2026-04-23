@@ -382,30 +382,30 @@ static int crypto_nxp_s32_hse_cipher_begin_session(const struct device *dev, str
 	struct crypto_nxp_s32_hse_session *session;
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		LOG_ERR("Unsupported algorithm");
+		LOG_ERROR("Unsupported algorithm");
 		return -ENOTSUP;
 	}
 
 	if (ctx->flags & ~(CRYPTO_NXP_S32_HSE_CIPHER_CAPS)) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -ENOTSUP;
 	}
 
 	if (mode != CRYPTO_CIPHER_MODE_ECB && mode != CRYPTO_CIPHER_MODE_CBC &&
 	    mode != CRYPTO_CIPHER_MODE_CTR) {
-		LOG_ERR("Unsupported mode");
+		LOG_ERROR("Unsupported mode");
 		return -ENOTSUP;
 	}
 
 	if (ctx->keylen != HSE_BITS_TO_BYTES(CONFIG_CRYPTO_NXP_S32_HSE_AES_KEY_SIZE)) {
-		LOG_ERR("%u key size is not supported", ctx->keylen);
+		LOG_ERROR("%u key size is not supported", ctx->keylen);
 		return -EINVAL;
 	}
 
 	session = crypto_nxp_s32_hse_get_session(dev);
 
 	if (session == NULL) {
-		LOG_ERR("No free session");
+		LOG_ERROR("No free session");
 		return -ENOSPC;
 	}
 
@@ -442,7 +442,7 @@ static int crypto_nxp_s32_hse_cipher_begin_session(const struct device *dev, str
 	/* Load the key in plain */
 	if (crypto_nxp_s32_hse_cipher_key_element_set(dev, session, ctx)) {
 		free_session(dev, session);
-		LOG_ERR("Failed to import key catalog");
+		LOG_ERROR("Failed to import key catalog");
 		return -EIO;
 	}
 
@@ -593,18 +593,19 @@ static int crypto_nxp_s32_hse_init(const struct device *dev)
 		 (k_uptime_ticks() - start_time < timeout.ticks));
 
 	if (!(status & HSE_STATUS_INIT_OK)) {
-		LOG_ERR("HSE initialization has not been completed or "
-			 "MU%d is not activated", config->mu_instance);
+		LOG_ERROR("HSE initialization has not been completed or "
+			  "MU%d is not activated",
+			  config->mu_instance);
 		return -EIO;
 	}
 
 	if (!(status & HSE_STATUS_INSTALL_OK)) {
-		LOG_ERR("Key catalogs has not been formatted");
+		LOG_ERROR("Key catalogs has not been formatted");
 		return -EIO;
 	}
 
 	if (Hse_Ip_Init(config->mu_instance, &data->mu_state) != HSE_IP_STATUS_SUCCESS) {
-		LOG_ERR("Failed to initialize MU%d", config->mu_instance);
+		LOG_ERROR("Failed to initialize MU%d", config->mu_instance);
 		return -EIO;
 	}
 

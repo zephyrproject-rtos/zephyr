@@ -49,12 +49,12 @@ static int mcux_cop_setup(const struct device *dev, uint8_t options)
 	struct mcux_cop_data *data = dev->data;
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
 	if (data->setup_done) {
-		LOG_ERR("Watchdog already setup, only one setup allowed");
+		LOG_ERROR("Watchdog already setup, only one setup allowed");
 		return -EPERM;
 	}
 
@@ -62,7 +62,7 @@ static int mcux_cop_setup(const struct device *dev, uint8_t options)
 	data->cop_config.enableStop = (options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
 #else
 	if ((options & WDT_OPT_PAUSE_IN_SLEEP) != 0U) {
-		LOG_ERR("WDT_OPT_PAUSE_IN_SLEEP not supported");
+		LOG_ERROR("WDT_OPT_PAUSE_IN_SLEEP not supported");
 		return -ENOTSUP;
 	}
 #endif
@@ -71,7 +71,7 @@ static int mcux_cop_setup(const struct device *dev, uint8_t options)
 	data->cop_config.enableDebug = (options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
 #else
 	if ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) != 0U) {
-		LOG_ERR("WDT_OPT_PAUSE_HALTED_BY_DBG not supported");
+		LOG_ERROR("WDT_OPT_PAUSE_HALTED_BY_DBG not supported");
 		return -ENOTSUP;
 	}
 #endif
@@ -90,7 +90,7 @@ static int mcux_cop_disable(const struct device *dev)
 	struct mcux_cop_data *data = dev->data;
 
 	if (data->setup_done) {
-		LOG_ERR("Watchdog already setup, only one setup allowed");
+		LOG_ERROR("Watchdog already setup, only one setup allowed");
 		return -EPERM;
 	}
 
@@ -144,13 +144,13 @@ static int mcux_cop_install_timeout(const struct device *dev, const struct wdt_t
 		if (data->cop_config.timeoutMode == kCOP_LongTimeoutMode) {
 			data->cop_config.enableWindowMode = true;
 		} else {
-			LOG_ERR("Windowed mode not supported in short timeout mode");
+			LOG_ERROR("Windowed mode not supported in short timeout mode");
 			return -ENOTSUP;
 		}
 	}
 #else
 	if (config->windowed_mode) {
-		LOG_ERR("Windowed mode not supported");
+		LOG_ERROR("Windowed mode not supported");
 		return -ENOTSUP;
 	}
 #endif
@@ -166,7 +166,7 @@ static int mcux_cop_feed(const struct device *dev, int channel_id)
 	const struct mcux_cop_config *config = dev->config;
 
 	if (channel_id != 0) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 

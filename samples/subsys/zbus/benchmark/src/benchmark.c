@@ -64,7 +64,7 @@ static void producer_thread(void)
 	uint64_t duration_ns = end_ns - start_ns;
 
 	if (duration_ns == 0) {
-		LOG_ERR("Something wrong. Duration is zero!\n");
+		LOG_ERROR("Something wrong. Duration is zero!\n");
 		k_oops();
 	}
 	uint64_t i = ((BYTES_TO_BE_SENT * NSEC_PER_SEC) / MB(1)) / duration_ns;

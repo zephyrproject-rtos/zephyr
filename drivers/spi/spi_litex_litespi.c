@@ -129,48 +129,48 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	}
 
 	if (config->slave >= SPI_MAX_CS_SIZE) {
-		LOG_ERR("More slaves than supported");
+		LOG_ERROR("More slaves than supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) != SPI_MAX_WORD_SIZE) {
-		LOG_ERR("Word size must be 8, is %d", SPI_WORD_SIZE_GET(config->operation));
+		LOG_ERROR("Word size must be 8, is %d", SPI_WORD_SIZE_GET(config->operation));
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_CS_ACTIVE_HIGH) {
-		LOG_ERR("CS active high not supported");
+		LOG_ERROR("CS active high not supported");
 		return -ENOTSUP;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only supports single mode");
+		LOG_ERROR("Only supports single mode");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB first not supported");
+		LOG_ERROR("LSB first not supported");
 		return -ENOTSUP;
 	}
 
 	if (!spi_litex_set_mode(dev, config)) {
-		LOG_ERR("Invalid CPOL CPHA configuration");
+		LOG_ERROR("Invalid CPOL CPHA configuration");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback mode not supported");
+		LOG_ERROR("Loopback mode not supported");
 		return -ENOTSUP;
 	}
 

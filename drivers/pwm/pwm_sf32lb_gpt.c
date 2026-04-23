@@ -50,14 +50,14 @@ static int pwm_sf32lb_set_cycles(const struct device *dev, uint32_t channel, uin
 	pos = channel * 4U;
 
 	if (channel >= MAX_CH_NUM) {
-		LOG_ERR("Invalid PWM channel: %u. Must be 0-3.", channel);
+		LOG_ERROR("Invalid PWM channel: %u. Must be 0-3.", channel);
 		return -EINVAL;
 	}
 
 	LOG_DBG("Setting PWM period_cycles: %d, pulse_cycles: %d", period_cycles, pulse_cycles);
 
 	if ((period_cycles > UINT16_MAX) || (pulse_cycles > UINT16_MAX)) {
-		LOG_ERR("Cannot set PWM output, value exceeds 16-bit timer limit.");
+		LOG_ERROR("Cannot set PWM output, value exceeds 16-bit timer limit.");
 		return -ENOTSUP;
 	}
 
@@ -114,7 +114,7 @@ static int pwm_sf32lb_get_cycles_per_sec(const struct device *dev, uint32_t chan
 	int ret;
 
 	if (channel >= MAX_CH_NUM) {
-		LOG_ERR("Invalid PWM channel: %u. Must be 0-3.", channel);
+		LOG_ERROR("Invalid PWM channel: %u. Must be 0-3.", channel);
 		return -EINVAL;
 	}
 
@@ -144,7 +144,7 @@ static int pwm_sf32lb_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure pins");
+		LOG_ERROR("Failed to configure pins");
 		return ret;
 	}
 

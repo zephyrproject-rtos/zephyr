@@ -45,13 +45,13 @@ static int ethos_u_renesas_ra_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	err = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_subsys);
 	if (err < 0) {
-		LOG_ERR("Could not initialize clock (%d)", err);
+		LOG_ERROR("Could not initialize clock (%d)", err);
 		return err;
 	}
 
@@ -66,7 +66,7 @@ static int ethos_u_renesas_ra_init(const struct device *dev)
 
 	if (ethosu_init(drv, ethosu_dts_info.base_addr, NULL, 0, ethosu_dts_info.secure_enable,
 			ethosu_dts_info.privilege_enable)) {
-		LOG_ERR("Failed to initialize NPU with ethosu_init().");
+		LOG_ERROR("Failed to initialize NPU with ethosu_init().");
 		return -EINVAL;
 	}
 

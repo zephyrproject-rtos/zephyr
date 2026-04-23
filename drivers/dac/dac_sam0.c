@@ -45,7 +45,7 @@ static int dac_sam0_write_value(const struct device *dev, uint8_t channel,
 	Dac *regs = cfg->regs;
 
 	if (value >= BIT(12)) {
-		LOG_ERR("value %d out of range", value);
+		LOG_ERROR("value %d out of range", value);
 		return -EINVAL;
 	}
 

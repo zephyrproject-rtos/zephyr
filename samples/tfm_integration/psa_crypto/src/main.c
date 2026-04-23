@@ -28,7 +28,7 @@ int main(void)
 
 	/* Load app config struct from secure storage (create if missing). */
 	if (cfg_load_data(&cfg)) {
-		LOG_ERR("Error loading/generating app config data in SS.");
+		LOG_ERROR("Error loading/generating app config data in SS.");
 	}
 
 	/* Get the entity attestation token (requires ~1kB stack memory!). */

@@ -90,12 +90,12 @@ void bt_mesh_sar_cfg_cli_timeout_set(int32_t timeout)
 static int bt_mesh_sar_cfg_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
-		LOG_ERR("SAR Configuration Client only allowed in primary element");
+		LOG_ERROR("SAR Configuration Client only allowed in primary element");
 		return -EINVAL;
 	}
 
 	if (!model->rt->user_data) {
-		LOG_ERR("No SAR Configuration Client context provided");
+		LOG_ERROR("No SAR Configuration Client context provided");
 		return -EINVAL;
 	}
 
@@ -141,7 +141,7 @@ int bt_mesh_sar_cfg_cli_transmitter_get(uint16_t net_idx, uint16_t addr,
 
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
-		LOG_ERR("model_send() failed (err %d)", err);
+		LOG_ERROR("model_send() failed (err %d)", err);
 		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
 		return err;
 	}
@@ -167,7 +167,7 @@ int bt_mesh_sar_cfg_cli_transmitter_set(uint16_t net_idx, uint16_t addr,
 
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
-		LOG_ERR("model_send() failed (err %d)", err);
+		LOG_ERROR("model_send() failed (err %d)", err);
 		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
 		return err;
 	}
@@ -191,7 +191,7 @@ int bt_mesh_sar_cfg_cli_receiver_get(uint16_t net_idx, uint16_t addr,
 
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
-		LOG_ERR("model_send() failed (err %d)", err);
+		LOG_ERROR("model_send() failed (err %d)", err);
 		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
 		return err;
 	}
@@ -217,7 +217,7 @@ int bt_mesh_sar_cfg_cli_receiver_set(uint16_t net_idx, uint16_t addr,
 
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
-		LOG_ERR("model_send() failed (err %d)", err);
+		LOG_ERROR("model_send() failed (err %d)", err);
 		bt_mesh_msg_ack_ctx_clear(&cli->ack_ctx);
 		return err;
 	}

@@ -124,7 +124,7 @@ void eth_cyclonev_set_mac_addr(uint8_t *address, uint32_t instance, uint32_t n,
 		return;
 	}
 	if (n > 15) {
-		LOG_ERR("Invalid index of MAC Address: %d", n);
+		LOG_ERROR("Invalid index of MAC Address: %d", n);
 		return;
 	}
 
@@ -423,13 +423,13 @@ static int eth_cyclonev_send(const struct device *dev, struct net_pkt *pkt)
 		/* Check if it is a free descriptor.  */
 		if (tx_desc->status & ETH_DMATXDESC_OWN) {
 			/* Buffer is still owned by device.  */
-			LOG_ERR("No free tx descriptors!\n");
+			LOG_ERROR("No free tx descriptors!\n");
 			goto abort;
 		}
 
 		/* check if len is too large */
 		if (len >= ETH_BUFFER_SIZE) {
-			LOG_ERR("Length of packet is too long\n");
+			LOG_ERROR("Length of packet is too long\n");
 			goto abort;
 		}
 
@@ -473,7 +473,7 @@ static int eth_cyclonev_send(const struct device *dev, struct net_pkt *pkt)
 				tx_desc = &p->tx_desc_ring[index];
 
 				if (tx_desc->status & ETH_DMATXDESC_OWN) {
-					LOG_ERR("Send packet error!\n");
+					LOG_ERROR("Send packet error!\n");
 					/* Restart DMA transmission and re-initialise
 					 * TX descriptors
 					 */
@@ -604,7 +604,7 @@ void eth_cyclonev_isr(const struct device *dev)
 			LOG_INF("Link Speed 125MHz");
 			break;
 		default:
-			LOG_ERR("LNKSPEED_GET_ERROR");
+			LOG_ERROR("LNKSPEED_GET_ERROR");
 			break;
 		}
 
@@ -614,7 +614,7 @@ void eth_cyclonev_isr(const struct device *dev)
 			cfg_reg_set = sys_read32(GMACGRP_MAC_CONFIG_ADDR(p->base_addr));
 
 			if (eth_cyclonev_stop(dev) == -1) {
-				LOG_ERR("Couldn't stop device: %s", dev->name);
+				LOG_ERROR("Couldn't stop device: %s", dev->name);
 				return;
 			}
 
@@ -650,7 +650,7 @@ static void eth_cyclonev_receive(struct eth_cyclonev_priv *p)
 		LOG_DBG("RDES0[%d] = 0x%08x", index, rx_desc->status);
 		/* Look for FS bit */
 		if (!(rx_desc->status & ETH_DMARXDESC_FS)) {
-			LOG_ERR("Unexpected missing FS bit");
+			LOG_ERROR("Unexpected missing FS bit");
 			rx_desc->status |= ETH_DMARXDESC_OWN;
 			goto cont;
 		}
@@ -667,7 +667,7 @@ static void eth_cyclonev_receive(struct eth_cyclonev_priv *p)
 			if (!(rx_desc->status & ETH_DMARXDESC_LS)) {
 				INC_WRAP(rx_search, NB_RX_DESCS);
 				if (rx_search == wrap) {
-					LOG_ERR("Couldn't find EOF bit!");
+					LOG_ERROR("Couldn't find EOF bit!");
 					rx_desc = &p->rx_desc_ring[index];
 					rx_desc->status |= ETH_DMARXDESC_OWN;
 					goto cont;
@@ -682,7 +682,7 @@ static void eth_cyclonev_receive(struct eth_cyclonev_priv *p)
 		pkt = net_pkt_rx_alloc_with_buffer(p->iface, frame_length,
 						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
-			LOG_ERR("net_pkt_rx_alloc_with_buffer() failed");
+			LOG_ERROR("net_pkt_rx_alloc_with_buffer() failed");
 			eth_stats_update_errors_rx(p->iface);
 		}
 
@@ -705,7 +705,8 @@ static void eth_cyclonev_receive(struct eth_cyclonev_priv *p)
 			if (last_desc_index != rx_search) {
 				INC_WRAP(rx_search, NB_RX_DESCS);
 				if (rx_search == wrap) {
-					LOG_ERR("Couldn't find last descriptor! Data remaining: %d",
+					LOG_ERROR(
+						"Couldn't find last descriptor! Data remaining: %d",
 						data_remaining);
 					goto cont;
 				}
@@ -733,7 +734,7 @@ static void eth_cyclonev_receive(struct eth_cyclonev_priv *p)
 		/* Hand-over packet into IP stack */
 		if (pkt) {
 			if (net_recv_data(p->iface, pkt) < 0) {
-				LOG_ERR("RX packet hand-over to IP stack failed");
+				LOG_ERROR("RX packet hand-over to IP stack failed");
 				net_pkt_unref(pkt);
 			}
 			LOG_DBG("Received packet %p, len %d", pkt, frame_length);
@@ -779,7 +780,7 @@ static void eth_cyclonev_tx_release(struct eth_cyclonev_priv *p)
 		if (des3_val & ETH_DMATXDESC_LS) {
 			/* log any errors */
 			if (des3_val & ETH_DMATXDESC_ES) {
-				LOG_ERR("tx error (DES3 = 0x%08x)", des3_val);
+				LOG_ERROR("tx error (DES3 = 0x%08x)", des3_val);
 				eth_stats_update_errors_tx(p->iface);
 			}
 		}
@@ -804,7 +805,7 @@ int set_mac_conf_status(int instance, uint32_t *mac_config_reg_settings,
 
 	ret = alt_eth_phy_get_duplex_and_speed(&phy_duplex_status, &phy_speed, instance, p);
 	if (ret != 0) {
-		LOG_ERR("alt_eth_phy_get_duplex_and_speed failure!");
+		LOG_ERROR("alt_eth_phy_get_duplex_and_speed failure!");
 		return ret;
 	}
 
@@ -868,14 +869,14 @@ int eth_cyclonev_probe(const struct device *dev)
 	/* Reset the PHY  */
 	ret = alt_eth_phy_reset(config->emac_index, p);
 	if (ret != 0) {
-		LOG_ERR("alt_eth_phy_reset failure!\n");
+		LOG_ERROR("alt_eth_phy_reset failure!\n");
 		return ret;
 	}
 
 	/* Configure the PHY */
 	ret = alt_eth_phy_config(config->emac_index, p);
 	if (ret != 0) {
-		LOG_ERR("alt_eth_phy_config failure!\n");
+		LOG_ERROR("alt_eth_phy_config failure!\n");
 		return ret;
 	}
 
@@ -894,7 +895,7 @@ int eth_cyclonev_probe(const struct device *dev)
 
 	ret = eth_cyclonev_software_reset(config->emac_index, p);
 	if (ret != 0) {
-		LOG_ERR("eth_cyclonev_software_reset failure!\n");
+		LOG_ERROR("eth_cyclonev_software_reset failure!\n");
 		return ret;
 	}
 
@@ -966,7 +967,7 @@ int eth_cyclonev_probe(const struct device *dev)
 	 */
 
 	if (sys_read32(EMAC_DMAGRP_AHB_OR_AXI_STATUS_ADDR(p->base_addr)) != 0) {
-		LOG_ERR("AHB_OR_AXI_STATUS Fail!\n");
+		LOG_ERROR("AHB_OR_AXI_STATUS Fail!\n");
 		return -1;
 	}
 

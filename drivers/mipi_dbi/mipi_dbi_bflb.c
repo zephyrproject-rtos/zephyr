@@ -362,7 +362,7 @@ static int mipi_dbi_bflb_command_write(const struct device *dev,
 	bool triggered = false;
 
 	if (len > DBI_MAX_CMD_WRITE_LEN) {
-		LOG_ERR("Max command and data write len is 256 bytes");
+		LOG_ERROR("Max command and data write len is 256 bytes");
 		return -EINVAL;
 	}
 
@@ -528,12 +528,12 @@ static int mipi_dbi_bflb_write_display(const struct device *dev,
 		sys_timepoint_calc(K_MSEC(DBI_WAIT_TIMEOUT_MS));
 
 	if ((desc->buf_size % 4) != 0) {
-		LOG_ERR("Write size must be multiple of 4");
+		LOG_ERROR("Write size must be multiple of 4");
 		return -ENOTSUP;
 	}
 
 	if ((expected_wait / DBI_USEC_TO_MSEC) > DBI_WAIT_TIMEOUT_MS) {
-		LOG_ERR("Expected transfer time greater than timeout");
+		LOG_ERROR("Expected transfer time greater than timeout");
 		return -EINVAL;
 	}
 
@@ -658,8 +658,8 @@ static int mipi_dbi_bflb_init(const struct device *dev)
 	for (cs_gpio = config->cs_gpios; cs_gpio < &config->cs_gpios[config->num_cs_gpios];
 	     cs_gpio++) {
 		if (!device_is_ready(cs_gpio->port)) {
-			LOG_ERR("CS GPIO port %s pin %d is not ready",
-				cs_gpio->port->name, cs_gpio->pin);
+			LOG_ERROR("CS GPIO port %s pin %d is not ready", cs_gpio->port->name,
+				  cs_gpio->pin);
 			return -ENODEV;
 		}
 
@@ -675,7 +675,7 @@ static int mipi_dbi_bflb_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure reset GPIO (%d)", ret);
+			LOG_ERROR("Could not configure reset GPIO (%d)", ret);
 			return ret;
 		}
 	}
@@ -686,7 +686,7 @@ static int mipi_dbi_bflb_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(&config->dc_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure D/C GPIO (%d)", ret);
+			LOG_ERROR("Could not configure D/C GPIO (%d)", ret);
 			return ret;
 		}
 	}

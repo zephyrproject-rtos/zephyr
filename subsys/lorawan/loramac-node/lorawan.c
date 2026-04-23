@@ -138,8 +138,7 @@ static void mcps_confirm_handler(McpsConfirm_t *mcps_confirm)
 		mcps_confirm->McpsRequest);
 
 	if (mcps_confirm->Status != LORAMAC_EVENT_INFO_STATUS_OK) {
-		LOG_ERR("McpsRequest failed : %s",
-			lorawan_eventinfo2str(mcps_confirm->Status));
+		LOG_ERROR("McpsRequest failed : %s", lorawan_eventinfo2str(mcps_confirm->Status));
 	} else {
 		LOG_DBG("McpsRequest success!");
 	}
@@ -161,8 +160,8 @@ static void mcps_indication_handler(McpsIndication_t *mcps_indication)
 	LOG_DBG("Received McpsIndication %d", mcps_indication->McpsIndication);
 
 	if (mcps_indication->Status != LORAMAC_EVENT_INFO_STATUS_OK) {
-		LOG_ERR("McpsIndication failed : %s",
-			lorawan_eventinfo2str(mcps_indication->Status));
+		LOG_ERROR("McpsIndication failed : %s",
+			  lorawan_eventinfo2str(mcps_indication->Status));
 		return;
 	}
 
@@ -202,8 +201,7 @@ static void mlme_confirm_handler(MlmeConfirm_t *mlme_confirm)
 		mlme_confirm->MlmeRequest);
 
 	if (mlme_confirm->Status != LORAMAC_EVENT_INFO_STATUS_OK) {
-		LOG_ERR("MlmeConfirm failed : %s",
-			lorawan_eventinfo2str(mlme_confirm->Status));
+		LOG_ERROR("MlmeConfirm failed : %s", lorawan_eventinfo2str(mlme_confirm->Status));
 		goto out_sem;
 	}
 
@@ -250,9 +248,8 @@ static LoRaMacStatus_t lorawan_join_otaa(
 	if (IS_ENABLED(CONFIG_LORAWAN_NVM_NONE)) {
 		/* Retrieve the NVM context to store device nonce */
 		mib_req.Type = MIB_NVM_CTXS;
-		if (LoRaMacMibGetRequestConfirm(&mib_req) !=
-			LORAMAC_STATUS_OK) {
-			LOG_ERR("Could not get NVM context");
+		if (LoRaMacMibGetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
+			LOG_ERROR("Could not get NVM context");
 			return -EINVAL;
 		}
 		mib_req.Param.Contexts->Crypto.DevNonce =
@@ -393,7 +390,7 @@ int lorawan_set_region(enum lorawan_region region)
 #endif
 
 	default:
-		LOG_ERR("No support for region %d!", region);
+		LOG_ERROR("No support for region %d!", region);
 		return -ENOTSUP;
 	}
 
@@ -411,7 +408,7 @@ int lorawan_request_link_check(bool force_request)
 	mlme_req.Type = MLME_LINK_CHECK;
 	status = LoRaMacMlmeRequest(&mlme_req);
 	if (status != LORAMAC_STATUS_OK) {
-		LOG_ERR("LinkCheckReq failed: %s", lorawan_status2str(status));
+		LOG_ERROR("LinkCheckReq failed: %s", lorawan_status2str(status));
 		ret = lorawan_status2errno(status);
 		return ret;
 	}
@@ -432,7 +429,7 @@ int lorawan_request_device_time(bool force_request)
 	mlme_req.Type = MLME_DEVICE_TIME;
 	status = LoRaMacMlmeRequest(&mlme_req);
 	if (status != LORAMAC_STATUS_OK) {
-		LOG_ERR("DeviceTime Req. failed: %s", lorawan_status2str(status));
+		LOG_ERROR("DeviceTime Req. failed: %s", lorawan_status2str(status));
 		ret = lorawan_status2errno(status);
 		return ret;
 	}
@@ -475,8 +472,7 @@ int lorawan_join(const struct lorawan_join_config *join_cfg)
 	if (join_cfg->mode == LORAWAN_ACT_OTAA) {
 		status = lorawan_join_otaa(join_cfg);
 		if (status != LORAMAC_STATUS_OK) {
-			LOG_ERR("OTAA join failed: %s",
-				lorawan_status2str(status));
+			LOG_ERROR("OTAA join failed: %s", lorawan_status2str(status));
 			ret = lorawan_status2errno(status);
 			goto out;
 		}
@@ -496,8 +492,7 @@ int lorawan_join(const struct lorawan_join_config *join_cfg)
 	} else if (join_cfg->mode == LORAWAN_ACT_ABP) {
 		status = lorawan_join_abp(join_cfg);
 		if (status != LORAMAC_STATUS_OK) {
-			LOG_ERR("ABP join failed: %s",
-				lorawan_status2str(status));
+			LOG_ERROR("ABP join failed: %s", lorawan_status2str(status));
 			ret = lorawan_status2errno(status);
 			goto out;
 		}
@@ -551,7 +546,7 @@ int lorawan_set_class(enum lorawan_class dev_class)
 		mib_req.Param.Class = CLASS_A;
 		break;
 	case LORAWAN_CLASS_B:
-		LOG_ERR("Class B not supported yet!");
+		LOG_ERROR("Class B not supported yet!");
 		return -ENOTSUP;
 	case LORAWAN_CLASS_C:
 		mib_req.Param.Class = CLASS_C;
@@ -563,8 +558,7 @@ int lorawan_set_class(enum lorawan_class dev_class)
 	if (mib_req.Param.Class != current_class) {
 		status = LoRaMacMibSetRequestConfirm(&mib_req);
 		if (status != LORAMAC_STATUS_OK) {
-			LOG_ERR("Failed to set device class: %s",
-				lorawan_status2str(status));
+			LOG_ERROR("Failed to set device class: %s", lorawan_status2str(status));
 			return lorawan_status2errno(status);
 		}
 	}
@@ -688,8 +682,7 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 		 * hoping the application to lower the payload size for
 		 * next try.
 		 */
-		LOG_ERR("LoRaWAN Query Tx Possible Failed: %s",
-			lorawan_status2str(status));
+		LOG_ERROR("LoRaWAN Query Tx Possible Failed: %s", lorawan_status2str(status));
 		empty_frame = true;
 		mcps_req.Type = MCPS_UNCONFIRMED;
 		mcps_req.Req.Unconfirmed.fBuffer = NULL;
@@ -712,7 +705,7 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 
 	status = LoRaMacMcpsRequest(&mcps_req);
 	if (status != LORAMAC_STATUS_OK) {
-		LOG_ERR("LoRaWAN Send failed: %s", lorawan_status2str(status));
+		LOG_ERROR("LoRaWAN Send failed: %s", lorawan_status2str(status));
 		ret = lorawan_status2errno(status);
 		goto out;
 	}
@@ -771,8 +764,7 @@ int lorawan_start(void)
 	status = LoRaMacInitialization(&mac_primitives, &mac_callbacks,
 				       selected_region);
 	if (status != LORAMAC_STATUS_OK) {
-		LOG_ERR("LoRaMacInitialization failed: %s",
-			lorawan_status2str(status));
+		LOG_ERROR("LoRaMacInitialization failed: %s", lorawan_status2str(status));
 		return -EINVAL;
 	}
 
@@ -785,8 +777,7 @@ int lorawan_start(void)
 
 	status = LoRaMacStart();
 	if (status != LORAMAC_STATUS_OK) {
-		LOG_ERR("Failed to start the LoRaMAC stack: %s",
-			lorawan_status2str(status));
+		LOG_ERROR("Failed to start the LoRaMAC stack: %s", lorawan_status2str(status));
 		return -EINVAL;
 	}
 

@@ -191,7 +191,7 @@ static int mipi_dbi_sf32lb_freq_config(const struct device *dev,
 
 	ret = sf32lb_clock_control_get_rate_dt(&config->clock, &lcdc_clk);
 	if (ret < 0) {
-		LOG_ERR("Failed to get LCDC clock rate");
+		LOG_ERROR("Failed to get LCDC clock rate");
 		return ret;
 	}
 
@@ -561,7 +561,7 @@ static int mipi_dbi_init_sf32lb(const struct device *dev)
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
-		LOG_ERR("Failed to apply pinctrl state: %d", err);
+		LOG_ERROR("Failed to apply pinctrl state: %d", err);
 		return err;
 	}
 

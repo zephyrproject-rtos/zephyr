@@ -375,7 +375,7 @@ int lbm_driver_radio_init(const struct device *dev)
 	/* Reset chip */
 	status = ral_reset(&config->lbm_common.ralf.ral);
 	if (status != RAL_STATUS_OK) {
-		LOG_ERR("Reset failure (%d)", status);
+		LOG_ERROR("Reset failure (%d)", status);
 		return -EIO;
 	}
 
@@ -390,7 +390,7 @@ int lbm_driver_radio_init(const struct device *dev)
 		gpio_init_callback(&data->dio_packages[i].callback, sx127x_dio_callback,
 				   BIT(config->dios[i].pin));
 		if (gpio_add_callback(config->dios[i].port, &data->dio_packages[i].callback) < 0) {
-			LOG_ERR("Could not set GPIO callback for DIO%d interrupt.", i);
+			LOG_ERROR("Could not set GPIO callback for DIO%d interrupt.", i);
 			return -EIO;
 		}
 		gpio_pin_interrupt_configure_dt(&config->dios[i], GPIO_INT_EDGE_RISING);
@@ -412,13 +412,13 @@ static int sx127x_driver_init(const struct device *dev)
 
 	/* Validate hardware is ready */
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus %s not ready", config->spi.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->spi.bus->name);
 		return -ENODEV;
 	}
 
 	/* Setup GPIOs */
 	if (gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE)) {
-		LOG_ERR("GPIO configuration failed.");
+		LOG_ERROR("GPIO configuration failed.");
 		return -EIO;
 	}
 	if (config->ant_enable.port) {

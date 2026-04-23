@@ -117,13 +117,14 @@ static int mcux_adc16_acquisition_time_setup(const struct device *dev, uint16_t 
 	if (acquisition_time_unit == ADC_ACQ_TIME_TICKS) {
 		/* acquisition_time_value must directly match ADLSTS field encoding (0..3). */
 		if (acquisition_time_value > MCUX_ADC16_ACQUISITION_TIME_6CYCLE) {
-			LOG_ERR("Invalid acquisition time ticks value: %u", acquisition_time_value);
+			LOG_ERROR("Invalid acquisition time ticks value: %u",
+				  acquisition_time_value);
 			return -EINVAL;
 		}
 		config->base->CFG2 = ((config->base->CFG2 & ~ADC_CFG2_ADLSTS_MASK) |
 					ADC_CFG2_ADLSTS(acquisition_time_value));
 	} else {
-		LOG_ERR("Acquisition time unit not support");
+		LOG_ERROR("Acquisition time unit not support");
 		return -ENOTSUP;
 	}
 
@@ -138,19 +139,19 @@ static int mcux_adc16_channel_setup(const struct device *dev,
 	int ret;
 
 	if (channel_id > (ADC_SC1_ADCH_MASK >> ADC_SC1_ADCH_SHIFT)) {
-		LOG_ERR("Channel %d is not valid", channel_id);
+		LOG_ERROR("Channel %d is not valid", channel_id);
 		return -EINVAL;
 	}
 
 	ret = mcux_adc16_acquisition_time_setup(dev, channel_cfg->acquisition_time);
 	if (ret) {
-		LOG_ERR("ADC16 acquisition time setting failed");
+		LOG_ERROR("ADC16 acquisition time setting failed");
 		return ret;
 	}
 
 	if (channel_cfg->differential) {
 		if (!config->supports_diff) {
-			LOG_ERR("Differential channels are not supported on %s", dev->name);
+			LOG_ERROR("Differential channels are not supported on %s", dev->name);
 			return -ENOTSUP;
 		}
 		/* Record user's differential request for this channel */
@@ -181,7 +182,7 @@ static int mcux_adc16_channel_setup(const struct device *dev,
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Invalid channel gain");
+		LOG_ERROR("Invalid channel gain");
 		return -EINVAL;
 	}
 
@@ -226,7 +227,7 @@ static int start_read(const struct device *dev,
 		break;
 #endif
 	default:
-		LOG_ERR("Invalid resolution");
+		LOG_ERROR("Invalid resolution");
 		return -EINVAL;
 	}
 
@@ -251,26 +252,26 @@ static int start_read(const struct device *dev,
 		mode = kADC16_HardwareAverageCount32;
 		break;
 	default:
-		LOG_ERR("Invalid oversampling");
+		LOG_ERROR("Invalid oversampling");
 		return -EINVAL;
 	}
 	ADC16_SetHardwareAverage(config->base, mode);
 
 	if (sequence->buffer_size < 2) {
-		LOG_ERR("sequence buffer size too small %d < 2", sequence->buffer_size);
+		LOG_ERROR("sequence buffer size too small %d < 2", sequence->buffer_size);
 		return -EINVAL;
 	}
 
 	min_buffer_size = channels_count * sizeof(uint16_t);
 
 	if (channels_count == 0) {
-		LOG_ERR("No channels selected");
+		LOG_ERROR("No channels selected");
 		return -EINVAL;
 	}
 
 	if (sequence->buffer_size < min_buffer_size) {
-		LOG_ERR("sequence buffer size too small %d < %d",
-			sequence->buffer_size, min_buffer_size);
+		LOG_ERROR("sequence buffer size too small %d < %d", sequence->buffer_size,
+			  min_buffer_size);
 		return -EINVAL;
 	}
 
@@ -278,8 +279,8 @@ static int start_read(const struct device *dev,
 		min_buffer_size = channels_count * sizeof(uint16_t) *
 				  (sequence->options->extra_samplings + 1);
 		if (sequence->buffer_size < min_buffer_size) {
-			LOG_ERR("sequence buffer size too small for samplings: %d < %d",
-				sequence->buffer_size, min_buffer_size);
+			LOG_ERROR("sequence buffer size too small for samplings: %d < %d",
+				  sequence->buffer_size, min_buffer_size);
 			return -EINVAL;
 		}
 	}
@@ -485,7 +486,7 @@ static int mcux_adc16_init(const struct device *dev)
 	data->adc_dma_config.dma_block.source_address = (uint32_t)&base->R[0];
 
 	if (data->dev_dma == NULL || !device_is_ready(data->dev_dma)) {
-		LOG_ERR("dma binding fail");
+		LOG_ERROR("dma binding fail");
 		return -EINVAL;
 	}
 
@@ -501,7 +502,7 @@ static int mcux_adc16_init(const struct device *dev)
 			dma_request_channel(data->dev_dma, (void *)&adc_filter);
 	}
 	if (data->adc_dma_config.dma_channel == -EINVAL) {
-		LOG_ERR("can not allocate dma channel");
+		LOG_ERROR("can not allocate dma channel");
 		return -EINVAL;
 	}
 	LOG_DBG("dma allocated channel %d", data->adc_dma_config.dma_channel);

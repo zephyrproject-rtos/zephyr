@@ -50,7 +50,7 @@ static int acmp_pm_action(const struct device *dev, enum pm_device_action action
 
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (err < 0 && err != -ENOENT) {
-			LOG_ERR("failed to allocate silabs,analog-bus via pinctrl");
+			LOG_ERROR("failed to allocate silabs,analog-bus via pinctrl");
 			return err;
 		}
 
@@ -88,7 +88,7 @@ static int acmp_init(const struct device *dev)
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0 && err != -ENOENT) {
-		LOG_ERR("failed to allocate silabs,analog-bus via pinctrl");
+		LOG_ERROR("failed to allocate silabs,analog-bus via pinctrl");
 		return err;
 	}
 

@@ -147,7 +147,7 @@ static int explorir_m_buffer_process(struct explorir_m_data *data, char type,
 		break;
 
 	default:
-		LOG_ERR("Unknown type %c/0x%02x", type, type);
+		LOG_ERROR("Unknown type %c/0x%02x", type, type);
 		return -EIO;
 	}
 
@@ -179,7 +179,7 @@ static void explorir_m_uart_isr(const struct device *uart_dev, void *user_data)
 	rc = uart_fifo_read(uart_dev, &data->read_buffer[data->read_index], read_len);
 
 	if (rc < 0 || rc == read_len) {
-		LOG_ERR("UART read failed: %d", rc < 0 ? rc : -ERANGE);
+		LOG_ERROR("UART read failed: %d", rc < 0 ? rc : -ERANGE);
 		explorir_m_uart_flush(uart_dev);
 		LOG_HEXDUMP_WRN(data->read_buffer, data->read_index, "Discarding");
 		explorir_m_buffer_reset(data);
@@ -209,7 +209,7 @@ static int explorir_m_uart_transceive(const struct device *dev, char type, struc
 	int rc, len;
 
 	if (val == NULL && set != EXPLORIR_M_SET_NONE) {
-		LOG_ERR("val is NULL but set is not NONE");
+		LOG_ERROR("val is NULL but set is not NONE");
 		return -EINVAL;
 	}
 
@@ -290,7 +290,7 @@ static int explorir_m_calibrate(const struct device *dev, struct sensor_value *v
 	restore_rc = explorir_m_uart_transceive(dev, EXPLORIR_M_SET_FILTER_CHAR, &original,
 						EXPLORIR_M_SET_VAL_ONE);
 	if (restore_rc != 0) {
-		LOG_ERR("Could not restore filter value");
+		LOG_ERROR("Could not restore filter value");
 	}
 
 unlock:
@@ -394,7 +394,7 @@ static int explorir_m_init(const struct device *dev)
 
 	rc = uart_irq_callback_user_data_set(cfg->uart_dev, cfg->cb, (void *)dev);
 	if (rc != 0) {
-		LOG_ERR("UART IRQ setup failed: %d", rc);
+		LOG_ERROR("UART IRQ setup failed: %d", rc);
 		return rc;
 	}
 
@@ -407,13 +407,13 @@ static int explorir_m_init(const struct device *dev)
 	val.val1 = EXPLORIR_M_MODE_POLL;
 	rc = explorir_m_uart_transceive(dev, EXPLORIR_M_MODE_CHAR, &val, EXPLORIR_M_SET_VAL_ONE);
 	if (rc != 0) {
-		LOG_ERR("Set mode failed: %d", rc);
+		LOG_ERROR("Set mode failed: %d", rc);
 		return rc;
 	}
 
 	rc = explorir_m_uart_transceive(dev, EXPLORIR_M_SCALING_CHAR, NULL, EXPLORIR_M_SET_NONE);
 	if (rc != 0) {
-		LOG_ERR("Set scaling failed: %d", rc);
+		LOG_ERROR("Set scaling failed: %d", rc);
 		return rc;
 	}
 

@@ -263,7 +263,7 @@ static int flash_mcux_c40_init(const struct device *dev)
 
 	st = FLASH_Init(&data->cfg);
 	if (st != kStatus_FLASH_Success) {
-		LOG_ERR("FLASH_Init failed: %d", (int)st);
+		LOG_ERROR("FLASH_Init failed: %d", (int)st);
 		return mcux_to_errno(st);
 	}
 
@@ -304,7 +304,7 @@ static int flash_mcux_c40_init(const struct device *dev)
 	st = flash_c40_apply_protection(data, cfg->base, cfg->size, cfg->erase_block, prot_aligned,
 				  nprot_al);
 	if (st != kStatus_FLASH_Success) {
-		LOG_ERR("Protection apply failed: %d", (int)st);
+		LOG_ERROR("Protection apply failed: %d", (int)st);
 		return mcux_to_errno(st);
 	}
 	LOG_DBG("Protection policy applied (%u window%s)", (unsigned int)nprot_al,

@@ -47,7 +47,7 @@ int virtq_create(struct virtq *v, size_t size)
 	uint8_t *v_area = k_aligned_alloc(16, v_size);
 
 	if (!v_area) {
-		LOG_ERR("unable to allocate virtqueue");
+		LOG_ERROR("unable to allocate virtqueue");
 		return -ENOMEM;
 	}
 
@@ -105,7 +105,7 @@ int virtq_add_buffer_chain(
 	}
 
 	if (total_len > MAX_DESCRIPTOR_CHAIN_LENGTH) {
-		LOG_ERR("buffer chain is longer than 2^32 bytes");
+		LOG_ERROR("buffer chain is longer than 2^32 bytes");
 		return -EINVAL;
 	}
 

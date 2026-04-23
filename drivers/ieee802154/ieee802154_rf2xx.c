@@ -180,7 +180,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 	}
 
 	if (!ctx->promiscuous && pkt_len < RX2XX_FRAME_MIN_PHR_SIZE) {
-		LOG_ERR("Invalid RX frame length");
+		LOG_ERROR("Invalid RX frame length");
 		return;
 	}
 
@@ -204,7 +204,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 	ctx->pkt_lqi = rx_buf[pkt_len + RX2XX_FRAME_LQI_INDEX];
 
 	if (!ctx->promiscuous && trac == RF2XX_TRX_PHY_STATE_TRAC_INVALID) {
-		LOG_ERR("Invalid RX frame");
+		LOG_ERROR("Invalid RX frame");
 		return;
 	}
 
@@ -215,7 +215,7 @@ static void rf2xx_trx_rx(const struct device *dev)
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len,
 					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		LOG_ERR("No RX buffer available");
+		LOG_ERROR("No RX buffer available");
 		return;
 	}
 
@@ -434,15 +434,16 @@ static int rf2xx_set_channel(const struct device *dev, uint16_t channel)
 	LOG_DBG("Set Channel %d", channel);
 
 	if (ctx->trx_model == RF2XX_TRX_MODEL_212) {
-		if ((ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915
-		     || ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915)
-		    && channel > 10) {
-			LOG_ERR("Unsupported channel %u", channel);
+		if ((ctx->cc_page ==
+			     IEEE802154_ATTR_PHY_CHANNEL_PAGE_ZERO_OQPSK_2450_BPSK_868_915 ||
+		     ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_TWO_OQPSK_868_915) &&
+		    channel > 10) {
+			LOG_ERROR("Unsupported channel %u", channel);
 			return channel > 26 ? -EINVAL : -ENOTSUP;
 		}
 		if (ctx->cc_page == IEEE802154_ATTR_PHY_CHANNEL_PAGE_FIVE_OQPSK_780 &&
 		    channel > 3) {
-			LOG_ERR("Unsupported channel %u", channel);
+			LOG_ERROR("Unsupported channel %u", channel);
 			return channel > 7 ? -EINVAL : -ENOTSUP;
 		}
 
@@ -452,7 +453,7 @@ static int rf2xx_set_channel(const struct device *dev, uint16_t channel)
 	} else {
 		/* 2.4G O-QPSK, channel page zero */
 		if (channel < 11 || channel > 26) {
-			LOG_ERR("Unsupported channel %u", channel);
+			LOG_ERROR("Unsupported channel %u", channel);
 			return channel < 11 ? -ENOTSUP : -EINVAL;
 		}
 	}
@@ -675,7 +676,7 @@ static int rf2xx_tx(const struct device *dev,
 		case IEEE802154_TX_MODE_TXTIME:
 		case IEEE802154_TX_MODE_TXTIME_CCA:
 		default:
-			LOG_ERR("TX mode %d not supported", mode);
+			LOG_ERROR("TX mode %d not supported", mode);
 			return -ENOTSUP;
 		}
 
@@ -925,7 +926,7 @@ static int power_on_and_setup(const struct device *dev)
 			   BIT(conf->irq_gpio.pin));
 
 	if (gpio_add_callback(conf->irq_gpio.port, &ctx->irq_cb) < 0) {
-		LOG_ERR("Could not set IRQ callback.");
+		LOG_ERROR("Could not set IRQ callback.");
 		return -ENXIO;
 	}
 
@@ -938,7 +939,7 @@ static inline int configure_gpios(const struct device *dev)
 
 	/* Chip IRQ line */
 	if (!gpio_is_ready_dt(&conf->irq_gpio)) {
-		LOG_ERR("IRQ GPIO device not ready");
+		LOG_ERROR("IRQ GPIO device not ready");
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&conf->irq_gpio, GPIO_INPUT);
@@ -947,14 +948,14 @@ static inline int configure_gpios(const struct device *dev)
 
 	/* Chip RESET line */
 	if (!gpio_is_ready_dt(&conf->reset_gpio)) {
-		LOG_ERR("RESET GPIO device not ready");
+		LOG_ERROR("RESET GPIO device not ready");
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&conf->reset_gpio, GPIO_OUTPUT_INACTIVE);
 
 	/* Chip SLPTR line */
 	if (!gpio_is_ready_dt(&conf->slptr_gpio)) {
-		LOG_ERR("SLPTR GPIO device not ready");
+		LOG_ERROR("SLPTR GPIO device not ready");
 		return -ENODEV;
 	}
 	gpio_pin_configure_dt(&conf->slptr_gpio, GPIO_OUTPUT_INACTIVE);
@@ -962,7 +963,7 @@ static inline int configure_gpios(const struct device *dev)
 	/* Chip DIG2 line (Optional feature) */
 	if (conf->dig2_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&conf->dig2_gpio)) {
-			LOG_ERR("DIG2 GPIO device not ready");
+			LOG_ERROR("DIG2 GPIO device not ready");
 			return -ENODEV;
 		}
 		LOG_INF("Optional instance of %s device activated",
@@ -975,7 +976,7 @@ static inline int configure_gpios(const struct device *dev)
 	/* Chip CLKM line (Optional feature) */
 	if (conf->clkm_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&conf->clkm_gpio)) {
-			LOG_ERR("CLKM GPIO device not ready");
+			LOG_ERROR("CLKM GPIO device not ready");
 			return -ENODEV;
 		}
 		LOG_INF("Optional instance of %s device activated",
@@ -991,8 +992,7 @@ static inline int configure_spi(const struct device *dev)
 	const struct rf2xx_config *conf = dev->config;
 
 	if (!spi_is_ready_dt(&conf->spi)) {
-		LOG_ERR("SPI bus %s is not ready",
-			conf->spi.bus->name);
+		LOG_ERROR("SPI bus %s is not ready", conf->spi.bus->name);
 		return -ENODEV;
 	}
 
@@ -1013,19 +1013,19 @@ static int rf2xx_init(const struct device *dev)
 	k_sem_init(&ctx->trx_isr_lock, 0, 1);
 
 	if (configure_gpios(dev) != 0) {
-		LOG_ERR("Configuring GPIOS failed");
+		LOG_ERROR("Configuring GPIOS failed");
 		return -EIO;
 	}
 
 	if (configure_spi(dev) != 0) {
-		LOG_ERR("Configuring SPI failed");
+		LOG_ERROR("Configuring SPI failed");
 		return -EIO;
 	}
 
 	LOG_DBG("GPIO and SPI configured");
 
 	if (power_on_and_setup(dev) != 0) {
-		LOG_ERR("Configuring RF2XX failed");
+		LOG_ERROR("Configuring RF2XX failed");
 		return -EIO;
 	}
 

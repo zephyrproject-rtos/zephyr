@@ -60,7 +60,7 @@ static int dyn_handler(struct http_client_ctx *client, enum http_transaction_sta
 		ret = prometheus_format_exposition(prom_context.collector, prom_buffer,
 						   sizeof(prom_buffer));
 		if (ret < 0) {
-			LOG_ERR("Cannot format exposition data (%d)", ret);
+			LOG_ERROR("Cannot format exposition data (%d)", ret);
 			return ret;
 		}
 
@@ -116,31 +116,31 @@ static void setup_tls(void)
 	err = tls_credential_add(HTTP_SERVER_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
 				 ca_certificate, sizeof(ca_certificate));
 	if (err < 0) {
-		LOG_ERR("Failed to register CA certificate: %d", err);
+		LOG_ERROR("Failed to register CA certificate: %d", err);
 	}
 #endif /* defined(CONFIG_NET_SAMPLE_CERTS_WITH_SC) */
 
 	err = tls_credential_add(HTTP_SERVER_CERTIFICATE_TAG, TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 				 server_certificate, sizeof(server_certificate));
 	if (err < 0) {
-		LOG_ERR("Failed to register public certificate: %d", err);
+		LOG_ERROR("Failed to register public certificate: %d", err);
 	}
 
 	err = tls_credential_add(HTTP_SERVER_CERTIFICATE_TAG, TLS_CREDENTIAL_PRIVATE_KEY,
 				 private_key, sizeof(private_key));
 	if (err < 0) {
-		LOG_ERR("Failed to register private key: %d", err);
+		LOG_ERROR("Failed to register private key: %d", err);
 	}
 
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
 	err = tls_credential_add(PSK_TAG, TLS_CREDENTIAL_PSK, psk, sizeof(psk));
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK: %d", err);
+		LOG_ERROR("Failed to register PSK: %d", err);
 	}
 
 	err = tls_credential_add(PSK_TAG, TLS_CREDENTIAL_PSK_ID, psk_id, sizeof(psk_id) - 1);
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK ID: %d", err);
+		LOG_ERROR("Failed to register PSK ID: %d", err);
 	}
 #endif /* defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED) */
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */

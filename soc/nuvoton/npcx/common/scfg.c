@@ -183,7 +183,7 @@ void npcx_i3c_target_sel(uint8_t module_id, bool enable)
 		inst_scfg->DEV_CTL3 &= ~NPCX_DEV_CTL3_I3C_MODE_BIT(module_id);
 	}
 #else
-	LOG_ERR("%s: i3c target select not supported yet", __func__);
+	LOG_ERROR("%s: i3c target select not supported yet", __func__);
 #endif
 }
 

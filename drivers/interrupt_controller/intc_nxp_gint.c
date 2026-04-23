@@ -136,13 +136,13 @@ int nxp_gint_enable_pin(const struct device *dev, uint8_t port, uint8_t pin,
 
 	/* Validate port number */
 	if (port >= GINT_PORT_COUNT) {
-		LOG_ERR("Invalid port number: %d (max: %d)", port, GINT_PORT_COUNT - 1);
+		LOG_ERROR("Invalid port number: %d (max: %d)", port, GINT_PORT_COUNT - 1);
 		return -EINVAL;
 	}
 
 	/* Validate pin number */
 	if (pin > 31) {
-		LOG_ERR("Invalid pin number: %d (max: 31)", pin);
+		LOG_ERROR("Invalid pin number: %d (max: 31)", pin);
 		return -EINVAL;
 	}
 
@@ -175,13 +175,13 @@ int nxp_gint_disable_pin(const struct device *dev, uint8_t port, uint8_t pin)
 
 	/* Validate port number */
 	if (port >= GINT_PORT_COUNT) {
-		LOG_ERR("Invalid port number: %d (max: %d)", port, GINT_PORT_COUNT - 1);
+		LOG_ERROR("Invalid port number: %d (max: %d)", port, GINT_PORT_COUNT - 1);
 		return -EINVAL;
 	}
 
 	/* Validate pin number */
 	if (pin > 31) {
-		LOG_ERR("Invalid pin number: %d (max: 31)", pin);
+		LOG_ERROR("Invalid pin number: %d (max: 31)", pin);
 		return -EINVAL;
 	}
 

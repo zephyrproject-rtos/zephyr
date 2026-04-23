@@ -40,14 +40,14 @@ static int check_legal_max_min(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_PSE84)
 	if (config->block == IFX_HF && config->instance == 0) {
 		if (Cy_SysClk_ClkHfGetFrequency(0) > MHZ(200)) {
-			LOG_ERR("clk_hf0 frequency is greater than legal max 200 MHz");
+			LOG_ERROR("clk_hf0 frequency is greater than legal max 200 MHz");
 			return -EINVAL;
 		}
 	}
 #elif defined(CONFIG_SOC_SERIES_PSC3)
 	if (config->block == IFX_HF && config->instance == 0) {
 		if (Cy_SysClk_ClkHfGetFrequency(0) > MHZ(180)) {
-			LOG_ERR("clk_hf0 frequency is greater than legal max 180 MHz");
+			LOG_ERROR("clk_hf0 frequency is greater than legal max 180 MHz");
 			return -EINVAL;
 		}
 	}

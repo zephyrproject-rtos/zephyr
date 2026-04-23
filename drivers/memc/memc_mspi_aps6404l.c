@@ -96,7 +96,7 @@ static int memc_mspi_aps6404l_command_write(const struct device *psram, uint8_t 
 
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
 	if (ret) {
-		LOG_ERR("MSPI write transaction failed with code: %d/%u", ret, __LINE__);
+		LOG_ERROR("MSPI write transaction failed with code: %d/%u", ret, __LINE__);
 		return -EIO;
 	}
 	return ret;
@@ -130,7 +130,7 @@ static int memc_mspi_aps6404l_command_read(const struct device *psram, uint8_t c
 
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
 	if (ret) {
-		LOG_ERR("MSPI read transaction failed with code: %d/%u", ret, __LINE__);
+		LOG_ERROR("MSPI read transaction failed with code: %d/%u", ret, __LINE__);
 		return -EIO;
 	}
 	memcpy(rdata, buffer, length);
@@ -210,7 +210,7 @@ static int memc_mspi_aps6404l_half_sleep_enter(const struct device *psram)
 	LOG_DBG("Putting aps6404l to half sleep/%u", __LINE__);
 	ret = memc_mspi_aps6404l_command_write(psram, APS6404L_HALF_SLEEP_ENTER, 0, NULL, 0);
 	if (ret) {
-		LOG_ERR("Failed to enter half sleep/%u", __LINE__);
+		LOG_ERROR("Failed to enter half sleep/%u", __LINE__);
 		return ret;
 	}
 	/** Minimum half sleep duration tHS time */
@@ -234,7 +234,7 @@ static int memc_mspi_aps6404l_half_sleep_exit(const struct device *psram)
 	LOG_DBG("Waking up aps6404l from half sleep/%u", __LINE__);
 	ret = memc_mspi_aps6404l_command_write(psram, 0, 0, NULL, 0);
 	if (ret) {
-		LOG_ERR("Failed to exit from half sleep/%u", __LINE__);
+		LOG_ERROR("Failed to exit from half sleep/%u", __LINE__);
 		return ret;
 	}
 	/** Minimum half sleep exit CE to CLK setup time  */
@@ -245,7 +245,7 @@ static int memc_mspi_aps6404l_half_sleep_exit(const struct device *psram)
 	ret = mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_FREQUENCY,
 			      (const struct mspi_dev_cfg *)&data->dev_cfg);
 	if (ret) {
-		LOG_ERR("Failed to reconfigure MSPI after exiting half sleep/%u", __LINE__);
+		LOG_ERROR("Failed to reconfigure MSPI after exiting half sleep/%u", __LINE__);
 		return ret;
 	}
 
@@ -282,7 +282,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 	uint8_t vendor_id;
 
 	if (!device_is_ready(cfg->bus)) {
-		LOG_ERR("Controller device not ready/%u", __LINE__);
+		LOG_ERROR("Controller device not ready/%u", __LINE__);
 		return -ENODEV;
 	}
 
@@ -291,40 +291,40 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 	case MSPI_IO_MODE_QUAD:
 		break;
 	default:
-		LOG_ERR("Bus mode %d not supported/%u", cfg->tar_dev_cfg.io_mode, __LINE__);
+		LOG_ERROR("Bus mode %d not supported/%u", cfg->tar_dev_cfg.io_mode, __LINE__);
 		return -EIO;
 	}
 
 	if (data->dev_cfg.io_mode == MSPI_IO_MODE_QUAD) {
 		if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL,
 				    &cfg->quad_cfg)) {
-			LOG_ERR("Failed to config mspi controller/%u", __LINE__);
+			LOG_ERROR("Failed to config mspi controller/%u", __LINE__);
 			return -EIO;
 		}
 		data->dev_cfg = cfg->quad_cfg;
 		if (memc_mspi_aps6404l_reset(psram)) {
-			LOG_ERR("Could not reset pSRAM/%u", __LINE__);
+			LOG_ERROR("Could not reset pSRAM/%u", __LINE__);
 			return -EIO;
 		}
 		if (memc_mspi_aps6404l_command_write(psram, APS6404L_QUAD_MODE_EXIT, 0, NULL, 0)) {
-			LOG_ERR("Could not exit quad mode/%u", __LINE__);
+			LOG_ERROR("Could not exit quad mode/%u", __LINE__);
 			return -EIO;
 		}
 	}
 
 	if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL, &cfg->serial_cfg)) {
-		LOG_ERR("Failed to config mspi controller/%u", __LINE__);
+		LOG_ERROR("Failed to config mspi controller/%u", __LINE__);
 		return -EIO;
 	}
 	data->dev_cfg = cfg->serial_cfg;
 
 	if (memc_mspi_aps6404l_reset(psram)) {
-		LOG_ERR("Could not reset pSRAM/%u", __LINE__);
+		LOG_ERROR("Could not reset pSRAM/%u", __LINE__);
 		return -EIO;
 	}
 
 	if (memc_mspi_aps6404l_get_vendor_id(psram, &vendor_id)) {
-		LOG_ERR("Could not read vendor id/%u", __LINE__);
+		LOG_ERROR("Could not read vendor id/%u", __LINE__);
 		return -EIO;
 	}
 	LOG_DBG("Vendor id: 0x%0x", vendor_id);
@@ -340,7 +340,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 	}
 
 	if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL, &cfg->tar_dev_cfg)) {
-		LOG_ERR("Failed to config mspi controller/%u", __LINE__);
+		LOG_ERROR("Failed to config mspi controller/%u", __LINE__);
 		return -EIO;
 	}
 	data->dev_cfg = cfg->tar_dev_cfg;
@@ -348,7 +348,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 #if CONFIG_MSPI_TIMING
 	if (mspi_timing_config(cfg->bus, &cfg->dev_id, cfg->timing_cfg_mask,
 			       (void *)&cfg->tar_timing_cfg)) {
-		LOG_ERR("Failed to config mspi timing/%u", __LINE__);
+		LOG_ERROR("Failed to config mspi timing/%u", __LINE__);
 		return -EIO;
 	}
 	data->timing_cfg = cfg->tar_timing_cfg;
@@ -357,7 +357,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 #if CONFIG_MSPI_XIP
 	if (cfg->tar_xip_cfg.enable) {
 		if (mspi_xip_config(cfg->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
-			LOG_ERR("Failed to enable XIP/%u", __LINE__);
+			LOG_ERROR("Failed to enable XIP/%u", __LINE__);
 			return -EIO;
 		}
 		data->xip_cfg = cfg->tar_xip_cfg;
@@ -367,7 +367,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 #if CONFIG_MSPI_SCRAMBLE
 	if (cfg->tar_scramble_cfg.enable) {
 		if (mspi_scramble_config(cfg->bus, &cfg->dev_id, &cfg->tar_scramble_cfg)) {
-			LOG_ERR("Failed to enable scrambling/%u", __LINE__);
+			LOG_ERROR("Failed to enable scrambling/%u", __LINE__);
 			return -EIO;
 		}
 		data->scramble_cfg = cfg->tar_scramble_cfg;

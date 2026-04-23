@@ -355,13 +355,13 @@ MODEM_CMD_DEFINE(on_cmd_socket_ipread)
 	struct modem_socket	 *sock = NULL;
 
 	if (!len) {
-		LOG_ERR("Invalid length, Aborting!");
+		LOG_ERROR("Invalid length, Aborting!");
 		return -EAGAIN;
 	}
 
 	/* Make sure we still have buf data. */
 	if (!data->rx_buf) {
-		LOG_ERR("Incorrect format! Ignoring data!");
+		LOG_ERROR("Incorrect format! Ignoring data!");
 		return -EINVAL;
 	}
 
@@ -374,7 +374,7 @@ MODEM_CMD_DEFINE(on_cmd_socket_ipread)
 	/* Skip context_id, socket_id, commas, len, CRLF */
 	bytes_to_skip = digits(socket_data_length) + 2 + 4;
 	if (socket_data_length <= 0) {
-		LOG_ERR("Length problem (%d).  Aborting!", socket_data_length);
+		LOG_ERROR("Length problem (%d).  Aborting!", socket_data_length);
 		return -EAGAIN;
 	}
 
@@ -400,14 +400,14 @@ MODEM_CMD_DEFINE(on_cmd_socket_ipread)
 
 	sock = modem_socket_from_id(&mdata.socket_config, sock_id);
 	if (!sock) {
-		LOG_ERR("Socket not found! (%d)", sock_id);
+		LOG_ERROR("Socket not found! (%d)", sock_id);
 		ret = -EINVAL;
 		goto exit;
 	}
 
 	sock_data = (struct socket_read_data *)sock->data;
 	if (!sock_data) {
-		LOG_ERR("Socket data not found! Skip handling (%d)", sock_id);
+		LOG_ERROR("Socket data not found! Skip handling (%d)", sock_id);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -418,8 +418,9 @@ MODEM_CMD_DEFINE(on_cmd_socket_ipread)
 
 	sock_data->recv_read_len = ret;
 	if (ret != socket_data_length) {
-		LOG_ERR("Total copied data is different than received data!"
-			" copied:%d vs. received:%d", ret, socket_data_length);
+		LOG_ERROR("Total copied data is different than received data!"
+			  " copied:%d vs. received:%d",
+			  ret, socket_data_length);
 		ret = -EINVAL;
 	}
 
@@ -705,13 +706,13 @@ static int st87mxx_cold_param_init(void)
 	ret = snprintk(buf, sizeof(buf), "AT#NVMRD=%d,%d,1", ST87MXX_COLD_VERSION_NVM_PAGE,
 				ST87MXX_COLD_VERSION_NVM_OFFSET);
 	if (ret < 0) {
-		LOG_ERR("Failed to read the NVM");
+		LOG_ERROR("Failed to read the NVM");
 		goto error;
 	}
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), buf,
 				&mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to send AT command: %s ret: %d", buf, ret);
+		LOG_ERROR("Failed to send AT command: %s ret: %d", buf, ret);
 		goto error;
 	}
 
@@ -776,7 +777,7 @@ static int st87mxx_init(struct st87mxx_register *reg)
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmds, ARRAY_SIZE(cmds), buf,
 					&mdata.sem_response, MDM_CMD_TIMEOUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to query registration!!");
+			LOG_ERROR("Failed to query registration!!");
 			return -1;
 		}
 
@@ -886,7 +887,7 @@ static int modem_init(const struct device *dev)
 
 	ret = modem_context_register(&mctx);
 	if (ret < 0) {
-		LOG_ERR("Error registering modem context: %d", ret);
+		LOG_ERROR("Error registering modem context: %d", ret);
 		goto error;
 	}
 
@@ -919,13 +920,13 @@ static void socket_close(struct modem_socket *sock)
 
 	ret = snprintk(buf, sizeof(buf), "AT#SOCKETCLOSE=%d,%d", mdata.context_id, sock->id);
 	if (ret < 0) {
-		LOG_ERR("Failed to close the socket %d", sock->id);
+		LOG_ERROR("Failed to close the socket %d", sock->id);
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf, &mdata.sem_response,
 				MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("%s ret: %d", buf, ret);
+		LOG_ERROR("%s ret: %d", buf, ret);
 	}
 
 	modem_socket_put(&mdata.socket_config, sock->sock_fd);
@@ -958,7 +959,7 @@ static int st87mxx_create_socket(struct modem_socket *sock, const struct net_soc
 
 	ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
 	if (ret != 0) {
-		LOG_ERR("Failed to format IP!");
+		LOG_ERROR("Failed to format IP!");
 		errno = ENOMEM;
 		return -1;
 	}
@@ -967,7 +968,8 @@ static int st87mxx_create_socket(struct modem_socket *sock, const struct net_soc
 				ip_mode, protocol, SOCKET_SEND_TIMEOUT,
 				SOCKET_RECEIVE_TIMEOUT, SOCKET_FRAME_RECEIVED_URC);
 	if (ret < 0) {
-		LOG_ERR("Failed to build connect command. ID: %d, FD: %d", sock->id, sock->sock_fd);
+		LOG_ERROR("Failed to build connect command. ID: %d, FD: %d", sock->id,
+			  sock->sock_fd);
 		errno = ENOMEM;
 		return -1;
 	}
@@ -975,14 +977,14 @@ static int st87mxx_create_socket(struct modem_socket *sock, const struct net_soc
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), buf,
 				&mdata.sem_response, MDM_CONNECT_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("%s ret: %d", buf, ret);
+		LOG_ERROR("%s ret: %d", buf, ret);
 		socket_close(sock);
 		goto error;
 	}
 
 	ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
 	if (ret != 0) {
-		LOG_ERR("Closing the socket!");
+		LOG_ERROR("Closing the socket!");
 		socket_close(sock);
 		goto error;
 	}
@@ -1015,7 +1017,7 @@ static int st87mxx_tcp_connect(struct modem_socket *sock, const struct net_socka
 
 		ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
 		if (ret != 0) {
-			LOG_ERR("Failed to format IP!");
+			LOG_ERROR("Failed to format IP!");
 			errno = ENOMEM;
 			return -1;
 		}
@@ -1024,7 +1026,7 @@ static int st87mxx_tcp_connect(struct modem_socket *sock, const struct net_socka
 						mdata.context_id, sock->id, ip_str, dst_port);
 
 		if (ret < 0) {
-			LOG_ERR("Failed to build send command!!");
+			LOG_ERROR("Failed to build send command!!");
 			errno = ENOMEM;
 			return -1;
 		}
@@ -1070,7 +1072,7 @@ static int offload_bind(void *obj, const struct net_sockaddr *addr, net_socklen_
 	/* Make sure we've created the socket. */
 	if (modem_socket_is_allocated(&mdata.socket_config, sock) == true) {
 		if (st87mxx_create_socket(sock, addr) != 0) {
-			LOG_ERR("Socket creation failed");
+			LOG_ERROR("Socket creation failed");
 			return -EOPNOTSUPP;
 		}
 	}
@@ -1138,7 +1140,7 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 	int ret;
 
 	if (modem_socket_is_allocated(&mdata.socket_config, sock) == false) {
-		LOG_ERR("Invalid socket id %d from fd %d", sock->id, sock->sock_fd);
+		LOG_ERROR("Invalid socket id %d from fd %d", sock->id, sock->sock_fd);
 		errno = EINVAL;
 		return -1;
 	}
@@ -1147,7 +1149,7 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 		LOG_INF("Socket is already connected! id: %d, fd: %d", sock->id, sock->sock_fd);
 	} else {
 		if (st87mxx_create_socket(sock, addr) != 0) {
-			LOG_ERR("Socket creation failed");
+			LOG_ERROR("Socket creation failed");
 			return -EOPNOTSUPP;
 		}
 	}
@@ -1158,7 +1160,7 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 
 	ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
 	if (ret != 0) {
-		LOG_ERR("Closing the socket!");
+		LOG_ERROR("Closing the socket!");
 		socket_close(sock);
 		goto error;
 	}
@@ -1209,7 +1211,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 		ret = snprintk(send_buf_tcp, sizeof(send_buf_tcp), "AT#IPSENDTCP=%d,%d,1,%zu",
 						mdata.context_id, sock->id, len);
 		if (ret < 0) {
-			LOG_ERR("Failed to build send command!!");
+			LOG_ERROR("Failed to build send command!!");
 			errno = ENOMEM;
 			return -1;
 		}
@@ -1217,7 +1219,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 		ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler,
 					NULL, 0U, send_buf_tcp, NULL, K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("Failed to send AT#IPSENDTCP command!!");
+			LOG_ERROR("Failed to send AT#IPSENDTCP command!!");
 			goto exit;
 		}
 
@@ -1239,15 +1241,15 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 
 	ret = modem_context_sprint_ip_addr(dest_addr, ip_str, sizeof(ip_str));
 	if (ret != 0) {
-		LOG_ERR("Failed to format IP!");
+		LOG_ERROR("Failed to format IP!");
 		errno = ENOMEM;
 		return -1;
 	}
 
 	ret = snprintk(send_buf_udp, sizeof(send_buf_udp), "AT#IPSENDUDP=%d,%d,%s,%d,%d,%d,%zu",
-			mdata.context_id, sock->id, ip_str, dst_port, 0, 1, len);
+		       mdata.context_id, sock->id, ip_str, dst_port, 0, 1, len);
 	if (ret < 0) {
-		LOG_ERR("Failed to build send command!!");
+		LOG_ERROR("Failed to build send command!!");
 		errno = ENOMEM;
 		return -1;
 	}
@@ -1256,7 +1258,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 				NULL, 0U, send_buf_udp, NULL, K_NO_WAIT);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to send AT#IPSENDUDP command!!");
+		LOG_ERROR("Failed to send AT#IPSENDUDP command!!");
 		goto exit;
 	}
 
@@ -1641,11 +1643,11 @@ st87mxx_get_pos_callback_t *get_pos_callback_func, uint32_t timeout)
 	struct modem_cmd data_cmd_init[] = { MODEM_CMD("#GNSSINIT: ", on_cmd_gnssinit, 2U, ",") };
 
 	if (timeout == 0) {
-		LOG_ERR("bad parameter");
+		LOG_ERROR("bad parameter");
 		ret = EINVAL;
 		goto end;
 	} else if (app_srv_data.sequence_state == SEQUENCE_ONGOING) {
-		LOG_ERR("sequence already on-going");
+		LOG_ERROR("sequence already on-going");
 		ret = ECANCELED;
 		goto end;
 	}
@@ -1677,7 +1679,7 @@ st87mxx_get_pos_callback_t *get_pos_callback_func, uint32_t timeout)
 			ARRAY_SIZE(data_cmd_init), buf_gnss_init, &app_srv_data.sequence_sem,
 			APP_MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to send AT#GNSSINIT command");
+		LOG_ERROR("Failed to send AT#GNSSINIT command");
 		ret = -1;
 		goto end;
 	}
@@ -1705,13 +1707,13 @@ st87mxx_get_pos_callback_t *get_pos_callback_func, uint32_t timeout)
 #endif
 
 		if (ret < 0) {
-			LOG_ERR("Failed to send AT#GNSSFIX command");
+			LOG_ERROR("Failed to send AT#GNSSFIX command");
 			k_sem_give(&app_srv_data.sequence_sem);
 			ret = -1;
 			goto end;
 		}
 	} else {
-		LOG_ERR("Bad init sts (=%d)", app_srv_data.getfix_vars.init_status);
+		LOG_ERROR("Bad init sts (=%d)", app_srv_data.getfix_vars.init_status);
 		k_sem_give(&app_srv_data.sequence_sem);
 		ret = -1;
 		goto end;
@@ -1749,7 +1751,7 @@ int st87mxx_wifiscan(st87mxx_wifiscan_params *wscan_params)
 		ret = EINVAL;
 		goto end;
 	} else if (app_srv_data.sequence_state == SEQUENCE_ONGOING) {
-		LOG_ERR("sequence already on-going");
+		LOG_ERROR("sequence already on-going");
 		ret = ECANCELED;
 		goto end;
 	}
@@ -1845,7 +1847,7 @@ int st87mxx_getrssi(st87mxx_get_rssi_callback_t *get_rssi_callback_func)
 	char buf_steng_polling[sizeof("AT#STENG=3")];
 
 	if (app_srv_data.sequence_state == SEQUENCE_ONGOING) {
-		LOG_ERR("sequence already on-going");
+		LOG_ERROR("sequence already on-going");
 		ret = ECANCELED;
 		goto end;
 	}
@@ -1862,7 +1864,7 @@ int st87mxx_getrssi(st87mxx_get_rssi_callback_t *get_rssi_callback_func)
 	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler,
 				NULL, 0U, buf_steng_polling, NULL, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to send AT#STENG=3 command");
+		LOG_ERROR("Failed to send AT#STENG=3 command");
 		ret = -1;
 		goto end;
 	}

@@ -213,12 +213,12 @@ static int flash_silabs_erase(const struct device *dev, off_t offset, size_t siz
 	}
 
 	if (!IS_ALIGNED(offset, DT_PROP(SOC_NV_FLASH_NODE, erase_block_size))) {
-		LOG_ERR("offset 0x%lx: not on a page boundary", (long)offset);
+		LOG_ERROR("offset 0x%lx: not on a page boundary", (long)offset);
 		return -EINVAL;
 	}
 
 	if (!IS_ALIGNED(size, DT_PROP(SOC_NV_FLASH_NODE, erase_block_size))) {
-		LOG_ERR("size %zu: not multiple of a page size", size);
+		LOG_ERROR("size %zu: not multiple of a page size", size);
 		return -EINVAL;
 	}
 

@@ -82,11 +82,11 @@ static unsigned int wpa_alg_to_cipher_suite(enum wpa_alg alg, size_t key_len)
 	case WPA_ALG_KRK:
 		return RSN_CIPHER_SUITE_KRK;
 	case WPA_ALG_NONE:
-		LOG_ERR("%s: Unexpected encryption algorithm %d", __func__, alg);
+		LOG_ERROR("%s: Unexpected encryption algorithm %d", __func__, alg);
 		return 0;
 	}
 
-	LOG_ERR("%s: Unsupported encryption algorithm %d", __func__, alg);
+	LOG_ERROR("%s: Unsupported encryption algorithm %d", __func__, alg);
 	return 0;
 }
 
@@ -179,7 +179,7 @@ void nrf_wifi_wpa_supp_event_proc_scan_res(void *if_priv,
 	r = nrf_wifi_osal_mem_zalloc(sizeof(*r) + ie_len + beacon_ie_len);
 
 	if (!r) {
-		LOG_ERR("%s: Unable to allocate memory for scan result", __func__);
+		LOG_ERROR("%s: Unable to allocate memory for scan result", __func__);
 		return;
 	}
 
@@ -276,13 +276,13 @@ void nrf_wifi_wpa_supp_event_proc_auth_resp(void *if_priv,
 	mgmt = (const struct ieee80211_mgmt *)frame;
 
 	if (frame_len < 4 + (2 * NRF_WIFI_ETH_ADDR_LEN)) {
-		LOG_ERR("%s: MLME event too short", __func__);
+		LOG_ERROR("%s: MLME event too short", __func__);
 		return;
 	}
 
 
 	if (frame_len < 24 + sizeof(mgmt->u.auth)) {
-		LOG_ERR("%s: Authentication response frame too short", __func__);
+		LOG_ERROR("%s: Authentication response frame too short", __func__);
 		return;
 	}
 
@@ -324,7 +324,7 @@ void nrf_wifi_wpa_supp_event_proc_assoc_resp(void *if_priv,
 	mgmt = (const struct ieee80211_mgmt *)frame;
 
 	if (frame_len < 24 + sizeof(mgmt->u.assoc_resp)) {
-		LOG_ERR("%s: Association response frame too short", __func__);
+		LOG_ERROR("%s: Association response frame too short", __func__);
 		return;
 	}
 
@@ -385,7 +385,7 @@ void nrf_wifi_wpa_supp_event_proc_deauth(void *if_priv,
 	mgmt = (const struct ieee80211_mgmt *)frame;
 
 	if (frame_len < 24 + sizeof(mgmt->u.deauth)) {
-		LOG_ERR("%s: Deauthentication frame too short", __func__);
+		LOG_ERROR("%s: Deauthentication frame too short", __func__);
 		return;
 	}
 
@@ -425,7 +425,7 @@ void nrf_wifi_wpa_supp_event_proc_disassoc(void *if_priv,
 	mgmt = (const struct ieee80211_mgmt *)frame;
 
 	if (frame_len < 24 + sizeof(mgmt->u.disassoc)) {
-		LOG_ERR("%s: Disassociation frame too short", __func__);
+		LOG_ERROR("%s: Disassociation frame too short", __func__);
 		return;
 	}
 
@@ -455,14 +455,14 @@ void *nrf_wifi_wpa_supp_dev_init(void *supp_drv_if_ctx, const char *iface_name,
 	const struct device *device = net_if_get_device(iface);
 
 	if (!device) {
-		LOG_ERR("%s: Interface %s not found", __func__, iface_name);
+		LOG_ERROR("%s: Interface %s not found", __func__, iface_name);
 		return NULL;
 	}
 
 	vif_ctx_zep = device->data;
 
 	if (!vif_ctx_zep || !vif_ctx_zep->rpu_ctx_zep) {
-		LOG_ERR("%s: Interface %s not properly initialized", __func__, iface_name);
+		LOG_ERROR("%s: Interface %s not properly initialized", __func__, iface_name);
 		return NULL;
 	}
 
@@ -499,14 +499,14 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 	int num_freqs = 0;
 
 	if (!if_priv || !params) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep->rpu_ctx) {
-		LOG_ERR("%s: RPU context not initialized", __func__);
+		LOG_ERROR("%s: RPU context not initialized", __func__);
 		return ret;
 	}
 
@@ -517,7 +517,7 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 	}
 
 	if (vif_ctx_zep->scan_in_progress) {
-		LOG_ERR("%s: Scan already in progress", __func__);
+		LOG_ERROR("%s: Scan already in progress", __func__);
 		ret = -EBUSY;
 		goto out;
 	}
@@ -532,7 +532,7 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 					    (num_freqs * sizeof(unsigned int)));
 
 	if (!scan_info) {
-		LOG_ERR("%s: Unable to allocate memory for scan info", __func__);
+		LOG_ERROR("%s: Unable to allocate memory for scan info", __func__);
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -581,15 +581,15 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 		memcpy(scan_info->scan_params.ie.ie, params->extra_ies, params->extra_ies_len);
 		scan_info->scan_params.ie.ie_len = params->extra_ies_len;
 	} else if (params->extra_ies_len) {
-		LOG_ERR("%s: extra_ies_len %d is greater than max IE len %d",
-			__func__, params->extra_ies_len, NRF_WIFI_MAX_IE_LEN);
+		LOG_ERROR("%s: extra_ies_len %d is greater than max IE len %d", __func__,
+			  params->extra_ies_len, NRF_WIFI_MAX_IE_LEN);
 		goto out;
 	}
 
 	status = nrf_wifi_sys_fmac_scan(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, scan_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: Scan trigger failed", __func__);
+		LOG_ERROR("%s: Scan trigger failed", __func__);
 		goto out;
 	}
 
@@ -617,12 +617,12 @@ int nrf_wifi_wpa_supp_scan_abort(void *if_priv)
 
 	vif_ctx_zep = if_priv;
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return -1;
 	}
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return -1;
 	}
 
@@ -633,22 +633,22 @@ int nrf_wifi_wpa_supp_scan_abort(void *if_priv)
 	}
 
 	if (!vif_ctx_zep->scan_in_progress) {
-		LOG_ERR("%s:Ignore scan abort, no scan in progress", __func__);
+		LOG_ERROR("%s:Ignore scan abort, no scan in progress", __func__);
 		goto out;
 	}
 
 	status = nrf_wifi_sys_fmac_abort_scan(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_abort_scan failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_abort_scan failed", __func__);
 		goto out;
 	}
 
 	k_sem_reset(&wait_for_scan_resp_sem);
 	sem_ret = k_sem_take(&wait_for_scan_resp_sem, K_MSEC(RPU_RESP_EVENT_TIMEOUT));
 	if (sem_ret) {
-		LOG_ERR("%s: Timedout waiting for scan abort response, ret = %d",
-			    __func__, sem_ret);
+		LOG_ERROR("%s: Timedout waiting for scan abort response, ret = %d", __func__,
+			  sem_ret);
 		status = NRF_WIFI_STATUS_FAIL;
 		goto out;
 	}
@@ -666,14 +666,14 @@ int nrf_wifi_wpa_supp_scan_results_get(void *if_priv)
 	int ret = -1;
 
 	if (!if_priv) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -687,7 +687,7 @@ int nrf_wifi_wpa_supp_scan_results_get(void *if_priv)
 					    SCAN_CONNECT);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_scan_res_get failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_scan_res_get failed", __func__);
 		goto out;
 	}
 
@@ -706,14 +706,14 @@ int nrf_wifi_wpa_supp_deauthenticate(void *if_priv, const char *addr, unsigned s
 	int ret = -1;
 
 	if ((!if_priv) || (!addr)) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -732,7 +732,7 @@ int nrf_wifi_wpa_supp_deauthenticate(void *if_priv, const char *addr, unsigned s
 	status = nrf_wifi_sys_fmac_deauth(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, &deauth_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_deauth failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_deauth failed", __func__);
 		goto out;
 	}
 
@@ -789,14 +789,14 @@ int nrf_wifi_wpa_supp_authenticate(void *if_priv, struct wpa_driver_auth_params 
 	int max_ie_len = 0;
 
 	if ((!if_priv) || (!params)) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -808,7 +808,7 @@ int nrf_wifi_wpa_supp_authenticate(void *if_priv, struct wpa_driver_auth_params 
 
 #ifdef CONFIG_NRF70_RAW_DATA_RX
 	if (vif_ctx_zep->if_type == NRF_WIFI_IFTYPE_MONITOR) {
-		LOG_ERR("%s: Interface is in Monitor mode -  cannot connect to a BSS", __func__);
+		LOG_ERROR("%s: Interface is in Monitor mode -  cannot connect to a BSS", __func__);
 		goto out;
 	}
 #endif /* CONFIG_NRF70_RAW_DATA_RX */
@@ -876,7 +876,7 @@ int nrf_wifi_wpa_supp_authenticate(void *if_priv, struct wpa_driver_auth_params 
 	status = nrf_wifi_sys_fmac_auth(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, &auth_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: MLME command failed (auth): count=%d ret=%d", __func__, count, ret);
+		LOG_ERROR("%s: MLME command failed (auth): count=%d ret=%d", __func__, count, ret);
 		count++;
 		ret = -1;
 	} else {
@@ -897,7 +897,7 @@ int nrf_wifi_wpa_supp_associate(void *if_priv, struct wpa_driver_associate_param
 	int ret = -1;
 
 	if ((!if_priv) || (!params)) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
@@ -964,7 +964,7 @@ int nrf_wifi_wpa_supp_associate(void *if_priv, struct wpa_driver_associate_param
 	status = nrf_wifi_sys_fmac_assoc(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, &assoc_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: MLME command failed (assoc)", __func__);
+		LOG_ERROR("%s: MLME command failed (assoc)", __func__);
 	} else {
 		LOG_DBG("%s: Association request sent successfully", __func__);
 		ret = 0;
@@ -991,14 +991,14 @@ int nrf_wifi_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enum w
 
 
 	if ((!if_priv) || (!ifname)) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep->rpu_ctx) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -1060,7 +1060,7 @@ int nrf_wifi_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enum w
 					       &key_info, mac_addr);
 
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: nrf_wifi_sys_fmac_del_key failed", __func__);
+			LOG_ERROR("%s: nrf_wifi_sys_fmac_del_key failed", __func__);
 		} else {
 			ret = 0;
 		}
@@ -1069,7 +1069,7 @@ int nrf_wifi_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enum w
 					       &key_info, mac_addr);
 
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: nrf_wifi_sys_fmac_add_key failed", __func__);
+			LOG_ERROR("%s: nrf_wifi_sys_fmac_add_key failed", __func__);
 		} else {
 			ret = 0;
 		}
@@ -1105,7 +1105,7 @@ int nrf_wifi_wpa_supp_set_key(void *if_priv, const unsigned char *ifname, enum w
 	status = nrf_wifi_sys_fmac_set_key(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, &key_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_set_key failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_set_key failed", __func__);
 		ret = -1;
 	} else {
 		ret = 0;
@@ -1125,14 +1125,14 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 	int ret = -1;
 
 	if (!if_priv || !bssid) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -1144,7 +1144,7 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 
 	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
 	if (!sys_dev_ctx) {
-		LOG_ERR("%s: sys_dev_ctx is NULL", __func__);
+		LOG_ERROR("%s: sys_dev_ctx is NULL", __func__);
 		goto out;
 	}
 
@@ -1171,7 +1171,7 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 					   &chg_sta_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_sta failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_chg_sta failed", __func__);
 		ret = -1;
 		goto out;
 	}
@@ -1196,14 +1196,14 @@ int nrf_wifi_wpa_supp_signal_poll(void *if_priv, struct wpa_signal_info *si, uns
 	int rssi_record_elapsed_time_ms = 0;
 
 	if (!if_priv || !si || !bssid) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -1225,13 +1225,13 @@ int nrf_wifi_wpa_supp_signal_poll(void *if_priv, struct wpa_signal_info *si, uns
 						    vif_ctx_zep->vif_idx,
 						    bssid);
 		if (ret != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: Failed to send get station info command", __func__);
+			LOG_ERROR("%s: Failed to send get station info command", __func__);
 			goto out;
 		}
 
 		sem_ret = k_sem_take(&wait_for_event_sem, K_MSEC(RPU_RESP_EVENT_TIMEOUT));
 		if (sem_ret) {
-			LOG_ERR("%s: Failed to get station info, ret = %d", __func__, sem_ret);
+			LOG_ERROR("%s: Failed to get station info, ret = %d", __func__, sem_ret);
 			ret = NRF_WIFI_STATUS_FAIL;
 			goto out;
 		}
@@ -1241,13 +1241,13 @@ int nrf_wifi_wpa_supp_signal_poll(void *if_priv, struct wpa_signal_info *si, uns
 
 	ret = nrf_wifi_sys_fmac_get_interface(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx);
 	if (ret != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: Failed to send get interface info command", __func__);
+		LOG_ERROR("%s: Failed to send get interface info command", __func__);
 		goto out;
 	}
 
 	sem_ret = k_sem_take(&wait_for_event_sem, K_MSEC(RPU_RESP_EVENT_TIMEOUT));
 	if (sem_ret) {
-		LOG_ERR("%s: Failed to get interface info, ret = %d", __func__, sem_ret);
+		LOG_ERROR("%s: Failed to get interface info, ret = %d", __func__, sem_ret);
 		ret = NRF_WIFI_STATUS_FAIL;
 		goto out;
 	}
@@ -1266,13 +1266,13 @@ void nrf_wifi_wpa_supp_event_proc_get_sta(void *if_priv,
 	struct wpa_signal_info *signal_info = NULL;
 
 	if (!if_priv || !info) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		goto out;
 	}
 
 	vif_ctx_zep = if_priv;
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		goto out;
 	}
 
@@ -1324,7 +1324,7 @@ void nrf_wifi_wpa_supp_event_proc_get_if(void *if_priv,
 	struct wpa_signal_info *signal_info = NULL;
 
 	if (!if_priv || !info) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		k_sem_give(&wait_for_event_sem);
 		return;
 	}
@@ -1354,14 +1354,14 @@ void nrf_wifi_wpa_supp_event_mgmt_tx_status(void *if_priv,
 	bool acked = false;
 
 	if (!if_priv) {
-		LOG_ERR("%s: Missing interface context", __func__);
+		LOG_ERROR("%s: Missing interface context", __func__);
 		return;
 	}
 
 	vif_ctx_zep = if_priv;
 
 	if (!mlme_event) {
-		LOG_ERR("%s: Missing MLME event data", __func__);
+		LOG_ERROR("%s: Missing MLME event data", __func__);
 		return;
 	}
 
@@ -1398,7 +1398,7 @@ void nrf_wifi_wpa_supp_event_proc_unprot_mgmt(void *if_priv,
 	cmd_evnt = ((struct nrf_wifi_umac_hdr *)unprot_mgmt)->cmd_evnt;
 
 	if (frame_len < 24 + sizeof(mgmt->u.deauth)) {
-		LOG_ERR("%s: Unprotected mgmt frame too short", __func__);
+		LOG_ERROR("%s: Unprotected mgmt frame too short", __func__);
 		return;
 	}
 
@@ -1436,14 +1436,14 @@ int nrf_wifi_nl80211_send_mlme(void *if_priv, const u8 *data,
 	unsigned int timeout = 0;
 
 	if (!if_priv || !data) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return -1;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return -1;
 	}
 
@@ -1458,7 +1458,7 @@ int nrf_wifi_nl80211_send_mlme(void *if_priv, const u8 *data,
 	mgmt_tx_info = nrf_wifi_osal_mem_zalloc(sizeof(*mgmt_tx_info));
 
 	if (!mgmt_tx_info) {
-		LOG_ERR("%s: Unable to allocate memory", __func__);
+		LOG_ERROR("%s: Unable to allocate memory", __func__);
 		goto out;
 	}
 
@@ -1508,7 +1508,7 @@ int nrf_wifi_nl80211_send_mlme(void *if_priv, const u8 *data,
 			mgmt_tx_info);
 
 	if (status == NRF_WIFI_STATUS_FAIL) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_mgmt_tx failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_mgmt_tx failed", __func__);
 		goto out;
 	}
 
@@ -1526,8 +1526,7 @@ int nrf_wifi_nl80211_send_mlme(void *if_priv, const u8 *data,
 		}
 
 		if (!vif_ctx_zep->cookie_resp_received) {
-			LOG_ERR("%s: cookie response not received (%dms)", __func__,
-				timeout);
+			LOG_ERROR("%s: cookie response not received (%dms)", __func__, timeout);
 			status = NRF_WIFI_STATUS_FAIL;
 			goto out;
 		}
@@ -1562,7 +1561,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 		struct wpa_supp_event_channel *chan = &band->channels[count];
 
 		if (count >= WPA_SUPP_SBAND_MAX_CHANNELS) {
-			LOG_ERR("%s: Failed to add channel", __func__);
+			LOG_ERROR("%s: Failed to add channel", __func__);
 			break;
 		}
 
@@ -1579,7 +1578,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 		struct wpa_supp_event_rate *rate = &band->bitrates[count];
 
 		if (count >= WPA_SUPP_SBAND_MAX_RATES) {
-			LOG_ERR("%s: Failed to add bitrate", __func__);
+			LOG_ERROR("%s: Failed to add bitrate", __func__);
 			break;
 		}
 
@@ -1601,7 +1600,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 	for (count = 0; count < NRF_WIFI_HT_MCS_RES_LEN; count++) {
 
 		if (count >= WPA_SUPP_HT_MCS_RES_LEN) {
-			LOG_ERR("%s: Failed to add reserved bytes", __func__);
+			LOG_ERROR("%s: Failed to add reserved bytes", __func__);
 			break;
 		}
 
@@ -1636,7 +1635,7 @@ void nrf_wifi_wpa_supp_event_get_wiphy(void *if_priv,
 	struct wpa_supp_event_supported_band band;
 
 	if (!if_priv || !wiphy_info || !event_len) {
-		LOG_ERR("%s: Invalid parameters", __func__);
+		LOG_ERROR("%s: Invalid parameters", __func__);
 		return;
 	}
 
@@ -1692,14 +1691,14 @@ int nrf_wifi_supp_get_wiphy(void *if_priv)
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 
 	if (!if_priv) {
-		LOG_ERR("%s: Missing interface context", __func__);
+		LOG_ERROR("%s: Missing interface context", __func__);
 		return -1;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return -1;
 	}
 
@@ -1712,7 +1711,7 @@ int nrf_wifi_supp_get_wiphy(void *if_priv)
 	status = nrf_wifi_sys_fmac_get_wiphy(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_get_wiphy failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_get_wiphy failed", __func__);
 		goto out;
 	}
 out:
@@ -1730,14 +1729,14 @@ int nrf_wifi_supp_register_frame(void *if_priv,
 	struct nrf_wifi_umac_mgmt_frame_info frame_info;
 
 	if (if_priv == NULL) {
-		LOG_ERR("%s: Invalid parameters", __func__);
+		LOG_ERROR("%s: Invalid parameters", __func__);
 		return -1;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return -1;
 	}
 
@@ -1752,7 +1751,7 @@ int nrf_wifi_supp_register_frame(void *if_priv,
 	frame_info.frame_type = type;
 	if (match_len > 0) {
 		if (match == NULL) {
-			LOG_ERR("%s: Invalid match parameters", __func__);
+			LOG_ERROR("%s: Invalid match parameters", __func__);
 			goto out;
 		}
 		frame_info.frame_match.frame_match_len = match_len;
@@ -1763,7 +1762,7 @@ int nrf_wifi_supp_register_frame(void *if_priv,
 			&frame_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_register_frame failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_register_frame failed", __func__);
 		goto out;
 	}
 out:
@@ -1778,14 +1777,14 @@ void nrf_wifi_wpa_supp_event_mgmt_rx_callbk_fn(void *if_priv,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 
 	if (!if_priv) {
-		LOG_ERR("%s: Missing interface context", __func__);
+		LOG_ERROR("%s: Missing interface context", __func__);
 		return;
 	}
 
 	vif_ctx_zep = if_priv;
 
 	if (!mlme_event || !event_len) {
-		LOG_ERR("%s: Missing MLME event data", __func__);
+		LOG_ERROR("%s: Missing MLME event data", __func__);
 		return;
 	}
 
@@ -1805,7 +1804,7 @@ int nrf_wifi_supp_get_capa(void *if_priv, struct wpa_driver_capa *capa)
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 
 	if (!if_priv || !capa) {
-		LOG_ERR("%s: Invalid parameters", __func__);
+		LOG_ERROR("%s: Invalid parameters", __func__);
 		return -1;
 	}
 
@@ -1814,7 +1813,7 @@ int nrf_wifi_supp_get_capa(void *if_priv, struct wpa_driver_capa *capa)
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return -1;
 	}
 
@@ -1868,7 +1867,7 @@ void nrf_wifi_wpa_supp_event_mac_chgd(void *if_priv)
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 
 	if (!if_priv) {
-		LOG_ERR("%s: Invalid parameters", __func__);
+		LOG_ERROR("%s: Invalid parameters", __func__);
 		return;
 	}
 
@@ -1890,14 +1889,14 @@ int nrf_wifi_supp_get_conn_info(void *if_priv, struct wpa_conn_info *info)
 	int sem_ret;
 
 	if (!if_priv || !info) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -1912,13 +1911,14 @@ int nrf_wifi_supp_get_conn_info(void *if_priv, struct wpa_conn_info *info)
 	vif_ctx_zep->conn_info = info;
 	ret = nrf_wifi_sys_fmac_get_conn_info(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx);
 	if (ret != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_get_conn_info failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_get_conn_info failed", __func__);
 		goto out;
 	}
 
 	sem_ret = k_sem_take(&wait_for_event_sem, K_MSEC(RPU_RESP_EVENT_TIMEOUT));
 	if (sem_ret) {
-		LOG_ERR("%s: Timeout: failed to get connection info, ret = %d", __func__, sem_ret);
+		LOG_ERROR("%s: Timeout: failed to get connection info, ret = %d", __func__,
+			  sem_ret);
 		ret = NRF_WIFI_STATUS_FAIL;
 		goto out;
 	}
@@ -1936,14 +1936,14 @@ int nrf_wifi_supp_set_country(void *if_priv, const char *alpha2)
 	struct nrf_wifi_fmac_reg_info reg_domain_info = {0};
 
 	if (!if_priv || !alpha2) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return -1;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return -1;
 	}
 
@@ -1957,7 +1957,7 @@ int nrf_wifi_supp_set_country(void *if_priv, const char *alpha2)
 
 	status = nrf_wifi_fmac_set_reg(rpu_ctx_zep->rpu_ctx, &reg_domain_info);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_set_reg failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_fmac_set_reg failed", __func__);
 		goto out;
 	}
 out:
@@ -1973,14 +1973,14 @@ int nrf_wifi_supp_get_country(void *if_priv, char *alpha2)
 	struct nrf_wifi_fmac_reg_info reg_domain_info = {0};
 
 	if (!if_priv || !alpha2) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return -1;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return -1;
 	}
 
@@ -1992,7 +1992,7 @@ int nrf_wifi_supp_get_country(void *if_priv, char *alpha2)
 
 	status = nrf_wifi_fmac_get_reg(rpu_ctx_zep->rpu_ctx, &reg_domain_info);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_get_reg failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_fmac_get_reg failed", __func__);
 		goto out;
 	}
 
@@ -2010,7 +2010,7 @@ void nrf_wifi_supp_event_proc_get_conn_info(void *if_priv,
 	struct wpa_conn_info *conn_info = NULL;
 
 	if (!if_priv || !info) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		k_sem_give(&wait_for_event_sem);
 		return;
 	}
@@ -2030,14 +2030,14 @@ void nrf_wifi_supp_event_remain_on_channel(void *if_priv,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 
 	if (if_priv == NULL) {
-		LOG_ERR("%s: Missing interface context", __func__);
+		LOG_ERROR("%s: Missing interface context", __func__);
 		return;
 	}
 
 	vif_ctx_zep = if_priv;
 
 	if (roc_complete == NULL) {
-		LOG_ERR("%s: Missing ROC complete event data", __func__);
+		LOG_ERROR("%s: Missing ROC complete event data", __func__);
 		return;
 	}
 
@@ -2060,14 +2060,14 @@ void nrf_wifi_supp_event_roc_cancel_complete(void *if_priv,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 
 	if (if_priv == NULL) {
-		LOG_ERR("%s: Missing interface context", __func__);
+		LOG_ERROR("%s: Missing interface context", __func__);
 		return;
 	}
 
 	vif_ctx_zep = if_priv;
 
 	if (roc_cancel_complete == NULL) {
-		LOG_ERR("%s: Missing ROC cancel complete event data", __func__);
+		LOG_ERROR("%s: Missing ROC cancel complete event data", __func__);
 		return;
 	}
 
@@ -2091,14 +2091,14 @@ int nrf_wifi_supp_remain_on_channel(void *if_priv, unsigned int freq,
 	struct remain_on_channel_info roc_info;
 
 	if (if_priv == NULL) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return -1;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (rpu_ctx_zep == NULL) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return -1;
 	}
 
@@ -2120,7 +2120,7 @@ int nrf_wifi_supp_remain_on_channel(void *if_priv, unsigned int freq,
 	status = nrf_wifi_sys_fmac_p2p_roc_start(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx,
 						 &roc_info);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_remain_on_channel failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_fmac_remain_on_channel failed", __func__);
 		goto out;
 	}
 out:
@@ -2137,14 +2137,14 @@ int nrf_wifi_supp_cancel_remain_on_channel(void *if_priv, u64 cookie)
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 
 	if (if_priv == NULL) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return -1;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (rpu_ctx_zep == NULL) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return -1;
 	}
 
@@ -2156,7 +2156,7 @@ int nrf_wifi_supp_cancel_remain_on_channel(void *if_priv, u64 cookie)
 
 	status = nrf_wifi_sys_fmac_p2p_roc_stop(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, cookie);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_cancel_remain_on_channel failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_fmac_cancel_remain_on_channel failed", __func__);
 		goto out;
 	}
 out:
@@ -2173,13 +2173,13 @@ int nrf_wifi_supp_set_p2p_powersave(void *if_priv, int legacy_ps, int opp_ps, in
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 
 	if (if_priv == NULL) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return -1;
 	}
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (rpu_ctx_zep == NULL) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return -1;
 	}
 	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
@@ -2194,14 +2194,14 @@ int nrf_wifi_supp_set_p2p_powersave(void *if_priv, int legacy_ps, int opp_ps, in
 	}
 
 	if (legacy_ps != 0 && legacy_ps != 1) {
-		LOG_ERR("%s: Invalid legacy_ps value: %d", __func__, legacy_ps);
+		LOG_ERROR("%s: Invalid legacy_ps value: %d", __func__, legacy_ps);
 		goto out;
 	}
 
 	status = nrf_wifi_sys_fmac_set_power_save(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx,
 						  legacy_ps);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_set_p2p_powersave failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_fmac_set_p2p_powersave failed", __func__);
 		goto out;
 	}
 out:
@@ -2223,12 +2223,12 @@ static int nrf_wifi_vif_state_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 	int ret = -1;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -2249,8 +2249,7 @@ static int nrf_wifi_vif_state_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 					     &vif_state_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_vif_state failed",
-			__func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_chg_vif_state failed", __func__);
 		goto out;
 	}
 
@@ -2259,7 +2258,7 @@ static int nrf_wifi_vif_state_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 	}
 
 	if (!vif_ctx->ifflags) {
-		LOG_ERR("%s: set interface state event not received (%dms)", __func__, timeout);
+		LOG_ERROR("%s: set interface state event not received (%dms)", __func__, timeout);
 		goto out;
 	}
 	ret = 0;
@@ -2277,12 +2276,12 @@ static int nrf_wifi_iftype_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep, int 
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -2294,7 +2293,7 @@ static int nrf_wifi_iftype_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep, int 
 
 	ret = nrf_wifi_vif_state_change(vif_ctx_zep, NRF_WIFI_FMAC_IF_OP_STATE_DOWN);
 	if (ret) {
-		LOG_ERR("%s: Failed to set interface down", __func__);
+		LOG_ERROR("%s: Failed to set interface down", __func__);
 		goto out;
 	}
 
@@ -2305,7 +2304,7 @@ static int nrf_wifi_iftype_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep, int 
 					   vif_ctx_zep->vif_idx,
 					   &chg_vif_info);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_vif failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_chg_vif failed", __func__);
 		goto out;
 	}
 
@@ -2315,19 +2314,19 @@ static int nrf_wifi_iftype_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep, int 
 	}
 
 	if (!vif_ctx_zep->set_if_event_received) {
-		LOG_ERR("%s: set interface event not received (%dms)", __func__, timeout);
+		LOG_ERROR("%s: set interface event not received (%dms)", __func__, timeout);
 		goto out;
 	}
 
 	if (vif_ctx_zep->set_if_status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: set interface failed: %d", __func__, vif_ctx_zep->set_if_status);
+		LOG_ERROR("%s: set interface failed: %d", __func__, vif_ctx_zep->set_if_status);
 		goto out;
 	}
 
 	vif_ctx_zep->if_type = iftype;
 	ret = nrf_wifi_vif_state_change(vif_ctx_zep, NRF_WIFI_FMAC_IF_OP_STATE_UP);
 	if (ret) {
-		LOG_ERR("%s: Failed to set interface up", __func__);
+		LOG_ERROR("%s: Failed to set interface up", __func__);
 		goto out;
 	}
 	ret = 0;
@@ -2344,12 +2343,12 @@ static int nrf_wifi_wait_for_carrier_status(struct nrf_wifi_vif_ctx_zep *vif_ctx
 	unsigned int timeout = 0;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -2365,9 +2364,8 @@ static int nrf_wifi_wait_for_carrier_status(struct nrf_wifi_vif_ctx_zep *vif_ctx
 	}
 
 	if (vif_ctx_zep->if_carr_state != carrier_status) {
-		LOG_ERR("%s: Carrier %s event not received in %dms", __func__,
-			carrier_status == NRF_WIFI_FMAC_IF_CARR_STATE_ON ? "ON" : "OFF",
-			timeout);
+		LOG_ERROR("%s: Carrier %s event not received in %dms", __func__,
+			  carrier_status == NRF_WIFI_FMAC_IF_CARR_STATE_ON ? "ON" : "OFF", timeout);
 		goto out;
 	}
 
@@ -2385,19 +2383,19 @@ int nrf_wifi_wpa_supp_init_ap(void *if_priv, struct wpa_driver_associate_params 
 	int ret = -1;
 
 	if (!if_priv || !params) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	if (params->mode != IEEE80211_MODE_AP) {
-		LOG_ERR("%s: Invalid mode", __func__);
+		LOG_ERROR("%s: Invalid mode", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -2409,7 +2407,7 @@ int nrf_wifi_wpa_supp_init_ap(void *if_priv, struct wpa_driver_associate_params 
 
 	ret = nrf_wifi_iftype_change(vif_ctx_zep, NRF_WIFI_IFTYPE_AP);
 	if (ret) {
-		LOG_ERR("%s: Failed to set interface type to AP: %d", __func__, ret);
+		LOG_ERROR("%s: Failed to set interface type to AP: %d", __func__, ret);
 		goto out;
 	}
 
@@ -2444,17 +2442,17 @@ static int nrf_wifi_set_beacon_data(const struct wpa_driver_ap_params *params,
 	int ret = -1;
 
 	if (params->head_len > ARRAY_SIZE(beacon_data->head)) {
-		LOG_ERR("%s: head_len too big", __func__);
+		LOG_ERROR("%s: head_len too big", __func__);
 		goto out;
 	}
 
 	if (params->tail_len > ARRAY_SIZE(beacon_data->tail)) {
-		LOG_ERR("%s: tail_len too big", __func__);
+		LOG_ERROR("%s: tail_len too big", __func__);
 		goto out;
 	}
 
 	if (params->proberesp_len > ARRAY_SIZE(beacon_data->probe_resp)) {
-		LOG_ERR("%s: proberesp_len too big", __func__);
+		LOG_ERROR("%s: proberesp_len too big", __func__);
 		goto out;
 	}
 
@@ -2492,14 +2490,14 @@ int nrf_wifi_supp_register_mgmt_frame(void *if_priv,
 	int ret = -1;
 
 	if (!if_priv || (match_len && !match)) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -2512,8 +2510,8 @@ int nrf_wifi_supp_register_mgmt_frame(void *if_priv,
 	mgmt_frame_info.frame_type = frame_type;
 	mgmt_frame_info.frame_match.frame_match_len = match_len;
 	if (match_len >= NRF_WIFI_FRAME_MATCH_MAX_LEN) {
-		LOG_ERR("%s: match_len too big: %d (max %d)", __func__, match_len,
-			NRF_WIFI_FRAME_MATCH_MAX_LEN);
+		LOG_ERROR("%s: match_len too big: %d (max %d)", __func__, match_len,
+			  NRF_WIFI_FRAME_MATCH_MAX_LEN);
 		goto out;
 	}
 	memcpy(mgmt_frame_info.frame_match.frame_match, match, match_len);
@@ -2522,7 +2520,7 @@ int nrf_wifi_supp_register_mgmt_frame(void *if_priv,
 					      vif_ctx_zep->vif_idx,
 					      &mgmt_frame_info);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_mgmt_frame_reg failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_mgmt_frame_reg failed", __func__);
 		goto out;
 	}
 
@@ -2548,12 +2546,12 @@ static int nrf_wifi_set_bss(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 	int i;
 
 	if (!vif_ctx_zep || !params) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -2566,8 +2564,8 @@ static int nrf_wifi_set_bss(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 	if (params->basic_rates) {
 		for (i = 0; params->basic_rates[i] != -1; i++) {
 			if (i >= ARRAY_SIZE(bss_info.basic_rates)) {
-				LOG_ERR("%s: basic_rates too big: %d (max %d)", __func__, i,
-					ARRAY_SIZE(bss_info.basic_rates));
+				LOG_ERROR("%s: basic_rates too big: %d (max %d)", __func__, i,
+					  ARRAY_SIZE(bss_info.basic_rates));
 				goto out;
 			}
 			bss_info.basic_rates[i] = params->basic_rates[i];
@@ -2583,7 +2581,7 @@ static int nrf_wifi_set_bss(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 
 	status = nrf_wifi_sys_fmac_set_bss(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, &bss_info);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_set_bss failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_set_bss failed", __func__);
 		goto out;
 	}
 
@@ -2629,14 +2627,14 @@ int nrf_wifi_wpa_supp_start_ap(void *if_priv, struct wpa_driver_ap_params *param
 	int ch_width = 0;
 
 	if (!if_priv || !params) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -2684,7 +2682,7 @@ int nrf_wifi_wpa_supp_start_ap(void *if_priv, struct wpa_driver_ap_params *param
 					    vif_ctx_zep->vif_idx,
 					    &start_ap_info);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_start_ap failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_start_ap failed", __func__);
 		goto out;
 	}
 
@@ -2695,7 +2693,7 @@ int nrf_wifi_wpa_supp_start_ap(void *if_priv, struct wpa_driver_ap_params *param
 
 	ret = nrf_wifi_set_bss(vif_ctx_zep, params);
 	if (ret) {
-		LOG_ERR("%s: Failed to set BSS", __func__);
+		LOG_ERROR("%s: Failed to set BSS", __func__);
 		goto out;
 	}
 
@@ -2714,14 +2712,14 @@ int nrf_wifi_wpa_supp_change_beacon(void *if_priv, struct wpa_driver_ap_params *
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 
 	if (!if_priv || !params) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -2737,7 +2735,7 @@ int nrf_wifi_wpa_supp_change_beacon(void *if_priv, struct wpa_driver_ap_params *
 					   vif_ctx_zep->vif_idx,
 					   &chg_bcn_info);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_bcn failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_chg_bcn failed", __func__);
 		goto out;
 	}
 
@@ -2755,14 +2753,14 @@ int nrf_wifi_wpa_supp_stop_ap(void *if_priv)
 	int ret = -1;
 
 	if (!if_priv) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -2775,7 +2773,7 @@ int nrf_wifi_wpa_supp_stop_ap(void *if_priv)
 	status = nrf_wifi_sys_fmac_stop_ap(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_stop_ap failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_stop_ap failed", __func__);
 		goto out;
 	}
 
@@ -2798,7 +2796,7 @@ int nrf_wifi_wpa_supp_deinit_ap(void *if_priv)
 	int ret = -1;
 
 	if (!if_priv) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
@@ -2817,14 +2815,14 @@ int nrf_wifi_wpa_supp_deinit_ap(void *if_priv)
 
 	status = nrf_wifi_wpa_supp_stop_ap(if_priv);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: Failed to stop AP", __func__);
+		LOG_ERROR("%s: Failed to stop AP", __func__);
 		goto out;
 	}
 
 	if (!is_ap_dynamic_iface(vif_ctx_zep)) {
 		ret = nrf_wifi_iftype_change(vif_ctx_zep, NRF_WIFI_IFTYPE_STATION);
 		if (ret) {
-			LOG_ERR("%s: Failed to set interface type to STATION: %d", __func__, ret);
+			LOG_ERROR("%s: Failed to set interface type to STATION: %d", __func__, ret);
 			goto out;
 		}
 	}
@@ -2871,14 +2869,14 @@ int nrf_wifi_wpa_supp_sta_add(void *if_priv, struct hostapd_sta_add_params *para
 	int i;
 
 	if (!if_priv || !params) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = if_priv;
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -2899,8 +2897,8 @@ int nrf_wifi_wpa_supp_sta_add(void *if_priv, struct hostapd_sta_add_params *para
 
 	sta_info.ext_capability.ext_capability_len = params->ext_capab_len;
 	if (params->ext_capab_len >= NRF_WIFI_EXT_CAPABILITY_MAX_LEN) {
-		LOG_ERR("%s: ext_capab_len too big: %d (max %d)", __func__,
-			params->ext_capab_len, NRF_WIFI_EXT_CAPABILITY_MAX_LEN);
+		LOG_ERROR("%s: ext_capab_len too big: %d (max %d)", __func__, params->ext_capab_len,
+			  NRF_WIFI_EXT_CAPABILITY_MAX_LEN);
 		goto out;
 	}
 	memcpy(sta_info.ext_capability.ext_capability, params->ext_capab,
@@ -2908,8 +2906,8 @@ int nrf_wifi_wpa_supp_sta_add(void *if_priv, struct hostapd_sta_add_params *para
 
 	sta_info.supported_channels.supported_channels_len = params->supp_channels_len;
 	if (params->supp_channels_len >= NRF_WIFI_SUPPORTED_CHANNELS_MAX_LEN) {
-		LOG_ERR("%s: supp_channels_len too big: %d (max %d)", __func__,
-			params->supp_channels_len, NRF_WIFI_SUPPORTED_CHANNELS_MAX_LEN);
+		LOG_ERROR("%s: supp_channels_len too big: %d (max %d)", __func__,
+			  params->supp_channels_len, NRF_WIFI_SUPPORTED_CHANNELS_MAX_LEN);
 		goto out;
 	}
 	memcpy(sta_info.supported_channels.supported_channels, params->supp_channels,
@@ -2917,8 +2915,8 @@ int nrf_wifi_wpa_supp_sta_add(void *if_priv, struct hostapd_sta_add_params *para
 
 	sta_info.supported_oper_classes.supported_oper_classes_len = params->supp_oper_classes_len;
 	if (params->supp_oper_classes_len >= NRF_WIFI_OPER_CLASSES_MAX_LEN) {
-		LOG_ERR("%s: supp_oper_classes_len too big: %d (max %d)", __func__,
-			params->supp_oper_classes_len, NRF_WIFI_OPER_CLASSES_MAX_LEN);
+		LOG_ERROR("%s: supp_oper_classes_len too big: %d (max %d)", __func__,
+			  params->supp_oper_classes_len, NRF_WIFI_OPER_CLASSES_MAX_LEN);
 		goto out;
 	}
 	memcpy(sta_info.supported_oper_classes.supported_oper_classes, params->supp_oper_classes,
@@ -2954,7 +2952,7 @@ int nrf_wifi_wpa_supp_sta_add(void *if_priv, struct hostapd_sta_add_params *para
 					&sta_info);
 	}
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_add_sta failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_add_sta failed", __func__);
 		goto out;
 	}
 
@@ -2973,7 +2971,7 @@ int nrf_wifi_wpa_supp_sta_remove(void *if_priv, const u8 *addr)
 	int ret = -1;
 
 	if (!if_priv || !addr) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
@@ -2994,7 +2992,7 @@ int nrf_wifi_wpa_supp_sta_remove(void *if_priv, const u8 *addr)
 
 	status = nrf_wifi_sys_fmac_del_sta(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, &del_sta);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_del_sta failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_del_sta failed", __func__);
 		goto out;
 	}
 
@@ -3019,7 +3017,7 @@ int nrf_wifi_wpa_supp_sta_set_flags(void *if_priv, const u8 *addr,
 	char buf[18] = {0};
 
 	if (!if_priv || !addr) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
@@ -3039,24 +3037,21 @@ int nrf_wifi_wpa_supp_sta_set_flags(void *if_priv, const u8 *addr,
 	memcpy(chg_sta.mac_addr, addr, sizeof(chg_sta.mac_addr));
 
 	if (!net_eth_is_addr_valid((struct net_eth_addr *)&chg_sta.mac_addr)) {
-		LOG_ERR("%s: Invalid peer MAC address: %s", __func__,
-			nrf_wifi_sprint_ll_addr_buf(chg_sta.mac_addr, 6, buf,
-						    sizeof(buf)));
+		LOG_ERROR("%s: Invalid peer MAC address: %s", __func__,
+			  nrf_wifi_sprint_ll_addr_buf(chg_sta.mac_addr, 6, buf, sizeof(buf)));
 		goto out;
 	}
 
 	peer_id = nrf_wifi_fmac_peer_get_id(rpu_ctx_zep->rpu_ctx, chg_sta.mac_addr);
 	if (peer_id == -1) {
-		LOG_ERR("%s: Unknown PEER: %s", __func__,
-			nrf_wifi_sprint_ll_addr_buf(chg_sta.mac_addr, 6, buf,
-						    sizeof(buf)));
+		LOG_ERROR("%s: Unknown PEER: %s", __func__,
+			  nrf_wifi_sprint_ll_addr_buf(chg_sta.mac_addr, 6, buf, sizeof(buf)));
 		goto out;
 	}
 
 	if (peer_id == MAX_PEERS) {
-		LOG_ERR("%s: Invalid PEER (group): %s", __func__,
-			nrf_wifi_sprint_ll_addr_buf(chg_sta.mac_addr, 6, buf,
-						    sizeof(buf)));
+		LOG_ERROR("%s: Invalid PEER (group): %s", __func__,
+			  nrf_wifi_sprint_ll_addr_buf(chg_sta.mac_addr, 6, buf, sizeof(buf)));
 		goto out;
 	}
 
@@ -3069,7 +3064,7 @@ int nrf_wifi_wpa_supp_sta_set_flags(void *if_priv, const u8 *addr,
 	status = nrf_wifi_sys_fmac_chg_sta(rpu_ctx_zep->rpu_ctx,
 		vif_ctx_zep->vif_idx, &chg_sta);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_chg_sta failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_chg_sta failed", __func__);
 		goto out;
 	}
 
@@ -3094,7 +3089,7 @@ int nrf_wifi_wpa_supp_sta_get_inact_sec(void *if_priv, const u8 *addr)
 	int inactive_time_sec = -1;
 
 	if (!if_priv || !addr) {
-		LOG_ERR("%s: Invalid params", __func__);
+		LOG_ERROR("%s: Invalid params", __func__);
 		return ret;
 	}
 
@@ -3115,13 +3110,13 @@ int nrf_wifi_wpa_supp_sta_get_inact_sec(void *if_priv, const u8 *addr)
 					       vif_ctx_zep->vif_idx,
 					       (unsigned char *) addr);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_get_station failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_get_station failed", __func__);
 		goto out;
 	}
 
 	sem_ret = k_sem_take(&wait_for_event_sem, K_MSEC(RPU_RESP_EVENT_TIMEOUT));
 	if (sem_ret) {
-		LOG_ERR("%s: Timed out to get station info, ret = %d", __func__, sem_ret);
+		LOG_ERROR("%s: Timed out to get station info, ret = %d", __func__, sem_ret);
 		ret = NRF_WIFI_STATUS_FAIL;
 		goto out;
 	}

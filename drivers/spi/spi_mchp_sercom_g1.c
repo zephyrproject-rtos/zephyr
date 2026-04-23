@@ -77,7 +77,7 @@ static inline void spi_wait_sync(const struct mchp_spi_reg_config *spi_reg_cfg, 
 
 	if (WAIT_FOR(((spi->SERCOM_SYNCBUSY & sync_flag) == 0), TIMEOUT_VALUE_US,
 		     k_busy_wait(DELAY_US)) == false) {
-		LOG_ERR("Timeout waiting for SPI SYNCBUSY ENABLE clear");
+		LOG_ERROR("Timeout waiting for SPI SYNCBUSY ENABLE clear");
 	}
 }
 
@@ -163,7 +163,7 @@ static int spi_configure_pinout(const struct mchp_spi_reg_config *spi_reg_cfg,
 
 	if ((config->operation & SPI_MODE_LOOP) != 0U) {
 		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
-			LOG_ERR("For slave Loopback mode is not supported");
+			LOG_ERROR("For slave Loopback mode is not supported");
 
 			return -ENOTSUP;
 		}
@@ -261,8 +261,8 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 
 	/* Select the Character Size */
 	if (SPI_WORD_SIZE_GET(config->operation) != SUPPORTED_SPI_WORD_SIZE) {
-		LOG_ERR("Unsupported SPI word size: %d bits. Only 8-bit transfers are supported.",
-			SPI_WORD_SIZE_GET(config->operation));
+		LOG_ERROR("Unsupported SPI word size: %d bits. Only 8-bit transfers are supported.",
+			  SPI_WORD_SIZE_GET(config->operation));
 
 		return -ENOTSUP;
 	}
@@ -329,7 +329,7 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	}
 
 	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only single line mode is supported");
+		LOG_ERROR("Only single line mode is supported");
 
 		return -ENOTSUP;
 	}
@@ -581,8 +581,8 @@ static int spi_check_buf_len(const struct spi_buf_set *buf_set)
 
 	for (size_t i = 0; i < buf_set->count; i++) {
 		if (buf_set->buffers[i].len > SPI_MCHP_MAX_XFER_SIZE) {
-			LOG_ERR("SPI buffer length (%u) exceeds max allowed (%u)",
-				buf_set->buffers[i].len, SPI_MCHP_MAX_XFER_SIZE);
+			LOG_ERROR("SPI buffer length (%u) exceeds max allowed (%u)",
+				  buf_set->buffers[i].len, SPI_MCHP_MAX_XFER_SIZE);
 
 			return -EINVAL;
 		}
@@ -611,7 +611,7 @@ static int spi_transceive_interrupt(const struct device *dev, const struct spi_c
 	/*Clear the DATA register until the RXC flag is cleared*/
 	if (WAIT_FOR(((spi->SERCOM_INTFLAG & SERCOM_SPI_INTFLAG_RXC_Msk) == 0), TIMEOUT_VALUE_US,
 		     ((void)spi->SERCOM_DATA, k_busy_wait(DELAY_US))) == false) {
-		LOG_ERR("Timeout while clearing RXC");
+		LOG_ERROR("Timeout while clearing RXC");
 	}
 
 	/* Get the dummysize */
@@ -846,7 +846,7 @@ static void spi_mchp_isr_slave(const struct device *dev)
 		/* Clear the DATA register */
 		if (WAIT_FOR(((spi->SERCOM_INTFLAG & SERCOM_SPI_INTFLAG_RXC_Msk) == 0),
 			     TIMEOUT_VALUE_US, (void)spi->SERCOM_DATA) == false) {
-			LOG_ERR("Timeout while clearing RXC");
+			LOG_ERROR("Timeout while clearing RXC");
 		}
 		/*Clear the Error Interrupt Flag */
 		spi->SERCOM_INTFLAG = (uint8_t)SERCOM_SPI_INTFLAG_ERROR_Msk;
@@ -906,7 +906,7 @@ static inline bool spi_mchp_master_handle_overflow(struct spi_mchp_dev_data *dat
 
 	if (WAIT_FOR(((spi->SERCOM_INTFLAG & SERCOM_SPI_INTFLAG_RXC_Msk) == 0), TIMEOUT_VALUE_US,
 		     (void)spi->SERCOM_DATA) == false) {
-		LOG_ERR("Timeout while clearing RXC");
+		LOG_ERROR("Timeout while clearing RXC");
 		return true;
 	}
 
@@ -1035,14 +1035,14 @@ static int spi_mchp_init(const struct device *dev)
 
 	retval = clock_control_on(cfg->spi_clock.clock_dev, cfg->spi_clock.gclk_sys);
 	if ((retval < 0) && (retval != -EALREADY)) {
-		LOG_ERR("Failed to enable the gclk_sys for SPI: %d", retval);
+		LOG_ERROR("Failed to enable the gclk_sys for SPI: %d", retval);
 
 		return retval;
 	}
 
 	retval = clock_control_on(cfg->spi_clock.clock_dev, cfg->spi_clock.mclk_sys);
 	if ((retval < 0) && (retval != -EALREADY)) {
-		LOG_ERR("Failed to enable the mclk_sys for SPI: %d", retval);
+		LOG_ERROR("Failed to enable the mclk_sys for SPI: %d", retval);
 
 		return retval;
 	}
@@ -1054,7 +1054,7 @@ static int spi_mchp_init(const struct device *dev)
 
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (retval < 0) {
-		LOG_ERR("pinctrl_apply_state Failed for SPI: %d", retval);
+		LOG_ERROR("pinctrl_apply_state Failed for SPI: %d", retval);
 
 		return retval;
 	}

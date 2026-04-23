@@ -66,7 +66,7 @@ static int tmc51xx_stepper_driver_enable(const struct device *dev)
 		 */
 		err = gpio_pin_set_dt(&config->en_gpio, 1);
 		if (err < 0) {
-			LOG_ERR("Failed to assert enable GPIO (%d)", err);
+			LOG_ERROR("Failed to assert enable GPIO (%d)", err);
 			return err;
 		}
 	}
@@ -92,7 +92,7 @@ static int tmc51xx_stepper_driver_disable(const struct device *dev)
 	if (config->en_gpio.port != NULL) {
 		err = gpio_pin_set_dt(&config->en_gpio, 0);
 		if (err < 0) {
-			LOG_ERR("Failed to deassert enable GPIO (%d)", err);
+			LOG_ERROR("Failed to deassert enable GPIO (%d)", err);
 			return err;
 		}
 	}
@@ -161,19 +161,19 @@ static int tmc51xx_stepper_driver_init(const struct device *dev)
 
 	if (config->en_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->en_gpio)) {
-			LOG_ERR("Enable GPIO not ready");
+			LOG_ERROR("Enable GPIO not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->en_gpio, GPIO_OUTPUT_INACTIVE);
 		if (err < 0) {
-			LOG_ERR("Failed to configure enable GPIO (%d)", err);
+			LOG_ERROR("Failed to configure enable GPIO (%d)", err);
 			return err;
 		}
 	}
 
 	if (!IN_RANGE(config->sg_threshold, TMC5XXX_SG_MIN_VALUE, TMC5XXX_SG_MAX_VALUE)) {
-		LOG_ERR("Stallguard threshold out of range");
+		LOG_ERROR("Stallguard threshold out of range");
 		return -EINVAL;
 	}
 

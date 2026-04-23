@@ -49,10 +49,10 @@ static int table_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ct
 
 	if (!(table_status.entry.addr1 == BT_MESH_ADDR_UNASSIGNED ||
 	      BT_MESH_ADDR_IS_UNICAST(table_status.entry.addr1))) {
-		LOG_ERR("addr1 shall be a unicast address or unassigned.");
+		LOG_ERROR("addr1 shall be a unicast address or unassigned.");
 		return -EINVAL;
 	} else if (table_status.entry.addr2 == BT_MESH_ADDR_ALL_NODES) {
-		LOG_ERR("addr2 shall not be the all-nodes fixed group address.");
+		LOG_ERROR("addr2 shall not be the all-nodes fixed group address.");
 		return -EINVAL;
 	}
 
@@ -177,12 +177,12 @@ const struct bt_mesh_model_op _bt_mesh_brg_cfg_cli_op[] = {
 static int brg_cfg_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
-		LOG_ERR("Bridge Configuration Client only allowed in primary element");
+		LOG_ERROR("Bridge Configuration Client only allowed in primary element");
 		return -EINVAL;
 	}
 
 	if (!model->rt->user_data) {
-		LOG_ERR("No Bridge Configuration Client context provided");
+		LOG_ERROR("No Bridge Configuration Client context provided");
 		return -EINVAL;
 	}
 
@@ -266,18 +266,19 @@ int bt_mesh_brg_cfg_cli_table_add(uint16_t net_idx, uint16_t addr,
 	};
 
 	if (entry->addr1 == entry->addr2) {
-		LOG_ERR("addr1 and addr2 shall have different values.");
+		LOG_ERROR("addr1 and addr2 shall have different values.");
 		return -EINVAL;
 	} else if (!BT_MESH_ADDR_IS_UNICAST(entry->addr1)) {
-		LOG_ERR("addr1 shall be a unicast address.");
+		LOG_ERROR("addr1 shall be a unicast address.");
 		return -EINVAL;
 	} else if (entry->directions == 0x01 && (entry->addr2 == BT_MESH_ADDR_UNASSIGNED ||
 						 entry->addr2 == BT_MESH_ADDR_ALL_NODES)) {
-		LOG_ERR("For direction 0x01: addr2 shall not be unassigned or the all-nodes fixed "
+		LOG_ERROR(
+			"For direction 0x01: addr2 shall not be unassigned or the all-nodes fixed "
 			"group address.");
 		return -EINVAL;
 	} else if (entry->directions == 0x02 && !BT_MESH_ADDR_IS_UNICAST(entry->addr2)) {
-		LOG_ERR("For direction 0x02: addr2 shall be a unicast address.");
+		LOG_ERROR("For direction 0x02: addr2 shall be a unicast address.");
 		return -EINVAL;
 	}
 
@@ -304,10 +305,10 @@ int bt_mesh_brg_cfg_cli_table_remove(uint16_t net_idx, uint16_t addr, uint16_t n
 	};
 
 	if (!(addr1 == BT_MESH_ADDR_UNASSIGNED || BT_MESH_ADDR_IS_UNICAST(addr1))) {
-		LOG_ERR("addr1 shall be a unicast address or unassigned.");
+		LOG_ERROR("addr1 shall be a unicast address or unassigned.");
 		return -EINVAL;
 	} else if (addr2 == BT_MESH_ADDR_ALL_NODES) {
-		LOG_ERR("addr2 shall not be the all-nodes fixed group address.");
+		LOG_ERROR("addr2 shall not be the all-nodes fixed group address.");
 		return -EINVAL;
 	}
 

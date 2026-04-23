@@ -131,7 +131,7 @@ static int write_value(const struct device *dev, off_t offset,
 
 	/* if the control register is locked, do not fail silently */
 	if (is_flash_locked(regs)) {
-		LOG_ERR("Flash is locked");
+		LOG_ERROR("Flash is locked");
 		return -EIO;
 	}
 
@@ -143,7 +143,7 @@ static int write_value(const struct device *dev, off_t offset,
 
 	/* Check if this half word is erased */
 	if (*flash != FLASH_ERASED_VALUE) {
-		LOG_ERR("Flash location not erased");
+		LOG_ERROR("Flash location not erased");
 		return -EIO;
 	}
 
@@ -174,7 +174,7 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 
 	/* if the control register is locked, do not fail silently */
 	if (is_flash_locked(regs)) {
-		LOG_ERR("Flash is locked");
+		LOG_ERROR("Flash is locked");
 		return -EIO;
 	}
 

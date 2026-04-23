@@ -258,7 +258,7 @@ static int alif_clock_control_off(const struct device *dev,
 	mem_addr_t reg_addr;
 
 	if (!ALIF_CLOCK_CFG_EN_MASK(clk_id)) {
-		LOG_ERR("Clock is always-on and cannot be disabled");
+		LOG_ERROR("Clock is always-on and cannot be disabled");
 		return -ENOTSUP;
 	}
 

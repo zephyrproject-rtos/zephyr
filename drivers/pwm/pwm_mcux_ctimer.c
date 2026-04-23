@@ -98,8 +98,8 @@ static int mcux_ctimer_pwm_select_period_channel(struct pwm_mcux_ctimer_data *da
 	if (data->is_period_channel_set) {
 		if (!mcux_ctimer_pwm_is_period_valid(data, new_pulse_channel, new_period_cycles,
 						     data->current_period_channel)) {
-			LOG_ERR("Cannot set channel %u to %u as period channel",
-				*ret_period_channel, new_period_cycles);
+			LOG_ERROR("Cannot set channel %u to %u as period channel",
+				  *ret_period_channel, new_period_cycles);
 			return -EINVAL;
 		}
 
@@ -115,7 +115,7 @@ static int mcux_ctimer_pwm_select_period_channel(struct pwm_mcux_ctimer_data *da
 	*ret_period_channel %= CHANNEL_COUNT;
 	while (data->channel_states[*ret_period_channel].role != PWM_CTIMER_CHANNEL_ROLE_NONE) {
 		if (new_pulse_channel == *ret_period_channel) {
-			LOG_ERR("no available channel for period counter");
+			LOG_ERROR("no available channel for period counter");
 			return -EBUSY;
 		}
 		(*ret_period_channel)++;
@@ -153,19 +153,19 @@ static int mcux_ctimer_pwm_set_cycles(const struct device *dev, uint32_t pulse_c
 	status_t status;
 
 	if (pulse_channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel %u. muse be less than %u", pulse_channel, CHANNEL_COUNT);
+		LOG_ERROR("Invalid channel %u. muse be less than %u", pulse_channel, CHANNEL_COUNT);
 		return -EINVAL;
 	}
 
 	if (period_cycles == 0) {
-		LOG_ERR("Channel can not be set to zero");
+		LOG_ERROR("Channel can not be set to zero");
 		return -ENOTSUP;
 	}
 
 	ret = mcux_ctimer_pwm_select_period_channel(data, pulse_channel, period_cycles,
 						    &period_channel);
 	if (ret != 0) {
-		LOG_ERR("could not select valid period channel. ret=%d", ret);
+		LOG_ERROR("could not select valid period channel. ret=%d", ret);
 		return ret;
 	}
 
@@ -181,7 +181,7 @@ static int mcux_ctimer_pwm_set_cycles(const struct device *dev, uint32_t pulse_c
 	status = CTIMER_SetupPwmPeriod(config->base, period_channel, pulse_channel, period_cycles,
 				       pulse_cycles, false);
 	if (kStatus_Success != status) {
-		LOG_ERR("failed setup pwm period. status=%d", status);
+		LOG_ERROR("failed setup pwm period. status=%d", status);
 		return -EIO;
 	}
 	mcux_ctimer_pwm_update_state(data, pulse_channel, pulse_cycles, period_channel,
@@ -203,7 +203,7 @@ static int mcux_ctimer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t
 
 	err = clock_control_get_rate(config->clock_control, config->clock_id, (uint32_t *)cycles);
 	if (err != 0) {
-		LOG_ERR("could not get clock rate");
+		LOG_ERROR("could not get clock rate");
 		return err;
 	}
 
@@ -226,8 +226,8 @@ static int mcux_ctimer_pwm_init(const struct device *dev)
 	}
 
 	if (config->period_channel >= CHANNEL_COUNT) {
-		LOG_ERR("invalid period_channel: %d. must be less than %d", config->period_channel,
-			CHANNEL_COUNT);
+		LOG_ERROR("invalid period_channel: %d. must be less than %d",
+			  config->period_channel, CHANNEL_COUNT);
 		return -EINVAL;
 	}
 

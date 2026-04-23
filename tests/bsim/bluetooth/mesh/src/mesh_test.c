@@ -349,12 +349,12 @@ int bt_mesh_test_recv(uint16_t len, uint16_t dst, const uint8_t *uuid, k_timeout
 	}
 
 	if (len != msg->len) {
-		LOG_ERR("Recv: Invalid message length (%u, expected %u)", msg->len, len);
+		LOG_ERROR("Recv: Invalid message length (%u, expected %u)", msg->len, len);
 		return -EINVAL;
 	}
 
 	if (dst != BT_MESH_ADDR_UNASSIGNED && dst != msg->ctx.recv_dst) {
-		LOG_ERR("Recv: Invalid dst 0x%04x, expected 0x%04x", msg->ctx.recv_dst, dst);
+		LOG_ERROR("Recv: Invalid dst 0x%04x, expected 0x%04x", msg->ctx.recv_dst, dst);
 		return -EINVAL;
 	}
 
@@ -362,10 +362,10 @@ int bt_mesh_test_recv(uint16_t len, uint16_t dst, const uint8_t *uuid, k_timeout
 	    ((uuid != NULL && msg->ctx.uuid == NULL) ||
 	     (uuid == NULL && msg->ctx.uuid != NULL) ||
 	     memcmp(uuid, msg->ctx.uuid, 16))) {
-		LOG_ERR("Recv: Label UUID mismatch for virtual address 0x%04x");
+		LOG_ERROR("Recv: Label UUID mismatch for virtual address 0x%04x");
 		if (uuid && msg->ctx.uuid) {
-			LOG_ERR("Got: %s", bt_hex(msg->ctx.uuid, 16));
-			LOG_ERR("Expected: %s", bt_hex(uuid, 16));
+			LOG_ERROR("Got: %s", bt_hex(msg->ctx.uuid, 16));
+			LOG_ERROR("Expected: %s", bt_hex(uuid, 16));
 		}
 
 		return -EINVAL;
@@ -414,7 +414,7 @@ static void tx_started(uint16_t dur, int err, void *data)
 	struct sync_send_ctx *send_ctx = data;
 
 	if (err) {
-		LOG_ERR("Couldn't start sending (err: %d)", err);
+		LOG_ERROR("Couldn't start sending (err: %d)", err);
 
 		send_ctx->err = err;
 		k_sem_give(&send_ctx->sem);
@@ -432,7 +432,7 @@ static void tx_ended(int err, void *data)
 	send_ctx->err = err;
 
 	if (err) {
-		LOG_ERR("Send failed (%d)", err);
+		LOG_ERROR("Send failed (%d)", err);
 	} else {
 		LOG_INF("Sending ended");
 	}
@@ -468,8 +468,7 @@ int bt_mesh_test_send_async(uint16_t addr, const uint8_t *uuid, size_t len,
 	}
 
 	if (net_buf_simple_tailroom(&buf) < mic_len) {
-		LOG_ERR("No room for MIC of len %u in %u byte buffer", mic_len,
-			buf.len);
+		LOG_ERROR("No room for MIC of len %u in %u byte buffer", mic_len, buf.len);
 		return -EINVAL;
 	}
 
@@ -483,7 +482,7 @@ int bt_mesh_test_send_async(uint16_t addr, const uint8_t *uuid, size_t len,
 	err = bt_mesh_model_send(test_model, &test_send_ctx, &buf, send_cb,
 				 cb_data);
 	if (err) {
-		LOG_ERR("bt_mesh_model_send failed (err: %d)", err);
+		LOG_ERROR("bt_mesh_model_send failed (err: %d)", err);
 		return err;
 	}
 
@@ -515,7 +514,7 @@ int bt_mesh_test_send(uint16_t addr, const uint8_t *uuid, size_t len,
 
 	err = k_sem_take(&send_ctx.sem, timeout);
 	if (err) {
-		LOG_ERR("Send timed out");
+		LOG_ERROR("Send timed out");
 		return err;
 	}
 
@@ -545,7 +544,7 @@ int bt_mesh_test_send_data(uint16_t addr, const uint8_t *uuid, uint8_t *data, si
 
 	err = bt_mesh_model_send(test_model, &test_send_ctx, &buf, send_cb, cb_data);
 	if (err) {
-		LOG_ERR("bt_mesh_model_send failed (err: %d)", err);
+		LOG_ERROR("bt_mesh_model_send failed (err: %d)", err);
 		return err;
 	}
 
@@ -589,7 +588,7 @@ int bt_mesh_test_wait_for_packet(bt_le_scan_cb_t scan_cb, struct k_sem *observer
 
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err && err != -EALREADY) {
-		LOG_ERR("Starting scan failed (err %d)", err);
+		LOG_ERROR("Starting scan failed (err %d)", err);
 		return err;
 	}
 
@@ -598,13 +597,13 @@ int bt_mesh_test_wait_for_packet(bt_le_scan_cb_t scan_cb, struct k_sem *observer
 		LOG_WRN("Taking sem timed out (err %d)", err);
 		returned_value = -ETIMEDOUT;
 	} else if (err) {
-		LOG_ERR("Taking sem failed (err %d)", err);
+		LOG_ERROR("Taking sem failed (err %d)", err);
 		return err;
 	}
 
 	err = bt_le_scan_stop();
 	if (err && err != -EALREADY) {
-		LOG_ERR("Stopping scan failed (err %d)", err);
+		LOG_ERROR("Stopping scan failed (err %d)", err);
 		return err;
 	}
 

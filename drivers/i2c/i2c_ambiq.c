@@ -136,7 +136,7 @@ static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *hdr_msg,
 		ret = am_hal_iom_nonblocking_transfer(data->iom_handler, &trans, i2c_ambiq_callback,
 						      (void *)dev);
 		if (k_sem_take(&data->transfer_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC))) {
-			LOG_ERR("Timeout waiting for transfer complete");
+			LOG_ERROR("Timeout waiting for transfer complete");
 			/* cancel timed out transaction */
 			am_hal_iom_disable(data->iom_handler);
 			/* clean up for next xfer */
@@ -196,7 +196,7 @@ static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *hdr_msg,
 						      (void *)dev);
 
 		if (k_sem_take(&data->transfer_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC))) {
-			LOG_ERR("Timeout waiting for transfer complete");
+			LOG_ERROR("Timeout waiting for transfer complete");
 			/* cancel timed out transaction */
 			am_hal_iom_disable(data->iom_handler);
 			/* clean up for next xfer */
@@ -269,7 +269,7 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		}
 
 		if (ret != 0) {
-			LOG_ERR("i2c transfer failed: %d", ret);
+			LOG_ERROR("i2c transfer failed: %d", ret);
 			break;
 		}
 	}
@@ -316,15 +316,15 @@ static int i2c_ambiq_recover_bus(const struct device *dev)
 	uint32_t bitrate_cfg;
 	int error = 0;
 
-	LOG_ERR("attempting to recover bus");
+	LOG_ERROR("attempting to recover bus");
 
 	if (!gpio_is_ready_dt(&config->scl)) {
-		LOG_ERR("SCL GPIO device not ready");
+		LOG_ERROR("SCL GPIO device not ready");
 		return -EIO;
 	}
 
 	if (!gpio_is_ready_dt(&config->sda)) {
-		LOG_ERR("SDA GPIO device not ready");
+		LOG_ERROR("SDA GPIO device not ready");
 		return -EIO;
 	}
 
@@ -332,13 +332,13 @@ static int i2c_ambiq_recover_bus(const struct device *dev)
 
 	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
 	if (error != 0) {
-		LOG_ERR("failed to configure SCL GPIO (err %d)", error);
+		LOG_ERROR("failed to configure SCL GPIO (err %d)", error);
 		goto restore;
 	}
 
 	error = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
 	if (error != 0) {
-		LOG_ERR("failed to configure SDA GPIO (err %d)", error);
+		LOG_ERROR("failed to configure SDA GPIO (err %d)", error);
 		goto restore;
 	}
 
@@ -347,13 +347,13 @@ static int i2c_ambiq_recover_bus(const struct device *dev)
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
 	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
 	if (error != 0) {
-		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+		LOG_ERROR("failed to configure I2C bitbang (err %d)", error);
 		goto restore;
 	}
 
 	error = i2c_bitbang_recover_bus(&bitbang_ctx);
 	if (error != 0) {
-		LOG_ERR("failed to recover bus (err %d)", error);
+		LOG_ERROR("failed to recover bus (err %d)", error);
 	}
 
 restore:
@@ -373,7 +373,7 @@ static int i2c_ambiq_init(const struct device *dev)
 	int ret = 0;
 
 	if (AM_HAL_STATUS_SUCCESS != am_hal_iom_initialize(config->inst_idx, &data->iom_handler)) {
-		LOG_ERR("Fail to initialize I2C\n");
+		LOG_ERROR("Fail to initialize I2C\n");
 		return -ENXIO;
 	}
 
@@ -381,13 +381,13 @@ static int i2c_ambiq_init(const struct device *dev)
 
 	ret |= i2c_ambiq_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
-		LOG_ERR("Fail to config I2C\n");
+		LOG_ERROR("Fail to config I2C\n");
 		goto end;
 	}
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Fail to config I2C pins\n");
+		LOG_ERROR("Fail to config I2C pins\n");
 		goto end;
 	}
 
@@ -400,7 +400,7 @@ static int i2c_ambiq_init(const struct device *dev)
 	}
 
 	if (AM_HAL_STATUS_SUCCESS != am_hal_iom_enable(data->iom_handler)) {
-		LOG_ERR("Fail to enable I2C\n");
+		LOG_ERROR("Fail to enable I2C\n");
 		ret = -EIO;
 	}
 end:
@@ -434,7 +434,7 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		/* Move pins to active/default state */
 		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
-			LOG_ERR("I2C pinctrl setup failed (%d)", ret);
+			LOG_ERROR("I2C pinctrl setup failed (%d)", ret);
 			return ret;
 		}
 		status = AM_HAL_SYSCTRL_WAKE;

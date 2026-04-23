@@ -366,7 +366,7 @@ static void dfu_reset_counters(void)
 	dfu_data.bytes_sent = 0U;
 	dfu_data.block_nr = 0U;
 	if (flash_img_init(&dfu_data.ctx)) {
-		LOG_ERR("flash img init error");
+		LOG_ERROR("flash img init error");
 		dfu_data.state = dfuERROR;
 		dfu_data.status = errUNKNOWN;
 	}
@@ -382,7 +382,7 @@ static void dfu_flash_write(uint8_t *data, size_t len)
 	}
 
 	if (flash_img_buffered_write(&dfu_data.ctx, data, len, flush)) {
-		LOG_ERR("flash write error");
+		LOG_ERROR("flash write error");
 		dfu_data.state = dfuERROR;
 		dfu_data.status = errWRITE;
 	} else if (!len) {
@@ -413,7 +413,7 @@ static void dfu_enter_idle(void)
 	/* Set the DFU mode descriptors to be used after reset */
 	dfu_config.usb_device_description = (uint8_t *) &dfu_mode_desc;
 	if (usb_set_config(dfu_config.usb_device_description)) {
-		LOG_ERR("usb_set_config failed during DFU idle entry");
+		LOG_ERROR("usb_set_config failed during DFU idle entry");
 	}
 }
 
@@ -424,7 +424,7 @@ static void dfu_timer_work_handler(struct k_work *item)
 	if (dfu_data.state == appDETACH) {
 		if (IS_ENABLED(CONFIG_USB_DFU_WILL_DETACH)) {
 			if (usb_dc_detach()) {
-				LOG_ERR("usb_dc_detach failed");
+				LOG_ERROR("usb_dc_detach failed");
 			}
 			dfu_enter_idle();
 
@@ -432,7 +432,7 @@ static void dfu_timer_work_handler(struct k_work *item)
 			k_sleep(K_MSEC(1));
 
 			if (usb_dc_attach()) {
-				LOG_ERR("usb_dc_attach failed");
+				LOG_ERROR("usb_dc_attach failed");
 			}
 		} else {
 			dfu_data.state = appIDLE;
@@ -523,11 +523,10 @@ static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 			LOG_DBG("DFU_UPLOAD start");
 			__fallthrough;
 		case dfuUPLOAD_IDLE:
-			if (!setup->wLength ||
-			    dfu_data.block_nr != setup->wValue) {
-				LOG_ERR("DFU_UPLOAD block %d, expected %d, "
-					"len %d", setup->wValue,
-					dfu_data.block_nr, setup->wLength);
+			if (!setup->wLength || dfu_data.block_nr != setup->wValue) {
+				LOG_ERROR("DFU_UPLOAD block %d, expected %d, "
+					  "len %d",
+					  setup->wValue, dfu_data.block_nr, setup->wLength);
 				dfu_data.state = dfuERROR;
 				dfu_data.status = errUNKNOWN;
 				return -EINVAL;
@@ -588,7 +587,7 @@ static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 
 			break;
 		default:
-			LOG_ERR("DFU_UPLOAD wrong state %d", dfu_data.state);
+			LOG_ERROR("DFU_UPLOAD wrong state %d", dfu_data.state);
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errUNKNOWN;
 			dfu_reset_counters();
@@ -651,7 +650,7 @@ static int dfu_class_handle_to_device(struct usb_setup_packet *setup,
 			if (dfu_data.flash_area_id != DOWNLOAD_FLASH_AREA_ID) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
-				LOG_ERR("This area can not be overwritten");
+				LOG_ERROR("This area can not be overwritten");
 				break;
 			}
 
@@ -670,7 +669,7 @@ static int dfu_class_handle_to_device(struct usb_setup_packet *setup,
 			k_work_submit_to_queue(&USB_WORK_Q, &dfu_work);
 			break;
 		default:
-			LOG_ERR("DFU_DNLOAD wrong state %d", dfu_data.state);
+			LOG_ERROR("DFU_DNLOAD wrong state %d", dfu_data.state);
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errUNKNOWN;
 			dfu_reset_counters();
@@ -897,7 +896,7 @@ static void dfu_work_handler(struct k_work *item)
 				dfu_data_worker.worker_len);
 		break;
 	default:
-		LOG_ERR("OUT of state machine");
+		LOG_ERROR("OUT of state machine");
 		break;
 	}
 }

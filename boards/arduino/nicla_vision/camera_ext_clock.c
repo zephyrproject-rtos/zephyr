@@ -18,19 +18,19 @@ int camera_ext_clock_enable(void)
 	const struct device *cam_ext_clk_dev = DEVICE_DT_GET(DT_NODELABEL(pwmclock));
 
 	if (!device_is_ready(cam_ext_clk_dev)) {
-		LOG_ERR("Camera external clock source device is not ready!");
+		LOG_ERROR("Camera external clock source device is not ready!");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(cam_ext_clk_dev, (clock_control_subsys_t)0);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable camera external clock error: (%d)", ret);
+		LOG_ERROR("Failed to enable camera external clock error: (%d)", ret);
 		return ret;
 	}
 
 	ret = clock_control_get_rate(cam_ext_clk_dev, (clock_control_subsys_t)0, &rate);
 	if (ret < 0) {
-		LOG_ERR("Failed to get camera external clock rate, error: (%d)", ret);
+		LOG_ERROR("Failed to get camera external clock rate, error: (%d)", ret);
 		return ret;
 	}
 

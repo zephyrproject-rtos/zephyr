@@ -36,7 +36,7 @@ static int bmm350_read_otp_word(const struct device *dev, uint8_t addr, uint16_t
 	tx_buf = BMM350_OTP_CMD_DIR_READ | (addr & BMM350_OTP_WORD_ADDR_MSK);
 	ret = bmm350_reg_write(dev, BMM350_REG_OTP_CMD_REG, tx_buf);
 	if (ret != 0) {
-		LOG_ERR("i2c xfer failed! read addr = 0x%02x, ret = %d", tx_buf, ret);
+		LOG_ERROR("i2c xfer failed! read addr = 0x%02x, ret = %d", tx_buf, ret);
 		return ret;
 	}
 
@@ -44,7 +44,7 @@ static int bmm350_read_otp_word(const struct device *dev, uint8_t addr, uint16_t
 		/* Get OTP status */
 		ret = bmm350_reg_read(dev, BMM350_REG_OTP_STATUS_REG, &rx_buf[0], sizeof(rx_buf));
 		if (ret != 0) {
-			LOG_ERR("%s: failed to read otp status", dev->name);
+			LOG_ERROR("%s: failed to read otp status", dev->name);
 			return ret;
 		}
 		otp_status = rx_buf[2];
@@ -55,20 +55,20 @@ static int bmm350_read_otp_word(const struct device *dev, uint8_t addr, uint16_t
 	} while ((!(otp_status & BMM350_OTP_STATUS_CMD_DONE)) && (ret == BMM350_OK));
 
 	if (otp_err != BMM350_OTP_STATUS_NO_ERROR) {
-		LOG_ERR("OTP error code: 0x%02x", otp_err);
+		LOG_ERROR("OTP error code: 0x%02x", otp_err);
 		return -EIO;
 	}
 
 	/* Get OTP L/MSB data */
 	ret = bmm350_reg_read(dev, BMM350_REG_OTP_DATA_MSB_REG, &rx_buf[0], sizeof(rx_buf));
 	if (ret != 0) {
-		LOG_ERR("%s: failed to read otp msb data", dev->name);
+		LOG_ERROR("%s: failed to read otp msb data", dev->name);
 		return ret;
 	}
 	msb = rx_buf[2];
 	ret = bmm350_reg_read(dev, BMM350_REG_OTP_DATA_LSB_REG, &rx_buf[0], sizeof(rx_buf));
 	if (ret != 0) {
-		LOG_ERR("%s: failed to read otp lsb data", dev->name);
+		LOG_ERROR("%s: failed to read otp lsb data", dev->name);
 		return ret;
 	}
 	lsb = rx_buf[2];
@@ -192,7 +192,7 @@ static int bmm350_otp_dump_after_boot(const struct device *dev)
 	bmm350_update_mag_off_sens(data);
 
 	if (ret) {
-		LOG_ERR("i2c xfer failed, ret = %d", ret);
+		LOG_ERROR("i2c xfer failed, ret = %d", ret);
 	}
 
 	return ret;
@@ -294,7 +294,7 @@ static int bmm350_set_powermode(const struct device *dev, enum bmm350_power_mode
 
 	ret = bmm350_reg_read(dev, BMM350_REG_PMU_CMD, &rx_buf[0], sizeof(rx_buf));
 	if (ret != 0) {
-		LOG_ERR("%s: set power mode read failed", dev->name);
+		LOG_ERROR("%s: set power mode read failed", dev->name);
 		return ret;
 	}
 
@@ -306,13 +306,13 @@ static int bmm350_set_powermode(const struct device *dev, enum bmm350_power_mode
 		/* Set PMU command configuration */
 		ret = bmm350_reg_write(dev, BMM350_REG_PMU_CMD, BMM350_PMU_CMD_SUS);
 		if (ret != 0) {
-			LOG_ERR("%s: set PMU cmd failed", dev->name);
+			LOG_ERROR("%s: set PMU cmd failed", dev->name);
 		}
 	}
 
 	ret = set_powermode(dev, powermode);
 	if (ret != 0) {
-		LOG_ERR("%s: set power mode failed", dev->name);
+		LOG_ERROR("%s: set power mode failed", dev->name);
 	}
 
 	return ret;
@@ -332,7 +332,7 @@ int bmm350_magnetic_reset(const struct device *dev)
 	/* Read PMU CMD status */
 	ret = bmm350_get_pmu_cmd_status_0(dev, &pmu_cmd_stat_0);
 	if (ret != 0) {
-		LOG_ERR("%s: PMU cmd status read failed", dev->name);
+		LOG_ERROR("%s: PMU cmd status read failed", dev->name);
 	}
 
 	/* Check the powermode is normal before performing magnetic reset */
@@ -342,14 +342,14 @@ int bmm350_magnetic_reset(const struct device *dev)
 		ret = bmm350_set_powermode(dev, BMM350_SUSPEND_MODE);
 		LOG_DBG("set power mode 0:%d", ret);
 		if (ret != 0) {
-			LOG_ERR("%s: set power mode failed", dev->name);
+			LOG_ERROR("%s: set power mode failed", dev->name);
 			return ret;
 		}
 	}
 	/* Set BR to PMU_CMD register */
 	ret = bmm350_reg_write(dev, BMM350_REG_PMU_CMD, BMM350_PMU_CMD_BR);
 	if (ret != 0) {
-		LOG_ERR("%s: set BR failed", dev->name);
+		LOG_ERROR("%s: set BR failed", dev->name);
 		return ret;
 	}
 	k_usleep(BMM350_BR_DELAY);
@@ -358,7 +358,7 @@ int bmm350_magnetic_reset(const struct device *dev)
 	ret = bmm350_get_pmu_cmd_status_0(dev, &pmu_cmd_stat_0);
 	LOG_DBG("get status result 1:%d", ret);
 	if (ret != 0) {
-		LOG_ERR("%s: get PMU cmd status failed", dev->name);
+		LOG_ERROR("%s: get PMU cmd status failed", dev->name);
 		return ret;
 	}
 	if (pmu_cmd_stat_0.pmu_cmd_value != BMM350_PMU_CMD_STATUS_0_BR) {
@@ -368,7 +368,7 @@ int bmm350_magnetic_reset(const struct device *dev)
 	/* Set FGR to PMU_CMD register */
 	ret = bmm350_reg_write(dev, BMM350_REG_PMU_CMD, BMM350_PMU_CMD_FGR);
 	if (ret != 0) {
-		LOG_ERR("%s: set FGR failed", dev->name);
+		LOG_ERROR("%s: set FGR failed", dev->name);
 		return ret;
 	}
 	k_usleep(BMM350_FGR_DELAY);
@@ -377,7 +377,7 @@ int bmm350_magnetic_reset(const struct device *dev)
 	ret = bmm350_get_pmu_cmd_status_0(dev, &pmu_cmd_stat_0);
 	LOG_DBG("get status result 2:%d", ret);
 	if (ret != 0) {
-		LOG_ERR("%s: get PMU cmd status failed", dev->name);
+		LOG_ERROR("%s: get PMU cmd status failed", dev->name);
 		return ret;
 	}
 
@@ -400,7 +400,7 @@ static int bmm350_sample_fetch(const struct device *dev, enum sensor_channel cha
 	struct bmm350_raw_mag_data raw_data;
 
 	if (bmm350_reg_read(dev, BMM350_REG_MAG_X_XLSB, raw_data.buf, sizeof(raw_data.buf)) < 0) {
-		LOG_ERR("failed to read sample");
+		LOG_ERROR("failed to read sample");
 		return -EIO;
 	}
 
@@ -526,7 +526,7 @@ static int bmm350_set_odr_performance(enum bmm350_data_rates odr,
 	rslt = bmm350_reg_write(dev, BMM350_REG_PMU_CMD_AGGR_SET, reg_data);
 	LOG_DBG("odr index %d odr_reg_data 0x%x", odr, reg_data);
 	if (rslt != 0) {
-		LOG_ERR("%s: failed to set ODR and performance", dev->name);
+		LOG_ERROR("%s: failed to set ODR and performance", dev->name);
 		return rslt;
 	}
 
@@ -552,7 +552,7 @@ static int set_mag_odr_osr(const struct device *dev, const struct sensor_value *
 	/* read current state */
 	ret = bmm350_reg_read(dev, BMM350_REG_PMU_CMD_AGGR_SET, &rx_buf[0], sizeof(rx_buf));
 	if (ret < 0) {
-		LOG_ERR("failed to read PMU_CMD_AGGR_SET");
+		LOG_ERROR("failed to read PMU_CMD_AGGR_SET");
 		return -EIO;
 	}
 	osr_bits = ((rx_buf[2] & BMM350_AVG_MSK) >> BMM350_AVG_POS);
@@ -561,7 +561,7 @@ static int set_mag_odr_osr(const struct device *dev, const struct sensor_value *
 	/* to change sampling rate, device needs to suspend first */
 	ret = bmm350_set_powermode(dev, BMM350_SUSPEND_MODE);
 	if (ret < 0) {
-		LOG_ERR("failed to set suspend mode");
+		LOG_ERROR("failed to set suspend mode");
 		return -EIO;
 	}
 
@@ -571,19 +571,19 @@ static int set_mag_odr_osr(const struct device *dev, const struct sensor_value *
 	if (osr) {
 		osr_bits = mag_osr_to_reg(osr);
 		if (osr_bits == 0xFF) {
-			LOG_ERR("unsupported oversampling rate");
+			LOG_ERROR("unsupported oversampling rate");
 			return -EINVAL;
 		}
 	}
 	if (bmm350_set_odr_performance((enum bmm350_data_rates)odr_bits, osr_bits, dev) < 0) {
-		LOG_ERR("bmm350_set_odr_performance failed");
+		LOG_ERROR("bmm350_set_odr_performance failed");
 		return -EIO;
 	}
 
 	/* go to normal mode now, measurements are requested. */
 	ret = bmm350_set_powermode(dev, BMM350_NORMAL_MODE);
 	if (ret < 0) {
-		LOG_ERR("failed to set suspend mode");
+		LOG_ERROR("failed to set suspend mode");
 		return -EIO;
 	}
 
@@ -691,7 +691,7 @@ static int get_mag_odr_osr(const struct device *dev, struct sensor_value *odr,
 	/* read current state */
 	ret = bmm350_reg_read(dev, BMM350_REG_PMU_CMD_AGGR_SET, &rx_buf[0], sizeof(rx_buf));
 	if (ret < 0) {
-		LOG_ERR("failed to read PMU_CMD_AGGR_SET");
+		LOG_ERROR("failed to read PMU_CMD_AGGR_SET");
 		return -EIO;
 	}
 
@@ -773,7 +773,7 @@ static void bmm350_one_shot_complete(struct rtio *ctx, const struct rtio_sqe *sq
 
 	err = bmm350_encode(dev, cfg, false, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to encode frame: %d", err);
+		LOG_ERROR("Failed to encode frame: %d", err);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -795,7 +795,7 @@ static void bmm350_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 			      &buf, &buf_len);
 
 	CHECKIF(err != 0 || buf_len < sizeof(struct bmm350_encoded_data)) {
-		LOG_ERR("Failed to allocate BMM350 encoded buffer: %d", err);
+		LOG_ERROR("Failed to allocate BMM350 encoded buffer: %d", err);
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
@@ -830,7 +830,7 @@ static void bmm350_submit(const struct device *dev, struct rtio_iodev_sqe *iodev
 	} else if (IS_ENABLED(CONFIG_BMM350_STREAM)) {
 		bmm350_stream_submit(dev, iodev_sqe);
 	} else {
-		LOG_ERR("Streaming mode not supported");
+		LOG_ERROR("Streaming mode not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }
@@ -862,11 +862,11 @@ static int bmm350_init_chip(const struct device *dev)
 	int ret = 0;
 	/* Read chip ID (can only be read in sleep mode)*/
 	if (bmm350_reg_read(dev, BMM350_REG_CHIP_ID, &chip_id[0], sizeof(chip_id)) < 0) {
-		LOG_ERR("failed reading chip id");
+		LOG_ERROR("failed reading chip id");
 		goto err_poweroff;
 	}
 	if (chip_id[2] != BMM350_CHIP_ID) {
-		LOG_ERR("invalid chip id 0x%x", chip_id[2]);
+		LOG_ERROR("invalid chip id 0x%x", chip_id[2]);
 		goto err_poweroff;
 	}
 	/* Soft-reset */
@@ -877,18 +877,18 @@ static int bmm350_init_chip(const struct device *dev)
 	k_usleep(BMM350_SOFT_RESET_DELAY);
 	/* Read chip ID (can only be read in sleep mode)*/
 	if (bmm350_reg_read(dev, BMM350_REG_CHIP_ID, &chip_id[0], sizeof(chip_id)) < 0) {
-		LOG_ERR("failed reading chip id");
+		LOG_ERROR("failed reading chip id");
 		goto err_poweroff;
 	}
 	if (chip_id[2] != BMM350_CHIP_ID) {
-		LOG_ERR("invalid chip id 0x%x", chip_id[2]);
+		LOG_ERROR("invalid chip id 0x%x", chip_id[2]);
 		goto err_poweroff;
 	}
 
 	/* Set pad drive strength */
 	ret = bmm350_reg_write(dev, BMM350_REG_PAD_CTRL, config->drive_strength);
 	if (ret != 0) {
-		LOG_ERR("%s: failed to set pad drive strength", dev->name);
+		LOG_ERROR("%s: failed to set pad drive strength", dev->name);
 		return ret;
 	}
 
@@ -896,13 +896,13 @@ static int bmm350_init_chip(const struct device *dev)
 	LOG_DBG("bmm350 chip_id 0x%x otp dump after boot %d", chip_id[2], ret);
 
 	if (bmm350_reg_write(dev, BMM350_REG_OTP_CMD_REG, BMM350_OTP_CMD_PWR_OFF_OTP) < 0) {
-		LOG_ERR("failed to set REP");
+		LOG_ERROR("failed to set REP");
 		goto err_poweroff;
 	}
 
 	ret = bmm350_magnetic_reset(dev);
 	if (ret != 0) {
-		LOG_ERR("failed to perform magnetic reset");
+		LOG_ERROR("failed to perform magnetic reset");
 		goto err_poweroff;
 	}
 
@@ -910,13 +910,13 @@ static int bmm350_init_chip(const struct device *dev)
 
 	ret = bmm350_get_pmu_cmd_status_0(dev, &pmu_cmd_stat_0);
 	if (ret != 0) {
-		LOG_ERR("failed to get pmu_cmd_stat_0");
+		LOG_ERROR("failed to get pmu_cmd_stat_0");
 		goto err_poweroff;
 	}
 
 	ret = bmm350_reg_read(dev, BMM350_REG_ERR_REG, &rx_buf[0], 3);
 	if (ret != 0) {
-		LOG_ERR("failed to read err_reg");
+		LOG_ERROR("failed to read err_reg");
 		goto err_poweroff;
 	}
 
@@ -925,7 +925,7 @@ static int bmm350_init_chip(const struct device *dev)
 err_poweroff:
 	ret = bmm350_set_powermode(dev, BMM350_SUSPEND_MODE);
 	if (ret != 0) {
-		LOG_ERR("failed to set suspend mode");
+		LOG_ERROR("failed to set suspend mode");
 	}
 	return -EIO;
 }
@@ -939,13 +939,13 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 	case PM_DEVICE_ACTION_RESUME:
 		ret = bmm350_set_powermode(dev, BMM350_NORMAL_MODE);
 		if (ret != 0) {
-			LOG_ERR("failed to enter normal mode: %d", ret);
+			LOG_ERROR("failed to enter normal mode: %d", ret);
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = bmm350_set_powermode(dev, BMM350_SUSPEND_MODE);
 		if (ret != 0) {
-			LOG_ERR("failed to enter suspend mode: %d", ret);
+			LOG_ERROR("failed to enter suspend mode: %d", ret);
 		}
 		break;
 	default:
@@ -967,30 +967,30 @@ static int bmm350_init(const struct device *dev)
 
 	err = bmm350_bus_check(dev);
 	if (err < 0) {
-		LOG_ERR("bus check failed: %d", err);
+		LOG_ERROR("bus check failed: %d", err);
 		return err;
 	}
 
 	if (bmm350_init_chip(dev) < 0) {
-		LOG_ERR("failed to initialize chip");
+		LOG_ERROR("failed to initialize chip");
 		return -EIO;
 	}
 
 #ifdef CONFIG_BMM350_TRIGGER
 	if (bmm350_trigger_mode_init(dev) < 0) {
-		LOG_ERR("Cannot set up trigger mode.");
+		LOG_ERROR("Cannot set up trigger mode.");
 		return -EINVAL;
 	}
 #endif
 #ifdef CONFIG_BMM350_STREAM
 	if (bmm350_stream_init(dev) < 0) {
-		LOG_ERR("Cannot set up streaming mode.");
+		LOG_ERROR("Cannot set up streaming mode.");
 		return -EINVAL;
 	}
 #endif
 	/* Initialize to odr and osr */
 	if (set_mag_odr_osr(dev, &odr, &osr) < 0) {
-		LOG_ERR("failed to set default odr and osr");
+		LOG_ERROR("failed to set default odr and osr");
 		return -EIO;
 	}
 

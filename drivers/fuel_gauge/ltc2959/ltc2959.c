@@ -96,7 +96,7 @@ static int ltc2959_read16(const struct device *dev, uint8_t reg, uint16_t *value
 	int ret = i2c_burst_read_dt(&cfg->i2c, reg, buf, sizeof(buf));
 
 	if (ret < 0) {
-		LOG_ERR("Failed to read 16-bit register 0x%02X", reg);
+		LOG_ERROR("Failed to read 16-bit register 0x%02X", reg);
 		return ret;
 	}
 
@@ -111,7 +111,7 @@ static int ltc2959_read32(const struct device *dev, uint8_t reg, uint32_t *value
 	int ret = i2c_burst_read_dt(&cfg->i2c, reg, buf, sizeof(buf));
 
 	if (ret < 0) {
-		LOG_ERR("Failed to read 32-bit register 0x%02X", reg);
+		LOG_ERROR("Failed to read 32-bit register 0x%02X", reg);
 		return ret;
 	}
 
@@ -150,7 +150,7 @@ static int ltc2959_set_adc_mode(const struct device *dev, uint8_t mode)
 	ret = i2c_reg_write_byte_dt(&cfg->i2c, LTC2959_REG_ADC_CONTROL, ctrl);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to set ADC mode: 0x%02x (ctrl=0x%02x)", mode, ctrl);
+		LOG_ERROR("Failed to set ADC mode: 0x%02x (ctrl=0x%02x)", mode, ctrl);
 		return ret;
 	}
 
@@ -247,7 +247,7 @@ static int ltc2959_get_gpio_voltage_uv(const struct device *dev, int32_t *value_
 		break;
 
 	default:
-		LOG_ERR("Unsupported GPIO analog mode: 0x%x", gpio_mode);
+		LOG_ERROR("Unsupported GPIO analog mode: 0x%x", gpio_mode);
 		return -EINVAL;
 	}
 
@@ -263,7 +263,7 @@ static int ltc2959_get_gpio_threshold_uv(const struct device *dev, bool high, in
 	int ret = i2c_reg_read_byte_dt(&cfg->i2c, LTC2959_REG_ADC_CONTROL, &ctrl);
 
 	if (ret < 0) {
-		LOG_ERR("NO CTRL: %i", ret);
+		LOG_ERROR("NO CTRL: %i", ret);
 		return ret;
 	}
 
@@ -289,7 +289,7 @@ static int ltc2959_get_gpio_threshold_uv(const struct device *dev, bool high, in
 		break;
 
 	default:
-		LOG_ERR("Unsupported GPIO mode: 0x%x", gpio_mode);
+		LOG_ERROR("Unsupported GPIO mode: 0x%x", gpio_mode);
 		return -ENOTSUP;
 	}
 	return 0;
@@ -348,7 +348,7 @@ static int ltc2959_set_gpio_threshold_uv(const struct device *dev, bool high, in
 		break;
 	}
 
-	LOG_ERR("Unsupported GPIO mode: 0x%02x", gpio_mode);
+	LOG_ERROR("Unsupported GPIO mode: 0x%02x", gpio_mode);
 	return -ENOTSUP;
 }
 
@@ -359,7 +359,7 @@ static int ltc2959_get_voltage_threshold_uv(const struct device *dev, bool high,
 	int ret = ltc2959_read16(dev, reg, &raw);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to get voltage threshold: %i", ret);
+		LOG_ERROR("Failed to get voltage threshold: %i", ret);
 		return ret;
 	}
 
@@ -661,7 +661,7 @@ static int ltc2959_init(const struct device *dev)
 	const struct ltc2959_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 

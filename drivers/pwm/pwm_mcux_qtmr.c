@@ -62,7 +62,7 @@ static int mcux_qtmr_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	uint16_t reg;
 
 	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -161,22 +161,22 @@ static int mcux_qtmr_configure_capture(const struct device *dev,
 	bool inverted = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
 
 	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("invalid channel %d", channel);
+		LOG_ERROR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	if (mcux_qtmr_channel_is_active(dev, channel)) {
-		LOG_ERR("pwm capture in progress");
+		LOG_ERROR("pwm capture in progress");
 		return -EBUSY;
 	}
 
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
-		LOG_ERR("No capture type specified");
+		LOG_ERROR("No capture type specified");
 		return -EINVAL;
 	}
 
 	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
+		LOG_ERROR("Cannot capture both period and pulse width");
 		return -ENOTSUP;
 	}
 
@@ -214,17 +214,17 @@ static int mcux_qtmr_enable_capture(const struct device *dev, uint32_t channel)
 	struct pwm_mcux_qtmr_data *data = dev->data;
 
 	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("invalid channel %d", channel);
+		LOG_ERROR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	if (!data->capture.callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
 	if (mcux_qtmr_channel_is_active(dev, channel)) {
-		LOG_ERR("PWM capture already enabled");
+		LOG_ERROR("PWM capture already enabled");
 		return -EBUSY;
 	}
 
@@ -241,7 +241,7 @@ static int mcux_qtmr_disable_capture(const struct device *dev, uint32_t channel)
 	const struct pwm_mcux_qtmr_config *config = dev->config;
 
 	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("invalid channel %d", channel);
+		LOG_ERROR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 

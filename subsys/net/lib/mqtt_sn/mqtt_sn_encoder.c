@@ -37,12 +37,12 @@ static int prepare_message(struct net_buf_simple *buf, size_t sz, enum mqtt_sn_m
 
 	/* Size must not be larger than an uint16_t can fit */
 	if (sz > UINT16_MAX) {
-		LOG_ERR("Message of size %zu is too large for MQTT-SN", sz);
+		LOG_ERROR("Message of size %zu is too large for MQTT-SN", sz);
 		return -EFBIG;
 	}
 
 	if (sz > maxlen) {
-		LOG_ERR("Message of size %zu does not fit in buffer of length %zu", sz, maxlen);
+		LOG_ERROR("Message of size %zu does not fit in buffer of length %zu", sz, maxlen);
 		return -ENOMEM;
 	}
 
@@ -452,7 +452,7 @@ int mqtt_sn_encode_msg(struct net_buf_simple *buf, struct mqtt_sn_param *param)
 	int result;
 
 	if (buf->len) {
-		LOG_ERR("Buffer not clean - bug?");
+		LOG_ERROR("Buffer not clean - bug?");
 		return -EBUSY;
 	}
 
@@ -517,7 +517,7 @@ int mqtt_sn_encode_msg(struct net_buf_simple *buf, struct mqtt_sn_param *param)
 		result = mqtt_sn_encode_msg_willmsgupd(buf, &param->params.willmsgupd);
 		break;
 	default:
-		LOG_ERR("Unsupported msg type %d", param->type);
+		LOG_ERROR("Unsupported msg type %d", param->type);
 		result = -ENOTSUP;
 		break;
 	}

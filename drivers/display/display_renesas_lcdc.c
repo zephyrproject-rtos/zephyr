@@ -130,7 +130,7 @@ static uint8_t lcdc_smartbond_pixel_to_lcm(enum display_pixel_format pixel_forma
 	case PIXEL_FORMAT_ARGB_8888:
 		return (uint8_t)LCDC_SMARTBOND_L0_ARGB8888;
 	default:
-		LOG_ERR("Unsupported pixel format");
+		LOG_ERROR("Unsupported pixel format");
 		return 0;
 	};
 }
@@ -149,7 +149,7 @@ static int display_smartbond_configure(const struct device *dev)
 	da1469x_lcdc_set_status(true, LCDC_SMARTBOND_IS_PLL_REQUIRED, clk_div);
 
 	if (!da1469x_lcdc_check_id()) {
-		LOG_ERR("Invalid LCDC ID");
+		LOG_ERROR("Invalid LCDC ID");
 		da1469x_lcdc_set_status(false, false, 0);
 		return -EINVAL;
 	}
@@ -164,7 +164,7 @@ static int display_smartbond_configure(const struct device *dev)
 	ret = da1469x_lcdc_timings_configure(config->x_res, config->y_res,
 						(lcdc_smartbond_timing_cfg *)&config->timing_cfg);
 	if (ret < 0) {
-		LOG_ERR("Unable to configure timing settings");
+		LOG_ERROR("Unable to configure timing settings");
 		da1469x_lcdc_set_status(false, false, 0);
 		return ret;
 	}
@@ -180,7 +180,7 @@ static int display_smartbond_configure(const struct device *dev)
 
 	ret = da1469x_lcdc_layer_configure(&data->layer);
 	if (ret < 0) {
-		LOG_ERR("Unable to configure layer settings");
+		LOG_ERROR("Unable to configure layer settings");
 		da1469x_lcdc_set_status(false, false, 0);
 	}
 
@@ -226,7 +226,7 @@ static int display_smartbond_dma_config(const struct device *dev)
 
 	data->dma = DEVICE_DT_GET(DT_NODELABEL(dma));
 	if (!device_is_ready(data->dma)) {
-		LOG_ERR("DMA device is not ready");
+		LOG_ERROR("DMA device is not ready");
 		return -ENODEV;
 	}
 
@@ -240,7 +240,7 @@ static int display_smartbond_dma_config(const struct device *dev)
 	/* Request an arbitrary DMA channel */
 	data->dma_channel = dma_request_channel(data->dma, NULL);
 	if (data->dma_channel < 0) {
-		LOG_ERR("Could not acquire a DMA channel");
+		LOG_ERROR("Could not acquire a DMA channel");
 		return -EIO;
 	}
 
@@ -255,7 +255,7 @@ static int display_smartbond_resume(const struct device *dev)
 	/* Select default state */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Could not apply LCDC pins' default state (%d)", ret);
+		LOG_ERROR("Could not apply LCDC pins' default state (%d)", ret);
 		return -EIO;
 	}
 
@@ -329,7 +329,7 @@ static int display_smartbond_init(const struct device *dev)
 	if (gpio_is_ready_dt(&config->disp)) {
 		ret = gpio_pin_configure_dt(&config->disp, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not activate display port");
+			LOG_ERROR("Could not activate display port");
 			return -EIO;
 		}
 	}
@@ -494,13 +494,13 @@ static int display_smartbond_read(const struct device *dev,
 		data->dma_block_cfg.source_address = (uint32_t)src;
 
 		if (dma_config(data->dma, data->dma_channel, &data->dma_cfg)) {
-			LOG_ERR("Could not configure DMA");
+			LOG_ERROR("Could not configure DMA");
 			k_sem_give(&data->device_sem);
 			return -EIO;
 		}
 
 		if (dma_start(data->dma, data->dma_channel)) {
-			LOG_ERR("Could not start DMA");
+			LOG_ERROR("Could not start DMA");
 			k_sem_give(&data->device_sem);
 			return -EIO;
 		}
@@ -563,13 +563,13 @@ static int display_smartbond_write(const struct device *dev,
 		data->dma_block_cfg.source_address = (uint32_t)src;
 
 		if (dma_config(data->dma, data->dma_channel, &data->dma_cfg)) {
-			LOG_ERR("Could not configure DMA");
+			LOG_ERROR("Could not configure DMA");
 			k_sem_give(&data->device_sem);
 			return -EIO;
 		}
 
 		if (dma_start(data->dma, data->dma_channel)) {
-			LOG_ERR("Could not start DMA");
+			LOG_ERROR("Could not start DMA");
 			k_sem_give(&data->device_sem);
 			return -EIO;
 		}

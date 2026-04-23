@@ -211,7 +211,7 @@ static int ina237_trigg_one_shot_request(const struct device *dev, enum sensor_c
 
 	ret = ina2xx_reg_write(&common->bus, INA237_REG_ADC_CONFIG, common->adc_config);
 	if (ret < 0) {
-		LOG_ERR("Failed to write ADC configuration register!");
+		LOG_ERROR("Failed to write ADC configuration register!");
 		return ret;
 	}
 
@@ -261,7 +261,7 @@ static void ina237_trigger_work_handler(struct k_work *work)
 	/* Read reg alert to clear alerts */
 	ret = ina2xx_reg_read_16(&common->bus, INA237_REG_ALERT, &reg_alert);
 	if (ret < 0) {
-		LOG_ERR("Failed to read alert register!");
+		LOG_ERROR("Failed to read alert register!");
 		return;
 	}
 
@@ -291,7 +291,7 @@ static int ina237_init(const struct device *dev)
 
 	if (ina237_is_triggered_mode_set(dev)) {
 		if ((config->alert_config & GENMASK(15, 14)) != GENMASK(15, 14)) {
-			LOG_ERR("ALATCH and CNVR bits must be enabled in triggered mode!");
+			LOG_ERROR("ALATCH and CNVR bits must be enabled in triggered mode!");
 			return -ENODEV;
 		}
 
@@ -299,13 +299,13 @@ static int ina237_init(const struct device *dev)
 
 		ret = ina2xx_trigger_mode_init(&data->trigger, &config->alert_gpio);
 		if (ret < 0) {
-			LOG_ERR("Failed to init trigger mode");
+			LOG_ERROR("Failed to init trigger mode");
 			return ret;
 		}
 
 		ret = ina2xx_reg_write(&common->bus, INA237_REG_ALERT, config->alert_config);
 		if (ret < 0) {
-			LOG_ERR("Failed to write alert configuration register!");
+			LOG_ERROR("Failed to write alert configuration register!");
 			return ret;
 		}
 	}
