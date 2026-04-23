@@ -116,16 +116,18 @@
 		quad-enable-requirements = "S2B1v1";
 
 		partitions {
-			compatible = "fixed-partitions";
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			ptable: partition@0 {
+				compatible = "zephyr,mapped-partition";
 				label = "ptable";
 				reg = <0x0 DT_SIZE_K(64)>;
 			};
 
 			code: partition@10000 {
+				compatible = "zephyr,mapped-partition";
 				label = "code";
 				reg = <0x10000 DT_SIZE_K(16320)>;
 			};
