@@ -145,6 +145,12 @@ struct llext {
 	struct llext_symtable sym_tab;
 
 	/**
+	 * Index mapping from LLEXT_MEM_SYMTAB to sym_tab to accelerate
+	 * symbol table lookup.
+	 */
+	int *sym_tab_lookup_hint;
+
+	/**
 	 * Table of symbols exported by the llext via @ref LL_EXTENSION_SYMBOL.
 	 * This can be used in the main Zephyr binary to find symbols in the
 	 * extension.

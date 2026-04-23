@@ -687,6 +687,15 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 	int i, j, ret;
 	size_t pos;
 
+	/** We use a lookup hint table for Xtensa architecture to speed up symbol lookup */
+	if (IS_ENABLED(CONFIG_XTENSA)) {
+		ext->sym_tab_lookup_hint = llext_alloc_metadata(sym_cnt * sizeof(int));
+		if (ext->sym_tab_lookup_hint) {
+			ext->alloc_size += sym_cnt * sizeof(int);
+			memset(ext->sym_tab_lookup_hint, -1, sym_cnt * sizeof(int));
+		}
+	}
+
 	for (i = 0, pos = ldr->sects[LLEXT_MEM_SYMTAB].sh_offset, j = 0;
 	     i < sym_cnt;
 	     i++, pos += ent_size) {
@@ -748,6 +757,10 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 
 			LOG_DBG("function symbol %d name %s addr %p",
 				j, name, sym_tab->syms[j].addr);
+
+			if (ext->sym_tab_lookup_hint) {
+				ext->sym_tab_lookup_hint[i] = j;
+			}
 			j++;
 		}
 	}
@@ -898,6 +911,14 @@ out:
 		llext_free_metadata(ext->sym_tab.syms);
 		ext->sym_tab.sym_cnt = 0;
 		ext->sym_tab.syms = NULL;
+	}
+
+	/* Always free the lookup hint table since it is only used during the
+	 * symbol lookup process
+	 */
+	if (ext->sym_tab_lookup_hint) {
+		llext_free_metadata(ext->sym_tab_lookup_hint);
+		ext->sym_tab_lookup_hint = NULL;
 	}
 
 	if (ret != 0) {
