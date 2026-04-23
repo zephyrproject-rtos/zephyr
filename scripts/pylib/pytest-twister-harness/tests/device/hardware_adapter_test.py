@@ -53,7 +53,7 @@ def test_if_get_command_returns_proper_string_2(patched_which, device: HardwareA
     device.generate_command()
     assert isinstance(device.command, list)
     assert device.command == [
-        'west', 'flash', '--no-rebuild', '--build-dir', 'build', '--runner', 'pyocd', '--', '--board-id', 'p_id'
+        'west', 'flash', '--no-rebuild', '--build-dir', 'build', '--runner', 'pyocd', '--', '--dev-id', 'p_id'
     ]
 
 
