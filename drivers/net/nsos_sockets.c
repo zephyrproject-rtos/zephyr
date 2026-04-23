@@ -591,7 +591,7 @@ static int nsos_wait_for_poll(struct nsos_socket *sock, int events,
 
 	ret = nsos_adapt_dup(sock->poll.mid.fd);
 	if (ret < 0) {
-		goto return_ret;
+		return ret;
 	}
 
 	socket_poll.mid.fd = ret;
@@ -618,7 +618,6 @@ poll_update:
 close_dup:
 	nsi_host_close(socket_poll.mid.fd);
 
-return_ret:
 	if (ret < 0) {
 		return -nsi_errno_to_mid(-ret);
 	}
