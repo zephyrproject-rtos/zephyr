@@ -21,7 +21,8 @@ LOG_MODULE_REGISTER(flash_mspi_nor, CONFIG_FLASH_LOG_LEVEL);
 			  MSPI_DEVICE_CONFIG_READ_CMD | \
 			  MSPI_DEVICE_CONFIG_WRITE_CMD | \
 			  MSPI_DEVICE_CONFIG_RX_DUMMY | \
-			  MSPI_DEVICE_CONFIG_TX_DUMMY)
+			  MSPI_DEVICE_CONFIG_TX_DUMMY | \
+			  MSPI_DEVICE_CONFIG_IO_MODE)
 
 #define NON_XIP_DEV_CFG_MASK (MSPI_DEVICE_CONFIG_ALL & ~XIP_DEV_CFG_MASK)
 
@@ -1182,6 +1183,7 @@ static int flash_chip_init(const struct device *dev)
 	/* Enable XIP access for this chip if specified so in DT. */
 	if (dev_config->xip_cfg.enable) {
 		struct mspi_dev_cfg mspi_cfg = {
+			.io_mode = dev_config->read_io_mode,
 			.addr_length = dev_data->cmd_info.uses_4byte_addr
 				     ? 4 : 3,
 			.rx_dummy = get_rx_dummy(dev),
