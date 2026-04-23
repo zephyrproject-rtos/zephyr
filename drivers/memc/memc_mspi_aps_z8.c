@@ -18,6 +18,10 @@
 #include "mspi_ambiq.h"
 typedef struct mspi_ambiq_timing_cfg mspi_timing_cfg;
 typedef enum mspi_ambiq_timing_param mspi_timing_param;
+#elif CONFIG_SOC_FAMILY_STM32
+#include "mspi_stm32.h"
+typedef struct mspi_stm32_timing_cfg mspi_timing_cfg;
+typedef enum mspi_stm32_timing_param mspi_timing_param;
 #else
 typedef struct mspi_timing_cfg mspi_timing_cfg;
 typedef enum mspi_timing_param mspi_timing_param;
@@ -59,7 +63,9 @@ struct memc_mspi_aps_z8_data {
 	struct mspi_dev_cfg            dev_cfg;
 	struct mspi_xip_cfg            xip_cfg;
 	struct mspi_scramble_cfg       scramble_cfg;
-	mspi_timing_cfg                timing_cfg;
+#if defined(CONFIG_MSPI_TIMING)
+	mspi_timing_cfg timing_cfg;
+#endif
 	struct mspi_xfer               trans;
 	struct mspi_xfer_packet        packet;
 
@@ -131,6 +137,7 @@ static int memc_mspi_aps_z8_command_read(const struct device *psram, uint8_t cmd
 	return ret;
 }
 
+#if CONFIG_PM_DEVICE
 static int memc_mspi_aps_z8_enter_command_mode(const struct device *psram)
 {
 	const struct memc_mspi_aps_z8_config *cfg = psram->config;
@@ -185,7 +192,6 @@ static int memc_mspi_aps_z8_exit_command_mode(const struct device *psram)
 	return 0;
 }
 
-#if CONFIG_PM_DEVICE
 static void acquire(const struct device *psram)
 {
 	const struct memc_mspi_aps_z8_config *cfg = psram->config;
@@ -570,9 +576,12 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 		.mem_boundary       = 1024,                                                       \
 		.time_to_break      = 4,                                                          \
 	}
-#define MSPI_TIMING_CONFIG(n)                                                                     \
-	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
-		(MSPI_AMBIQ_TIMING_CONFIG(n)), ({}))                                              \
+
+#define MSPI_TIMING_CONFIG(n)                                                   \
+	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                    \
+		(MSPI_AMBIQ_TIMING_CONFIG(n)),                                  \
+	(COND_CODE_1(CONFIG_SOC_FAMILY_STM32,                                   \
+		(MSPI_STM32_TIMING_CONFIG(n)), ({}))))
 
 #define MSPI_TIMING_CONFIG_MASK(n)                                                                \
 	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
