@@ -243,9 +243,6 @@ static int siwx91x_nwp_compute_config(const struct device *dev,
 	default:
 		return -EINVAL;
 	}
-	if (boot_config.coex_mode == SL_SI91X_WLAN_BLE_MODE) {
-		*enable_pll = false;
-	}
 
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
 		siwx91x_apply_network_features(&boot_config, wifi_oper_mode);
