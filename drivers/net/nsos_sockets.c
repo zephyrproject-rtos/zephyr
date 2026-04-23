@@ -400,14 +400,15 @@ static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 
 	case ZVFS_F_SETFL: {
 		int flags = va_arg(args, int);
+		int flags_mid;
 		int ret;
 
-		ret = nsi_fcntl_to_mid_strict(flags);
-		if (ret < 0) {
-			return -nsi_errno_from_mid(-ret);
+		flags_mid = nsi_fcntl_to_mid_strict(flags);
+		if (flags_mid < 0) {
+			return -nsi_errno_from_mid(-flags_mid);
 		}
 
-		ret = nsos_adapt_fcntl_setfl(sock->poll.mid.fd, flags);
+		ret = nsos_adapt_fcntl_setfl(sock->poll.mid.fd, flags_mid);
 
 		return -nsi_errno_from_mid(-ret);
 	}
