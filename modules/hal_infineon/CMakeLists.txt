@@ -1,5 +1,7 @@
 # Copyright (c) 2020 Linumiz
 # Copyright (c) 2022 Cypress Semiconductor Corporation.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_HAS_XMCLIB
@@ -26,13 +28,15 @@ if(CONFIG_SOC_FAMILY_INFINEON_CAT1
   ## Add core-lib sources for CAT1 devices
   add_subdirectory(core-lib)
 
-  if(NOT CONFIG_SOC_FAMILY_INFINEON_EDGE)
+  if(NOT CONFIG_SOC_FAMILY_INFINEON_EDGE AND NOT CONFIG_SOC_DIE_PSC3M6)
     ## Add mtb-pdl-cat1 sources for CAT1 devices
     add_subdirectory(mtb-pdl-cat1)
   endif()
 
-  ## Add mtb-templates-cat1 sources for CAT1 devices
-  add_subdirectory(mtb-template-cat1)
+  if(NOT CONFIG_SOC_DIE_PSC3M6)
+    ## Add mtb-templates-cat1 sources for CAT1 devices
+    add_subdirectory(mtb-template-cat1)
+  endif()
 endif()
 
 if(CONFIG_USE_INFINEON_LEGACY_HAL
@@ -42,7 +46,8 @@ endif()
 
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1
   AND NOT CONFIG_SOC_FAMILY_PSOC6_LEGACY
-  AND NOT CONFIG_SOC_FAMILY_INFINEON_EDGE)
+  AND NOT CONFIG_SOC_FAMILY_INFINEON_EDGE
+  AND NOT CONFIG_SOC_DIE_PSC3M6)
 
   ## Add catcm0p sleep images for CM0 Devices
   if(CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP)
@@ -95,7 +100,36 @@ if(CONFIG_SOC_FAMILY_INFINEON_CAT1C)
 endif()
 
 if(CONFIG_SOC_SERIES_PSC3)
+  # PDL sources here do not pull in infineon_kconfig.h, so repeat what it
+  # sets for drivers/ - both need the same macros to see a consistent header.
+  zephyr_library_compile_definitions(COMPONENT_CAT1B)
+  zephyr_library_compile_definitions(COMPONENT_CM33)
+  zephyr_library_compile_definitions(CORE_NAME_CM33_0)
+  zephyr_library_compile_definitions_ifdef(CONFIG_TRUSTED_EXECUTION_SECURE COMPONENT_SECURE_DEVICE)
+
+  zephyr_library_compile_definitions(FLASH_BOOT)
+  zephyr_library_compile_definitions(CY_PDL_FLASH_BOOT)
+  zephyr_library_compile_definitions(NORMAL_PROVISIONED_LCS)
+
+  if(CONFIG_SOC_DIE_PSC3M6)
+    dt_nodelabel(ifx_flash_node NODELABEL "flash0")
+    dt_nodelabel(ifx_sram_node NODELABEL "sram0")
+    dt_reg_size(ifx_flash_size PATH ${ifx_flash_node})
+    dt_reg_size(ifx_sram_size PATH ${ifx_sram_node})
+    zephyr_library_compile_definitions(USER_FLASH_S_SIZE=${ifx_flash_size})
+    zephyr_library_compile_definitions(USER_SRAM_S_SIZE=${ifx_sram_size})
+  else()
+    zephyr_library_compile_definitions(CY_USING_HAL)
+    zephyr_library_compile_definitions(USER_FLASH_S_SIZE=0x10000)
+    zephyr_library_compile_definitions(USER_SRAM_S_SIZE=0x4000)
+  endif()
+
   add_subdirectory(zephyr-ifx-cycfg)
+endif()
+
+if(CONFIG_SOC_DIE_PSC3M6)
+  add_subdirectory(mtb-dsl-psc3m6)
+  add_subdirectory(mtb-template-psc3m6)
 endif()
 
 ## Add Wi-Fi assets for AIROC devices
