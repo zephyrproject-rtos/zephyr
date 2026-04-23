@@ -34,6 +34,8 @@ LOG_MODULE_REGISTER(bt_driver);
 #define DT_DRV_COMPAT zephyr_bt_hci_uart
 
 struct h4_data {
+	struct bt_hci_driver_data common;
+
 	struct {
 		uint8_t type;
 		struct net_buf *buf;
@@ -67,6 +69,8 @@ struct h4_data {
 };
 
 struct h4_config {
+	struct bt_hci_driver_config common;
+
 	const struct device *uart;
 	k_thread_stack_t *rx_thread_stack;
 	size_t rx_thread_stack_size;
@@ -609,6 +613,7 @@ static DEVICE_API(bt_hci, h4_driver_api) = {
 	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE); \
 	static struct k_thread rx_thread_##inst; \
 	static const struct h4_config h4_config_##inst = { \
+		.common = BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst), \
 		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
 		.rx_thread_stack = rx_thread_stack_##inst, \
 		.rx_thread_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst), \

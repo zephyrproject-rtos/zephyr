@@ -77,6 +77,7 @@ LOG_MODULE_REGISTER(cyw208xx);
 #define DT_DRV_COMPAT infineon_cyw208xx_hci
 
 struct cyw208xx_data {
+	struct bt_hci_driver_data common;
 	bt_hci_recv_t recv;
 };
 
@@ -548,8 +549,11 @@ cy_en_syspm_status_t cyw208xx_syspm_callback(cy_stc_syspm_callback_params_t *cal
 
 #define CYW208XX_DEVICE_INIT(inst)                                                                 \
 	static struct cyw208xx_data cyw208xx_data_##inst = {};                                     \
-	DEVICE_DT_INST_DEFINE(inst, cyw208xx_hci_init, NULL, &cyw208xx_data_##inst, NULL,          \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	static const struct bt_hci_driver_config cyw208xx_config_##inst =                          \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	DEVICE_DT_INST_DEFINE(inst, cyw208xx_hci_init, NULL, &cyw208xx_data_##inst,                \
+			      &cyw208xx_config_##inst, POST_KERNEL,                                \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */
 CYW208XX_DEVICE_INIT(0)

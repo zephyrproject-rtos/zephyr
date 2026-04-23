@@ -37,6 +37,7 @@ static struct {
 };
 
 struct bt_bee_data {
+	struct bt_hci_driver_data common;
 	bt_hci_recv_t recv;
 };
 
@@ -295,8 +296,10 @@ static DEVICE_API(bt_hci, drv) = {
 
 #define BT_HCI_BEE_DEVICE_INIT(inst)                                                               \
 	static struct bt_bee_data bt_bee_data_##inst = {};                                         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bt_bee_data_##inst, NULL, POST_KERNEL,            \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	static const struct bt_hci_driver_config bt_bee_config_##inst =                            \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bt_bee_data_##inst, &bt_bee_config_##inst,        \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */
 BT_HCI_BEE_DEVICE_INIT(0)

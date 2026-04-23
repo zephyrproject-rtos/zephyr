@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(bt_hci_driver_efr32);
 #define DT_DRV_COMPAT silabs_bt_hci_efr32
 
 struct hci_data {
+	struct bt_hci_driver_data common;
 	bt_hci_recv_t recv;
 };
 
@@ -348,7 +349,9 @@ static DEVICE_API(bt_hci, drv) = {
 #define HCI_DEVICE_INIT(inst) \
 	static struct hci_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, \
+	static const struct bt_hci_driver_config hci_config_##inst =                               \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, &hci_config_##inst,              \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported right now */

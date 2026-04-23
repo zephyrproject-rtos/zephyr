@@ -82,6 +82,8 @@ static bool reliable_packet(uint8_t type)
 				 ((hdr)[2] |= (len) >> 4))
 
 struct h5_data {
+	struct bt_hci_driver_data common;
+
 	/* Needed for delayed work callbacks */
 	const struct device     *dev;
 
@@ -119,6 +121,8 @@ struct h5_data {
 };
 
 struct h5_config {
+	struct bt_hci_driver_config common;
+
 	const struct device *uart;
 
 	k_thread_stack_t *rx_stack;
@@ -794,6 +798,7 @@ static DEVICE_API(bt_hci, h5_driver_api) = {
 	static K_KERNEL_STACK_DEFINE(tx_thread_stack_##inst, CONFIG_BT_DRV_TX_STACK_SIZE); \
 	static struct k_thread tx_thread_##inst; \
 	static const struct h5_config h5_config_##inst = { \
+		.common = BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst), \
 		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
 		.rx_stack = rx_thread_stack_##inst, \
 		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst), \
