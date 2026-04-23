@@ -266,3 +266,17 @@ static void reg_write(uint32_t data, const struct device *dev, uint32_t off)
 #define USES_XIP_WRITE_SUPPORT(inst) + DT_INST_PROP(inst, xip_write_support)
 #define XIP_WRITE_SUPPORT_INSTANCES \
 	(0 DT_INST_FOREACH_STATUS_OKAY(USES_XIP_WRITE_SUPPORT))
+
+#define USES_CONCURRENT_XIP_SUPPORT(inst) \
+	+ DT_INST_PROP(inst, concurrent_xip_support)
+#define CONCURRENT_XIP_SUPPORT_INSTANCES \
+	(0 DT_INST_FOREACH_STATUS_OKAY(USES_CONCURRENT_XIP_SUPPORT))
+
+/* XIPSER only needs to be managed on cores that support concurrent XIP (so master
+ * transfers keep running while XIP is enabled) and without XIP-write support, hence
+ * why this register exists for IP's with concurrent XIP enabled. However, this driver
+ * doesn't yet support the hardware concurrent XIP feature. Regardless, we still need
+ * to use this register.
+ */
+#define SUPPORTS_XIP_SER (CONCURRENT_XIP_SUPPORT_INSTANCES != 0 && \
+	XIP_WRITE_SUPPORT_INSTANCES == 0)
