@@ -97,6 +97,12 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
+&adc2 {
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <8>;
+	status = "okay";
+};
+
 &clk_lsi {
 	status = "okay";
 };
