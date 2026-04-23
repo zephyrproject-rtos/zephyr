@@ -35,4 +35,13 @@
 
 #endif /* _ASMLANGUAGE */
 
+/* number of clocks registered */
+#define SOC_NUM_CLOCK_PLL_FRAC     7
+#define SOC_NUM_CLOCK_PLL_DIV      (SOC_NUM_CLOCK_PLL_FRAC + 1) /* AUDIO PLL: DIVPMC, DIVIO */
+#define SOC_NUM_CLOCK_MASTER       2	/* MCK_pres, MCK_div */
+#define SOC_NUM_CLOCK_PROGRAMMABLE 2	/* PCK0, PCK1 */
+#define SOC_NUM_CLOCK_SYSTEM       4	/* DDRCK, UHP, PCK0, PCK1 */
+#define SOC_NUM_CLOCK_PERIPHERAL   72
+#define SOC_NUM_CLOCK_GENERATED    46
+
 #endif /* __SAM9X7_SOC__H_ */
