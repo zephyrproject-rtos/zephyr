@@ -1730,9 +1730,21 @@ static int _api_xip_config(const struct device *dev,
 		write_xip_incr_inst(dev, params->read_cmd);
 		write_xip_wrap_inst(dev, params->read_cmd);
 		write_xip_ctrl(dev, ctrl.read);
-		write_xip_write_incr_inst(dev, params->write_cmd);
-		write_xip_write_wrap_inst(dev, params->write_cmd);
-		write_xip_write_ctrl(dev, ctrl.write);
+
+		if (cfg->permission == MSPI_XIP_READ_WRITE) {
+#if MEMMAP_WRITE_SUPPORT_INSTANCES != 0
+			write_xip_write_incr_inst(dev, params->write_cmd);
+			write_xip_write_wrap_inst(dev, params->write_cmd);
+			write_xip_write_ctrl(dev, ctrl.write);
+#else
+			LOG_ERR("XIP write access not supported by this controller");
+			rc = pm_device_runtime_put(dev);
+			if (rc < 0) {
+				LOG_ERR("pm_device_runtime_put() failed: %d", rc);
+			}
+			return -ENOTSUP;
+#endif
+		}
 	} else if (dev_data->xip_params_active.read_cmd !=
 		   dev_data->xip_params_stored.read_cmd ||
 		   dev_data->xip_params_active.write_cmd !=
