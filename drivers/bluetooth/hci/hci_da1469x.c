@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(hci_da1469x);
 #define DT_DRV_COMPAT renesas_bt_hci_da1469x
 
 struct hci_data {
+	struct bt_hci_driver_data common;
 	bt_hci_recv_t recv;
 };
 
@@ -498,7 +499,9 @@ static int bt_da1469x_init(const struct device *dev)
 #define HCI_DEVICE_INIT(inst) \
 	static struct hci_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, bt_da1469x_init, NULL, &hci_data_##inst, NULL, \
+	static const struct bt_hci_driver_config hci_config_##inst =                               \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	DEVICE_DT_INST_DEFINE(inst, bt_da1469x_init, NULL, &hci_data_##inst, &hci_config_##inst,   \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported right now */

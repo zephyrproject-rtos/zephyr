@@ -163,6 +163,7 @@ static esp_ble_power_type_t handle_to_esp_power_type(uint8_t handle_type, uint16
 #define HCI_BT_ESP32_TIMEOUT K_MSEC(2000)
 
 struct bt_esp32_data {
+	struct bt_hci_driver_data common;
 	bt_hci_recv_t recv;
 };
 
@@ -863,7 +864,9 @@ static DEVICE_API(bt_hci, drv) = {
 
 #define BT_ESP32_DEVICE_INIT(inst)                                                                 \
 	static struct bt_esp32_data bt_esp32_data_##inst = {};                                     \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bt_esp32_data_##inst, NULL, POST_KERNEL,          \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	static const struct bt_hci_driver_config bt_esp32_config_##inst =                          \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bt_esp32_data_##inst, &bt_esp32_config_##inst,    \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 BT_ESP32_DEVICE_INIT(0)
