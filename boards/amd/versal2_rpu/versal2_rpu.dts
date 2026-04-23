@@ -94,3 +94,17 @@
 	status = "okay";
 	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
 };
+
+&ttc0_timer0 {
+	status = "okay";
+};
+
+&ttc0_timer1 {
+	status = "okay";
+	prescaler = <0>;
+};
+
+&ttc0_timer2 {
+	status = "okay";
+	prescaler = <0>;
+};
