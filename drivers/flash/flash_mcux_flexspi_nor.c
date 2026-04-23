@@ -81,6 +81,10 @@ struct flash_flexspi_nor_config {
 	uint16_t rst_assert_ms;
 	uint16_t rst_deassert_ms;
 #endif
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
+	bool initial_soft_reset;
+	uint32_t reset_recovery_us;
+#endif
 };
 
 /* Device variables used in critical sections should be in this structure */
@@ -1648,7 +1652,92 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 }
 
 /* Probe parameters from flash SFDP header, and use them to configure the FlexSPI */
-static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
+/*
+ * The recovery wait below runs while XIP is suspended, so every call it makes
+ * must be relocated to ITCM. k_us_to_cyc_ceil32() expands to the constant
+ * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC unless the runtime-rate path is selected,
+ * in which case it dispatches to sys_clock_hw_cycles_per_sec_runtime_get()
+ * which is *not* relocated and would fault. Forbid that combination at
+ * compile time so a downstream board cannot silently turn this into a fault.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME),
+	     "initial-soft-reset is XIP-critical: "
+	     "CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME would route "
+	     "k_us_to_cyc_ceil32() through a non-ITCM helper");
+
+/*
+ * XIP-safe busy-wait. k_busy_wait() is not relocated to SRAM and cannot be
+ * called while the outer IRQ lock is held. __always_inline ensures this code
+ * always lives inside the caller (flash_flexspi_nor_init), which is relocated
+ * to ITCM by zephyr_code_relocate(). Without it the linker script's explicit
+ * per-function enumeration would leave a separate symbol in flash.
+ */
+static __always_inline void flash_flexspi_nor_recovery_wait(uint32_t us)
+{
+	uint32_t count = k_us_to_cyc_ceil32(us);
+
+	while (count--) {
+		compiler_barrier();
+	}
+}
+
+/*
+ * Issue a software reset sequence (RSTEN 0x66 + RST 0x99) to return the
+ * flash to its power-on-reset state. This must be called after the initial
+ * LUT has been installed so IP commands can be issued. Stack-allocated LUT
+ * entries are used to avoid any flash data access during XIP critical sections.
+ */
+static __always_inline int flash_flexspi_nor_soft_reset(struct flash_flexspi_nor_data *data)
+{
+	uint32_t lut[2 * MEMC_FLEXSPI_CMD_PER_SEQ] = {0};
+	flexspi_transfer_t transfer = {
+		.deviceAddress = 0,
+		.port = data->port,
+		.SeqNumber = 1,
+		.cmdType = kFLEXSPI_Command,
+		.dataSize = 0,
+	};
+	int ret;
+
+	/*
+	 * The two LUT entries below are written contiguously starting at
+	 * SCRATCH_CMD: lut[0] holds RSTEN at SCRATCH_CMD, and the second slot
+	 * (lut[MEMC_FLEXSPI_CMD_PER_SEQ]) holds RST and *must* land at
+	 * SCRATCH_CMD + 1. If SCRATCH_CMD2 ever stops being SCRATCH_CMD + 1
+	 * the RST(0x99) would be issued from the wrong sequence index and
+	 * the soft-reset would silently complete only its first half.
+	 */
+	BUILD_ASSERT(SCRATCH_CMD2 == SCRATCH_CMD + 1,
+		     "soft-reset LUT layout assumes SCRATCH_CMD2 == SCRATCH_CMD + 1");
+
+	lut[0] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RESET_EN,
+				  kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+	lut[MEMC_FLEXSPI_CMD_PER_SEQ] = FLEXSPI_LUT_SEQ(
+				  kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RESET_MEM,
+				  kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+
+	ret = memc_flexspi_update_lut(&data->controller, data->port, SCRATCH_CMD,
+				      lut, ARRAY_SIZE(lut));
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Send Reset Enable (0x66) */
+	transfer.seqIndex = SCRATCH_CMD;
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Send Reset Memory (0x99) */
+	transfer.seqIndex = SCRATCH_CMD2;
+	return memc_flexspi_transfer(&data->controller, &transfer);
+}
+#endif /* DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset) */
+
+static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data,
+				   const struct flash_flexspi_nor_config *nor_cfg)
 {
 	/* JESD216B defines up to 23 basic flash parameters */
 	uint32_t param_buf[23];
@@ -1694,6 +1783,25 @@ static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
 	if (ret < 0) {
 		goto _exit;
 	}
+
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
+	/* Issue software reset (RSTEN 0x66 + RST 0x99) before reading SFDP to
+	 * guarantee the flash is in 3-byte address mode after a warm reset.
+	 * The outer IRQ lock prevents any ISR-triggered XIP fetch during the
+	 * flash reset recovery window. flash_flexspi_nor_recovery_wait() is
+	 * used instead of k_busy_wait() because this file is relocated to SRAM
+	 * under CONFIG_FLASH_MCUX_FLEXSPI_XIP while k_busy_wait() is not.
+	 */
+	if (nor_cfg->initial_soft_reset) {
+		ret = flash_flexspi_nor_soft_reset(data);
+		if (ret < 0) {
+			goto _exit;
+		}
+		if (nor_cfg->reset_recovery_us > 0) {
+			flash_flexspi_nor_recovery_wait(nor_cfg->reset_recovery_us);
+		}
+	}
+#endif
 
 	/* First, check if the JEDEC ID of this flash has explicit support
 	 * in this driver
@@ -1803,7 +1911,7 @@ static int flash_flexspi_nor_init(const struct device *dev)
 	}
 #endif
 
-	if (flash_flexspi_nor_probe(data)) {
+	if (flash_flexspi_nor_probe(data, config)) {
 		if (memc_flexspi_is_running_xip(&data->controller)) {
 			/* We can't continue from here- the LUT stored in
 			 * the FlexSPI will be invalid so we cannot XIP.
@@ -1863,6 +1971,15 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 #define FLASH_FLEXSPI_RST_GPIO(inst)
 #endif
 
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
+#define FLASH_FLEXSPI_SOFT_RESET(inst)                                                             \
+	.initial_soft_reset = DT_INST_PROP(inst, initial_soft_reset),                              \
+	.reset_recovery_us = DIV_ROUND_UP(DT_INST_PROP_OR(inst, t_reset_recovery, 0), \
+						1000),
+#else
+#define FLASH_FLEXSPI_SOFT_RESET(inst)
+#endif
+
 #define FLASH_FLEXSPI_DEVICE_CONFIG(n)					\
 	{								\
 		.flexspiRootClk = DT_INST_PROP(n, spi_max_frequency),	\
@@ -1892,6 +2009,7 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 		flash_flexspi_nor_config_##n = {			\
 		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),		\
 		FLASH_FLEXSPI_RST_GPIO(n)				\
+		FLASH_FLEXSPI_SOFT_RESET(n)				\
 	};								\
 	static struct flash_flexspi_nor_data				\
 		flash_flexspi_nor_data_##n = {				\
