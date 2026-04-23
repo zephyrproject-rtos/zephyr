@@ -251,14 +251,29 @@ enum quic_tls_error_code {
 };
 
 /* Transport parameter IDs from RFC 9000 Section 18.2 */
-#define QUIC_MAX_IDLE_TIMEOUT                    0x01
-#define QUIC_MAX_UDP_PAYLOAD_SIZE                0x03
-#define QUIC_INITIAL_MAX_DATA                    0x04
-#define QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL  0x05
-#define QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE 0x06
-#define QUIC_INITIAL_MAX_STREAM_DATA_UNI         0x07
-#define QUIC_INITIAL_MAX_STREAMS_BIDI            0x08
-#define QUIC_INITIAL_MAX_STREAMS_UNI             0x09
+#define QUIC_ORIGINAL_DESTINATION_CONNECTION_ID   0x00
+#define QUIC_MAX_IDLE_TIMEOUT                     0x01
+#define QUIC_MAX_UDP_PAYLOAD_SIZE                 0x03
+#define QUIC_INITIAL_MAX_DATA                     0x04
+#define QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL   0x05
+#define QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE  0x06
+#define QUIC_INITIAL_MAX_STREAM_DATA_UNI          0x07
+#define QUIC_INITIAL_MAX_STREAMS_BIDI             0x08
+#define QUIC_INITIAL_MAX_STREAMS_UNI              0x09
+#define QUIC_INITIAL_SOURCE_CONNECTION_ID         0x0f
+#define QUIC_RETRY_SOURCE_CONNECTION_ID           0x10
+
+enum quic_address_token_type {
+	QUIC_TOKEN_NONE = 0,
+	QUIC_TOKEN_RETRY = 1,
+	QUIC_TOKEN_NEW = 2,
+};
+
+struct quic_token_validation {
+	enum quic_address_token_type type;
+	uint8_t orig_dcid[MAX_CONN_ID_LEN];
+	uint8_t orig_dcid_len;
+};
 
 /** A list of secure tags that TLS context should use. */
 struct sec_tag_list {
@@ -334,6 +349,7 @@ struct quic_tls_context {
 	/* Random values */
 	uint8_t client_random[32];
 	uint8_t server_random[32];
+	bool client_hello_prepared;
 
 	/* Certificate request context */
 #define QUIC_CERT_REQ_CONTEXT_LEN 8
@@ -481,6 +497,25 @@ struct quic_deferred_crypto_payload {
 #endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 
 /**
+ * Long header information parsed from an incoming packet, used for initial
+ * processing before we know which endpoint it belongs to.
+ */
+struct quic_long_header_info {
+	uint8_t *packet;
+	enum quic_packet_type ptype;
+	uint32_t version;
+	const uint8_t *dst_conn_id;
+	const uint8_t *src_conn_id;
+	const uint8_t *token;
+	uint8_t dst_conn_id_len;
+	uint8_t src_conn_id_len;
+	size_t token_len;
+	size_t payload_len;
+	size_t total_len;
+	size_t pn_offset;
+};
+
+/**
  * QUIC endpoint information
  */
 struct quic_endpoint {
@@ -605,6 +640,19 @@ struct quic_endpoint {
 	/** Original connection id length.
 	 */
 	uint8_t peer_orig_dcid_len;
+
+	/** Address-validation token state. */
+	struct {
+		uint8_t initial[CONFIG_QUIC_TOKEN_MAX_LEN];
+		uint8_t client_initial_dcid[MAX_CONN_ID_LEN];
+		uint8_t retry_source_cid[MAX_CONN_ID_LEN];
+		uint16_t initial_len;
+		uint8_t initial_type;
+		uint8_t client_initial_dcid_len;
+		uint8_t retry_source_cid_len;
+		bool retry_seen;
+		bool retry_used;
+	} token;
 
 	/** Pending data buffer for this endpoint.
 	 */
@@ -1208,19 +1256,34 @@ int process_handshake_message(struct quic_tls_context *ctx,
 			      uint8_t msg_type,
 			      const uint8_t *msg, size_t msg_len,
 			      const uint8_t *full_msg, size_t full_msg_len);
+int quic_parse_long_header(struct quic_long_header_info *info,
+			   uint8_t *data, size_t data_len);
 int quic_stream_receive_data(struct quic_stream *stream,
 			     uint64_t offset,
 			     const uint8_t *data,
 			     size_t len,
 			     bool is_fin);
+int quic_build_address_token(enum quic_address_token_type type,
+			     const struct net_sockaddr *addr,
+			     const uint8_t *orig_dcid,
+			     uint8_t orig_dcid_len,
+			     uint8_t *out, size_t out_len,
+			     size_t *token_len);
+int quic_validate_address_token(const struct net_sockaddr *addr,
+				const uint8_t *token, size_t token_len,
+				struct quic_token_validation *validation);
+void quic_token_cache_clear(void);
+void quic_token_cache_store(const struct net_sockaddr *remote_addr,
+			    const uint8_t *token, size_t token_len);
+size_t quic_token_cache_take(const struct net_sockaddr *remote_addr,
+			     uint8_t *token, size_t token_size);
+int parse_peer_transport_params(struct quic_endpoint *ep);
+int quic_client_handle_retry(struct quic_endpoint *ep,
+			    const struct quic_long_header_info *info);
 int process_long_header(struct quic_endpoint *ep,
 			struct net_sockaddr *addr,
 			net_socklen_t addrlen,
-			uint8_t *buf,
-			size_t payload_len,
-			uint64_t token,
-			size_t total_len,
-			size_t pn_offset,
+			struct quic_long_header_info *info,
 			size_t datagram_len);
 
 #endif /* CONFIG_NET_TEST */

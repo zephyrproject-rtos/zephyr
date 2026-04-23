@@ -10,6 +10,7 @@ static int quic_connection_init(struct quic_context *ctx,
 {
 	struct quic_endpoint *ep;
 	int ret;
+	size_t token_len;
 
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 
@@ -54,6 +55,15 @@ static int quic_connection_init(struct quic_context *ctx,
 
 			ep->my_cid_len = 8;
 			sys_rand_get(ep->my_cid, ep->my_cid_len);
+			ep->token.client_initial_dcid_len = ep->peer_cid_len;
+			memcpy(ep->token.client_initial_dcid, ep->peer_cid, ep->peer_cid_len);
+
+			token_len = quic_token_cache_take(remote_addr, ep->token.initial,
+							  sizeof(ep->token.initial));
+			if (token_len > 0U) {
+				ep->token.initial_len = token_len;
+				ep->token.initial_type = QUIC_TOKEN_NEW;
+			}
 
 			NET_DBG("[EP:%p/%d] Created new endpoint from %s to %s", ep,
 				quic_get_by_ep(ep), local_addr == NULL ? "ANY" :

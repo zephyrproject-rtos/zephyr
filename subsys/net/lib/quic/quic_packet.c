@@ -490,7 +490,9 @@ static int handle_new_token_frame(struct quic_endpoint *ep,
 
 	NET_DBG("[EP:%p/%d] NEW_TOKEN: len=%" PRIu64, ep, quic_get_by_ep(ep), token_len);
 
-	/* TODO: Store token for future connections */
+	if (!ep->is_server) {
+		quic_token_cache_store(net_sad(&ep->remote_addr), &buf[pos], token_len);
+	}
 
 	return pos + token_len;
 }
