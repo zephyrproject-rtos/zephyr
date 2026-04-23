@@ -15,6 +15,11 @@
 			   (MMU_REGION_FLAT_ENTRY(#name, base, size,				\
 						  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
 
+#define CONFIGURE_GCLK(idx, div, src)								\
+	PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |		\
+				PMC_PCR_GCLKDIV((div) - 1) | (src) |				\
+				PMC_PCR_PID(idx);
+
 static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_ENTRY("vectors", CONFIG_KERNEL_VM_BASE, 0, 0x1000,
 			 MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
@@ -32,5 +37,6 @@ const struct arm_mmu_config mmu_config = {
 
 void soc_early_init_hook(void)
 {
-	/* Apply SoC related preinit configuration */
+	/* Enable Generic clock for PIT64B0 for system tick */
+	CONFIGURE_GCLK(ID_PIT64B0, 40, PMC_PCR_GCLKCSS_PLLADIV2CLK);
 }
