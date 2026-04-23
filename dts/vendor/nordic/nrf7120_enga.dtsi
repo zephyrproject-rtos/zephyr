@@ -332,6 +332,7 @@
 				packet-data-limit = <65536>;
 				dma-transmit-data-level = <8>;
 				dma-receive-data-level = <8>;
+				concurrent-memmap-support;
 				status = "disabled";
 			};
 
