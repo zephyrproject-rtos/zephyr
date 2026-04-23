@@ -834,7 +834,7 @@ static void sx126x_irq_work_handler(struct k_work *work)
 }
 
 static int sx126x_lora_config(const struct device *dev,
-			      struct lora_modem_config *config)
+			      const struct lora_modem_config *config)
 {
 	struct sx126x_data *data = dev->data;
 	const struct sx126x_hal_config *hal_config = dev->config;

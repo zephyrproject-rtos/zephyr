@@ -73,7 +73,7 @@ static bool modem_release(const struct device *dev)
 	return true;
 }
 
-int lbm_lora_config(const struct device *dev, struct lora_modem_config *lora_config)
+int lbm_lora_config(const struct device *dev, const struct lora_modem_config *lora_config)
 {
 	const struct lbm_lora_config_common *config = dev->config;
 	struct lbm_lora_data_common *data = dev->data;
