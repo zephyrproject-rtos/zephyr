@@ -335,7 +335,7 @@ static int sockaddr_from_nsos_mid(struct sockaddr **addr, socklen_t *addrlen,
 			(const struct nsos_mid_sockaddr_ll *)addr_mid;
 		struct sockaddr_ll *addr_ll = (struct sockaddr_ll *)*addr;
 
-		addr_ll->sll_family = NSOS_MID_AF_PACKET;
+		addr_ll->sll_family = AF_PACKET;
 		addr_ll->sll_protocol = addr_ll_mid->sll_protocol;
 		addr_ll->sll_ifindex = addr_ll_mid->sll_ifindex;
 		addr_ll->sll_hatype = addr_ll_mid->sll_hatype;
