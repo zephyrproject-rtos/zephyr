@@ -132,16 +132,18 @@
 		 * jedec-id = [a1 31 10];
 		 */
 		partitions {
-			compatible = "fixed-partitions";
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			product_info: partition@0 {
+				compatible = "zephyr,mapped-partition";
 				label = "product-info";
 				reg = <0x00000000 DT_SIZE_K(4)>;
 			};
 
 			led_das: partition@1000 {
+				compatible = "zephyr,mapped-partition";
 				label = "led-das";
 				reg = <0x00001000 DT_SIZE_K(60)>;
 			};
