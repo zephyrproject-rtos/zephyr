@@ -1,5 +1,7 @@
 # Copyright (c) 2020 Linumiz
 # Copyright (c) 2022 Cypress Semiconductor Corporation.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_HAS_XMCLIB
@@ -26,13 +28,15 @@ if(CONFIG_SOC_FAMILY_INFINEON_CAT1
   ## Add core-lib sources for CAT1 devices
   add_subdirectory(core-lib)
 
-  if(NOT CONFIG_SOC_FAMILY_INFINEON_EDGE)
+  if(NOT CONFIG_SOC_FAMILY_INFINEON_EDGE AND NOT CONFIG_SOC_SERIES_PSC3M6)
     ## Add mtb-pdl-cat1 sources for CAT1 devices
     add_subdirectory(mtb-pdl-cat1)
   endif()
 
-  ## Add mtb-templates-cat1 sources for CAT1 devices
-  add_subdirectory(mtb-template-cat1)
+  if(NOT CONFIG_SOC_SERIES_PSC3M6)
+    ## Add mtb-templates-cat1 sources for CAT1 devices
+    add_subdirectory(mtb-template-cat1)
+  endif()
 endif()
 
 if(CONFIG_USE_INFINEON_LEGACY_HAL
@@ -42,7 +46,8 @@ endif()
 
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1
   AND NOT CONFIG_SOC_FAMILY_PSOC6_LEGACY
-  AND NOT CONFIG_SOC_FAMILY_INFINEON_EDGE)
+  AND NOT CONFIG_SOC_FAMILY_INFINEON_EDGE
+  AND NOT CONFIG_SOC_SERIES_PSC3M6)
 
   ## Add catcm0p sleep images for CM0 Devices
   if(CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP)
@@ -94,6 +99,25 @@ endif()
 
 if(CONFIG_SOC_SERIES_PSC3)
   add_subdirectory(zephyr-ifx-cycfg)
+endif()
+
+if(CONFIG_SOC_SERIES_PSC3M6)
+  if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
+    # Use secure device in cy_device_headers
+    zephyr_library_compile_definitions(COMPONENT_SECURE_DEVICE)
+  endif()
+
+  if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_NONSECURE)
+    # Use non secure device in cy_device_headers
+    zephyr_library_compile_definitions(COMPONENT_NON_SECURE_DEVICE)
+  endif()
+
+  zephyr_library_compile_definitions_ifdef(CONFIG_CPU_CORTEX_M33 COMPONENT_CM33)
+  zephyr_library_compile_definitions_ifdef(CONFIG_CPU_CORTEX_M33 CORE_NAME_CM33_0)
+
+  add_subdirectory(zephyr-ifx-cycfg)
+  add_subdirectory(mtb-dsl-psc3m6)
+  add_subdirectory(mtb-template-psc3m6)
 endif()
 
 ## Add Wi-Fi assets for AIROC devices
