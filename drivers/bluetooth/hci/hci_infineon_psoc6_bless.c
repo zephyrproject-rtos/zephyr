@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(psoc6_bless);
 #define DT_DRV_COMPAT infineon_bless_hci
 
 struct psoc6_bless_data {
+	struct bt_hci_driver_data common;
 	bt_hci_recv_t recv;
 };
 
@@ -259,8 +260,11 @@ static DEVICE_API(bt_hci, drv) = {
 #define PSOC6_BLESS_DEVICE_INIT(inst) \
 	static struct psoc6_bless_data psoc6_bless_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, psoc6_bless_hci_init, NULL, &psoc6_bless_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	static const struct bt_hci_driver_config psoc6_bless_config_##inst = \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
+	DEVICE_DT_INST_DEFINE(inst, psoc6_bless_hci_init, NULL, &psoc6_bless_data_##inst, \
+			      &psoc6_bless_config_##inst, POST_KERNEL, \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */
 PSOC6_BLESS_DEVICE_INIT(0)
