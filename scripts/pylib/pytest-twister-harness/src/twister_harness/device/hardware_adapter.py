@@ -81,35 +81,35 @@ class HardwareAdapter(DeviceAdapter):
         if self.device_config.runner_params:
             for param in self.device_config.runner_params:
                 extra_args.append(param)
-        if board_id := self.device_config.id:
+        if dev_id := self.device_config.id:
             if runner == 'pyocd':
-                extra_args.append('--board-id')
-                extra_args.append(board_id)
+                extra_args.append('--dev-id')
+                extra_args.append(dev_id)
             elif runner == "esp32":
                 extra_args.append("--esp-device")
-                extra_args.append(board_id)
+                extra_args.append(dev_id)
             elif runner in ('nrfjprog', 'nrfutil', 'nrfutil_next'):
                 extra_args.append('--dev-id')
-                extra_args.append(board_id)
+                extra_args.append(dev_id)
             elif runner == 'openocd' and self.device_config.product in [
                 'STM32 STLink',
                 'STLINK-V3',
             ]:
                 extra_args.append('--cmd-pre-init')
-                extra_args.append(f'hla_serial {board_id}')
+                extra_args.append(f'hla_serial {dev_id}')
             elif runner == 'openocd' and self.device_config.product == 'EDBG CMSIS-DAP':
                 extra_args.append('--cmd-pre-init')
-                extra_args.append(f'cmsis_dap_serial {board_id}')
+                extra_args.append(f'cmsis_dap_serial {dev_id}')
             elif runner == "openocd" and self.device_config.product == "LPC-LINK2 CMSIS-DAP":
                 extra_args.append("--cmd-pre-init")
-                extra_args.append(f'adapter serial {board_id}')
+                extra_args.append(f'adapter serial {dev_id}')
             elif runner == 'jlink' or (
                 runner == 'stm32cubeprogrammer' and self.device_config.product != "BOOT-SERIAL"
             ):
                 base_args.append('--dev-id')
-                base_args.append(board_id)
+                base_args.append(dev_id)
             elif runner == 'linkserver':
-                base_args.append(f'--probe={board_id}')
+                base_args.append(f'--probe={dev_id}')
         return base_args, extra_args
 
     def _device_launch(self) -> None:
