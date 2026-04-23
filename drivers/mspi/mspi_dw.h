@@ -262,3 +262,7 @@ static void reg_write(uint32_t data, const struct device *dev, uint32_t off)
 		dev_config->write(data, dev, off); \
 	}
 #endif
+
+#define USES_MEMMAP_WRITE_SUPPORT(inst) + DT_INST_PROP(inst, memmap_write_support)
+#define MEMMAP_WRITE_SUPPORT_INSTANCES \
+	(0 DT_INST_FOREACH_STATUS_OKAY(USES_MEMMAP_WRITE_SUPPORT))
