@@ -15,3 +15,4 @@ supported:
   - clock_control
   - gpio
   - pinctrl
+  - bluetooth
