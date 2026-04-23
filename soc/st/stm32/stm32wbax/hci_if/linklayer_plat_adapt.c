@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/logging/log.h>
@@ -16,8 +17,28 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(linklayer_plat_adapt);
 
-#define RADIO_INTR_PRIO_HIGH_Z (RADIO_INTR_PRIO_HIGH + _IRQ_PRIO_OFFSET)
-#define RADIO_INTR_PRIO_LOW_Z (RADIO_INTR_PRIO_LOW + _IRQ_PRIO_OFFSET)
+#if defined(CONFIG_BT_STM32WBA)
+#define RADIO_NODE DT_NODELABEL(bt_hci_wba)
+#elif defined(CONFIG_IEEE802154_STM32WBA)
+#define RADIO_NODE DT_NODELABEL(ieee802154)
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(RADIO_NODE)
+#define STM32WBA_RADIO_IRQ_NUM DT_IRQ_BY_NAME(RADIO_NODE, radio, irq)
+#define STM32WBA_RADIO_INTR_PRIO_HIGH DT_IRQ_BY_NAME(RADIO_NODE, radio, priority)
+#if DT_IRQ_HAS_NAME(RADIO_NODE, radio_sw_low)
+#define STM32WBA_RADIO_SW_LOW_IRQ_NUM DT_IRQ_BY_NAME(RADIO_NODE, radio_sw_low, irq)
+#define STM32WBA_RADIO_SW_LOW_INTR_PRIO DT_IRQ_BY_NAME(RADIO_NODE, radio_sw_low, priority)
+#else
+#error "Radio SW low interrupt is not defined in DTS"
+#endif
+#endif
+
+#define STM32WBA_RADIO_INTR_PRIO_HIGH_Z (STM32WBA_RADIO_INTR_PRIO_HIGH + _IRQ_PRIO_OFFSET)
+#define STM32WBA_RADIO_INTR_PRIO_LOW_Z (RADIO_INTR_PRIO_LOW + _IRQ_PRIO_OFFSET)
+
+BUILD_ASSERT(STM32WBA_RADIO_INTR_PRIO_HIGH_Z <= STM32WBA_RADIO_INTR_PRIO_LOW_Z,
+	     "Radio Interrupts priority configuration is invalid\n");
 
 /* 2.4GHz RADIO ISR callbacks */
 typedef void (*radio_isr_cb_t) (void);
@@ -78,18 +99,18 @@ void radio_high_prio_isr(void)
 
 void radio_low_prio_isr(void)
 {
-	irq_disable(RADIO_SW_LOW_INTR_NUM);
+	irq_disable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 
 	low_isr_callback();
 
 	/* Check if nested SW radio low interrupt has been requested*/
 	if (radio_sw_low_isr_is_running_high_prio != 0) {
-		NVIC_SetPriority((IRQn_Type) RADIO_SW_LOW_INTR_NUM, RADIO_INTR_PRIO_LOW);
+		NVIC_SetPriority((IRQn_Type)STM32WBA_RADIO_SW_LOW_IRQ_NUM, RADIO_INTR_PRIO_LOW);
 		radio_sw_low_isr_is_running_high_prio = 0;
 	}
 
 	/* Re-enable SW radio low interrupt */
-	irq_enable(RADIO_SW_LOW_INTR_NUM);
+	irq_enable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 
 	ISR_DIRECT_PM();
 }
@@ -104,64 +125,64 @@ void link_layer_register_isr(bool force)
 	}
 	is_isr_registered = true;
 
-	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(RADIO_INTR_NUM, 0, 0, reschedule);
+	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(STM32WBA_RADIO_IRQ_NUM, 0, 0, reschedule);
 
 	/* Ensure the IRQ is disabled before enabling it at run time */
-	irq_disable(RADIO_INTR_NUM);
+	irq_disable(STM32WBA_RADIO_IRQ_NUM);
 
-	irq_connect_dynamic(RADIO_INTR_NUM, RADIO_INTR_PRIO_HIGH_Z,
+	irq_connect_dynamic(STM32WBA_RADIO_IRQ_NUM, STM32WBA_RADIO_INTR_PRIO_HIGH_Z,
 			    (void (*)(const void *))radio_high_prio_isr, NULL, 0);
 
-	irq_enable(RADIO_INTR_NUM);
+	irq_enable(STM32WBA_RADIO_IRQ_NUM);
 
-	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(RADIO_SW_LOW_INTR_NUM, 0, 0, reschedule);
+	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(STM32WBA_RADIO_SW_LOW_IRQ_NUM, 0, 0, reschedule);
 
 	/* Ensure the IRQ is disabled before enabling it at run time */
-	irq_disable(RADIO_SW_LOW_INTR_NUM);
+	irq_disable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 
-	irq_connect_dynamic(RADIO_SW_LOW_INTR_NUM, RADIO_SW_LOW_INTR_PRIO,
+	irq_connect_dynamic(STM32WBA_RADIO_SW_LOW_IRQ_NUM, STM32WBA_RADIO_SW_LOW_INTR_PRIO,
 			    (void (*)(const void *))radio_low_prio_isr, NULL, 0);
 
-	irq_enable(RADIO_SW_LOW_INTR_NUM);
+	irq_enable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 }
 
 void link_layer_disable_isr(void)
 {
-	irq_disable(RADIO_INTR_NUM);
+	irq_disable(STM32WBA_RADIO_IRQ_NUM);
 
-	irq_disable(RADIO_SW_LOW_INTR_NUM);
+	irq_disable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 
 	local_basepri_value = __get_BASEPRI();
-	__set_BASEPRI_MAX(RADIO_INTR_PRIO_LOW_Z << 4);
+	__set_BASEPRI_MAX(STM32WBA_RADIO_INTR_PRIO_LOW_Z << 4);
 }
 
 void LINKLAYER_PLAT_TriggerSwLowIT(uint8_t priority)
 {
-	uint8_t low_isr_priority = RADIO_INTR_PRIO_LOW_Z;
+	uint8_t low_isr_priority = STM32WBA_RADIO_INTR_PRIO_LOW_Z;
 
 	LOG_DBG("Priority: %d", priority);
 
 	/* Check if a SW low interrupt as already been raised.
 	 * Nested call far radio low isr are not supported
 	 **/
-	if (NVIC_GetActive((IRQn_Type)RADIO_SW_LOW_INTR_NUM) == 0) {
+	if (NVIC_GetActive((IRQn_Type)STM32WBA_RADIO_SW_LOW_IRQ_NUM) == 0) {
 		/* No nested SW low ISR, default behavior */
 		if (priority == 0) {
-			low_isr_priority = RADIO_SW_LOW_INTR_PRIO;
+			low_isr_priority = STM32WBA_RADIO_SW_LOW_INTR_PRIO;
 		}
-		NVIC_SetPriority((IRQn_Type)RADIO_SW_LOW_INTR_NUM, low_isr_priority);
+		NVIC_SetPriority((IRQn_Type)STM32WBA_RADIO_SW_LOW_IRQ_NUM, low_isr_priority);
 	} else {
 		/* Nested call detected */
 		/* No change for SW radio low interrupt priority for the moment */
 		if (priority != 0) {
 			/* At the end of current SW radio low ISR, this pending SW
-			 * low interrupt will run with RADIO_INTR_PRIO_LOW_Z priority
+			 * low interrupt will run with STM32WBA_RADIO_INTR_PRIO_LOW_Z priority
 			 **/
 			radio_sw_low_isr_is_running_high_prio = 1;
 		}
 	}
 
-	NVIC_SetPendingIRQ((IRQn_Type)RADIO_SW_LOW_INTR_NUM);
+	NVIC_SetPendingIRQ((IRQn_Type)STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 }
 
 void LINKLAYER_PLAT_Assert(uint8_t condition)
@@ -197,14 +218,14 @@ void LINKLAYER_PLAT_EnableSpecificIRQ(uint8_t isr_type)
 	if ((isr_type & LL_HIGH_ISR_ONLY) != 0) {
 		prio_high_isr_counter--;
 		if (prio_high_isr_counter == 0) {
-			irq_enable(RADIO_INTR_NUM);
+			irq_enable(STM32WBA_RADIO_IRQ_NUM);
 		}
 	}
 
 	if ((isr_type & LL_LOW_ISR_ONLY) != 0) {
 		prio_low_isr_counter--;
 		if (prio_low_isr_counter == 0) {
-			irq_enable(RADIO_SW_LOW_INTR_NUM);
+			irq_enable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 		}
 	}
 
@@ -224,14 +245,14 @@ void LINKLAYER_PLAT_DisableSpecificIRQ(uint8_t isr_type)
 	if ((isr_type & LL_HIGH_ISR_ONLY) != 0) {
 		prio_high_isr_counter++;
 		if (prio_high_isr_counter == 1) {
-			irq_disable(RADIO_INTR_NUM);
+			irq_disable(STM32WBA_RADIO_IRQ_NUM);
 		}
 	}
 
 	if ((isr_type & LL_LOW_ISR_ONLY) != 0) {
 		prio_low_isr_counter++;
 		if (prio_low_isr_counter == 1) {
-			irq_disable(RADIO_SW_LOW_INTR_NUM);
+			irq_disable(STM32WBA_RADIO_SW_LOW_IRQ_NUM);
 		}
 	}
 
@@ -239,7 +260,7 @@ void LINKLAYER_PLAT_DisableSpecificIRQ(uint8_t isr_type)
 		prio_sys_isr_counter++;
 		if (prio_sys_isr_counter == 1) {
 			local_basepri_value = __get_BASEPRI();
-			__set_BASEPRI_MAX(RADIO_INTR_PRIO_LOW_Z << 4);
+			__set_BASEPRI_MAX(STM32WBA_RADIO_INTR_PRIO_LOW_Z << 4);
 		}
 	}
 }
@@ -247,27 +268,27 @@ void LINKLAYER_PLAT_DisableSpecificIRQ(uint8_t isr_type)
 void LINKLAYER_PLAT_EnableRadioIT(void)
 {
 	LOG_DBG("Enable RADIO IRQ");
-	irq_enable(RADIO_INTR_NUM);
+	irq_enable(STM32WBA_RADIO_IRQ_NUM);
 }
 
 void LINKLAYER_PLAT_DisableRadioIT(void)
 {
 	LOG_DBG("Disable RADIO IRQ");
-	irq_disable(RADIO_INTR_NUM);
+	irq_disable(STM32WBA_RADIO_IRQ_NUM);
 }
 
 void LINKLAYER_PLAT_StartRadioEvt(void)
 {
 	__HAL_RCC_RADIO_CLK_SLEEP_ENABLE();
 
-	NVIC_SetPriority((IRQn_Type)RADIO_INTR_NUM, RADIO_INTR_PRIO_HIGH_Z);
+	NVIC_SetPriority((IRQn_Type)STM32WBA_RADIO_IRQ_NUM, STM32WBA_RADIO_INTR_PRIO_HIGH_Z);
 }
 
 void LINKLAYER_PLAT_StopRadioEvt(void)
 {
 	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
 
-	NVIC_SetPriority((IRQn_Type)RADIO_INTR_NUM, RADIO_INTR_PRIO_LOW_Z);
+	NVIC_SetPriority((IRQn_Type)STM32WBA_RADIO_IRQ_NUM, STM32WBA_RADIO_INTR_PRIO_LOW_Z);
 }
 
 /* Link Layer notification for RCO calibration start */
