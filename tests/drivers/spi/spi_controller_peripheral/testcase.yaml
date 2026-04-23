@@ -145,3 +145,36 @@ tests:
       - CONFIG_SPI_NRFX_RAM_BUFFER_SIZE=0
       - CONFIG_PREALLOC_BUFFERS=n
     filter: CONFIG_SOC_FAMILY_NORDIC_NRF
+
+  drivers.spi.stm32_interrupt:
+    extra_configs:
+      - CONFIG_SPI_STM32_INTERRUPT=y
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_g474re/stm32g474xx
+      - nucleo_u385rg_q/stm32u385xx
+
+  drivers.spi.stm32_interrupt_half_duplex:
+    extra_configs:
+      - CONFIG_SPI_STM32_INTERRUPT=y
+    filter: CONFIG_SOC_FAMILY_STM32
+    extra_args:
+      - platform:nucleo_f429zi/stm32f429xx:DTC_OVERLAY_FILE="boards/nucleo_f429zi_half_duplex.overlay"
+      - platform:nucleo_g474re/stm32g474xx:DTC_OVERLAY_FILE="boards/nucleo_g474re_half_duplex.overlay"
+      - platform:nucleo_u385rg_q/stm32u385xx:DTC_OVERLAY_FILE="boards/nucleo_u385rg_q_half_duplex.overlay"
+    platform_allow:
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_g474re/stm32g474xx
+      - nucleo_u385rg_q/stm32u385xx
+
+  drivers.spi.stm32_rtio_interrupt:
+    extra_configs:
+      - CONFIG_SPI_STM32_INTERRUPT=y
+      - CONFIG_SPI_RTIO=y
+      - CONFIG_SPI_ASYNC=n
+    filter: CONFIG_SOC_FAMILY_STM32
+    platform_allow:
+      - nucleo_f429zi/stm32f429xx
+      - nucleo_g474re/stm32g474xx
+      - nucleo_u385rg_q/stm32u385xx

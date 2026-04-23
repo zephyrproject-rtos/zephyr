@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The two SPI instances need to be connected as follows:
+ * CN10:9 (SPI2 MISO) to CN7:19 (SPI3 MISO)
+ * CN7:3 (SPI2 MOSI) to CN7:13 (SPI3 MOSI)
+ * CN7:7 (SPI2 NSS) to CN7:9 (SPI3 NSS)
+ * CN9:10 (SPI2 SCK) to CN7:15 (SPI3 SCK)
+ */
+
+&spi2 {
+	interrupts = <36 1>;
+	pinctrl-0 = <&spi2_miso_pc2 &spi2_mosi_pb15 &spi2_nss_pb12 &spi2_sck_pd3>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		reg = <0>;
+	};
+};
+
+dut_spis: &spi3 {
+	interrupts = <51 0>;
+	pinctrl-0 = <&spi3_miso_pb4 &spi3_mosi_pb5 &spi3_nss_pa15 &spi3_sck_pb3>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	dut_spis_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		reg = <0>;
+	};
+};
