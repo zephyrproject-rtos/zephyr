@@ -56,6 +56,8 @@ struct memc_mspi_aps_z8_config {
 
 	bool                           sw_multi_periph;
 	bool                           pm_dev_rt_auto;
+	uint8_t                        drive_strength;
+	enum memc_aps_version          aps_version;
 };
 
 struct memc_mspi_aps_z8_data {
@@ -71,6 +73,29 @@ struct memc_mspi_aps_z8_data {
 
 	struct k_sem                   lock;
 	uint16_t                       dummy;
+};
+
+/* Mapping from enum value to actual register value based on aps version */
+static const uint8_t rlc_register_map[2][8] = {
+	/* Other chips (index 0) */
+	{
+		[MEMC_MSPI_APS_Z8_RLC_4] = 0,
+		[MEMC_MSPI_APS_Z8_RLC_5] = 1,
+		[MEMC_MSPI_APS_Z8_RLC_6] = 2,
+		[MEMC_MSPI_APS_Z8_RLC_7] = 3,
+		[MEMC_MSPI_APS_Z8_RLC_8] = 4,
+		[MEMC_MSPI_APS_Z8_RLC_9] = 5,
+	},
+	/* APS256/APS6408L (index 1) */
+	{
+		[MEMC_MSPI_APS_Z8_RLC_3] = 0,
+		[MEMC_MSPI_APS_Z8_RLC_4] = 1,
+		[MEMC_MSPI_APS_Z8_RLC_5] = 2,
+		[MEMC_MSPI_APS_Z8_RLC_6] = 3,
+		[MEMC_MSPI_APS_Z8_RLC_7] = 4,
+		[MEMC_MSPI_APS_Z8_RLC_8] = 5,
+		[MEMC_MSPI_APS_Z8_RLC_9] = 6,
+	},
 };
 
 static int memc_mspi_aps_z8_command_write(const struct device *psram, uint8_t cmd,
@@ -246,9 +271,25 @@ static int memc_mspi_aps_z8_reset(const struct device *psram)
 static int memc_mspi_aps_z8_get_vendor_id(const struct device *psram)
 {
 	struct memc_mspi_aps_z8_data *data = psram->data;
+	const struct memc_mspi_aps_z8_config *cfg = psram->config;
 	int ret;
 
-	ret = memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 1, &data->regs.MR1, 1);
+	if ((cfg->aps_version == MEMC_APS256) || (cfg->aps_version == MEMC_APS6408L)) {
+		/*
+		 * Workaround for known issue when reading from odd addresses.
+		 * When reading MR1 (odd address), the controller returns 2 bytes:
+		 *   - First byte: MR0
+		 *   - Second byte: MR1
+		 * Vendor ID (VID) resides in MR1, so direct reading from MR0 fills
+		 * both bytes
+		 */
+		ret = memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 0, &data->regs.MR0,
+						    2);
+	} else {
+		ret = memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 1,
+						    &data->regs.MR1, 1);
+	}
+
 	LOG_DBG("MR1 reg: %x/%u", data->regs.MR1, __LINE__);
 
 	if (data->regs.MR1_b.VID != APM_VENDOR_ID) {
@@ -258,9 +299,17 @@ static int memc_mspi_aps_z8_get_vendor_id(const struct device *psram)
 	return ret;
 }
 
-static int memc_mspi_aps_z8_get_rlc(uint8_t rx_dummy, enum memc_mspi_aps_z8_rlc *rlc)
+static int memc_mspi_aps_z8_get_rlc(uint8_t rx_dummy, enum memc_mspi_aps_z8_rlc *rlc,
+				    enum memc_aps_version aps_version)
 {
 	switch (rx_dummy) {
+
+	case 3:
+		if ((aps_version == MEMC_APS256) || (aps_version == MEMC_APS6408L)) {
+			*rlc = MEMC_MSPI_APS_Z8_RLC_3;
+			return 0;
+		}
+		return -EINVAL;
 	case 4:
 		*rlc = MEMC_MSPI_APS_Z8_RLC_4;
 		break;
@@ -274,20 +323,35 @@ static int memc_mspi_aps_z8_get_rlc(uint8_t rx_dummy, enum memc_mspi_aps_z8_rlc 
 		*rlc = MEMC_MSPI_APS_Z8_RLC_7;
 		break;
 	case 8:
-		*rlc = MEMC_MSPI_APS_Z8_RLC_8;
-		break;
+		if ((aps_version != MEMC_APS256) && (aps_version != MEMC_APS6408L)) {
+			*rlc = MEMC_MSPI_APS_Z8_RLC_8;
+			break;
+		}
+		return -EINVAL;
 	case 9:
-		*rlc = MEMC_MSPI_APS_Z8_RLC_9;
-		break;
+		if ((aps_version != MEMC_APS256) && (aps_version != MEMC_APS6408L)) {
+			*rlc = MEMC_MSPI_APS_Z8_RLC_9;
+			break;
+		}
 	default:
 		return -EINVAL;
 	}
 	return 0;
 }
 
-static int memc_mspi_aps_z8_get_wlc(uint8_t tx_dummy, enum memc_mspi_aps_z8_wlc *wlc)
+static int memc_mspi_aps_z8_get_wlc(uint8_t tx_dummy, enum memc_mspi_aps_z8_wlc *wlc,
+				    enum memc_aps_version aps_version)
 {
 	switch (tx_dummy) {
+	case 3:
+		if ((aps_version == MEMC_APS256) || (aps_version == MEMC_APS6408L)) {
+			*wlc = MEMC_MSPI_APS_Z8_WLC_3;
+			return 0;
+		}
+		return -EINVAL;
+	case 4:
+		*wlc = MEMC_MSPI_APS_Z8_WLC_4;
+		break;
 	case 5:
 		*wlc = MEMC_MSPI_APS_Z8_WLC_5;
 		break;
@@ -298,11 +362,18 @@ static int memc_mspi_aps_z8_get_wlc(uint8_t tx_dummy, enum memc_mspi_aps_z8_wlc 
 		*wlc = MEMC_MSPI_APS_Z8_WLC_7;
 		break;
 	case 8:
-		*wlc = MEMC_MSPI_APS_Z8_WLC_8;
-		break;
+		if ((aps_version != MEMC_APS256) && (aps_version != MEMC_APS6408L)) {
+			*wlc = MEMC_MSPI_APS_Z8_WLC_8;
+			break;
+		}
+		return -EINVAL;
 	case 9:
-		*wlc = MEMC_MSPI_APS_Z8_WLC_9;
-		break;
+		if ((aps_version != MEMC_APS256) && (aps_version != MEMC_APS6408L)) {
+			*wlc = MEMC_MSPI_APS_Z8_WLC_9;
+			break;
+		}
+		return -EINVAL;
+
 	case 10:
 		*wlc = MEMC_MSPI_APS_Z8_WLC_10;
 		break;
@@ -447,47 +518,51 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 		return -EIO;
 	}
 
-	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 0, &data->regs.MR0, 1)) {
+	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 0, &data->regs.MR0, 2)) {
 		LOG_ERR("Could not read MR0 register/%u", __LINE__);
 		return -EIO;
 	}
 
-	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 2, &data->regs.MR2, 1)) {
+	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 2, &data->regs.MR2, 2)) {
 		LOG_ERR("Could not read MR2 register/%u", __LINE__);
 		return -EIO;
 	}
 
-	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 3, &data->regs.MR3, 1)) {
+	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 3, &data->regs.MR3, 2)) {
 		LOG_ERR("Could not read MR3 register/%u", __LINE__);
 		return -EIO;
 	}
 
-	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 4, &data->regs.MR4, 1)) {
+	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 4, &data->regs.MR4, 2)) {
 		LOG_ERR("Could not read MR4 register/%u", __LINE__);
 		return -EIO;
 	}
 
-	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 6, &data->regs.MR6, 1)) {
+	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 6, &data->regs.MR6, 2)) {
 		LOG_ERR("Could not read MR2 register/%u", __LINE__);
 		return -EIO;
 	}
 
-	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 8, &data->regs.MR8, 1)) {
+	if (memc_mspi_aps_z8_command_read(psram, APS_Z8_READ_REGISTER, 8, &data->regs.MR8, 2)) {
 		LOG_ERR("Could not read MR8 register/%u", __LINE__);
 		return -EIO;
 	}
 
 	enum memc_mspi_aps_z8_rlc rlc;
+	int map_idx =
+		((cfg->aps_version == MEMC_APS256) || (cfg->aps_version == MEMC_APS6408L)) ? 1 : 0;
 
-	if (memc_mspi_aps_z8_get_rlc(cfg->tar_dev_cfg.rx_dummy, &rlc)) {
+	if (memc_mspi_aps_z8_get_rlc(cfg->tar_dev_cfg.rx_dummy, &rlc, cfg->aps_version)) {
 		LOG_ERR("rx_dummy:%d not supported/%u", cfg->tar_dev_cfg.rx_dummy, __LINE__);
 		return -EIO;
 	}
-	data->regs.MR0_b.RLC = rlc;
+
+	data->regs.MR0_b.RLC =  rlc_register_map[map_idx][rlc];
+	data->regs.MR0_b.DS = cfg->drive_strength;
 
 	enum memc_mspi_aps_z8_wlc wlc;
 
-	if (memc_mspi_aps_z8_get_wlc(cfg->tar_dev_cfg.tx_dummy, &wlc)) {
+	if (memc_mspi_aps_z8_get_wlc(cfg->tar_dev_cfg.tx_dummy, &wlc, cfg->aps_version)) {
 		LOG_ERR("tx_dummy:%d not supported/%u", cfg->tar_dev_cfg.tx_dummy, __LINE__);
 		return -EIO;
 	}
@@ -610,7 +685,9 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 					      timing_cfg_mask, MSPI_TIMING_CONFIG_MASK(n))        \
 		MSPI_XIP_BASE_ADDR_INIT(xip_base_addr, DT_INST_BUS(n))                            \
 		.sw_multi_periph    = DT_PROP(DT_INST_BUS(n), software_multiperipheral),          \
-		.pm_dev_rt_auto     = DT_INST_PROP(n, zephyr_pm_device_runtime_auto)              \
+		.pm_dev_rt_auto     = DT_INST_PROP(n, zephyr_pm_device_runtime_auto),             \
+		.drive_strength = DT_INST_PROP_OR(n, drive_strength, 0),                          \
+		.aps_version = DT_INST_ENUM_IDX_OR(n, aps_version, 0)                             \
 	};                                                                                        \
 	static struct memc_mspi_aps_z8_data                                                       \
 		memc_mspi_aps_z8_data_##n = {                                                     \
