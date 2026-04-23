@@ -1,0 +1,15 @@
+sample:
+  name: ADGM3121 MEMS Switch
+  description: Demonstrates the ADGM3121 MEMS RF switch driver API
+common:
+  tags:
+    - drivers
+    - misc
+  filter: dt_compat_enabled("adi,adgm3121-gpio") or dt_compat_enabled("adi,adgm3121")
+tests:
+  sample.drivers.misc.adgm3121:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "ADGM3121 sample completed"
