@@ -575,11 +575,15 @@
 
 	bt_hci_wba: bt_hci_wba {
 		compatible = "st,hci-stm32wba";
+		interrupt-parent = <&nvic>;
+		interrupt-names = "radio";
 		status = "okay";
 	};
 
 	ieee802154: ieee802154 {
 		compatible = "st,stm32wba-ieee802154";
+		interrupt-parent = <&nvic>;
+		interrupt-names = "radio";
 		status = "disabled";
 	};
 
