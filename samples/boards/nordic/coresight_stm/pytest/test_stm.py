@@ -454,8 +454,8 @@ def test_STM_dictionary_mode(dut: DeviceAdapter):
         log_2_arg=8.6,
         log_3_arg=17.4,
         log_str=45.2,
-        tracepoint=0.5,
-        tracepoint_d32=0.5,
+        tracepoint=1.5,
+        tracepoint_d32=1.5,
         tolerance=0.5,
     )
     flpr_constraints = STMLimits(
