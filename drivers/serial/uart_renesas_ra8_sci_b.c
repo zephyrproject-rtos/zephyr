@@ -181,10 +181,11 @@ static void uart_ra_sci_b_poll_out(const struct device *dev, unsigned char c)
 	uart_ra_sci_b_tx_pm_policy_state_lock_get(dev);
 #endif
 
-	while (cfg->regs->CSR_b.TEND == 0U) {
+	while (cfg->regs->CSR_b.TDRE == 0U) {
 	}
 
 	cfg->regs->TDR_BY = c;
+	cfg->regs->CFCLR_b.TDREC = 1;
 
 	while (cfg->regs->CSR_b.TEND == 0U) {
 	}
