@@ -71,31 +71,36 @@
 			reg = <0x00000000 DT_SIZE_K(2048)>;
 
 			partitions {
-				compatible = "fixed-partitions";
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
 
 				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
 					label = "mcuboot";
 					reg = <0x00000000 0x0000c000>;
 				};
 
 				slot0_partition: partition@c000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-0";
 					reg = <0x0000c000 0x00069000>;
 				};
 
 				slot1_partition: partition@75000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-1";
 					reg = <0x00075000 0x00069000>;
 				};
 
 				scratch_partition: partition@de000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-scratch";
 					reg = <0x000de000 0x0001e000>;
 				};
 
 				storage_partition: partition@fc000 {
+					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0x000fc000 0x00004000>;
 				};
