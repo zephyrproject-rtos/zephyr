@@ -31,7 +31,7 @@ listen to, the required security level ``sec_level``, and the callback
 ``accept`` which is called to authorize incoming connection requests and
 allocate channel instances.
 
-.. literalinclude:: ../../../../samples/bluetooth/l2cap_coc_acceptor/src/main.c
+.. literalinclude:: ../../../../../samples/bluetooth/l2cap_coc_acceptor/src/main.c
    :language: c
    :start-after: doc l2cap server start
    :end-before: doc l2cap server end

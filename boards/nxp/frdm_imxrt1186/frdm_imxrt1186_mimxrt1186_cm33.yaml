@@ -21,6 +21,7 @@ supported:
   - gpio
   - can
   - uart
+  - hwinfo
   - mbox
   - netif:eth
   - i2c

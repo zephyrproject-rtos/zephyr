@@ -216,6 +216,44 @@ mikrobus_serial: &flexcomm0 {};
 		ahb-write-wait-unit = <2>;
 		ahb-write-wait-interval = <0>;
 	};
+
+	/*
+	 * Winbond W25N01GV NAND - FlexSPI PortB1 (CS2).
+	 * Pin-compatible alternative to aps6404l@2.
+	 * Mutually exclusive with aps6404l@2: enable at most one via overlay.
+	 */
+	w25n01gv: w25n01gv@2 {
+		compatible = "nxp,imx-flexspi-nand";
+		reg = <2>; /* PortB1 */
+		status = "disabled";
+
+		/* W25N01GVZEIG: 1 Gbit = 128 MiB; DT size is in bits */
+		size = <DT_SIZE_M(128 * 8)>;
+
+		spi-max-frequency = <DT_FREQ_M(104)>;
+		write-block-size = <2048>;
+		erase-block-size = <DT_SIZE_K(128)>;
+
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <6>;
+		column-space = <11>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			nand_storage: partition@0 {
+				label = "nand-storage";
+				reg = <0x0 DT_SIZE_M(128)>;
+			};
+		};
+	};
 };
 
 &hci {
@@ -252,6 +290,10 @@ mikrobus_serial: &flexcomm0 {};
 };
 
 &dma0 {
+	status = "okay";
+};
+
+&gdma {
 	status = "okay";
 };
 

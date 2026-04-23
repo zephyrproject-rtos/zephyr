@@ -22,6 +22,12 @@
 #include <fwk_platform_ble.h>
 #include <fwk_platform.h>
 
+#if defined(CONFIG_NXP_SNPS_BLE_CTRL)
+#include "ble_controller.h"
+#elif defined(CONFIG_NXP_MCXW7X_BLE_CTRL)
+#include "controller_api.h"
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                                  Definitions                               */
 /* -------------------------------------------------------------------------- */
@@ -190,6 +196,37 @@ static const uint8_t hci_cal_data_annex100_params[] = {
 /* -------------------------------------------------------------------------- */
 /*                             Private functions                              */
 /* -------------------------------------------------------------------------- */
+
+int nxp_nbu_set_tx_power(int8_t level_dbm, uint8_t handle_type)
+{
+	int status = 0;
+#if defined(CONFIG_NXP_SNPS_BLE_CTRL)
+	if (handle_type == BT_HCI_VS_LL_HANDLE_TYPE_CONN) {
+		if (kBLEC_Success != BLEController_SetConnectionInitialTxPowerDbm(level_dbm)) {
+			status = -EIO;
+		}
+	} else {
+		if (kBLEC_Success != BLEController_SetTxPowerDbm(level_dbm)) {
+			status = -EIO;
+		}
+	}
+#elif defined(CONFIG_NXP_MCXW7X_BLE_CTRL)
+	if (handle_type == BT_HCI_VS_LL_HANDLE_TYPE_CONN) {
+		if (Controller_SetTxPowerLevelDbm(level_dbm, gConnTxChannel_c) !=
+		    KOSA_StatusSuccess) {
+			status = -EIO;
+		}
+	} else {
+		if (Controller_SetTxPowerLevelDbm(level_dbm, gAdvTxChannel_c) !=
+		    KOSA_StatusSuccess) {
+			status = -EIO;
+		}
+	}
+#else
+	status = -ENOENT;
+#endif
+	return status;
+}
 
 #if defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP) || defined(CONFIG_HCI_NXP_SET_CAL_DATA) ||           \
 	defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR)
@@ -515,10 +552,143 @@ static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
 }
 #endif /* CONFIG_HCI_NXP_RX_THREAD */
 
+/**
+ * @brief Send a vendor-specific command complete event back to host
+ *
+ * @param opcode The command opcode
+ * @param status The status to return (0 = success)
+ */
+static void bt_nxp_send_vs_cmd_complete(const struct device *dev, uint16_t opcode, uint8_t status)
+{
+	struct net_buf *buf;
+	uint8_t *pckt;
+	struct bt_nxp_data *hci = dev->data;
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate buffer for complete event");
+		return;
+	}
+
+	/*
+	 * Command Complete Event:
+	 * [0] Event Code
+	 * [1] Param Length
+	 * [2] Ncmd
+	 * [3 - 4] Opcode
+	 * [5] Status
+	 */
+	pckt = net_buf_add(buf, BT_HCI_EVT_HDR_SIZE + sizeof(struct bt_hci_evt_cmd_complete) + 1U);
+	pckt[0U] = BT_HCI_EVT_CMD_COMPLETE;
+	pckt[1U] = sizeof(struct bt_hci_evt_cmd_complete) + 1U;
+	pckt[2U] = 1U;
+	sys_put_le16(opcode, &pckt[3U]);
+	pckt[5U] = status;
+
+	hci->recv(dev, buf);
+}
+
+static int bt_nxp_process_tx_power_cmd(const uint8_t *params, uint8_t params_len)
+{
+	int8_t level_dbm;
+	uint8_t handle_type;
+	uint16_t handle;
+	int8_t status = 0;
+
+	do {
+		/* Zephyr's VS TX power command format:
+		 * - handle_type: 1 byte (0=adv, 1=conn)
+		 * - handle: 2 bytes
+		 * - tx_power: 1 byte
+		 */
+		if ((params == NULL) ||
+		    (params_len < sizeof(struct bt_hci_cp_vs_write_tx_power_level))) {
+			status = -EINVAL;
+			break;
+		}
+
+		handle_type = params[0U];
+		handle = sys_get_le16(&params[1U]);
+		level_dbm = (int8_t)params[3U];
+
+		LOG_DBG("TX Power: level=%d dBm, type=%d, handle=0x%04x", level_dbm, handle_type,
+			handle);
+
+		if (nxp_nbu_set_tx_power(level_dbm, handle_type) != 0U) {
+			status = -EIO;
+			break;
+		}
+	} while (false);
+
+	return status;
+}
+
+/**
+ * @brief Check and process vendor-specific commands
+ *
+ * @param buf HCI buffer
+ * @return true if correctly handled
+ */
+static bool bt_nxp_process_vs_command(const struct device *dev, struct net_buf *buf)
+{
+	bool handled = false;
+	uint16_t opcode;
+	uint8_t param_len;
+	const uint8_t *params;
+	int ret;
+
+	if (buf->len < BT_HCI_CMD_HDR_SIZE + 1U) {
+		return false;
+	}
+
+	if (buf->data[0] != BT_HCI_H4_CMD) {
+		return false;
+	}
+
+	opcode = sys_get_le16(buf->data + 1U);
+	/* Is it a vendor command? */
+	if (BT_OGF(opcode) != BT_OGF_VS) {
+		return false;
+	}
+
+	param_len = buf->data[3U];
+
+	/* Validate that buffer contains all claimed parameters */
+	if (buf->len < (BT_HCI_CMD_HDR_SIZE + param_len + 1U)) {
+		LOG_WRN("VS command buffer too short: len=%u, expected=%u", buf->len,
+			BT_HCI_CMD_HDR_SIZE + param_len + 1U);
+		return false;
+	}
+
+	params = &buf->data[4];
+
+	/* Handle commands */
+	switch (opcode) {
+	case BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL:
+		LOG_DBG("Processing VS TX Power command");
+		ret = bt_nxp_process_tx_power_cmd(params, param_len);
+		/* Send command complete back to host */
+		bt_nxp_send_vs_cmd_complete(dev, opcode, (ret == 0) ? 0x0U : 0x1U);
+		handled = true;
+		break;
+
+	default:
+		/* Unknown VS command */
+		break;
+	}
+
+	return handled;
+}
+
 static int bt_nxp_send(const struct device *dev, struct net_buf *buf)
 {
 	ARG_UNUSED(dev);
 
+	if (bt_nxp_process_vs_command(dev, buf)) {
+		LOG_DBG("VS command handled");
+		net_buf_unref(buf);
+		return 0;
+	}
 #if defined(HCI_NXP_LOCK_STANDBY_BEFORE_SEND)
 	/* Sending an HCI message requires to wake up the controller core if it's asleep.
 	 * Platform controllers may send responses using non wakeable interrupts which can

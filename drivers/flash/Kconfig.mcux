@@ -74,6 +74,34 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH
 	select MEMC
 	select MEMC_MCUX_FLEXSPI
 
+config FLASH_MCUX_FLEXSPI_NAND
+	bool "MCUX FlexSPI NAND (ONFI probe)"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_NAND_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_EX_OP
+	select MEMC
+	select MEMC_MCUX_FLEXSPI
+	select CRC
+	help
+	  NAND flash driver over NXP FlexSPI with ONFI parameter probe
+	  and quad I/O for data read/write.
+
+config FLASH_MCUX_FLEXSPI_NAND_INIT_PRIORITY
+	int "MCUX FlexSPI NAND flash init priority"
+	default FLASH_INIT_PRIORITY
+	help
+	  Initialization priority for FlexSPI NAND flash driver.
+
+config FLASH_MCUX_FLEXSPI_NAND_TIMEOUT_US
+	int "Timeout for FlexSPI NAND busy-wait polling"
+	default 0
+	help
+	  Maximum time in microseconds to wait for the NAND flash to
+	  become ready after an operation. Set to 0 to poll indefinitely.
+
 endmenu
 
 if FLASH_MCUX_FLEXSPI_MX25UM51345G

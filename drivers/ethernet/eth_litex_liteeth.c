@@ -173,6 +173,10 @@ static int eth_set_config(const struct device *dev __unused,
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		return 0;
+#ifdef CONFIG_NET_PROMISCUOUS_MODE
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		return 0;
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
 	default:
 		break;
 	}
@@ -246,6 +250,8 @@ static void eth_iface_init(struct net_if *iface)
 	/* set MAC address */
 	(void)net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
 
+	net_lldp_set_lldpdu(iface);
+
 	if (config->phy_dev == NULL) {
 		LOG_WRN("No PHY device");
 		return;
@@ -267,6 +273,12 @@ static enum ethernet_hw_caps eth_caps(const struct device *dev)
 	return
 #ifdef CONFIG_NET_VLAN
 		ETHERNET_HW_VLAN |
+#endif
+#ifdef CONFIG_NET_PROMISCUOUS_MODE
+		ETHERNET_PROMISC_MODE |
+#endif
+#ifdef CONFIG_NET_LLDP
+		ETHERNET_LLDP |
 #endif
 		ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }

@@ -366,6 +366,9 @@
 		compatible = "nxp,nbu";
 		interrupts = <48 2>;
 		interrupt-names = "nbu_rx_int";
+		max-tx-power-support = <0 7>; /* TODO: Add 10dbm support */
+		/* Max TX power can be overridden by the board */
+		max-tx-power-dbm = <7>;
 		wakeup-source;
 	};
 

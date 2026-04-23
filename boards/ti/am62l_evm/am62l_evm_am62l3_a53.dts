@@ -21,6 +21,15 @@
 
 	aliases {
 		adc0 = &main_adc0;
+		led0 = &ld9;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		ld9: led_0 {
+			gpios = <&main_gpio0_3 27 GPIO_ACTIVE_HIGH>;
+		};
 	};
 
 	cpus {
@@ -95,5 +104,40 @@
 		zephyr,resolution = <12>;
 		zephyr,oversampling = <4>;
 		zephyr,vref-mv = <1800>;
+	};
+};
+
+&main_gpio0_3 {
+	pinctrl-0 = <&main_gpio0_3_led>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_i2c0 {
+	pinctrl-0 = <&main_i2c0_scl &main_i2c0_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@51 {
+		compatible = "atmel,at24";
+		reg = <0x51>;
+		address-width = <16>;
+		pagesize = <128>;
+		size = <65536>;
+		timeout = <5>;
+	};
+};
+
+&main_i2c1 {
+	pinctrl-0 = <&main_i2c1_scl &main_i2c1_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_expander: tca6424a@22 {
+		compatible = "ti,tca6424a";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
 	};
 };

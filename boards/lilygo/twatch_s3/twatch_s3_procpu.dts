@@ -9,6 +9,7 @@
 #include "twatch_s3-pinctrl.dtsi"
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	model = "T-Watch S3 PROCPU";
@@ -55,7 +56,7 @@
 			y-offset = <80>;
 			mdac = <0xc8>;
 			ram-param = [00 e0];
-			colmod = <0x55>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			porch-param = [0c 0c 00 33 33];
 			gctrl = <0x35>;
 			vcom = <0x28>;

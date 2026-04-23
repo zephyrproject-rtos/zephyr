@@ -92,6 +92,12 @@ config NXP_SNPS_BLE_CTRL
 	help
 	  If enabled, the NXP SNPS BLE Controller will be included.
 
+config NXP_MCXW7X_BLE_CTRL
+	bool "Include MCXW7X NXP BLE Controller"
+	depends on NXP_NBU
+	help
+	  If enabled, MCXW7X NXP BLE Controller will be included.
+
 endif # HAS_MCUX
 
 config BT_NXP_PCM_PINS_DIR_REVERSE
