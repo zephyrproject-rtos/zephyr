@@ -2744,6 +2744,68 @@ class TextEncoding(ComplianceTest):
                 self.fmtd_failure("error", "TextEncoding", file, desc=desc)
 
 
+class LogErrCheck(ComplianceTest):
+    """
+    Checks that no new uses of LOG_ERR() are introduced in C/C++ source and
+    header files.  LOG_ERR() is being phased out in favour of alternatives
+    such as LOG_WRN() or structured error reporting; while the macro cannot
+    yet be formally deprecated, new additions should not be merged so that
+    the eventual deprecation is straightforward.
+
+    Only added lines (lines starting with '+' in the diff, excluding the
+    '+++' file header) are examined, so pre-existing calls do not block
+    unrelated changes to the same file.
+    """
+
+    name = "LogErr"
+    doc = zephyr_doc_detail_builder("/services/logging/index.html")
+
+    # Matches LOG_ERR( anywhere on a line, even inside a comment or string.
+    # Intentionally conservative: any occurrence is flagged.
+    LOG_ERR_RE = re.compile(r"\bLOG_ERR\s*\(")
+
+    # File extensions that may contain LOG_ERR() calls.
+    SOURCE_EXTS = (".c", ".h", ".cpp", ".hpp")
+
+    # Files that are excluded from the check (e.g. the header that defines the macro).
+    EXCLUDE_FILES = {
+        "include/zephyr/logging/log.h",
+    }
+
+    def run(self):
+        diff_text = git("diff", "-U0", "--no-ext-diff", COMMIT_RANGE)
+        try:
+            patchset = unidiff.PatchSet.from_string(diff_text)
+        except Exception as e:  # noqa: BLE001
+            self.error(f"Failed to parse git diff output: {e}")
+
+        for patched_file in patchset:
+            fname = patched_file.path
+
+            if not any(fname.endswith(ext) for ext in self.SOURCE_EXTS):
+                continue
+
+            if fname in self.EXCLUDE_FILES:
+                continue
+
+            for hunk in patched_file:
+                for line in hunk:
+                    if not line.is_added:
+                        continue
+                    if self.LOG_ERR_RE.search(line.value):
+                        self.fmtd_failure(
+                            "error",
+                            "LogErr",
+                            fname,
+                            line=line.target_line_no,
+                            desc=(
+                                "New use of LOG_ERR() detected. "
+                                "LOG_ERR() will soon be deprecated; "
+                                "use LOG_ERROR() instead."
+                            ),
+                        )
+
+
 class DeviceAPICheck(ComplianceTest):
     """
     Checks that driver API structs use the DEVICE_API() macro instead of
