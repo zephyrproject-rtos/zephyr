@@ -97,4 +97,12 @@
 			status = "disabled";
 		};
 	};
+
+	bt_hci_wba: bt_hci_wba {
+		interrupts = <66 0>;
+	};
+
+	ieee802154: ieee802154 {
+		interrupts = <66 0>;
+	};
 };
