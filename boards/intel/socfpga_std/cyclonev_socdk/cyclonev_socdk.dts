@@ -82,6 +82,13 @@
 				compatible = "maxim,ds3231";
 				reg = <0x68>;
 			};
+
+			auxdisplay: nhd-k3z@28 {
+				compatible = "newhaven,nhd-0216k3z-nsw-bbw", "newhaven,nhd-k3z";
+				reg = <0x28>;
+				rows = <2>;
+				columns = <16>;
+			};
 		};
 	};
 
