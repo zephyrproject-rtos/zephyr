@@ -19,5 +19,10 @@ properties:
     description: |
       from common clock binding; shall be set to 1.
 
+  slow-rc-frequency:
+    type: int
+    default: 64000
+    description: The frequency of the enbedded Slow RC Oscillator.
+
 clock-cells:
   - clock-crystal-osc

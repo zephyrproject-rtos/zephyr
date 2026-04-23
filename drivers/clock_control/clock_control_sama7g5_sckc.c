@@ -62,7 +62,7 @@ static int sckc_get_rate(const struct device *dev,
 	if (sel_xtal) {
 		ret = clock_control_get_rate(SAM_DT_SLOW_XTAL, NULL, rate);
 	} else {
-		*rate = KHZ(64);
+		*rate = DT_INST_PROP(0, slow_rc_frequency);
 	}
 	LOG_DBG("Rate: %d", *rate);
 
