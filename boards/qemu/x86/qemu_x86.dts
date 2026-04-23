@@ -164,7 +164,7 @@
 
 &flash_sim0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -173,21 +173,25 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@1000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00001000 0x00010000>;
 		};
 
 		slot0_partition: partition@11000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00011000 0x00010000>;
 		};
 
 		slot1_partition: partition@21000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00021000 0x00010000>;
 		};
 
 		eepromemu_partition: partition@31000 {
+			compatible = "zephyr,mapped-partition";
 			label = "eeprom-emu";
 			reg = <0x00031000 0x00010000>;
 		};
