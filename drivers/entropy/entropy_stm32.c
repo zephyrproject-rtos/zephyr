@@ -353,6 +353,27 @@ static int recover_seed_error(RNG_TypeDef *rng)
 	}
 #endif /* !CONFIG_SOC_SERIES_STM32WB0X */
 
+#if defined(CONFIG_SOC_STM32WB09XX)
+	if (ll_rng_is_active_seis(rng) != 0) {
+		/* RM0505 §14.7.11 "Health Test Control Register (TRNG_HEALTH_CR)":
+		 * When some oscillators are powered down, the cutoff values
+		 * must be increased as health tests could trigger an error.
+		 * The values 100 and 850 are arbitrarily higher than the default ones.
+		 * It is recommended to disable TRNG before changing these values.
+		 */
+		LL_RNG_Disable(rng);
+		ll_rng_clear_seis(rng);
+		LL_RNG_SetAesReset(rng, 1);
+		if (LL_RNG_IsActiveFlag_OSCS_REPET_ERROR(rng)) {
+			LL_RNG_SetRepetCutoff(rng, 100);
+		}
+		if (LL_RNG_IsActiveFlag_OSCS_ADAPT_ERROR(rng)) {
+			LL_RNG_SetAdapCutoff(rng, 850);
+		}
+		LL_RNG_Enable(rng);
+	}
+#endif /* CONFIG_SOC_STM32WB09XX */
+
 	if (ll_rng_is_active_seis(rng) != 0) {
 		return -EIO;
 	}
