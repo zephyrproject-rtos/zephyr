@@ -582,3 +582,7 @@
 		status = "disabled";
 	};
 };
+
+&vbat {
+	io-channels = <&adc2 16>;
+};
