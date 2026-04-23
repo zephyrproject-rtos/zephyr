@@ -10,6 +10,12 @@
 extern const uint32_t __rom_region_start;
 extern const uint32_t __rom_region_mpu_size_bits;
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#endif
+
 static const struct arm_mpu_region mpu_regions[] = {
 
 	/* clang-format off */
@@ -36,7 +42,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 	/* Basic SRAM mapping is all data, R/W + XN */
 	MPU_REGION_ENTRY(
 		"sram",
-		CONFIG_SRAM_BASE_ADDRESS,
+		RAM_BASE,
 		REGION_SRAM_SIZE,
 		{.rasr = P_RW_U_RW_Msk |
 			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE |

@@ -1314,6 +1314,14 @@ void arch_mem_unmap(void *addr, size_t size)
 }
 
 #ifdef K_MEM_IS_VM_KERNEL
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE KB(CONFIG_SRAM_SIZE)
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 __boot_func
 static void identity_map_remove(uint32_t level)
 {
@@ -1325,8 +1333,8 @@ static void identity_map_remove(uint32_t level)
 	pentry_t *entry_ptr;
 
 	k_mem_region_align((uintptr_t *)&pos, &size,
-			   (uintptr_t)CONFIG_SRAM_BASE_ADDRESS,
-			   (size_t)CONFIG_SRAM_SIZE * 1024U, scope);
+			   (uintptr_t)RAM_BASE,
+			   (size_t)RAM_SIZE, scope);
 
 	while (size != 0U) {
 		/* Need to get to the correct table */

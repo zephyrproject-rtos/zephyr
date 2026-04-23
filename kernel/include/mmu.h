@@ -14,12 +14,21 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel/mm.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/devicetree.h>
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
 /** Start address of physical memory. */
 #define K_MEM_PHYS_RAM_START	((uintptr_t)CONFIG_SRAM_BASE_ADDRESS)
 
 /** Size of physical memory. */
 #define K_MEM_PHYS_RAM_SIZE	(KB(CONFIG_SRAM_SIZE))
+#else
+/** Start address of physical memory. */
+#define K_MEM_PHYS_RAM_START	((uintptr_t)DT_REG_ADDR(DT_CHOSEN(zephyr_sram)))
+
+/** Size of physical memory. */
+#define K_MEM_PHYS_RAM_SIZE	DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
 
 /** End address (exclusive) of physical memory. */
 #define K_MEM_PHYS_RAM_END	(K_MEM_PHYS_RAM_START + K_MEM_PHYS_RAM_SIZE)
@@ -49,7 +58,7 @@
  */
 #define K_MEM_VM_OFFSET	\
 	((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
-	 (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
+	 (K_MEM_PHYS_RAM_START + CONFIG_SRAM_OFFSET))
 
 /**
  * @brief Get physical address from virtual address for boot RAM mappings.

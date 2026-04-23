@@ -79,6 +79,12 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#endif
+
 static const clock_sys_pll2_config_t sysPll2Config = {
 	/* Denominator of spread spectrum */
 	.mfd = 268435455,
@@ -102,7 +108,7 @@ const __imx_boot_data_section BOOT_DATA_T boot_data = {
 	.start = CONFIG_FLASH_BASE_ADDRESS,
 	.size = (uint32_t)&_flash_used,
 #else
-	.start = CONFIG_SRAM_BASE_ADDRESS,
+	.start = RAM_BASE,
 	.size = (uint32_t)&_image_ram_size,
 #endif
 	.plugin = PLUGIN_FLAG,

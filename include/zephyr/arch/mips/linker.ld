@@ -22,9 +22,17 @@
 #define _EXCEPTION_SECTION_NAME     exceptions
 #define _RESET_SECTION_NAME         reset
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE KB(CONFIG_SRAM_SIZE)
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif /* CONFIG_SRAM_DEPRECATED_KCONFIG_SET */
+
 MEMORY
 {
-    RAM (rwx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS, LENGTH = KB(CONFIG_SRAM_SIZE)
+    RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -37,9 +45,9 @@ REGION_ALIAS("REGION_BSS", RAM);
 
 ENTRY(CONFIG_KERNEL_ENTRY)
 
-PROVIDE (__memory_base = CONFIG_SRAM_BASE_ADDRESS);
-PROVIDE (__memory_size = CONFIG_SRAM_SIZE * 1024);
-PROVIDE (__stack = CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE - 1) * 1024);
+PROVIDE (__memory_base = RAM_BASE);
+PROVIDE (__memory_size = RAM_SIZE);
+PROVIDE (__stack = RAM_BASE + (RAM_SIZE - 1024));
 
 SECTIONS
 {

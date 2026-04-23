@@ -17,19 +17,25 @@ extern char _rom_attr[];
 #define REGION_PPB_BASE_ADDRESS        0xE0000000
 #define REGION_PPB_SIZE                REGION_1M
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#endif
+
 static struct arm_mpu_region mpu_regions[] = {
 
 	/* ERR011573: use first region to prevent speculative access in entire memory space */
 	MPU_REGION_ENTRY("UNMAPPED", 0, {REGION_4G | MPU_RASR_XN_Msk | P_NA_U_NA_Msk}),
 
 	/* Keep before CODE region so it can be overlapped by SRAM CODE in non-XIP systems */
-	MPU_REGION_ENTRY("SRAM", CONFIG_SRAM_BASE_ADDRESS, REGION_RAM_ATTR(REGION_SRAM_SIZE)),
+	MPU_REGION_ENTRY("SRAM", RAM_BASE, REGION_RAM_ATTR(REGION_SRAM_SIZE)),
 
 #ifdef CONFIG_XIP
 	MPU_REGION_ENTRY("FLASH", CONFIG_FLASH_BASE_ADDRESS, REGION_FLASH_ATTR(REGION_FLASH_SIZE)),
 #else
 	/* Run from SRAM */
-	MPU_REGION_ENTRY("CODE", CONFIG_SRAM_BASE_ADDRESS, {(uint32_t)_rom_attr}),
+	MPU_REGION_ENTRY("CODE", RAM_BASE, {(uint32_t)_rom_attr}),
 #endif
 
 	MPU_REGION_ENTRY("PERIPHERALS", REGION_PERIPHERAL_BASE_ADDRESS,

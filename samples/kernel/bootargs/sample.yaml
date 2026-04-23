@@ -12,7 +12,7 @@ tests:
       regex:
         - "argv\\[0\\] = .*/zephyr(-qemu-locore)?.elf"
   sample.kernel.bootargs.efi:
-    extra_args: EXTRA_CONF_FILE=prj_efi.conf
+    extra_args: FILE_SUFFIX=efi
     platform_allow: qemu_x86_64
     harness: console
     harness_config:

@@ -45,8 +45,13 @@
 #endif
 #endif
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
 #define RAM_START (CONFIG_SRAM_BASE_ADDRESS)
-#define RAM_SIZE  (KB(CONFIG_SRAM_SIZE))
+#define RAM_SIZE (KB(CONFIG_SRAM_SIZE))
+#else
+#define RAM_START DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
 
 _region_min_align = 4;
 

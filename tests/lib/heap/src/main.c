@@ -35,7 +35,11 @@
 #else
 /* Otherwise just trust CONFIG_SRAM_SIZE
  */
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
 # define MEMSZ (1024 * (size_t) CONFIG_SRAM_SIZE)
+#else
+# define MEMSZ (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)))
+#endif
 #endif
 
 #define BIG_HEAP_SZ MIN(256 * 1024, MEMSZ / 3)

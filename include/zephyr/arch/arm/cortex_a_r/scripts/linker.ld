@@ -57,8 +57,13 @@
 #endif
 #endif /* defined(CONFIG_FLASH_USES_MAPPED_PARTITION) */
 
-#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
 #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE KB(CONFIG_SRAM_SIZE)
+#else
+#define RAM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif /* CONFIG_SRAM_DEPRECATED_KCONFIG_SET */
 
 /* Set alignment to CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
  * to make linker section alignment comply with MPU granularity.

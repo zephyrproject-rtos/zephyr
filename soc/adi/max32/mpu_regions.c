@@ -21,6 +21,14 @@
 
 #define MAX32_MPU_REGION(name, base, attr, size) MPU_REGION_ENTRY(name, (base), attr((base), size))
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE KB(CONFIG_SRAM_SIZE)
+#else
+#define RAM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 /*
  * The MPU regions are defined in the following way:
  * - Cacheable flash region
@@ -40,7 +48,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 	MAX32_MPU_REGION("FLASH", CONFIG_FLASH_BASE_ADDRESS, REGION_FLASH_ATTR,
 			 KB(CONFIG_FLASH_SIZE)),
 #endif
-	MAX32_MPU_REGION("SRAM", CONFIG_SRAM_BASE_ADDRESS, REGION_RAM_ATTR, KB(CONFIG_SRAM_SIZE)),
+	MAX32_MPU_REGION("SRAM", RAM_ADDR, REGION_RAM_ATTR, RAM_SIZE),
 };
 
 const struct arm_mpu_config mpu_config = {

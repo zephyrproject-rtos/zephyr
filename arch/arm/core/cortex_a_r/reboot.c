@@ -41,10 +41,16 @@ TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_NONNULL)
 
 #define VECTOR_ADDRESS 0
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#endif
+
 void __weak relocate_vector_table(void)
 {
 #if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) ||                                     \
-	!defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
+	!defined(CONFIG_XIP) && (RAM_BASE != 0)
 	write_sctlr(read_sctlr() & ~HIVECS);
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
 	(void)arch_early_memcpy(VECTOR_ADDRESS, _vector_start, vector_size);

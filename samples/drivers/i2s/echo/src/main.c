@@ -21,8 +21,14 @@
 #define I2S_TX_NODE  DT_NODELABEL(i2s_tx)
 #endif
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_SIZE CONFIG_SRAM_SIZE
+#else
+#define RAM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) / 1024)
+#endif
+
 /* Reduce echo delay when running on low ram devices */
-#if CONFIG_SRAM_SIZE <= 48
+#if SRAM_SIZE <= 48
 #define ECHO_DELAY 30
 #else
 #define ECHO_DELAY 10

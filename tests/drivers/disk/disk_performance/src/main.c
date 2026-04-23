@@ -24,7 +24,13 @@
 #error "No disk device defined, is your board supported?"
 #endif
 
-#if CONFIG_SRAM_SIZE >= 512
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_SIZE CONFIG_SRAM_SIZE
+#else
+#define RAM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) / 1024)
+#endif
+
+#if RAM_SIZE >= 512
 /* Cap buffer size at 128 KiB */
 #define MAX_TOTAL_BUF_SIZE 128
 #elif CONFIG_SOC_POSIX
@@ -32,7 +38,7 @@
 #define MAX_TOTAL_BUF_SIZE 128
 #else
 /* Use half of all SRAM */
-#define MAX_TOTAL_BUF_SIZE (CONFIG_SRAM_SIZE / 2)
+#define MAX_TOTAL_BUF_SIZE (RAM_SIZE / 2)
 #endif
 
 #define BUF_SIZE ((MAX_TOTAL_BUF_SIZE * 1024) / 2)
