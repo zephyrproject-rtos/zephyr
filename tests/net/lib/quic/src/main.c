@@ -1031,6 +1031,71 @@ ZTEST(net_socket_quic, test_170_rx_flow_control_ooo_no_double_count)
 		      "OOO replay must not double-count connection bytes");
 }
 
+ZTEST(net_socket_quic, test_175_rx_flow_control_ooo_unbufferable_is_fatal)
+{
+	static struct quic_stream stream;
+	static uint8_t oversize[CONFIG_QUIC_STREAM_OOO_SEG_SIZE + 1];
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t data4[4] = { 0 };
+	size_t slots = ARRAY_SIZE(stream.rx_buf.ooo);
+	uint64_t queued_bytes = 4U * (slots + 1U);
+	int ret;
+
+	init_test_rx_stream(&stream, ep, 1024, 1024, 1);
+
+	for (size_t i = 0; i < slots; i++) {
+		ret = quic_stream_receive_data(&stream, 4U * (i + 1U),
+					       data4, sizeof(data4), false);
+		zassert_equal(ret, -EAGAIN,
+			      "Expected OOO data %zu to be queued (%d)", i, ret);
+	}
+
+	zassert_equal(stream.rx_buf.ooo_count, slots, "Expected OOO queue to be full");
+	zassert_equal(stream.highest_offset_received, queued_bytes,
+		      "Unexpected highest received end after filling OOO queue");
+	zassert_equal(stream.bytes_received, queued_bytes,
+		      "Unexpected stream RX accounting after filling OOO queue");
+	zassert_equal(ep->rx_fc.bytes_received, queued_bytes,
+		      "Unexpected connection RX accounting after filling OOO queue");
+
+	ret = quic_stream_receive_data(&stream, 4, data4, sizeof(data4), false);
+	zassert_equal(ret, -EAGAIN,
+		      "Expected duplicate OOO data to remain non-fatal when full (%d)",
+		      ret);
+	zassert_equal(stream.rx_buf.ooo_count, slots,
+		      "Duplicate OOO data should not consume extra slots");
+	zassert_equal(stream.bytes_received, queued_bytes,
+		      "Duplicate OOO data must not change stream accounting");
+	zassert_equal(ep->rx_fc.bytes_received, queued_bytes,
+		      "Duplicate OOO data must not change connection accounting");
+
+	ret = quic_stream_receive_data(&stream, queued_bytes,
+				       data4, sizeof(data4), false);
+	zassert_equal(ret, -EPROTO,
+		      "Expected unbufferable OOO data to be fatal (%d)", ret);
+	zassert_equal(stream.rx_buf.ooo_count, slots,
+		      "Fatal OOO data should not change the queued segment count");
+	zassert_equal(stream.highest_offset_received, queued_bytes,
+		      "Fatal OOO data must not advance highest received end");
+	zassert_equal(stream.bytes_received, queued_bytes,
+		      "Fatal OOO data must not change stream accounting");
+	zassert_equal(ep->rx_fc.bytes_received, queued_bytes,
+		      "Fatal OOO data must not change connection accounting");
+
+	init_test_rx_stream(&stream, ep, 4096, 4096, 1);
+
+	ret = quic_stream_receive_data(&stream, 4, oversize, sizeof(oversize), false);
+	zassert_equal(ret, -EPROTO,
+		      "Expected oversized OOO data to be fatal (%d)", ret);
+	zassert_equal(stream.rx_buf.ooo_count, 0, "Oversized OOO data must not be queued");
+	zassert_equal(stream.highest_offset_received, 0,
+		      "Oversized OOO data must not advance highest received end");
+	zassert_equal(stream.bytes_received, 0,
+		      "Oversized OOO data must not change stream accounting");
+	zassert_equal(ep->rx_fc.bytes_received, 0,
+		      "Oversized OOO data must not change connection accounting");
+}
+
 /*
  * Test 04: RFC 9001 A.1 - Initial secret derivation
  *
