@@ -939,7 +939,7 @@ def test_devicehandler_create_command(
         west_flash_cmd=None
     )
 
-    command = handler._create_command(runner, hardware)
+    command = handler._create_flash_command(runner, hardware)
 
     assert command == expected
 
@@ -1076,7 +1076,7 @@ def test_devicehandler_start_serial_pty(
     popen_mock = mock.Mock(side_effect=mock_popen)
 
     with mock.patch('subprocess.Popen', popen_mock):
-        result = handler._start_serial_pty(serial_pty, 'master')
+        result = handler._start_pty(serial_pty, 'master')
 
     if popen_exception:
         assert result is None
@@ -1095,8 +1095,8 @@ TESTDATA_17 = [
     (False, False, False, 0, True, False,
      TwisterStatus.NONE, None, ['Timed out while monitoring serial output on IPName']),
     (False, False, False, 0, False, True,
-     TwisterStatus.NONE, None, ["Terminating serial-pty:'Serial PTY'",
-                                "Terminated serial-pty:'Serial PTY', stdout:'', stderr:''"]),
+     TwisterStatus.NONE, None, ["Terminating pty:'Serial PTY'",
+                                "Terminated pty:'Serial PTY', stdout:'', stderr:''"]),
 ]
 
 @pytest.mark.parametrize(
@@ -1165,6 +1165,7 @@ def test_devicehandler_handle(
         baud=14400,
         runner='dummy runner',
         serial_pty='Serial PTY' if use_pty else None,
+        use_rtt=False,
         serial='dummy serial',
         pre_script='dummy pre script',
         post_script='dummy post script',
@@ -1181,8 +1182,8 @@ def test_devicehandler_handle(
         west_runner=None,
         verbose=0
     )
-    handler._start_serial_pty = mock.Mock(side_effect=mock_start_serial_pty)
-    handler._create_command = mock.Mock(return_value=['dummy', 'command'])
+    handler._start_pty = mock.Mock(side_effect=mock_start_serial_pty)
+    handler._create_flash_command = mock.Mock(return_value=['dummy', 'command'])
     handler.run_custom_script = mock.Mock()
     handler._create_serial_connection = mock.Mock(
         side_effect=mock_create_serial
