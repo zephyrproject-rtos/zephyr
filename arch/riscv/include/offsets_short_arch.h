@@ -59,6 +59,11 @@
 #define _thread_offset_to_exception_depth \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_exception_depth_OFFSET)
 
+#ifdef CONFIG_RISCV_ISA_EXT_ZFINX
+#define _thread_offset_to_zfinx_fcsr \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_zfinx_fcsr_OFFSET)
+#endif
+
 #endif
 
 #ifdef CONFIG_USERSPACE
