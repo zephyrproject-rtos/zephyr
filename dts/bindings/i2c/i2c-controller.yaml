@@ -25,3 +25,18 @@ properties:
     type: int
     default: 4
     description: Size of the completion queue for blocking requests
+  transfer-timeout-ms:
+    type: int
+    description: |
+      Maximum time to wait for an I2C transfer to complete, in milliseconds.
+      When absent the driver uses its own built-in default (typically 500 ms
+      for STM32, 100 ms for ITE).  Setting this property allows board designers
+      to tighten the timeout (e.g. 50 ms for a fast, always-responsive sensor
+      bus) or relax it (e.g. 2000 ms for a slow EEPROM write cycle) without
+      patching the driver.
+
+      Example usage in a board overlay::
+
+        &i2c1 {
+          transfer-timeout-ms = <50>;
+        };
