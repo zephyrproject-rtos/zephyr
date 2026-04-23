@@ -969,10 +969,7 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 		.ARDSeqNumber = 1,
 		.ARDSeqIndex = READ,
 	};
-	if (en4b & BIT(6)) {
-		/* Flash is always in 4 byte mode. We just need to configure LUT */
-		return 0;
-	} else if (en4b & BIT(0)) {
+	if (en4b & BIT(0)) {
 		/* Issue instruction 0xB7 */
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
@@ -1036,6 +1033,14 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 		transfer.seqIndex = SCRATCH_CMD2;
 		transfer.cmdType = kFLEXSPI_Read;
 		return memc_flexspi_transfer(&data->controller, &transfer);
+	} else if (en4b & BIT(6)) {
+		/* Flash is always in 4 byte mode (no entry command needed).
+		 * This is checked last so that devices advertising both BIT(6)
+		 * and an active entry method (e.g. BIT(0)) still issue the
+		 * entry command — required after a warm reset (NRST) on parts
+		 * that reset to 3-byte mode despite setting BIT(6).
+		 */
+		return 0;
 	}
 
 	/* Other methods not supported. Include:
