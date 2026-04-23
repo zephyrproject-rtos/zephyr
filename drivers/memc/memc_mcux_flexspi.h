@@ -128,3 +128,35 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
  */
 int memc_flexspi_update_lut(const struct device *dev, flexspi_port_t port, uint32_t seq_idx,
 			    const uint32_t *lut_ptr, uint8_t lut_count);
+
+#ifdef CONFIG_MEMC_MCUX_FLEXSPI_IPED
+/**
+ * @brief Check if address range overlaps an IPED-encrypted region
+ *
+ * @param dev: FlexSPI device
+ * @param port: FlexSPI port the flash device is on
+ * @param offset: byte offset from start of flash device
+ * @param len: length in bytes
+ * @return 1  range is fully contained within one IPED region
+ * @return 0  range has no overlap with any IPED region
+ * @return -EINVAL  range partially overlaps an IPED region boundary
+ */
+int memc_flexspi_is_iped_region(const struct device *dev,
+		flexspi_port_t port, off_t offset, size_t len);
+
+/**
+ * @brief Read from an IPED-encrypted region via the AHB path
+ *
+ * Performs an AHB memcpy with the DCache and AHB prefetch buffers disabled
+ * so that IPED can transparently decrypt the data. Restores the AHB
+ * configuration afterwards.
+ * @param dev: FlexSPI device
+ * @param port: FlexSPI port the flash device is on
+ * @param offset: byte offset from start of flash device
+ * @param dst: destination buffer
+ * @param len: number of bytes to read
+ * @return 0 on success, negative value on failure
+ */
+int memc_flexspi_read_iped(const struct device *dev,
+		flexspi_port_t port, off_t offset, void *dst, size_t len);
+#endif /* CONFIG_MEMC_MCUX_FLEXSPI_IPED */

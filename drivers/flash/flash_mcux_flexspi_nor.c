@@ -362,6 +362,26 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *
 		memc_flexspi_wait_bus_idle(&data->controller);
 	}
 
+#ifdef CONFIG_MEMC_MCUX_FLEXSPI_IPED
+	ret = memc_flexspi_is_iped_region(&data->controller, data->port,
+					  offset, len);
+	if (ret != 0) {
+		if (ret == 1) {
+			ret = memc_flexspi_read_iped(&data->controller,
+						     data->port, offset,
+						     buffer, len);
+		}
+		/* ret == 1 (now result of read_iped) or ret == -EINVAL
+		 * (partial overlap): either way, do not fall through to
+		 * the IP command path.
+		 */
+		if (xip) {
+			irq_unlock(key);
+		}
+		return ret;
+	}
+#endif
+
 	uint8_t *dst = (uint8_t *)buffer;
 	size_t remaining = len;
 	off_t current_offset = offset;
@@ -417,6 +437,16 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	if (!area_is_subregion(dev, offset, len)) {
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_MEMC_MCUX_FLEXSPI_IPED
+	if (memc_flexspi_is_iped_region(&data->controller, data->port,
+					offset, len) != 0) {
+		/* Runtime writes to IPED-encrypted regions are not supported.
+		 * Images must be pre-encrypted by the SEC tool or MCUBoot.
+		 */
+		return -ENOTSUP;
+	}
+#endif
 
 	uint8_t *src = (uint8_t *) buffer;
 	int i;
