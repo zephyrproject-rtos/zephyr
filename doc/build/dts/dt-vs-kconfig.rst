@@ -76,12 +76,11 @@ Automatic Kconfig symbols from devicetree
 *****************************************
 
 During the devicetree processing step, CMake runs
-:zephyr_file:`scripts/dts/gen_driver_kconfig_dts.py`, which scans all
-:ref:`DTS root <dts_root>` directories, including :zephyr_file:`dts/bindings` and
-writes ``Kconfig.dts`` into the build's ``KCONFIG_BINARY_DIR`` (for example
-``<build>/zephyr`` or ``<build>/<image>/zephyr`` in case of :ref:`sysbuild`).
-For each ``compatible = "vendor,chip"`` that appears in a binding, the generated
-file contains:
+:zephyr_file:`scripts/dts/gen_edt.py`, which builds an EDT from the current
+devicetree using bindings from the :ref:`DTS root <dts_root>` directories, and
+writes ``Kconfig.dts`` into the build's ``KCONFIG_BINARY_DIR``.
+For each ``compatible = "vendor,chip"`` present on a node in that EDT
+(``edt.compat2nodes``), the generated file contains:
 
 .. code-block:: kconfig
 
@@ -109,7 +108,7 @@ and have ``depends on CONFIG_DT_HAS_<compatible>_ENABLED``, for example:
            default y
            depends on DT_HAS_VENDOR_CHIP_ENABLED
 
-Because these symbols are generated automatically, adding a new binding with
-a ``compatible`` property is all that is required to make the corresponding
-``DT_HAS_<compatible>_ENABLED`` and ``DT_COMPAT_<compatible>`` constructs
-available to Kconfig.
+Because these symbols are generated automatically from the current EDT object,
+the corresponding ``DT_HAS_<compatible>_ENABLED`` and ``DT_COMPAT_<compatible>``
+constructs are available to Kconfig whenever that ``compatible`` appears in the
+current devicetree.
