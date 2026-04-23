@@ -79,6 +79,7 @@ struct net_buf *mcumgr_serial_process_frag(
 		if (rx_ctxt->nb == NULL) {
 			return NULL;
 		}
+		net_buf_reset(rx_ctxt->nb);
 	}
 
 	if (frag_len < sizeof(op)) {
