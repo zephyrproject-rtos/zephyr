@@ -676,7 +676,7 @@ static int nsos_connect_blocking(struct nsos_socket *sock,
 				 int fcntl_flags)
 {
 	int clear_nonblock_ret;
-	int ret;
+	int ret; /* As a mid errno */
 
 	ret = nsos_adapt_fcntl_setfl(sock->poll.mid.fd, fcntl_flags | NSI_FCNTL_MID_O_NONBLOCK);
 	if (ret < 0) {
@@ -699,7 +699,7 @@ static int nsos_connect_blocking(struct nsos_socket *sock,
 			goto clear_nonblock;
 		}
 
-		ret = -nsi_errno_to_mid(so_err);
+		ret = -so_err;
 	}
 
 clear_nonblock:
