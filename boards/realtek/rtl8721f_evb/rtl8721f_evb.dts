@@ -27,22 +27,25 @@
 	ranges = <0x0 0x04000020 DT_SIZE_M(4)>;
 
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "bootloader";
 			reg = <0x00000000 0x00014000>;
 			read-only;
 		};
 
 		slot0_partition: partition@14000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00014000 0x001ec000>;
 		};
 
 		storage_partition: partition@250000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00250000 0x00006000>;
 		};
