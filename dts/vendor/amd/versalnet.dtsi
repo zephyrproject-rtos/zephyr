@@ -334,5 +334,37 @@
 				      IRQ_DEFAULT_PRIORITY>;
 			clock-names = "clk_main", "clk_apb";
 		};
+
+		ttc0: timer@f1dc0000 {
+			compatible = "xlnx,ttc";
+			reg = <0xf1dc0000 0x1000>;
+			timer-width = <32>;
+			clock-frequency = <149998505>;
+			status = "disabled";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ttc0_timer0: counter@0 {
+				compatible = "xlnx,ttc-counter";
+				reg = <0>;
+				interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			ttc0_timer1: counter@1 {
+				compatible = "xlnx,ttc-counter";
+				reg = <1>;
+				interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			ttc0_timer2: counter@2 {
+				compatible = "xlnx,ttc-counter";
+				reg = <2>;
+				interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
 	};
 };
