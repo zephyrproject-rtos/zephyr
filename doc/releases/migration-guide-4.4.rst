@@ -1038,6 +1038,7 @@ STM32
     gen_isr_tables.py: error: IRQ 114 (offset=0) exceeds the maximum of 106
 
   Explicitly set :kconfig:option:`CONFIG_NUM_IRQS` to an appropriate value to solve these issues.
+  (:ref:`The following documentation page <setting_configuration_values>` explains how to do it)
 
 Timer
 =====
