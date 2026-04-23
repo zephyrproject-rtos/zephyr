@@ -340,10 +340,10 @@ Development Kit Board. Try to ``blink`` an LED from the HPS side of the chip:
 
    HPS LED0 blinking example (Credit: Intel®)
 
-Try writing characters to the LCD display connected to the i2c bus:
+You may also interact with the LCD display connected to the I2C bus:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/lcd_cyclonev_socdk
+   :zephyr-app: samples/drivers/auxdisplay
    :board: cyclonev_socdk
    :goals: flash
 
