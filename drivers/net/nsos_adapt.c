@@ -514,12 +514,13 @@ int nsos_adapt_accept(int fd, struct nsos_mid_sockaddr *addr_mid, size_t *addrle
 	return ret;
 }
 
-int nsos_adapt_sendto(int fd, const void *buf, size_t len, int flags,
+int nsos_adapt_sendto(int fd, const void *buf, size_t len, int flags_mid,
 		      const struct nsos_mid_sockaddr *addr_mid, size_t addrlen_mid)
 {
 	struct sockaddr_storage addr_storage;
 	struct sockaddr *addr = (struct sockaddr *)&addr_storage;
 	socklen_t addrlen;
+	int flags;
 	int ret;
 
 	ret = sockaddr_from_nsos_mid(&addr, &addrlen, addr_mid, addrlen_mid);
@@ -527,8 +528,12 @@ int nsos_adapt_sendto(int fd, const void *buf, size_t len, int flags,
 		return ret;
 	}
 
-	ret = sendto(fd, buf, len,
-		     socket_flags_from_nsos_mid(flags) | MSG_NOSIGNAL,
+	flags = socket_flags_from_nsos_mid(flags_mid);
+	if (flags < 0) {
+		return flags;
+	}
+
+	ret = sendto(fd, buf, len, flags | MSG_NOSIGNAL,
 		     addr, addrlen);
 	if (ret < 0) {
 		return -nsi_errno_to_mid(errno);
@@ -537,18 +542,24 @@ int nsos_adapt_sendto(int fd, const void *buf, size_t len, int flags,
 	return ret;
 }
 
-int nsos_adapt_sendmsg(int fd, const struct nsos_mid_msghdr *msg_mid, int flags)
+int nsos_adapt_sendmsg(int fd, const struct nsos_mid_msghdr *msg_mid, int flags_mid)
 {
 	struct sockaddr_storage addr_storage;
 	struct sockaddr *addr = (struct sockaddr *)&addr_storage;
 	struct msghdr msg;
 	struct iovec *msg_iov;
 	socklen_t addrlen;
+	int flags;
 	int ret;
 
 	ret = sockaddr_from_nsos_mid(&addr, &addrlen, msg_mid->msg_name, msg_mid->msg_namelen);
 	if (ret < 0) {
 		return ret;
+	}
+
+	flags = socket_flags_from_nsos_mid(flags_mid);
+	if (flags < 0) {
+		return flags;
 	}
 
 	msg_iov = calloc(msg_mid->msg_iovlen, sizeof(*msg_iov));
@@ -569,7 +580,7 @@ int nsos_adapt_sendmsg(int fd, const struct nsos_mid_msghdr *msg_mid, int flags)
 	msg.msg_controllen = 0;
 	msg.msg_flags = 0;
 
-	ret = sendmsg(fd, &msg, socket_flags_from_nsos_mid(flags) | MSG_NOSIGNAL);
+	ret = sendmsg(fd, &msg, flags | MSG_NOSIGNAL);
 	if (ret < 0) {
 		ret = -nsi_errno_to_mid(errno);
 	}
@@ -579,16 +590,22 @@ int nsos_adapt_sendmsg(int fd, const struct nsos_mid_msghdr *msg_mid, int flags)
 	return ret;
 }
 
-int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags,
+int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags_mid,
 			struct nsos_mid_sockaddr *addr_mid, size_t *addrlen_mid)
 {
 	struct sockaddr_storage addr_storage;
 	struct sockaddr *addr = (struct sockaddr *)&addr_storage;
 	socklen_t addrlen = sizeof(addr_storage);
+	int flags;
 	int ret;
 	int err;
 
-	ret = recvfrom(fd, buf, len, socket_flags_from_nsos_mid(flags),
+	flags = socket_flags_from_nsos_mid(flags_mid);
+	if (flags < 0) {
+		return flags;
+	}
+
+	ret = recvfrom(fd, buf, len, flags,
 		       addr, &addrlen);
 	if (ret < 0) {
 		return -nsi_errno_to_mid(errno);
