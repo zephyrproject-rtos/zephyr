@@ -117,6 +117,7 @@
 		flashctrl0: flash-controller@12000000 {
 			compatible = "silabs,siwx91x-flash-controller";
 			reg = <0x12000000 0x200>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
