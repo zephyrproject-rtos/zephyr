@@ -5038,6 +5038,43 @@ static int tls_opt_sec_tag_list_set(struct quic_tls_context *context,
 
 	NET_DBG("Configured %d sec tags to TLS context %p", sec_tag_cnt, context);
 
+	if (context->is_initialized) {
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+		if (context->signing_key_id != 0) {
+			psa_destroy_key(context->signing_key_id);
+			context->signing_key_id = 0;
+		}
+
+		context->ca_cert = false;
+		context->my_cert = NULL;
+		context->my_cert_len = 0;
+		context->my_key = NULL;
+		context->my_key_len = 0;
+
+		mbedtls_x509_crt_free(&context->ca_chain);
+		mbedtls_x509_crt_free(&context->own_cert);
+		mbedtls_pk_free(&context->priv_key);
+
+		mbedtls_x509_crt_init(&context->ca_chain);
+		mbedtls_x509_crt_init(&context->own_cert);
+		mbedtls_pk_init(&context->priv_key);
+#endif
+
+		ret = quic_tls_mbedtls_set_credentials(context);
+		if (ret != 0) {
+			NET_DBG("Cannot refresh credentials (%d)", ret);
+			return ret;
+		}
+
+		ret = quic_tls_set_own_cert(context, context->my_cert,
+					    context->my_cert_len,
+					    context->my_key,
+					    context->my_key_len);
+		if (ret != 0) {
+			NET_DBG("Cannot refresh own certificate, will retry later");
+		}
+	}
+
 	return 0;
 }
 
