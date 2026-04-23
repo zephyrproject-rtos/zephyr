@@ -1041,8 +1041,9 @@ class ZephyrBinaryRunner(abc.ABC):
             events = sel.select()
             for key, _ in events:
                 if key.fileobj == sys.stdin:
-                    # mypy now assumes sys.stdin is of same type as key.fileobj, which is a "plain"
-                    # file without .readline()
+                    # The regression https://github.com/python/mypy/issues/21199 in mypy v1.20
+                    # causes the type of sys.stdin to wrongly become the type of key.fileobj,
+                    # which is a "plain" file without .readline()
                     text = sys.stdin.readline()  # type: ignore[union-attr]
                     if text:
                         sock.send(text.encode())
