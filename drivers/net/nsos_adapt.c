@@ -553,8 +553,7 @@ int nsos_adapt_sendmsg(int fd, const struct nsos_mid_msghdr *msg_mid, int flags)
 
 	msg_iov = calloc(msg_mid->msg_iovlen, sizeof(*msg_iov));
 	if (!msg_iov) {
-		ret = -ENOMEM;
-		return ret;
+		return -NSI_ERRNO_MID_ENOMEM;
 	}
 
 	for (size_t i = 0; i < msg_mid->msg_iovlen; i++) {
