@@ -3,8 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief DT bindings for STM32F7 clock system
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F7_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F7_CLOCK_H_
+/** @cond INTERNAL_HIDDEN */
 
 #include "stm32_common_clocks.h"
 
@@ -72,6 +79,18 @@
 #define MCO_PRE_DIV_4 6
 #define MCO_PRE_DIV_5 7
 
+/** MCO1 clock output */
+#define MCO1_SEL_HSI		0
+#define MCO1_SEL_LSE		1
+#define MCO1_SEL_HSE		2
+#define MCO1_SEL_PLL		3
+
+/** MCO2 clock output */
+#define MCO2_SEL_SYSCLK		0
+#define MCO2_SEL_PLL2S		1
+#define MCO2_SEL_HSE		2
+#define MCO2_SEL_PLL		3
+
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, BDCR_REG)
 
@@ -100,4 +119,5 @@
 #define SDMMC2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 29, 29, DCKCFGR2_REG)
 #define DSI_SEL(val)		STM32_DT_CLOCK_SELECT((val), 30, 30, DCKCFGR2_REG)
 
+/** @endcond */
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F7_CLOCK_H_ */
