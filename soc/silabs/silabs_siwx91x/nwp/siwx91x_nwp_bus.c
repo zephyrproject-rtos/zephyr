@@ -527,14 +527,13 @@ struct net_buf *siwx91x_nwp_send_frame(const struct device *dev, struct net_buf 
 		k_sem_take(&data->global_lock, K_FOREVER);
 		k_sem_give(&data->global_lock);
 	}
-	if (!(flags & SIWX91X_FRAME_FLAG_ASYNC)) {
-		/* FIXME: We could easily implement timeout here */
-		k_mutex_lock(&queue->sync_frame_in_queue, K_FOREVER);
-	}
-	k_fifo_put(&queue->tx_queue, net_buf_ref(buf));
 	if (flags & SIWX91X_FRAME_FLAG_ASYNC) {
+		k_fifo_put(&queue->tx_queue, net_buf_ref(buf));
 		return NULL;
 	}
+	/* FIXME: We could easily implement timeout here */
+	k_mutex_lock(&queue->sync_frame_in_queue, K_FOREVER);
+	k_fifo_put(&queue->tx_queue, net_buf_ref(buf));
 	/* FIXME: We could also implement timeout here (more complex) */
 	k_sem_take(&queue->tx_done, K_FOREVER);
 	k_mutex_unlock(&queue->sync_frame_in_queue);
