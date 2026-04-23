@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TI's AM62 quirk module for the Synopsys DWC3 controller
+
+compatible: "ti,dwc3-am62"
+
+include: snps,dwc3.yaml
+
+properties:
+  ti,syscon-phy-pll-refclk:
+    type: phandle
+    required: true
+    description: |
+      Specifier for conveying frequency of ref clock input. The node
+      that this phandle points to contains the offset of the register
+      while the parent of that node is the actual syscon node.
+
+  ti,vbus-divider:
+    type: boolean
+    description: |
+      Whether USB VBUS line is connected to the VBUS pin of the SoC
+      via a 1/3 voltage divider.
+
+  reg-names:
+    required: true
+
+  clocks:
+    required: true
