@@ -1105,8 +1105,8 @@ int nsos_adapt_getaddrinfo(const char *node, const char *service,
 	ret = getaddrinfo(node, service,
 			  hints_mid ? &hints : NULL,
 			  &res);
-	if (ret < 0) {
-		return ret;
+	if (ret != 0) {
+		return eai_to_nsos_mid(ret);
 	}
 
 	ret = addrinfo_to_nsos_mid(res, res_mid);
