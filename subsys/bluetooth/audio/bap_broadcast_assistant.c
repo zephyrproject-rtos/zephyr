@@ -75,8 +75,6 @@ struct bap_broadcast_assistant_instance {
 	uint8_t pa_sync;
 	uint8_t recv_state_cnt;
 
-	uint16_t start_handle;
-	uint16_t end_handle;
 	uint16_t cp_handle;
 	uint16_t recv_state_handles[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 
@@ -678,7 +676,7 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 		}
 
 		if (sub_params != NULL) {
-			sub_params->end_handle = inst->end_handle;
+			sub_params->end_handle = params->end_handle;
 			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = attr->handle + 1;
@@ -727,12 +725,10 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
-		inst->start_handle = attr->handle + 1;
-		inst->end_handle = prim_service->end_handle;
 
 		inst->disc_params.uuid = NULL;
-		inst->disc_params.start_handle = inst->start_handle;
-		inst->disc_params.end_handle = inst->end_handle;
+		inst->disc_params.start_handle = attr->handle + 1U;
+		inst->disc_params.end_handle = prim_service->end_handle;
 		inst->disc_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 		inst->disc_params.func = char_discover_func;
 
@@ -924,8 +920,6 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 	inst->scanning = false;
 	inst->pa_sync = 0U;
 	inst->recv_state_cnt = 0U;
-	inst->start_handle = 0U;
-	inst->end_handle = 0U;
 	inst->cp_handle = 0U;
 	inst->long_read_handle = 0;
 	(void)k_work_cancel_delayable(&inst->bap_read_work);
