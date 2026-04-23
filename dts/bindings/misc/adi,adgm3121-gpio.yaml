@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices ADGM3121 DPDT MEMS switch (DC-24GHz), parallel GPIO
+  control mode.
+
+  Each of the 4 MEMS switches is controlled by a dedicated GPIO pin
+  (IN1 through IN4).
+
+  Example:
+
+    adgm3121 {
+      compatible = "adi,adgm3121-gpio";
+      in1-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+      in2-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+      in3-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+      in4-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+    };
+
+compatible: "adi,adgm3121-gpio"
+
+properties:
+  in1-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO controlling switch SW1 (RF1A-RFCA)
+
+  in2-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO controlling switch SW2 (RF2A-RFCA)
+
+  in3-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO controlling switch SW3 (RF2B-RFCB)
+
+  in4-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO controlling switch SW4 (RF1B-RFCB)
