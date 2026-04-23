@@ -131,6 +131,9 @@ Other subsystems
 Modules
 *******
 
+* Support for the `CANopenNode <https://github.com/CANopenNode/CANopenNode>`_ protocol stack was
+  moved to an :ref:`external module<external_module_canopennode>`.
+
 hal_nxp
 =======
 
