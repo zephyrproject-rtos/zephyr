@@ -502,7 +502,7 @@ static int sockaddr_to_nsos_mid(const struct net_sockaddr *addr, net_socklen_t a
 			return -NSI_ERRNO_MID_EINVAL;
 		}
 
-		addr_ll_mid->sll_family = NSOS_MID_AF_UNIX;
+		addr_ll_mid->sll_family = NSOS_MID_AF_PACKET;
 		addr_ll_mid->sll_protocol = addr_ll->sll_protocol;
 		addr_ll_mid->sll_ifindex = addr_ll->sll_ifindex;
 		addr_ll_mid->sll_hatype = addr_ll->sll_hatype;
