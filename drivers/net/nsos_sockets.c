@@ -356,6 +356,8 @@ static int nsos_poll_update(struct nsos_socket *sock, struct zsock_pollfd *pfd,
 
 	k_poll_signal_check(&poll->signal, &signaled, &flags);
 	if (!signaled) {
+		nsos_adapt_poll_update(&poll->mid);
+		pfd->revents = poll->mid.revents;
 		return 0;
 	}
 
