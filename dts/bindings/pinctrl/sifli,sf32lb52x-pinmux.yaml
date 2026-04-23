@@ -59,12 +59,15 @@ description: |
     - bias-pull-up: Enable pull-up resistor.
     - bias-pull-down: Enable pull-down resistor.
     - input-enable: Enable input buffer.
+    - slew-rate: 0 selects slow slew rate and 1 selects fast slew rate. The
+      default is slow. PA39-PA42 do not support slew-rate because bit 8 is
+      MODE (0=GPIO, 1=I2C) on those pads.
     - drive-strength: 2, 4, 8, 12 or 20 mA drive strength. 20mA is only valid
       for PA39-PA42 pins.
 
     Note that drive and bias options are mutually exclusive.
-    Note: SR (slew-rate) and IS (input-schmitt) registers are preserved
-    from hardware defaults and cannot be changed via pinctrl.
+    Note: IS (input-schmitt) registers are preserved from hardware defaults
+    and cannot be changed via pinctrl.
 
     To link pin configurations with a device, use a pinctrl-N property for some
     number N, like this example you could place in your board's DTS file:
@@ -124,6 +127,10 @@ child-binding:
 
       slew-rate:
         default: 0
+        description: |
+          Select pin output slew rate. 0 selects slow slew rate and 1 selects
+          fast slew rate. PA39-PA42 do not support slew-rate because bit 8 is
+          MODE (0=GPIO, 1=I2C) on those pads.
         enum:
           - 0
           - 1
