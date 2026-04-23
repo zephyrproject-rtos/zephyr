@@ -8,3 +8,11 @@ config I2C_ENE_KB1200
 	select PINCTRL
 	help
 	  Enable the ENE KB1200 I2C driver.
+
+config I2C_ENE_KB106X
+	bool "ENE KB106X I2C driver"
+	default y
+	depends on DT_HAS_ENE_KB106X_I2C_ENABLED
+	select PINCTRL
+	help
+	  Enable the ENE KB106X I2C driver.

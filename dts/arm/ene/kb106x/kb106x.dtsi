@@ -164,6 +164,60 @@
 			interrupts = <0 0>;
 			status = "disabled";
 		};
+
+		i2c_bus0: i2c@40340000 {
+			compatible = "ene,kb106x-i2c";
+			reg = <0x40340000 0x1000>;
+			interrupts = <15 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c_bus1: i2c@40341000 {
+			compatible = "ene,kb106x-i2c";
+			reg = <0x40341000 0x1000>;
+			interrupts = <15 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c_bus2: i2c@40342000 {
+			compatible = "ene,kb106x-i2c";
+			reg = <0x40342000 0x1000>;
+			interrupts = <15 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c_bus3: i2c@40343000 {
+			compatible = "ene,kb106x-i2c";
+			reg = <0x40343000 0x1000>;
+			interrupts = <15 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c_bus4: i2c@40344000 {
+			compatible = "ene,kb106x-i2c";
+			reg = <0x40344000 0x1000>;
+			interrupts = <15 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c_bus5: i2c@40345000 {
+			compatible = "ene,kb106x-i2c";
+			reg = <0x40345000 0x1000>;
+			interrupts = <15 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 
