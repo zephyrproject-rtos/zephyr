@@ -85,6 +85,10 @@ struct arch_esf {
 	unsigned long mepc;		/* machine exception program counter */
 	unsigned long mstatus;	/* machine status register */
 
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_ZFINX)
+	uint32_t zfinx_fcsr;		/* saved Zfinx floating-point control/status */
+#endif
+
 	unsigned long s0;		/* callee-saved s0 */
 
 #ifdef CONFIG_USERSPACE

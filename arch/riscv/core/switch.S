@@ -84,12 +84,29 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	lr tp, _thread_offset_to_tls(a0)
 #endif
 
-#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_RISCV_ISA_EXT_F)
+#ifdef CONFIG_FPU_SHARING
+#ifdef CONFIG_RISCV_ISA_EXT_F
 	 /* Preserve a0 across following call. s0 is not yet restored. */
 	mv s0, a0
 	call z_riscv_fpu_thread_context_switch
 	mv a0, s0
 #endif
+#ifdef CONFIG_RISCV_ISA_EXT_ZFINX
+	/* For Zfinx, save the old thread's fcsr and restore the new thread's fcsr.
+	 * Zfinx uses integer registers for FP values, so only the control/status
+	 * register needs to be preserved across context switches.
+	 */
+	lb t1, _thread_offset_to_exception_depth(a1)
+	bnez t1, 1f
+	frcsr t0
+	sw t0, ___thread_arch_t_zfinx_fcsr_OFFSET(a1)
+1:
+
+	/* Load the new thread's fcsr */
+	lw t0, ___thread_arch_t_zfinx_fcsr_OFFSET(a0)
+	fscsr t0
+#endif /* CONFIG_RISCV_ISA_EXT_ZFINX */
+#endif /* CONFIG_FPU_SHARING */
 
 #ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/* Kernel mode has priority over user space for PMP usage. */
