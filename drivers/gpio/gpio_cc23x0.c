@@ -21,7 +21,7 @@
 #include <inc/hw_types.h>
 
 #define IOC_ADDR(index)       (IOC_BASE + IOC_O_IOC0 + (sizeof(uint32_t) * (index)))
-#define IOC_PORTCFG_MASK	  IOC_IOC0_PORTCFG_M
+#define IOC_PORTCFG_MASK      IOC_IOC0_PORTCFG_M
 #define GPIO_PIN_TO_MASK(pin) (1 << (pin))
 
 struct gpio_cc23x0_config {
@@ -40,6 +40,19 @@ static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_fl
 	uint32_t config = 0;
 	uint32_t iocfg_reg = IOC_ADDR(pin);
 	gpio_flags_t direction = flags & GPIO_DIR_MASK;
+
+	bool setPinToOutput = flags & GPIO_OUTPUT;
+
+	/* The pin will be an output after configuring */
+	if (setPinToOutput) {
+		/* Set the new default value and enable output */
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			GPIOSetDio(pin);
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+			GPIOClearDio(pin);
+		}
+		GPIOSetOutputEnableDio(pin, GPIO_OUTPUT_ENABLE);
+	}
 
 	/*
 	 * Keep the port configuration (pinmux). pinctrl takes care of the pinmux.
@@ -75,16 +88,7 @@ static int gpio_cc23x0_config(const struct device *port, gpio_pin_t pin, gpio_fl
 
 	IOCSetConfigAndMux(pin, config, IOC_MUX_GPIO);
 
-	if (flags & GPIO_OUTPUT) {
-
-		if (flags & GPIO_OUTPUT_INIT_HIGH) {
-			GPIOSetDio(pin);
-		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
-			GPIOClearDio(pin);
-		}
-		GPIOSetOutputEnableDio(pin, GPIO_OUTPUT_ENABLE);
-
-	} else {
+	if (!setPinToOutput) {
 		GPIOSetOutputEnableDio(pin, GPIO_OUTPUT_DISABLE);
 	}
 	return 0;
