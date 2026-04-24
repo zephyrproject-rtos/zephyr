@@ -289,6 +289,26 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 #endif
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	/* No direct probe primitive in the SoC ops; fall back to
+	 * briefly locking and restoring.
+	 */
+	unsigned int key = z_soc_irq_lock();
+	bool enabled = z_soc_irq_unlocked(key);
+
+	z_soc_irq_unlock(key);
+	return enabled;
+#else
+	unsigned int mstatus;
+
+	__asm__ volatile ("csrr %0, mstatus" : "=r" (mstatus));
+	return (mstatus & MSTATUS_IEN) != 0;
+#endif
+}
+
 static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");

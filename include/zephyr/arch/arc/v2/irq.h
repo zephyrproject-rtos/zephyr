@@ -187,6 +187,16 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	return (key & 0x10)  ==  0x10;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+	/* Probe the live STATUS32 register. IE lives at bit 31 there,
+	 * unlike the bit 4 position used in the packed value returned
+	 * by "clri" above.
+	 */
+	return (z_arc_v2_aux_reg_read(_ARC_V2_STATUS32) & _ARC_V2_STATUS32_IE) != 0;
+}
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

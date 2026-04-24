@@ -989,9 +989,7 @@ int z_unpend_all_locked(_wait_q_t *wait_q)
 	int need_sched = 0;
 	struct k_thread *thread;
 
-#ifdef CONFIG_SMP
 	__ASSERT(z_spin_is_locked(&_sched_spinlock), "sched lock not held");
-#endif
 
 	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
 		unpend_thread_no_timeout(thread);
@@ -1139,11 +1137,7 @@ static inline void z_vrfy_k_reschedule(void)
 
 bool k_can_yield(void)
 {
-	unsigned int k = arch_irq_lock();
-	bool irq_locked = !arch_irq_unlocked(k);
-
-	arch_irq_unlock(k);
-	return !(k_is_pre_kernel() || k_is_in_isr() || irq_locked ||
+	return !(k_is_pre_kernel() || k_is_in_isr() || !arch_cpu_irqs_are_enabled() ||
 		 z_is_idle_thread_object(_current));
 }
 
