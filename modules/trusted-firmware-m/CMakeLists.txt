@@ -556,7 +556,7 @@ if(CONFIG_BUILD_WITH_TFM)
       # it gets used over the system imgtool. Used so that imgtool from upstream
       # mcuboot is preferred over system imgtool
       ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts
-      ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper/wrapper.py
+      ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper.py
       --layout ${layout_file}
       -k ${CONFIG_TFM_KEY_FILE_${TFM_SIGN_ARG_SUFFIX}}
       --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
