@@ -861,8 +861,10 @@ struct bt_le_adv_param {
 	 * Advertising Interval. The Minimum Advertising Interval and Maximum Advertising Interval
 	 * aren't recommended to be the same value to enable the Controller to determine the best
 	 * advertising interval given other activities.
-	 * (See Bluetooth Core Spec 6.0, Vol 4, Part E, section 7.8.5)
-	 * Range: 0x0020 to 0x4000
+	 * (See Bluetooth Core Spec 6.2, Vol 4, Part E, section 7.8.5)
+	 * Range for legacy advertising: 0x0020 to 0x4000
+	 * (See Bluetooth Core Spec 6.2, Vol 4, Part E, section 7.8.53)
+	 * Range for extended advertising: 0x0020 to 0xFFFFFF
 	 */
 	uint32_t interval_min;
 
@@ -873,8 +875,10 @@ struct bt_le_adv_param {
 	 * Advertising Interval. The Minimum Advertising Interval and Maximum Advertising Interval
 	 * aren't recommended to be the same value to enable the Controller to determine the best
 	 * advertising interval given other activities.
-	 * (See Bluetooth Core Spec 6.0, Vol 4, Part E, section 7.8.5)
-	 * Range: 0x0020 to 0x4000
+	 * (See Bluetooth Core Spec 6.2, Vol 4, Part E, section 7.8.5)
+	 * Range for legacy advertising: 0x0020 to 0x4000
+	 * (See Bluetooth Core Spec 6.2, Vol 4, Part E, section 7.8.53)
+	 * Range for extended advertising: 0x0020 to 0xFFFFFF
 	 */
 	uint32_t interval_max;
 

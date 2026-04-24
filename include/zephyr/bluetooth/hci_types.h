@@ -1228,6 +1228,8 @@ struct bt_hci_cp_le_set_random_address {
 
 #define BT_LE_ADV_INTERVAL_MIN                  0x0020
 #define BT_LE_ADV_INTERVAL_MAX                  0x4000
+/** Maximum LE Extended Advertising interval (0xFFFFFF, 0.625ms units). */
+#define BT_LE_EXT_ADV_INTERVAL_MAX              0xFFFFFFU
 #define BT_LE_ADV_INTERVAL_DEFAULT              0x0800
 
 #define BT_LE_ADV_CHAN_MAP_CHAN_37              0x01
