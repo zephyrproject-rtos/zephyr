@@ -703,7 +703,7 @@ static void remove_all_sources(void)
 
 			err = remove_source(state);
 			if (err) {
-				FAIL("[%zu]: Remove source failed (err %d)\n", err);
+				FAIL("[%zu]: Remove source failed (err %d)\n", i, err);
 				return;
 			}
 
