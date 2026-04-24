@@ -218,6 +218,7 @@ struct charger_pca9422_data {
 	enum charger_status status;
 	enum charger_online online;
 	bool charger_enabled;
+	charger_online_notifier_t charger_online_notifier;
 };
 
 static const struct linear_range vin_i_limit_ua_range[] = {
@@ -626,6 +627,7 @@ static int pca9422_charger_get_prop(const struct device *dev, charger_prop_t pro
 static int pca9422_charger_set_prop(const struct device *dev, charger_prop_t prop,
 				    const union charger_propval *val)
 {
+	struct charger_pca9422_data *data = dev->data;
 	switch (prop) {
 	case CHARGER_PROP_CONSTANT_CHARGE_CURRENT_UA:
 		return pca9422_charger_set_constant_charge_current(dev,
@@ -633,11 +635,15 @@ static int pca9422_charger_set_prop(const struct device *dev, charger_prop_t pro
 	case CHARGER_PROP_CONSTANT_CHARGE_VOLTAGE_UV:
 		return pca9422_charger_set_constant_charge_voltage(dev,
 								   val->const_charge_voltage_uv);
+
 	case CHARGER_PROP_INPUT_REGULATION_CURRENT_UA:
 		return pca9422_charger_set_input_regulation_current(
 			dev, val->input_current_regulation_current_ua);
 	case CHARGER_PROP_CHARGE_TERM_CURRENT_UA:
 		return pca9422_charger_set_topoff_current(dev, val->charge_term_current_ua);
+	case CHARGER_PROP_ONLINE_NOTIFICATION:
+		data->charger_online_notifier = val->online_notification;
+		return 0;
 	default:
 		return -ENOTSUP;
 	}
@@ -679,11 +685,17 @@ static void pca9422_charger_isr(const struct device *dev)
 		/* Check status register */
 		(void)pca9422_charger_get_online(dev, &data->online);
 		LOG_DBG("%s: VIN_OK INT - online=%d\n", __func__, data->online);
+		if (data->charger_online_notifier != NULL) {
+			data->charger_online_notifier(data->online);
+		}
 	}
 	if ((int_val[0] & PCA9422_BIT_VIN_NOK) && (~mask_val[0] & PCA9422_BIT_VIN_NOK)) {
 		/* Check status register */
 		(void)pca9422_charger_get_online(dev, &data->online);
 		LOG_DBG("%s: VIN_NOK INT - online=%d\n", __func__, data->online);
+		if (data->charger_online_notifier != NULL) {
+			data->charger_online_notifier(data->online);
+		}
 	}
 }
 
