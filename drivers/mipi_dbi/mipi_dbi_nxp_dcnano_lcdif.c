@@ -10,6 +10,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/mipi_dbi.h>
+#include <zephyr/drivers/misc/nxp_power_rail/nxp_power_rail.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -29,6 +30,8 @@ struct mcux_dcnano_lcdif_dbi_config {
 	lcdif_panel_config_t panel_config;
 	const struct pinctrl_dev_config *pincfg;
 	const struct gpio_dt_spec reset;
+	const struct nxp_power_rail_spec *power_rails;
+	uint8_t power_rail_count;
 };
 
 struct mcux_dcnano_lcdif_dbi_foramt_map_t {
@@ -157,16 +160,20 @@ static int mcux_dcnano_lcdif_dbi_init(const struct device *dev)
 {
 	const struct mcux_dcnano_lcdif_dbi_config *config = dev->config;
 	struct mcux_dcnano_lcdif_dbi_data *lcdif_data = dev->data;
-
-#ifndef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 	int ret;
 
+#ifndef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 	/* Pin control is not applied when DCNano is used in MCUX DSI driver. */
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
 	}
 #endif
+
+	ret = nxp_power_rail_request_all(config->power_rails, config->power_rail_count);
+	if (ret) {
+		return ret;
+	}
 
 	LCDIF_Init(config->base);
 
@@ -336,6 +343,7 @@ static DEVICE_API(mipi_dbi, mcux_dcnano_lcdif_dbi_api) = {
 };
 
 #define MCUX_DCNANO_LCDIF_DEVICE_INIT(n)						\
+	NXP_POWER_RAIL_DT_INST_SPECS_DEFINE(n)						\
 	static void mcux_dcnano_lcdif_dbi_config_func_##n(const struct device *dev)	\
 	{										\
 		IRQ_CONNECT(DT_INST_IRQN(n),						\
@@ -352,6 +360,7 @@ static DEVICE_API(mipi_dbi, mcux_dcnano_lcdif_dbi_api) = {
 		.irq_config_func = mcux_dcnano_lcdif_dbi_config_func_##n,		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),			\
+		NXP_POWER_RAIL_DT_INST_SPECS_INIT(n)					\
 		.dbi_config = {								\
 			.type = kLCDIF_DbiTypeA_FixedE,					\
 			.swizzle = DT_INST_ENUM_IDX_OR(n, swizzle, 0),			\

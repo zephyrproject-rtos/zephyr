@@ -542,10 +542,8 @@ void board_early_init_hook(void)
 	/* Assert LCDIF reset. */
 	RESET_SetPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
 
-	/* Disable media main and LCDIF power down. */
+	/* Disable media main power down. */
 	POWER_DisablePD(kPDRUNCFG_SHUT_MEDIA_MAINCLK);
-	POWER_DisablePD(kPDRUNCFG_APD_LCDIF);
-	POWER_DisablePD(kPDRUNCFG_PPD_LCDIF);
 
 	/* Apply power down configuration. */
 	POWER_ApplyPD();

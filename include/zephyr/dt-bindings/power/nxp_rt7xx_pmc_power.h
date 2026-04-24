@@ -24,4 +24,10 @@
 /** @brief Build a flat PMC rail id from PDRUNCFGn register index and bit. */
 #define NXP_PMC_POWER_ID(pdruncfg_idx, bit) ((pdruncfg_idx) * 32 + (bit))
 
+/* PMC peripheral array / periphery power rails (PDRUNCFG4 / PDRUNCFG5). */
+/** @brief LCDIF Active Power Down (PDRUNCFG4 bit 21). */
+#define NXP_RT7XX_PMC_APD_LCDIF NXP_PMC_POWER_ID(4, 21)
+/** @brief LCDIF Periphery Power Down (PDRUNCFG5 bit 21). */
+#define NXP_RT7XX_PMC_PPD_LCDIF NXP_PMC_POWER_ID(5, 21)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_POWER_NXP_RT7XX_PMC_POWER_H_ */
