@@ -1,5 +1,5 @@
 # Copyright (c) 2024 Intel Corporation
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MCTP
@@ -42,6 +42,24 @@ config MCTP_I2C_GPIO_TARGET
 	help
 	  Build the MCTP I2C+GPIO target binding to use MCTP over Zephyr's I2C target
 	  interface and GPIO to signal writes to the bus controller.
+
+config MCTP_I2C_SMBUS_TARGET
+	bool "MCTP I2C SMBus target binding"
+	depends on I2C
+	depends on I2C_TARGET
+	help
+	  Build the MCTP SMBus target binding over Zephyr's I2C target API.
+	  The binding relies on the underlying I2C driver to support transient
+	  controller-mode transfers for packet transmission.
+
+config MCTP_I2C_SMBUS_BLOCK_MAX
+	int "Maximum SMBus block payload size"
+	default 32
+	range 1 255
+	depends on MCTP_I2C_SMBUS_TARGET
+	help
+	  Maximum SMBus block payload size in bytes for the MCTP SMBus
+	  target binding. Classic SMBus block transfers use 32 bytes.
 
 config MCTP_I3C_CONTROLLER
 	bool "MCTP I3C Controller Binding"
