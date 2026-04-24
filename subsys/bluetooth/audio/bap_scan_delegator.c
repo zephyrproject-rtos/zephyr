@@ -1360,7 +1360,7 @@ static int bass_register(void)
 	int err;
 
 	err = bt_gatt_service_register(&bass_svc);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to register BASS service (err %d)", err);
 		return err;
 	}
@@ -1375,7 +1375,7 @@ static int bass_unregister(void)
 	int err;
 
 	err = bt_gatt_service_unregister(&bass_svc);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to unregister BASS service (err %d)", err);
 		return err;
 	}
@@ -1397,7 +1397,7 @@ int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb)
 	}
 
 	err = bass_register();
-	if (err) {
+	if (err != 0) {
 		atomic_clear_bit(scan_delegator_flags,
 				 SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELEGATOR);
 		return err;
@@ -1440,7 +1440,7 @@ int bt_bap_scan_delegator_unregister(void)
 	}
 
 	err = bass_unregister();
-	if (err) {
+	if (err != 0) {
 		atomic_set_bit(scan_delegator_flags, SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELEGATOR);
 		return err;
 	}

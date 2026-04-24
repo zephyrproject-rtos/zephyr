@@ -396,7 +396,7 @@ static uint8_t broadcast_assistant_bap_ntf_read_func(struct bt_conn *conn, uint8
 
 	LOG_DBG("conn %p err 0x%02x len %u", (void *)conn, err, length);
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to read: %u", err);
 		memset(read, 0, sizeof(*read));
 		bap_long_read_reset(inst);
