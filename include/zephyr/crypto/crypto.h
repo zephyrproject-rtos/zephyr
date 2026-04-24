@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Crypto Cipher APIs
+ * @ingroup crypto
  *
  * This file contains the Crypto Abstraction layer APIs.
  */
@@ -30,62 +31,128 @@
  * @{
  */
 
-
-/* ctx.flags values. Not all drivers support all flags.
- * A user app can query the supported hw / driver
- * capabilities via provided API (crypto_query_hwcaps()), and choose a
- * supported config during the session setup.
+/**
+ * @name Crypto capability flags
+ *
+ * Capability flags returned by crypto_query_hwcaps() and selected in
+ * cipher_ctx::flags or hash_ctx::flags during session setup.
+ *
+ * Not all drivers support all flags. More flags to be added as necessary.
+ *
+ * @{
  */
+
+/** Key material is referenced through an opaque driver-specific handle. */
 #define CAP_OPAQUE_KEY_HNDL		BIT(0)
+
+/** Key material is supplied as raw key bytes. */
 #define CAP_RAW_KEY			BIT(1)
 
-/* TBD to define */
+/** TBD. */
 #define CAP_KEY_LOADING_API		BIT(2)
 
-/** Whether the output is placed in separate buffer or not */
+/** In-place operations are supported. */
 #define CAP_INPLACE_OPS			BIT(3)
+
+/** Separate input and output buffers are supported. */
 #define CAP_SEPARATE_IO_BUFS		BIT(4)
 
-/**
- * These denotes if the output (completion of a cipher_xxx_op) is conveyed
- * by the op function returning, or it is conveyed by an async notification
- */
+/** Synchronous operations are supported. */
 #define CAP_SYNC_OPS			BIT(5)
+
+/** Asynchronous operations with completion notifications are supported. */
 #define CAP_ASYNC_OPS			BIT(6)
 
-/** Whether the hardware/driver supports autononce feature */
+/** Automatic nonce generation is supported. */
 #define CAP_AUTONONCE			BIT(7)
 
-/** Don't prefix IV to cipher blocks */
+/** Cipher output does not include a prefixed IV. */
 #define CAP_NO_IV_PREFIX		BIT(8)
 
-/* More flags to be added as necessary */
+/**
+ * @}
+ */
 
-/** @brief Crypto driver API definition. */
+/**
+ * @def_driverbackendgroup{Crypto,crypto}
+ * @{
+ */
+
+/**
+ * @brief Query crypto hardware capabilities.
+ * See crypto_query_hwcaps() for argument description.
+ */
+typedef int (*crypto_api_query_hw_caps)(const struct device *dev);
+
+/**
+ * @brief Setup a crypto cipher session.
+ * See cipher_begin_session() for argument description.
+ */
+typedef int (*crypto_api_cipher_begin_session)(const struct device *dev, struct cipher_ctx *ctx,
+					       enum cipher_algo algo, enum cipher_mode mode,
+					       enum cipher_op op_type);
+
+/**
+ * @brief Cleanup a crypto cipher session.
+ * See cipher_free_session() for argument description.
+ */
+typedef int (*crypto_api_cipher_free_session)(const struct device *dev, struct cipher_ctx *ctx);
+
+/**
+ * @brief Register an asynchronous crypto cipher callback.
+ * See cipher_callback_set() for argument description.
+ */
+typedef int (*crypto_api_cipher_async_callback_set)(const struct device *dev,
+						    cipher_completion_cb cb);
+
+/**
+ * @brief Setup a crypto hash session.
+ * See hash_begin_session() for argument description.
+ */
+typedef int (*crypto_api_hash_begin_session)(const struct device *dev, struct hash_ctx *ctx,
+					     enum hash_algo algo);
+
+/**
+ * @brief Cleanup a crypto hash session.
+ * See hash_free_session() for argument description.
+ */
+typedef int (*crypto_api_hash_free_session)(const struct device *dev, struct hash_ctx *ctx);
+
+/**
+ * @brief Register an asynchronous crypto hash callback.
+ * See hash_callback_set() for argument description.
+ */
+typedef int (*crypto_api_hash_async_callback_set)(const struct device *dev, hash_completion_cb cb);
+
+/**
+ * @driver_ops{Crypto}
+ */
 __subsystem struct crypto_driver_api {
-	int (*query_hw_caps)(const struct device *dev);
+	/** @driver_ops_mandatory @copybrief crypto_api_query_hw_caps */
+	crypto_api_query_hw_caps query_hw_caps;
 
-	/* Setup a crypto session */
-	int (*cipher_begin_session)(const struct device *dev, struct cipher_ctx *ctx,
-			     enum cipher_algo algo, enum cipher_mode mode,
-			     enum cipher_op op_type);
+	/** @driver_ops_mandatory @copybrief crypto_api_cipher_begin_session */
+	crypto_api_cipher_begin_session cipher_begin_session;
 
-	/* Tear down an established session */
-	int (*cipher_free_session)(const struct device *dev, struct cipher_ctx *ctx);
+	/** @driver_ops_mandatory @copybrief crypto_api_cipher_free_session */
+	crypto_api_cipher_free_session cipher_free_session;
 
-	/* Register async crypto op completion callback with the driver */
-	int (*cipher_async_callback_set)(const struct device *dev,
-					 cipher_completion_cb cb);
+	/** @driver_ops_optional @copybrief crypto_api_cipher_async_callback_set */
+	crypto_api_cipher_async_callback_set cipher_async_callback_set;
 
-	/* Setup a hash session */
-	int (*hash_begin_session)(const struct device *dev, struct hash_ctx *ctx,
-				  enum hash_algo algo);
-	/* Tear down an established hash session */
-	int (*hash_free_session)(const struct device *dev, struct hash_ctx *ctx);
-	/* Register async hash op completion callback with the driver */
-	int (*hash_async_callback_set)(const struct device *dev,
-					 hash_completion_cb cb);
+	/** @driver_ops_mandatory @copybrief crypto_api_hash_begin_session */
+	crypto_api_hash_begin_session hash_begin_session;
+
+	/** @driver_ops_mandatory @copybrief crypto_api_hash_free_session */
+	crypto_api_hash_free_session hash_free_session;
+
+	/** @driver_ops_optional @copybrief crypto_api_hash_async_callback_set */
+	crypto_api_hash_async_callback_set hash_async_callback_set;
 };
+
+/**
+ * @}
+ */
 
 /* Following are the public API a user app may call.
  * The first two relate to crypto "session" setup / teardown. Further we
