@@ -1320,8 +1320,8 @@ void bt_cap_initiator_cp_cb(struct bt_cap_stream *cap_stream, enum bt_bap_ascs_r
 		LOG_DBG("Control point operation on stream %p failed with %d and reason %d",
 			cap_stream, rsp_code, reason);
 
-		/* Unexpected callback - Abort */
-		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
+		/* Control point operation failed or was rejected by the peer - Abort */
+		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EACCES);
 
 		if (bt_cap_common_proc_is_aborted()) {
 			if (bt_cap_common_proc_all_handled()) {

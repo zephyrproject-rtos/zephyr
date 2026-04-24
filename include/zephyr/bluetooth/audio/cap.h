@@ -104,36 +104,64 @@ struct bt_cap_initiator_cb {
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_audio_start().
 	 *
-	 * @param err            0 if success, BT_GATT_ERR() with a
-	 *                       specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
-	 *                       by bt_cap_initiator_unicast_audio_cancel().
-	 * @param conn           Pointer to the connection where the error
-	 *                       occurred. NULL if @p err is 0 or if cancelled by
-	 *                       bt_cap_initiator_unicast_audio_cancel()
+	 * @param err
+	 * - 0 if success.
+	 * - -ENOEXEC if subprocedure could not be performed.
+	 * - -ENOMEM if subprocedure could not be performed due to lack of memory.
+	 * - -EACCES if request rejected by peer.
+	 * - -EBUSY if subprocedure could not be performed because unicast client is already busy.
+	 * - -EINVAL if subprocedure contained invalid parameters.
+	 * - -EBADMSG if unexpected state change happened.
+	 * - -EALREADY if subprocedure could not be performed due to unexpected state.
+	 * - -ECONNRESET if connection dropped during procedure.
+	 * - -ENOTCONN if subprocedure could not be performed due to connection.
+	 * - -ECANCELED if cancelled by bt_cap_initiator_unicast_audio_cancel().
+	 *
+	 * @param conn Pointer to the connection where the error occurred. NULL if @p err is 0 or if
+	 *             cancelled by bt_cap_initiator_unicast_audio_cancel()
 	 */
 	void (*unicast_start_complete)(int err, struct bt_conn *conn);
 
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_audio_update().
 	 *
-	 * @param err            0 if success, BT_GATT_ERR() with a
-	 *                       specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
-	 *                       by bt_cap_initiator_unicast_audio_cancel().
-	 * @param conn           Pointer to the connection where the error
-	 *                       occurred. NULL if @p err is 0 or if cancelled by
-	 *                       bt_cap_initiator_unicast_audio_cancel()
+	 * @param err
+	 * - 0 if success.
+	 * - -ENOEXEC if subprocedure could not be performed.
+	 * - -ENOMEM if subprocedure could not be performed due to lack of memory.
+	 * - -EACCES if request rejected by peer.
+	 * - -EBUSY if subprocedure could not be performed because unicast client is
+	 * - already busy.
+	 * - -EINVAL if subprocedure contained invalid parameters.
+	 * - -EBADMSG if unexpected state change happened.
+	 * - -ECONNRESET if connection dropped during procedure.
+	 * - -ENOTCONN if subprocedure could not be performed due to connection.
+	 * - -ECANCELED if cancelled by bt_cap_initiator_unicast_audio_cancel().
+	 *
+	 * @param conn Pointer to the connection where the error occurred. NULL if @p err is 0 or if
+	 *             cancelled by bt_cap_initiator_unicast_audio_cancel()
 	 */
 	void (*unicast_update_complete)(int err, struct bt_conn *conn);
 
 	/**
 	 * @brief Callback for bt_cap_initiator_unicast_audio_stop().
 	 *
-	 * @param err            0 if success, BT_GATT_ERR() with a
-	 *                       specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
-	 *                       by bt_cap_initiator_unicast_audio_cancel().
-	 * @param conn           Pointer to the connection where the error
-	 *                       occurred. NULL if @p err is 0 or if cancelled by
-	 *                       bt_cap_initiator_unicast_audio_cancel()
+	 * @param err
+	 * - 0 if success.
+	 * - -ENOEXEC if subprocedure could not be performed.
+	 * - -ENOMEM if subprocedure could not be performed due to lack of memory.
+	 * - -EACCES if request rejected by peer.
+	 * - -EBUSY if subprocedure could not be performed because unicast client is
+	 * - already busy.
+	 * - -EINVAL if subprocedure contained invalid parameters.
+	 * - -EBADMSG if unexpected state change happened.
+	 * - -EALREADY if subprocedure could not be performed due to unexpected state.
+	 * - -ECONNRESET if connection dropped during procedure.
+	 * - -ENOTCONN if subprocedure could not be performed due to connection.
+	 * - -ECANCELED if cancelled by bt_cap_initiator_unicast_audio_cancel().
+	 *
+	 * @param conn Pointer to the connection where the error occurred. NULL if @p err is 0 or if
+	 *             cancelled by bt_cap_initiator_unicast_audio_cancel()
 	 */
 	void (*unicast_stop_complete)(int err, struct bt_conn *conn);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
