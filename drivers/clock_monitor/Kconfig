@@ -17,5 +17,6 @@ module-str = clock_monitor
 source "subsys/logging/Kconfig.template.log_config"
 
 rsource "Kconfig.nxp_cmu_fc"
+rsource "Kconfig.nxp_cmu_fm"
 
 endif # CLOCK_MONITOR

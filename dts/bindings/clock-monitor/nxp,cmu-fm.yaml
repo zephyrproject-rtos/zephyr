@@ -1,0 +1,35 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Clock Monitoring Unit - Frequency Meter (CMU_FM).
+
+  Measures the frequency of a metered clock against a reference clock
+  and returns the result in Hz. Exposed through the Zephyr
+  clock_monitor subsystem (METER mode).
+
+compatible: "nxp,cmu-fm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+    description: |
+      NVIC interrupt for measurement-complete (and timeout) events.
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    const: ["reference", "monitored"]
+    description: |
+      Exactly two entries, in order: "reference" (the CMU's timebase
+      clock, queried by the driver to (1) size the measurement window
+      via REF_CNT and (2) convert the metered count back to Hz) and
+      "monitored" (the clock whose frequency is measured; kept for
+      symmetry with CMU_FC bindings and diagnostic use).
