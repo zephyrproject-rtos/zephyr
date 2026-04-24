@@ -45,4 +45,9 @@
 /** @brief XSPI2 Periphery Power Down (PDRUNCFG5 bit 20). */
 #define NXP_RT7XX_PMC_PPD_XSPI2 NXP_PMC_POWER_ID(5, 20)
 
+/** @brief USDHC0 SRAM Active Power Down (PDRUNCFG4 bit 0). */
+#define NXP_RT7XX_PMC_APD_SDHC0_SRAM NXP_PMC_POWER_ID(4, 0)
+/** @brief USDHC0 SRAM Periphery Power Down (PDRUNCFG5 bit 0). */
+#define NXP_RT7XX_PMC_PPD_SDHC0_SRAM NXP_PMC_POWER_ID(5, 0)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_POWER_NXP_RT7XX_PMC_POWER_H_ */

@@ -11,6 +11,13 @@ properties:
   reg:
     required: true
 
+  nxp,power-rails:
+    type: phandle-array
+    specifier-space: power-rail
+    description: |
+      Power-rail specifiers for rails that must be powered up before the controller
+      can be accessed.
+
   data-timeout:
     type: int
     default: 0xF

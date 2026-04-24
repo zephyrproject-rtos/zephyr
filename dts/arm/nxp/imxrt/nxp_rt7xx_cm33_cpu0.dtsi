@@ -949,6 +949,8 @@
 		max-current-180 = <1020>;
 		max-bus-freq = <DT_FREQ_M(208)>;
 		min-bus-freq = <DT_FREQ_K(400)>;
+		nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_SDHC0_SRAM>,
+				  <&pmc0 NXP_RT7XX_PMC_PPD_SDHC0_SRAM>;
 	};
 
 	usdhc1: memory-controller@413000 {

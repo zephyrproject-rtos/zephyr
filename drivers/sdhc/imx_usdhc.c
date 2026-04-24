@@ -12,6 +12,7 @@
 #include <zephyr/sd/sd_spec.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/misc/nxp_power_rail/nxp_power_rail.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -83,6 +84,8 @@ struct usdhc_config {
 	bool mmc_hs400_1_8v;
 	const struct pinctrl_dev_config *pincfg;
 	void (*irq_config_func)(const struct device *dev);
+	const struct nxp_power_rail_spec *power_rails;
+	uint8_t power_rail_count;
 };
 
 struct usdhc_data {
@@ -1123,6 +1126,11 @@ static int imx_usdhc_init(const struct device *dev)
 
 	DEVICE_MMIO_NAMED_MAP(dev, usdhc_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
+	ret = nxp_power_rail_request_all(cfg->power_rails, cfg->power_rail_count);
+	if (ret) {
+		return ret;
+	}
+
 	if (!device_is_ready(cfg->clock_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
@@ -1231,6 +1239,7 @@ static DEVICE_API(sdhc, usdhc_api) = {
 	}                                                                                          \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	NXP_POWER_RAIL_DT_INST_SPECS_DEFINE(n)                                                     \
                                                                                                    \
 	static const struct usdhc_config usdhc_##n##_config = {                                    \
 		DEVICE_MMIO_NAMED_ROM_INIT(usdhc_mmio, DT_DRV_INST(n)),                            \
@@ -1256,6 +1265,7 @@ static DEVICE_API(sdhc, usdhc_api) = {
 		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                                 \
 		.irq_config_func = usdhc_##n##_irq_config_func,                                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		NXP_POWER_RAIL_DT_INST_SPECS_INIT(n)                                               \
 	};                                                                                         \
                                                                                                    \
 	IMX_USDHC_DMA_BUFFER_DEFINE(n)                                                             \

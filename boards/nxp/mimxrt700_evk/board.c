@@ -450,9 +450,9 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0)) && CONFIG_IMX_USDHC
-	/*Make sure USDHC ram buffer has power up*/
-	POWER_DisablePD(kPDRUNCFG_APD_SDHC0_SRAM);
-	POWER_DisablePD(kPDRUNCFG_PPD_SDHC0_SRAM);
+	/* LPOSC enable is still owned by the board: SLEEPCON RUNCFG is
+	 * not yet managed by a rail controller driver.
+	 */
 	POWER_DisablePD(kPDRUNCFG_PD_LPOSC);
 	POWER_ApplyPD();
 
