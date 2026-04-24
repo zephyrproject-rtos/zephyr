@@ -1836,6 +1836,8 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
       ${KERNEL_HEX_NAME}
       )
     set(BYPRODUCT_KERNEL_HEX_NAME "${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}" CACHE FILEPATH "Kernel hex file" FORCE)
+  else()
+    message(WARNING "Intel HEX output format not supported by toolchain (CONFIG_BUILD_OUTPUT_HEX=y)")
   endif()
 endif()
 
@@ -1858,6 +1860,8 @@ if(CONFIG_BUILD_OUTPUT_BIN)
       ${KERNEL_BIN_NAME}
       )
     set(BYPRODUCT_KERNEL_BIN_NAME "${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}" CACHE FILEPATH "Kernel binary file" FORCE)
+  else()
+    message(WARNING "Binary output format not supported by toolchain (CONFIG_BUILD_OUTPUT_BIN=y)")
   endif()
 endif()
 
@@ -1925,6 +1929,8 @@ if(CONFIG_BUILD_OUTPUT_MOT)
       ${KERNEL_MOT_NAME}
       )
     set(BYPRODUCT_KERNEL_MOT_NAME "${PROJECT_BINARY_DIR}/${KERNEL_MOT_NAME}" CACHE FILEPATH "Kernel mot file" FORCE)
+  else()
+    message(WARNING "Motorola SREC output format not supported by toolchain (CONFIG_BUILD_OUTPUT_MOT=y)")
   endif()
 endif()
 
@@ -1963,7 +1969,6 @@ endif()
 if(CONFIG_BUILD_OUTPUT_S19)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(srec IN_LIST elfconvert_formats)
-    # Should we print a warning if case the tools does not support converting to s19 ?
     list(APPEND
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
@@ -1980,13 +1985,14 @@ if(CONFIG_BUILD_OUTPUT_S19)
       ${KERNEL_S19_NAME}
       )
     set(BYPRODUCT_KERNEL_S19_NAME "${PROJECT_BINARY_DIR}/${KERNEL_S19_NAME}" CACHE FILEPATH "Kernel s19 file" FORCE)
+  else()
+    message(WARNING "Motorola S19 output format not supported by toolchain (CONFIG_BUILD_OUTPUT_S19=y)")
   endif()
 endif()
 
 if(CONFIG_BUILD_OUTPUT_VERILOG)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(verilog IN_LIST elfconvert_formats)
-    # Should we print a warning if case the tools does not support converting to verilog ?
     list(APPEND
       post_build_commands
       COMMAND
@@ -2000,6 +2006,8 @@ if(CONFIG_BUILD_OUTPUT_VERILOG)
     )
     list(APPEND post_build_byproducts ${KERNEL_VERILOG_NAME})
     set(BYPRODUCT_KERNEL_VERILOG_NAME "${PROJECT_BINARY_DIR}/${KERNEL_VERILOG_NAME}" CACHE FILEPATH "Kernel Verilog file" FORCE)
+  else()
+    message(WARNING "Verilog output format not supported by toolchain (CONFIG_BUILD_OUTPUT_VERILOG=y)")
   endif()
 endif()
 
