@@ -1,0 +1,22 @@
+sample:
+  name: Clock Monitor - Frequency Meter
+  description: |
+    Uses a clock_monitor instance (referenced by the `clock-meter`
+    devicetree alias) in METER mode to measure a monitored clock
+    once per second, logging the result in Hz.
+
+    Which physical clock is measured depends on which instance the
+    board overlay aliases to `clock-meter` and the binding's
+    `clocks` phandle.
+tests:
+  sample.drivers.clock_monitor.measure_freq:
+    platform_allow:
+      - frdm_mcxe31b
+    tags:
+      - drivers
+      - clock_monitor
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Measured frequency = \\d+ Hz"

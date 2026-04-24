@@ -1,0 +1,25 @@
+sample:
+  name: Clock Monitor - Frequency Check
+  description: |
+    Uses a clock_monitor instance (referenced by the `clock-monitor`
+    devicetree alias) in WINDOW mode to watch a monitored clock
+    against programmable thresholds. Installs a callback that logs
+    any out-of-window or clock-lost events, and periodically drains
+    get_events() from the main loop to show the polling path.
+
+    Which physical clock is being watched depends on which CMU
+    instance the board overlay aliases to `clock-monitor`. The
+    expected frequency, tolerance and measurement window are all
+    Kconfig-tunable (see Kconfig in this sample).
+tests:
+  sample.drivers.clock_monitor.check_freq:
+    platform_allow:
+      - frdm_mcxe31b
+    tags:
+      - drivers
+      - clock_monitor
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "clock check running \\(expected ~\\d+ Hz"
