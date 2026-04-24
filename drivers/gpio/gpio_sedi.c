@@ -309,9 +309,9 @@ static int gpio_sedi_init(const struct device *dev)
 }
 
 #define GPIO_SEDI_IRQ_FLAGS_SENSE0(n) 0
-#define GPIO_SEDI_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
+#define GPIO_SEDI_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, flags)
 #define GPIO_SEDI_IRQ_FLAGS(n) \
-	_CONCAT(GPIO_SEDI_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+	_CONCAT(GPIO_SEDI_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, flags))(n)
 
 #define GPIO_DEVICE_INIT_SEDI(n)				       \
 	static struct gpio_sedi_data gpio##n##_data;	               \

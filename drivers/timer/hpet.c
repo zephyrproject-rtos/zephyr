@@ -221,15 +221,15 @@ static inline void hpet_timer_comparator_set(uint64_t val)
  * for ARM CPU with NVIC like EHL PSE, whose DTS interrupt setting
  * has no "sense" cell.
  */
-#if (DT_INST_IRQ_HAS_CELL(0, sense))
+#if (DT_INST_IRQ_HAS_CELL(0, flags))
 #ifdef HPET_INT_LEVEL_TRIGGER
 __WARN("HPET_INT_LEVEL_TRIGGER has no effect, DTS setting is used instead")
 #undef HPET_INT_LEVEL_TRIGGER
 #endif
-#if ((DT_INST_IRQ(0, sense) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
+#if ((DT_INST_IRQ(0, flags) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
 #define HPET_INT_LEVEL_TRIGGER
 #endif
-#endif /* (DT_INST_IRQ_HAS_CELL(0, sense)) */
+#endif /* (DT_INST_IRQ_HAS_CELL(0, flags)) */
 
 static __pinned_bss uint64_t last_count;
 static __pinned_bss uint64_t last_tick;
@@ -423,10 +423,10 @@ static int sys_clock_driver_init(void)
 
 	DEVICE_MMIO_TOPLEVEL_MAP(hpet_regs, K_MEM_CACHE_NONE);
 
-#if DT_INST_IRQ_HAS_CELL(0, sense)
+#if DT_INST_IRQ_HAS_CELL(0, flags)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    hpet_isr, 0, DT_INST_IRQ(0, sense));
+		    hpet_isr, 0, DT_INST_IRQ(0, flags));
 #else
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),

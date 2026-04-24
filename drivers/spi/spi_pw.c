@@ -1052,10 +1052,10 @@ static int spi_pw_init(const struct device *dev)
 	(.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0)),),    \
 	())), ())
 
-#define SPI_INTEL_IRQ_FLAGS_SENSE0(n) 0
-#define SPI_INTEL_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
+#define SPI_INTEL_IRQ_FLAGS_FLAGS0(n) 0
+#define SPI_INTEL_IRQ_FLAGS_FLAGS1(n) DT_INST_IRQ(n, flags)
 #define SPI_INTEL_IRQ_FLAGS(n) \
-	_CONCAT(SPI_INTEL_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+	_CONCAT(SPI_INTEL_IRQ_FLAGS_FLAGS, DT_INST_IRQ_HAS_CELL(n, flags))(n)
 
 #define SPI_INTEL_IRQ_INIT(n)						     \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),		     \

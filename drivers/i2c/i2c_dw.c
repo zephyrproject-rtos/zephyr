@@ -1406,8 +1406,8 @@ static int i2c_dw_initialize(const struct device *dev)
 #define I2C_PCIE_DEFINE(n)  _CONCAT(I2C_DEFINE_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
 #define I2C_DW_IRQ_FLAGS_SENSE0(n) 0
-#define I2C_DW_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
-#define I2C_DW_IRQ_FLAGS_SENSE(n)  _CONCAT(I2C_DW_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))
+#define I2C_DW_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, flags)
+#define I2C_DW_IRQ_FLAGS_SENSE(n)  _CONCAT(I2C_DW_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, flags))
 #define I2C_DW_IRQ_FLAGS(n)        I2C_DW_IRQ_FLAGS_SENSE(n)(n)
 
 /* not PCI(e) */
