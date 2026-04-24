@@ -80,7 +80,7 @@ static int do_pdm_transfer(const struct device *dmic,
 {
 	int ret;
 	void *buffer;
-	uint32_t size;
+	size_t size;
 
 	TC_PRINT("PCM output rate: %u, channels: %u\n",
 		 cfg->streams[0].pcm_rate, cfg->channel.req_num_chan);
@@ -200,7 +200,7 @@ ZTEST(dmic, test_pause_restart)
 {
 	int ret, i;
 	void *buffer;
-	uint32_t size;
+	size_t size;
 
 	dmic_cfg.channel.req_num_chan = 1;
 	dmic_cfg.channel.req_chan_map_lo =

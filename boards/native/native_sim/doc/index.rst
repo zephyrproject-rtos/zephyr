@@ -319,6 +319,28 @@ Here are more details on the peripherals that are currently provided with this b
       (eg. USB to UART dongles). For more information refer to the section
       `TTY UART`_.
 
+**Digital microphone (DMIC)**
+  A file-backed DMIC driver is available for native_sim. It reads PCM sample
+  data from a binary file on the host file system and presents it through the
+  Zephyr DMIC API, which is useful for testing audio capture pipelines.
+
+  By default the input file path is taken from
+  :kconfig:option:`CONFIG_AUDIO_DMIC_NATIVE_SIM_FILE_PATH`. The location of
+  this file can be changed through the command line parameter ``--dmic``, which
+  overrides the configured Kconfig value.
+
+**Inter-IC sound (I2S)**
+  A file-backed I2S driver is available for native_sim. It can be configured
+  for RX, TX, or both directions, and it reads or writes PCM sample data from
+  or to files on the host file system through the Zephyr I2S API. This is
+  useful for testing stream handling and loopback scenarios.
+
+  By default the RX and TX file paths are taken from
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_RX_FILE_PATH` and
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_FILE_PATH`. These file locations
+  can be changed through the command line parameters ``--i2s_rx`` and
+  ``--i2s_tx``, which override the configured Kconfig values.
+
 **Real time clock**
   The real time clock model provides a model of a constantly powered clock.
   By default this is initialized to the host time at boot.

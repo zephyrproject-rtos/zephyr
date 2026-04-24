@@ -1,0 +1,32 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DMIC_NATIVE_SIM
+	bool "Native simulator DMIC driver"
+	depends on DT_HAS_ZEPHYR_NATIVE_SIM_DMIC_ENABLED
+	help
+	  Enable the native simulator DMIC driver.
+
+if AUDIO_DMIC_NATIVE_SIM
+
+config AUDIO_DMIC_NATIVE_SIM_FILE_PATH
+	string "Input PCM file path"
+	default "/tmp/native_sim_dmic_in.pcm"
+	help
+	  Host file path used as the PCM capture source.
+
+config AUDIO_DMIC_NATIVE_SIM_QUEUE_SIZE
+	int "Receive queue length"
+	default 8
+	range 1 64
+	help
+	  Number of capture blocks that can be queued for the application.
+
+config AUDIO_DMIC_NATIVE_SIM_THREAD_PRIORITY
+	int "Worker thread priority"
+	default 5
+	help
+	  Priority for the native simulator DMIC worker thread.
+
+endif # AUDIO_DMIC_NATIVE_SIM

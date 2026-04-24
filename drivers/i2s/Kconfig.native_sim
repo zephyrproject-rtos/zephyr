@@ -1,0 +1,51 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_NATIVE_SIM
+	bool "native_sim I2S file backend"
+	depends on DT_HAS_ZEPHYR_NATIVE_SIM_I2S_ENABLED
+	default y
+	help
+	  Enable a native_sim I2S backend which reads RX PCM samples from a host
+	  file and writes TX PCM samples to a host file.
+
+if I2S_NATIVE_SIM
+
+config I2S_NATIVE_SIM_RX
+	bool "native_sim I2S RX backend"
+	default y
+	help
+	  Enable file-backed receive support for native_sim I2S devices.
+
+config I2S_NATIVE_SIM_RX_FILE_PATH
+	string "native_sim I2S RX PCM file path"
+	default ""
+	help
+	  Path to the host PCM file consumed by native_sim I2S RX devices.
+
+config I2S_NATIVE_SIM_TX
+	bool "native_sim I2S TX backend"
+	default y
+	help
+	  Enable file-backed transmit support for native_sim I2S devices.
+
+config I2S_NATIVE_SIM_TX_FILE_PATH
+	string "native_sim I2S TX PCM file path"
+	default ""
+	help
+	  Path to the host PCM file produced by native_sim I2S TX devices.
+
+config I2S_NATIVE_SIM_QUEUE_SIZE
+	int "native_sim I2S queue depth"
+	default 8
+	range 2 64
+	help
+	  Number of queued I2S blocks per native_sim I2S device.
+
+config I2S_NATIVE_SIM_THREAD_PRIORITY
+	int "native_sim I2S worker priority"
+	default 8
+	help
+	  Priority of the native_sim I2S worker thread.
+
+endif # I2S_NATIVE_SIM
