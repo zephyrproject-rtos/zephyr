@@ -19,3 +19,14 @@ config SPI_RPI_PICO_PIO_DMA
 	help
 	  Enables DMA support for Raspberry Pi Pico PIO SPI driver.
 endif
+
+config SPI_RPI_PICO_PIO_QSPI
+	bool "Raspberry Pi Pico PIO QSPI (Quad SPI) controller driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_SPI_PIO_QSPI_ENABLED
+	select PICOSDK_USE_PIO
+	select PICOSDK_USE_CLAIM
+	select PINCTRL
+	help
+	  Enable driving QSPI (Quad SPI) via PIO on the Pico.
+	  Uses 4 data lines (IO0-IO3) for half-duplex quad mode.

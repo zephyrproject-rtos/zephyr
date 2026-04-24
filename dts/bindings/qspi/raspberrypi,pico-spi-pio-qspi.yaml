@@ -1,0 +1,43 @@
+# Copyright (c) 2026 WIZnet Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico QSPI (Quad SPI) via PIO
+
+compatible: "raspberrypi,pico-spi-pio-qspi"
+
+include: ["spi-controller.yaml", "raspberrypi,pico-pio-device.yaml", "reset-device.yaml"]
+
+properties:
+  clk-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Output pin for QSPI clock
+
+  io0-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Bidirectional data pin IO0 (base pin).
+      IO0 through IO3 must be consecutive GPIO pins.
+
+  io1-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Bidirectional data pin IO1 (must be IO0 + 1)
+
+  io2-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Bidirectional data pin IO2 (must be IO0 + 2)
+
+  io3-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Bidirectional data pin IO3 (must be IO0 + 3)
+
+  clocks:
+    required: true
