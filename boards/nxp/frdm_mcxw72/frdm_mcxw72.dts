@@ -209,6 +209,9 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+	recover-bus-on-init;
 
 	accelerometer: accelerometer@19 {
 		status = "okay";

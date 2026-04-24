@@ -252,6 +252,9 @@ zephyr_lcdif: &lcdif {
 lpi2c3: &lpi2c3 {
 	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+	recover-bus-on-init;
 	status = "okay";
 
 	fxls8974: fxls8974@18 {
