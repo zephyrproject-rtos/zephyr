@@ -1,0 +1,369 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LTC4286 High Power Positive Hot-Swap Controller with Power Monitoring Telemetry
+
+compatible: "adi,ltc4286"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  rsense-uohms:
+    type: int
+    default: 500
+    description: |
+      Resistor sense value in micro-ohms.
+      The device default for this setting is 500 uOhms from the typical application,
+      but will depend on the attached resistor value across the SENSE+ and SENSE- pins.
+
+  write-protect-enable:
+    type: boolean
+    description: |
+      sets whether the device can be written to during use
+
+  vds-enable:
+    type: boolean
+    description: |
+      sets the device to use V_DS for auxiliary input measurement.
+
+  vin-vout-enable:
+    type: boolean
+    description: |
+      Enables V_IN or V_OUT as an auxiliary input for ADC Measurement.
+      The choice between the two depends on VPWR_SELECT in MFR_CONFIG1.
+      vpower-select determines the source selected;
+      V_IN if vpower-select is set, V_OUT if vpower-select is unset.
+
+  display-averaged-read:
+    type: boolean
+    description: |
+      selects averaged values for reading telemetry data
+      (V_IN, V_OUT, I_OUT, P_IN). If unset, averaged values will be selected.
+
+  average-samples-set:
+    type: int
+    enum: [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536]
+    default: 64
+    description: |
+      sets the number of samples used for averaging the ADC values.
+      Min value - 2 samples
+      Max value - 65536 samples
+      The device default value is 64 samples.
+
+
+  vrange-select:
+    type: boolean
+    description: |
+      sets the voltage range used for V_IN and V_OUT measurements.
+      If set, uses 102.4V. If unset, uses 25.6V.
+
+  vpower-select:
+    type: boolean
+    description: |
+      sets V_OUT as voltage used for power multiplication if set.
+      sets V_IN as voltage if unset. Also affects vin-vout-select.
+
+  pmbus-1mbit-enable:
+    type: boolean
+    description: |
+      set to enable 1Mbit-compatible PMBus timing.
+
+  reset-fault-enable:
+    type: boolean
+    description: |
+      sets a fault reset on an edge of the EN pin. set to disable the
+      EN pin from triggering a reset fault.
+
+  power-grid-reset-control-set:
+    type: boolean
+    description: |
+      configures PG_LATCH reset condition in MFR_PADS_LIVE_STATUS.
+      If set, FB Low resets PG_LATCH. If unset, FET off resets PG_LATCH.
+
+  mass-write-enable:
+    type: boolean
+    description: |
+      set to disable mass write (or global address) when using
+      multiple instances of this device on the same bus line.
+
+  external-temp-sensor-enable:
+    type: boolean
+    description: |
+      set to disable the use of external temperature sensor on GPIO3.
+      If set, an on-chip temperature sensor will be used.
+
+  debounce-timer-enable:
+    type: boolean
+    description: |
+      set to disable a debounce timer for EN pin transitions.
+
+  dev-gpio-reboot-enable:
+    type: boolean
+    description: |
+      set to enable a GPIO pin to generate a reboot.
+
+  dev-gpio-reboot-inv:
+    type: boolean
+    description: |
+      invert the polarity of the GPIO reboot pin, to activate on falling edge.
+
+  dev-gpio-cmp-input-pin:
+    type: int
+    default: 5
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      GPIO pin ID to select as CMP input.
+      The device default for this function is on pin 5.
+
+  current-limit-set:
+    type: int
+    default: 10
+    enum: [6, 8, 10, 12, 14, 16, 18, 20]
+    description: |
+      Set the reference voltage for current limit ILIM of device, from
+      6mV to 20mV in 2mV increments.
+      The device default is 10mV.
+
+  reboot-init-fet-only:
+    type: boolean
+    description: |
+      selects the chip initialization options following a reboot signal.
+      If set, no device reset occurs, and only the FET is turned off then on by
+      the turn-on delay selected in reboot-delay-config. if unset, chip reset.
+
+  dev-gpio-reboot-pin:
+    type: int
+    default: 6
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      GPIO pin ID to use for reboot signal input.
+      Should overlap with dev-gpio-alert-pin
+      The device default for this function is on pin 6.
+
+  dev-gpio-alert-pin:
+    type: int
+    description: |
+      GPIO pin ID to use for alert signal output.
+      Ensure that the pin selected (0-7) does not overlap with other pins
+
+  reboot-delay-config:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    default: 0
+    description: |
+      selects the auto-reboot turn-on delay following a reboot signal.
+      0 - 0.580s
+      1 - 1.16s
+      2 - 2.32s
+      3 - 4.64s
+      4 - 9.28s
+      5 - 18.6s
+      6 - 37.1s
+      7 - 74.2s
+      The device default is 0.580s.
+
+  overcurrent-fault-retries:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Configures the number of auto-retries the device attempts when an OC fault
+      occurs. If set to 7, the device will ignore the retry counter.
+      The device default is 0 retries.
+
+  overcurrent-fault-response-shutdown:
+    type: boolean
+    description: |
+      Configures if the device performs a shutdown sequence if an OC fault occurs.
+
+  overvolt-fault-retries:
+    type: int
+    default: 7
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Configures the number of auto-retries the device attempts when an OV fault
+      occurs. If set to 7, the device will ignore the retry counter.
+      The device default is to ignore the counter.
+
+  overvolt-fault-response-shutdown:
+    type: boolean
+    description: |
+      Configures if the device performs a shutdown sequence if an OV fault occurs.
+
+  undervolt-fault-retries:
+    type: int
+    default: 7
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Configures the number of auto-retries the device attempts when an UV fault
+      occurs. If set to 7, the device will ignore the retry counter.
+      The device default is to ignore the counter.
+
+  undervolt-fault-response-shutdown:
+    type: boolean
+    description: |
+      Configures if the device performs a shutdown sequence if an UV fault occurs.
+
+  overtemp-fault-retries:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Configures the number of auto-retries the device attempts when an OT fault
+      occurs. If set to 7, the device will ignore the retry counter.
+      The device default is 0 retries.
+
+  overtemp-fault-response-shutdown:
+    type: boolean
+    description: |
+      Configures if the device performs a shutdown sequence if an OT fault occurs.
+
+  overpower-fault-timer:
+    type: int
+    default: 1023
+    description: |
+      Determines the time spent for an overpower event before causing a fault.
+
+  overpower-fault-retries:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Configures the number of auto-retries the device attempts when an OP fault
+      occurs. If set to 7, the device will ignore the retry counter.
+      The device default is 0 retries.
+
+  overpower-fault-response-shutdown:
+    type: boolean
+    description: |
+      Configures if the device performs a shutdown sequence if an OP fault occurs.
+
+  fet-fault-retries:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Configures the number of auto-retries the device attempts when a FET fault
+      occurs. If set to 7, the device will ignore the retry counter.
+      The device default is 0 retries.
+
+  fet-fault-response-bad:
+    type: boolean
+    description: |
+      Configures if the device performs a shutdown sequence if a FET fault occurs.
+
+  gpo1-output-select:
+    type: int
+    default: 3
+    enum: [0, 1, 2, 3, 4, 5, 8, 9, 10]
+    description: |
+      Sets the output of the GPIO1 pin.
+      Options:
+      0 - Three-state
+      1 - MFR_GPO_DATA[GPIO#-1]
+      2 - Comparator Output
+      3 - Power good
+      4 - Fault
+      5 - IOUT_OC_STATUS
+      8 - OP1_STATUS
+      9 - Alert
+      10 - Latched Alert
+      15 - Temperature Sensor (Reserved for GPIO3 only)
+      The device default is as a Power Good status output pin.
+
+  gpo2-output-select:
+    type: int
+    default: 4
+    enum: [0, 1, 2, 3, 4, 5, 8, 9, 10]
+    description: |
+      Sets the output of the GPIO2 pin. See gpo1-output-select for options.
+      The device default is as a FAULT status output pin.
+
+  gpo3-output-select:
+    type: int
+    default: 15
+    enum: [0, 1, 2, 3, 4, 5, 8, 9, 10, 15]
+    description: |
+      Sets the output of the GPIO3 pin. See gpo1-output-select for options.
+      15 - Temperature Sensor is exclusive to GPIO3 pin.
+      The device default is as a Temperature sensor output pin.
+
+  gpo4-output-select:
+    type: int
+    default: 5
+    enum: [0, 1, 2, 3, 4, 5, 8, 9, 10]
+    description: |
+      Sets the output of the GPIO4 pin. See gpo1-output-select for options.
+      The device default is as a IOUT_OC status output pin.
+
+  gpo5-output-select:
+    type: int
+    default: 7
+    enum: [0, 1, 2, 3, 4, 5, 7, 8, 9, 10]
+    description: |
+      Sets the output of the GPIO5 pin. See gpo1-output-select for options.
+      Disabled by default.
+      The device default is as a reserved pin.
+
+  gpo6-output-select:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 8, 9, 10]
+    description: |
+      Sets the output of the GPIO6 pin. See gpo1-output-select for options.
+      The device default is as a Three-state output pin.
+
+  gpo7-output-select:
+    type: int
+    default: 2
+    enum: [0, 1, 2, 3, 4, 5, 8, 9, 10]
+    description: |
+      Sets the output of the GPIO7 pin. See gpo1-output-select for options.
+      The device default is as a Comparator Output pin.
+
+  gpo8-output-select:
+    type: int
+    default: 8
+    enum: [0, 1, 2, 3, 4, 5, 8, 9, 10]
+    description: |
+      Sets the output of the GPIO8 pin. See gpo1-output-select for options.
+      The device default is as a OP1 status output pin.
+
+  reboot-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used to signal a reboot to the device.
+
+  op-status-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used to signal an overpower fault of the device.
+
+  oc-status-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used to signal an overcurrent fault of the device.
+
+  comp-out-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used as input for comparator output signal.
+
+  fault-out-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used to signal if any fault occurs on the device.
+
+  power-good-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used to signal the power status on the device.
+
+  alert-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used to signal an ALERT# from the device.

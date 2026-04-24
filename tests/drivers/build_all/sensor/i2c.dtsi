@@ -1561,3 +1561,15 @@ test_i2c_htu21d: htu21d@ce {
 	compatible = "meas,htu21d";
 	reg = <0xce>;
 };
+
+test_i2c_ltc4286: ltc4286@cf {
+	compatible = "adi,ltc4286";
+	reg = <0xcf>;
+	reboot-gpios = <&test_gpio 0 0>;
+	op-status-gpios = <&test_gpio 0 0>;
+	oc-status-gpios = <&test_gpio 0 0>;
+	comp-out-gpios = <&test_gpio 0 0>;
+	fault-out-gpios = <&test_gpio 0 0>;
+	power-good-gpios = <&test_gpio 0 0>;
+	alert-gpios = <&test_gpio 0 0>;
+};
