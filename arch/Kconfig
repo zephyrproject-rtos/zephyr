@@ -225,8 +225,6 @@ config 64BIT
 
 config SRAM_DEPRECATED_KCONFIG_SET
 	bool
-	default y if SRAM_SIZE != $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
-	default y if SRAM_BASE_ADDRESS != $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	default n
 	select DEPRECATED
 	help
