@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_AURIX
+	bool
+
+if SOC_FAMILY_AURIX
+
+rsource "*/Kconfig"
+
+config AURIX_CORE_TOS
+	int
+
+config AURIX_SLAVE_CORE
+	bool "Slave core started after main core"
+	default y if TRICORE_CORE_ID != 0
+
+endif # SOC_FAMILY_AURIX

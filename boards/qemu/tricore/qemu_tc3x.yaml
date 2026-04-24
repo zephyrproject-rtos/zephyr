@@ -1,0 +1,18 @@
+identifier: qemu_tc3x
+name: QEMU emulation for AURIX TC39x (TC1.6P)
+type: qemu
+simulation:
+  - name: qemu
+arch: tricore
+toolchain:
+  - cross-compile
+ram: 240
+supported:
+  - gpio
+  - uart
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: infineon

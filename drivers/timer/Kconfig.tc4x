@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config TC4X_STM
+	bool "TC4x System Timer Module (STM) support"
+	depends on SOC_SERIES_TC4X
+	default y
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	help
+	  This option enables the system timer driver for the Infineon TC4x
+	  System Timer Module integrated in the cores.

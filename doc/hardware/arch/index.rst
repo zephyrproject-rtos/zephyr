@@ -11,6 +11,7 @@ Architecture-related Guides
    arm64.rst
    risc-v.rst
    semihost.rst
+   tricore.rst
    x86.rst
    xtensa.rst
    arm-scmi.rst

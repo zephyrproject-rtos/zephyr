@@ -1,0 +1,264 @@
+/*
+ * Copyright (c) 2024 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	clocks {
+		#clock-cells = <0>;
+
+		/* Clock sources */
+		fback: fback {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(100)>;
+			status = "okay";
+		};
+
+		fosc: fosc {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(20)>;
+			status = "disabled";
+		};
+
+		fsysclk: fsysclk {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(20)>;
+			status = "disabled";
+		};
+
+		/* PLLs */
+		sys_pll: sys_pll {
+			compatible = "infineon,aurix-pll";
+			n-div = <50>;
+			p-div = <2>;
+			clocks = <&fosc>;
+			status = "okay";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#clock-cells = <0>;
+
+			fpll0: sys_pll@2 {
+				compatible = "infineon,aurix-pll-clock";
+				reg = <2>;
+				clocks = <&sys_pll>;
+				k-div = <1>;
+				#clock-cells = <0>;
+			};
+		};
+
+		per_pll: per_pll {
+			compatible = "infineon,aurix-pll";
+			n-div = <40>;
+			p-div = <1>;
+			clocks = <&fosc>;
+			status = "okay";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#clock-cells = <0>;
+
+			fpll1: per_pll@2 {
+				reg = <2>;
+				compatible = "infineon,aurix-pll-clock";
+				clocks = <&per_pll>;
+				k-div = <5>;
+				k-pre-div = "1.0";
+				#clock-cells = <0>;
+			};
+
+			fpll2: per_pll@3 {
+				reg = <3>;
+				compatible = "infineon,aurix-pll-clock";
+				clocks = <&sys_pll>;
+				k-div = <4>;
+				k-pre-div = "1.0";
+				#clock-cells = <0>;
+			};
+
+			fpll3: per_pll@4 {
+				reg = <4>;
+				compatible = "infineon,aurix-pll-clock";
+				clocks = <&sys_pll>;
+				k-div = <4>;
+				k-pre-div = "1.0";
+				#clock-cells = <0>;
+			};
+		};
+
+		/* Clock Mux */
+
+		fsource0: fsource0 {
+			compatible = "infineon,aurix-clock-mux";
+			clocks = <&fpll0>;
+			#clock-cells = <0>;
+		};
+
+		fsource1: fsource1 {
+			compatible = "infineon,aurix-clock-mux";
+			clocks = <&fpll1>;
+			#clock-cells = <0>;
+		};
+
+		fsource2: fsource2 {
+			compatible = "infineon,aurix-clock-mux";
+			clocks = <&fpll2>;
+			#clock-cells = <0>;
+		};
+
+		fsource3: fsource3 {
+			compatible = "infineon,aurix-clock-mux";
+			clocks = <&fpll3>;
+			#clock-cells = <0>;
+		};
+
+		/* CPU and Timer Clocks */
+		fsri: fsri {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsource0>;
+			clock-frequency = <DT_FREQ_M(500)>;
+			status = "okay";
+			#clock-cells = <0>;
+		};
+
+		fsrics: fsrics {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsri>;
+			clock-frequency = <DT_FREQ_M(500)>;
+			clock-names = "fsrics";
+			status = "okay";
+			#clock-cells = <0>;
+		};
+		fspb: fspb {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsource0>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			clock-names = "fspb";
+			status = "okay";
+			#clock-cells = <0>;
+		};
+
+		fstm: fstm {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsource0>;
+			clock-frequency = <DT_FREQ_M(500)>;
+			clock-names = "fstm";
+			status = "okay";
+			#clock-cells = <0>;
+		};
+
+		/* Trace */
+
+		ftpb: ftpb {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsource0>;
+			clock-names = "fsource0";
+			clock-frequency = <DT_FREQ_M(250)>;
+			status = "okay";
+			#clock-cells = <0>;
+		};
+
+		/* Peripheral */
+		fleth100: fleth100 {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsource0>;
+			clock-frequency = <DT_FREQ_M(125)>;
+			#clock-cells = <0>;
+		};
+
+		fmcani: fmcani {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsource1>;
+			clock-frequency = <DT_FREQ_M(80)>;
+			#clock-cells = <0>;
+		};
+
+		fmcanh: fmcanh {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsource0>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			#clock-cells = <0>;
+		};
+
+		fmcan: fmcan {
+			compatible = "infineon,aurix-clock-mux";
+			clocks = <&fmcani>;
+			#clock-cells = <0>;
+		};
+
+		fasclinsi: fasclinsi {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsource1>;
+			clock-names = "fsource1";
+			clock-frequency = <DT_FREQ_M(80)>;
+			#clock-cells = <0>;
+		};
+
+		fasclins: fasclins {
+			compatible = "infineon,aurix-clock-mux";
+			clocks = <&fasclinsi>;
+			status = "okay";
+			#clock-cells = <0>;
+		};
+
+		fasclinf: fasclinf {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsource2>;
+			clock-names = "fsource2";
+			clock-frequency = <DT_FREQ_M(200)>;
+			#clock-cells = <0>;
+		};
+
+		fsourceqspi: fsourceqspi {
+			compatible = "infineon,aurix-clock-mux";
+			clocks = <&fsource2>;
+			status = "okay";
+			#clock-cells = <0>;
+		};
+
+		fqspi: fqspi {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsourceqspi>;
+			clock-frequency = <DT_FREQ_M(200)>;
+			status = "okay";
+			#clock-cells = <0>;
+		};
+
+		fi2c: fi2c {
+			compatible = "infineon,aurix-clock";
+			clocks = <&fsource2>;
+			clock-frequency = <66666667>;
+			status = "okay";
+			#clock-cells = <0>;
+		};
+	};
+
+	soc {
+		interrupt-parent = <&ir>;
+
+		ir: interrupt_controller@f4430000 {
+			compatible = "infineon,aurix-ir";
+			reg = <0xF4430000 0x20000 0xF4432000 0x40000>;
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+
+		safety_wdt: wdt@f0000184 {
+			compatible = "infineon,tc-wdt";
+			reg = <0xF0000184 0x30>;
+			status = "disabled";
+		};
+
+		ccu: clock_controller@f0064000 {
+			#clock-cells = <1>;
+			compatible = "infineon,tc4x-ccu";
+			reg = <0xf0064000 0x2000>;
+			status = "okay";
+		};
+	};
+};

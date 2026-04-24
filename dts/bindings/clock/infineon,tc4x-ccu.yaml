@@ -1,0 +1,18 @@
+# Copyright (c) Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: TC4X Clock Control Unit
+
+compatible: "infineon,tc4x-ccu"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - id

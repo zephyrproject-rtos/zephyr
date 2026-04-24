@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_TC3X
+	select TRICORE
+	select CPU_TC162
+	select CPU_HAS_FPU
+	select CPU_HAS_MPU
+	select AURIX_IR
+	select HAS_INFINEON_TC3X_HAL
+

@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <skeleton.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/aurix-pinctrl.h>
+#include <zephyr/dt-bindings/clock/tc4x_clock.h>
+#include <infineon/tc4x/tc4x-common.dtsi>
+#include <infineon/tc4x/tc4dx.dtsi>
+#include <infineon/tc4x/tc4x7_com-pinctrl.dtsi>
+
+/ {
+
+};
+

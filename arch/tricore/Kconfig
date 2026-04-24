@@ -1,0 +1,82 @@
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Tricore Options"
+	depends on TRICORE
+
+config ARCH
+	string
+	default "tricore"
+
+config CPU_TC162
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CPU_CACHE_INCOHERENT
+	select CPU_HAS_FPU
+	imply FPU
+	bool
+
+config CPU_TC18
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CPU_CACHE_INCOHERENT
+	select CPU_HAS_FPU
+	imply FPU
+	bool
+
+config TRICORE_CSA_COUNT
+	int "Number of Context Save Areas allocated"
+	default 256
+
+config TRICORE_CORE_ID
+	int "Core ID of the core if running in AMP mode"
+	default 0
+	help
+		Core ID of the TriCore core
+
+config TRICORE_RESET_TRAMPOLINE
+	bool "Trampoline to jump to cached address"
+	default y
+	help
+		Enable startup trampoline function which jumps from
+		any address (e.g. no cached) to the actual startup
+		function.
+
+menu "Tricore Processor Options"
+
+if CPU_TC18
+config CPU_HAS_TRICORE_VIRTUALIZATION
+	bool
+	default n
+
+config TRICORE_VIRTUALIZATION
+	bool "Tricore Virtualization"
+	default n
+
+config TRICORE_VM_ID
+	int "Tricore Virtual Machine ID"
+	depends on TRICORE_VIRTUALIZATION
+	default 0
+endif
+
+endmenu
+
+config DCACHE_LINE_SIZE
+	default 32
+
+config ICACHE_LINE_SIZE
+	default 32
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config NUM_IRQ_PRIORITIES
+	int
+	default 256
+
+endmenu

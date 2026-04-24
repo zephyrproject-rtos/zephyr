@@ -1,0 +1,87 @@
+/* Copyright (c) 2025 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "kit_a3g_tc4d7_lite-pinctrl.dtsi"
+
+/ {
+	leds: leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&p03 9 GPIO_ACTIVE_LOW>;
+		};
+		led1: led_1 {
+			gpios = <&p03 10 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	buttons: buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&p03 11 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+	};
+};
+
+&p00 {
+	status = "okay";
+};
+
+&p03 {
+	status = "okay";
+};
+
+&asclin0 {
+	compatible = "infineon,asclin-uart";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&fosc {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&sys_pll {
+	p-div = <1>;
+	n-div = <20>;
+};
+
+&per_pll {
+	p-div = <1>;
+	n-div = <32>;
+};
+
+&fpll0 {
+	k-div = <1>;
+	k-pre-div = "1.0";
+};
+
+&fpll1 {
+	k-div = <5>;
+	k-pre-div = "1.0";
+};
+
+&fpll2 {
+	k-div = <2>;
+	k-pre-div = "2.0";
+};
+
+&fpll3 {
+	k-div = <1>;
+	k-pre-div = "2.0";
+};
+
+&fpllppu {
+	k-div = <1>;
+	k-pre-div = "1.1";
+};

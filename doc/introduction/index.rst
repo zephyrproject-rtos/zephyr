@@ -21,6 +21,7 @@ The Zephyr kernel supports multiple architectures, including:
  - RISC-V (32- and 64-bit)
  - SPARC V8
  - Tensilica Xtensa
+ - TriCore (TC1.6.2 and TC1.8)
 
 The full list of supported boards based on these architectures can be found :ref:`here <boards>`.
 

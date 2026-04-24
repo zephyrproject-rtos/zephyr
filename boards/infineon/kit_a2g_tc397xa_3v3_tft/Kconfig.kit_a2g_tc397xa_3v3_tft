@@ -1,0 +1,11 @@
+# Copyright 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KIT_A2G_TC397XA_3V3_TFT
+	bool "Infineon TC397 ADAS Application Kit"
+	select SOC_TC397XP
+
+config TRICORE_CORE_ID
+	int
+	default 0 if BOARD_KIT_A2G_TC397XA_3V3_TFT_TC397XP_CPU0
+	default 0

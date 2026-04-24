@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_QEMU_TC3X
+	select SOC_TC39xB

@@ -34,6 +34,8 @@ if(NOT "${ARCH}" STREQUAL "posix")
     include(${ZEPHYR_BASE}/cmake/compiler/clang/target_arm64.cmake)
   elseif("${ARCH}" STREQUAL "riscv")
     include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_riscv.cmake)
+  elseif("${ARCH}" STREQUAL "tricore")
+    include(${CMAKE_CURRENT_LIST_DIR}/target_tricore.cmake)
   endif()
 
   foreach(file_name include/stddef.h)

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_QEMU_TC4X
+	bool
+
+config SOC
+	default "qemu_tc4x" if SOC_QEMU_TC4X

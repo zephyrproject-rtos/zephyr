@@ -261,6 +261,14 @@ static inline void trigger_irq(int irq)
 		_sw_isr_table[irq - CONFIG_GEN_IRQ_START_VECTOR].arg);
 }
 
+#elif defined(CONFIG_TRICORE)
+#include <zephyr/drivers/interrupt_controller/intc_aurix_ir.h>
+
+static inline void trigger_irq(int irq)
+{
+	intc_aurix_ir_irq_raise(irq);
+}
+
 #else
 #define NO_TRIGGER_FROM_SW
 #endif

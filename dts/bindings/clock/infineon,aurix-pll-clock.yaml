@@ -1,0 +1,28 @@
+# Copyright (c) Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Aurix Soc PLL Clock
+
+compatible: "infineon,aurix-pll-clock"
+
+include: clock-controller.yaml
+
+properties:
+  reg:
+    type: int
+    required: true
+
+  k-div:
+      type: int
+      required: true
+
+  k-pre-div:
+      type: string
+      enum: ["1.0", "1.1", "1.2", "1.4", "1.6", "1.7", "2.0"]
+
+  clocks:
+    type: phandle-array
+    description: input clock source
+
+  "#clock-cells":
+    const: 0

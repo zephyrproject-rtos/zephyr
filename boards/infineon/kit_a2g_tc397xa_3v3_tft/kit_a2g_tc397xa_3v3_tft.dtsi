@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "kit_a2g_tc397xa_3v3_tft-pinctrl.dtsi"
+
+/ {
+	leds: leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&p33 1 GPIO_ACTIVE_LOW>;
+		};
+		led1: led_1 {
+			gpios = <&p33 2 GPIO_ACTIVE_LOW>;
+		};
+		led2: led_2 {
+			gpios = <&p33 3 GPIO_ACTIVE_LOW>;
+		};
+		led3: led_3 {
+			gpios = <&p33 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+};
+
+&fosc {
+	clock-frequency = <DT_FREQ_M(20)>;
+	status = "okay";
+};
+
+&p33 {
+	status = "okay";
+};
+
+&asclin0 {
+	compatible = "infineon,asclin-uart";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};

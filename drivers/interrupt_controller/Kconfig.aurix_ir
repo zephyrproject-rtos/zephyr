@@ -1,0 +1,9 @@
+# Copyright (C) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config AURIX_IR
+	bool "Infineon Aurix Interrupt Router"
+	default y
+	depends on DT_HAS_INFINEON_AURIX_IR_ENABLED
+	help
+		Enable driver for Infineon Aurix interrupt router.

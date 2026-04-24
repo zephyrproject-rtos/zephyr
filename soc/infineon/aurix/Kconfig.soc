@@ -1,0 +1,21 @@
+# Copyright 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+
+config SOC_FAMILY_AURIX
+	bool
+
+config SOC_SERIES_TC3X
+	bool
+	help
+	  Enable support for TC3X MCU series
+
+config SOC_SERIES_TC4X
+	bool
+	help
+	  Enable support for TC4X MCU series
+
+config SOC_FAMILY
+	default "aurix" if SOC_FAMILY_AURIX
+
+rsource "*/Kconfig.soc"

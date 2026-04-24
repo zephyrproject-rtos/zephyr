@@ -1,0 +1,9 @@
+# Copyright 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: kit_a2g_tc375_lite
+  full_name: TC375 LiteKit
+  vendor: infineon
+  socs:
+    - name: tc375tp

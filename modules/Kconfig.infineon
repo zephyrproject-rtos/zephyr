@@ -71,3 +71,11 @@ config HAS_XMCLIB_RTC
 	  Enable XMCLIB RTC
 
 endif # HAS_XMCLIB
+
+config HAS_INFINEON_TC3X_HAL
+	bool
+	depends on SOC_SERIES_TC3X
+
+config HAS_INFINEON_TC4X_HAL
+	bool
+	depends on SOC_SERIES_TC4X

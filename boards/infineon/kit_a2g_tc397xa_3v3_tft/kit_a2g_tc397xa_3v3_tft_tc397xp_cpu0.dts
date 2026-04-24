@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2024 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <infineon/tc3x/tc397xp.dtsi>
+#include "kit_a2g_tc397xa_3v3_tft.dtsi"
+
+/ {
+	model = "Infineon TC397 ADAS Application Kit";
+	compatible = "infineon,kit_a2g_tc397xa_3v3_tft",
+		      "infineon,tc397",
+		      "infineon,tc3xx";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &dsram0;
+		zephyr,itcm = &psram0;
+		zephyr,console = &asclin0;
+		zephyr,shell-uart = &asclin0;
+		infineon,system-timer = &stm0;
+	};
+};
+
+&stm0 {
+	status = "okay";
+	freeze;
+};
+
+&asclin0 {
+	status = "okay";
+};

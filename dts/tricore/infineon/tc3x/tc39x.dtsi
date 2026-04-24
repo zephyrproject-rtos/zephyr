@@ -1,0 +1,500 @@
+/*
+ * Copyright (c) 2024 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <skeleton.dtsi>
+#include <zephyr/dt-bindings/clock/tc3x_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <infineon/tc3x/tc39x-irq.h>
+#include <infineon/tc3x/tc3x-common.dtsi>
+
+/ {
+	model = "infineon,tc39x";
+	compatible = "infineon,tc39x";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "infineon,tc162";
+			reg = <0>;
+			clocks = <&fcpu0>;
+		};
+		cpu1: cpu@1 {
+			compatible = "infineon,tc162";
+			reg = <1>;
+			clocks = <&fcpu1>;
+		};
+		cpu2: cpu@2 {
+			compatible = "infineon,tc162";
+			reg = <2>;
+			clocks = <&fcpu2>;
+		};
+		cpu3: cpu@3 {
+			compatible = "infineon,tc162";
+			reg = <3>;
+			clocks = <&fcpu3>;
+		};
+		cpu4: cpu@4 {
+			compatible = "infineon,tc162";
+			reg = <4>;
+			clocks = <&fcpu4>;
+		};
+		cpu5: cpu@5 {
+			compatible = "infineon,tc162";
+			reg = <5>;
+			clocks = <&fcpu5>;
+		};
+	};
+
+	flash_controller0: flash_controller@af000000 {
+		compatible = "infineon,tc3x-flash-controller";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0xaf000000 DT_SIZE_K(256)>;
+		flash0: flash@80000000 {
+			compatible = "infineon,tc3x-nv-flash","soc-nv-flash";
+			write-block-size = <256>;
+			reg = <0x80000000 DT_SIZE_M(3)>;
+		};
+		flash1: flash@80300000 {
+			compatible = "infineon,tc3x-nv-flash","soc-nv-flash";
+			write-block-size = <256>;
+			reg = <0x80300000 DT_SIZE_M(3)>;
+		};
+		flash2: flash@80600000 {
+			compatible = "infineon,tc3x-nv-flash","soc-nv-flash";
+			write-block-size = <256>;
+			reg = <0x80600000 DT_SIZE_M(3)>;
+		};
+		flash3: flash@80900000 {
+			compatible = "infineon,tc3x-nv-flash","soc-nv-flash";
+			write-block-size = <256>;
+			reg = <0x80900000 DT_SIZE_M(3)>;
+		};
+		flash4: flash@80c00000 {
+			compatible = "infineon,tc3x-nv-flash","soc-nv-flash";
+			write-block-size = <256>;
+			reg = <0x80c00000 DT_SIZE_M(3)>;
+		};
+		flash5: flash@80f00000 {
+			compatible = "infineon,tc3x-nv-flash","soc-nv-flash";
+			write-block-size = <256>;
+			reg = <0x80f00000 DT_SIZE_M(1)>;
+		};
+	};
+
+	dsram0: memory@70000000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x70000000 DT_SIZE_K(240)>;
+		zephyr,memory-region = "DSRAM0";
+	};
+	dsram1: memory@60000000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x60000000 DT_SIZE_K(240)>;
+		zephyr,memory-region = "DSRAM1";
+	};
+	dsram2: memory@50000000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x50000000 DT_SIZE_K(96)>;
+		zephyr,memory-region = "DSRAM2";
+	};
+	dsram3: memory@40000000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x40000000 DT_SIZE_K(96)>;
+		zephyr,memory-region = "DSRAM3";
+	};
+	dsram4: memory@30000000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x30000000 DT_SIZE_K(96)>;
+		zephyr,memory-region = "DSRAM4";
+	};
+	dsram5: memory@10000000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x10000000 DT_SIZE_K(96)>;
+		zephyr,memory-region = "DSRAM5";
+	};
+
+	psram0: memory@70100000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x70100000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "PSRAM0";
+	};
+	psram1: memory@60100000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x60100000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "PSRAM1";
+	};
+	psram2: memory@50100000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x50100000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "PSRAM2";
+	};
+	psram3: memory@40100000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x40100000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "PSRAM3";
+	};
+	psram4: memory@30100000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x30100000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "PSRAM4";
+	};
+	psram5: memory@10100000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x10100000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "PSRAM5";
+	};
+
+	dlmu0: memory@90000000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x90000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "DLMU0";
+	};
+
+	dlmu1: memory@90010000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x90010000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "DLMU1";
+	};
+
+	dlmu2: memory@90020000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x90020000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "DLMU2";
+	};
+
+	dlmu3: memory@90030000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x90030000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "DLMU3";
+	};
+
+	dlmu4: memory@90040000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x90040000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "DLMU4";
+	};
+
+	dlmu5: memory@90050000 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x90050000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "DLMU5";
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&ir>;
+		compatible = "simple-bus";
+		ranges;
+
+		stm0: timer@f0001000 {
+			compatible = "infineon,tc3x-stm";
+			reg = <0xF0001000 256>;
+			clocks = <&fstm>;
+			interrupts = <IRQ_STM0_SR0 1>;
+		};
+		stm1: timer@f0001100 {
+			compatible = "infineon,tc3x-stm";
+			reg = <0xF0001100 256>;
+			clocks = <&fstm>;
+			interrupts = <IRQ_STM1_SR0 1>;
+		};
+		stm2: timer@f0001200 {
+			compatible = "infineon,tc3x-stm";
+			reg = <0xF0001200 256>;
+			clocks = <&fstm>;
+			interrupts = <IRQ_STM2_SR0 1>;
+		};
+		stm3: timer@f0001300 {
+			compatible = "infineon,tc3x-stm";
+			reg = <0xF0001300 256>;
+			clocks = <&fstm>;
+			interrupts = <IRQ_STM3_SR0 1>;
+		};
+		stm4: timer@f0001400 {
+			compatible = "infineon,tc3x-stm";
+			reg = <0xF0001400 256>;
+			clocks = <&fstm>;
+			interrupts = <IRQ_STM4_SR0 1>;
+		};
+		stm5: timer@f0001500 {
+			compatible = "infineon,tc3x-stm";
+			reg = <0xF0001500 256>;
+			clocks = <&fstm>;
+			interrupts = <IRQ_STM5_SR0 1>;
+		};
+
+		pinctrl: pinctrl@f003a000 {
+			compatible = "infineon,tc3x-pinctrl";
+			reg = <0xF003A000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			p00: gpio@f003a000 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003A000 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p01: gpio@f003a100 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003A100 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p02: gpio@f003a200 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003A200 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p10: gpio@f003aa00 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003AA00 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p11: gpio@f003ab00 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003AB00 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p12: gpio@f003ac00 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003AC00 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p13: gpio@f003ad00 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003AD00 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p14: gpio@f003ae00 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003AE00 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p15: gpio@f003af00 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003AF00 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p20: gpio@f003b400 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003B400 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p21: gpio@f003b500 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003B500 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p22: gpio@f003b600 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003B600 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p23: gpio@f003b700 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003B700 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p24: gpio@f003b800 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003B800 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p25: gpio@f003b900 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003B900 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p26: gpio@f003ba00 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003BA00 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p30: gpio@f003be00 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003BE00 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p31: gpio@f003bf00 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003BF00 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p32: gpio@f003c000 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003C000 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p33: gpio@f003c100 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003C100 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p34: gpio@f003c200 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003C200 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p40: gpio@f003c800 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003C800 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+			p41: gpio@f003c900 {
+				compatible = "infineon,tc3x-gpio";
+				reg = <0xF003C900 0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+		};
+
+		asclin0: asclin@f0000600 {
+			reg = <0xF0000600 256>;
+			interrupts = <IRQ_ASCLIN0_TX 2>, <IRQ_ASCLIN0_RX 3>, <IRQ_ASCLIN0_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+		asclin1: asclin@f0000700 {
+			reg = <0xF0000700 256>;
+			interrupts = <IRQ_ASCLIN1_TX 2>, <IRQ_ASCLIN1_RX 3>, <IRQ_ASCLIN1_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+		asclin2: asclin@f0000800 {
+			reg = <0xF0000800 256>;
+			interrupts = <IRQ_ASCLIN2_TX 2>, <IRQ_ASCLIN2_RX 3>, <IRQ_ASCLIN2_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+		asclin3: asclin@f0000900 {
+			reg = <0xF0000900 256>;
+			interrupts = <IRQ_ASCLIN3_TX 2>, <IRQ_ASCLIN3_RX 3>, <IRQ_ASCLIN3_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+		asclin4: asclin@f0000a00 {
+			reg = <0xF0000A00 256>;
+			interrupts = <IRQ_ASCLIN4_TX 2>, <IRQ_ASCLIN4_RX 3>, <IRQ_ASCLIN4_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+		asclin5: asclin@f0000b00 {
+			reg = <0xF0000B00 256>;
+			interrupts = <IRQ_ASCLIN5_TX 2>, <IRQ_ASCLIN5_RX 3>, <IRQ_ASCLIN5_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+		asclin6: asclin@f0000c00 {
+			reg = <0xF0000C00 256>;
+			interrupts = <IRQ_ASCLIN6_TX 2>, <IRQ_ASCLIN6_RX 3>, <IRQ_ASCLIN6_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+		asclin7: asclin@f0000d00 {
+			reg = <0xF0000D00 256>;
+			interrupts = <IRQ_ASCLIN7_TX 2>, <IRQ_ASCLIN7_RX 3>, <IRQ_ASCLIN7_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+		asclin8: asclin@f0000e00 {
+			reg = <0xF0000E00 256>;
+			interrupts = <IRQ_ASCLIN8_TX 2>, <IRQ_ASCLIN8_RX 3>, <IRQ_ASCLIN8_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+		asclin9: asclin@f0000f00 {
+			reg = <0xF0000F00 256>;
+			interrupts = <IRQ_ASCLIN9_TX 2>, <IRQ_ASCLIN9_RX 3>, <IRQ_ASCLIN9_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+		asclin10: asclin@f02c0a00 {
+			reg = <0xF02C0A00 0x100>;
+			interrupts = <IRQ_ASCLIN10_TX 2>, <IRQ_ASCLIN10_RX 3>, <IRQ_ASCLIN10_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+		asclin11: asclin@f02c0b00 {
+			reg = <0xF02C0B00 0x100>;
+			interrupts = <IRQ_ASCLIN11_TX 2>, <IRQ_ASCLIN11_RX 3>, <IRQ_ASCLIN11_ERR 4>;
+			interrupt-names = "tx", "rx", "err";
+			clocks = <&ccu CLOCK_FASCLINF>, <&ccu CLOCK_FASCLINS>;
+			clock-names = "fasclinf", "fasclins";
+			status = "disabled";
+		};
+	};
+};

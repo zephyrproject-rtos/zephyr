@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kit_a3g_tc4d7_lite/tc4d7xp/cpu0
+name: AURIX A3G TC4D7 Lite Kit (CPU0)
+type: mcu
+arch: tricore
+ram: 240
+flash: 4096
+toolchain:
+  - cross-compile
+supported:
+  - gpio
+  - uart
+testing:
+  ignore_tags:
+    - benchmark
+    - cache
+    - cpp
+vendor: infineon

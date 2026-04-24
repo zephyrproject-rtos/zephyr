@@ -133,6 +133,17 @@
 #endif
 
 /* Unaligned access */
+#ifdef CONFIG_TRICORE
+#define UNALIGNED_GET(g) \
+__extension__ ({                                                            \
+	union {                                                              \
+		__typeof__(*(g)) __v;                                        \
+		unsigned char __b[sizeof(__typeof__(*(g)))];                 \
+	} __u = { 0 };                                                     \
+	__builtin_memcpy(__u.__b, (const void *)(g), sizeof(__u.__b));    \
+	__u.__v;                                                           \
+})
+#else
 #define UNALIGNED_GET(g)						\
 __extension__ ({							\
 	struct  __attribute__((__packed__)) {				\
@@ -140,6 +151,7 @@ __extension__ ({							\
 	} *__g = (__typeof__(__g)) (g);					\
 	__g->__v;							\
 })
+#endif
 
 
 #if (__GNUC__ >= 7) && (defined(CONFIG_ARM) || defined(CONFIG_ARM64))
@@ -405,7 +417,7 @@ do {                                                                    \
 #if defined(CONFIG_ARM) || defined(CONFIG_RISCV) \
 	|| defined(CONFIG_XTENSA) || defined(CONFIG_ARM64) \
 	|| defined(CONFIG_MIPS) || defined(CONFIG_RX) \
-	|| defined(CONFIG_OPENRISC)
+	|| defined(CONFIG_OPENRISC) || defined(CONFIG_TRICORE)
 #define GTEXT(sym) .global sym; .type sym, %function
 #define GDATA(sym) .global sym; .type sym, %object
 #define WTEXT(sym) .weak sym; .type sym, %function
@@ -611,6 +623,17 @@ do {                                                                    \
 	__asm__ __volatile__(".global\t" #name                    \
 		"\n\t.equ\t" #name "," #value        \
 		"\n\t.type\t" #name ",#object")
+
+#elif defined(CONFIG_TRICORE)
+#define GEN_ABSOLUTE_SYM(name, value)			\
+	__asm__(".global\t" #name "\n\t.equ\t" #name	\
+		",%0"					\
+		"\n\t.type\t" #name ",@object" : : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",@object")
 
 #else
 #error processor architecture not supported
