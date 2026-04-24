@@ -70,6 +70,7 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_OPEN_DLCI2,
 	MODEM_CELLULAR_STATE_WAIT_FOR_APN,
 	MODEM_CELLULAR_STATE_RUN_APN_SCRIPT,
+	MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT,
 	MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT,
 	MODEM_CELLULAR_STATE_AWAIT_REGISTERED,
 	MODEM_CELLULAR_STATE_REGISTERED,
@@ -209,6 +210,7 @@ struct modem_cellular_config {
 	bool use_default_apn;
 	k_timeout_t cmux_idle_timeout;
 	const struct modem_chat_script *init_chat_script;
+	const struct modem_chat_script *network_chat_script;
 	const struct modem_chat_script *dial_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
 	const struct modem_chat_script *shutdown_chat_script;
@@ -294,10 +296,13 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 				   (,), inst, __VA_ARGS__)                                         \
 	);
 
-/* Helper to define modem instance */
-#define MODEM_CELLULAR_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,   \
-				       set_baudrate_script, init_script, dial_script,              \
-				       periodic_script, shutdown_script)                           \
+/* Helper to define modem instance with a separate scripts for:
+ *  * Network setup script to configure network and URC messages,
+ *  * PPP dial script (ATD*99# or AT+CGDATA or similar)
+ */
+#define MODEM_CELLULAR2_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,  \
+				       set_baudrate_script, init_script, network_script,           \
+				       dial_script, periodic_script, shutdown_script)              \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
@@ -325,6 +330,7 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 		.cmux_idle_timeout = K_MSEC(DT_INST_PROP_OR(inst, cmux_idle_timeout_ms, 0)),       \
 		.set_baudrate_chat_script = (set_baudrate_script),                                 \
 		.init_chat_script = (init_script),                                                 \
+		.network_chat_script = (network_script),                                           \
 		.dial_chat_script = (dial_script),                                                 \
 		.periodic_chat_script = (periodic_script),                                         \
 		.shutdown_chat_script = (shutdown_script),                                         \
@@ -338,6 +344,16 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
 			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL,                \
 			      CONFIG_MODEM_CELLULAR_INIT_PRIORITY, &modem_cellular_api);
+
+/* Helper to define modem instance
+ * with the same script for network setup and PPP dial
+ */
+#define MODEM_CELLULAR_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,   \
+				       set_baudrate_script, init_script, dial_script,              \
+				       periodic_script, shutdown_script)                           \
+	MODEM_CELLULAR2_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,  \
+					set_baudrate_script, init_script, NULL, dial_script,       \
+					periodic_script, shutdown_script)
 
 /** @} */
 
