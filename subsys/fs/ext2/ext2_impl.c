@@ -255,6 +255,13 @@ int ext2_verify_disk_superblock(struct ext2_disk_superblock *sb)
 		return -ENOTSUP;
 	}
 
+	/* Reject zero divisors used during block-group and inode lookup. */
+	if (sys_le32_to_cpu(sb->s_blocks_per_group) == 0 ||
+	    sys_le32_to_cpu(sb->s_inodes_per_group) == 0) {
+		LOG_ERR("Invalid superblock: s_blocks_per_group or s_inodes_per_group is zero");
+		return -EINVAL;
+	}
+
 	/* Check if file system may contain errors. */
 	if (sys_le16_to_cpu(sb->s_state) == EXT2_ERROR_FS) {
 		LOG_WRN("File system may contain errors.");
