@@ -250,11 +250,24 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 	case MCUX_SIRC_CLK:
 		*rate = CLOCK_SIRC_CLK_FREQ;
 		return 0;
+	case MCUX_FIRC_CLK:
+		*rate = CLOCK_GetFircClkFreq();
+		return 0;
+	case MCUX_FXOSC_CLK:
+		*rate = CLOCK_GetFxoscFreq();
+		return 0;
+	case MCUX_CORESYS_CLK:
 #if defined(CONFIG_MCUX_FLEXIO)
 	case MCUX_FLEXIO_CLK:
+#endif
 		*rate = CLOCK_GetCoreClkFreq();
 		return 0;
-#endif
+	case MCUX_AIPSPLAT_CLK:
+		*rate = CLOCK_GetAipsPlatClkFreq();
+		return 0;
+	case MCUX_HSE_CLK:
+		*rate = CLOCK_GetHseClkFreq();
+		return 0;
 	default:
 		return -ENOTSUP;
 	}
