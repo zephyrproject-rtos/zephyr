@@ -10,11 +10,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/posix/unistd.h>
 
-#define ENTROPY_NODE DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy))
-
 int getentropy(void *buffer, size_t length)
 {
-	const struct device *const entropy = ENTROPY_NODE;
+	const struct device *const entropy = entropy_get_default_device();
 
 	if (!buffer) {
 		errno = EFAULT;

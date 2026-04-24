@@ -62,6 +62,13 @@ config ENTROPY_HAS_DRIVER
 	  This is an option to be enabled by individual entropy driver
 	  to signal that there is a true entropy driver.
 
+config ARCH_HAS_ENTROPY
+	bool
+	select ENTROPY_HAS_DRIVER
+	help
+	  This is a hidden option to indicate that the architecture supports
+	  entropy without a dedicated device.
+
 config ENTROPY_NEEDS_PRNG
 	bool
 	help
