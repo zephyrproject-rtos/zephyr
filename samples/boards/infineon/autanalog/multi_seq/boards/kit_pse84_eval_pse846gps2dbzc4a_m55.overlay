@@ -1,0 +1,184 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/infineon-autanalog-sar.h>
+
+/ {
+	zephyr,user {
+		/* ADC channels: GPIO ch0~7, MUX ch8~9 */
+		io-channels = <&adc0 0>, <&adc0 1>, <&adc0 2>, <&adc0 3>,
+			      <&adc0 5>, <&adc0 6>, <&adc0 7>, <&adc0 8>, <&adc0 9>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <0>;   /* P15.0 */
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <1>;   /* P15.1 */
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <2>;   /* P15.2 */
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <3>;   /* P15.3 */
+	};
+
+	channel@5 {
+		reg = <5>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <5>;   /* P15.5 */
+	};
+
+	channel@6 {
+		reg = <6>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <6>;   /* P15.6 */
+	};
+
+	channel@7 {
+		reg = <7>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <7>;   /* P15.7 */
+	};
+
+	/* MUX channel: P15.0 via internal MUX routing.
+	 * Channel ID 8 = MUX channel index 0.
+	 */
+	channel@8 {
+		reg = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IFX_AUTANALOG_SAR_PIN_MUX_GPIO0>;
+		mux-buf-bypass;
+	};
+
+	/* MUX channel: P15.2 via internal MUX routing.
+	 * Channel ID 9 = MUX channel index 1.
+	 */
+	channel@9 {
+		reg = <9>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IFX_AUTANALOG_SAR_PIN_MUX_GPIO2>;
+		mux-buf-bypass;
+	};
+
+	/* HS sequencer table: one channel per entry, chained via next-action.
+	 * All entries use sample-time slot 0 (1 µs acquisition time).
+	 */
+	seq-hs-0 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		gpio-channels = <0x01>;  /* GPIO ch 0 */
+		sample-time-en;
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE>;
+	};
+
+	seq-hs-1 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		gpio-channels = <0x02>;  /* GPIO ch 1 */
+		sample-time-en;
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE>;
+	};
+
+	seq-hs-2 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		gpio-channels = <0x04>;  /* GPIO ch 2 */
+		sample-time-en;
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE>;
+	};
+
+	seq-hs-3 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		gpio-channels = <0x08>;  /* GPIO ch 3 */
+		sample-time-en;
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE>;
+	};
+
+	seq-hs-4 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		gpio-channels = <0x20>;  /* GPIO ch 5 */
+		sample-time-en;
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE>;
+	};
+
+	seq-hs-5 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		gpio-channels = <0x40>;  /* GPIO ch 6 */
+		sample-time-en;
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE>;
+	};
+
+	seq-hs-6 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		gpio-channels = <0x80>;  /* GPIO ch 7 */
+		sample-time-en;
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE>;
+	};
+
+	seq-hs-7 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		mux-mode = <IFX_AUTANALOG_SAR_MUX0_SINGLE_ENDED>;
+		mux0-sel = <0>;  /* MUX ch 8 (MUX index 0) */
+		sample-time-en;
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_CONTINUE>;
+	};
+
+	seq-hs-8 {
+		compatible = "infineon,autanalog-sar-seq-hs";
+		mux-mode = <IFX_AUTANALOG_SAR_MUX0_SINGLE_ENDED>;
+		mux0-sel = <1>;  /* MUX ch 9 (MUX index 1) */
+		sample-time-en;
+		next-action = <IFX_AUTANALOG_SAR_SEQ_NEXT_STOP>;
+	};
+};
+
+&gpio_prt15 {
+	status = "okay";
+};
