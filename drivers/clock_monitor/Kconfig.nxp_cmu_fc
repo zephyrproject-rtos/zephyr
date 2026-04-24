@@ -1,0 +1,17 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_MONITOR_NXP_CMU_FC
+	bool "NXP CMU_FC frequency check driver"
+	default y
+	depends on DT_HAS_NXP_CMU_FC_ENABLED
+	select HAS_MCUX
+	help
+	  Zephyr clock_monitor back-end wrapping the MCUX SDK fsl_cmu_fc HAL.
+	  Provides WINDOW modes for clock frequency check.
+
+config CLOCK_MONITOR_INIT_PRIORITY
+	int "clock_monitor init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Device init priority for clock_monitor back-end drivers.

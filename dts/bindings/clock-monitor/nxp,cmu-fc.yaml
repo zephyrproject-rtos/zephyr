@@ -1,0 +1,59 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Clock Monitoring Unit - Frequency Check (CMU_FC).
+
+  Continuously compares the frequency of a monitored clock against
+  programmable high/low thresholds derived from the nominal expected
+  frequency (queried from the `monitored` clock via clock_control) and
+  the user-supplied tolerance. Exposed through the Zephyr clock_monitor
+  subsystem.
+
+compatible: "nxp,cmu-fc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: |
+      NVIC interrupt for synchronous threshold-crossing events.
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      Exactly two entries, in order: "reference" (the CMU's timebase
+      clock used to size the measurement window) and "monitored" (the
+      clock whose frequency is being checked). The driver queries both
+      rates via clock_control_get_rate().
+
+  tolerance-ppm:
+    type: int
+    description: |
+      Optional +/- tolerance in parts-per-million. Consumed by
+      CLOCK_MONITOR_DT_SPEC_GET() as a convenience for applications.
+
+  nxp,fault-reaction:
+    type: string
+    default: "interrupt"
+    enum:
+      - "interrupt"
+      - "reset"
+    description: |
+      HW output path the CMU_FC uses when SR[FHH] or SR[FLL] fires.
+
+      "interrupt" (default):
+        Sets IER[FHHIE/FLLIE]. Event is routed synchronously through
+        the NVIC line listed in "interrupts"; the driver ISR then
+        dispatches to the user-installed clock_monitor callback.
+
+      "reset":
+        Escalates to a destructive reset. The application observes
+        the fault only as a reboot and must rely on reset-cause registers
+        to identify the source after the system comes back up.
