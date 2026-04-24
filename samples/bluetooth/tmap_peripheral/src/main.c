@@ -86,7 +86,7 @@ void tmap_discovery_complete(enum bt_tmap_role peer_role, struct bt_conn *conn, 
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("TMAS discovery failed! (err %d)\n", err);
 		return;
 	}
@@ -167,7 +167,7 @@ static bool adv_rpa_expired_cb(struct bt_le_ext_adv *adv)
 	printk("PRSI: 0x%s\n", rsi_str);
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to set advertising data (err %d)\n", err);
 		return false;
 	}
@@ -249,19 +249,19 @@ int main(void)
 	printk("BAP initialized\n");
 
 	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, &adv_cb, &adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to create advertising set (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to set advertising data (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to start advertising set (err %d)\n", err);
 		return err;
 	}

@@ -869,7 +869,7 @@ static int init(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Bluetooth enable failed (err %d)\n", err);
 		return err;
 	}
@@ -877,19 +877,19 @@ static int init(void)
 	printk("Bluetooth initialized\n");
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		printk("Could not register PACS (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
-	if (err) {
+	if (err != 0) {
 		printk("Capability register failed (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
-	if (err) {
+	if (err != 0) {
 		printk("Scan delegator register failed (err %d)\n", err);
 		return err;
 	}
@@ -933,7 +933,7 @@ static int reset(void)
 
 	if (broadcast_sink != NULL) {
 		err = bt_bap_broadcast_sink_delete(broadcast_sink);
-		if (err) {
+		if (err != 0) {
 			printk("Deleting broadcast sink failed (err %d)\n", err);
 
 			return err;
@@ -944,7 +944,7 @@ static int reset(void)
 
 	if (pa_sync != NULL) {
 		bt_le_per_adv_sync_delete(pa_sync);
-		if (err) {
+		if (err != 0) {
 			printk("Deleting PA sync failed (err %d)\n", err);
 
 			return err;
@@ -1164,7 +1164,7 @@ int main(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		printk("Init failed (err %d)\n", err);
 		return 0;
 	}

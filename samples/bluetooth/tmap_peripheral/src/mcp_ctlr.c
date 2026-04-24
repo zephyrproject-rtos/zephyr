@@ -24,7 +24,7 @@ static K_SEM_DEFINE(sem_discovery_done, 0, 1);
 
 static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 {
-	if (err) {
+	if (err != 0) {
 		printk("MCP: Discovery of MCS failed (%d)\n", err);
 	} else {
 		printk("MCP: Discovered MCS\n");
@@ -34,7 +34,7 @@ static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 
 static void mcc_send_command_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
 {
-	if (err) {
+	if (err != 0) {
 		printk("MCP: Command send failed (%d) - opcode: %u, param: %d\n",
 			err, cmd->opcode, cmd->param);
 	} else {
