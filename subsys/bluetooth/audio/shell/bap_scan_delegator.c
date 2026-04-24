@@ -493,13 +493,13 @@ static int cmd_bap_scan_delegator_init(const struct shell *sh, size_t argc,
 		int err;
 
 		err = bt_bap_scan_delegator_register(&scan_delegator_cb);
-		if (err) {
+		if (err != 0) {
 			shell_error(sh, "Failed to register scan delegator (err: %d)", err);
 			return -ENOEXEC;
 		}
 
 		err = bt_le_per_adv_sync_cb_register(&pa_sync_cb);
-		if (err) {
+		if (err != 0) {
 			shell_error(sh, "Failed to register PA sync callbacks (err: %d)", err);
 			return -ENOEXEC;
 		}

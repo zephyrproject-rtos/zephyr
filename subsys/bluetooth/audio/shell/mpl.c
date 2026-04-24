@@ -77,7 +77,7 @@ int cmd_media_proxy_pl_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = media_proxy_pl_init();
 
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Could not init mpl");
 	}
 

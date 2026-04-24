@@ -360,7 +360,7 @@ int bt_gmap_register(enum bt_gmap_role role, struct bt_gmap_feat features)
 	update_service(role);
 
 	err = bt_gatt_service_register(&gmas);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Could not register the GMAS service");
 
 		return -ENOEXEC;

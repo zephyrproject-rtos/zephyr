@@ -364,7 +364,7 @@ static uint8_t internal_read_state_cb(struct bt_conn *conn, uint8_t err,
 		return BT_GATT_ITER_STOP;
 	}
 
-	if (err) {
+	if (err != 0) {
 		LOG_WRN("State read failed: %d", err);
 	} else if (data) {
 		if (length == sizeof(*state)) {
