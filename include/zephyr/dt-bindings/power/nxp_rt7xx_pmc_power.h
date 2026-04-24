@@ -55,4 +55,7 @@
 /** @brief USB0 SRAM Periphery Power Down (PDRUNCFG5 bit 2). */
 #define NXP_RT7XX_PMC_PPD_USB0_SRAM NXP_PMC_POWER_ID(5, 2)
 
+/** @brief PMC temperature sensor power domain (PDRUNCFG1 bit 0). */
+#define NXP_RT7XX_PMC_PD_PMC_TEMPSNS NXP_PMC_POWER_ID(1, 0)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_POWER_NXP_RT7XX_PMC_POWER_H_ */

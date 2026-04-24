@@ -566,8 +566,6 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pmc_tmpsns))
-	POWER_DisablePD(kPDRUNCFG_PD_PMC_TEMPSNS);
-	POWER_ApplyPD();
 	otp_init(SystemCoreClock);
 #endif
 

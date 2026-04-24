@@ -9,6 +9,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/misc/nxp_power_rail/nxp_power_rail.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
@@ -33,6 +34,8 @@ struct nxp_pmc_tmpsns_config {
 	const struct device *adc;
 	struct adc_sequence adc_seq;
 	struct adc_channel_cfg ch_cfg;
+	const struct nxp_power_rail_spec *power_rails;
+	uint8_t power_rail_count;
 };
 
 struct nxp_pmc_tmpsns_data {
@@ -174,6 +177,11 @@ static int nxp_pmc_tmpsns_init(const struct device *dev)
 	struct nxp_pmc_tmpsns_data *data = dev->data;
 	int ret;
 
+	ret = nxp_power_rail_request_all(config->power_rails, config->power_rail_count);
+	if (ret) {
+		return ret;
+	}
+
 	if (!device_is_ready(config->adc)) {
 		LOG_ERR_DEVICE_NOT_READY(config->adc);
 		return -ENODEV;
@@ -202,6 +210,7 @@ static DEVICE_API(sensor, nxp_pmc_tmpsns_api) = {
 
 #define NXP_PMC_TMPSNS_INIT(inst)								\
 	static struct nxp_pmc_tmpsns_data _CONCAT(nxp_pmc_tmpsns_data, inst);			\
+	NXP_POWER_RAIL_DT_INST_SPECS_DEFINE(inst)						\
 												\
 	static const struct nxp_pmc_tmpsns_config _CONCAT(nxp_pmc_tmpsns_config, inst) = {	\
 		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),				\
@@ -214,6 +223,7 @@ static DEVICE_API(sensor, nxp_pmc_tmpsns_api) = {
 		},										\
 		.ch_cfg = ADC_CHANNEL_CFG_DT(DT_CHILD(DT_INST_IO_CHANNELS_CTLR(inst),		\
 				 UTIL_CAT(channel_, DT_INST_IO_CHANNELS_INPUT(inst)))),		\
+		NXP_POWER_RAIL_DT_INST_SPECS_INIT(inst)						\
 	};											\
 												\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, nxp_pmc_tmpsns_init, NULL,				\
