@@ -1,18 +1,20 @@
 /*
- * Copyright (c) 2024-2025 Silicon Laboratories Inc.
+ * Copyright (c) 2024-2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
 #include "sl_si91x_power_manager.h"
 #include "sli_si91x_clock_manager.h"
+#include "sli_siwx917_soc.h"
 #include "sl_rsi_utility.h"
 #include "sl_si91x_m4_ps.h"
 
-LOG_MODULE_REGISTER(siwx91x_pm);
+LOG_MODULE_REGISTER(soc_power, CONFIG_SOC_LOG_LEVEL);
 
 extern uint32_t frontend_switch_control;
 
@@ -74,4 +76,25 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
+}
+
+void siwx91x_power_init(void)
+{
+	sl_power_peripheral_t peripheral_config = {};
+	sl_power_ram_retention_config_t ram_configuration = {
+		.configure_ram_banks = false,
+		/* The real RAM size from DT is correct but the power manager API expect to
+		 * receive either 192/256/320 KB value, so we need to round it up to the
+		 * next boundary to avoid powering down the top M4 bank(s) by mistake.
+		 */
+		.m4ss_ram_size_kb = (DT_REG_SIZE(DT_NODELABEL(sram0)) / 1024) + 1,
+		.ulpss_ram_size_kb = 4,
+	};
+
+	sli_si91x_platform_init();
+	sl_si91x_power_manager_init();
+	sl_si91x_power_manager_remove_peripheral_requirement(&peripheral_config);
+	sl_si91x_power_manager_configure_ram_retention(&ram_configuration);
+	sl_si91x_power_manager_add_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
+	sl_si91x_power_manager_set_clock_scaling(SL_SI91X_POWER_MANAGER_PERFORMANCE);
 }
