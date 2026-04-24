@@ -5706,6 +5706,7 @@ USB:
     - tmon-nordic
   collaborators:
     - josuah
+    - MarkWangChinese
   files:
     - drivers/usb/
     - dts/bindings/usb/
