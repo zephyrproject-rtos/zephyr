@@ -1,0 +1,145 @@
+/*
+ * Copyright (c) 2026 NotioNext Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_wroom_n16.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include "esp32s3_box3-pinctrl.dtsi"
+
+/ {
+	model = "Espressif ESP32S3-BOX-3 PROCPU";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		watchdog0 = &wdt0;
+		sw0 = &button0;
+		radar-int = &radar_detect_pin;
+		audio-codec-spk = &es8311;
+		audio-codec-mic = &es7210;
+		audio-i2s = &i2s0;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,audio = &i2s0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "MUTE Button";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	gpio_radar {
+		compatible = "gpio-keys";
+		radar_detect_pin: radar_detect {
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			label = "Radar Detection Pin";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pa_ctrl: pa_ctrl {
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+			label = "Speaker PA Control";
+		};
+	};
+
+	mute_ctrl_gpio {
+		compatible = "gpio-leds";
+
+		mute_ctrl: mute_ctrl {
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			label = "Audio Mute Control";
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	es8311: es8311@18 {
+		compatible = "everest,es8311";
+		reg = <0x18>;
+		pa-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	es7210: es7210@40 {
+		compatible = "everest,es7210";
+		reg = <0x40>;
+		mclk-freq = <4096000>;
+		mic-mask = <0x03>;
+		mic-gain-db = <24>;
+		status = "okay";
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+
+	at581x: at581x@28 {
+		compatible = "andar,at581x";
+		reg = <0x28>;
+		status = "okay";
+	};
+};
+
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};

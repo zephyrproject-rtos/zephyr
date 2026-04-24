@@ -1,0 +1,107 @@
+# Copyright (c) 2026 NotioNext Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ES7210 4-Channel ADC for Microphone Array
+
+  The ES7210 is a 4-channel analog-to-digital converter (ADC) specifically
+  designed for microphone array applications. It features high-performance
+  audio ADC with built-in microphone bias and programmable gain amplifiers.
+  
+  Key features:
+  - 4-channel simultaneous sampling ADC
+  - Built-in microphone bias for electret microphones
+  - Programmable gain amplifiers (PGA) for each channel
+  - I2S/TDM digital audio output interface
+  - I2C control interface
+  - Sample rates: 8kHz to 48kHz
+  - 16/24-bit audio data resolution
+  - Low power consumption
+  - Integrated anti-aliasing filters
+
+  Example devicetree configuration:
+
+  &i2c1 {
+    es7210: es7210@40 {
+      compatible = "everest,es7210";
+      reg = <0x40>;
+      reset-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+      power-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+      mclk-freq = <12288000>;
+      mic-mask = <15>;
+      mic-gain-db = <24>;
+      mic-bias-voltage = <2800>;
+    };
+  };
+
+compatible: "everest,es7210"
+
+include: i2c-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the ES7210 reset pin. This pin is active high.
+      When asserted, the codec enters reset state and all registers
+      are reset to their default values. After reset, a minimum 1ms
+      delay is required before I2C communication.
+
+  power-gpios:
+    type: phandle-array
+    description: |
+      GPIO controlling the ES7210 power rail or power enable pin.
+      This pin is active high. When asserted, power is supplied to
+      the ES7210 chip. Useful for power management in battery applications.
+
+  mclk-freq:
+    type: int
+    default: 12288000
+    description: |
+      Master clock frequency in Hz presented to ES7210 MCLK input.
+      Common values are:
+      - 12288000 Hz (12.288 MHz) - Standard for 48kHz family sample rates
+      - 11289600 Hz (11.2896 MHz) - Standard for 44.1kHz family sample rates
+      - 4096000 Hz (4.096 MHz) - Lower frequency option for power savings
+      Default is 12.288 MHz which provides optimal performance for most applications.
+
+  mic-mask:
+    type: int
+    default: 15
+    description: |
+      Bit mask of enabled microphones (0-15):
+        bit 0 = MIC1 (channel 0)
+        bit 1 = MIC2 (channel 1) 
+        bit 2 = MIC3 (channel 2)
+        bit 3 = MIC4 (channel 3)
+      Default value 15 enables all 4 microphone channels.
+      For ESP32-S3-BOX-3, typically use 3 (MIC1 | MIC2) for stereo recording.
+
+  mic-gain-db:
+    type: int
+    default: 24
+    description: |
+      Programmable gain amplifier (PGA) gain in dB applied to all enabled channels.
+      Supported range: 0 dB to 37.5 dB in approximately 3 dB steps.
+      Default 24 dB provides good signal level for most electret microphones.
+      Higher gain may be needed for low-sensitivity microphones or distant sources.
+
+  mic-bias-voltage:
+    type: int
+    default: 2800
+    description: |
+      Microphone bias voltage in millivolts for powering electret microphones.
+      Supported values:
+      - 2800 mV (default) - Standard bias voltage for most electret microphones
+      - 2500 mV - Lower bias voltage option
+      - 3300 mV - Higher bias voltage for high-performance microphones
+      This voltage is supplied to all connected electret microphones.
+
+  use-tdm:
+    type: boolean
+    description: |
+      Enable Time Division Multiplexing (TDM) framing on SDOUT pin.
+      When enabled, all 4 channels are transmitted in TDM format on a single
+      data line. When disabled (default), uses standard I2S format.
+      TDM mode is useful for connecting multiple ES7210 devices or when
+      the receiving device supports TDM input.

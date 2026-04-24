@@ -1,0 +1,18 @@
+# Copyright (c) 2026 NotioNext Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: esp32s3_box3/esp32s3/procpu
+name: ESP32-S3 BOX-3 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - spi
+  - watchdog
+  - entropy
+  - dma
+  - display
+vendor: espressif

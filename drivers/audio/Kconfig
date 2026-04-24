@@ -15,7 +15,7 @@ if AUDIO
 menuconfig AUDIO_CODEC
 	bool "Audio Codec Drivers"
 	help
-	  Enable Audio Codec Driver Configuration
+	  Enable Audio Codec Drivesource "drivers/audio/Kconfig.es8311"r Configuration
 
 if AUDIO_CODEC
 
@@ -39,6 +39,8 @@ source "subsys/logging/Kconfig.template.log_config"
 source "drivers/audio/Kconfig.aw88298"
 source "drivers/audio/Kconfig.cs43l22"
 source "drivers/audio/Kconfig.da7212"
+source "drivers/audio/Kconfig.es7210"
+source "drivers/audio/Kconfig.es8311"
 source "drivers/audio/Kconfig.max98091"
 source "drivers/audio/Kconfig.pcm1681"
 source "drivers/audio/Kconfig.sf32lb"
