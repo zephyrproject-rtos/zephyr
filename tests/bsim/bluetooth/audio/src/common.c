@@ -108,7 +108,7 @@ static void device_found(const struct bt_le_scan_recv_info *info, struct net_buf
 
 	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
 				&default_conn);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not connect to peer: %d", err);
 	}
 }
@@ -256,7 +256,7 @@ void setup_broadcast_adv(struct bt_le_ext_adv **adv)
 
 	/* Set periodic advertising parameters */
 	err = bt_le_per_adv_set_param(*adv, BT_BAP_PER_ADV_PARAM_BROADCAST_SLOW);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to set periodic advertising parameters: %d\n", err);
 		return;
 	}

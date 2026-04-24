@@ -411,7 +411,7 @@ static uint8_t vocs_state_get(const void *cmd, uint16_t cmd_len, void *rsp, uint
 	LOG_DBG("Volume Offset Control Service offset state get");
 
 	err = bt_vocs_state_get(included.vocs[0]);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -427,7 +427,7 @@ static uint8_t vocs_state_set(const void *cmd, uint16_t cmd_len, void *rsp, uint
 	LOG_DBG("VCP CTLR Set absolute volume %d", offset);
 
 	err = bt_vocs_state_set(included.vocs[0], cp->offset);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -442,7 +442,7 @@ static uint8_t vocs_audio_location_get(const void *cmd, uint16_t cmd_len, void *
 	LOG_DBG("Volume Offset Control Service Audio Location get");
 
 	err = bt_vocs_location_get(included.vocs[0]);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -672,7 +672,7 @@ static void vcp_vol_ctlr_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err, 
 	struct bt_conn *conn;
 	uint8_t conn_idx;
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Discovery failed (%d)", err);
 		return;
 	}
@@ -838,7 +838,7 @@ static uint8_t vcp_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 
 	err = bt_vcp_vol_ctlr_discover(conn, &vol_ctlrs[conn_idx]);
 	bt_conn_unref(conn);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Fail: %d", err);
 		return BTP_STATUS_FAILED;
 	}
@@ -860,7 +860,7 @@ static uint8_t vcp_state_read(const void *cmd, uint16_t cmd_len, void *rsp, uint
 	}
 
 	err = bt_vcp_vol_ctlr_read_state(vol_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -882,7 +882,7 @@ static uint8_t vcp_volume_flags_read(const void *cmd, uint16_t cmd_len, void *rs
 	}
 
 	err = bt_vcp_vol_ctlr_read_flags(vol_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -903,7 +903,7 @@ static uint8_t vcp_ctlr_vol_down(const void *cmd, uint16_t cmd_len, void *rsp, u
 	}
 
 	err = bt_vcp_vol_ctlr_vol_down(vol_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -924,7 +924,7 @@ static uint8_t vcp_ctlr_vol_up(const void *cmd, uint16_t cmd_len, void *rsp, uin
 	}
 
 	err = bt_vcp_vol_ctlr_vol_up(vol_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -946,7 +946,7 @@ static uint8_t vcp_ctlr_unmute_vol_down(const void *cmd, uint16_t cmd_len, void 
 	}
 
 	err = bt_vcp_vol_ctlr_unmute_vol_down(vol_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -968,7 +968,7 @@ static uint8_t vcp_ctlr_unmute_vol_up(const void *cmd, uint16_t cmd_len, void *r
 	}
 
 	err = bt_vcp_vol_ctlr_unmute_vol_up(vol_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -989,7 +989,7 @@ static uint8_t vcp_ctlr_set_vol(const void *cmd, uint16_t cmd_len, void *rsp, ui
 	}
 
 	err = bt_vcp_vol_ctlr_set_vol(vol_ctlr, cp->volume);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1010,7 +1010,7 @@ static uint8_t vcp_ctlr_unmute(const void *cmd, uint16_t cmd_len, void *rsp, uin
 	}
 
 	err = bt_vcp_vol_ctlr_unmute(vol_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1031,7 +1031,7 @@ static uint8_t vcp_ctlr_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	}
 
 	err = bt_vcp_vol_ctlr_mute(vol_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1103,7 +1103,7 @@ uint8_t tester_init_vcp(void)
 
 	err = bt_vcp_vol_ctlr_cb_register(&vcp_cbs);
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to register callbacks: %d", err);
 		return BTP_STATUS_FAILED;
 	}

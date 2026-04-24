@@ -916,7 +916,7 @@ static uint8_t btp_cap_broadcast_source_stop(const void *cmd, uint16_t cmd_len,
 
 	/* Make sure source is stopped before proceeding */
 	err = k_sem_take(&source_stopped_sem, K_SECONDS(1));
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Semaphore timed out: %d", err);
 
 		return BTP_STATUS_FAILED;

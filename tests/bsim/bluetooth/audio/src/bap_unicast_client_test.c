@@ -472,7 +472,7 @@ static bool parse_ascs_ad_data(struct bt_data *data, void *user_data)
 
 	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
 				&default_conn);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not connect to peer: %d", err);
 		return false;
 	}
