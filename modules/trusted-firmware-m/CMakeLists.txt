@@ -287,6 +287,19 @@ if(CONFIG_BUILD_WITH_TFM)
     )
   endif()
 
+  # Prevent TF-M's CMake build system from signing images.
+  # Zephyr does not follow the official TF-M build pattern [1] and instead it
+  # reimplements some steps including the signature. This is done below through
+  # the "wrapper.py" Python script.
+  # As a consequence we don't want TF-M to sign images.
+  # [1]: https://tf-m.docs.trustedfirmware.org/en/latest/getting_started/index.html#build-an521-regression-sample
+  list(APPEND TFM_CMAKE_ARGS -DPLATFORM_DEFAULT_IMAGE_SIGNING=OFF)
+  list(APPEND TFM_CMAKE_ARGS -DTFM_MERGE_HEX_FILES=OFF)
+  # This is Zephyr's custom addition to TF-M build system. We need TF-M to
+  # keep generating a couple of object files which are required to sign
+  # images.
+  list(APPEND TFM_CMAKE_ARGS -DTFM_CREATE_SIGNING_LAYOUT_OBJECTS=ON)
+
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
     DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
