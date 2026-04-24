@@ -1561,3 +1561,8 @@ test_i2c_htu21d: htu21d@ce {
 	compatible = "meas,htu21d";
 	reg = <0xce>;
 };
+
+test_i2c_htu31d: htu31d@ce {
+	compatible = "meas,htu31d";
+	reg = <0xcf>;
+};
