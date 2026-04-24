@@ -1,0 +1,19 @@
+# Clock monitor drivers
+#
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CLOCK_MONITOR
+	bool "Clock Monitor drivers"
+	help
+	  Enable the clock monitor driver class. Individual back-end drivers
+	  for specific clock monitoring peripherals are selected by their
+	  own Kconfig symbols sourced below.
+
+if CLOCK_MONITOR
+
+module = CLOCK_MONITOR
+module-str = clock_monitor
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CLOCK_MONITOR
