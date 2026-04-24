@@ -1,0 +1,10 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - clock_monitor
+tests:
+  drivers.clock_monitor.api.nxp:
+    filter: dt_compat_enabled("nxp,cmu-fc") or dt_compat_enabled("nxp,cmu-fm")
