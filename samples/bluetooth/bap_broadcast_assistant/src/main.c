@@ -426,7 +426,7 @@ static void scan_for_broadcast_source(void)
 	scanning_for_broadcast_source = true;
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Scanning failed to start (err %d)\n", err);
 		return;
 	}
@@ -444,7 +444,7 @@ static void scan_for_broadcast_sink(void)
 	scanning_for_broadcast_source = false;
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Scanning failed to start (err %d)\n", err);
 		return;
 	}
@@ -673,7 +673,7 @@ int main(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return 0;
 	}

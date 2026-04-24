@@ -64,7 +64,7 @@ static int process_profile_connection(struct bt_conn *conn)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	if (err) {
+	if (err != 0) {
 		printk("Connection failed, err %d %s\n", err, bt_hci_err_to_str(err));
 		return;
 	}
@@ -87,7 +87,7 @@ static void discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count, bool g
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}
@@ -104,7 +104,7 @@ static void ccid_cb(struct bt_conn *conn, int err, uint8_t inst_index, uint32_t 
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}
@@ -121,7 +121,7 @@ static void status_flags_cb(struct bt_conn *conn, int err, uint8_t inst_index, u
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}
@@ -139,7 +139,7 @@ static void call_state_cb(struct bt_conn *conn, int err, uint8_t inst_index, uin
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}

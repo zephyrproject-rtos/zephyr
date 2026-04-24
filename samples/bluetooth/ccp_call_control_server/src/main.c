@@ -76,21 +76,21 @@ static int advertise(void)
 	int err;
 
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &adv);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to create advertising set: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to set advertising data: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to start advertising set: %d", err);
 
 		return err;
