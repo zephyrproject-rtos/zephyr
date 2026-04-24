@@ -507,10 +507,8 @@ void board_early_init_hook(void)
 	/* Assert LCDIF reset. */
 	RESET_SetPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
 
-	/* Disable media main and LCDIF power down. */
+	/* Disable media main power down. SLEEPCON still managed by board. */
 	POWER_DisablePD(kPDRUNCFG_SHUT_MEDIA_MAINCLK);
-	POWER_DisablePD(kPDRUNCFG_APD_LCDIF);
-	POWER_DisablePD(kPDRUNCFG_PPD_LCDIF);
 
 	/* Apply power down configuration. */
 	POWER_ApplyPD();
@@ -575,8 +573,6 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(co5300_zc143ac72mipi), okay)
 	POWER_DisablePD(kPDRUNCFG_SHUT_MEDIA_MAINCLK);
-	POWER_DisablePD(kPDRUNCFG_APD_LCDIF);
-	POWER_DisablePD(kPDRUNCFG_PPD_LCDIF);
 	POWER_ApplyPD();
 
 	CLOCK_EnableClock(kCLOCK_Lcdif);

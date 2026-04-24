@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/misc/nxp_power_rail/nxp_power_rail.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -33,6 +34,8 @@ struct mcux_dcnano_lcdif_config {
 	lcdif_dpi_config_t dpi_config;
 	/* Pointer to start of first framebuffer */
 	uint8_t *fb_ptr;
+	const struct nxp_power_rail_spec *power_rails;
+	uint8_t power_rail_count;
 };
 
 struct mcux_dcnano_lcdif_data {
@@ -311,6 +314,11 @@ static int mcux_dcnano_lcdif_init(const struct device *dev)
 	struct mcux_dcnano_lcdif_data *data = dev->data;
 	int ret;
 
+	ret = nxp_power_rail_request_all(config->power_rails, config->power_rail_count);
+	if (ret) {
+		return ret;
+	}
+
 	ret = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret) {
 		return ret;
@@ -419,6 +427,7 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 			   0);							\
 		irq_enable(DT_INST_IRQN(n));					\
 	}									\
+	NXP_POWER_RAIL_DT_INST_SPECS_DEFINE(n)					\
 	MCUX_DCNANO_LCDIF_FRAMEBUFFER_DECL(n);					\
 	struct mcux_dcnano_lcdif_data mcux_dcnano_lcdif_data_##n = {		\
 		MCUX_DCNANO_LCDIF_FB_CONFIG(n)					\
@@ -465,6 +474,7 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 			.format = DT_INST_ENUM_IDX(n, data_bus_width),		\
 		},								\
 		.fb_ptr = MCUX_DCNANO_LCDIF_FRAMEBUFFER(n),			\
+		NXP_POWER_RAIL_DT_INST_SPECS_INIT(n)				\
 	};									\
 	DEVICE_DT_INST_DEFINE(n,						\
 		&mcux_dcnano_lcdif_init,					\
