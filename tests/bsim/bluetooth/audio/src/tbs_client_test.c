@@ -467,7 +467,7 @@ static void discover_tbs(void)
 	discovery_complete = false;
 
 	err = bt_tbs_client_discover(default_conn);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to discover TBS: %d", err);
 		return;
 	}

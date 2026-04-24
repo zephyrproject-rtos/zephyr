@@ -73,7 +73,7 @@ static void discover_tbs(void)
 	UNSET_FLAG(flag_discovery_complete);
 
 	err = bt_ccp_call_control_client_discover(default_conn, &call_control_client);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to discover TBS: %d", err);
 		return;
 	}

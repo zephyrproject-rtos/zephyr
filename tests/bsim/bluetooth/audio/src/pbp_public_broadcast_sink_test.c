@@ -186,7 +186,7 @@ static int reset(void)
 
 	if (broadcast_sink != NULL) {
 		err = bt_bap_broadcast_sink_delete(broadcast_sink);
-		if (err) {
+		if (err != 0) {
 			printk("Deleting broadcast sink failed (err %d)\n", err);
 
 			return err;
@@ -209,7 +209,7 @@ static int init(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 
 		return err;
@@ -218,7 +218,7 @@ static int init(void)
 	printk("Bluetooth initialized\n");
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not register PACS (err %d)\n", err);
 		return err;
 	}
@@ -227,7 +227,7 @@ static int init(void)
 	bt_le_per_adv_sync_cb_register(&broadcast_sync_cb);
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
-	if (err) {
+	if (err != 0) {
 		printk("Capability register failed (err %d)\n", err);
 
 		return err;
@@ -359,7 +359,7 @@ static void test_main(void)
 		/* Start scanning */
 		printk("Starting scan\n");
 		err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
-		if (err) {
+		if (err != 0) {
 			printk("Scan start failed (err %d)\n", err);
 			break;
 		}

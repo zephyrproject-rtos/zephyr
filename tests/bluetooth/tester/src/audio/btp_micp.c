@@ -120,7 +120,7 @@ static void micp_mic_ctlr_discover_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err
 {
 	struct bt_conn *conn;
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Discovery failed (%d)", err);
 		return;
 	}
@@ -183,7 +183,7 @@ static uint8_t micp_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	}
 
 	err = bt_micp_mic_ctlr_discover(conn, &mic_ctlr);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Fail: %d", err);
 		return BTP_STATUS_FAILED;
 	}
@@ -198,7 +198,7 @@ static uint8_t micp_mute_read(const void *cmd, uint16_t cmd_len, void *rsp, uint
 	LOG_DBG("Read mute");
 
 	err = bt_micp_mic_ctlr_mute_get(mic_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -212,7 +212,7 @@ static uint8_t micp_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 	LOG_DBG("MICP Mute");
 
 	err = bt_micp_mic_ctlr_mute(mic_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -249,7 +249,7 @@ uint8_t tester_init_micp(void)
 
 	err = bt_micp_mic_ctlr_cb_register(&micp_cbs);
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to register callbacks: %d", err);
 		return BTP_STATUS_FAILED;
 	}
@@ -285,7 +285,7 @@ static uint8_t mics_mute_disable(const void *cmd, uint16_t cmd_len, void *rsp, u
 	LOG_DBG("MICP Mute disable");
 
 	err = bt_micp_mic_dev_mute_disable();
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -299,7 +299,7 @@ static uint8_t mics_mute_read(const void *cmd, uint16_t cmd_len, void *rsp, uint
 	LOG_DBG("MICS Mute state read");
 
 	err = bt_micp_mic_dev_mute_get();
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -313,7 +313,7 @@ static uint8_t mics_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 	LOG_DBG("MICS Mute");
 
 	err = bt_micp_mic_dev_mute();
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -327,7 +327,7 @@ static uint8_t mics_unmute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_
 	LOG_DBG("MICS Mute");
 
 	err = bt_micp_mic_dev_unmute();
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -449,13 +449,13 @@ uint8_t tester_init_mics(void)
 	mic_dev_register_param.cb = &mic_dev_cb;
 
 	err = bt_micp_mic_dev_register(&mic_dev_register_param);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
 #if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
 	err = bt_micp_mic_dev_included_get(&micp_included);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 #endif /* CONFIG_BT_MICP_MIC_DEV_AICS */
