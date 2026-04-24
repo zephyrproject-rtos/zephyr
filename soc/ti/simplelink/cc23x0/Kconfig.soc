@@ -26,6 +26,4 @@ config SOC_SERIES
 
 config SOC
 	default "cc2340r5" if SOC_CC2340R5
-
-config SOC
 	default "cc2340r53" if SOC_CC2340R53
