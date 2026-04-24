@@ -17,6 +17,7 @@
 #define I2C_CONTROLLER_TARGET_DEVICE_GET DEVICE_DT_GET(I2C_CONTROLLER_TARGET_NODE)
 #define I2C_TARGET_ADDR                  0x0A
 #define SAMPLE_TIMEOUT                   K_SECONDS(1)
+#define I2C_CONTROLLER_DEV_CONFIG        (I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER)
 
 static const struct device *sample_i2c_controller = I2C_CONTROLLER_DEVICE_GET;
 static const struct device *sample_i2c_controller_target = I2C_CONTROLLER_TARGET_DEVICE_GET;
@@ -141,6 +142,18 @@ static int sample_init_i2c_target(void)
 	return i2c_target_register(sample_i2c_controller_target, &sample_target_config);
 }
 
+static int sample_standard_configure_and_recover(void)
+{
+	int ret;
+
+	ret = i2c_configure(sample_i2c_controller, I2C_CONTROLLER_DEV_CONFIG);
+	if (ret) {
+		return ret;
+	}
+
+	return i2c_recover_bus(sample_i2c_controller);
+}
+
 static void sample_reset_buffers(void)
 {
 	memset(sample_write_buf, 0, sizeof(sample_write_buf));
@@ -204,6 +217,60 @@ static int sample_validate_write_read(void)
 	}
 
 	return 0;
+}
+
+static int sample_rtio_configure_and_recover(void)
+{
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+	int ret;
+
+	/*
+	 * We allocate one submission queue event (SQE) as defined by RTIO_DEFINE() and configure
+	 * it to apply an I2C controller configuration using sample_rtio_iodev.
+	 */
+	sqe = rtio_sqe_acquire(&sample_rtio);
+	rtio_sqe_prep_i2c_configure(sqe,
+				    &sample_rtio_iodev,
+				    0,
+				    I2C_CONTROLLER_DEV_CONFIG,
+				    NULL);
+
+	/*
+	 * In this case, we don't actually care which submission is handled first, we chain them
+	 * to ensure they remain ordered, so when we read the CQEs after they have completed,
+	 * we know that the first CQE is the result of the first SQE.
+	 */
+	sqe->flags |= RTIO_SQE_CHAINED;
+
+	/* We allocate another SQE to recover the I2C controller */
+	sqe = rtio_sqe_acquire(&sample_rtio);
+	rtio_sqe_prep_i2c_recover(sqe,
+				  &sample_rtio_iodev,
+				  0,
+				  NULL);
+
+	/* Submit the SQEs and await the results (CQEs) */
+	rtio_submit(&sample_rtio, 2);
+
+	/* Validate the result of the SQEs, relying on the order they where submitted */
+	ret = 0;
+
+	/* This is the result of the i2c configure SQE */
+	cqe = rtio_cqe_consume(&sample_rtio);
+	if (cqe->result) {
+		ret = -EIO;
+	}
+	rtio_cqe_release(&sample_rtio, cqe);
+
+	/* This is the result of the i2c recover SQE */
+	cqe = rtio_cqe_consume(&sample_rtio);
+	if (cqe->result) {
+		ret = -EIO;
+	}
+	rtio_cqe_release(&sample_rtio, cqe);
+
+	return ret;
 }
 
 /* This is functionally identical to sample_standard_write_read() but uses RTIO */
@@ -392,6 +459,13 @@ int main(void)
 		return 0;
 	}
 
+	printk("%s %s\n", "standard_configure_and_recover", "running");
+	ret = sample_standard_configure_and_recover();
+	if (ret) {
+		printk("%s %s\n", "standard_configure_and_recover", "failed");
+		return 0;
+	}
+
 	sample_reset_buffers();
 
 	printk("%s %s\n", "standard_write_read", "running");
@@ -404,6 +478,13 @@ int main(void)
 	ret = sample_validate_write_read();
 	if (ret) {
 		printk("%s %s\n", "standard_write_read", "corrupted");
+		return 0;
+	}
+
+	printk("%s %s\n", "rtio_configure_recover", "running");
+	ret = sample_rtio_configure_and_recover();
+	if (ret) {
+		printk("%s %s\n", "rtio_configure_recover", "failed");
 		return 0;
 	}
 
