@@ -191,13 +191,6 @@ static int usart_si32_irq_is_pending(const struct device *dev)
 	return usart_si32_irq_rx_ready(dev) || usart_si32_irq_tx_ready(dev);
 }
 
-static int usart_si32_irq_update(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 1;
-}
-
 static void usart_si32_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
@@ -236,7 +229,6 @@ static DEVICE_API(uart, usart_si32_driver_api) = {
 	.irq_err_enable = usart_si32_irq_err_enable,
 	.irq_err_disable = usart_si32_irq_err_disable,
 	.irq_is_pending = usart_si32_irq_is_pending,
-	.irq_update = usart_si32_irq_update,
 	.irq_callback_set = usart_si32_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };

@@ -459,11 +459,6 @@ static int apbuart_irq_is_pending(const struct device *dev)
 	return 0;
 }
 
-static int apbuart_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void apbuart_irq_callback_set(const struct device *dev,
 				     uart_irq_callback_user_data_t cb,
 				     void *cb_data)
@@ -535,7 +530,6 @@ static DEVICE_API(uart, apbuart_driver_api) = {
 	.irq_tx_complete        = apbuart_irq_tx_complete,
 	.irq_rx_ready           = apbuart_irq_rx_ready,
 	.irq_is_pending         = apbuart_irq_is_pending,
-	.irq_update             = apbuart_irq_update,
 	.irq_callback_set       = apbuart_irq_callback_set,
 #endif
 };

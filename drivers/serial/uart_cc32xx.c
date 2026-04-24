@@ -245,11 +245,6 @@ static int uart_cc32xx_irq_is_pending(const struct device *dev)
 	return (int_status & (UART_INT_TX | UART_INT_RX));
 }
 
-static int uart_cc32xx_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void uart_cc32xx_irq_callback_set(const struct device *dev,
 					 uart_irq_callback_user_data_t cb,
 					 void *cb_data)
@@ -307,7 +302,6 @@ static DEVICE_API(uart, uart_cc32xx_driver_api) = {
 	.irq_err_enable	  = uart_cc32xx_irq_err_enable,
 	.irq_err_disable  = uart_cc32xx_irq_err_disable,
 	.irq_is_pending	  = uart_cc32xx_irq_is_pending,
-	.irq_update	  = uart_cc32xx_irq_update,
 	.irq_callback_set = uart_cc32xx_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };

@@ -19,7 +19,7 @@
  *        controllers.
  * @defgroup uart_interface UART
  * @since 1.0
- * @version 1.0.0
+ * @version 2.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -656,6 +656,11 @@ __syscall void uart_irq_err_disable(const struct device *dev);
 /**
  * @brief Check if any IRQs is pending.
  *
+ * This function must be called in a UART interrupt
+ * handler, or its result is undefined. Before calling this function
+ * in the interrupt handler, uart_irq_update() must be called otherwise
+ * its result may be outdated.
+ *
  * @param dev UART device instance.
  *
  * @retval 1 If an IRQ is pending.
@@ -663,14 +668,14 @@ __syscall void uart_irq_err_disable(const struct device *dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_irq_is_pending(const struct device *dev);
+static inline int uart_irq_is_pending(const struct device *dev);
 
 /**
  * @brief Start processing interrupts in ISR.
  *
  * This function should be called the first thing in the ISR. Calling
  * uart_irq_rx_ready(), uart_irq_tx_ready(), uart_irq_tx_complete()
- * allowed only after this.
+ * and uart_irq_is_pending() is allowed only after this.
  *
  * The purpose of this function is:
  *
@@ -680,17 +685,13 @@ __syscall int uart_irq_is_pending(const struct device *dev);
  * * For devices with explicit acknowledgment of interrupts, to ack
  *   any pending interrupts and likewise to cache the original value.
  * * For devices with implicit acknowledgment, this function will be
- *   empty. But the ISR must perform the actions needs to ack the
+ *   not implemented. But the ISR must perform the actions needs to ack the
  *   interrupts (usually, call uart_fifo_read() on rx_ready, and
  *   uart_fifo_fill() on tx_ready).
  *
  * @param dev UART device instance.
- *
- * @retval 1 On success.
- * @retval -ENOSYS If this function is not implemented.
- * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_irq_update(const struct device *dev);
+static inline void uart_irq_update(const struct device *dev);
 
 /**
  * @brief Set the IRQ callback function pointer.

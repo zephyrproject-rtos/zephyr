@@ -1600,9 +1600,8 @@ static void uart_mchp_irq_err_disable(const struct device *dev)
  * This function clears sticky interrupts and updates the TX complete cache.
  *
  * @param dev Pointer to the device structure.
- * @return Always returns 1.
  */
-static int uart_mchp_irq_update(const struct device *dev)
+static void uart_mchp_irq_update(const struct device *dev)
 {
 	/* Clear sticky interrupts */
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
@@ -1617,8 +1616,6 @@ static int uart_mchp_irq_update(const struct device *dev)
 	 */
 	dev_data->is_tx_completed_cache = uart_is_tx_complete(regs, is_clock_external);
 	uart_clear_interrupts(regs, is_clock_external);
-
-	return 1;
 }
 
 /**

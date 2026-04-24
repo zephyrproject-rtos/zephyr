@@ -122,13 +122,13 @@ __subsystem struct uart_driver_api {
 	int (*irq_is_pending)(const struct device *dev);
 
 	/** Interrupt driven interrupt update function */
-	int (*irq_update)(const struct device *dev);
+	void (*irq_update)(const struct device *dev);
 
 	/** Set the irq callback function */
 	void (*irq_callback_set)(const struct device *dev, uart_irq_callback_user_data_t cb,
 				 void *user_data);
 
-#endif
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #ifdef CONFIG_UART_LINE_CTRL
 	int (*line_ctrl_set)(const struct device *dev, uint32_t ctrl, uint32_t val);
@@ -423,7 +423,7 @@ static inline void z_impl_uart_irq_err_disable(const struct device *dev)
 #endif
 }
 
-static inline int z_impl_uart_irq_is_pending(const struct device *dev)
+static inline int uart_irq_is_pending(const struct device *dev)
 {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct uart_driver_api *api = DEVICE_API_GET(uart, dev);
@@ -438,18 +438,14 @@ static inline int z_impl_uart_irq_is_pending(const struct device *dev)
 #endif
 }
 
-static inline int z_impl_uart_irq_update(const struct device *dev)
+static inline void uart_irq_update(const struct device *dev)
 {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct uart_driver_api *api = DEVICE_API_GET(uart, dev);
 
-	if (api->irq_update == NULL) {
-		return -ENOSYS;
+	if (api->irq_update != NULL) {
+		api->irq_update(dev);
 	}
-	return api->irq_update(dev);
-#else
-	ARG_UNUSED(dev);
-	return -ENOTSUP;
 #endif
 }
 

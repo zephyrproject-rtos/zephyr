@@ -53,6 +53,11 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+Serial
+======
+
+* The return type of :c:func:`uart_irq_update` is now ``void`` instead of ``int``.
+  (:github:`105231`)
 
 STM32
 =====
