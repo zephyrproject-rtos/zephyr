@@ -168,6 +168,7 @@ config INTEL_ADSP_MEMORY_IS_MIRRORED
 
 config INTEL_ADSP_CACHED_REGION
 	int "Cached RPO mapping"
+	depends on INTEL_ADSP_MEMORY_IS_MIRRORED
 	range 0 7
 	help
 	  This specifies which 512M region (0-7, as defined by the Xtensa
@@ -175,6 +176,7 @@ config INTEL_ADSP_CACHED_REGION
 
 config INTEL_ADSP_UNCACHED_REGION
 	int "Uncached RPO mapping"
+	depends on INTEL_ADSP_MEMORY_IS_MIRRORED
 	range 0 7
 	help
 	  As for INTEL_ADSP_CACHED_REGION, this specifies which 512M
