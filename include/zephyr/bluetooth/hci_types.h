@@ -3654,6 +3654,9 @@ struct bt_hci_evt_le_ext_advertising_info {
 	uint8_t      length;
 	uint8_t      data[0];
 } __packed;
+
+/** Maximum number of reports in an LE Extended Advertising Report. */
+#define BT_HCI_LE_EXT_ADV_REPORT_MAX_NUM_REPORTS 0x0a
 struct bt_hci_evt_le_ext_advertising_report {
 	uint8_t num_reports;
 	struct bt_hci_evt_le_ext_advertising_info adv_info[0];
