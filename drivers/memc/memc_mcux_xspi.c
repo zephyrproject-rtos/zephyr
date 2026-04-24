@@ -10,6 +10,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/misc/nxp_power_rail/nxp_power_rail.h>
 #include <soc.h>
 #include "memc_mcux_xspi.h"
 
@@ -25,6 +26,8 @@ struct memc_mcux_xspi_config {
 	bool mdad_valid;
 	xspi_sfp_frad_config_t frad_configs;
 	bool frad_valid;
+	const struct nxp_power_rail_spec *power_rails;
+	uint8_t power_rail_count;
 };
 
 struct memc_mcux_xspi_data {
@@ -104,6 +107,12 @@ static int memc_mcux_xspi_init(const struct device *dev)
 	xspi_config_t config = memc_xspi_config->xspi_config;
 	XSPI_Type *base = ((struct memc_mcux_xspi_data *)dev->data)->base;
 	int ret;
+
+	ret = nxp_power_rail_request_all(memc_xspi_config->power_rails,
+					 memc_xspi_config->power_rail_count);
+	if (ret) {
+		return ret;
+	}
 
 	if ((memc_xspi_is_running_xip(dev)) && (!IS_ENABLED(CONFIG_MEMC_MCUX_XSPI_INIT_XIP))) {
 		LOG_DBG("XIP active on %s, skipping init\n", dev->name);
@@ -200,6 +209,7 @@ static int memc_mcux_xspi_init(const struct device *dev)
 
 #define MCUX_XSPI_INIT(n)	\
 	PINCTRL_DT_INST_DEFINE(n);	\
+	NXP_POWER_RAIL_DT_INST_SPECS_DEFINE(n)	\
 	static const struct memc_mcux_xspi_config memc_mcux_xspi_config_##n = {	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),	\
 		.xspi_config = {	\
@@ -242,6 +252,7 @@ static int memc_mcux_xspi_init(const struct device *dev)
 			},	\
 		},	\
 		.frad_valid = DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(n), frad_region0)),	\
+		NXP_POWER_RAIL_DT_INST_SPECS_INIT(n)	\
 	};	\
 	static struct memc_mcux_xspi_data memc_mcux_xspi_data_##n = {	\
 		.base = (XSPI_Type *)DT_INST_REG_ADDR(n),	\

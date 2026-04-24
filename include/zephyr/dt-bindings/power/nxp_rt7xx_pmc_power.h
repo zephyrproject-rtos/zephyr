@@ -30,4 +30,19 @@
 /** @brief LCDIF Periphery Power Down (PDRUNCFG5 bit 21). */
 #define NXP_RT7XX_PMC_PPD_LCDIF NXP_PMC_POWER_ID(5, 21)
 
+/** @brief XSPI0 Active Power Down (PDRUNCFG4 bit 18). */
+#define NXP_RT7XX_PMC_APD_XSPI0 NXP_PMC_POWER_ID(4, 18)
+/** @brief XSPI0 Periphery Power Down (PDRUNCFG5 bit 18). */
+#define NXP_RT7XX_PMC_PPD_XSPI0 NXP_PMC_POWER_ID(5, 18)
+
+/** @brief XSPI1 Active Power Down (PDRUNCFG4 bit 19). */
+#define NXP_RT7XX_PMC_APD_XSPI1 NXP_PMC_POWER_ID(4, 19)
+/** @brief XSPI1 Periphery Power Down (PDRUNCFG5 bit 19). */
+#define NXP_RT7XX_PMC_PPD_XSPI1 NXP_PMC_POWER_ID(5, 19)
+
+/** @brief XSPI2 Active Power Down (PDRUNCFG4 bit 20). */
+#define NXP_RT7XX_PMC_APD_XSPI2 NXP_PMC_POWER_ID(4, 20)
+/** @brief XSPI2 Periphery Power Down (PDRUNCFG5 bit 20). */
+#define NXP_RT7XX_PMC_PPD_XSPI2 NXP_PMC_POWER_ID(5, 20)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_POWER_NXP_RT7XX_PMC_POWER_H_ */

@@ -1158,6 +1158,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl0 MCUX_XSPI0_CLK>;
+	nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_XSPI0>,
+			  <&pmc0 NXP_RT7XX_PMC_PPD_XSPI0>;
 };
 
 &xspi1 {
@@ -1167,6 +1169,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl0 MCUX_XSPI1_CLK>;
+	nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_XSPI1>,
+			  <&pmc0 NXP_RT7XX_PMC_PPD_XSPI1>;
 };
 
 &xspi2 {
@@ -1176,4 +1180,6 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl4 MCUX_XSPI2_CLK>;
+	nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_XSPI2>,
+			  <&pmc0 NXP_RT7XX_PMC_PPD_XSPI2>;
 };
