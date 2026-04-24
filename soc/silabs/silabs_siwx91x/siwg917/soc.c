@@ -34,7 +34,6 @@ void soc_early_init_hook(void)
 		sl_si91x_power_manager_init();
 		sl_si91x_power_manager_remove_peripheral_requirement(&peripheral_config);
 		sl_si91x_power_manager_configure_ram_retention(&ram_configuration);
-		sl_si91x_power_manager_add_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
 		sl_si91x_power_manager_set_clock_scaling(SL_SI91X_POWER_MANAGER_PERFORMANCE);
 	}
 }

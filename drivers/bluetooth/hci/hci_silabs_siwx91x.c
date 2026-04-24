@@ -14,8 +14,6 @@
 
 #include "device/silabs/si91x/wireless/ble/inc/rsi_ble_common_config.h"
 #include "device/silabs/si91x/wireless/ble/inc/rsi_ble.h"
-#include "device/silabs/si91x/mcu/drivers/service/clock_manager/inc/sli_si91x_clock_manager.h"
-#include "device/silabs/si91x/mcu/drivers/service/power_manager/inc/sl_si91x_power_manager.h"
 
 LOG_MODULE_REGISTER(siwx91x_bt, CONFIG_BT_HCI_DRIVER_LOG_LEVEL);
 
@@ -93,53 +91,6 @@ static int siwx91x_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
-#define SIWX91X_BLE_RF_POWER_INDEX     0x0006
-#define SIWX91X_BLE_MODE               2
-static int siwx91x_bt_set_tx_power(const struct device *dev, uint8_t protocol_mode,
-				   uint8_t le_tx_power_index)
-{
-	struct net_buf *buf;
-	int ret;
-
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOMEM;
-	}
-	net_buf_add_u8(buf, protocol_mode);
-	net_buf_add_u8(buf, le_tx_power_index);
-	LOG_DBG("Sending RF Power Mode command (OCF 0x%04X) with power index %d",
-		SIWX91X_BLE_RF_POWER_INDEX, le_tx_power_index);
-
-	ret = bt_hci_cmd_send_sync(BT_OP(BT_OGF_VS, SIWX91X_BLE_RF_POWER_INDEX), buf, NULL);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
-}
-
-static int siwx91x_bt_setup(const struct device *dev, const struct bt_hci_setup_params *params)
-{
-	const struct siwx91x_bt_config *config = dev->config;
-	sli_wifi_power_save_request_t ps_params = {
-		.power_mode = SLI_CONNECTED_M4_BASED_PS,
-		.ulp_mode_enable = 1, /* SLI_ULP_WITH_RAM_RETENTION */
-	};
-	int ret;
-
-	ret = siwx91x_bt_set_tx_power(dev, SIWX91X_BLE_MODE, RSI_BLE_PWR_INX);
-	if (ret) {
-		return ret;
-	}
-	if (IS_ENABLED(CONFIG_PM)) {
-		sli_si91x_config_clocks_to_mhz_rc();
-		/* FIXME: ps_requirements does not prevent Wifi to change PS parameters */
-		sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
-		siwx91x_nwp_ps_enable(config->nwp_dev, &ps_params);
-	}
-	return 0;
-}
-
 static int siwx91x_bt_init(const struct device *dev)
 {
 	const struct siwx91x_bt_config *config = dev->config;
@@ -158,7 +109,6 @@ static int siwx91x_bt_init(const struct device *dev)
 static DEVICE_API(bt_hci, siwx91x_bt_api) = {
 	.send = siwx91x_bt_send,
 	.open = siwx91x_bt_open,
-	.setup = siwx91x_bt_setup,
 };
 
 #define SIWX91X_BT_DEFINE(inst)                                                                    \

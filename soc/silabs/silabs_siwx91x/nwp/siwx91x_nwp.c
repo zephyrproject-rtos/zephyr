@@ -7,7 +7,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
+
 #include "siwx91x_nwp.h"
 #include "siwx91x_nwp_bus.h"
 #include "siwx91x_nwp_api.h"
@@ -15,7 +17,11 @@
 #include "siwx91x_nwp_fw_version.h"
 
 #include "device/silabs/si91x/mcu/drivers/service/clock_manager/inc/sli_si91x_clock_manager.h"
+#include "device/silabs/si91x/mcu/drivers/service/power_manager/inc/sl_si91x_power_manager.h"
 #include "device/silabs/si91x/wireless/ble/inc/rsi_ble_common_config.h"
+#include "device/silabs/si91x/wireless/ble/inc/rsi_ble.h"
+#include "sli_wifi/inc/sli_wifi_constants.h"
+
 
 LOG_MODULE_REGISTER(siwx91x_nwp, CONFIG_SIWX91X_NWP_LOG_LEVEL);
 
@@ -360,6 +366,58 @@ static int siwx91x_check_nwp_version(const struct device *dev)
 	return 0;
 }
 
+struct siwx91x_nwp_bt_init_ctx {
+	struct siwx91x_nwp_bt_cb cb;
+	struct k_event event;
+};
+
+static void siwx91x_nwp_bt_init_on_rx(const struct siwx91x_nwp_bt_cb *ctxt,
+				       uint8_t type, void *payload, size_t len)
+{
+	struct siwx91x_nwp_bt_init_ctx *ctx =
+		container_of(ctxt, struct siwx91x_nwp_bt_init_ctx, cb);
+
+	k_event_set(&ctx->event, 1);
+}
+
+/* HACK: NWP won't accept (= crash) siwx91x_nwp_ps_enable() while it didn't received
+ * RSI_BLE_PWR_INX. Sending this frame normally required a fully configured Bluetooth stack which is
+ * available after user call bt_enable(). Rather than juggling with PS states, emulate the BT stack
+ * to initialize BT unconditionally.
+ */
+#define SIWX91X_BLE_RF_POWER_INDEX 0x0006
+#define SIWX91X_BLE_MODE           2
+static void siwx91x_nwp_bt_init(const struct device *dev)
+{
+	struct {
+		struct siwx91x_frame_desc desc;
+		uint16_t opcode;
+		uint8_t param_len;
+		uint8_t protocol_mode;
+		uint8_t tx_power_index;
+	} __packed cmd_buf = {
+		.desc.reserved[10] = BT_HCI_H4_CMD,
+		.opcode = BT_OP(BT_OGF_VS, SIWX91X_BLE_RF_POWER_INDEX),
+		.param_len = 2,
+		.protocol_mode = SIWX91X_BLE_MODE,
+		.tx_power_index = RSI_BLE_PWR_INX,
+	};
+	struct siwx91x_nwp_bt_init_ctx bt_ctx = {
+		.cb.on_rx = siwx91x_nwp_bt_init_on_rx,
+	};
+	NET_BUF_DEFINE_STACK(cmd_container, &cmd_buf, sizeof(cmd_buf), sizeof(void *));
+
+	k_event_init(&bt_ctx.event);
+	siwx91x_nwp_register_bt(dev, &bt_ctx.cb);
+	siwx91x_nwp_send_frame(dev, cmd_container, RSI_BLE_REQ_HCI_RAW, SLI_BT_Q,
+			       SIWX91X_FRAME_FLAG_NO_HDR_RESET | SIWX91X_FRAME_FLAG_ASYNC);
+	/* Wait for NWP reply before returning: guarantees cmd_container is no
+	 * longer referenced by the NWP thread.
+	 */
+	k_event_wait(&bt_ctx.event, 1, false, K_FOREVER);
+	siwx91x_nwp_register_bt(dev, NULL);
+}
+
 static int siwx91x_nwp_init(const struct device *dev)
 {
 	const struct siwx91x_nwp_config *config = dev->config;
@@ -426,18 +484,16 @@ static int siwx91x_nwp_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* These 2 commands are required to enable NWP Power Management */
+	/* Initialize the RF stack is required for PM. To keep things easy, do the initialization
+	 * unconditionally.
+	 */
 	siwx91x_nwp_set_band(dev, SL_WIFI_BAND_MODE_2_4GHZ);
 	siwx91x_nwp_wifi_init(dev);
-
-	/* FIXME Rather than making this call conditionnal, emulate the BT
-	 * driver and send ble_tx_power request here. Thus, we fix the case
-	 * where the user does not call bt_setup().
-	 */
-	if (IS_ENABLED(CONFIG_PM) && !IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-		/* FIXME: Find a proper fix */
+	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+		siwx91x_nwp_bt_init(dev);
+	}
+	if (IS_ENABLED(CONFIG_PM)) {
 		sli_si91x_config_clocks_to_mhz_rc();
-		sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
 		siwx91x_nwp_ps_enable(dev, &ps_params);
 	}
 	return 0;

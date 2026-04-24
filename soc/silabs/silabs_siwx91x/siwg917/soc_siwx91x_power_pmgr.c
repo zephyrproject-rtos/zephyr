@@ -35,10 +35,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		arch_cpu_idle();
 		return;
 	}
-	if (sl_si91x_get_lowest_ps() != SL_SI91X_POWER_MANAGER_SLEEP) {
-		arch_cpu_idle();
-		return;
-	}
 	ret = siwx91x_nwp_prepare_sleep(dev_nwp);
 	if (ret) {
 		arch_cpu_idle();
