@@ -69,6 +69,8 @@ GPIO
   from the ``flags`` they provide to :c:func:`gpio_pin_configure`; this will result in the same
   behavior as before since these flags were effectively ignored. (:github:`104690`)
 
+* On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
+
 STM32
 =====
 
