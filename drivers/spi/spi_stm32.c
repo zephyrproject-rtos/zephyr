@@ -1134,6 +1134,13 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	struct spi_stm32_data *data = dev->data;
 
 #ifdef CONFIG_SPI_RTIO
+#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* On H7, with SPI still enabled, the ISR is always called, even if the interrupt
+	 * enable register is cleared.
+	 * As a workaround, disable the IRQ at NVIC level to prevent any spurious interrupt.
+	 */
+	irq_disable(cfg->irq_line);
+#endif /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 	if (data->rtio_ctx->txn_head != NULL) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		LL_SPI_ClearFlag_TXTF(spi);
