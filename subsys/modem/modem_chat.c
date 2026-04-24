@@ -859,12 +859,11 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 	}
 
 	/* Validate script */
-	if (script->script_chats == NULL ||
-	   (script->script_chats_size == 0
-	    && script->script_chats != modem_chat_empty_script_chats) ||
-	   (script->abort_matches_size == 0
-	    && script->abort_matches != NULL
-	    && script->abort_matches != modem_chat_empty_matches)) {
+	if (script == NULL || script->script_chats == NULL ||
+	    (script->script_chats_size == 0 &&
+	     script->script_chats != modem_chat_empty_script_chats) ||
+	    (script->abort_matches_size == 0 && script->abort_matches != NULL &&
+	     script->abort_matches != modem_chat_empty_matches)) {
 		return -EINVAL;
 	}
 
