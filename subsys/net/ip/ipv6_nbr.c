@@ -1210,12 +1210,21 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
-	if (((length < (sizeof(struct net_ipv6_hdr) +
-			  sizeof(struct net_icmp_hdr) +
-			  sizeof(struct net_icmpv6_ns_hdr))) ||
-	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT)) &&
-	    (net_ipv6_is_addr_mcast((struct in6_addr *)ns_hdr->tgt) &&
-	     icmp_hdr->code != 0U)) {
+	if (length < (sizeof(struct net_ipv6_hdr) +
+		      sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_ns_hdr))) {
+		goto drop;
+	}
+
+	if (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) {
+		goto drop;
+	}
+
+	if (net_ipv6_is_addr_mcast((struct in6_addr *)ns_hdr->tgt)) {
+		goto drop;
+	}
+
+	if (icmp_hdr->code != 0U) {
 		goto drop;
 	}
 
@@ -1821,15 +1830,27 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
-	if (((length < (sizeof(struct net_ipv6_hdr) +
-			sizeof(struct net_icmp_hdr) +
-			sizeof(struct net_icmpv6_na_hdr) +
-			sizeof(struct net_icmpv6_nd_opt_hdr))) ||
-	     (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	     net_ipv6_is_addr_mcast((struct in6_addr *)na_hdr->tgt) ||
-	     (na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED &&
-	      net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst))) &&
-	    (icmp_hdr->code != 0U)) {
+	if (length < (sizeof(struct net_ipv6_hdr) +
+		      sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_na_hdr) +
+		      sizeof(struct net_icmpv6_nd_opt_hdr))) {
+		goto drop;
+	}
+
+	if (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) {
+		goto drop;
+	}
+
+	if (net_ipv6_is_addr_mcast((struct in6_addr *)na_hdr->tgt)) {
+		goto drop;
+	}
+
+	if ((na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED) &&
+	     net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst)) {
+		goto drop;
+	}
+
+	if (icmp_hdr->code != 0U) {
 		goto drop;
 	}
 
@@ -2516,13 +2537,22 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
-	if (((length < (sizeof(struct net_ipv6_hdr) +
-			sizeof(struct net_icmp_hdr) +
-			sizeof(struct net_icmpv6_ra_hdr) +
-			sizeof(struct net_icmpv6_nd_opt_hdr))) ||
-	     (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	     !net_ipv6_is_ll_addr((struct in6_addr *)ip_hdr->src)) &&
-		icmp_hdr->code != 0U) {
+	if (length < (sizeof(struct net_ipv6_hdr) +
+		      sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_ra_hdr) +
+		      sizeof(struct net_icmpv6_nd_opt_hdr))) {
+		goto drop;
+	}
+
+	if (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) {
+		goto drop;
+	}
+
+	if (!net_ipv6_is_ll_addr((struct in6_addr *)ip_hdr->src)) {
+		goto drop;
+	}
+
+	if (icmp_hdr->code != 0U) {
 		goto drop;
 	}
 
