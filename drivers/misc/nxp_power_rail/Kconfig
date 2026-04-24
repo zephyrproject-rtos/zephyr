@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_POWER_RAIL
+	bool
+	help
+	  Selected by concrete NXP power-rail controller drivers.
+
+config NXP_PMC_POWER_RAIL
+	bool "NXP PMC power-rail controller driver"
+	default y
+	depends on DT_HAS_NXP_PMC_POWER_RAIL_CONTROLLER_ENABLED
+	select NXP_POWER_RAIL
+	help
+	  Enable the NXP PMC power-rail controller driver.
+
+if NXP_POWER_RAIL
+
+config NXP_POWER_RAIL_INIT_PRIORITY
+	int "NXP power-rail controller init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Initialization priority for the power-rail controllers. Must run
+	  earlier than any peripheral driver that consumes a power rail.
+
+endif # NXP_POWER_RAIL

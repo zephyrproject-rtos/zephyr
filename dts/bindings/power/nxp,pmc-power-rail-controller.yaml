@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP PMC (Power Management Controller) power-rail controller.
+
+compatible: "nxp,pmc-power-rail-controller"
+
+include: base.yaml
+
+examples: |
+    pmc0: pmc@20f000 {
+      compatible = "nxp,pmc-power-rail-controller";
+      reg = <0x20f000 0x1000>;
+      #power-rail-cells = <1>;
+    };
+
+    &lcdif {
+      nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_LCDIF>,
+                        <&pmc0 NXP_RT7XX_PMC_PPD_LCDIF>;
+    };
+
+properties:
+  reg:
+    required: true
+
+  "#power-rail-cells":
+    type: int
+    const: 1
+
+power-rail-cells:
+  - id
