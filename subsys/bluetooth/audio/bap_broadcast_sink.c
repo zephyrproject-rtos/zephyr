@@ -1429,7 +1429,7 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink)
 	}
 
 	err = bt_iso_big_terminate(sink->big);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to terminate BIG (err %d)", err);
 		return err;
 	}

@@ -927,7 +927,7 @@ static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 		unicast_client_cbs.discover = discover_cb;
 
 		err = bt_bap_unicast_client_discover(default_conn, dir);
-		if (err) {
+		if (err != 0) {
 			bt_shell_error("bt_bap_unicast_client_discover err %d", err);
 		}
 	}
@@ -1380,7 +1380,7 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	err = bt_bap_stream_qos(default_conn, default_unicast_group.bap_group);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Unable to setup QoS: %d", err);
 		return -ENOEXEC;
 	}
@@ -1429,7 +1429,7 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_bap_stream_enable(default_stream, uni_stream->codec_cfg.meta,
 				   uni_stream->codec_cfg.meta_len);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Unable to enable Channel");
 		return -ENOEXEC;
 	}
@@ -1447,7 +1447,7 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	err = bt_bap_stream_stop(default_stream);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Unable to stop Channel");
 		return -ENOEXEC;
 	}
@@ -1465,7 +1465,7 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	err = bt_bap_stream_connect(default_stream);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Unable to connect stream");
 		return -ENOEXEC;
 	}
@@ -1515,7 +1515,7 @@ static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_bap_stream_metadata(default_stream, uni_stream->codec_cfg.meta,
 				     uni_stream->codec_cfg.meta_len);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Unable to set Channel metadata");
 		return -ENOEXEC;
 	}
@@ -1533,7 +1533,7 @@ static int cmd_start(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	err = bt_bap_stream_start(default_stream);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Unable to start Channel");
 		return -ENOEXEC;
 	}
@@ -1551,7 +1551,7 @@ static int cmd_disable(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	err = bt_bap_stream_disable(default_stream);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Unable to disable Channel");
 		return -ENOEXEC;
 	}
@@ -1635,7 +1635,7 @@ static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	err = bt_bap_stream_release(default_stream);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Unable to release Channel");
 		return -ENOEXEC;
 	}
@@ -3424,7 +3424,7 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 		shell_print(sh, "No PA sync available, starting scanning for broadcast_id");
 
 		err = bt_le_scan_start(&param, NULL);
-		if (err) {
+		if (err != 0) {
 			shell_print(sh, "Fail to start scanning: %d", err);
 
 			return -ENOEXEC;
@@ -3463,7 +3463,7 @@ static int cmd_create_sink_by_name(const struct shell *sh, size_t argc, char *ar
 	shell_print(sh, "Starting scanning for broadcast_name");
 
 	err = bt_le_scan_start(&param, NULL);
-	if (err) {
+	if (err != 0) {
 		shell_print(sh, "Fail to start scanning: %d", err);
 
 		return -ENOEXEC;
@@ -3645,7 +3645,7 @@ static int cmd_set_loc(const struct shell *sh, size_t argc, char *argv[])
 	loc = loc_val;
 
 	err = bt_pacs_set_location(dir, loc);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Set available contexts err %d", err);
 		return -ENOEXEC;
 	}
@@ -3670,7 +3670,7 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	ctx_val = shell_strtoul(argv[2], 16, &err);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Could not parse context: %d", err);
 
 		return err;
@@ -3692,13 +3692,13 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		err = bt_pacs_set_supported_contexts(dir, ctx);
-		if (err) {
+		if (err != 0) {
 			shell_error(sh, "Set supported contexts err %d", err);
 			return err;
 		}
 	} else if (!strcmp(argv[3], "available")) {
 		err = bt_pacs_set_available_contexts(dir, ctx);
-		if (err) {
+		if (err != 0) {
 			shell_error(sh, "Set available contexts err %d", err);
 			return err;
 		}
