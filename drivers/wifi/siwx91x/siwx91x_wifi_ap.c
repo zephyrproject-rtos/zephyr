@@ -139,8 +139,7 @@ int siwx91x_ap_enable(const struct device *dev, struct net_if *iface,
 		goto err;
 	}
 
-	/* FIXME: Should we switch automatically between AP and sta? */
-	if (data->operating_mode != WIFI_SOFTAP_MODE) {
+	if (siwx91x_nwp_get_operating_mode(config->nwp_dev) != WIFI_SOFTAP_MODE) {
 		result = WIFI_STATUS_AP_FAIL;
 		ret = -EINVAL;
 		goto err;

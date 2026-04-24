@@ -6,6 +6,7 @@
 #include <zephyr/logging/log.h>
 #include "siwx91x_nwp_api.h"
 #include "siwx91x_wifi.h"
+#include "siwx91x_wifi_ps.h"
 #include "siwx91x_wifi_socket.h"
 
 LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
@@ -86,6 +87,7 @@ int siwx91x_wifi_connect(const struct device *dev, struct net_if *iface,
 	wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
 	siwx91x_sock_on_join_ipv4(dev, iface);
 	siwx91x_sock_on_join_ipv6(dev, iface);
+	siwx91x_wifi_apply_power_save(dev);
 	return 0;
 
 join_fail:
@@ -98,11 +100,18 @@ err:
 int siwx91x_wifi_disconnect(const struct device *dev, struct net_if *iface)
 {
 	const struct siwx91x_wifi_config *config = dev->config;
+	sli_wifi_power_save_request_t ps_params = {
+		.power_mode = SLI_CONNECTED_M4_BASED_PS,
+		.ulp_mode_enable = 1,
+	};
 
 	siwx91x_nwp_disconnect(config->nwp_dev);
 	siwx91x_nwp_wifi_init(config->nwp_dev);
 	if (!IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD)) {
 		net_if_dormant_on(iface);
+	}
+	if (IS_ENABLED(CONFIG_PM)) {
+		siwx91x_nwp_ps_enable(config->nwp_dev, &ps_params);
 	}
 	wifi_mgmt_raise_disconnect_result_event(iface, WIFI_REASON_DISCONN_SUCCESS);
 

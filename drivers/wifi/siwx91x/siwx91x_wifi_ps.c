@@ -27,7 +27,7 @@ static int siwx91x_wifi_get_beacon_interval(const struct device *dev)
  */
 #define SIWX91X_WIFI_MAX_PSP   0
 #define SIWX91X_WIFI_FAST_PSP  1
-static int siwx91x_wifi_apply_power_save(const struct device *dev)
+int siwx91x_wifi_apply_power_save(const struct device *dev)
 {
 	const struct siwx91x_wifi_config *config = dev->config;
 	struct siwx91x_wifi_data *data = dev->data;

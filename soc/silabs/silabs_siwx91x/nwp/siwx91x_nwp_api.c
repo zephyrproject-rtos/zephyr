@@ -23,6 +23,7 @@
 #include "siwx91x_nwp_bus.h"
 #include "siwx91x_nwp_api.h"
 
+#include "device/silabs/si91x/mcu/drivers/service/clock_manager/inc/sli_si91x_clock_manager.h"
 #include "device/silabs/si91x/mcu/drivers/service/power_manager/inc/sl_si91x_power_manager.h"
 #include "device/silabs/si91x/wireless/ble/inc/rsi_bt_common.h"
 #include "device/silabs/si91x/wireless/inc/sl_si91x_driver.h"
@@ -297,8 +298,11 @@ void siwx91x_nwp_ps_enable(const struct device *dev, sli_wifi_power_save_request
 	uint32_t status;
 
 	__ASSERT(params->power_mode != 0, "Prefer siwx91x_nwp_disable_ps()");
-	__ASSERT(sl_si91x_get_lowest_ps() == SL_SI91X_POWER_MANAGER_SLEEP, "bt_setup() has to be called first");
 
+	/* FIXME: properly integrate with clock_controller */
+	if (IS_ENABLED(CONFIG_PM)) {
+		sli_si91x_config_clocks_to_mhz_rc();
+	}
 	status = siwx91x_nwp_send_cmd(dev, params, sizeof(*params), SLI_WIFI_REQ_PWRMODE,
 				      SLI_WLAN_MGMT_Q, 0, NULL);
 	__ASSERT(!status, "Corrupted NWP reply");

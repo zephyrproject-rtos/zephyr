@@ -153,7 +153,7 @@ struct siwx91x_nwp_cmd_queue {
 };
 
 struct siwx91x_nwp_data {
-	uint8_t power_profile;
+	uint8_t operating_mode;
 	char current_country_code[2];
 	const struct siwx91x_nwp_bt_cb *bt;
 	const struct siwx91x_nwp_wifi_cb *wifi;
@@ -196,6 +196,7 @@ void siwx91x_nwp_register_wifi(const struct device *dev, const struct siwx91x_nw
 void siwx91x_nwp_register_bt(const struct device *dev, const struct siwx91x_nwp_bt_cb *val);
 int siwx91x_nwp_reset(const struct device *dev, uint8_t oper_mode, bool hidden_ssid,
 		      uint8_t max_num_sta);
+int siwx91x_nwp_get_operating_mode(const struct device *dev);
 int siwx91x_nwp_prepare_sleep(const struct device *dev);
 void siwx91x_nwp_enter_sleep(const struct device *dev);
 void siwx91x_nwp_exit_sleep(const struct device *dev);

@@ -19,7 +19,6 @@ struct siwx91x_wifi_config {
 struct siwx91x_wifi_data {
 	struct siwx91x_nwp_wifi_cb nwp_ops;
 	scan_result_cb_t zephyr_scan_cb;
-	uint8_t operating_mode;
 	int ap_idle_timeout;
 	int ap_max_num_sta;
 	bool ap_hide_ssid;

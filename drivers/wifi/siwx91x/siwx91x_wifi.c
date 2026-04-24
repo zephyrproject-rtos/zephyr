@@ -48,28 +48,24 @@ static int siwx91x_wifi_mode(const struct device *dev, struct net_if *iface,
 			     struct wifi_mode_info *mode)
 {
 	const struct siwx91x_wifi_config *config = dev->config;
-	struct siwx91x_wifi_data *data = dev->data;
 	int ret;
 
 	switch (mode->oper) {
 	case WIFI_MGMT_GET:
-		mode->mode = data->operating_mode;
+		mode->mode = siwx91x_nwp_get_operating_mode(config->nwp_dev);
 	case WIFI_MGMT_SET:
 		ret = siwx91x_nwp_reset(config->nwp_dev, mode->mode, false, 0);
 		if (ret) {
 			return ret;
 		}
-		siwx91x_nwp_set_band(config->nwp_dev, SL_WIFI_BAND_MODE_2_4GHZ);
-		siwx91x_nwp_wifi_init(config->nwp_dev);
-		if (mode->mode == WIFI_SOFTAP_MODE) {
-			siwx91x_nwp_set_region_ap(config->nwp_dev);
-		} else { /* WIFI_STA_MODE */
+		if (mode->mode == WIFI_STA_MODE) {
 			siwx91x_nwp_set_region_sta(config->nwp_dev, SL_WIFI_DEFAULT_REGION);
+		} else { /* WIFI_SOFTAP_MODE */
+			siwx91x_nwp_set_region_ap(config->nwp_dev);
 		}
 		siwx91x_nwp_set_config(config->nwp_dev, SLI_WIFI_CONFIG_RTS_THRESHOLD, 2346);
 		siwx91x_nwp_set_sta_config(config->nwp_dev);
 		/* FIXME: Set max Tx Power for scan and join */
-		data->operating_mode = mode->mode;
 	default:
 		__ASSERT(0, "Corrupted argument");
 	}
@@ -94,10 +90,9 @@ static void siwx91x_wifi_iface_init(struct net_if *iface)
 	const struct siwx91x_wifi_config *config = net_if_get_device(iface)->config;
 	uint8_t mac_addr[NET_ETH_ADDR_LEN];
 
-	/* Note siwx91x_nwp_set_band() and siwx91x_nwp_wifi_init() are already called from NWP
-	 * driver but it does not hurt to call them twice.
+	/* Note siwx91x_nwp_wifi_init() are already called from NWP driver but it does not hurt to
+	 * call them twice. It will be called during association anyway.
 	 */
-	siwx91x_nwp_set_band(config->nwp_dev, SL_WIFI_BAND_MODE_2_4GHZ);
 	siwx91x_nwp_wifi_init(config->nwp_dev);
 	siwx91x_nwp_set_region_sta(config->nwp_dev, SL_WIFI_DEFAULT_REGION);
 	siwx91x_nwp_set_config(config->nwp_dev, SLI_WIFI_CONFIG_RTS_THRESHOLD, 2346);

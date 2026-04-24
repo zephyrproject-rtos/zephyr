@@ -17,5 +17,6 @@ int siwx91x_wifi_set_power_save(const struct device *dev, struct net_if *iface,
 				struct wifi_ps_params *params);
 int siwx91x_wifi_get_power_save_config(const struct device *dev, struct net_if *iface,
 				       struct wifi_ps_config *config);
+int siwx91x_wifi_apply_power_save(const struct device *dev);
 
 #endif
