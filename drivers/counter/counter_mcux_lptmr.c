@@ -189,6 +189,12 @@ static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	k_spin_unlock(&data->lock, key);
 
 	LPTMR_StopTimer(config->base);
+	/*
+	 * LPTMR only has one register (CMR) for both period and alarm.
+	 * if cancel doesn't affect the period, no need restoration.
+	 */
+	LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
+	LPTMR_ClearStatusFlags(config->base, kLPTMR_TimerCompareFlag);
 
 	return 0;
 }
