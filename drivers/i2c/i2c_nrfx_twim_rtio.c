@@ -34,31 +34,19 @@ struct i2c_nrfx_twim_rtio_data {
 	uint16_t user_rx_buf_size;
 };
 
-static bool i2c_nrfx_twim_rtio_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf,
-					 size_t buf_len, uint16_t i2c_addr)
+static void iodev_end_curr(const struct device *dev, int status);
+static void iodev_start_curr(const struct device *dev);
+
+static void iodev_await_callback(struct rtio_iodev_sqe *iodev_sqe, void *userdata)
 {
-	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
-	struct i2c_rtio *ctx = config->ctx;
-	int ret = 0;
+	ARG_UNUSED(iodev_sqe);
 
-	ret = i2c_nrfx_twim_msg_transfer(dev, flags, buf, buf_len, i2c_addr);
-	if (ret != 0) {
-		return i2c_rtio_complete(ctx, ret);
-	}
-
-	return false;
-}
-
-static void i2c_nrfx_twim_rtio_complete(const struct device *dev, int status);
-
-static void i2c_nrfx_twim_rtio_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, void *userdata)
-{
 	const struct device *dev = userdata;
 
-	(void)i2c_nrfx_twim_rtio_complete(dev, 0);
+	iodev_end_curr(dev, 0);
 }
 
-static bool i2c_nrfx_twim_rtio_start(const struct device *dev)
+static void iodev_start_curr(const struct device *dev)
 {
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
 	struct i2c_nrfx_twim_rtio_data *data = dev->data;
@@ -66,30 +54,37 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev)
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
 	struct rtio_iodev_sqe *iodev_sqe;
+	int ret;
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
 		if (!nrf_dma_accessible_check(&config->common.twim, sqe->rx.buf)) {
 			if (sqe->rx.buf_len > config->common.msg_buf_size) {
-				return i2c_rtio_complete(ctx, -ENOSPC);
+				ret = -ENOSPC;
+				break;
 			}
 
 			data->user_rx_buf = sqe->rx.buf;
 			data->user_rx_buf_size = sqe->rx.buf_len;
-			return i2c_nrfx_twim_rtio_msg_start(dev,
-							    I2C_MSG_READ | sqe->iodev_flags,
-							    config->common.msg_buf,
-							    data->user_rx_buf_size,
-							    dt_spec->addr);
+			ret = i2c_nrfx_twim_msg_transfer(dev,
+							 I2C_MSG_READ | sqe->iodev_flags,
+							 config->common.msg_buf,
+							 data->user_rx_buf_size,
+							 dt_spec->addr);
+		} else {
+			data->user_rx_buf = NULL;
+			ret = i2c_nrfx_twim_msg_transfer(dev,
+							 I2C_MSG_READ | sqe->iodev_flags,
+							 sqe->rx.buf,
+							 sqe->rx.buf_len,
+							 dt_spec->addr);
 		}
-
-		data->user_rx_buf = NULL;
-		return i2c_nrfx_twim_rtio_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
-						    sqe->rx.buf, sqe->rx.buf_len, dt_spec->addr);
+		break;
 	case RTIO_OP_TINY_TX:
-		return i2c_nrfx_twim_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-						    sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
-						    dt_spec->addr);
+		ret = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_WRITE | sqe->iodev_flags,
+						 sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
+						 dt_spec->addr);
+		break;
 	case RTIO_OP_TX:
 		/* If buffer is not accessible by DMA, copy it into the internal driver buffer */
 		if (!nrf_dma_accessible_check(&config->common.twim, sqe->tx.buf)) {
@@ -103,45 +98,57 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev)
 					"(the one with greater value) in the "
 					"\"%s\"' node.",
 					sqe->tx.buf_len, config->common.msg_buf_size, dev->name);
-				return i2c_rtio_complete(ctx, -ENOSPC);
+				ret = -ENOSPC;
+				break;
 			}
 			memcpy(config->common.msg_buf, sqe->tx.buf, sqe->tx.buf_len);
 			sqe->tx.buf = config->common.msg_buf;
 		}
-		return i2c_nrfx_twim_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-						    (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
-						    dt_spec->addr);
+		ret = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_WRITE | sqe->iodev_flags,
+						 (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
+						 dt_spec->addr);
+		break;
 	case RTIO_OP_I2C_CONFIGURE:
-		(void)i2c_nrfx_twim_configure(dev, sqe->i2c_config);
-		/** This request will not generate an event therefore, this
-		 * code immediately submits a CQE in order to unblock
-		 * i2c_rtio_configure.
-		 */
-		return i2c_rtio_complete(ctx, 0);
+		ret = i2c_nrfx_twim_configure(dev, sqe->i2c_config);
+		break;
 	case RTIO_OP_I2C_RECOVER:
-		(void)i2c_nrfx_twim_recover_bus(dev);
-		return false;
+		ret = i2c_nrfx_twim_recover_bus(dev);
+		break;
 	case RTIO_OP_AWAIT:
 		iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
-		rtio_iodev_sqe_await_signal(iodev_sqe, i2c_nrfx_twim_rtio_sqe_signaled,
+		rtio_iodev_sqe_await_signal(iodev_sqe, iodev_await_callback,
 					    (void *)dev);
-		return false;
+		ret = 0;
+		break;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
-		return i2c_rtio_complete(ctx, -EINVAL);
+		ret = -ENOTSUP;
+		break;
+	}
+
+	if (ret != 0) {
+		iodev_end_curr(dev, ret);
+		return;
+	}
+
+	switch (sqe->op) {
+	case RTIO_OP_I2C_CONFIGURE:
+	case RTIO_OP_I2C_RECOVER:
+		iodev_end_curr(dev, 0);
+		break;
+	default:
+		break;
 	}
 }
 
-static void i2c_nrfx_twim_rtio_complete(const struct device *dev, int status)
+static void iodev_end_curr(const struct device *dev, int status)
 {
-	/** Finalize if there are no more pending xfers */
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
 	struct i2c_rtio *ctx = config->ctx;
 
 	if (i2c_rtio_complete(ctx, status)) {
-		(void)i2c_nrfx_twim_rtio_start(dev);
+		iodev_start_curr(dev);
 	} else {
-		/* Release bus on completion */
 		pm_device_runtime_put(dev);
 	}
 }
@@ -178,9 +185,9 @@ static void i2c_nrfx_twim_rtio_submit(const struct device *dev, struct rtio_iode
 
 	if (i2c_rtio_submit(ctx, iodev_seq)) {
 		if (pm_device_runtime_get(dev) < 0) {
-			(void)i2c_rtio_complete(ctx, -EINVAL);
+			iodev_end_curr(dev, -EINVAL);
 		} else {
-			(void)i2c_nrfx_twim_rtio_start(dev);
+			iodev_start_curr(dev);
 		}
 	}
 }
@@ -196,7 +203,7 @@ static void event_handler(nrfx_twim_event_t const *p_event, void *p_context)
 		memcpy(data->user_rx_buf, config->common.msg_buf, data->user_rx_buf_size);
 	}
 
-	i2c_nrfx_twim_rtio_complete(dev, status);
+	iodev_end_curr(dev, status);
 }
 
 static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
