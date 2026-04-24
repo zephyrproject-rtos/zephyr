@@ -2492,27 +2492,26 @@ int modem_cellular_init(const struct device *dev)
  */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(quectel_bg95) || DT_HAS_COMPAT_STATUS_OKAY(quectel_bg96)
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_init_chat_script_cmds,
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_set_baudrate_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR="
+					STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE), ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_set_baudrate_chat_script, quectel_bg9x_set_baudrate_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 1);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QGMR", cgmr_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QCCID", qccid_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127", 300));
 
@@ -2520,28 +2519,26 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_init_chat_script, quectel_bg9x_init_chat_s
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99***1#", connect_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_dial_chat_script, quectel_bg9x_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
 
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_periodic_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match));
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_network_setup_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QCFG=\"cmux/urcport\",1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
 
-MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_periodic_chat_script,
-			 quectel_bg9x_periodic_chat_script_cmds, abort_matches,
-			 modem_cellular_chat_callback_handler, 4);
+MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_network_chat_script,
+			 quectel_bg9x_network_setup_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 60);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_shutdown_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QPOWD=1", powerdown_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_shutdown_chat_script,
 			 quectel_bg9x_shutdown_chat_script_cmds, abort_matches,
-			 modem_cellular_chat_callback_handler, 1);
+			 modem_cellular_chat_callback_handler, 5);
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(quectel_eg25_g)
@@ -3223,11 +3220,12 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 						  (user_pipe_0, 3),                                \
 						  (user_pipe_1, 4))                                \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 500, 1000, 5000, 2000, false,                         \
-				       NULL,                                                       \
+	MODEM_CELLULAR2_DEFINE_INSTANCE(inst, 500, 1000, 5000, 2000, false,                        \
+				       &quectel_bg9x_set_baudrate_chat_script,                     \
 				       &quectel_bg9x_init_chat_script,                             \
+				       &quectel_bg9x_network_chat_script,                          \
 				       &quectel_bg9x_dial_chat_script,                             \
-				       &quectel_bg9x_periodic_chat_script,                         \
+				       NULL,				                           \
 				       &quectel_bg9x_shutdown_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_QUECTEL_EG25_G(inst)                                                 \
