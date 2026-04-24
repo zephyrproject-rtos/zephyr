@@ -179,7 +179,7 @@ static void efuse_bflb_cache(const struct device *dev)
 	irq_unlock(key);
 }
 
-static int efuse_bflb_read(const struct device *dev, uint16_t reg, uint32_t *val)
+static int efuse_bflb_read(const struct device *dev, uint32_t reg, uint32_t *val)
 {
 	struct efuse_bflb_data *data = dev->data;
 

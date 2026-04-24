@@ -53,6 +53,13 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+Syscon
+======
+
+* The syscon API functions :c:func:`syscon_read_reg` and :c:func:`syscon_write_reg` now use
+  ``uint32_t`` for the register offset parameter instead of ``uint16_t``. This allows for
+  larger register offsets. Code that explicitly declares ``uint16_t`` variables for the
+  register parameter or implements the syscon driver API functions may need to be updated.
 
 STM32
 =====
