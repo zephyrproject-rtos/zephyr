@@ -276,8 +276,8 @@ static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
 	}											\
 	IF_ENABLED(USES_MSG_BUF(inst), (MSG_BUF_DEFINE(inst);))					\
 	I2C_RTIO_DEFINE(_i2c##inst##_twim_rtio,							\
-			DT_INST_PROP_OR(n, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),			\
-			DT_INST_PROP_OR(n, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));			\
+			DT_INST_PROP_OR(inst, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),		\
+			DT_INST_PROP_OR(inst, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));		\
 	PINCTRL_DT_INST_DEFINE(inst);								\
 	static const struct i2c_nrfx_twim_rtio_config twim_##inst##z_config = {			\
 		.common =									\
