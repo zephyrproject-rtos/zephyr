@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Crypto Cipher structure definitions
+ * @ingroup crypto_cipher
  *
  * This file contains the Crypto Abstraction layer structures.
  *
@@ -24,16 +25,15 @@
  * @{
  */
 
-
-/** Cipher Algorithm */
+/** Cipher algorithms. */
 enum cipher_algo {
-	CRYPTO_CIPHER_ALGO_AES = 1,
+	CRYPTO_CIPHER_ALGO_AES = 1, /**< Advanced Encryption Standard. */
 };
 
-/** Cipher Operation */
+/** Cipher operation types. */
 enum cipher_op {
-	CRYPTO_CIPHER_OP_DECRYPT = 0,
-	CRYPTO_CIPHER_OP_ENCRYPT = 1,
+	CRYPTO_CIPHER_OP_DECRYPT = 0, /**< Decrypt input data. */
+	CRYPTO_CIPHER_OP_ENCRYPT = 1, /**< Encrypt input data. */
 };
 
 /**
@@ -42,11 +42,11 @@ enum cipher_op {
  * More to be added as required.
  */
 enum cipher_mode {
-	CRYPTO_CIPHER_MODE_ECB = 1,
-	CRYPTO_CIPHER_MODE_CBC = 2,
-	CRYPTO_CIPHER_MODE_CTR = 3,
-	CRYPTO_CIPHER_MODE_CCM = 4,
-	CRYPTO_CIPHER_MODE_GCM = 5,
+	CRYPTO_CIPHER_MODE_ECB = 1, /**< Electronic Codebook mode. */
+	CRYPTO_CIPHER_MODE_CBC = 2, /**< Cipher Block Chaining mode. */
+	CRYPTO_CIPHER_MODE_CTR = 3, /**< Counter mode. */
+	CRYPTO_CIPHER_MODE_CCM = 4, /**< Counter with CBC-MAC mode. */
+	CRYPTO_CIPHER_MODE_GCM = 5, /**< Galois/Counter mode. */
 };
 
 /* Forward declarations */
@@ -54,50 +54,125 @@ struct cipher_aead_pkt;
 struct cipher_ctx;
 struct cipher_pkt;
 
+/**
+ * @brief Perform an ECB block cipher operation.
+ *
+ * @param ctx Cipher session context.
+ * @param pkt Packet containing input and output buffers.
+ *
+ * @retval 0 Operation completed successfully.
+ * @retval -errno Negative errno code on failure.
+ */
 typedef int (*block_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt);
 
-/* Function signatures for encryption/ decryption using standard cipher modes
- * like  CBC, CTR, CCM.
+/**
+ * @brief Perform a CBC cipher operation.
+ *
+ * @param ctx Cipher session context.
+ * @param pkt Packet containing input and output buffers.
+ * @param iv Initialization vector for this operation. The buffer must
+ * remain valid for the duration of the operation.
+ *
+ * @retval 0 Operation completed successfully.
+ * @retval -errno Negative errno code on failure.
  */
 typedef int (*cbc_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 			uint8_t *iv);
 
+/**
+ * @brief Perform a CTR cipher operation.
+ *
+ * @param ctx Cipher session context.
+ * @param pkt Packet containing input and output buffers.
+ * @param ctr Initial counter bytes for this operation. For split-counter
+ * sessions, this is the IV portion supplied by the application.
+ *
+ * @retval 0 Operation completed successfully.
+ * @retval -errno Negative errno code on failure.
+ */
 typedef int (*ctr_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 			uint8_t *ctr);
 
+/**
+ * @brief Perform a CCM authenticated cipher operation.
+ *
+ * @param ctx Cipher session context.
+ * @param pkt Packet containing input, output, associated data, and
+ * authentication tag buffers.
+ * @param nonce Nonce for this operation. The buffer must remain valid for
+ * the duration of the operation.
+ *
+ * @retval 0 Operation completed successfully.
+ * @retval -errno Negative errno code on failure.
+ */
 typedef int (*ccm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
 			 uint8_t *nonce);
 
+/**
+ * @brief Perform a GCM authenticated cipher operation.
+ *
+ * @param ctx Cipher session context.
+ * @param pkt Packet containing input, output, associated data, and
+ * authentication tag buffers.
+ * @param nonce Nonce for this operation. The buffer must remain valid for
+ * the duration of the operation.
+ *
+ * @retval 0 Operation completed successfully.
+ * @retval -errno Negative errno code on failure.
+ */
 typedef int (*gcm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
 			 uint8_t *nonce);
 
+/**
+ * Cipher operation handlers selected for a session.
+ *
+ * The crypto driver populates this structure during cipher_begin_session()
+ * according to the selected algorithm, mode, and operation type.
+ */
 struct cipher_ops {
 
+	/** Cipher mode associated with the active handler. */
 	enum cipher_mode cipher_mode;
 
+	/** Handler selected for the active cipher mode. */
 	union {
+		/** Handler for ECB block operations. */
 		block_op_t	block_crypt_hndlr;
+		/** Handler for CBC operations. */
 		cbc_op_t	cbc_crypt_hndlr;
+		/** Handler for CTR operations. */
 		ctr_op_t	ctr_crypt_hndlr;
+		/** Handler for CCM authenticated operations. */
 		ccm_op_t	ccm_crypt_hndlr;
+		/** Handler for GCM authenticated operations. */
 		gcm_op_t	gcm_crypt_hndlr;
 	};
 };
 
+/** CCM mode session parameters. */
 struct ccm_params {
+	/** Authentication tag length, in bytes. */
 	uint16_t tag_len;
+	/** Nonce length, in bytes. */
 	uint16_t nonce_len;
 };
 
+/** CTR mode session parameters. */
 struct ctr_params {
-	/* CTR mode counter is a split counter composed of iv and counter
-	 * such that ivlen + ctr_len = keylen
+	/**
+	 * Counter length, in bytes.
+	 *
+	 * CTR mode uses a split counter composed of an IV and counter such
+	 * that IV length + counter length = key length.
 	 */
 	uint32_t ctr_len;
 };
 
+/** GCM mode session parameters. */
 struct gcm_params {
+	/** Authentication tag length, in bytes. */
 	uint16_t tag_len;
+	/** Nonce length, in bytes. */
 	uint16_t nonce_len;
 };
 
@@ -115,12 +190,19 @@ struct cipher_ctx {
 	 */
 	struct cipher_ops ops;
 
-	/** To be populated by the app before calling begin_session() */
+	/**
+	 * Key material for the session. The application populates the selected
+	 * member before calling cipher_begin_session().
+	 */
 	union {
-		/* Cryptographic key to be used in this session */
+		/**
+		 * Raw cryptographic key bytes. The buffer must remain valid while
+		 * the session is active.
+		 */
 		const uint8_t *bit_stream;
-		/* For cases where  key is protected and is not
-		 * available to caller
+		/**
+		 * Driver-specific key handle for protected keys that are not
+		 * directly available to the application.
 		 */
 		void *handle;
 	} key;
@@ -145,13 +227,16 @@ struct cipher_ctx {
 	 */
 	void *app_sessn_state;
 
-	/** Cypher mode parameters, which remain constant for all ops
+	/** Cipher mode parameters, which remain constant for all ops
 	 * in a session. To be populated by the app before calling
 	 * begin_session().
 	 */
 	union {
+		/** CCM parameters for CCM sessions. */
 		struct ccm_params ccm_info;
+		/** CTR parameters for CTR sessions. */
 		struct ctr_params ctr_info;
+		/** GCM parameters for GCM sessions. */
 		struct gcm_params gcm_info;
 	} mode_params;
 
@@ -179,20 +264,27 @@ struct cipher_ctx {
  */
 struct cipher_pkt {
 
-	/** Start address of input buffer */
+	/**
+	 * Start address of the input buffer. The buffer is allocated by the
+	 * application and must remain valid for the duration of the operation.
+	 */
 	uint8_t *in_buf;
 
-	/** Bytes to be operated upon */
+	/** Number of input bytes to process. */
 	int  in_len;
 
-	/** Start of the output buffer, to be allocated by
-	 * the application. Can be NULL for in-place ops. To be populated
-	 * with contents by the driver on return from op / async callback.
+	/**
+	 * Start address of the output buffer.
+	 *
+	 * The buffer is allocated by the application and must remain valid for
+	 * the duration of the operation. This can be NULL for in-place
+	 * operations, in which case the driver writes the result to @p in_buf.
 	 */
 	uint8_t *out_buf;
 
-	/** Size of the out_buf area allocated by the application. Drivers
-	 * should not write past the size of output buffer.
+	/**
+	 * Size of the output buffer, in bytes. Drivers must not write past this
+	 * buffer size.
 	 */
 	int out_buf_max;
 
@@ -215,29 +307,42 @@ struct cipher_pkt {
  * App has to furnish valid contents prior to making cipher_ccm_op() call.
  */
 struct cipher_aead_pkt {
-	/* IO buffers for encryption. This has to be supplied by the app. */
+	/**
+	 * Packet containing input and output buffers. This is supplied by the
+	 * application and must remain valid for the duration of the operation.
+	 */
 	struct cipher_pkt *pkt;
 
 	/**
-	 * Start address for Associated Data. This has to be supplied by app.
+	 * Start address of associated data. The buffer is supplied by the
+	 * application and must remain valid for the duration of the operation.
 	 */
 	uint8_t *ad;
 
-	/** Size of  Associated Data. This has to be supplied by the app. */
+	/** Size of associated data, in bytes. */
 	uint32_t ad_len;
 
-	/** Start address for the auth hash. For an encryption op this will
-	 * be populated by the driver when it returns from cipher_ccm_op call.
-	 * For a decryption op this has to be supplied by the app.
+	/**
+	 * Start address of the authentication tag buffer.
+	 *
+	 * For encryption, the driver writes the tag to this application
+	 * allocated buffer before the operation completes. For decryption, the
+	 * application supplies the expected tag in this buffer.
 	 */
 	uint8_t *tag;
 };
 
-/* Prototype for the application function to be invoked by the crypto driver
- * on completion of an async request. The app may get the session context
- * via the pkt->ctx field. For CCM ops the encompassing AEAD packet may be
- * accessed via container_of(). The type of a packet can be determined via
- * pkt->ctx.ops.mode .
+/**
+ * @brief Handle completion of an asynchronous cipher request.
+ *
+ * The application can get the session context from the completed packet's
+ * @c ctx field. For AEAD operations, the encompassing AEAD packet can be
+ * accessed with container_of(). The packet type can be determined from the
+ * session cipher mode.
+ *
+ * @param completed Completed cipher packet.
+ * @param status Completion status. A value of 0 indicates success and a
+ * negative errno code indicates failure.
  */
 typedef void (*cipher_completion_cb)(struct cipher_pkt *completed, int status);
 
