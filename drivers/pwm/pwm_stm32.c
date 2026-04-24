@@ -345,7 +345,6 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 		LL_TIM_OC_SetIdleState(timer, current_ll_channel, STM32_TIM_OCIDLESTATE_RESET);
 #endif
 		LL_TIM_CC_EnableChannel(timer, current_ll_channel);
-		LL_TIM_EnableARRPreload(timer);
 		/* in LL_TIM_OC_EnablePreload, the channel is always the non-complementary */
 		LL_TIM_OC_EnablePreload(timer, ll_channel);
 		LL_TIM_GenerateEvent_UPDATE(timer);
@@ -452,7 +451,6 @@ static int pwm_stm32_configure_capture(const struct device *dev,
 		LL_TIM_SetSlaveMode(timer, LL_TIM_SLAVEMODE_RESET);
 	}
 
-	LL_TIM_EnableARRPreload(timer);
 	if (!IS_TIM_32B_COUNTER_INSTANCE(timer)) {
 		LL_TIM_SetAutoReload(timer, 0xffffu);
 	} else {
@@ -721,6 +719,7 @@ static int pwm_stm32_init(const struct device *dev)
 	/* initialize timer */
 	LL_TIM_SetPrescaler(timer, cfg->prescaler);
 	LL_TIM_SetAutoReload(timer, 0U);
+	LL_TIM_EnableARRPreload(timer);
 
 	if (IS_TIM_COUNTER_MODE_SELECT_INSTANCE(timer)) {
 		LL_TIM_SetCounterMode(timer, cfg->countermode);
