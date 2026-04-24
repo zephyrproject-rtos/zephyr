@@ -423,14 +423,10 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && CONFIG_UDC_NXP_EHCI
-	/* Power on COM VDDN domain for USB */
+	/* Power on COM VDDN domain for USB (board-level; not USB-specific). */
 	POWER_DisablePD(kPDRUNCFG_DSR_VDDN_COM);
-
-	/* Power on usb ram array as need, powered USB0RAM array*/
-	POWER_DisablePD(kPDRUNCFG_APD_USB0_SRAM);
-	POWER_DisablePD(kPDRUNCFG_PPD_USB0_SRAM);
-	/* Apply the config */
 	POWER_ApplyPD();
+
 	/* disable the read and write gate */
 	SYSCON4->USB0_MEM_CTRL |= (SYSCON4_USB0_MEM_CTRL_MEM_WIG_MASK |
 				   SYSCON4_USB0_MEM_CTRL_MEM_RIG_MASK |

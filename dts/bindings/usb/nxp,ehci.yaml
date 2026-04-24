@@ -15,3 +15,10 @@ properties:
     type: array
     description: |
       Optional rate given to each clock provider in the "clocks" property.
+
+  nxp,power-rails:
+    type: phandle-array
+    specifier-space: power-rail
+    description: |
+      Power-rail specifiers for rails that must be powered up before the controller
+      can be accessed.

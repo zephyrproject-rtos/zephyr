@@ -921,6 +921,8 @@
 		clocks = <&usbclk>;
 		num-bidir-endpoints = <8>;
 		status = "disabled";
+		nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_USB0_SRAM>,
+				  <&pmc0 NXP_RT7XX_PMC_PPD_USB0_SRAM>;
 	};
 
 	usb1: usb@419000 {

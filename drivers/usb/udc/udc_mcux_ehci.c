@@ -17,6 +17,7 @@
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/misc/nxp_power_rail/nxp_power_rail.h>
 
 #include "udc_common.h"
 #include "usb.h"
@@ -57,6 +58,8 @@ struct udc_mcux_config {
 	const struct device *phy_clock_dev;
 	clock_control_subsys_t phy_clock_subsys;
 	clock_control_subsys_rate_t phy_clock_rate;
+	const struct nxp_power_rail_spec *power_rails;
+	uint8_t power_rail_count;
 };
 
 struct udc_mcux_data {
@@ -731,6 +734,11 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
+	err = nxp_power_rail_request_all(config->power_rails, config->power_rail_count);
+	if (err) {
+		return err;
+	}
+
 	udc_mcux_get_hal_driver_id(dev);
 	if (priv->controller_id == 0xFFu) {
 		return -ENOMEM;
@@ -899,6 +907,7 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 		ep_cfg_in##n[DT_INST_PROP(n, num_bidir_endpoints)];			\
 											\
 	PINCTRL_DT_INST_DEFINE(n);							\
+	NXP_POWER_RAIL_DT_INST_SPECS_DEFINE(n)						\
 											\
 	static struct udc_mcux_config priv_config_##n = {				\
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),			\
@@ -912,6 +921,7 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 		.phy_config = UDC_MCUX_PHY_CFG_PTR_OR_NULL(n),				\
 		UDC_MCUX_USB_CLK_DEFINE_OR(n)						\
 		UDC_MCUX_USB_PHY_CLK_DEFINE_OR(n)					\
+		NXP_POWER_RAIL_DT_INST_SPECS_INIT(n)					\
 	};										\
 											\
 	static struct udc_mcux_data priv_data_##n = {					\
