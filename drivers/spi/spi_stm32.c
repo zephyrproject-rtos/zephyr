@@ -1155,6 +1155,9 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	struct spi_stm32_data *data = dev->data;
 
 #ifdef CONFIG_SPI_RTIO
+#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+	irq_disable(cfg->irq_line);
+#endif /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 	if (data->rtio_ctx->txn_head != NULL &&
 	    ((ll_get_transfer_direction(spi) == STM32_SPI_FULL_DUPLEX) ||
 	     !spi_stm32_transfer_ongoing(data))) {
