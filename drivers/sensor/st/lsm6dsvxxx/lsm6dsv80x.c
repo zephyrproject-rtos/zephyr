@@ -631,7 +631,7 @@ static int lsm6dsv80x_pm_action(const struct device *dev, enum pm_device_action 
 			LOG_ERR("failed to disable accelerometer");
 			ret = -EIO;
 		}
-		if (lsm6dsv80x_gy_setup(ctx, LSM6DSV80X_XL_UNCHANGED_MD,
+		if (lsm6dsv80x_gy_setup(ctx, LSM6DSVXXX_DT_ODR_OFF,
 					LSM6DSV80X_GY_UNCHANGED_MD) < 0) {
 			LOG_ERR("failed to disable gyroscope");
 			ret = -EIO;
