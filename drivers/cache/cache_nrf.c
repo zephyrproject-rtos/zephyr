@@ -129,6 +129,15 @@ static inline int _cache_range(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, vo
 {
 	uintptr_t line_addr = (uintptr_t)addr;
 	uintptr_t end_addr;
+	uint32_t cache_line_size = 0;
+
+#if defined(CONFIG_ICACHE) && defined(CONFIG_DCACHE)
+	cache_line_size = (cache == NRF_DCACHE) ? CONFIG_DCACHE_LINE_SIZE : CONFIG_ICACHE_LINE_SIZE;
+#elif defined(CONFIG_ICACHE)
+	cache_line_size = CONFIG_ICACHE_LINE_SIZE;
+#else
+	cache_line_size = CONFIG_DCACHE_LINE_SIZE;
+#endif
 
 	/* Some SOCs has a bug that requires to set 28th bit in the address on
 	 * Trustzone secure builds.
@@ -140,17 +149,19 @@ static inline int _cache_range(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, vo
 
 	end_addr = line_addr + size;
 
-	/*
-	 * Align address to line size
-	 */
-	line_addr &= ~(CONFIG_DCACHE_LINE_SIZE - 1);
+	if (cache_line_size) {
+		/*
+		 * Align address to line size
+		 */
+		line_addr &= ~(cache_line_size - 1);
 
-	do {
-		_cache_line(cache, op, line_addr);
-		line_addr += CONFIG_DCACHE_LINE_SIZE;
-	} while (line_addr < end_addr);
+		do {
+			_cache_line(cache, op, line_addr);
+			line_addr += cache_line_size;
+		} while (line_addr < end_addr);
 
-	wait_for_cache(cache);
+		wait_for_cache(cache);
+	}
 
 	return 0;
 }
@@ -185,7 +196,7 @@ static inline int _cache_all_checks(NRF_CACHE_Type *cache, enum k_nrf_cache_op o
 }
 #endif /* NRF_CACHE_HAS_LINEADDR */
 
-#if defined(NRF_DCACHE) && NRF_CACHE_HAS_TASKS
+#if defined(CONFIG_DCACHE) && defined(NRF_DCACHE) && NRF_CACHE_HAS_TASKS
 
 void cache_data_enable(void)
 {
@@ -291,7 +302,7 @@ int cache_data_flush_and_invd_range(void *addr, size_t size)
 
 #endif /* NRF_DCACHE */
 
-#if defined(NRF_ICACHE) && NRF_CACHE_HAS_TASKS
+#if defined(CONFIG_ICACHE) && defined(NRF_ICACHE) && NRF_CACHE_HAS_TASKS
 
 void cache_instr_enable(void)
 {
