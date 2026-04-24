@@ -15,6 +15,10 @@
 	model = "SAMA7D65-Curiosity board";
 	compatible = "microchip,sama7d65curiosity", "microchip,sama7d6", "microchip,sama7";
 
+	aliases {
+		eeprom-0 = &eeprom0;
+	};
+
 	chosen {
 		zephyr,sram = &ddram;
 		zephyr,console = &uart6;
