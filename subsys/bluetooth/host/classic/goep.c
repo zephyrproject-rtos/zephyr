@@ -169,20 +169,14 @@ static int goep_rfcomm_init(struct bt_conn *conn, struct bt_goep *goep)
 	hdr_size += BT_RFCOMM_HDR_SIZE + BT_RFCOMM_FCS_SIZE;
 
 	mtu = CONFIG_BT_GOEP_RFCOMM_MTU - hdr_size;
-	/* Use default MTU if it is not given */
-	if (goep->obex.rx.mtu == 0) {
-		goep->obex.rx.mtu = mtu;
-	}
+
+	/* Set the default MTU to the largest value that the configuration can support */
+	goep->obex.rx.mtu = mtu;
 
 	if (goep->obex.rx.mtu < GOEP_MIN_MTU) {
-		LOG_WRN("GOEP RFCOMM MTU less than minimum size (%d < %d)", goep->obex.rx.mtu,
+		LOG_ERR("GOEP RFCOMM MTU less than minimum size (%d < %d)", goep->obex.rx.mtu,
 			GOEP_MIN_MTU);
-		goep->obex.rx.mtu = GOEP_MIN_MTU;
-	}
-
-	if (goep->obex.rx.mtu > mtu) {
-		LOG_WRN("GOEP RFCOMM MTU exceeds maximum size (%d > %d)", goep->obex.rx.mtu, mtu);
-		goep->obex.rx.mtu = mtu;
+		return -EINVAL;
 	}
 
 	err = bt_obex_reg_transport(&goep->obex, &goep_rfcomm_transport_ops);
@@ -462,20 +456,14 @@ static int goep_l2cap_init(struct bt_conn *conn, struct bt_goep *goep)
 	hdr_size = sizeof(struct bt_l2cap_hdr);
 
 	mtu = CONFIG_BT_GOEP_L2CAP_MTU - hdr_size;
-	/* Use default MTU if it is not given */
-	if (goep->obex.rx.mtu == 0) {
-		goep->obex.rx.mtu = mtu;
-	}
+
+	/* Set the default MTU to the largest value that the configuration can support */
+	goep->obex.rx.mtu = mtu;
 
 	if (goep->obex.rx.mtu < GOEP_MIN_MTU) {
-		LOG_WRN("GOEP L2CAP MTU less than minimum size (%d < %d)", goep->obex.rx.mtu,
+		LOG_ERR("GOEP L2CAP MTU less than minimum size (%d < %d)", goep->obex.rx.mtu,
 			GOEP_MIN_MTU);
-		goep->obex.rx.mtu = GOEP_MIN_MTU;
-	}
-
-	if (goep->obex.rx.mtu > mtu) {
-		LOG_WRN("GOEP L2CAP MTU exceeds maximum size (%d > %d)", goep->obex.rx.mtu, mtu);
-		goep->obex.rx.mtu = mtu;
+		return -EINVAL;
 	}
 
 	err = bt_obex_reg_transport(&goep->obex, &goep_l2cap_transport_ops);
