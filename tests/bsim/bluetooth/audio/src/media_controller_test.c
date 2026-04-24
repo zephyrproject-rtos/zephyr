@@ -556,7 +556,7 @@ void initialize_media(void)
 	printk("media init and local player instance succeeded\n");
 }
 
-/* Callback after Bluetoot initialization attempt */
+/* Callback after Bluetooth initialization attempt */
 static void bt_ready(int err)
 {
 	if (err) {
