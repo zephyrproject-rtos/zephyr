@@ -408,7 +408,6 @@ ZTEST(prf, test_c)
 ZTEST(prf, test_s)
 {
 	const char *s = "123";
-	static wchar_t ws[] = L"abc";
 	int rc;
 
 	TEST_PRF(&rc, "/%s/", s);
@@ -425,12 +424,16 @@ ZTEST(prf, test_s)
 		return;
 	}
 
+#if __SIZEOF_WCHAR_T__ != 4
+	static wchar_t ws[] = L"abc";
+
 	TEST_PRF(&rc, "%ls", ws);
 	if (ENABLED_USE_LIBC) {
 		PRF_CHECK("abc", rc);
 	} else {
 		PRF_CHECK("%ls", rc);
 	}
+#endif
 }
 
 ZTEST(prf, test_v_c)
