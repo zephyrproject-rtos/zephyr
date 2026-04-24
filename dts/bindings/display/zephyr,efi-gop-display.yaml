@@ -1,0 +1,20 @@
+# Copyright (c) 2025 rede97
+# SPDX-License-Identifier: Apache-2.0
+
+description: EFI GOP framebuffer display (runtime size from bootloader)
+
+compatible: "zephyr,efi-gop-display"
+
+include: display-controller.yaml
+
+properties:
+  width:
+    type: int
+    description: |
+      Width in pixels (for LVGL static buffer sizing; driver uses EFI value at runtime).
+    default: 1024
+  height:
+    type: int
+    description: |
+      Height in pixels (for LVGL static buffer sizing; driver uses EFI value at runtime).
+    default: 768

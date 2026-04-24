@@ -1,0 +1,19 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * EFI GOP display node and chosen zephyr,display for LVGL.
+ * Resolution is read from EFI at runtime; width/height here are for
+ * optional static buffer sizing when CONFIG_LV_Z_BUFFER_ALLOC_STATIC=y.
+ */
+/ {
+	chosen {
+		zephyr,display = &gop_display;
+	};
+
+	gop_display: display_gop {
+		compatible = "zephyr,efi-gop-display";
+		width = <1024>;
+		height = <768>;
+		status = "okay";
+	};
+};

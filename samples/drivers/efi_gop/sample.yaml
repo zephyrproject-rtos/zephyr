@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  description: LVGL on EFI GOP display (x86_64 UEFI)
+  name: efi_gop
+
+common:
+  tags:
+    - display
+    - gui
+    - lvgl
+    - efi
+    - gop
+    - x86
+  modules:
+    - lvgl
+
+tests:
+  sample.drivers.efi_gop.qemu_x86_64:
+    platform_allow:
+      - qemu_x86_64
+    filter: dt_chosen_enabled("zephyr,display")
+    min_flash: 512
+    min_ram: 64
+    harness: none
+    extra_args: "-DOVERLAY_FILE=boards/qemu_x86_64.overlay"

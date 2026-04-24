@@ -548,47 +548,60 @@ typedef efi_status_t __abi (*efi_create_event_ex_t)(
 	void **Event);
 
 struct efi_boot_services {
+	/* The table header for the EFI Boot Services Table. */
 	struct efi_table_header Hdr;
+	/* Task Priority Services */
 	efi_raise_tpl_t RaiseTPL;
 	efi_restore_tpl_t RestoreTPL;
+	/* Memory Services */
 	efi_allocate_pages_t AllocatePages;
 	efi_free_pages_t FreePages;
 	efi_get_memory_map_t GetMemoryMap;
 	efi_allocate_pool_t AllocatePool;
 	efi_free_pool_t FreePool;
+	/* Event & Timer Services */
 	efi_create_event_t CreateEvent;
 	efi_set_timer_t SetTimer;
 	efi_wait_for_event_t WaitForEvent;
 	efi_signal_event_t SignalEvent;
 	efi_close_event_t CloseEvent;
 	efi_check_event_t CheckEvent;
+	/* Protocol Handler Services */
 	efi_install_protocol_interface_t InstallProtocolInterface;
 	efi_reinstall_protocol_interface_t ReinstallProtocolInterface;
 	efi_uninstall_protocol_interface_t UninstallProtocolInterface;
 	efi_handle_protocol_t HandleProtocol;
+	void *Reserved;
 	efi_register_protocol_notify_t RegisterProtocolNotify;
 	efi_locate_handle_t LocateHandle;
 	efi_locate_device_path_t LocateDevicePath;
 	efi_install_configuration_table_t InstallConfigurationTable;
+	/* Image Services */
 	efi_load_image_t LoadImage;
 	efi_start_image_t StartImage;
 	efi_exit_t Exit;
 	efi_unload_image_t UnloadImage;
 	efi_exit_boot_services_t ExitBootServices;
+	/* Miscellaneous Services */
 	efi_get_next_monotonic_count_t GetNextMonotonicCount;
 	efi_stall_t Stall;
 	efi_set_watchdog_timer_t SetWatchdogTimer;
+	/* DriverSupport Services */
 	efi_connect_controller_t ConnectController;
 	efi_disconnect_controller_t DisconnectController;
+	/* Open and Close Protocol Services */
 	efi_open_protocol_t OpenProtocol;
 	efi_close_protocol_t CloseProtocol;
 	efi_open_protocol_information_t OpenProtocolInformation;
+	/* Library Services */
 	efi_protocols_per_handle_t ProtocolsPerHandle;
 	efi_locate_handle_buffer_t LocateHandleBuffer;
 	efi_locate_protocol_t LocateProtocol;
 	efi_multiple_protocol_interface_t InstallMultipleProtocolInterfaces;
 	efi_multiple_protocol_interface_t UninstallMultipleProtocolInterfaces;
+	/* 32-bit CRC Services */
 	efi_calculate_crc32_t CalculateCrc32;
+	/* Miscellaneous Services */
 	efi_copy_mem_t CopyMem;
 	efi_set_mem_t SetMem;
 	efi_create_event_ex_t CreateEventEx;
@@ -617,6 +630,108 @@ struct efi_system_table {
 	uint64_t NumberOfTableEntries;
 	/** A pointer to the configuration table(s) */
 	struct efi_configuration_table *ConfigurationTable;
+};
+
+/* EFI Graphics Output Protocol (GOP) - UEFI spec 12.9 */
+
+/** Pixel format for EFI GOP framebuffer. */
+enum efi_gop_pixel_format {
+	/** 32-bit, red in bits[23:16], green in bits[15:8], blue in bits[7:0]. */
+	PixelRedGreenBlueReserved8BitPerColor,
+	/** 32-bit, blue in bits[23:16], green in bits[15:8], red in bits[7:0]. */
+	PixelBlueGreenRedReserved8BitPerColor,
+	/** Pixel layout described by efi_gop_pixel_bitmask. */
+	PixelBitMask,
+	/** Framebuffer not supported; only BLT protocol is available. */
+	PixelBltOnly,
+	/** Sentinel value. */
+	PixelFormatMax
+};
+
+/** Bitmask describing a custom GOP pixel layout (used with PixelBitMask). */
+struct efi_gop_pixel_bitmask {
+	uint32_t RedMask;      /**< Bit mask for red channel. */
+	uint32_t GreenMask;    /**< Bit mask for green channel. */
+	uint32_t BlueMask;     /**< Bit mask for blue channel. */
+	uint32_t ReservedMask; /**< Bit mask for reserved (alpha/padding) channel. */
+};
+
+/** GOP video mode information (returned by QueryMode). */
+struct efi_gop_mode_info {
+	uint32_t Version;             /**< Structure version; must be zero. */
+	uint32_t HorizontalResolution;/**< Horizontal resolution in pixels. */
+	uint32_t VerticalResolution;  /**< Vertical resolution in pixels. */
+	enum efi_gop_pixel_format PixelFormat; /**< Framebuffer pixel format. */
+	struct efi_gop_pixel_bitmask PixelInformation; /**< Pixel bitmasks (PixelBitMask only). */
+	uint32_t PixelsPerScanLine;   /**< Number of pixels per scan line (may be >= HorizontalResolution). */
+};
+
+/** GOP current mode state. */
+struct efi_gop_mode {
+	uint32_t MaxMode;              /**< Number of available video modes (0..MaxMode-1). */
+	uint32_t Mode;                 /**< Current mode number. */
+	struct efi_gop_mode_info *Info;/**< Pointer to current mode information. */
+	uintptr_t SizeOfInfo;          /**< Size of *Info in bytes. */
+	uint64_t FrameBufferBase;      /**< Physical address of the framebuffer. */
+	uintptr_t FrameBufferSize;     /**< Size of the framebuffer in bytes. */
+};
+
+struct efi_gop;
+
+/**
+ * Query available video modes.
+ *
+ * @param This       Pointer to the GOP protocol instance.
+ * @param ModeNumber Zero-based mode index to query.
+ * @param SizeOfInfo Receives the size of the returned Info buffer.
+ * @param Info       Receives a pointer to the mode information.
+ * @return EFI_SUCCESS on success.
+ */
+typedef efi_status_t __abi (*efi_gop_query_mode_t)(
+	struct efi_gop *This,
+	uint32_t ModeNumber,
+	uintptr_t *SizeOfInfo,
+	struct efi_gop_mode_info **Info);
+
+/**
+ * Set the active video mode.
+ *
+ * @param This       Pointer to the GOP protocol instance.
+ * @param ModeNumber Mode to activate.
+ * @return EFI_SUCCESS on success.
+ */
+typedef efi_status_t __abi (*efi_gop_set_mode_t)(struct efi_gop *This,
+						 uint32_t ModeNumber);
+
+/**
+ * Block transfer (BLT) operation on the framebuffer.
+ *
+ * @param This         Pointer to the GOP protocol instance.
+ * @param BltBuffer    Source or destination pixel buffer.
+ * @param BltOperation Operation type.
+ * @param SourceX      Source X coordinate.
+ * @param SourceY      Source Y coordinate.
+ * @param DestX        Destination X coordinate.
+ * @param DestY        Destination Y coordinate.
+ * @param Width        Width in pixels.
+ * @param Height       Height in pixels.
+ * @param Delta        Bytes per row in BltBuffer (0 = contiguous).
+ * @return EFI_SUCCESS on success.
+ */
+typedef efi_status_t __abi (*efi_gop_blt_t)(struct efi_gop *This,
+					    void *BltBuffer,
+					    uint32_t BltOperation,
+					    uintptr_t SourceX, uintptr_t SourceY,
+					    uintptr_t DestX, uintptr_t DestY,
+					    uintptr_t Width, uintptr_t Height,
+					    uintptr_t Delta);
+
+/** EFI Graphics Output Protocol interface (UEFI spec 12.9). */
+struct efi_gop {
+	efi_gop_query_mode_t QueryMode; /**< Query available video modes. */
+	efi_gop_set_mode_t SetMode;     /**< Set active video mode. */
+	efi_gop_blt_t Blt;              /**< Block transfer to/from framebuffer. */
+	struct efi_gop_mode *Mode;      /**< Current mode state. */
 };
 
 #ifdef CONFIG_DYNAMIC_BOOTARGS
