@@ -115,7 +115,7 @@ static uint8_t discover_supported_contexts(struct bt_conn *conn, const struct bt
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &pacs_instance.discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -126,7 +126,7 @@ static uint8_t discover_supported_contexts(struct bt_conn *conn, const struct bt
 		subscribe_params->ccc_handle = attr->handle;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		} else {
 			SET_FLAG(flag_supported_contexts_discovered);
@@ -182,7 +182,7 @@ static uint8_t discover_available_contexts(struct bt_conn *conn, const struct bt
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &pacs_instance.discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -193,7 +193,7 @@ static uint8_t discover_available_contexts(struct bt_conn *conn, const struct bt
 		subscribe_params->ccc_handle = attr->handle;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		} else {
 			SET_FLAG(flag_available_contexts_discovered);
@@ -249,7 +249,7 @@ static uint8_t discover_src_loc(struct bt_conn *conn, const struct bt_gatt_attr 
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &pacs_instance.discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -260,7 +260,7 @@ static uint8_t discover_src_loc(struct bt_conn *conn, const struct bt_gatt_attr 
 		subscribe_params->ccc_handle = attr->handle;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		} else {
 			SET_FLAG(flag_src_loc_discovered);
@@ -316,7 +316,7 @@ static uint8_t discover_snk_loc(struct bt_conn *conn, const struct bt_gatt_attr 
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &pacs_instance.discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -327,7 +327,7 @@ static uint8_t discover_snk_loc(struct bt_conn *conn, const struct bt_gatt_attr 
 		subscribe_params->ccc_handle = attr->handle;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		} else {
 			SET_FLAG(flag_snk_loc_discovered);
@@ -383,7 +383,7 @@ static uint8_t discover_pacs_src(struct bt_conn *conn, const struct bt_gatt_attr
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &pacs_instance.discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -394,7 +394,7 @@ static uint8_t discover_pacs_src(struct bt_conn *conn, const struct bt_gatt_attr
 		subscribe_params->ccc_handle = attr->handle;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		} else {
 			SET_FLAG(flag_pacs_src_discovered);
@@ -450,7 +450,7 @@ static uint8_t discover_pacs_snk(struct bt_conn *conn, const struct bt_gatt_attr
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &pacs_instance.discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -461,7 +461,7 @@ static uint8_t discover_pacs_snk(struct bt_conn *conn, const struct bt_gatt_attr
 		subscribe_params->ccc_handle = attr->handle;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		} else {
 			SET_FLAG(flag_pacs_snk_discovered);
