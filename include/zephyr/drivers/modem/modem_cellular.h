@@ -70,6 +70,7 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_OPEN_DLCI2,
 	MODEM_CELLULAR_STATE_WAIT_FOR_APN,
 	MODEM_CELLULAR_STATE_RUN_APN_SCRIPT,
+	MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT,
 	MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT,
 	MODEM_CELLULAR_STATE_AWAIT_REGISTERED,
 	MODEM_CELLULAR_STATE_REGISTERED,
@@ -188,12 +189,26 @@ struct modem_cellular_user_pipe {
 	struct modem_pipelink *pipelink;
 };
 
+/**
+ * @brief Chat scripts for cellular modem.
+ *
+ * Only the init and dial scripts are mandatory, other scripts are optional.
+ *
+ * If the network script is provided, it will be used to wait for network registration
+ * before issuing the dial script.
+ *
+ * If the network script is not provided, the dial script is expected to
+ * configure the network registration and the modem will wait for
+ * registration after the dial script completes.
+ *
+ */
 struct modem_cellular_config_scripts {
-	const struct modem_chat_script *init;
-	const struct modem_chat_script *dial;
-	const struct modem_chat_script *periodic;
-	const struct modem_chat_script *shutdown;
-	const struct modem_chat_script *set_baudrate;
+	const struct modem_chat_script *set_baudrate; /**< script for setting the baudrate */
+	const struct modem_chat_script *init;         /**< script for initializing the CMUX */
+	const struct modem_chat_script *network;      /**< script for network registration */
+	const struct modem_chat_script *dial;         /**< script for starting the PPP data mode */
+	const struct modem_chat_script *periodic;     /**< script for periodic state polling */
+	const struct modem_chat_script *shutdown;     /**< script for shutting down the modem */
 };
 
 struct modem_cellular_config {
