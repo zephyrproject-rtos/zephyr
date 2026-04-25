@@ -43,7 +43,6 @@ extern "C" {
  */
 
 /**
- * @typedef entropy_get_entropy_t
  * @brief Callback API to get entropy.
  *
  * @note This call has to be thread safe to satisfy requirements
@@ -56,7 +55,6 @@ typedef int (*entropy_get_entropy_t)(const struct device *dev,
 				     uint16_t length);
 
 /**
- * @typedef entropy_get_entropy_isr_t
  * @brief Callback API to get entropy from an ISR.
  *
  * See entropy_get_entropy_isr() for argument description

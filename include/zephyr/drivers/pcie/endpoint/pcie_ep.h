@@ -43,7 +43,6 @@ enum pcie_reset {
 };
 
 /**
- * @typedef pcie_ep_reset_callback_t
  * @brief Callback API for PCIe reset interrupts
  *
  * These callbacks execute in interrupt context. Therefore, use only
