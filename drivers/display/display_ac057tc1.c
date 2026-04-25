@@ -52,6 +52,7 @@ struct ac057tc1_config {
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
 	struct gpio_dt_spec busy_gpio;
+	uint32_t color_palette[AC057TC1_COLOR_PALETTE_SIZE];
 	uint16_t width;
 	uint16_t height;
 };
@@ -445,6 +446,7 @@ static DEVICE_API(display, ac057tc1_api) = {
 					inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),            \
 			},                                                                         \
 		.busy_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, busy_gpios, {0}),                      \
+		.color_palette = DT_PROP(DT_INST_CHILD(inst, color_palette), colors),              \
 		.width = DT_INST_PROP(inst, width),                                                \
 		.height = DT_INST_PROP(inst, height),                                              \
 	};                                                                                         \

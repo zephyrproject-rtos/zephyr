@@ -398,6 +398,17 @@
 				width = <600>;
 				height = <448>;
 				busy-gpios = <&test_gpio 0 0>;
+
+				color-palette {
+					compatible = "zephyr,panel-color-palette";
+					colors = <ARGB8888(52, 50, 67, 255)
+						  ARGB8888(172, 172, 171, 255)
+						  ARGB8888(50, 104, 74, 255)
+						  ARGB8888(61, 67, 100, 255)
+						  ARGB8888(139, 65, 70, 255)
+						  ARGB8888(173, 156, 65, 255)
+						  ARGB8888(157, 92, 71, 255)>;
+				};
 			};
 
 			test_mipi_dbi_ili9163c: ili9163c@17 {
