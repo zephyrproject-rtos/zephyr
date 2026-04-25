@@ -1,0 +1,9 @@
+sample:
+  name: EC Host Commands over USB
+tests:
+  sample.mgmt.ec_host_cmd_usb:
+    depends_on: usbd
+    tags: usb
+    build_only: true
+    platform_allow:
+      - nucleo_c071rb
