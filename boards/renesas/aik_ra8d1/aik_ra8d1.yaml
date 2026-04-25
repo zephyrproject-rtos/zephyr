@@ -17,7 +17,5 @@ supported:
   - can
   - watchdog
   - crc
-  - display
-  - video
   - eth
 vendor: renesas
