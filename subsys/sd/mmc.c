@@ -596,7 +596,8 @@ static int mmc_read_ext_csd(struct sd_card *card, struct mmc_ext_csd *card_ext_c
 static inline void mmc_decode_ext_csd(struct mmc_ext_csd *ext, uint8_t *raw)
 {
 	ext->sec_count =
-		(raw[215U] << 24U) + (raw[214U] << 16U) + (raw[213U] << 8U) + (raw[212U] << 0U);
+		((uint32_t)raw[215U] << 24U) + (raw[214U] << 16U) + (raw[213U] << 8U) +
+		(raw[212U] << 0U);
 	ext->bus_width = raw[183U];
 	ext->hs_timing = raw[185U];
 	ext->device_type.MMC_HS400_DDR_1200MV = ((1 << 7U) & raw[196U]);
@@ -612,7 +613,8 @@ static inline void mmc_decode_ext_csd(struct mmc_ext_csd *ext, uint8_t *raw)
 	ext->mmc_driver_strengths = raw[197U];
 	ext->pwr_class_200MHZ_VCCQ195 = raw[237U];
 	ext->cache_size =
-		(raw[252] << 24U) + (raw[251] << 16U) + (raw[250] << 8U) + (raw[249] << 0U);
+		((uint32_t)raw[252] << 24U) + (raw[251] << 16U) + (raw[250] << 8U) +
+		(raw[249] << 0U);
 }
 
 static int mmc_set_cache(struct sd_card *card, struct mmc_ext_csd *card_ext_csd)
