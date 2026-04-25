@@ -122,7 +122,7 @@ static void clock_sync_package_callback(uint8_t port, uint8_t flags, int16_t rss
 			time_correction = rx_buf[rx_pos++];
 			time_correction	+= rx_buf[rx_pos++] << 8;
 			time_correction	+= rx_buf[rx_pos++] << 16;
-			time_correction	+= rx_buf[rx_pos++] << 24;
+			time_correction	+= (int32_t)((uint32_t)rx_buf[rx_pos++] << 24);
 
 			uint8_t token = rx_buf[rx_pos++] & 0x0F;
 
