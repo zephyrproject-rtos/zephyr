@@ -112,7 +112,7 @@ static int get_battery_percent(const struct device *dev, union fuel_gauge_prop_v
 		return ret;
 	}
 
-	val->relative_state_of_charge = tmp;
+	val->relative_state_of_charge_pct = tmp;
 	return 0;
 }
 
@@ -137,7 +137,7 @@ static int get_bat_voltage(const struct device *dev, union fuel_gauge_prop_val *
 		return ret;
 	}
 
-	val->voltage = (((h5 & GAUGE_VBAT_H_MASK) << 8) | l8) * 1000;
+	val->voltage_uv = (((h5 & GAUGE_VBAT_H_MASK) << 8) | l8) * 1000;
 	return 0;
 }
 
@@ -148,10 +148,10 @@ static int axp2101_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	case FUEL_GAUGE_PRESENT_STATE:
 	case FUEL_GAUGE_CONNECT_STATE:
 		return is_battery_connect(dev, val);
-	case FUEL_GAUGE_VOLTAGE:
+	case FUEL_GAUGE_VOLTAGE_UV:
 		return get_bat_voltage(dev, val);
-	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
-	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
+	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT:
+	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT:
 		return get_battery_percent(dev, val);
 	default:
 		return -ENOTSUP;
