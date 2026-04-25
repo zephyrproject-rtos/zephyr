@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <espressif/esp32s3/esp32s3_r8.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <espressif/partitions_0x0_amp_32M.dtsi>
@@ -39,6 +40,15 @@
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 		watchdog0 = &wdt0;
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 0>;
+		output-ohms = <10000>;
+		full-ohms = <20000>;
+		power-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		power-on-sample-delay-us = <10000>;
 	};
 
 	buttons {
@@ -161,10 +171,17 @@
 };
 
 &i2c1 {
-	status = "disabled";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+
+	charger: sy6974b@6b {
+		compatible = "silergy,sy6974b";
+		reg = <0x6b>;
+		constant-charge-current-max-microamp = <1000000>; /* 0.5C (battery is 2000mAh) */
+		constant-charge-voltage-max-microvolt = <4208000>;
+	};
 };
 
 &ledc0 {
@@ -186,6 +203,20 @@
 
 &gpio1 {
 	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
 };
 
 &timer0 {
