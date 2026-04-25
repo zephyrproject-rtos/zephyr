@@ -806,8 +806,6 @@ static void vcp_vol_ctlr_vocs_discover_cb(struct bt_vocs *inst, int err)
 
 	if (vol_ctlr == NULL) {
 		LOG_ERR("Could not lookup vol_ctlr from vocs");
-		vcp_vol_ctlr_discover_complete(vol_ctlr, BT_GATT_ERR(BT_ATT_ERR_UNLIKELY));
-
 		return;
 	}
 
