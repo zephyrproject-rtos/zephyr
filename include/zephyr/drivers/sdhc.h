@@ -252,7 +252,6 @@ enum sdhc_interrupt_source {
 };
 
 /**
- * @typedef sdhc_interrupt_cb_t
  * @brief SDHC card interrupt callback prototype
  *
  * Function prototype for SDHC card interrupt callback.
