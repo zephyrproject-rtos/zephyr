@@ -1240,7 +1240,7 @@ static void deferred_nfy_work_handler(struct k_work *work)
 
 static void pacs_auth_pairing_complete(struct bt_conn *conn, bool bonded)
 {
-	LOG_DBG("%s paired (%sbonded)", bt_addr_le_str(bt_conn_get_dst(conn)),
+	LOG_DBG("%s paired (%sbonded)", bt_conn_dst_str(conn),
 		bonded ? "" : "not ");
 
 	if (!bonded) {
@@ -1290,7 +1290,7 @@ static void pacs_security_changed(struct bt_conn *conn, bt_security_t level,
 	struct bt_conn_info info;
 	int err;
 
-	LOG_DBG("%s changed security level to %d", bt_addr_le_str(bt_conn_get_dst(conn)), level);
+	LOG_DBG("%s changed security level to %d", bt_conn_dst_str(conn), level);
 
 	if (sec_err != BT_SECURITY_ERR_SUCCESS || level <= BT_SECURITY_L1) {
 		return;
@@ -1389,12 +1389,9 @@ static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void
 	for (uint8_t i = 0; i < ARRAY_SIZE(pacs.clients); i++) {
 		/* Check if device is registered, it not, add it */
 		if (!atomic_test_bit(pacs.clients[i].flags, FLAG_ACTIVE)) {
-			char addr_str[BT_ADDR_LE_STR_LEN];
-
 			atomic_set_bit(pacs.clients[i].flags, FLAG_ACTIVE);
 			memcpy(&pacs.clients[i].addr, &info->addr, sizeof(bt_addr_le_t));
-			bt_addr_le_to_str(&pacs.clients[i].addr, addr_str, sizeof(addr_str));
-			LOG_DBG("Added %s to bonded list\n", addr_str);
+			LOG_DBG("Added %s to bonded list\n", bt_addr_le_str(&pacs.clients[i].addr));
 			return;
 		}
 	}

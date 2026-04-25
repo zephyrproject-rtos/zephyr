@@ -1,0 +1,19 @@
+# Native LoRaWAN region configuration
+#
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if LORA_MODULE_BACKEND_NATIVE
+
+config LORAWAN_NATIVE_DUTY_CYCLE
+	bool "Enforce regional duty cycle limits"
+	help
+	  Enable per-sub-band duty cycle enforcement as required by
+	  ETSI regulations (e.g. EU868). When enabled, the stack
+	  tracks on-air time per sub-band and blocks channels whose
+	  off-time has not yet elapsed.
+
+	  Disable this option for testing or when duty cycle
+	  enforcement is handled externally.
+
+endif # LORA_MODULE_BACKEND_NATIVE

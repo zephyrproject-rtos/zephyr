@@ -31,6 +31,7 @@
 #define PSIREF_24000000	LL_RCC_PSIREF_24MHZ
 #define PSIREF_16000000	LL_RCC_PSIREF_16MHZ
 #define PSIREF_8000000	LL_RCC_PSIREF_8MHZ
+#define PSIREF_0	0	/* Dummy value in case STM32_HSE_FREQ is defined to 0 */
 
 #define psi_ref(v) CONCAT(PSIREF_, v)
 
@@ -403,7 +404,7 @@ static void set_up_fixed_clock_sources(void)
 		/* Wait for HSE ready */
 		}
 
-#if STM32_HSE_CSS
+#ifdef STM32_HSE_CSS
 		/* Enable HSE clock security system */
 		z_arm_nmi_set_handler(HAL_RCC_NMI_IRQHandler);
 		LL_RCC_HSE_EnableCSS();

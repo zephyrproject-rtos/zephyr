@@ -11,4 +11,11 @@
 				<RX_PSEL(0x0C, 11, 6)>; /* RX - PB6 */
 		};
 	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <RX_PSEL(RX_PSEL_P1nPFS_SDA, 11, 2)>, /* SDA0 PB2*/
+				<RX_PSEL(RX_PSEL_P1nPFS_SCL, 11, 1)>; /* SCL0 PB1*/
+		};
+	};
 };

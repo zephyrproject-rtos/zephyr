@@ -212,7 +212,7 @@ void ull_sched_mfy_win_offset_use(void *param)
 	}
 
 	/*
-	 * TODO: update calculationg of the win_offset
+	 * TODO: update calculation of the win_offset
 	 * when updating the connection update procedure
 	 * see the legacy code from Zephyr v3.3 for inspiration
 	 */

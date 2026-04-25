@@ -98,9 +98,9 @@ Another option controls block size.
 :kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE`
 
         Block size in bytes for LLEXT :c:type:`sys_mem_blocks_t` heap(s).
-        Must be equal to or a multiple of ``LLEXT_PAGE_SIZE``. The block size
-        must also be equal to or a multiple of the largest alignment needed
-        for any extension region. If
+        Must be equal to or a multiple of ``LLEXT_PAGE_SIZE`` if MMU or MPU
+        are enabled. The block size must also be equal to or a multiple of the
+        largest alignment needed for any extension region. If
         :kconfig:option:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT` is
         selected and regions are large, an unreasonably large block size may be
         needed to satisfy alignment requirements.
@@ -109,12 +109,52 @@ Heap placement
 --------------
 
 The LLEXT heap(s) have custom sections. Non-Harvard heap sections
-(``.llext_heap`` or ``.llext_metadata_heap`` and ``.llext_ext_heap`` if
+(``.llext_heap``, or ``.llext_metadata_heap`` and ``.llext_ext_heap`` if
 :kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK` is selected) are placed alongside
-``.noinit`` sections by default. Harvard instruction and data heap sections
-(``.llext_instr_heap`` and ``.llext_data_heap``) are placed in instruction and
-data memory respectively. These default placements can be overridden by
-providing a custom linker script.
+``.noinit`` sections in the file
+:file:`include/zephyr/linker/common-noinit.ld`. If none of your linker scripts
+include this file, you will need to place the non-Harvard LLEXT heap sections
+manually. One way to do this is by including :file:`snippets-noinit.ld` in
+your linker script after your ``.noinit`` sections.
+
+.. code-block:: none
+
+   /* Located in generated directory. This file is populated by the
+    * zephyr_linker_sources() CMake function.
+    */
+   #include <snippets-noinit.ld>
+
+Add the file as a linker source in your board, SoC, or architecture
+:file:`CMakeFiles.txt`.
+
+.. code-block:: cmake
+
+   zephyr_linker_sources(NOINIT snippets-noinit.ld)
+
+Then create a file in the same directory as your :file:`CMakeFiles.txt` named
+:file:`noinit.ld`.
+
+.. code-block:: none
+
+   #if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+   *(.llext_heap)
+   *(.llext_ext_heap)
+   *(.llext_metadata_heap)
+   #endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
+
+For ARC, the Harvard instruction and data heap sections (``.llext_instr_heap``
+and ``.llext_data_heap``) are placed in instruction and data memory at the
+architecture level. If you are using a non-ARC board with a Harvard
+architecture, you will need to manually place ``.llext_instr_heap`` and
+``.llext_data_heap``.
+
+.. warning::
+
+   LLEXT will be unable to load extensions if the instruction memory
+   ``.llext_instr_heap`` is placed in is not writable at the time the
+   extensions are loaded and linked.
+
+Placements can also be specified by providing a custom linker script.
 
 :kconfig:option:`CONFIG_CUSTOM_LINKER_SCRIPT`
 
@@ -128,11 +168,16 @@ providing a custom linker script.
         linker script and avoid having to change the script provided by
         Zephyr.
 
-.. warning::
+While using a custom linker script, you may need to override default
+placements. For example, you may wish to include
+:file:`include/zephyr/linker/common-noinit.ld` in your linker script
+but place the heap section(s) elsewhere. To do this, select the following
+option.
 
-   LLEXT will be unable to load extensions if the instruction memory
-   ``.llext_instr_heap`` is placed in is not writable at the time the
-   extensions are loaded and linked.
+:kconfig:option:`CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT`
+
+        Remove default placements of LLEXT heap sections in the linker script,
+        allowing the user to place the heap(s) themselves.
 
 .. _llext_kconfig_type:
 

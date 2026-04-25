@@ -3,11 +3,17 @@
 
 if(CONFIG_ARM)
   zephyr_library_sources(soc.c)
+  zephyr_library_sources(soc_power.c)
+  zephyr_code_relocate(
+    FILES soc_power.c
+    FILTER ".*\\.cache_retain_and_sleep"
+    LOCATION PMLocalRamfunc_TEXT
+  )
+  zephyr_library_sources_ifdef(CONFIG_PM_S2RAM soc_pm_s2ram.c)
 endif()
 
 if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
   zephyr_library_sources_ifdef(CONFIG_SOC_NRF54H20_CPURAD nrfx_gppi_cpurad.c)
-  zephyr_library_sources_ifdef(CONFIG_SOC_NRF54H20_CPUAPP nrfx_gppi_nrf54h_global.c)
 endif()
 
 zephyr_include_directories(.)

@@ -265,9 +265,15 @@ tests:
     harness_config:
       fixture: gpio_loopback
   drivers.flash.common.spi_nand.mikroe_flash_5_click:
+    harness_config:
+      fixture: mikroe_flash_5_click
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
     extra_args:
       - SHIELD=mikroe_flash_5_click
       - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
       - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
+  drivers.flash.common.versalnet:
+    build_only: true
+    platform_allow:
+      - versalnet_rpu/amd_versalnet_rpu

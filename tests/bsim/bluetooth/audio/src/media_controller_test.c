@@ -1599,7 +1599,6 @@ void initialize_bluetooth(void)
 
 void scan_and_connect(void)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
@@ -1612,8 +1611,7 @@ void scan_and_connect(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(default_conn));
 }
 
 void discover_remote_player(void)

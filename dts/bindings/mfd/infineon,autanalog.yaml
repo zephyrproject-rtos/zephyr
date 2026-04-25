@@ -1,0 +1,115 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AutAnalog (Autonomous Analog) Multi-Function Device
+
+  The AutAnalog subsystem is a shared analog peripheral block containing a SAR ADC,
+  DACs, Programmable regulator, op-amp (CTB), and a Programmable Threshold
+  comparator (PTCOMP), all coordinated by an Autonomous Controller (AC).
+
+  This MFD device manages the shared resources: the Autonomous Controller state
+  machine, shared interrupt dispatch, and subsystem initialization. Individual
+  peripherals (ADC, DAC, comparator) are child nodes of this device.
+
+  Two usage modes are supported:
+
+  Basic mode (ac-states omitted):
+    The driver automatically generates a 3-state SAR single-shot AC sequence.
+    SAR fields are populated at compile time when the SAR ADC child node is
+    enabled.  No AC configuration is required from the user.
+
+  Advanced mode (ac-states provided):
+    The AC State Transition Table (STT) is configured via ac-states, an ordered
+    phandle list referencing nodes with compatible "infineon,autanalog-ac-state".
+    Each node defines one AC state with full control over SAR, CTB, PTCOMP, and
+    DAC sub-peripheral fields.
+
+compatible: "infineon,autanalog"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+  ac-states:
+    type: phandles
+    description: |
+      Ordered list of AC state node phandles for advanced mode.  When present,
+      the driver uses these nodes to build the full State Transition Table.
+      Each referenced node must have compatible "infineon,autanalog-ac-state".
+
+      The AC state nodes should be defined as children of the autanalog node
+      so they are co-located with the peripheral they configure.
+
+      When omitted, the driver uses a built-in 3-state SAR single-shot
+      sequence (basic mode) and automatically populates SAR fields based on
+      the SAR ADC child node status.
+
+examples:
+  - |
+    /* Example of custom 4-state sequence using SAR.
+     * Use constants from <dt-bindings/mfd/infineon-autanalog.h>.
+     */
+
+    / {
+        /*
+        * AC State Transition Table:
+        * State 0: Wait for BLOCK_READY, enable SAR, branch to 1
+        * State 1: STOP and wait for any reconfiguration request
+        * State 2: Wait for SAR_EOS, trigger SAR, branch to 3
+        * State 3: Loop back to state 1
+        */
+        ac_state0: ac-state-0 {
+            compatible = "infineon,autanalog-ac-state";
+            ac-unlock = <1>;
+            ac-condition = <IFX_AUTANALOG_AC_COND_BLOCK_READY>;
+            ac-action = <IFX_AUTANALOG_AC_ACTION_WAIT_FOR>;
+            branch-state = <1>;
+            sar-unlock = <1>;
+            sar-enable = <1>;
+        };
+
+        ac_state1: ac-state-1 {
+            compatible = "infineon,autanalog-ac-state";
+            ac-condition = <IFX_AUTANALOG_AC_COND_FALSE>;
+            ac-action = <IFX_AUTANALOG_AC_ACTION_STOP>;
+            sar-unlock = <1>;
+            sar-enable = <1>;
+        };
+
+        ac_state2: ac-state-2 {
+            compatible = "infineon,autanalog-ac-state";
+            ac-condition = <CY_AUTANALOG_STT_AC_CONDITION_SAR_EOS>;
+            ac-action = <IFX_AUTANALOG_AC_ACTION_WAIT_FOR>;
+            branch-state = <3>;
+            sar-unlock = <1>;
+            sar-enable = <1>;
+            sar-trigger = <1>;
+        };
+
+        ac_state3: ac-state-3 {
+            compatible = "infineon,autanalog-ac-state";
+            ac-condition = <CY_AUTANALOG_STT_AC_CONDITION_TRUE>;
+            ac-action = <IFX_AUTANALOG_AC_ACTION_BRANCH_IF_TRUE>;
+            branch-state = <1>;   /* loop back to stop state */
+            sar-unlock = <1>;
+            sar-enable = <1>;
+        };
+    };
+
+    &autanalog {
+        ac-states = <&ac_state0 &ac_state1 &ac_state2 &ac_state3>;
+    };

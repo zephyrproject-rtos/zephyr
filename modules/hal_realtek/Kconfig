@@ -9,3 +9,4 @@ config ZEPHYR_HAL_REALTEK_MODULE_BLOBS
 
 osource "$(ZEPHYR_HAL_REALTEK_MODULE_DIR)/Kconfig"
 rsource "bee/Kconfig.bee"
+rsource "ameba/Kconfig.ameba"

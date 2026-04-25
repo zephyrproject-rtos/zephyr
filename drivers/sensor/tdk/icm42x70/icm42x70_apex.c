@@ -35,7 +35,7 @@ int icm42x70_apex_enable(inv_imu_device_t *s)
 
 	/*
 	 * Configure the power mode Normal mode.
-	 *  Avalaible mode : Low Power mode (WoM+Pedometer),
+	 *  Available mode : Low Power mode (WoM+Pedometer),
 	 *  configure the WoM to wake-up the DMP once it goes in power save mode
 	 */
 	apex_inputs.power_save = APEX_CONFIG0_DMP_POWER_SAVE_DIS;

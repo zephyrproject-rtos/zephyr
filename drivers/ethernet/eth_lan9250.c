@@ -512,6 +512,24 @@ static int lan9250_configure(const struct device *dev)
 		return ret;
 	}
 
+	/* Configure HMAC VLAN:
+	 *
+	 * If used, this register is typically set to the standard VLAN value of
+	 * 8100h. If both VLAN1 and VLAN2 set to the same value, VLAN1 is
+	 * given higher precedence and the maximum legal frame length is
+	 * set to 1522.
+	 */
+#if defined(CONFIG_NET_VLAN)
+	ret = lan9250_write_mac_reg(dev, LAN9250_HMAC_VLAN1, NET_ETH_PTYPE_VLAN);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = lan9250_write_mac_reg(dev, LAN9250_HMAC_VLAN2, NET_ETH_PTYPE_VLAN);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
+
 	/* Configure TX:
 	 *
 	 *   - TX enable
@@ -768,6 +786,9 @@ static enum ethernet_hw_caps lan9250_get_capabilities(const struct device *dev)
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
 #endif
+#if defined(CONFIG_NET_VLAN)
+		| ETHERNET_HW_VLAN
+#endif
 	;
 }
 
@@ -811,10 +832,7 @@ static int lan9250_set_config(const struct device *dev, enum ethernet_config_typ
 			ctx->mac_address[2], ctx->mac_address[3],
 			ctx->mac_address[4], ctx->mac_address[5]);
 
-		/* register the new mac address with the upper layer */
-		return net_if_set_link_addr(ctx->iface, ctx->mac_address,
-					    sizeof(ctx->mac_address),
-					    NET_LINK_ETHERNET);
+		return 0;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
 			uint32_t reg;

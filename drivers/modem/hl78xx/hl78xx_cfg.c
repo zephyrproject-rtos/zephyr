@@ -28,7 +28,7 @@ LOG_MODULE_DECLARE(hl78xx_dev, CONFIG_MODEM_LOG_LEVEL);
 #define MDM_APN_FULL_STRING_MAX_LEN 256
 
 /* Delay after AT+IPR command for new rate to take effect */
-#define BAUDRATE_SWITCH_DELAY_MS    2500
+#define BAUDRATE_SWITCH_DELAY_MS 2500
 
 int hl78xx_enable_lte_coverage_urc(struct hl78xx_data *data, bool *modem_require_restart,
 				   uint16_t timeout_s)
@@ -68,6 +68,7 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		   enum hl78xx_cell_rat_mode *rat_request)
 {
 	int ret = 0;
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
 
 #if defined(CONFIG_MODEM_HL78XX_AUTORAT)
 	/* Check autorat status/configs */
@@ -112,26 +113,12 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	!defined(CONFIG_MODEM_HL78XX_RAT_GSM) && !defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
 #error "No rat has been selected."
 #endif
-
-	if (IS_ENABLED(CONFIG_MODEM_HL78XX_RAT_M1)) {
-		cmd_set_rat = (const char *)SET_RAT_M1_CMD_LEGACY;
-		*rat_request = HL78XX_RAT_CAT_M1;
-	} else if (IS_ENABLED(CONFIG_MODEM_HL78XX_RAT_NB1)) {
-		cmd_set_rat = (const char *)SET_RAT_NB1_CMD_LEGACY;
-		*rat_request = HL78XX_RAT_NB1;
+	if (config->variant->cfg_select_rat) {
+		ret = config->variant->cfg_select_rat(data, &cmd_set_rat, rat_request);
+		if (ret < 0) {
+			goto error;
+		}
 	}
-#ifdef CONFIG_MODEM_HL78XX_12
-	else if (IS_ENABLED(CONFIG_MODEM_HL78XX_RAT_GSM)) {
-		cmd_set_rat = (const char *)SET_RAT_GSM_CMD_LEGACY;
-		*rat_request = HL78XX_RAT_GSM;
-	}
-#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
-	else if (IS_ENABLED(CONFIG_MODEM_HL78XX_RAT_NBNTN)) {
-		cmd_set_rat = (const char *)SET_RAT_NBNTN_CMD_LEGACY;
-		*rat_request = HL78XX_RAT_NBNTN;
-	}
-#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
-#endif /* CONFIG_MODEM_HL78XX_12 */
 
 	if (cmd_set_rat == NULL || *rat_request == HL78XX_RAT_MODE_NONE) {
 		ret = -EINVAL;
@@ -148,24 +135,13 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 			*modem_require_restart = true;
 		}
 	}
-#if defined(CONFIG_MODEM_HL78XX_12) &&                                                             \
-	(defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT))
-	if (*rat_request == HL78XX_RAT_GSM) {
-		/* For GSM RAT, no band configuration is needed */
-		ret = hl78xx_run_lte_dis_gsm_en_reg_status_script(data);
+
+	if (config->variant->cfg_apply_rat_post_select) {
+		ret = config->variant->cfg_apply_rat_post_select(data, *rat_request);
 		if (ret < 0) {
 			goto error;
 		}
-	} else {
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
-		/* For LTE RATs, enable LTE registration status and disable GSM */
-		ret = hl78xx_run_gsm_dis_lte_en_reg_status_script(data);
-		if (ret < 0) {
-			goto error;
-		}
-#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
 	}
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
 #endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 
 error:
@@ -179,15 +155,15 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	char bnd_bitmap[MDM_BAND_HEX_STR_LEN] = {0};
 	const char *modem_trimmed;
 	const char *expected_trimmed;
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
 
 	if (rat_config_request == HL78XX_RAT_MODE_NONE) {
 		return -EINVAL;
 	}
-#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
-	if (rat_config_request == HL78XX_RAT_GSM) {
+	if (config->variant->cfg_skip_band_for_rat &&
+	    config->variant->cfg_skip_band_for_rat(data, rat_config_request)) {
 		return 0;
 	}
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
 #ifdef CONFIG_MODEM_HL78XX_AUTORAT
 	for (int rat = HL78XX_RAT_CAT_M1; rat <= HL78XX_RAT_NB1; rat++) {
 #else
@@ -517,8 +493,6 @@ static void hl78xx_power_down_work_handler(struct k_work *work_item)
 
 	LOG_DBG("%d: Power down work handler called", __LINE__);
 	hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
-	data->status.power_down.previous = data->status.power_down.current;
-	data->status.power_down.current = POWER_DOWN_EVENT_ENTER;
 	data->status.power_down.is_power_down_requested = true;
 }
 

@@ -1142,8 +1142,6 @@ static int eth_xmc4xxx_set_config(const struct device *dev, enum ethernet_config
 			dev_data->mac_addr[3], dev_data->mac_addr[4], dev_data->mac_addr[5]);
 
 		eth_xmc4xxx_set_mac_address(dev_cfg->regs, dev_data->mac_addr);
-		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
-				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 		return 0;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE: {

@@ -79,7 +79,7 @@ static void uhc_mcux_isr(const struct device *dev)
 	USB_HostEhciIsrFunction((void *)(&priv->mcux_host));
 }
 
-/* MCUX controller dirver uses this callback to notify upper layer suspend related event */
+/* MCUX controller driver uses this callback to notify upper layer suspend related event */
 static usb_status_t mcux_host_callback(usb_device_handle deviceHandle,
 				       usb_host_configuration_handle configurationHandle,
 				       uint32_t eventCode)

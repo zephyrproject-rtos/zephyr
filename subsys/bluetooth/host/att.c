@@ -384,7 +384,7 @@ static void att_disconnect(struct bt_att_chan *chan)
 	 * invalid
 	 */
 
-	LOG_DBG("ATT disconnecting device %s", bt_addr_le_str(bt_conn_get_dst(chan->att->conn)));
+	LOG_DBG("ATT disconnecting device %s", bt_conn_dst_str(chan->att->conn));
 
 	bt_att_disconnected(&chan->chan.chan);
 
@@ -3202,7 +3202,7 @@ static void att_timeout(struct k_work *work)
 	struct bt_att_chan *chan = CONTAINER_OF(dwork, struct bt_att_chan, timeout_work);
 
 	LOG_ERR("ATT Timeout for device %s. Disconnecting...",
-		bt_addr_le_str(bt_conn_get_dst(chan->att->conn)));
+		bt_conn_dst_str(chan->att->conn));
 
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 480:
 	 *
@@ -3761,8 +3761,7 @@ static void eatt_auto_connect(struct bt_conn *conn, bt_security_t level,
 	eatt_err = att_schedule_eatt_connect(conn, CONFIG_BT_EATT_MAX);
 	if (eatt_err < 0) {
 		LOG_WRN("Automatic creation of EATT bearers failed on "
-			"connection %s with error %d",
-			bt_addr_le_str(bt_conn_get_dst(conn)), eatt_err);
+			"connection %s with error %d", bt_conn_dst_str(conn), eatt_err);
 	}
 }
 

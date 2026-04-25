@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 The Chromium OS Authors
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +31,13 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 void tc_unattached_src_entry(void *obj)
 {
 	LOG_INF("Unattached.SRC");
+
+#ifdef CONFIG_USBC_CSM_DRP
+	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+
+	/* Start DRP toggle timer with tDRP Source time */
+	usbc_timer_start_with_value(&tc->tc_t_drp_toggle, TC_T_DRP_SRC_MS);
+#endif
 }
 
 enum smf_state_result tc_unattached_src_run(void *obj)
@@ -45,8 +53,24 @@ enum smf_state_result tc_unattached_src_run(void *obj)
 	 *   SRC.Ra will not be checked.
 	 */
 	if (tcpc_is_cc_at_least_one_rd(tc->cc1, tc->cc2)) {
+#ifdef CONFIG_USBC_CSM_DRP
+		/* Stop DRP toggle timer when CC connection detected */
+		usbc_timer_stop(&tc->tc_t_drp_toggle);
+#endif
 		tc_set_state(dev, TC_ATTACH_WAIT_SRC_STATE);
+		return SMF_EVENT_HANDLED;
 	}
+
+#ifdef CONFIG_USBC_CSM_DRP
+	/* Check if DRP toggle timer expired - transition to Unattached.SNK */
+	if (usbc_timer_expired(&tc->tc_t_drp_toggle)) {
+		tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
+		/* Execute transition immediately to improve DRP timing accuracy */
+		usbc_bypass_next_sleep(tc->dev);
+		return SMF_EVENT_HANDLED;
+	}
+#endif
+
 	return SMF_EVENT_PROPAGATE;
 }
 

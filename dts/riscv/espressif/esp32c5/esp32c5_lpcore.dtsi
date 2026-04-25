@@ -49,9 +49,9 @@
 				zephyr,memory-region = "SRAMLP_ULP";
 			};
 
-			ulp_shm: memory@3bf0 {
+			ulp_shm: memory@3c00 {
 				compatible = "zephyr,memory-region", "mmio-sram";
-				reg = <0x3bf0 0x10>;
+				reg = <0x3c00 0x10>;
 				zephyr,memory-region = "SRAMLP_ULP_SHM";
 			};
 
@@ -99,7 +99,7 @@
 
 		lp_uart: uart@600b1400 {
 			compatible = "espressif,esp32-lpuart";
-			reg = <0x600b1400 DT_SIZE_K(4)>;
+			reg = <0x600b1400 DT_SIZE_K(1)>;
 			status = "disabled";
 		};
 
@@ -107,7 +107,7 @@
 			compatible = "espressif,esp32-gpio";
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x600b4400 DT_SIZE_K(4)>;
+			reg = <0x600b4400 DT_SIZE_K(1)>;
 			ngpios = <7>;
 		};
 	};

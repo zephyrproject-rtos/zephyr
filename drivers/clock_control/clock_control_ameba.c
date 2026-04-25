@@ -156,7 +156,7 @@ static int ameba_clock_init(const struct device *dev)
 	return 0;
 }
 
-static const struct clock_control_driver_api ameba_clock_driver_api = {
+static DEVICE_API(clock_control, ameba_clock_driver_api) = {
 	.on = ameba_clock_on,
 	.off = ameba_clock_off,
 	.get_status = ameba_clock_get_status,

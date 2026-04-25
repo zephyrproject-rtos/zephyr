@@ -371,7 +371,7 @@ static int crypto_mchp_aes_init(const struct device *dev)
 	return 0;
 }
 
-static const struct crypto_driver_api mchp_aes_api = {
+static DEVICE_API(crypto, mchp_aes_api) = {
 	.cipher_begin_session = mchp_aes_begin_session,
 	.cipher_free_session = mchp_aes_free_session,
 	.query_hw_caps = mchp_aes_query_caps,

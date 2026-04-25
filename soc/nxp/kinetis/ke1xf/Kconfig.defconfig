@@ -1,7 +1,7 @@
 # Kinetis KE1xF series configuration options
 
 # Copyright (c) 2019-2021 Vestas Wind Systems A/S
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_KE1XF
@@ -36,5 +36,13 @@ config PWM_MCUX_PWT
 
 config GPIO
 	default y
+
+# Enable cache management features
+configdefault CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
 
 endif # SOC_SERIES_KE1XF

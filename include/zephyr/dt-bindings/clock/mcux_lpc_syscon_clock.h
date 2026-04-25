@@ -162,4 +162,12 @@
 /** TSI (Touch Sensing Input) clock identifier */
 #define MCUX_TSI_CLK MCUX_LPC_CLK_ID(0x25, 0x0)
 
+/** WWDT0 peripheral clock identifier. */
+#define MCUX_WWDT0_CLK MCUX_LPC_CLK_ID(0x26, 0x00)
+/** WWDT1 peripheral clock identifier. */
+#define MCUX_WWDT1_CLK MCUX_LPC_CLK_ID(0x26, 0x01)
+
+/** ENET QOS PTP peripheral clock identifier. */
+#define MCUX_ENET_QOS_PTP_CLK MCUX_LPC_CLK_ID(0x27, 0x00)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

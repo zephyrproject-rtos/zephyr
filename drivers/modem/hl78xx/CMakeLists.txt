@@ -14,6 +14,16 @@ zephyr_library_sources(
 )
 
 zephyr_library_sources_ifdef(
+    CONFIG_MODEM_HL78XX_12
+    hl78xx_hl7812.c
+)
+
+zephyr_library_sources_ifdef(
+    CONFIG_MODEM_HL78XX_00
+    hl78xx_hl7800.c
+)
+
+zephyr_library_sources_ifdef(
     CONFIG_MODEM_HL78XX_AT_SHELL
     hl78xx_at_shell.c
 )

@@ -4,23 +4,6 @@ Overview
 ********
 The nRF21540 DK (PCA10112) shows possibility of the Nordic Semiconductor
 nRF21540 Front End Module connected with nRF52840 ARM Cortex-M4F CPU.
-The CPU provides support for the following devices:
-
-* :abbr:`ADC (Analog to Digital Converter)`
-* CLOCK
-* FLASH
-* :abbr:`GPIO (General Purpose Input Output)`
-* :abbr:`I2C (Inter-Integrated Circuit)`
-* :abbr:`MPU (Memory Protection Unit)`
-* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
-* :abbr:`PWM (Pulse Width Modulation)`
-* RADIO (Bluetooth Low Energy and 802.15.4)
-* :abbr:`RTC (nRF RTC System Clock)`
-* Segger RTT (RTT Console)
-* :abbr:`SPI (Serial Peripheral Interface)`
-* :abbr:`UART (Universal asynchronous receiver-transmitter)`
-* :abbr:`USB (Universal Serial Bus)`
-* :abbr:`WDT (Watchdog Timer)`
 
 More information about the board can be found at the `nRF21540 website`_.
 `nRF21540 Product Specification`_ contains the processor's and front end

@@ -573,3 +573,7 @@ zephyr_jpegenc: &jpeg {
 &iwdg {
 	status = "okay";
 };
+
+&crc {
+	status = "okay";
+};

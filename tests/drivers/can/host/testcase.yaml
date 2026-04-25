@@ -12,6 +12,8 @@ tests:
       fixture: can
     extra_configs:
       - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+    extra_args:
+      - arch:posix:SNIPPET=socketcan-native-sim
     integration_platforms:
       - native_sim
       - native_sim/native/64

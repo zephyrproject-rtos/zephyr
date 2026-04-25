@@ -38,7 +38,7 @@ struct nxp_micfil_drv_data {
 	PDM_Type *base;
 	struct k_msgq *rx_msg_queue;
 	volatile enum dmic_state state;
-	uint8_t hw_chan[4];	/* Requested hardware channel order, maximun 4 channels. */
+	uint8_t hw_chan[4];	/* Requested hardware channel order, maximum 4 channels. */
 	uint8_t channels;	/* Current active channels count */
 	uint8_t sample_bytes;	/* bytes per sample (4 for 32bits). */
 	uint16_t block_size;
@@ -608,7 +608,7 @@ static int nxp_micfil_init(const struct device *dev)
 	return 0;
 }
 
-static const struct _dmic_ops dmic_ops = {
+static DEVICE_API(dmic, dmic_ops) = {
 	.configure = nxp_micfil_configure,
 	.trigger = nxp_micfil_trigger,
 	.read = nxp_micfil_read,

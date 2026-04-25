@@ -32,7 +32,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -954,7 +953,7 @@ static struct bt_conn *get_conn_ready(void)
 			continue;
 		}
 
-		CHECKIF(dont_have_methods(conn)) {
+		if (dont_have_methods(conn)) {
 			/* When a connection is missing mandatory methods, try next connection. */
 			LOG_DBG("conn %p (type %d) is missing mandatory methods", conn, conn->type);
 			prev = &conn->_conn_ready;
@@ -2680,7 +2679,7 @@ int bt_conn_cb_register(struct bt_conn_cb *cb)
 
 int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -2826,6 +2825,43 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	}
 
 	return &conn->le.dst;
+}
+
+struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn)
+{
+	struct bt_conn_tmp_str val;
+
+	switch (conn->type) {
+#if defined(CONFIG_BT_CLASSIC)
+	case BT_CONN_TYPE_BR:
+		(void)bt_addr_to_str(&conn->br.dst, val.str, sizeof(val.str));
+		break;
+	case BT_CONN_TYPE_SCO:
+		if (conn->sco.acl != NULL) {
+			(void)bt_addr_to_str(&conn->sco.acl->br.dst, val.str, sizeof(val.str));
+		} else {
+			val.str[0] = '\0';
+		}
+		break;
+#endif /* CONFIG_BT_CLASSIC */
+	case BT_CONN_TYPE_LE:
+		(void)bt_addr_le_to_str(&conn->le.dst, val.str, sizeof(val.str));
+		break;
+#if defined(CONFIG_BT_ISO)
+	case BT_CONN_TYPE_ISO:
+		if (conn->iso.acl != NULL) {
+			(void)bt_addr_le_to_str(&conn->iso.acl->le.dst, val.str, sizeof(val.str));
+		} else {
+			val.str[0] = '\0';
+		}
+		break;
+#endif /* CONFIG_BT_ISO */
+	default:
+		val.str[0] = '\0';
+		break;
+	}
+
+	return val;
 }
 
 static enum bt_conn_state conn_internal_to_public_state(bt_conn_state_t state)
@@ -3927,6 +3963,10 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 	bt_conn_set_param_le(conn, param);
 	create_param_setup(create_param);
 
+	if (IS_ENABLED(CONFIG_BT_SMP) && atomic_test_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
+		bt_id_pending_keys_update();
+	}
+
 	atomic_set_bit(conn->flags, BT_CONN_AUTO_CONNECT);
 	bt_conn_set_state(conn, BT_CONN_INITIATING_FILTER_LIST);
 
@@ -4044,11 +4084,11 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 	struct bt_conn *conn;
 	int err;
 
-	CHECKIF(ret_conn == NULL) {
+	if (ret_conn == NULL) {
 		return -EINVAL;
 	}
 
-	CHECKIF(*ret_conn != NULL) {
+	if (*ret_conn != NULL) {
 		/* This rule helps application developers prevent leaks of connection references. If
 		 * a bt_conn variable is not null, it presumably holds a reference and must not be
 		 * overwritten. To avoid this warning, initialize the variables to null, and set
@@ -4078,6 +4118,10 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 	}
 
 	create_param_setup(create_param);
+
+	if (IS_ENABLED(CONFIG_BT_SMP) && atomic_test_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
+		bt_id_pending_keys_update();
+	}
 
 #if defined(CONFIG_BT_SMP)
 	if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
@@ -4126,11 +4170,11 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
 	struct bt_conn *conn;
 	int err;
 
-	CHECKIF(ret_conn == NULL) {
+	if (ret_conn == NULL) {
 		return -EINVAL;
 	}
 
-	CHECKIF(*ret_conn != NULL) {
+	if (*ret_conn != NULL) {
 		/* This rule helps application developers prevent leaks of connection references. If
 		 * a bt_conn variable is not null, it presumably holds a reference and must not be
 		 * overwritten. To avoid this warning, initialize the variables to null, and set
@@ -4264,7 +4308,7 @@ int bt_conn_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *
 
 int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -4279,7 +4323,7 @@ int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 
 int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 

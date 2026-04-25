@@ -13,7 +13,7 @@
 #define VIDEO_CTRL_FLAG_READ_ONLY  BIT(0)
 /** Control is write-only */
 #define VIDEO_CTRL_FLAG_WRITE_ONLY BIT(1)
-/** Control that needs a freshly read as constanly updated by HW */
+/** Control that needs a freshly read as constantly updated by HW */
 #define VIDEO_CTRL_FLAG_VOLATILE   BIT(2)
 /** Control is inactive, e.g. manual controls of an autocluster in automatic mode */
 #define VIDEO_CTRL_FLAG_INACTIVE   BIT(3)

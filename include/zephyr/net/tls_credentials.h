@@ -13,6 +13,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_TLS_CREDENTIALS_H_
 #define ZEPHYR_INCLUDE_NET_TLS_CREDENTIALS_H_
 
+#include <stddef.h>
+
 /**
  * @brief TLS credentials management
  * @defgroup tls_credentials TLS credentials management

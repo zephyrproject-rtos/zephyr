@@ -23,6 +23,8 @@ supported:
   - pwm
   - flash
 testing:
+  binaries:
+    - flash.bin
   ignore_tags:
     - bluetooth
 vendor: nxp

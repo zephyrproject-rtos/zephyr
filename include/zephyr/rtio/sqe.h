@@ -769,12 +769,19 @@ static inline void rtio_sqe_pool_free(struct rtio_sqe_pool *pool, struct rtio_io
 	pool->pool_free++;
 }
 
+#if CONFIG_RTIO_SQE_PLACEMENT_DTCM
+#define RTIO_SQE_MEM Z_GENERIC_SECTION(".dtcm_bss") static
+#elif defined(CONFIG_RTIO_SQE_PLACEMENT_NOCACHE)
+#define RTIO_SQE_MEM __nocache static
+#else
+#define RTIO_SQE_MEM static
+#endif
 
 /* Do not try and reformat the macros */
 /* clang-format off */
 
 #define Z_RTIO_SQE_POOL_DEFINE(name, sz)			\
-	static struct rtio_iodev_sqe CONCAT(_sqe_pool_, name)[sz];	\
+	RTIO_SQE_MEM struct rtio_iodev_sqe CONCAT(_sqe_pool_, name)[sz];	\
 	STRUCT_SECTION_ITERABLE(rtio_sqe_pool, name) = {	\
 		.free_q = MPSC_INIT((name.free_q)),	\
 		.pool_size = sz,				\

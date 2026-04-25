@@ -6,6 +6,7 @@ tests:
     filter: dt_nodelabel_enabled("target_eeprom")
     platform_allow:
       - lpcxpresso55s69/lpc55s69/cpu0
+      - apollo510_evb
     harness: TBD
   sample.drivers.i2c.target.kinetis:
     tags: i2c_target

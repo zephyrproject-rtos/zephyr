@@ -133,7 +133,7 @@ child-binding:
         - 500
         - 1000
         - 2000
-      description: Pull-down resistence in Ohms. BUCK only.
+      description: Pull-down resistance in Ohms. BUCK only.
 
     regulator-ripple:
       type: string

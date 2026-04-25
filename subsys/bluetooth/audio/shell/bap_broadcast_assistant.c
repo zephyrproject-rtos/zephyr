@@ -120,12 +120,10 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *info,
 					    uint32_t broadcast_id)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	bt_shell_print(
 		"[DEVICE]: %s, broadcast_id 0x%06X, interval (ms) %u (0x%04x)), SID 0x%x, RSSI %i",
-		le_addr, broadcast_id, BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval),
+		bt_addr_le_str(info->addr), broadcast_id,
+		BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval),
 		info->interval, info->sid, info->rssi);
 }
 
@@ -145,7 +143,6 @@ static void bap_broadcast_assistant_recv_state_cb(
 	struct bt_conn *conn, int err,
 	const struct bt_bap_scan_delegator_recv_state *state)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	char bad_code[33];
 	bool is_bad_code;
 
@@ -154,14 +151,13 @@ static void bap_broadcast_assistant_recv_state_cb(
 		return;
 	}
 
-	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
 	bin2hex(state->bad_code, BT_ISO_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
 
 	is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
 	bt_shell_print(
 		"BASS recv state: src_id %u, addr %s, sid %u, broadcast_id 0x%06X, sync_state "
 		"%u, encrypt_state %u%s%s",
-		state->src_id, le_addr, state->adv_sid, state->broadcast_id,
+		state->src_id, bt_addr_le_str(&state->addr), state->adv_sid, state->broadcast_id,
 		state->pa_sync_state, state->encrypt_state, is_bad_code ? ", bad code" : "",
 		is_bad_code ? bad_code : "");
 
@@ -613,10 +609,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 
 	/* Verify that it is a BAP broadcaster*/
 	if (sr_info.broadcast_id != BT_BAP_INVALID_BROADCAST_ID) {
-		char addr_str[BT_ADDR_LE_STR_LEN];
 		bool identified_broadcast = false;
-
-		bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 
 		if (sr_info.broadcast_id == auto_scan.broadcast_id) {
 			identified_broadcast = true;
@@ -627,13 +620,13 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			identified_broadcast = true;
 
 			bt_shell_print("Found matched broadcast name '%s' with address %s",
-				       sr_info.broadcast_name, addr_str);
+				       sr_info.broadcast_name, bt_addr_le_str(info->addr));
 		}
 
 		if (identified_broadcast) {
 			bt_shell_print(
 				"Found BAP broadcast source with address %s and ID 0x%06X\n",
-				addr_str, sr_info.broadcast_id);
+				bt_addr_le_str(info->addr), sr_info.broadcast_id);
 
 			err = bt_le_scan_stop();
 			if (err) {

@@ -10,12 +10,30 @@
 	soc {
 		compatible = "st,stm32h523", "st,stm32h5", "simple-bus";
 
-		gpiof: gpio@42021400 {
-			compatible = "st,stm32-gpio";
-			gpio-controller;
-			#gpio-cells = <2>;
-			reg = <0x42021400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 7)>;
+		pinctrl: pin-controller@42020000 {
+			gpioe: gpio@42021000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021000 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 4)>;
+			};
+
+			gpiof: gpio@42021400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021400 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
+			};
+
+			gpiog: gpio@42021800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021800 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 6)>;
+			};
 		};
 
 		fmc: memory-controller@47000400 {

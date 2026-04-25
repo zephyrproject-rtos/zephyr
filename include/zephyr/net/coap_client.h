@@ -31,6 +31,8 @@ extern "C" {
 /** Maximum size of a CoAP message */
 #define MAX_COAP_MSG_LEN (CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE + \
 			  CONFIG_COAP_CLIENT_MESSAGE_SIZE)
+/** Maximum length in bytes for options specified in @ref coap_client_option */
+#define MAX_COAP_CLIENT_OPTION_LEN (12)
 
 /**
  * @brief Representation for CoAP client response data.
@@ -132,7 +134,7 @@ struct coap_client_option {
 	/** Option len */
 	uint8_t len;
 	/** Buffer for the length */
-	uint8_t value[12];
+	uint8_t value[MAX_COAP_CLIENT_OPTION_LEN];
 #endif
 };
 

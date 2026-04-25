@@ -10,6 +10,7 @@
 #include <dt-bindings/pinctrl/rtl8752h-pinctrl.h>
 #include <dt-bindings/clock/rtl8752h-clocks.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
@@ -45,6 +46,11 @@
 			/* bt controller code region */
 			reg = <0x25000 DT_SIZE_K(196)>;
 		};
+	};
+
+	bee_bt_hci: bee_bt_hci {
+		compatible = "realtek,bee-bt-hci";
+		status = "disabled";
 	};
 
 	soc {
@@ -270,6 +276,44 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+		};
+
+		keyscan: keyscan@40005000 {
+			compatible = "realtek,bee-keyscan";
+			reg = <0x40005000 0x34>;
+			interrupts = <19 0>;
+			clocks = <&cctl APB_CLK(KEYSCAN)>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@40015000 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40015000 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <16 0>;
+			clocks = <&cctl APB_CLK(I2C0)>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40015400 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40015400 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <17 0>;
+			clocks = <&cctl APB_CLK(I2C1)>;
+			status = "disabled";
+		};
+
+		rtc_counter: rtc@40000100 {
+			compatible = "realtek,bee-counter-rtc";
+			reg = <0x40000100 0x40>;
+			interrupts = <19 0>;
+			channels = <4>;
+			status = "disabled";
 		};
 	};
 

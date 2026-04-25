@@ -292,6 +292,7 @@
 			st,adc-internal-regulator = "startup-hw-status";
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -309,6 +310,7 @@
 			st,adc-internal-regulator = "startup-hw-status";
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 

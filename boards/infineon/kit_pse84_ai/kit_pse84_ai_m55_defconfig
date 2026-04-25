@@ -5,7 +5,6 @@
 
 # Enable FPU
 CONFIG_FPU=y
-CONFIG_FPU_SHARING=y
 
 # General configuration
 CONFIG_BUILD_OUTPUT_HEX=y

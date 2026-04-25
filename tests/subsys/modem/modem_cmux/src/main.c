@@ -30,6 +30,7 @@
 #define CMUX_BASIC_HRD_SMALL_SIZE	6
 #define CMUX_BASIC_HRD_LARGE_SIZE	7
 #define TRANSMISSION_DELAY_MS		10
+#define PIPE_EVENT_OPENED_BIT		BIT(0)
 
 /*************************************************************************************************/
 /*                                          Instances                                            */
@@ -362,6 +363,8 @@ static void test_modem_cmux_before(void *f)
 	modem_backend_mock_reset(&bus_mock);
 	cmux.state = MODEM_CMUX_STATE_CONNECTED;
 	k_event_set(&cmux.event, BIT(cmux.state));
+	k_event_set(&dlci1_pipe->event, PIPE_EVENT_OPENED_BIT);
+	k_event_set(&dlci2_pipe->event, PIPE_EVENT_OPENED_BIT);
 }
 
 ZTEST(modem_cmux, test_modem_cmux_receive_dlci2_at)

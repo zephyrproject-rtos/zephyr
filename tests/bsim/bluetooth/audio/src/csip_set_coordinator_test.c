@@ -199,10 +199,8 @@ static bool csip_found(struct bt_data *data, void *user_data)
 	if (primary_inst == NULL ||
 	    bt_csip_set_coordinator_is_set_member(primary_inst->info.sirk, data)) {
 		const bt_addr_le_t *addr = user_data;
-		char addr_str[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-		printk("Found CSIP advertiser with address %s\n", addr_str);
+		printk("Found CSIP advertiser with address %s\n", bt_addr_le_str(addr));
 
 		if (is_discovered(addr)) {
 			printk("Set member already found\n");
@@ -314,7 +312,6 @@ static void init(void)
 
 static void connect_set(void)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
 	connected_member_count = 0U;
@@ -338,15 +335,14 @@ static void connect_set(void)
 		return;
 	}
 
-	bt_addr_le_to_str(&addr_found[0], addr, sizeof(addr));
 	err = bt_conn_le_create(&addr_found[0], BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
 				&conns[0]);
 	if (err != 0) {
-		FAIL("Failed to connect to %s: %d\n", err);
+		FAIL("Failed to connect to %s: %d\n", bt_addr_le_str(&addr_found[0]), err);
 
 		return;
 	}
-	printk("Connecting to %s\n", addr);
+	printk("Connecting to %s\n", bt_conn_dst_str(conns[0]));
 
 	WAIT_FOR_FLAG(flag_connected);
 	connected_member_count++;
@@ -385,19 +381,17 @@ static void connect_set(void)
 	}
 
 	for (uint8_t i = 1; i < members_found; i++) {
-		bt_addr_le_to_str(&addr_found[i], addr, sizeof(addr));
-
 		UNSET_FLAG(flag_connected);
-		printk("Connecting to member[%d] (%s)", i, addr);
+		printk("Connecting to member[%d] (%s)", i, bt_addr_le_str(&addr_found[i]));
 		err = bt_conn_le_create(&addr_found[i], BT_CONN_LE_CREATE_CONN,
 					BT_LE_CONN_PARAM_DEFAULT, &conns[i]);
 		if (err != 0) {
-			FAIL("Failed to connect to %s: %d\n", addr, err);
+			FAIL("Failed to connect to %s: %d\n", bt_addr_le_str(&addr_found[i]), err);
 
 			return;
 		}
 
-		printk("Connected to %s\n", addr);
+		printk("Connected to %s\n", bt_conn_dst_str(conns[i]));
 		WAIT_FOR_FLAG(flag_connected);
 		connected_member_count++;
 
@@ -409,12 +403,9 @@ static void connect_set(void)
 static void disconnect_set(void)
 {
 	for (uint8_t i = 0; i < connected_member_count; i++) {
-		char addr[BT_ADDR_LE_STR_LEN];
 		int err;
 
-		bt_addr_le_to_str(&addr_found[i], addr, sizeof(addr));
-
-		printk("Disconnecting member[%u] (%s)", i, addr);
+		printk("Disconnecting member[%u] (%s)", i, bt_addr_le_str(&addr_found[i]));
 		err = bt_conn_disconnect(conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		(void)memset(&set_members[i], 0, sizeof(set_members[i]));
 		if (err != 0) {

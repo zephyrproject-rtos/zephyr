@@ -55,6 +55,7 @@
 	aliases {
 		led0 = &green_led_2;
 		pwm-led0 = &green_pwm_led;
+		rtc = &rtc;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 	};
@@ -225,4 +226,8 @@ zephyr_udc0: &usb {
 		pinctrl-0 = <&tim2_ch1_pa5>;
 		pinctrl-names = "default";
 	};
+};
+
+&crc {
+	status = "okay";
 };

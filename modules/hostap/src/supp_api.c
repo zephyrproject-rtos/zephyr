@@ -404,6 +404,11 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 
 			for (int i = 0; i < NUM_WEP_KEYS; i++) {
 				if (ssid->wep_key_len[i] > 0) {
+					if (ssid->auth_alg == WPA_AUTH_ALG_OPEN) {
+						return WIFI_SECURITY_TYPE_WEP_OPEN;
+					} else if (ssid->auth_alg == WPA_AUTH_ALG_SHARED) {
+						return WIFI_SECURITY_TYPE_WEP_SHARED;
+					}
 					return WIFI_SECURITY_TYPE_WEP;
 				}
 			}
@@ -419,7 +424,7 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 	case WPA_KEY_MGMT_PSK_SHA256:
 		return WIFI_SECURITY_TYPE_PSK_SHA256;
 	case WPA_KEY_MGMT_SAE:
-		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON)) {
 			if (pwe == 1) {
 				return WIFI_SECURITY_TYPE_SAE_H2E;
 			} else if (pwe == 2) {
@@ -438,7 +443,7 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 	case WPA_KEY_MGMT_FT_PSK:
 		return WIFI_SECURITY_TYPE_FT_PSK;
 	case WPA_KEY_MGMT_FT_SAE:
-		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON)) {
 			return WIFI_SECURITY_TYPE_FT_SAE;
 		}
 		return WIFI_SECURITY_TYPE_UNKNOWN;
@@ -449,7 +454,7 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 	case WPA_KEY_MGMT_FT_IEEE8021X_SHA384:
 		return WIFI_SECURITY_TYPE_FT_EAP_SHA384;
 	case WPA_KEY_MGMT_SAE_EXT_KEY:
-		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON)) {
 			return WIFI_SECURITY_TYPE_SAE_EXT_KEY;
 		}
 		return WIFI_SECURITY_TYPE_UNKNOWN;
@@ -747,7 +752,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			}
 		}
 
-		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3) &&
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON) &&
 		    (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
 		     params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
 		     params->security == WIFI_SECURITY_TYPE_SAE_AUTO ||
@@ -853,7 +858,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3)) {
+			if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON)) {
 				if (params->sae_password) {
 					if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
 					    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
@@ -925,6 +930,12 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 			if (params->wpa3_ent_mode == WIFI_WPA3_ENTERPRISE_SUITEB_192) {
 				if (params->TLS_cipher == WIFI_EAP_TLS_ECC_P384) {
+					snprintf(phase1, sizeof(phase1), "tls_disable_tlsv1_3=1");
+					if (!wpa_cli_cmd_v("set_network %d phase1 \"%s\"",
+							resp.network_id, &phase1[0])) {
+						goto out;
+					}
+
 					if (!wpa_cli_cmd_v("set_network %d openssl_ciphers \"%s\"",
 							resp.network_id,
 							cipher_config.openssl_ciphers)) {
@@ -1483,6 +1494,19 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		status->band = wpas_band_to_zephyr(wpas_freq_to_band(wpa_s->assoc_freq));
 		status->wpa3_ent_type = wpas_key_mgmt_to_zephyr_wpa3_ent(key_mgmt);
 		status->security = wpas_key_mgmt_to_zephyr(0, ssid, key_mgmt, proto, sae_pwe);
+#ifdef CONFIG_WEP
+		if (status->security == WIFI_SECURITY_TYPE_WEP ||
+		    status->security == WIFI_SECURITY_TYPE_WEP_OPEN ||
+		    status->security == WIFI_SECURITY_TYPE_WEP_SHARED) {
+			size_t klen = ssid->wep_key_len[ssid->wep_tx_keyidx];
+
+			if (klen == 5 || klen == 10) {
+				status->wep_key_type = WIFI_WEP_KEY_TYPE_64;
+			} else if (klen == 13 || klen == 26) {
+				status->wep_key_type = WIFI_WEP_KEY_TYPE_128;
+			}
+		}
+#endif
 		status->mfp = get_mfp(ssid->ieee80211w);
 		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
 		status->channel = channel;
@@ -2208,6 +2232,13 @@ static int supplicant_wps_pin(const struct device *dev, struct wifi_wps_config_p
 		if (zephyr_wpa_cli_cmd_resp(wpa_s->ctrl_conn, get_pin_cmd, params->pin)) {
 			goto out;
 		}
+
+		if (!wpa_cli_cmd_v("wps_pin any %s", params->pin)) {
+			goto out;
+		}
+
+		wpas_api_ctrl.dev = dev;
+		wpas_api_ctrl.requested_op = WPS_PIN;
 	} else if (params->oper == WIFI_WPS_PIN_SET) {
 		if (!wpa_cli_cmd_v("wps_check_pin %s", params->pin)) {
 			goto out;
@@ -2970,13 +3001,12 @@ int supplicant_p2p_oper(const struct device *dev, struct wifi_p2p_params *params
 				 join_str);
 			break;
 		case WIFI_P2P_METHOD_KEYPAD:
-			method_str = "keypad";
 			if (params->connect.pin[0] == '\0') {
 				wpa_printf(MSG_ERROR, "PIN required for keypad method");
 				return -EINVAL;
 			}
-			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s %s go_intent=%d%s%s",
-				 addr_str, method_str, params->connect.pin,
+			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s go_intent=%d%s%s",
+				 addr_str, params->connect.pin,
 				 params->connect.go_intent, freq_str, join_str);
 			break;
 		default:

@@ -768,6 +768,28 @@
 			};
 		};
 
+		test-regs {
+			#address-cells = <2>;
+			#size-cells = <1>;
+
+			/* there should only be one of these */
+			test_regs_test_node: testnode@2000000 {
+				compatible = "vnd,test-foreach-reg-unique";
+				reg = <0x00 0x2000000 0x40000>,
+				      <0x00 0x2200000 0x5c00000>,
+				      <0x00 0x8400000 0x7a00000>;
+			};
+
+			test_regs_other: other@107fff9000 {
+				compatible = "vnd,test-foreach-reg";
+				reg = <0x10 0x7fff9000 0x1000>;
+			};
+
+			test_regs_empty: empty {
+				compatible = "vnd,test-foreach-reg";
+			};
+		};
+
 		device-with-props-0 {
 			compatible = "vnd,device-with-props";
 			status = "okay";

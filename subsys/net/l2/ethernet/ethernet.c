@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_mgmt.h>
 #include <zephyr/net/ethernet_bridge.h>
-#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#if defined(CONFIG_NET_DSA)
 #include <zephyr/net/dsa_core.h>
 #endif
 #include <zephyr/net/gptp.h>
@@ -673,10 +673,10 @@ static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
 	eth_stats_update_bytes_tx(iface, net_pkt_get_len(pkt));
 	eth_stats_update_pkts_tx(iface);
 
-	if (net_eth_is_addr_multicast(&hdr->dst)) {
-		eth_stats_update_multicast_tx(iface);
-	} else if (net_eth_is_addr_broadcast(&hdr->dst)) {
+	if (net_eth_is_addr_broadcast(&hdr->dst)) {
 		eth_stats_update_broadcast_tx(iface);
+	} else if (net_eth_is_addr_multicast(&hdr->dst)) {
+		eth_stats_update_multicast_tx(iface);
 	}
 }
 
@@ -1072,7 +1072,7 @@ void ethernet_init(struct net_if *iface)
 	NET_DBG("Initializing Ethernet L2 %p for iface %d (%p)", ctx,
 		net_if_get_by_iface(iface), iface);
 
-#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#if defined(CONFIG_NET_DSA)
 	/* DSA port may need to handle flags */
 	dsa_eth_init(iface);
 #endif

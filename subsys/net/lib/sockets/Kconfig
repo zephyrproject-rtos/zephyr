@@ -119,6 +119,7 @@ config NET_SOCKETS_SERVICE_THREAD_PRIO
 
 config NET_SOCKETS_SERVICE_STACK_SIZE
 	int "Stack size for the thread handling socket services"
+	default 2400 if QUIC
 	default 2400 if NET_DHCPV4_SERVER
 	default 1400 if MDNS_RESPONDER
 	default 1200
@@ -171,6 +172,7 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 config NET_SOCKETS_ENABLE_DTLS
 	bool "DTLS socket support"
 	depends on NET_SOCKETS_SOCKOPT_TLS
+	select MBEDTLS_SSL_PROTO_TLS1_2 if NET_NATIVE
 	select MBEDTLS_SSL_PROTO_DTLS if NET_NATIVE
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
@@ -274,6 +276,26 @@ config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
 	help
 	  This variable specifies maximum number of stored TLS/DTLS sessions,
 	  used for TLS/DTLS session resumption.
+
+config NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT
+	bool "Persistent TLS session cache across reboots"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	depends on SETTINGS
+	help
+	  Enable persistent storage of TLS/DTLS client sessions
+	  using the settings subsystem. When enabled, sessions are
+	  saved after each successful TLS handshake and restored
+	  during system initialization, allowing session resumption
+	  across device reboots.
+
+config NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT_PREFIX
+	string "Persistent TLS session cache prefix"
+	depends on NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT
+	default "tls_cache"
+	help
+	  Settings key prefix used for persistent TLS session cache
+	  entries. Change this if the default prefix conflicts with
+	  other settings keys in your application.
 
 config NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK
 	bool "TLS certificate verification callback support"

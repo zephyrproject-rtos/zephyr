@@ -115,7 +115,7 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 
 	if (data->active_vbuf == NULL) {
 		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
-		LOG_ERR("No video buffer available. Enque some buffers first.");
+		LOG_ERR("No video buffer available. Enqueue some buffers first.");
 		return;
 	}
 

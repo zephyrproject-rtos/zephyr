@@ -10,7 +10,4 @@ if(CONFIG_BOARD_QEMU_XTENSA)
   )
 endif()
 
-# TODO: Support debug
-# board_set_debugger_ifnset(qemu)
-# debugserver: QEMU_EXTRA_FLAGS += -s -S
-# debugserver: qemu
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

@@ -37,7 +37,7 @@ properties:
     default: "disabled"
     description: |
       Chip select signal override configuration:
-        - Overrride disabled
+        - Override disabled
         - XSPI Chip select signal sent to ncs1
         - XSPI Chip select signal sent to ncs2
 

@@ -20,6 +20,13 @@
 
 #include <zephyr/platform/hooks.h>
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+void z_riscv_custom_stack_guard_init(void);
+void z_riscv_custom_stack_guard_enable(struct k_thread *thread);
+void z_riscv_custom_stack_guard_disable(void);
+bool z_riscv_custom_stack_guard_is_fault(struct arch_esf *esf);
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,6 +62,9 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_init();
 #endif
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	z_riscv_custom_stack_guard_init();
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
 	soc_per_core_init_hook();
 }
 

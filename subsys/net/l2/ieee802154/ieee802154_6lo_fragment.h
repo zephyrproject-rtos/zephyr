@@ -15,7 +15,7 @@
 #define __NET_IEEE802154_6LO_FRAGMENT_H__
 
 #include "ieee802154_6lo.h"
-#include "ieee802154_frame.h"
+#include <zephyr/net/ieee802154_frame.h>
 
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/sys/slist.h>

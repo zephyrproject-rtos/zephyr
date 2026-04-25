@@ -48,33 +48,31 @@ typedef void (*ipm_callback_t)(const struct device *ipmdev, void *user_data,
 			       uint32_t id, volatile void *data);
 
 /**
- * @typedef ipm_send_t
- * @brief Callback API to send IPM messages
- *
+ * @def_driverbackendgroup{IPM,ipm_interface}
+ * @{
+ */
+
+/**
+ * @brief Callback API to send IPM messages.
  * See @a ipm_send() for argument definitions.
  */
 typedef int (*ipm_send_t)(const struct device *ipmdev, int wait, uint32_t id,
 			  const void *data, int size);
+
 /**
- * @typedef ipm_max_data_size_get_t
- * @brief Callback API to get maximum data size
- *
+ * @brief Callback API to get maximum data size.
  * See @a ipm_max_data_size_get() for argument definitions.
  */
 typedef int (*ipm_max_data_size_get_t)(const struct device *ipmdev);
 
 /**
- * @typedef ipm_max_id_val_get_t
- * @brief Callback API to get the ID's maximum value
- *
+ * @brief Callback API to get the ID's maximum value.
  * See @a ipm_max_id_val_get() for argument definitions.
  */
 typedef uint32_t (*ipm_max_id_val_get_t)(const struct device *ipmdev);
 
 /**
- * @typedef ipm_register_callback_t
- * @brief Callback API upon registration
- *
+ * @brief Callback API to register a callback for incoming messages.
  * See @a ipm_register_callback() for argument definitions.
  */
 typedef void (*ipm_register_callback_t)(const struct device *port,
@@ -82,31 +80,52 @@ typedef void (*ipm_register_callback_t)(const struct device *port,
 					void *user_data);
 
 /**
- * @typedef ipm_set_enabled_t
- * @brief Callback API upon enablement of interrupts
- *
+ * @brief Callback API to enable or disable interrupts for inbound channels.
  * See @a ipm_set_enabled() for argument definitions.
  */
 typedef int (*ipm_set_enabled_t)(const struct device *ipmdev, int enable);
 
 /**
- * @typedef ipm_complete_t
- * @brief Callback API upon command completion
- *
+ * @brief Callback API to signal asynchronous command completion.
  * See @a ipm_complete() for argument definitions.
  */
 typedef void (*ipm_complete_t)(const struct device *ipmdev);
 
+/**
+ * @driver_ops{IPM}
+ */
 __subsystem struct ipm_driver_api {
+	/**
+	 * @driver_ops_mandatory @copybrief ipm_send
+	 */
 	ipm_send_t send;
+	/**
+	 * @driver_ops_mandatory @copybrief ipm_register_callback
+	 */
 	ipm_register_callback_t register_callback;
+	/**
+	 * @driver_ops_mandatory @copybrief ipm_max_data_size_get
+	 */
 	ipm_max_data_size_get_t max_data_size_get;
+	/**
+	 * @driver_ops_mandatory @copybrief ipm_max_id_val_get
+	 */
 	ipm_max_id_val_get_t max_id_val_get;
+	/**
+	 * @driver_ops_mandatory @copybrief ipm_set_enabled
+	 */
 	ipm_set_enabled_t set_enabled;
-#ifdef CONFIG_IPM_CALLBACK_ASYNC
+#if defined(CONFIG_IPM_CALLBACK_ASYNC) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief ipm_complete
+	 * @kconfig_dep{CONFIG_IPM_CALLBACK_ASYNC}
+	 */
 	ipm_complete_t complete;
 #endif
 };
+/**
+ * @}
+ */
 
 /**
  * @brief Try to send a message over the IPM device.
@@ -151,10 +170,7 @@ static inline int z_impl_ipm_send(const struct device *ipmdev, int wait,
 				  uint32_t id,
 				  const void *data, int size)
 {
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->send(ipmdev, wait, id, data, size);
+	return DEVICE_API_GET(ipm, ipmdev)->send(ipmdev, wait, id, data, size);
 }
 
 /**
@@ -168,10 +184,7 @@ static inline int z_impl_ipm_send(const struct device *ipmdev, int wait,
 static inline void ipm_register_callback(const struct device *ipmdev,
 					 ipm_callback_t cb, void *user_data)
 {
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	api->register_callback(ipmdev, cb, user_data);
+	DEVICE_API_GET(ipm, ipmdev)->register_callback(ipmdev, cb, user_data);
 }
 
 /**
@@ -188,10 +201,7 @@ __syscall int ipm_max_data_size_get(const struct device *ipmdev);
 
 static inline int z_impl_ipm_max_data_size_get(const struct device *ipmdev)
 {
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->max_data_size_get(ipmdev);
+	return DEVICE_API_GET(ipm, ipmdev)->max_data_size_get(ipmdev);
 }
 
 
@@ -209,10 +219,7 @@ __syscall uint32_t ipm_max_id_val_get(const struct device *ipmdev);
 
 static inline uint32_t z_impl_ipm_max_id_val_get(const struct device *ipmdev)
 {
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->max_id_val_get(ipmdev);
+	return DEVICE_API_GET(ipm, ipmdev)->max_id_val_get(ipmdev);
 }
 
 /**
@@ -229,10 +236,7 @@ __syscall int ipm_set_enabled(const struct device *ipmdev, int enable);
 static inline int z_impl_ipm_set_enabled(const struct device *ipmdev,
 					 int enable)
 {
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->set_enabled(ipmdev, enable);
+	return DEVICE_API_GET(ipm, ipmdev)->set_enabled(ipmdev, enable);
 }
 
 /**
@@ -254,8 +258,7 @@ __syscall void ipm_complete(const struct device *ipmdev);
 static inline void z_impl_ipm_complete(const struct device *ipmdev)
 {
 #ifdef CONFIG_IPM_CALLBACK_ASYNC
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
+	const struct ipm_driver_api *api = DEVICE_API_GET(ipm, ipmdev);
 
 	if (api->complete != NULL) {
 		api->complete(ipmdev);

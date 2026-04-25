@@ -251,7 +251,7 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 	 */
 	ret = dma_config(dma->dev, dma->channel, &dma->cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to conig");
+		LOG_ERR("Failed to config");
 		return ret;
 	}
 

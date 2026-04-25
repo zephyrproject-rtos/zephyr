@@ -9,7 +9,7 @@
 
 #include <zephyr/sys/util_macro.h>
 
-/* The microphones create a low frequecy thump sound when clock is enabled.
+/* The microphones create a low frequency thump sound when clock is enabled.
  * The unmute linear gain ramp chacteristic is defined here.
  * NOTE: Do not set any of these to 0.
  */

@@ -17,4 +17,4 @@ set(QEMU_KERNEL_OPTION
   "-device;loader,addr=0xff9a0000,data=0x80000218,data-len=4"
   )
 
-board_set_debugger_ifnset(qemu)
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

@@ -1336,7 +1336,6 @@ static int udc_bflb_v1_ep_dequeue(const struct device *dev,
 	const mm_reg_t base = config->base;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->addr);
 	unsigned int lock_key;
-	struct net_buf *buf;
 
 	lock_key = irq_lock();
 
@@ -1350,10 +1349,7 @@ static int udc_bflb_v1_ep_dequeue(const struct device *dev,
 		fifo_rx_clear(base, ep_idx);
 	}
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf != NULL) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	}
+	udc_ep_cancel_queued(dev, ep_cfg);
 
 	/* Clear pending completion signal to prevent stale processing */
 	atomic_and(&priv->xfer_finished, ~BIT(ep_to_bnum(ep_cfg->addr)));

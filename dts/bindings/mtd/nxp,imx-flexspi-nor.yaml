@@ -5,7 +5,7 @@ description: NXP FlexSPI NOR
 
 compatible: "nxp,imx-flexspi-nor"
 
-include: ["nxp,imx-flexspi-device.yaml", soc-nv-flash.yaml]
+include: ["nxp,imx-flexspi-device.yaml"]
 
 properties:
   reset-gpios:

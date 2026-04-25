@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: numaker_m3351ki
+name: NUVOTON NUMAKER-M3351KI Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 1024
+supported:
+  - gpio
+vendor: nuvoton

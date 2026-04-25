@@ -102,6 +102,74 @@ static int uart_imx_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+static int uart_imx_configure(const struct device *dev, const struct uart_config *cfg)
+{
+	UART_Type *uart = UART_STRUCT(dev);
+	uart_init_config_t initConfig;
+	int err;
+	const struct imx_uart_config *config = dev->config;
+	uint32_t key;
+
+	initConfig.clockRate  = get_uart_clock_freq(uart);
+	initConfig.baudRate = cfg->baudrate;
+
+	switch (cfg->data_bits) {
+	case UART_CFG_DATA_BITS_7:
+		initConfig.wordLength = uartWordLength7Bits;
+		break;
+	case UART_CFG_DATA_BITS_8:
+		initConfig.wordLength = uartWordLength8Bits;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	initConfig.stopBitNum = cfg->stop_bits;
+
+	switch (cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		initConfig.parity = uartParityDisable;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		initConfig.parity = uartParityEven;
+		break;
+	case UART_CFG_PARITY_ODD:
+		initConfig.parity = uartParityOdd;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	initConfig.direction = uartDirectionTxRx;
+
+	switch (cfg->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		UART_SetRtsFlowCtrlCmd(uart, false);
+		UART_SetCtsFlowCtrlCmd(uart, false);
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		UART_SetRtsFlowCtrlCmd(uart, true);
+		UART_SetCtsFlowCtrlCmd(uart, true);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+
+	key = irq_lock();
+	UART_Init(uart, &initConfig);
+	UART_Enable(uart);
+	irq_unlock(key);
+
+	return 0;
+}
+#endif
+
 static void uart_imx_poll_out(const struct device *dev, unsigned char c)
 {
 	UART_Type *uart = UART_STRUCT(dev);
@@ -270,6 +338,9 @@ void uart_imx_isr(const struct device *dev)
 static DEVICE_API(uart, uart_imx_driver_api) = {
 	.poll_in  = uart_imx_poll_in,
 	.poll_out = uart_imx_poll_out,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = uart_imx_configure,
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill		  = uart_imx_fifo_fill,

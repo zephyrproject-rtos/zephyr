@@ -37,6 +37,12 @@ extern "C" {
 #define ENTROPY_BUSYWAIT  BIT(0)
 
 /**
+ * @def_driverbackendgroup{Entropy,entropy_interface}
+ * @ingroup entropy_interface
+ * @{
+ */
+
+/**
  * @typedef entropy_get_entropy_t
  * @brief Callback API to get entropy.
  *
@@ -48,6 +54,7 @@ extern "C" {
 typedef int (*entropy_get_entropy_t)(const struct device *dev,
 				     uint8_t *buffer,
 				     uint16_t length);
+
 /**
  * @typedef entropy_get_entropy_isr_t
  * @brief Callback API to get entropy from an ISR.
@@ -60,14 +67,16 @@ typedef int (*entropy_get_entropy_isr_t)(const struct device *dev,
 					 uint32_t flags);
 
 /**
- * @brief Entropy driver API structure.
- *
- * This is the mandatory API any Entropy driver needs to expose.
+ * @driver_ops{Entropy}
  */
 __subsystem struct entropy_driver_api {
+	/** @driver_ops_mandatory @copybrief entropy_get_entropy */
 	entropy_get_entropy_t     get_entropy;
+	/** @driver_ops_optional @copybrief entropy_get_entropy_isr */
 	entropy_get_entropy_isr_t get_entropy_isr;
 };
+
+/** @} */
 
 /**
  * @brief Fills a buffer with entropy. Blocks if required in order to
@@ -87,8 +96,7 @@ static inline int z_impl_entropy_get_entropy(const struct device *dev,
 					     uint8_t *buffer,
 					     uint16_t length)
 {
-	const struct entropy_driver_api *api =
-		(const struct entropy_driver_api *)dev->api;
+	const struct entropy_driver_api *api = DEVICE_API_GET(entropy, dev);
 
 	__ASSERT(api->get_entropy != NULL,
 		"Callback pointer should not be NULL");
@@ -104,17 +112,17 @@ static inline int z_impl_entropy_get_entropy(const struct device *dev,
  * @param length Buffer length.
  * @param flags Flags to modify the behavior of the call.
  * @return number of bytes filled with entropy or -error.
+ * @retval -ENOSYS Driver does not implement the function
  */
 static inline int entropy_get_entropy_isr(const struct device *dev,
 					  uint8_t *buffer,
 					  uint16_t length,
 					  uint32_t flags)
 {
-	const struct entropy_driver_api *api =
-		(const struct entropy_driver_api *)dev->api;
+	const struct entropy_driver_api *api = DEVICE_API_GET(entropy, dev);
 
-	if (unlikely(!api->get_entropy_isr)) {
-		return -ENOTSUP;
+	if (unlikely(api->get_entropy_isr == NULL)) {
+		return -ENOSYS;
 	}
 
 	return api->get_entropy_isr(dev, buffer, length, flags);

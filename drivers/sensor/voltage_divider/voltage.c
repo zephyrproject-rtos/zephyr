@@ -164,13 +164,13 @@ static int voltage_init(const struct device *dev)
 	data->earliest_sample_time = sys_timepoint_calc(K_NO_WAIT);
 
 	if (!adc_is_ready_dt(&config->voltage.port)) {
-		LOG_ERR("ADC is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->voltage.port.dev);
 		return -ENODEV;
 	}
 
 	if (config->gpio_power.port != NULL) {
 		if (!gpio_is_ready_dt(&config->gpio_power)) {
-			LOG_ERR("Power GPIO is not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->gpio_power.port);
 			return -ENODEV;
 		}
 	}

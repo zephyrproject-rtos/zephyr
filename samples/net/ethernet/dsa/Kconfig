@@ -14,12 +14,6 @@ config NET_SAMPLE_DSA_MAX_USER_PORTS
 	help
 	  DSA user ports maximum number.
 
-config NET_SAMPLE_DSA_LLDP
-	bool "DSA LLDP example"
-	default y
-	help
-	  Enable DSA LLDP example.
-
 endif
 
 source "Kconfig.zephyr"

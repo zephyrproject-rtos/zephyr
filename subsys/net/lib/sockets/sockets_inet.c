@@ -1016,9 +1016,10 @@ static int insert_pktinfo(struct net_msghdr *msg, int level, int type,
 			  void *pktinfo, size_t pktinfo_len)
 {
 	struct net_cmsghdr *cmsg;
+	size_t cmsg_space = NET_CMSG_SPACE(pktinfo_len);
 
-	if (msg->msg_controllen < pktinfo_len) {
-		return -EINVAL;
+	if (msg->msg_controllen < cmsg_space) {
+		return -ENOMEM;
 	}
 
 	for (cmsg = NET_CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = NET_CMSG_NXTHDR(msg, cmsg)) {
@@ -1160,7 +1161,7 @@ static int update_msg_controllen(struct net_msghdr *msg)
 		if (cmsg->cmsg_len == 0) {
 			break;
 		}
-		cmsg_space += cmsg->cmsg_len;
+		cmsg_space += NET_ALIGN_H(cmsg->cmsg_len);
 	}
 	msg->msg_controllen = cmsg_space;
 
@@ -1440,6 +1441,27 @@ static int zsock_fionread_ctx(struct net_context *ctx)
 	size_t ret = zsock_recv_stream_immediate(ctx, NULL, NULL, 0);
 
 	return MIN(ret, INT_MAX);
+}
+
+static int zsock_fionwrite_ctx(struct net_context *ctx)
+{
+	int outq_bytes;
+	int ret;
+
+	if (net_context_get_proto(ctx) != NET_IPPROTO_TCP) {
+		return -EOPNOTSUPP;
+	}
+
+	if (net_context_get_state(ctx) == NET_CONTEXT_LISTENING) {
+		return -EINVAL;
+	}
+
+	ret = net_tcp_get_outq(ctx, &outq_bytes);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return outq_bytes;
 }
 
 static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghdr *msg,
@@ -3135,6 +3157,19 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		int *avail = va_arg(args, int *);
 
 		*avail = zsock_fionread_ctx(obj);
+		return 0;
+	}
+
+	case ZFD_IOCTL_FIONWRITE: {
+		int *avail = va_arg(args, int *);
+		int outq_bytes = zsock_fionwrite_ctx(obj);
+
+		if (outq_bytes < 0) {
+			errno = -outq_bytes;
+			return -1;
+		}
+
+		*avail = outq_bytes;
 		return 0;
 	}
 

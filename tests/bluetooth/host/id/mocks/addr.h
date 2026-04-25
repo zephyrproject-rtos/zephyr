@@ -12,3 +12,4 @@
 #define ADDR_FFF_FAKES_LIST(FAKE) FAKE(bt_addr_le_create_static)
 
 DECLARE_FAKE_VALUE_FUNC(int, bt_addr_le_create_static, bt_addr_le_t *);
+DECLARE_FAKE_VALUE_FUNC(int, bt_addr_le_create_nrpa, bt_addr_le_t *);

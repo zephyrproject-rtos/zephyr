@@ -1,5 +1,5 @@
 identifier: weact_esp32c6_mini/esp32c6/hpcore
-name: ESP32-C6-Mini HP Core
+name: WeAct Studio ESP32-C6-Mini HP Core
 vendor: weact
 type: mcu
 arch: riscv

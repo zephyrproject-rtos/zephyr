@@ -9,22 +9,7 @@ Overview
    SoC Datasheet), see the `nRF54L documentation`_ page.
 
 The nRF54LM20 Development Kit hardware provides support for the Nordic Semiconductor
-nRF54LM20B Arm Cortex-M33 CPU and the following devices:
-
-* :abbr:`SAADC (Successive Approximation Analog to Digital Converter)`
-* CLOCK
-* RRAM
-* :abbr:`GPIO (General Purpose Input Output)`
-* :abbr:`TWIM (I2C-compatible two-wire interface master with EasyDMA)`
-* MEMCONF
-* :abbr:`MPU (Memory Protection Unit)`
-* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
-* :abbr:`PWM (Pulse Width Modulation)`
-* :abbr:`GRTC (Global real-time counter)`
-* Segger RTT (RTT Console)
-* :abbr:`SPI (Serial Peripheral Interface)`
-* :abbr:`UARTE (Universal asynchronous receiver-transmitter)`
-* :abbr:`WDT (Watchdog Timer)`
+nRF54LM20B Arm Cortex-M33 CPU.
 
 Hardware
 ********

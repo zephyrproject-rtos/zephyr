@@ -1,0 +1,30 @@
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: bl618g0
+name: Bouffalo Lab BL618 G0 evaluation board
+type: mcu
+arch: riscv
+ram: 480
+flash: 4032
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - pinctrl
+  - uart
+  - dma
+  - pwm
+  - i2c
+  - spi
+  - flash
+  - input
+  - entropy
+  - crypto
+  - counter
+vendor: bflb

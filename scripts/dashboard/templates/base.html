@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<!--
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+SPDX-License-Identifier: Apache-2.0
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- To experiment with new bootstrap functionality, swap our bootstrap-chop
+         with the official CDN. -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous"> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" crossorigin="anonymous"></script> -->
+    <link href="static/css/bootstrap-chop.css" rel="stylesheet"/>
+    <script src="static/js/bootstrap-chop.js"></script>
+
+    <!-- To experiment with new icons, swap our icons.css with the bootstrap one. -->
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"> -->
+    <link href="static/css/icons.css" rel="stylesheet"/>
+
+    <link href="static/css/light.css" rel="stylesheet"/>
+    <link href="static/css/dashboard.css" rel="stylesheet"/>
+
+    <title>Zephyr Dashboard</title>
+    <link rel="icon" href="static/img/favicon.png"/>
+
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+
+        <div class="col-auto pt-3 ps-4 pe-4 sticky-top wy-menu-vertical" id="sidebar">
+          <div class="p-2 me-auto ms-auto">
+            <a href="https://docs.zephyrproject.org/latest/index.html"
+            class="d-flex align-items-center mb-0 me-auto text-decoration-none">
+              <img src="static/img/logo.svg" class="logo" alt="Logo">
+            </a>
+          </div>
+          <hr>
+          <p class="caption"><span class="caption-text">Dashboard</span></p>
+          <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item {% if current == 'home' %}current{% endif %}">
+              <a href="index.html" class="nav-link">Home</a>
+            </li>
+            {% if not build.skip_memory_report %}
+            <li class="nav-item {% if current == 'memory' %}current{% endif %}">
+              <a href="memoryreport.html" class="nav-link">Memory Report</a>
+            </li>
+            {% endif %}
+            <li class="nav-item {% if current == 'kconfig' %}current{% endif %}">
+              <a href="kconfig.html" class="nav-link">Kconfig</a>
+            </li>
+            <li class="nav-item {% if current == 'sysinit' %}current{% endif %}">
+              <a href="sysinit.html" class="nav-link">
+                Sys Init
+                {% if build.sys_init_errors %}
+                <i class="ms-2 bi bi-exclamation-circle" title="Errors found in sys-init priorities!"></i>
+                {% endif %}
+              </a>
+            </li>
+            <li class="nav-item {% if current == 'dts' %}current{% endif %}">
+              <a href="dts.html" class="nav-link">Device Tree</a>
+            </li>
+            <li class="nav-item {% if current == 'elfstats' %}current{% endif %}">
+              <a href="elfstats.html" class="nav-link">ELF Stats</a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="col-8 ps-4">
+          {% if title %}
+          <div class="mt-5">
+            <h1 class="section-title">{{title}}</h1>
+          </div>
+          {% endif %}
+
+          {% block content %}{% endblock %}
+        </div>
+
+      </div>
+    </div>
+
+  </body>
+  <footer>
+    {% block footer %}{% endblock %}
+  </footer>
+</html>

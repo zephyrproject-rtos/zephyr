@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024 Demant A/S
- * Copyright (c) 2024-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -456,12 +457,9 @@ static void scan_for_broadcast_sink(void)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err != 0) {
-		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
+		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
+		       err, bt_hci_err_to_str(err));
 
 		bt_conn_unref(broadcast_sink_conn);
 		broadcast_sink_conn = NULL;
@@ -474,21 +472,18 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
 	k_sem_give(&sem_sink_connected);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	if (conn != broadcast_sink_conn) {
 		return;
 	}
 
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
+	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
+	       reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(broadcast_sink_conn);
 	broadcast_sink_conn = NULL;
@@ -539,13 +534,10 @@ bap_broadcast_assistant_recv_state_read_cb(struct bt_conn *conn, int err,
 	}
 
 	if (state != NULL) {
-		char le_addr[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
 		printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state "
-		       "%u, num_subgroups %u\n",
-		       state->src_id, le_addr, state->adv_sid, state->pa_sync_state,
-		       state->encrypt_state, state->num_subgroups);
+		       "%u, num_subgroups %u\n", state->src_id, bt_addr_le_str(&state->addr),
+		       state->adv_sid, state->pa_sync_state, state->encrypt_state,
+		       state->num_subgroups);
 
 		for (uint8_t i = 0; i < state->num_subgroups; i++) {
 			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
@@ -707,15 +699,21 @@ int main(void)
 			continue;
 		}
 
-		err = bt_bap_broadcast_assistant_discover(broadcast_sink_conn);
+		err = bt_conn_set_security(broadcast_sink_conn, BT_SECURITY_L2);
 		if (err != 0) {
-			printk("Failed to discover BASS on the sink (err %d)\n", err);
+			printk("Failed to set security: %d\n", err);
 			continue;
 		}
 
 		err = k_sem_take(&sem_security_updated, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("Failed to take sem_security_updated (err %d)\n", err);
+			continue;
+		}
+
+		err = bt_bap_broadcast_assistant_discover(broadcast_sink_conn);
+		if (err != 0) {
+			printk("Failed to discover BASS on the sink (err %d)\n", err);
 			continue;
 		}
 

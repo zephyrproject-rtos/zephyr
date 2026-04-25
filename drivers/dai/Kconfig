@@ -9,7 +9,7 @@
 menuconfig DAI
 	bool "Digital Audio Interface (DAI) drivers"
 	help
-		Enable support for the DAI interface drivers.
+	  Enable support for the DAI interface drivers.
 
 if DAI
 
@@ -17,13 +17,23 @@ config DAI_INIT_PRIORITY
 	int "Init priority"
 	default 70
 	help
-		Device driver initialization priority.
+	  Device driver initialization priority.
 
 config DAI_USERSPACE
 	bool "DAI user-space support"
 	depends on USERSPACE
 	help
-		Expose the DAI interface to user-space threads via syscalls.
+	  Expose the DAI interface to user-space threads via syscalls.
+
+config DAI_MAX_BESPOKE_CFG_SIZE
+	int "Maximum bespoke configuration blob size"
+	default 1024
+	depends on DAI_USERSPACE
+	range 256 4096
+	help
+	  Maximum size of bespoke configuration objects passed to the DAI
+	  driver via syscalls. The objects are temporarily allocated on the
+	  stack for validation when copied from user-space to kernel memory.
 
 module = DAI
 module-str = dai

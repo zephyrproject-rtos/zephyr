@@ -785,7 +785,6 @@ static void btp_send_baa_found_ev(const bt_addr_le_t *address, uint32_t broadcas
 static bool baa_check(struct bt_data *data, void *user_data)
 {
 	const struct bt_le_scan_recv_info *info = user_data;
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
 
@@ -809,10 +808,8 @@ static bool baa_check(struct bt_data *data, void *user_data)
 
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	LOG_DBG("Found BAA with ID 0x%06X, addr %s, sid 0x%02X, interval 0x%04X", broadcast_id,
-		le_addr, info->sid, info->interval);
+		bt_addr_le_str(info->addr), info->sid, info->interval);
 
 	btp_send_baa_found_ev(info->addr, broadcast_id, info->sid, info->interval);
 
@@ -1525,11 +1522,9 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *info,
 					    uint32_t broadcast_id)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	LOG_DBG("[DEVICE]: %s, broadcast_id 0x%06X, interval (ms) %u (0x%04x)), SID 0x%x, RSSI %i",
-		le_addr, broadcast_id, BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval),
+		bt_addr_le_str(info->addr), broadcast_id,
+		BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval),
 		info->interval, info->sid, info->rssi);
 }
 
@@ -1884,6 +1879,33 @@ uint8_t btp_bap_scan_delegator_add_src(const void *cmd, uint16_t cmd_len, void *
 	rp->src_id = (uint8_t)err;
 	*rsp_len = sizeof(*rp);
 
+	return BTP_STATUS_SUCCESS;
+}
+
+uint8_t btp_bap_set_sink_broadcast_code(const void *cmd, uint16_t cmd_len, void *rsp,
+					uint16_t *rsp_len)
+{
+	const struct btp_bap_broadcast_sink_set_broadcast_code_cmd *cp = cmd;
+	struct btp_bap_broadcast_remote_source *broadcaster = NULL;
+	uint32_t host_broadcast_id = sys_get_le24(cp->broadcast_id);
+
+	/* Find the broadcaster by address and broadcast_id */
+	broadcaster = remote_broadcaster_find(&cp->address, host_broadcast_id);
+	if (broadcaster == NULL) {
+		LOG_DBG("Broadcast source not found for addr %s, broadcast_id 0x%06X, alloc new",
+			bt_addr_le_str(&cp->address), host_broadcast_id);
+		/* If not found, allocate a new one */
+		broadcaster = remote_broadcaster_alloc();
+		if (broadcaster == NULL) {
+			LOG_DBG("Failed to allocate broadcaster entry");
+			return BTP_STATUS_FAILED;
+		}
+		bt_addr_le_copy(&broadcaster->address, &cp->address);
+	}
+	(void)memcpy(broadcaster->sink_broadcast_code, cp->broadcast_code,
+		     BT_ISO_BROADCAST_CODE_SIZE);
+	broadcaster->broadcast_id = host_broadcast_id;
+	broadcaster->broadcast_code_received = true;
 	return BTP_STATUS_SUCCESS;
 }
 

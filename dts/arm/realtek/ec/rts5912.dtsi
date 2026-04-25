@@ -712,6 +712,7 @@
 		pinctrl-0 = <&jtag_tdi_gpio87 &jtag_tdo_gpio88 &jtag_rst_gpio89
 			     &jtag_clk_gpio90 &jtag_tms_gpio91>;
 		pinctrl-names = "default";
+		status = "disabled";
 	};
 
 	ulpm: ulpm {

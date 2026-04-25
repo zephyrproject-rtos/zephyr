@@ -1,0 +1,28 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ */
+
+/ {
+	chosen {
+		zephyr,display = &m5stack_unit_minioled_display;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	m5stack_unit_minioled_display: ssd1306@3c {
+		compatible = "solomon,ssd1306";
+		reg = <0x3c>;
+		width = <72>;
+		height = <40>;
+		segment-offset = <28>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <39>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+	};
+};

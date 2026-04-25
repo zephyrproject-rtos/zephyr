@@ -24,6 +24,7 @@
 #include <zephyr/sys/util.h>
 #include <mmu.h>
 
+#include "boot.h"
 #include "mmu.h"
 #include "paging.h"
 
@@ -333,23 +334,29 @@ static int set_mapping(uint64_t *top_table, uintptr_t virt, size_t size,
 			continue;
 		}
 
-		if (!may_overwrite && !is_free_desc(*pte)) {
-			/* the entry is already allocated */
-			LOG_ERR("entry already in use: "
-				"level %d pte %p *pte 0x%016llx",
-				level, pte, *pte);
-			return -EBUSY;
-		}
-
 		level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
 
+		/*
+		 * Check for an existing mapping with identical attributes
+		 * before rejecting a non-free entry. This makes set_mapping()
+		 * idempotent: re-mapping a region with the same physical
+		 * address and attributes is a no-op. This is needed when both
+		 * boot-time mmu_regions and device_map() identity-map the
+		 * same device address.
+		 */
 		if (is_desc_superset(*pte, desc, level)) {
-			/* This block already covers our range */
 			level_size -= (virt & (level_size - 1));
 			if (level_size > size) {
 				level_size = size;
 			}
 			goto move_on;
+		}
+
+		if (!may_overwrite && !is_free_desc(*pte)) {
+			LOG_ERR("entry already in use: "
+				"level %d pte %p *pte 0x%016llx",
+				level, pte, *pte);
+			return -EBUSY;
 		}
 
 		if ((size < level_size) || (virt & (level_size - 1)) ||
@@ -891,11 +898,35 @@ static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
 	}
 }
 
+static const struct arm_mmu_region mmu_dt_regions[] = {
+	MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY_FROM_DT(zephyr_memory_region)
+};
+
+DT_FOREACH_STATUS_OKAY(zephyr_memory_region, ARM64_MMU_VALIDATE_DT_REGION)
+
+static inline void max_region_bounds(const struct arm_mmu_region *regions,
+				     size_t count,
+				     uintptr_t *max_va, uintptr_t *max_pa)
+{
+	for (size_t i = 0U; i < count; i++) {
+		*max_va = MAX(*max_va, regions[i].base_va + regions[i].size);
+		*max_pa = MAX(*max_pa, regions[i].base_pa + regions[i].size);
+	}
+}
+
+static inline void map_mmu_regions(struct arm_mmu_ptables *ptables,
+				   const struct arm_mmu_region *regions,
+				   size_t count, uint32_t extra_flags)
+{
+	for (size_t i = 0U; i < count; i++) {
+		add_arm_mmu_region(ptables, &regions[i], extra_flags);
+	}
+}
+
 static void setup_page_tables(struct arm_mmu_ptables *ptables)
 {
 	unsigned int index;
 	const struct arm_mmu_flat_range *range;
-	const struct arm_mmu_region *region;
 	uintptr_t max_va = 0, max_pa = 0;
 
 	MMU_DEBUG("xlat tables:\n");
@@ -903,11 +934,10 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 		MMU_DEBUG("%d: %p\n", index, xlat_tables + index * Ln_XLAT_NUM_ENTRIES);
 	}
 
-	for (index = 0U; index < mmu_config.num_regions; index++) {
-		region = &mmu_config.mmu_regions[index];
-		max_va = MAX(max_va, region->base_va + region->size);
-		max_pa = MAX(max_pa, region->base_pa + region->size);
-	}
+	max_region_bounds(mmu_config.mmu_regions, mmu_config.num_regions,
+			  &max_va, &max_pa);
+	max_region_bounds(mmu_dt_regions, ARRAY_SIZE(mmu_dt_regions),
+			  &max_va, &max_pa);
 
 	__ASSERT(max_va <= (1ULL << CONFIG_ARM64_VA_BITS),
 		 "Maximum VA not supported\n");
@@ -924,10 +954,10 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 	 * Create translation tables for user provided platform regions.
 	 * Those must not conflict with our default mapping.
 	 */
-	for (index = 0U; index < mmu_config.num_regions; index++) {
-		region = &mmu_config.mmu_regions[index];
-		add_arm_mmu_region(ptables, region, MT_NO_OVERWRITE);
-	}
+	map_mmu_regions(ptables, mmu_config.mmu_regions,
+			mmu_config.num_regions, MT_NO_OVERWRITE);
+	map_mmu_regions(ptables, mmu_dt_regions,
+			ARRAY_SIZE(mmu_dt_regions), MT_NO_OVERWRITE);
 
 	invalidate_tlb_all();
 }
@@ -956,11 +986,16 @@ static uint64_t get_tcr(int el)
 
 	/*
 	 * Translation table walk is cacheable, inner/outer WBWA and
-	 * inner shareable.  Due to Cortex-A57 erratum #822227 we must
-	 * set TG1[1] = 4KB.
+	 * inner shareable.
 	 */
-	tcr |= TCR_TG1_4K | TCR_TG0_4K | TCR_SHARED_INNER |
-	       TCR_ORGN_WBWA | TCR_IRGN_WBWA;
+#if defined(CONFIG_ARM64_PAGE_SIZE_64KB)
+	tcr |= TCR_TG1_64K | TCR_TG0_64K;
+#elif defined(CONFIG_ARM64_PAGE_SIZE_16KB)
+	tcr |= TCR_TG1_16K | TCR_TG0_16K;
+#else
+	tcr |= TCR_TG1_4K | TCR_TG0_4K;
+#endif
+	tcr |= TCR_SHARED_INNER | TCR_ORGN_WBWA | TCR_IRGN_WBWA;
 
 	return tcr;
 }
@@ -1014,9 +1049,6 @@ __attribute__((target("branch-protection=none")))
 void z_arm64_mm_init(bool is_primary_core)
 {
 	unsigned int flags = 0U;
-
-	__ASSERT(CONFIG_MMU_PAGE_SIZE == KB(4),
-		 "Only 4K page size is supported\n");
 
 	__ASSERT(GET_EL(read_currentel()) == MODE_EL1,
 		 "Exception level not EL1, MMU not enabled!\n");

@@ -433,7 +433,7 @@ int main(void)
 		       sensor_value_to_double(&temp2));
 
 		/* pressure */
-		printf("LPS22HH: Pressure:%.3f kpa\n",
+		printf("LPS22HH: Pressure:%.3f kPa\n",
 		       sensor_value_to_double(&press));
 
 		/* temperature */
@@ -441,7 +441,7 @@ int main(void)
 		       sensor_value_to_double(&temp3));
 
 		/* lis2mdl */
-		printf("LIS2MDL: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LIS2MDL: Magn (G): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&magn[0]),
 		       sensor_value_to_double(&magn[1]),
 		       sensor_value_to_double(&magn[2]));
@@ -449,17 +449,17 @@ int main(void)
 		printf("LIS2MDL: Temperature: %.1f C\n",
 		       sensor_value_to_double(&die_temp2));
 
-		printf("LIS2DW12: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LIS2DW12: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&accel2[0]),
 			sensor_value_to_double(&accel2[1]),
 			sensor_value_to_double(&accel2[2]));
 
-		printf("LSM6DSO: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSO: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&accel1[0]),
 			sensor_value_to_double(&accel1[1]),
 			sensor_value_to_double(&accel1[2]));
 
-		printf("LSM6DSO: GYro (dps): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSO: Gyro (rad/s): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&gyro[0]),
 			sensor_value_to_double(&gyro[1]),
 			sensor_value_to_double(&gyro[2]));
@@ -470,7 +470,7 @@ int main(void)
 		       sensor_value_to_double(&die_temp));
 #endif
 		if (lis2de12_on_dil24) {
-			printf("LIS2DE12: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+			printf("LIS2DE12: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 				sensor_value_to_double(&lis2de12_xl[0]),
 				sensor_value_to_double(&lis2de12_xl[1]),
 				sensor_value_to_double(&lis2de12_xl[2]));

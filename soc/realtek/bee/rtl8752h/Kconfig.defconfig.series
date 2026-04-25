@@ -21,4 +21,20 @@ config TIMESLICE_SIZE
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 
+if BT
+
+config NUM_METAIRQ_PRIORITIES
+	default 1
+
+config MAIN_STACK_SIZE
+	default 2048
+
+config BT_BUF_ACL_TX_COUNT
+	default 5
+
+config BT_BUF_EVT_RX_COUNT
+	default 8
+
+endif # BT
+
 endif # SOC_SERIES_RTL8752H

@@ -50,6 +50,10 @@
 #define MSPM0_HFCLK_ENABLED 1
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(canclk), okay)
+#define MSPM0_CANCLK_ENABLED 1
+#endif
+
 #define DT_MCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mclk))
 #define DT_LFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(lfclk))
 #define DT_HFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(hfclk))
@@ -65,6 +69,12 @@ static struct mspm0_clk_cfg mspm0_lfclk_cfg = {
 	.clk_freq = DT_PROP(DT_NODELABEL(lfclk), clock_frequency),
 };
 
+#if MSPM0_CANCLK_ENABLED
+static struct mspm0_clk_cfg mspm0_canclk_cfg = {
+	.clk_freq = DT_PROP(DT_NODELABEL(canclk), clock_frequency),
+};
+#endif
+
 static struct mspm0_clk_cfg mspm0_ulpclk_cfg = {
 	.clk_freq = DT_PROP(DT_NODELABEL(ulpclk), clock_frequency),
 	.clk_div = MSPM0_ULPCLK_DIV,
@@ -74,6 +84,12 @@ static struct mspm0_clk_cfg mspm0_ulpclk_cfg = {
 static struct mspm0_clk_cfg mspm0_mfpclk_cfg = {
 	.clk_freq = DT_PROP(DT_NODELABEL(mfpclk), clock_frequency),
 	.clk_div = MSPM0_MFPCLK_DIV,
+};
+#endif
+
+#if MSPM0_HFCLK_ENABLED
+static struct mspm0_clk_cfg mspm0_hfclk_cfg = {
+	.clk_freq = DT_PROP(DT_NODELABEL(hfclk), clock_frequency),
 };
 #endif
 
@@ -144,8 +160,19 @@ static int clock_mspm0_get_rate(const struct device *dev,
 		break;
 #endif
 
-	case MSPM0_CLOCK_MFCLK:
+#if MSPM0_CANCLK_ENABLED
 	case MSPM0_CLOCK_CANCLK:
+		*rate = mspm0_canclk_cfg.clk_freq;
+		break;
+#endif
+
+#if MSPM0_HFCLK_ENABLED
+	case MSPM0_CLOCK_HFCLK:
+		*rate = mspm0_hfclk_cfg.clk_freq;
+		break;
+#endif
+
+	case MSPM0_CLOCK_MFCLK:
 	default:
 		return -ENOTSUP;
 	}

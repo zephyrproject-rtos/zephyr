@@ -13,8 +13,15 @@ toolchain:
   - zephyr
 supported:
   - clock_control
+  - counter
+  - dma
   - gpio
-  - pinctrl
-  - uart
+  - i2c
   - i2s
+  - pinctrl
+  - pwm
+  - spi
+  - uart
+  - rtc
   - watchdog
+  - comparator

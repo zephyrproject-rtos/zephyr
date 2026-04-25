@@ -23,7 +23,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/math_extras.h>
@@ -68,7 +67,7 @@ LOG_MODULE_REGISTER(bt_l2cap, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_LE_PSM_IS_DYN(_psm) \
 	(_psm >= L2CAP_LE_PSM_DYN_START && _psm <= L2CAP_LE_PSM_DYN_END)
 
-#define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
+#define L2CAP_CONN_TIMEOUT	K_SECONDS(CONFIG_BT_L2CAP_CONN_RTX_TIMEOUT)
 #define L2CAP_DISC_TIMEOUT	K_SECONDS(2)
 /** @brief Local L2CAP RTX (Response Timeout eXpired)
  *
@@ -2754,6 +2753,15 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 		chan->_sdu = chan->chan.ops->alloc_buf(&chan->chan);
 		if (!chan->_sdu) {
 			LOG_ERR("Unable to allocate buffer for SDU");
+			bt_l2cap_chan_disconnect(&chan->chan);
+			return;
+		}
+
+		if (chan->_sdu->user_data_size < sizeof(uint16_t)) {
+			LOG_ERR("SDU buffer user_data_size %u is too small",
+				chan->_sdu->user_data_size);
+			net_buf_unref(chan->_sdu);
+			chan->_sdu = NULL;
 			bt_l2cap_chan_disconnect(&chan->chan);
 			return;
 		}

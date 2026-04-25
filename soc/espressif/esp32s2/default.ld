@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Cadence Design Systems, Inc.
  * Copyright (c) 2017 Intel Corporation
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -187,9 +187,9 @@ SECTIONS
      * 15. Flash offset (LMA) for start of IROM region
      * 16. Size of IROM region
      */
-    LONG(ADDR(.flash.text))
-    LONG(LOADADDR(.flash.text))
-    LONG(SIZEOF(.flash.text))
+    LONG(ADDR(.text))
+    LONG(LOADADDR(.text))
+    LONG(SIZEOF(.text))
 
     /* DROM metadata:
      * 17. Destination address (VMA) for DROM region
@@ -752,10 +752,11 @@ SECTIONS
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* !CONFIG_BOOTLOADER_MCUBOOT */
 
-  #include <snippets-data-sections.ld>
   #include <zephyr/linker/common-ram.ld>
+  #include <snippets-data-sections.ld>
   #include <snippets-ram-sections.ld>
   #include <zephyr/linker/cplusplus-ram.ld>
+  #include <zephyr/linker/kobject-data.ld>
 
   /* logging sections should be placed in RAM area to avoid flash cache disabled issues */
   #pragma push_macro("GROUP_ROM_LINK_IN")
@@ -787,8 +788,9 @@ SECTIONS
     *(.sbss2.*)
     *(.gnu.linkonce.sb2.*)
     *(.dynbss)
-    *(.bss)
-    *(.bss.*)
+
+#include <esp_spiram_relocate_bss.ld.inc>
+
     *(.share.mem)
     *(.gnu.linkonce.b.*)
     *(COMMON)
@@ -820,12 +822,17 @@ SECTIONS
     *(.ext_ram.bss*)
     . = ALIGN(16);
 
+#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
+    . = ALIGN(16);
+
     /* Custom modules sections list */
     KEEP(*(.lvgl_buf*))
     . = ALIGN(16);
     KEEP(*(.lvgl_heap*))
     . = ALIGN(16);
     KEEP(*(.mbedtls_heap*))
+    . = ALIGN(16);
+    KEEP(*(.ot_msg_pool*))
     . = ALIGN(16);
 
     _ext_ram_bss_end = ABSOLUTE(.);
@@ -844,11 +851,11 @@ SECTIONS
     . = ALIGN(4);
     *(.noinit)
     *(.noinit.*)
-#ifdef CONFIG_LLEXT
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
     *(.llext_heap)
     *(.llext_ext_heap)
     *(.llext_metadata_heap)
-#endif /* CONFIG_LLEXT */
+#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     . = ALIGN(16);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -860,18 +867,18 @@ SECTIONS
 
   /* --- END OF DRAM --- */
 
-  /* --- START OF .flash.text --- */
+  /* --- START OF .text --- */
 
-  _image_irom_start = LOADADDR(.flash.text);
-  _image_irom_size = SIZEOF(.flash.text);
-  _image_irom_vaddr = ADDR(.flash.text);
+  _image_irom_start = LOADADDR(.text);
+  _image_irom_size = SIZEOF(.text);
+  _image_irom_vaddr = ADDR(.text);
 
-  .flash.text_dummy (NOLOAD):
+  .text_dummy (NOLOAD):
   {
     . = ALIGN(CACHE_ALIGN);
   } GROUP_LINK_IN(ROMABLE_REGION)
 
-  .flash.text : ALIGN(4)
+  .text : ALIGN(4)
   {
     _stext = .;
     _instruction_reserved_start = ABSOLUTE(.);
@@ -912,7 +919,7 @@ SECTIONS
 
   } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
 
-  /* --- END OF .flash.text --- */
+  /* --- END OF .text --- */
 
   /* --- START OF .rodata --- */
 
@@ -983,8 +990,10 @@ SECTIONS
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
-  .flash.rodata_end :
+  .flash.rodata_end : ALIGN(0x10)
   {
+    /* Enforce flash segment size alignment */
+    LONG(0);
     . = ALIGN(CACHE_ALIGN);
     _rodata_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);

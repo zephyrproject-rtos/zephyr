@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(NOT CMAKE_DTS_PREPROCESSOR)
-  find_program(CMAKE_DTS_PREPROCESSOR arm-zephyr-eabi-gcc PATHS ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin NO_DEFAULT_PATH)
+  find_program(CMAKE_DTS_PREPROCESSOR arm-zephyr-eabi-gcc PATHS ${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi/bin NO_DEFAULT_PATH)
 endif()
 
 if(NOT CMAKE_DTS_PREPROCESSOR)

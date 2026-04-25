@@ -19,6 +19,7 @@ include:
       - dpd-wakeup-sequence
       - t-enter-dpd
       - t-exit-dpd
+      - t-reset-recovery
 
 properties:
   read-frequency:
@@ -86,13 +87,6 @@ properties:
     type: int
     description: |
       Minimum duration, in nanoseconds, of an active pulse on the RESET line.
-
-  t-reset-recovery:
-    type: int
-    description: |
-      Minimum time, in nanoseconds, the flash chip needs to recover after reset.
-      Such delay is performed when a GPIO or software reset is done, or after
-      power is supplied to the chip if the "supply-gpios" property is specified.
 
   transfer-timeout:
     type: int

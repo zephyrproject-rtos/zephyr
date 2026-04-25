@@ -5,9 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -50,12 +52,12 @@ static struct bt_bap_lc3_preset broadcast_preset_48_2_1 =
 	BT_BAP_LC3_UNICAST_PRESET_48_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
 					BT_AUDIO_CONTEXT_TYPE_MEDIA);
 
-struct bt_cap_initiator_broadcast_stream_param stream_params;
-struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
-struct bt_cap_initiator_broadcast_create_param create_param;
-struct bt_cap_broadcast_source *broadcast_source;
+static struct bt_cap_initiator_broadcast_stream_param stream_params;
+static struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
+static struct bt_cap_initiator_broadcast_create_param create_param;
+static struct bt_cap_broadcast_source *broadcast_source;
 static struct k_work_delayable audio_send_work;
-struct bt_le_ext_adv *ext_adv;
+static struct bt_le_ext_adv *ext_adv;
 
 static uint8_t tmap_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL), /* TMAS UUID */

@@ -24,7 +24,8 @@ struct bt_rfcomm_session {
 	struct k_work_delayable rtx_work;
 	/* Binary sem for aggregate fc */
 	struct k_sem fc;
-	struct bt_rfcomm_dlc *dlcs;
+	/* DLC list */
+	sys_slist_t dlcs;
 	uint16_t mtu;
 	uint8_t state;
 	bt_rfcomm_role_t role;

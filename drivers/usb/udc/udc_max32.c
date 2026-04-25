@@ -340,16 +340,10 @@ static int udc_max32_ep_enqueue(const struct device *dev, struct udc_ep_config *
 static int udc_max32_ep_dequeue(const struct device *dev, struct udc_ep_config *const cfg)
 {
 	unsigned int lock_key;
-	struct net_buf *buf;
 
 	lock_key = irq_lock();
 
-	buf = udc_buf_get_all(cfg);
-	if (buf) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	} else {
-		LOG_INF("ep 0x%02x queue is empty", cfg->addr);
-	}
+	udc_ep_cancel_queued(dev, cfg);
 
 	irq_unlock(lock_key);
 

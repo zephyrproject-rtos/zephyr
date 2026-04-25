@@ -17,9 +17,6 @@ config MAIN_STACK_SIZE
 
 if SMP
 
-config SCHED_IPI_SUPPORTED
-	default y
-
 config SCHED_CPU_MASK
 	default y if SCHED_SIMPLE
 

@@ -154,6 +154,10 @@ typedef struct pinctrl_soc_pin {
  *	[   16] I/O delay direction
  *	[18:17] I/O retime edge
  *	[   19] I/O retime enable
+ *
+ * These fields are only used when pinctrl with compatible
+ * "st,stm32h5-pinctrl" is in use:
+ *	[   12] High-speed low-voltage mode
  */
 
 /* GPIO Mode */
@@ -203,6 +207,12 @@ typedef struct pinctrl_soc_pin {
 #define STM32_IORETIME_EDGE_SHIFT	17
 #define STM32_IORETIME_ENABLE_SHIFT	19
 
+/* High-speed low-voltage mode (HSLVR) */
+#define STM32_HSLVR_DISABLE		(0x0 << STM32_HSLVR_SHIFT)
+#define STM32_HSLVR_ENABLED		(0x1 << STM32_HSLVR_SHIFT)
+#define STM32_HSLVR_MASK		0x1
+#define STM32_HSLVR_SHIFT		12
+
 /**
  * @brief Definitions for the various fields related to I/O synchronization
  *
@@ -249,6 +259,14 @@ typedef struct pinctrl_soc_pin {
 #define Z_PINCTRL_STM32_IOSYNC_INIT(node_id)	0
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl) */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h5_pinctrl)
+#define Z_PINCTRL_STM32_HSLV_INIT(node_id)                                                         \
+	(STM32_HSLVR_ENABLED * DT_PROP(node_id, st_hslv_enable))
+#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h5_pinctrl) */
+/** Dummy value for series without high-speed low-voltage mode */
+#define Z_PINCTRL_STM32_HSLV_INIT(node_id)	0
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h5_pinctrl) */
+
 /**
  * @brief Utility macro to initialize pincfg field in #pinctrl_pin_t (non-F1).
  *
@@ -265,7 +283,8 @@ typedef struct pinctrl_soc_pin {
 	 ((STM32_GPIO_OUTPUT * DT_PROP(node_id, output_low)) << STM32_MODER_SHIFT) | \
 	 ((STM32_GPIO_OUTPUT * DT_PROP(node_id, output_high)) << STM32_MODER_SHIFT) | \
 	 (DT_ENUM_IDX(node_id, slew_rate) << STM32_OSPEEDR_SHIFT) | \
-	 (Z_PINCTRL_STM32_IOSYNC_INIT(node_id)))
+	 (Z_PINCTRL_STM32_IOSYNC_INIT(node_id)) | \
+	 (Z_PINCTRL_STM32_HSLV_INIT(node_id)))
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
 /**

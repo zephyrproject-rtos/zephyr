@@ -274,7 +274,7 @@ int max30210_init_interrupt(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->interrupt_gpio)) {
-		LOG_ERR("Interrupt GPIO not ready\n");
+		LOG_ERR_DEVICE_NOT_READY(config->interrupt_gpio.port);
 		return -ENODEV;
 	}
 

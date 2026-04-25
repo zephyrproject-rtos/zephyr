@@ -42,7 +42,6 @@ static const struct bt_data sd[] = {
 
 static void bt_ready(int err)
 {
-	char addr_s[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t addr = {0};
 	size_t count = 1;
 
@@ -69,9 +68,8 @@ static void bt_ready(int err)
 	 */
 
 	bt_id_get(&addr, &count);
-	bt_addr_le_to_str(&addr, addr_s, sizeof(addr_s));
 
-	printk("Beacon started, advertising as %s\n", addr_s);
+	printk("Beacon started, advertising as %s\n", bt_addr_le_str(&addr));
 }
 
 int main(void)

@@ -1,0 +1,10 @@
+# ST STM32F777XI MCU configuration options
+# Copyright (c) 2026 Anand Kumar <anandvtu16158@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F777XX
+
+configdefault CPU_HAS_FPU_DOUBLE_PRECISION
+	default y
+
+endif # SOC_STM32F777XX

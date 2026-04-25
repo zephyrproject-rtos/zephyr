@@ -134,8 +134,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		lptim_pre_idle = esp32_lptim_hook_on_lpm_entry(timeout_us);
 		systimer_pre_idle = get_systimer_alarm();
 		timeout_idle = true;
-	} else {
-		timeout_idle = false;
 	}
 #else
 	ARG_UNUSED(idle);

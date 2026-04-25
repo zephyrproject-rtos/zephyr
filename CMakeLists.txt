@@ -1045,6 +1045,7 @@ zephyr_constants_library(
   NAME offsets
   SOURCE ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c
   INCLUDES ${ARCH_DIR}/${ARCH}/include
+  INCLUDES ${ARCH_DIR}/common/include
   DEPENDS heap_constants
 )
 set(OFFSETS_LIB offsets)
@@ -1979,6 +1980,26 @@ if(CONFIG_BUILD_OUTPUT_S19)
       ${KERNEL_S19_NAME}
       )
     set(BYPRODUCT_KERNEL_S19_NAME "${PROJECT_BINARY_DIR}/${KERNEL_S19_NAME}" CACHE FILEPATH "Kernel s19 file" FORCE)
+  endif()
+endif()
+
+if(CONFIG_BUILD_OUTPUT_VERILOG)
+  get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
+  if(verilog IN_LIST elfconvert_formats)
+    # Should we print a warning if case the tools does not support converting to verilog ?
+    list(APPEND
+      post_build_commands
+      COMMAND
+        $<TARGET_PROPERTY:bintools,elfconvert_command>
+        $<TARGET_PROPERTY:bintools,elfconvert_flag>
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>verilog
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_verilog_data_width>${CONFIG_BUILD_OUTPUT_VERILOG_DATA_WIDTH}
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_VERILOG_NAME}
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+    )
+    list(APPEND post_build_byproducts ${KERNEL_VERILOG_NAME})
+    set(BYPRODUCT_KERNEL_VERILOG_NAME "${PROJECT_BINARY_DIR}/${KERNEL_VERILOG_NAME}" CACHE FILEPATH "Kernel Verilog file" FORCE)
   endif()
 endif()
 

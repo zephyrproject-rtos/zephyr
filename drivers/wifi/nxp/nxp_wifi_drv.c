@@ -1,5 +1,5 @@
 /**
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  * @file nxp_wifi_drv.c
@@ -282,12 +282,14 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 			return 0;
 		}
 
+#ifdef CONFIG_NXP_WIFI_SOFTAP_DHCP_SERVER
 		if (net_dhcpv4_server_start(g_uap.netif, &base_addr) < 0) {
 			LOG_ERR("DHCP Server start failed");
 			return 0;
 		}
 
 		LOG_DBG("DHCP Server started successfully");
+#endif
 		s_nxp_wifi_UapActivated = true;
 #ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 		wifi_mgmt_raise_ap_enable_result_event(g_uap.netif, WIFI_STATUS_AP_SUCCESS);
@@ -366,8 +368,10 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 			net_if_ipv4_addr_rm(g_uap.netif, &dhcps_addr4);
 		}
 
+#ifdef CONFIG_NXP_WIFI_SOFTAP_DHCP_SERVER
 		net_dhcpv4_server_stop(g_uap.netif);
 		LOG_DBG("DHCP Server stopped successfully");
+#endif
 		s_nxp_wifi_UapActivated = false;
 #ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 		wifi_mgmt_raise_ap_disable_result_event(g_uap.netif, WIFI_STATUS_AP_SUCCESS);
@@ -1716,6 +1720,7 @@ static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *
 				wlan_configure_listen_interval(0);
 			}
 			break;
+#ifdef CONFIG_NXP_WIFI_WMM_UAPSD
 		case WIFI_PS_PARAM_MODE:
 			if (params->mode == WIFI_PS_MODE_WMM) {
 				ret = wlan_set_wmm_uapsd(1);
@@ -1730,6 +1735,7 @@ static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *
 					status = NXP_WIFI_RET_FAIL;
 				}
 			}
+#endif
 			break;
 		case WIFI_PS_PARAM_TIMEOUT:
 			wlan_configure_delay_to_ps((int)params->timeout_ms);
@@ -1779,11 +1785,15 @@ int nxp_wifi_get_power_save(const struct device *dev, struct wifi_ps_config *con
 				config->ps_params.wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM;
 			}
 
+#ifdef CONFIG_NXP_WIFI_WMM_UAPSD
 			if (wlan_is_wmm_uapsd_enabled()) {
 				config->ps_params.mode = WIFI_PS_MODE_WMM;
 			} else {
 				config->ps_params.mode = WIFI_PS_MODE_LEGACY;
 			}
+#else
+			config->ps_params.mode = WIFI_PS_MODE_LEGACY;
+#endif
 		} else {
 			status = NXP_WIFI_RET_FAIL;
 		}
@@ -2188,9 +2198,6 @@ static int nxp_wifi_set_config(const struct device *dev, enum ethernet_config_ty
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(if_handle->mac_address, config->mac_address.addr, 6);
 
-		net_if_set_link_addr(if_handle->netif, if_handle->mac_address,
-				     sizeof(if_handle->mac_address), NET_LINK_ETHERNET);
-
 		if (if_handle->state.interface == WLAN_BSS_TYPE_STA) {
 			if (wlan_set_sta_mac_addr(if_handle->mac_address)) {
 				LOG_ERR("Failed to set Wi-Fi MAC Address");
@@ -2248,6 +2255,7 @@ void device_pm_dump_wakeup_source(void)
 }
 #endif
 
+#ifdef CONFIG_NXP_WIFI_HOST_SLEEP
 static bool nxp_wifi_wlan_wakeup(void)
 {
 #ifdef CONFIG_NXP_RW610
@@ -2337,6 +2345,13 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 	}
 	return ret;
 }
+#else
+static int device_wlan_pm_action(const struct device *dev, enum pm_device_action pm_action)
+{
+	/* Host sleep not enabled, no PM actions needed */
+	return 0;
+}
+#endif
 
 PM_DEVICE_DT_INST_DEFINE(0, device_wlan_pm_action);
 #endif

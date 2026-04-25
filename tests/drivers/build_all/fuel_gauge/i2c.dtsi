@@ -58,3 +58,13 @@ hy4245@7 {
 	reg = <0x7>;
 	status = "okay";
 };
+
+adp5360@8 {
+	compatible = "adi,adp5360";
+	reg = <0x8>;
+
+	fuel-gauge {
+		compatible = "adi,adp5360-fuel-gauge";
+		status = "okay";
+	};
+};

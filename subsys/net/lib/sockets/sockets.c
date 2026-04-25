@@ -800,7 +800,8 @@ static inline int z_vrfy_zsock_ioctl_impl(int sock, unsigned long request, va_li
 	case ZFD_IOCTL_FIONBIO:
 		break;
 
-	case ZFD_IOCTL_FIONREAD: {
+	case ZFD_IOCTL_FIONREAD:
+	case ZFD_IOCTL_FIONWRITE: {
 		int *avail;
 
 		avail = va_arg(args, int *);

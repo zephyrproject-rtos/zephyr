@@ -17,8 +17,10 @@ if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
   set(signed_hex ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.signed.hex)
 
   pse84_add_metadata_secure_hex(${unsigned_hex} ${signed_hex})
-else()
-  zephyr_sources_ifdef(CONFIG_CPU_CORTEX_M55 soc_pse84_m55.c)
+elseif(CONFIG_CPU_CORTEX_M33)
+  zephyr_sources(soc_pse84_m33_ns.c)
+elseif(CONFIG_CPU_CORTEX_M55)
+  zephyr_sources(soc_pse84_m55.c)
 endif()
 
 zephyr_include_directories(security_config)
@@ -45,3 +47,6 @@ set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/soc/infineon/edge/pse84/linker_exclude_sysl
 
 zephyr_linker_sources_ifdef(CONFIG_CPU_CORTEX_M33 RWDATA rwdata.ld)
 zephyr_linker_sources_ifdef(CONFIG_CPU_CORTEX_M55 RWDATA rwdata.ld)
+
+zephyr_linker_sources_ifdef(CONFIG_CPU_CORTEX_M55 ITCM_SECTION itcm_mem.ld)
+zephyr_linker_sources_ifdef(CONFIG_CPU_CORTEX_M33 RAMFUNC_SECTION ramfunc_mem.ld)

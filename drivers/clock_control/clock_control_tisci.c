@@ -58,7 +58,7 @@ static enum clock_control_status tisci_get_status(const struct device *dev,
 	bool curr_state = true;
 	int ret;
 
-	ret = tisci_cmd_clk_is_on(dmsc, req->clk_id, req->dev_id, &req_state, &curr_state);
+	ret = tisci_cmd_clk_is_on(dmsc, req->dev_id, req->clk_id, &req_state, &curr_state);
 	if (ret) {
 		LOG_ERR("Failed to get clock ON status: dev_id=%u clk_id=%u err=%d", req->dev_id,
 			req->clk_id, ret);
@@ -73,7 +73,7 @@ static enum clock_control_status tisci_get_status(const struct device *dev,
 
 	curr_state = true;
 
-	ret = tisci_cmd_clk_is_off(dmsc, req->clk_id, req->dev_id, NULL, &curr_state);
+	ret = tisci_cmd_clk_is_off(dmsc, req->dev_id, req->clk_id, NULL, &curr_state);
 	if (ret) {
 		LOG_ERR("Failed to get clock OFF status: dev_id=%u clk_id=%u err=%d", req->dev_id,
 			req->clk_id, ret);

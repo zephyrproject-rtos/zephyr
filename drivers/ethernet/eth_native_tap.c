@@ -82,6 +82,33 @@ static const char *ipv4_nm_cmd_opt;
 static const char *ipv4_gw_cmd_opt;
 #endif
 
+static void update_pkt_timestamp(struct net_pkt *pkt)
+{
+	struct net_ptp_time timestamp = {
+		.second = UINT64_MAX,
+		.nanosecond = UINT32_MAX,
+	};
+
+	if (eth_clock_gettime(&timestamp.second, &timestamp.nanosecond) < 0) {
+		LOG_DBG("Failed to retrieve packet timestamp");
+	}
+
+	net_pkt_set_timestamp(pkt, &timestamp);
+}
+
+static inline bool queue_tx_timestamp(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
+	net_if_add_tx_timestamp(pkt);
+
+	return true;
+#else
+	ARG_UNUSED(pkt);
+
+	return false;
+#endif
+}
+
 
 #define DEFINE_RX_THREAD(x, _)						\
 	K_KERNEL_STACK_DEFINE(rx_thread_stack_##x,			\
@@ -145,36 +172,38 @@ static void update_pkt_priority(struct gptp_hdr *hdr, struct net_pkt *pkt)
 	}
 }
 
-static void update_gptp(struct net_if *iface, struct net_pkt *pkt,
+static bool update_gptp(struct net_if *iface, struct net_pkt *pkt,
 			bool send)
 {
-	struct net_ptp_time timestamp;
 	struct gptp_hdr *hdr;
 	int ret;
 
-	ret = eth_clock_gettime(&timestamp.second, &timestamp.nanosecond);
-	if (ret < 0) {
-		return;
-	}
-
-	net_pkt_set_timestamp(pkt, &timestamp);
-
 	hdr = check_gptp_msg(iface, pkt, send);
 	if (!hdr) {
-		return;
+		return false;
 	}
 
 	if (send) {
 		ret = need_timestamping(hdr);
 		if (ret) {
-			net_if_add_tx_timestamp(pkt);
+			return queue_tx_timestamp(pkt);
 		}
 	} else {
 		update_pkt_priority(hdr, pkt);
 	}
+
+	return false;
 }
 #else
-#define update_gptp(iface, pkt, send)
+static inline bool update_gptp(struct net_if *iface, struct net_pkt *pkt,
+			       bool send)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(send);
+
+	return false;
+}
 #endif /* CONFIG_NET_GPTP */
 
 static int eth_send(const struct device *dev, struct net_pkt *pkt)
@@ -188,16 +217,23 @@ static int eth_send(const struct device *dev, struct net_pkt *pkt)
 		return ret;
 	}
 
-	update_gptp(net_pkt_iface(pkt), pkt, true);
-
 	LOG_DBG("Send pkt %p len %d", pkt, count);
 
 	ret = nsi_host_write(ctx->dev_fd, ctx->send, count);
 	if (ret < 0) {
 		LOG_DBG("Cannot send pkt %p (%d)", pkt, ret);
+		return ret;
 	}
 
-	return ret < 0 ? ret : 0;
+	/* Native TAP can only provide an approximate host-side TX timestamp. */
+	update_pkt_timestamp(pkt);
+	bool timestamp_queued = update_gptp(net_pkt_iface(pkt), pkt, true);
+
+	if (!timestamp_queued && net_pkt_is_tx_timestamping(pkt)) {
+		(void)queue_tx_timestamp(pkt);
+	}
+
+	return 0;
 }
 
 static struct net_pkt *prepare_pkt(struct eth_context *ctx,
@@ -242,7 +278,8 @@ static int read_data(struct eth_context *ctx, int fd)
 		return status;
 	}
 
-	update_gptp(iface, pkt, false);
+	update_pkt_timestamp(pkt);
+	(void)update_gptp(iface, pkt, false);
 
 	if (net_recv_data(iface, pkt) < 0) {
 		net_pkt_unref(pkt);
@@ -469,27 +506,11 @@ static int set_config(const struct device *dev,
 
 		memcpy(context->mac_addr, config->mac_address.addr,
 		       sizeof(context->mac_addr));
-		ret = net_if_set_link_addr(context->iface, context->mac_addr,
-					   sizeof(context->mac_addr),
-					   NET_LINK_ETHERNET);
+		return 0;
 	}
 
 	return ret;
 }
-
-#if defined(CONFIG_NET_VLAN)
-static int vlan_setup(const struct device *dev, struct net_if *iface,
-		      uint16_t tag, bool enable)
-{
-	if (enable) {
-		net_lldp_set_lldpdu(iface);
-	} else {
-		net_lldp_unset_lldpdu(iface);
-	}
-
-	return 0;
-}
-#endif /* CONFIG_NET_VLAN */
 
 static const struct ethernet_api eth_if_api = {
 	.iface_api.init = eth_iface_init,
@@ -497,10 +518,6 @@ static const struct ethernet_api eth_if_api = {
 	.get_capabilities = eth_native_tap_get_capabilities,
 	.set_config = set_config,
 	.send = eth_send,
-
-#if defined(CONFIG_NET_VLAN)
-	.vlan_setup = vlan_setup,
-#endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = get_stats,
 #endif

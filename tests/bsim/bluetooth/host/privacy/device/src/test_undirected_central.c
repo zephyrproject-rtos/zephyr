@@ -127,15 +127,13 @@ static void check_addresses(const bt_addr_le_t *peer_addr)
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	int err;
 
 	if (default_conn) {
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
-	LOG_INF("Device found: %s (RSSI %d)", addr_str, info->rssi);
+	LOG_INF("Device found: %s (RSSI %d)", bt_addr_le_str(info->addr), info->rssi);
 
 	/* In the case of extended advertising and active scanning, this
 	 * callback will be called twice: once for the AUX_ADV_IND and
@@ -172,7 +170,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 					BT_LE_CONN_PARAM_DEFAULT,
 					&default_conn);
 		if (err) {
-			LOG_DBG("Create conn to %s failed (%u)", addr_str, err);
+			LOG_DBG("Create conn to %s failed (%u)", bt_addr_le_str(info->addr), err);
 			start_scan();
 		}
 	}
@@ -200,24 +198,16 @@ static void start_scan(void)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("Connected: %s", addr);
+	LOG_DBG("Connected: %s", bt_conn_dst_str(conn));
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	if (conn != default_conn) {
 		return;
 	}
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr, reason);
+	LOG_DBG("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn), reason);
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
@@ -228,13 +218,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 			      const bt_addr_le_t *identity)
 {
-	char addr_identity[BT_ADDR_LE_STR_LEN];
-	char addr_rpa[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
-	bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
-
-	LOG_DBG("Identity resolved %s -> %s", addr_rpa, addr_identity);
+	LOG_DBG("Identity resolved %s -> %s", bt_addr_le_str(rpa), bt_addr_le_str(identity));
 
 	bt_addr_le_copy(&peer_rpa, rpa);
 	bt_addr_le_copy(&peer_identity, identity);

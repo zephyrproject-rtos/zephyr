@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2025-2026 Espressif Systems (Shanghai) Co., Ltd.
  */
 
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -63,4 +63,11 @@
 		reg = <0xa>;
 		timer = <0>;
 	};
+};
+
+&rtc_timer {
+	status = "okay";
+
+	/* Configure device as wakeup source */
+	wakeup-source;
 };

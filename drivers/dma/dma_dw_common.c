@@ -63,7 +63,7 @@ void dw_dma_isr(const struct device *dev)
 		chan_data = &dev_data->chan[channel];
 
 		if (chan_data->dma_blkcallback) {
-			LOG_DBG("%s: Dispatching block complete callback fro channel %d", dev->name,
+			LOG_DBG("%s: Dispatching block complete callback for channel %d", dev->name,
 				channel);
 
 			/* Ensure the linked list (chan_data->lli) is

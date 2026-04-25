@@ -85,7 +85,7 @@ properties:
   st,iodef-float:
     type: boolean
     description: |
-      Set default state (not acqusition) of all channel I/Os to floating.
+      Set default state (not acquisition) of all channel I/Os to floating.
       push-pull down by default.
 
 child-binding:
@@ -117,5 +117,5 @@ child-binding:
       type: boolean
       description: |
         Use channel as shield. This configures group but
-        does not enable it for acqusition. channel-io is used
+        does not enable it for acquisition. channel-io is used
         as shield pin and can only have values 1, 2, 4 or 8.

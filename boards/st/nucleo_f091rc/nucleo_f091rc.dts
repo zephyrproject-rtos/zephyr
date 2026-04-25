@@ -59,6 +59,7 @@
 		pwm-led0 = &green_pwm_led;
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
+		rtc = &rtc;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 	};
@@ -211,4 +212,8 @@
 			reg = <0x0003e800 DT_SIZE_K(6)>;
 		};
 	};
+};
+
+&crc {
+	status = "okay";
 };

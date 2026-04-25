@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		signal-gpios = <&gpio_prt17 5 0>, <&gpio_prt10 4 0>;
+	};
+};
+
+&gpio_prt10 {
+	status = "okay";
+};
+
+&gpio_prt17 {
+	status = "okay";
+};
+
+&lpcomp0 {
+	status = "okay";
+};
+
+&lpcomp0_0 {
+	status = "okay";
+	output-mode = "direct";
+	power = "ulp";
+	intr-type = "both";
+	input-p = "gpio";
+	input-n = "local_vref";
+};
+
+&lpcomp0_1 {
+	status = "disabled";
+	output-mode = "direct";
+	power = "ulp";
+	intr-type = "both";
+	input-p = "gpio";
+	input-n = "local_vref";
+};

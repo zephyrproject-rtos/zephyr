@@ -555,7 +555,7 @@ static int dma_xilinx_axi_dma_start(const struct device *dev, uint32_t channel)
 
 #ifdef CONFIG_DMA_64BIT
 	dma_xilinx_axi_dma_write_reg(channel_data, XILINX_AXI_DMA_REG_TAILDESC,
-				     (uint32_t)(((uintptr_t)current_descriptor) & 0xffffffff));
+				     (uint32_t)(((uintptr_t)current_descriptor) & UINT32_MAX));
 	dma_xilinx_axi_dma_write_reg(channel_data, XILINX_AXI_DMA_REG_TAILDESC_MSB,
 				     (uint32_t)(((uintptr_t)current_descriptor) >> 32));
 #else
@@ -593,6 +593,9 @@ static int dma_xilinx_axi_dma_stop(const struct device *dev, uint32_t channel)
 
 	/* commit before returning to caller */
 	barrier_dmem_fence_full();
+
+	/* Force soft reset on next dma_config() call */
+	data->device_has_been_reset = false;
 
 	return 0;
 }
@@ -673,7 +676,7 @@ static inline int dma_xilinx_axi_dma_transfer_block(const struct device *dev, ui
 	}
 
 #ifdef CONFIG_DMA_64BIT
-	current_descriptor->buffer_address = (uint32_t)buffer_addr & 0xffffffff;
+	current_descriptor->buffer_address = (uint32_t)buffer_addr & UINT32_MAX;
 	current_descriptor->buffer_address_msb = (uint32_t)(buffer_addr >> 32);
 #else
 	current_descriptor->buffer_address = buffer_addr;
@@ -804,11 +807,11 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 			"SG descriptor address %p (offset %u) was not aligned to 64-byte boundary!",
 			(void *)nextdesc, i);
 
-		low_bytes = (uint32_t)(((uint64_t)nextdesc) & 0xffffffff);
+		low_bytes = (uint32_t)(((uint64_t)nextdesc) & UINT32_MAX);
 		data->channels[channel].descriptors[i].nxtdesc = low_bytes;
 
 #ifdef CONFIG_DMA_64BIT
-		high_bytes = (uint32_t)(((uint64_t)nextdesc >> 32) & 0xffffffff);
+		high_bytes = (uint32_t)(((uint64_t)nextdesc >> 32) & UINT32_MAX);
 		data->channels[channel].descriptors[i].nxtdesc_msb = high_bytes;
 #endif
 		dma_xilinx_axi_dma_flush_dcache((void *)&data->channels[channel].descriptors[i],
@@ -818,7 +821,7 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 #ifdef CONFIG_DMA_64BIT
 	dma_xilinx_axi_dma_write_reg(
 		&data->channels[channel], XILINX_AXI_DMA_REG_CURDESC,
-		(uint32_t)(((uintptr_t)&data->channels[channel].descriptors[0]) & 0xffffffff));
+		(uint32_t)(((uintptr_t)&data->channels[channel].descriptors[0]) & UINT32_MAX));
 	dma_xilinx_axi_dma_write_reg(
 		&data->channels[channel], XILINX_AXI_DMA_REG_CURDESC_MSB,
 		(uint32_t)(((uintptr_t)&data->channels[channel].descriptors[0]) >> 32));

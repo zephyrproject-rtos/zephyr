@@ -81,27 +81,6 @@ struct net_buf *udc_buf_get(struct udc_ep_config *const ep_cfg)
 	return k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
 }
 
-struct net_buf *udc_buf_get_all(struct udc_ep_config *const ep_cfg)
-{
-	struct net_buf *buf;
-
-	buf = k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
-	if (!buf) {
-		return NULL;
-	}
-
-	LOG_DBG("ep 0x%02x dequeue %p", ep_cfg->addr, buf);
-	for (struct net_buf *n = buf; !k_fifo_is_empty(&ep_cfg->fifo); n = n->frags) {
-		n->frags = k_fifo_get(&ep_cfg->fifo, K_NO_WAIT);
-		LOG_DBG("|-> %p ", n->frags);
-		if (n->frags == NULL) {
-			break;
-		}
-	}
-
-	return buf;
-}
-
 struct net_buf *udc_buf_peek(struct udc_ep_config *const ep_cfg)
 {
 	return k_fifo_peek_head(&ep_cfg->fifo);
@@ -125,6 +104,15 @@ void udc_ep_buf_clear_zlp(const struct net_buf *const buf)
 	struct udc_buf_info *bi = udc_get_buf_info(buf);
 
 	bi->zlp = false;
+}
+
+void udc_ep_cancel_queued(const struct device *dev, struct udc_ep_config *const cfg)
+{
+	struct net_buf *buf;
+
+	for (buf = udc_buf_get(cfg); buf; buf = udc_buf_get(cfg)) {
+		udc_submit_ep_event(dev, buf, -ECONNABORTED);
+	}
 }
 
 void udc_setup_received(const struct device *dev, const void *const setup)
@@ -230,6 +218,7 @@ static bool ep_check_config(const struct device *dev,
 {
 	bool dir_is_in = USB_EP_DIR_IS_IN(ep);
 	bool dir_is_out = USB_EP_DIR_IS_OUT(ep);
+	uint8_t transfer_type = ep_attrib_get_transfer(attributes);
 
 	LOG_DBG("cfg d:%c|%c t:%c|%c|%c|%c, mps %u",
 		cfg->caps.in ? 'I' : '-',
@@ -239,6 +228,14 @@ static bool ep_check_config(const struct device *dev,
 		cfg->caps.interrupt ? 'I' : '-',
 		cfg->caps.control ? 'C' : '-',
 		cfg->caps.mps);
+	LOG_DBG("req d:%c|%c t:%c|%c|%c|%c, mps %u",
+		dir_is_in ? 'I' : '-',
+		dir_is_out ? 'O' : '-',
+		(transfer_type == USB_EP_TYPE_ISO) ? 'S' : '-',
+		(transfer_type == USB_EP_TYPE_BULK) ? 'B' : '-',
+		(transfer_type == USB_EP_TYPE_INTERRUPT) ? 'I' : '-',
+		(transfer_type == USB_EP_TYPE_CONTROL) ? 'C' : '-',
+		mps);
 
 	if (dir_is_out && !cfg->caps.out) {
 		return false;
@@ -252,7 +249,7 @@ static bool ep_check_config(const struct device *dev,
 		return false;
 	}
 
-	switch (ep_attrib_get_transfer(attributes)) {
+	switch (transfer_type) {
 	case USB_EP_TYPE_BULK:
 		if (!cfg->caps.bulk) {
 			return false;

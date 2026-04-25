@@ -258,6 +258,8 @@ struct numaker_tcpc_data {
 		tcpc_vconn_control_cb_t vconn_cb;
 		/* VCONN discharge callback function */
 		tcpc_vconn_discharge_cb_t vconn_discharge_cb;
+		/* USB-C connector device passed to VCONN callbacks */
+		const struct device *usbc_dev;
 	} dpm;
 };
 
@@ -1813,11 +1815,13 @@ static int numaker_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
  *	  the VCONN control capabilities of the TCPC
  */
 static void numaker_tcpc_set_vconn_discharge_cb(const struct device *dev,
-						tcpc_vconn_discharge_cb_t cb)
+						tcpc_vconn_discharge_cb_t cb,
+						const struct device *usbc_dev)
 {
 	struct numaker_tcpc_data *data = dev->data;
 
 	data->dpm.vconn_discharge_cb = cb;
+	data->dpm.usbc_dev = usbc_dev;
 }
 
 /**
@@ -1825,11 +1829,13 @@ static void numaker_tcpc_set_vconn_discharge_cb(const struct device *dev,
  *	  unable to or the system is configured in a way that does not use
  *	  the VCONN control capabilities of the TCPC
  */
-static void numaker_tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb)
+static void numaker_tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb,
+				      const struct device *usbc_dev)
 {
 	struct numaker_tcpc_data *data = dev->data;
 
 	data->dpm.vconn_cb = vconn_cb;
+	data->dpm.usbc_dev = usbc_dev;
 }
 
 /**
@@ -1851,7 +1857,7 @@ static int numaker_tcpc_vconn_discharge(const struct device *dev, bool enable)
 
 	/* Use DPM supplied VCONN discharge */
 	if (data->dpm.vconn_discharge_cb) {
-		return data->dpm.vconn_discharge_cb(dev, polarity, enable);
+		return data->dpm.vconn_discharge_cb(dev, data->dpm.usbc_dev, polarity, enable);
 	}
 
 	/* Use GPIO VCONN discharge */
@@ -1886,7 +1892,7 @@ static int numaker_tcpc_set_vconn(const struct device *dev, bool enable)
 
 	/* Use DPM supplied VCONN */
 	if (data->dpm.vconn_cb) {
-		return data->dpm.vconn_cb(dev, polarity, enable);
+		return data->dpm.vconn_cb(dev, data->dpm.usbc_dev, polarity, enable);
 	}
 
 	/* Use UTCPD VCONN */

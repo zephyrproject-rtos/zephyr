@@ -9,7 +9,6 @@
 #include <zephyr/arch/x86/cpuid.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
-#include <zephyr/spinlock.h>
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/irq.h>
 
@@ -87,7 +86,6 @@ struct apic_timer_lvt {
 	uint32_t unused2 : 13;
 };
 
-static struct k_spinlock lock;
 static uint64_t last_cycle;
 static uint64_t last_tick;
 static uint32_t last_elapsed;
@@ -129,7 +127,7 @@ static void isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = sys_clock_lock();
 	uint64_t curr_cycle = rdtsc();
 	uint64_t delta_cycles = curr_cycle - last_cycle;
 	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
@@ -144,8 +142,7 @@ static void isr(const void *arg)
 		set_trigger(next_cycle);
 	}
 
-	k_spin_unlock(&lock, key);
-	sys_clock_announce(delta_ticks);
+	sys_clock_announce_locked(delta_ticks, key);
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
@@ -156,7 +153,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t next_cycle;
 
 	if (ticks == K_TICKS_FOREVER) {
@@ -180,8 +176,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		next_cycle = UINT64_MAX;
 	}
 	set_trigger(next_cycle);
-
-	k_spin_unlock(&lock, key);
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -190,13 +184,11 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t curr_cycle = rdtsc();
 	uint64_t delta_cycles = curr_cycle - last_cycle;
 	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
 
 	last_elapsed = delta_ticks;
-	k_spin_unlock(&lock, key);
 	return delta_ticks;
 }
 

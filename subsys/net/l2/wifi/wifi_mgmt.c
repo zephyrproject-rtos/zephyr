@@ -104,6 +104,19 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	}
 }
 
+const char *wifi_wep_key_type_txt(enum wifi_wep_key_type wep_key_type)
+{
+	switch (wep_key_type) {
+	case WIFI_WEP_KEY_TYPE_64:
+		return " (64-bit key)";
+	case WIFI_WEP_KEY_TYPE_128:
+		return " (128-bit key)";
+	case WIFI_WEP_KEY_TYPE_UNKNOWN:
+	default:
+		return "";
+	}
+}
+
 const char *wifi_wpa3_enterprise_txt(enum wifi_wpa3_enterprise_type wpa3_ent)
 {
 	switch (wpa3_ent) {
@@ -735,6 +748,16 @@ static int wifi_ap_enable(uint64_t mgmt_request, struct net_if *iface,
 
 	if (!net_if_is_admin_up(iface)) {
 		return -ENETDOWN;
+	}
+
+	if (params->psk_length != 0 && (params->psk_length < 8 || params->psk_length > 64)) {
+		return -EINVAL;
+	}
+
+	if (params->sae_password_length != 0 &&
+	    (params->sae_password_length < 8 ||
+	    params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
+		return -EINVAL;
 	}
 
 	return wifi_mgmt_api->ap_enable(dev, params);
@@ -1618,6 +1641,11 @@ void wifi_mgmt_raise_ap_sta_disconnected_event(struct net_if *iface,
 #if defined(CONFIG_WIFI_CREDENTIALS_STATIC)
 BUILD_ASSERT(sizeof(CONFIG_WIFI_CREDENTIALS_STATIC_SSID) != 1,
 	     "CONFIG_WIFI_CREDENTIALS_STATIC_SSID required");
+BUILD_ASSERT(sizeof(CONFIG_WIFI_CREDENTIALS_STATIC_SSID) - 1 <= WIFI_SSID_MAX_LEN,
+	     "CONFIG_WIFI_CREDENTIALS_STATIC_SSID too long");
+BUILD_ASSERT(sizeof(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD) - 1 <=
+		     WIFI_CREDENTIALS_MAX_PASSWORD_LEN,
+	     "CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD too long");
 #endif /* defined(CONFIG_WIFI_CREDENTIALS_STATIC) */
 
 /**
@@ -1818,7 +1846,7 @@ static int add_static_network_config(struct net_if *iface)
 	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD));
 
 	LOG_DBG("Adding statically configured WiFi network [%s] to internal list.",
-		creds.header.ssid);
+		CONFIG_WIFI_CREDENTIALS_STATIC_SSID);
 
 	return add_network_from_credentials_struct_personal(&creds, iface);
 #else

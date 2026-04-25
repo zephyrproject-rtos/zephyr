@@ -44,27 +44,20 @@ static void locked_cb(struct bt_conn *conn,
 		bt_shell_error("Server %s the device",
 			       locked ? "locked" : "released");
 	} else {
-		char addr[BT_ADDR_LE_STR_LEN];
-
-		conn_addr_str(conn, addr, sizeof(addr));
-
 		bt_shell_print("Client %s %s the device",
-			       addr, locked ? "locked" : "released");
+			       bt_conn_dst_str(conn), locked ? "locked" : "released");
 	}
 }
 
 static uint8_t sirk_read_req_cb(struct bt_conn *conn,
 				struct bt_csip_set_member_svc_inst *inst)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	static const char *const rsp_strings[] = {
 		"Accept", "Accept Enc", "Reject", "OOB only"
 	};
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	bt_shell_print("Client %s requested to read the sirk. Responding with %s",
-		       addr, rsp_strings[sirk_read_rsp]);
+		       bt_conn_dst_str(conn), rsp_strings[sirk_read_rsp]);
 
 	return sirk_read_rsp;
 }
@@ -281,10 +274,7 @@ static int cmd_csip_set_member_get_info(const struct shell *sh, size_t argc, cha
 	shell_print(sh, "\tLockable: %s", info.lockable ? "true" : "false");
 	shell_print(sh, "\tLocked: %s", info.locked ? "true" : "false");
 	if (info.locked) {
-		char addr_str[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(&info.lock_client_addr, addr_str, sizeof(addr_str));
-		shell_print(sh, "\tLock owner: %s", addr_str);
+		shell_print(sh, "\tLock owner: %s", bt_addr_le_str(&info.lock_client_addr));
 	}
 
 	return 0;

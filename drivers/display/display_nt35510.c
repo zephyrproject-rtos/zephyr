@@ -178,7 +178,7 @@ static int nt35510_write_sequence(const struct device *dev, const struct nt35510
 {
 	int ret = 0;
 
-	/* Loop trough all commands as long as writes are successful*/
+	/* Loop through all commands as long as writes are successful*/
 	for (int i = 0; i < nr_cmds && ret == 0; i++) {
 		ret = nt35510_write_reg(dev, cmd->reg, cmd->cmd, cmd->cmd_len);
 		cmd++;

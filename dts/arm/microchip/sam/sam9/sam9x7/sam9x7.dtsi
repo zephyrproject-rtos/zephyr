@@ -1,0 +1,86 @@
+/*
+ * Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <arm/armv5.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/microchip_sam_pmc.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	model = "Microchip SAM9X7 family SoC";
+	compatible = "microchip,sam9x7";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a7";
+			reg = <0>;
+		};
+	};
+
+	clocks {
+		main_xtal: main_xtal {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+		};
+
+		slow_xtal: slow_xtal {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+		};
+	};
+
+	soc {
+		sram: memory@100000 {
+			compatible = "mmio-sram";
+			reg = <0x00100000 DT_SIZE_K(128)>;
+		};
+
+		pmc: clock-controller@e0018000 {
+			compatible = "microchip,sam-pmc";
+			reg = <0xe0018000 0x200>;
+			#clock-cells = <2>;
+			clocks = <&clk32k 1>, <&clk32k 0>, <&main_xtal>;
+			clock-names = "td_slck", "md_slck", "main_xtal";
+		};
+
+		clk32k: clock-controller@e001d500 {
+			compatible = "microchip,sama7g5-sckc", "microchip,sam9x60-sckc";
+			reg = <0xe001d500 0x4>;
+			clocks = <&slow_xtal>;
+			#clock-cells = <1>;
+		};
+
+		pit64b0: timer@f0028000 {
+			compatible = "microchip,sam-pit64b", "microchip,sam9x60-pit64b";
+			reg = <0xf0028000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 37>, <&pmc PMC_TYPE_GCK 37>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&aic>;
+			interrupts = <37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
+		aic: interrupt-controller@fffff100 {
+			compatible = "microchip,aic-g1-intc";
+			reg = <0xfffff100 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		dbgu: serial@fffff200 {
+			compatible = "microchip,dbgu-g1-uart";
+			reg = <0xfffff200 0x100>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 47>;
+			interrupt-parent = <&aic>;
+			interrupts = <47 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+	};
+};

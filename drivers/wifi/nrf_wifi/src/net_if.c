@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief File containing netowrk stack interface specific definitions for the
+ * @brief File containing network stack interface specific definitions for the
  * Zephyr OS layer of the Wi-Fi driver.
  */
 
@@ -1153,10 +1153,6 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 		       config->mac_address.addr,
 		       sizeof(vif_ctx_zep->mac_addr.addr));
 
-		net_if_set_link_addr(vif_ctx_zep->zep_net_if_ctx,
-				     vif_ctx_zep->mac_addr.addr,
-				     sizeof(vif_ctx_zep->mac_addr.addr),
-				     NET_LINK_ETHERNET);
 		ret = 0;
 		goto unlock;
 	}

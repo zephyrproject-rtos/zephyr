@@ -1,0 +1,471 @@
+# QUIC implementation for Zephyr
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config QUIC
+	bool "QUIC Support [EXPERIMENTAL]"
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
+	select TLS_CREDENTIALS
+	select EXPERIMENTAL
+	select SMF
+	select NET_IPV6_PMTU if NET_NATIVE_IPV6
+	select NET_IPV4_PMTU if NET_NATIVE_IPV4
+	select NET_STATISTICS_USER_API if NET_STATISTICS_QUIC
+	help
+	  This option enables the QUIC implementation specified
+	  in RFC 9000.
+
+if QUIC
+
+config QUIC_SHELL
+	bool "Create a shell to see Quic connectivity information"
+	default y if NET_SHELL
+	help
+	  This option enables Quic shell support and allow user
+	  to monitor Quic connections.
+
+config QUIC_MAX_CONTEXTS
+	int "Max number of QUIC connections to allocate"
+	default QUIC_MAX_ENDPOINTS
+	help
+	  How many QUIC connection contexts can exist simultaneously.
+	  For a server this should equal QUIC_MAX_ENDPOINTS: one context
+	  for the listening socket plus one for each concurrent client
+	  connection. If set lower than QUIC_MAX_ENDPOINTS, accepted
+	  connections will fail with "Cannot allocate context" once
+	  more than (QUIC_MAX_CONTEXTS - 1) clients connect.
+
+config QUIC_MAX_STREAMS_BIDI
+	int "Max number of bidirectional QUIC streams to allocate"
+	default 3 if NET_IPV4 && !NET_IPV6
+	default 3 if !NET_IPV4 && NET_IPV6
+	default 5 if NET_IPV4 && NET_IPV6
+	range 1 $(UINT8_MAX)
+	help
+	  How many bidirectional QUIC streams can be created in the system.
+
+config QUIC_MAX_STREAMS_UNI
+	int "Max number of unidirectional QUIC streams to allocate"
+	default 0
+	range 0 $(UINT8_MAX)
+	help
+	  How many unidirectional QUIC streams can be created in the system.
+
+config QUIC_INITIAL_MAX_DATA
+	int "Initial connection max data"
+	default 16384
+	range 1 $(UINT64_MAX)
+	help
+	  The initial maximum data parameter is an integer value that contains
+	  the initial value for the maximum amount of data that can be sent on
+	  the connection. This is equivalent to sending a MAX_DATA (in
+	  Section 19.9 of RFC 9000) for the connection immediately after
+	  completing the handshake.
+
+config QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL
+	int "Initial local bidirectional stream max data"
+	default QUIC_STREAM_RX_BUFFER_SIZE
+	range 1 $(UINT64_MAX)
+	help
+	  This parameter is an integer value specifying the initial flow
+	  control limit for locally initiated bidirectional streams.
+	  This limit applies to newly created bidirectional streams opened
+	  by the endpoint that sends the transport parameter. In client
+	  transport parameters, this applies to streams with an identifier
+	  with the least significant two bits set to 0x00;
+	  in server transport parameters, this applies to streams with the
+	  least significant two bits set to 0x01.
+
+config QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE
+	int "Initial remote bidirectional stream max data"
+	default 16384
+	range 1 $(UINT64_MAX)
+	help
+	  This parameter is an integer value specifying the initial flow
+	  control limit for peer-initiated bidirectional streams.
+	  This limit applies to newly created bidirectional streams opened
+	  by the endpoint that receives the transport parameter. In client
+	  transport parameters, this applies to streams with an identifier
+	  with the least significant two bits set to 0x01;
+	  in server transport parameters, this applies to streams with the
+	  least significant two bits set to 0x00.
+
+config QUIC_INITIAL_MAX_STREAM_DATA_UNI
+	int "Initial unidirectional stream max data"
+	default 16384
+	range 1 $(UINT64_MAX)
+	help
+	  This parameter is an integer value specifying the initial flow
+	  control limit for unidirectional streams. This limit applies to newly
+	  created unidirectional streams opened by the endpoint that receives
+	  the transport parameter. In client transport parameters, this applies
+	  to streams with an identifier with the least significant two bits set
+	  to 0x03; in server transport parameters, this applies to streams with
+	  the least significant two bits set to 0x02.
+
+config QUIC_INITIAL_MAX_STREAMS_BIDI
+	int "Initial bidirectional stream max count"
+	default QUIC_MAX_STREAMS_BIDI
+	range 1 QUIC_MAX_STREAMS_BIDI
+	help
+	  The initial maximum bidirectional streams parameter is an integer
+	  value that contains the initial maximum number of bidirectional
+	  streams the endpoint that receives this transport parameter is
+	  permitted to initiate. If this parameter is absent or zero, the peer
+	  cannot open bidirectional streams until a MAX_STREAMS frame is sent.
+	  Setting this parameter is equivalent to sending a MAX_STREAMS
+	  (Section 19.11) of the corresponding type with the same value.
+
+config QUIC_INITIAL_MAX_STREAMS_UNI
+	int "Initial unidirectional stream max count"
+	default QUIC_MAX_STREAMS_UNI
+	range 0 QUIC_MAX_STREAMS_UNI
+	help
+	  The initial maximum unidirectional streams parameter is an integer
+	  value that contains the initial maximum number of unidirectional
+	  streams the endpoint that receives this transport parameter is
+	  permitted to initiate. If this parameter is absent or zero, the peer
+	  cannot open unidirectional streams until a MAX_STREAMS frame is sent.
+	  Setting this parameter is equivalent to sending a MAX_STREAMS
+	  (Section 19.11) of the corresponding type with the same value.
+
+config QUIC_STREAM_RX_WINDOW_UPDATE_THRESHOLD
+	int "Percentage of received data after we send a window update"
+	default 25
+	range 1 99
+	help
+	  This tells the threshold of incoming data after we
+	  send a window update to peer. For example if
+	  QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL is set to 16kb,
+	  then value of 25 sends a window update message (MAX_STREAM_DATA)
+	  to peer after we have received 4kb of data.
+
+config QUIC_MAX_IDLE_TIMEOUT
+	int "Max idle timeout in ms"
+	default 30000
+	range 0 $(UINT32_MAX)
+	help
+	  If a max idle timeout is specified by either endpoint in its transport
+	  parameters (RFC 9000 Section 18.2), the connection is silently closed
+	  and its state is discarded when it remains idle for longer than the
+	  minimum of the max_idle_timeout value advertised by both endpoints.
+	  Idle timeout is disabled when both endpoints omit this transport
+	  parameter or specify a value of 0.
+
+config QUIC_MAX_ENDPOINTS
+	int "Max number of QUIC endpoints we can connect to"
+	default 3 if NET_IPV6 && NET_IPV4 && !QUIC_ENDPOINT_USE_IPV4_MAPPING_TO_IPV6
+	default 2
+	help
+	  How many QUIC endpoints can be created in the system.
+	  Typically one endpoint / remote server. But if remote
+	  server has more than one UDP port, then each one is
+	  a separate endpoint.
+
+config QUIC_ENDPOINT_USE_IPV4_MAPPING_TO_IPV6
+	bool "Set IPv4-to-IPv6-mapping to listening endpoint UDP socket"
+	depends on NET_IPV4_MAPPING_TO_IPV6
+	default y
+	help
+	  Share IPv4 and IPv6 socket if possible. This can save a lot of
+	  memory as one only needs one listening endpoint if IPv4 and IPv6 are
+	  enabled as IPv4 and IPv6 can share the same underlying UDP socket.
+
+config QUIC_MAX_PEER_CIDS
+	int "Max number of peer CIDs to track"
+	default 4
+	range 1 $(UINT8_MAX)
+	help
+	  How many peer CIDs to track. The peer can suggest a new
+	  connection id and we need to keep track of them and switch
+	  to start using them when needed.
+
+config QUIC_PKT_COUNT
+	int "Amount of simultaneous pending packet receives"
+	default QUIC_MAX_ENDPOINTS
+	range 1 1024
+	help
+	  The QUIC packets are used to pass data to QUIC handler thread.
+	  The value tells how many socket operations can be active
+	  simultaneously. Good default is to use the amount of endpoints
+	  value so that you would be able to receive one packet at a time
+	  to each endpoint. For faster processing, you could set the value
+	  to be multiple of endpoints. Each pkt occupies little over
+	  CONFIG_QUIC_ENDPOINT_PENDING_DATA_LEN amount of data.
+	  Each incoming UDP data packet is placed into pkt struct and
+	  then parsed for any Quic data.
+
+config QUIC_PKT_ALLOC_TIMEOUT
+	int "Timeout when allocating a packet (in ms)"
+	default 50
+	help
+	  The value tells how long to wait while allocating a packet.
+
+config QUIC_ENDPOINT_PENDING_DATA_LEN
+	int "Receive buffer size for each endpoint"
+	default 1500
+	help
+	  Each endpoint has a buffer that is used to store received
+	  data that is not yet processed.
+
+config ZVFS_OPEN_ADD_SIZE_QUIC_ENDPOINTS
+	int "Endpoint socket descriptor count requirements"
+	default QUIC_MAX_ENDPOINTS
+	help
+	  Each endpoint requires one UDP socket so increase the ZVFS
+	  descriptor count.
+
+config QUIC_SOCKOPT_TLS
+	bool
+	default y
+	imply TLS_CREDENTIALS
+	select MBEDTLS if NET_NATIVE
+	imply MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+	imply MBEDTLS_PEM_PARSE_C
+	imply MBEDTLS_X509_CRL_PARSE_C
+	imply MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	imply MBEDTLS_PSA_CRYPTO_C
+	imply PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	imply PSA_WANT_KEY_TYPE_AES
+	imply PSA_WANT_KEY_TYPE_DERIVE
+	imply PSA_WANT_ALG_CBC_NO_PADDING
+	imply PSA_WANT_ALG_ECB_NO_PADDING
+	imply PSA_WANT_ALG_HKDF_EXTRACT
+	imply PSA_WANT_ALG_HKDF_EXPAND
+	imply PSA_WANT_ALG_GCM
+	imply PSA_WANT_ALG_ECDH
+	imply PSA_WANT_ALG_SHA_256
+	imply PSA_WANT_ALG_SHA_384
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+	imply PSA_WANT_ECC_SECP_R1_256
+	imply PSA_WANT_ECC_SECP_R1_384
+	imply PSA_WANT_ECC_MONTGOMERY_255
+	help
+	  Enable TLS socket option support which automatically establishes
+	  a TLS connection to the remote host.
+
+config QUIC_TX_BUFFER_SIZE
+	int "Size of packet transmit buffer per endpoint"
+	default 1500
+	range 1280 1500
+	help
+	  Size of the buffer used to build outgoing QUIC packets.
+	  This should be at least the MTU size. For UDP over IPv4/IPv6,
+	  1500 bytes is typical for Ethernet.
+
+	  Minimum value of 1280 ensures IPv6 minimum MTU compliance.
+
+config QUIC_CRYPTO_RX_BUFFER_SIZE
+	int "CRYPTO stream reassembly buffer size"
+	default 4096
+	range 1024 8192
+	help
+	  Size of the shared reassembly buffer for CRYPTO frames during TLS
+	  handshake. Browsers like Chrome may split the ClientHello across
+	  multiple CRYPTO frames that arrive out of order. This buffer holds
+	  fragments until they can be reassembled in order. Since QUIC processes
+	  one encryption level at a time (Initial->Handshake->Application), a
+	  single buffer is shared across all levels.
+
+config QUIC_CRYPTO_OOO_SLOTS
+	int "Number of out-of-order CRYPTO segment slots"
+	default 8
+	range 4 16
+	help
+	  Each slot holds metadata for one out-of-order CRYPTO frame fragment.
+	  Chrome can split a ClientHello into 10+ small fragments.
+
+config QUIC_STREAM_TX_BUFFER_SIZE
+	int "Stream unacked sent buffer size"
+	default 8192
+	range 1500 $(UINT16_MAX)
+	help
+	  Size of the sent buffer for each QUIC stream that holds
+	  data before it is acked by peer.
+
+config QUIC_STREAM_RX_BUFFER_SIZE
+	int "Stream receive buffer size"
+	default QUIC_STREAM_TX_BUFFER_SIZE
+	range 1500 $(UINT16_MAX)
+	help
+	  Size of the receive buffer for each QUIC stream. Defaults to
+	  QUIC_STREAM_TX_BUFFER_SIZE for symmetric workloads like echo.
+
+config QUIC_STREAM_OOO_SLOTS
+	int "Number of out-of-order stream segment slots per stream"
+	default 4
+	help
+	  Each slot holds one out-of-order STREAM frame payload up to
+	  QUIC_STREAM_OOO_SEG_SIZE bytes. Larger values handle more
+	  reordering at the cost of RAM (slots * seg_size bytes per stream).
+
+config QUIC_STREAM_OOO_SEG_SIZE
+	int "Maximum size of a buffered out-of-order stream segment (bytes)"
+	default 1280
+	help
+	  Size of the segment for received out of order data
+
+config QUIC_SENT_PKT_HISTORY_SIZE
+	int "Number of sent packets to track for RTT/loss detection"
+	default 64
+	range 16 256
+	help
+	  Number of recently sent packets to track for RTT measurement
+	  and loss detection. Each entry uses ~24 bytes of memory.
+	  Larger values allow better loss detection over high-latency
+	  or lossy links.
+
+config QUIC_CONNECT_TIMEOUT
+	int "Timeout value in milliseconds to CONNECT"
+	default 3000
+	range 0 60000
+	help
+	  This variable specifies time in milliseconds after the connect
+	  will timeout if we have not received another packet from peer.
+
+config QUIC_MAX_PTO_TIMEOUT_MS
+	int "Maximum QUIC PTO timeout (milliseconds)"
+	default 10000
+	range 1000 600000
+	help
+	  Upper bound for the QUIC Probe Timeout (PTO) duration in milliseconds.
+
+	  The QUIC PTO timer increases exponentially on consecutive
+	  probe timeouts:
+
+	      PTO_n = PTO_base * 2^pto_count
+
+	  This option limits the maximum PTO duration to the specified
+	  number of milliseconds, regardless of the computed exponential backoff.
+
+	  This prevents excessively long retransmission delays on
+	  high-latency or lossy networks and ensures the PTO does not
+	  exceed the configured connection idle timeout.
+
+	  Recommended value:
+	    - Should be less than or equal to the QUIC idle timeout.
+	    - For embedded systems, 5–10 seconds is typically sufficient.
+
+	  Setting this value too low may cause premature connection
+	  termination on high-RTT links.
+
+config QUIC_SERVICE_THREAD_PRIO
+	int "Priority of the QUIC service dispatcher thread"
+	default NUM_PREEMPT_PRIORITIES
+	help
+	  Set the priority of the QUIC service dispatcher thread.
+
+	  Note that >= 0 value means preemptive thread priority, the lowest
+	  value is NUM_PREEMPT_PRIORITIES.
+	  Highest preemptive thread priority is 0.
+	  Lowest cooperative thread priority is -1.
+	  Highest cooperative thread priority is -NUM_COOP_PRIORITIES.
+
+config QUIC_SERVICE_STACK_SIZE
+	int "Stack size for the thread handling QUIC services"
+	default 4096
+	help
+	  Set the internal stack size for the thread that handles QUIC
+	  connections.
+
+config QUIC_TLS_TRANSCRIPT_BUF_LEN
+	int "TLS handshake transcript buffer length (bytes)"
+	default 4096
+	range 512 8192
+	depends on QUIC_SOCKOPT_TLS
+	help
+	  Per-connection buffer accumulating the TLS 1.3 handshake transcript
+	  (ClientHello, ServerHello, Certificate, CertificateVerify) needed
+	  for Finished MAC computation and HKDF key derivation.
+	  4096 B covers typical TLS 1.3 handshakes with RSA-2048/EC P-256 certs.
+	  Increase to 6144-8192 for long certificate chains or RSA-4096.
+	  Total RAM = QUIC_TLS_TRANSCRIPT_BUF_LEN x QUIC_MAX_CONTEXTS.
+
+config QUIC_TLS_MAX_CREDENTIALS
+	int "Maximum number of TLS credentials per socket"
+	default 4
+	depends on QUIC_SOCKOPT_TLS
+	help
+	  This variable sets maximum number of TLS/DTLS credentials that can be
+	  used with a specific socket.
+
+config QUIC_TLS_MAX_CIPHERSUITES
+	int "Maximum number of TLS/DTLS ciphersuites per socket"
+	default 4
+	depends on QUIC_SOCKOPT_TLS
+	help
+	  This variable sets maximum number of TLS ciphersuites that can
+	  be used with specific socket, if set explicitly by socket option.
+	  By default, all ciphersuites that are available in the system are
+	  available to the socket.
+
+config QUIC_TLS_MAX_APP_PROTOCOLS
+	int "Maximum number of supported application layer protocols"
+	default 2
+	help
+	  This variable sets maximum number of supported application layer
+	  protocols over QUIC that can be set explicitly by a socket option.
+
+config QUIC_TLS_CERT_VERIFY_CALLBACK
+	bool "TLS certificate verification callback support"
+	depends on QUIC_SOCKOPT_TLS
+	help
+	  This option controls whether TLS_CERT_VERIFY_CALLBACK TLS socket option
+	  is available to use. It allows to register a certificate verification
+	  callback, which is called by the TLS backend during the TLS handshake.
+
+config QUIC_TLS_MAX_CERT_CHAIN_DEPTH
+	int "Maximum certificate chain depth"
+	default 3
+	help
+	  Maximum number of certificates in a certificate chain.
+
+config QUIC_TLS_MAX_CERT_SIZE
+	int "Maximum certificate size"
+	default 2048
+	help
+	  Maximum size of a single DER-encoded certificate in bytes.
+
+config QUIC_TLS_DEBUG_KEYLOG
+	bool "Log TLS secrets for debugging purposes"
+	help
+	  Enable logging of TLS session secrets in NSS Key Log format.
+	  This allows decryption of QUIC traffic in Wireshark.
+	  WARNING: This exposes sensitive cryptographic material.
+	  Only enable for debugging purposes.
+
+	  Configure Wireshark like this
+	      Edit → Preferences → Protocols → TLS
+	      Set (Pre)-Master-Secret log filename to your TLS secrets key log
+	      file path.
+	      For QUIC specifically, also check Protocols → QUIC settings
+
+	  You can run zephyr in native_sim like this and store TLS secrets
+	  to a separate file
+
+	    build/zephyr/zephyr.exe -attach_uart | \
+	    tee >(grep --line-buffered "^QUIC_KEYLOG: " | \
+	          sed -u 's/^QUIC_KEYLOG: //' > tls-secrets.log)
+
+	  Wireshark can also opened like this
+
+	    wireshark -o tls.keylog_file:tls-secrets.txt capture.pcap
+
+module = QUIC
+module-dep = NET_LOG
+module-str = Log level for QUIC
+module-help = Enables QUIC debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config QUIC_TXRX_DEBUG
+	bool "Debug received and sent packets"
+	depends on QUIC_LOG_LEVEL_DBG
+	help
+	  Enables printing of received and sent network packets.
+	  This can produce lot of output so it is disabled by default.
+
+endif # QUIC

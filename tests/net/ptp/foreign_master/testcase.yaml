@@ -1,0 +1,13 @@
+common:
+  tags:
+    - net
+    - ptp
+    - unit
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  depends_on: netif
+tests:
+  net.ptp.foreign_master:
+    min_ram: 32

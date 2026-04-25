@@ -11,7 +11,6 @@
 #include <errno.h>
 
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/bluetooth/hci.h>
@@ -39,7 +38,7 @@ static sys_slist_t sco_hci_cbs = SYS_SLIST_STATIC_INIT(&sco_hci_cbs);
 
 int bt_sco_server_register(struct bt_sco_server *server)
 {
-	CHECKIF(!server) {
+	if (!server) {
 		LOG_DBG("Invalid parameter: server %p", server);
 		return -EINVAL;
 	}
@@ -65,7 +64,7 @@ int bt_sco_server_register(struct bt_sco_server *server)
 
 int bt_sco_server_unregister(struct bt_sco_server *server)
 {
-	CHECKIF(!server) {
+	if (!server) {
 		LOG_DBG("Invalid parameter: server %p", server);
 		return -EINVAL;
 	}
@@ -294,7 +293,7 @@ static int sco_accept(struct bt_conn *acl, struct bt_conn *sco)
 	struct bt_sco_chan *chan;
 	int err;
 
-	CHECKIF(!sco || sco->type != BT_CONN_TYPE_SCO) {
+	if (!sco || sco->type != BT_CONN_TYPE_SCO) {
 		LOG_ERR("Invalid parameters: sco %p sco->type %u", sco, sco ? sco->type : 0);
 		return -EINVAL;
 	}
@@ -485,7 +484,7 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer, struct bt_sco_chan *ch
 
 int bt_sco_conn_cb_register(struct bt_sco_conn_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -500,7 +499,7 @@ int bt_sco_conn_cb_register(struct bt_sco_conn_cb *cb)
 
 int bt_sco_conn_cb_unregister(struct bt_sco_conn_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -513,7 +512,7 @@ int bt_sco_conn_cb_unregister(struct bt_sco_conn_cb *cb)
 
 int bt_sco_hci_cb_register(struct bt_sco_hci_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -528,7 +527,7 @@ int bt_sco_hci_cb_register(struct bt_sco_hci_cb *cb)
 
 int bt_sco_hci_cb_unregister(struct bt_sco_hci_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 

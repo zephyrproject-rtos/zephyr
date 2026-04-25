@@ -19,6 +19,7 @@
 		led1 = &yellow_led;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		sdhc0 = &sdhc0;
 	};
 
 	chosen {
@@ -135,4 +136,17 @@ zephyr_udc0: &usbd {
 	pinctrl-0 = <&usbd_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&sdhc0 {
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-names = "default";
+	card-detect-from-gpio;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };

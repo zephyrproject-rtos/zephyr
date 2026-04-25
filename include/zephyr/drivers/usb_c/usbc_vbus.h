@@ -50,9 +50,7 @@ __subsystem struct usbc_vbus_driver_api {
  */
 static inline bool usbc_vbus_check_level(const struct device *dev, enum tc_vbus_level level)
 {
-	const struct usbc_vbus_driver_api *api = (const struct usbc_vbus_driver_api *)dev->api;
-
-	return api->check_level(dev, level);
+	return DEVICE_API_GET(usbc_vbus, dev)->check_level(dev, level);
 }
 
 /**
@@ -66,9 +64,7 @@ static inline bool usbc_vbus_check_level(const struct device *dev, enum tc_vbus_
  */
 static inline int usbc_vbus_measure(const struct device *dev, int *meas)
 {
-	const struct usbc_vbus_driver_api *api = (const struct usbc_vbus_driver_api *)dev->api;
-
-	return api->measure(dev, meas);
+	return DEVICE_API_GET(usbc_vbus, dev)->measure(dev, meas);
 }
 
 /**
@@ -83,9 +79,7 @@ static inline int usbc_vbus_measure(const struct device *dev, int *meas)
  */
 static inline int usbc_vbus_discharge(const struct device *dev, bool enable)
 {
-	const struct usbc_vbus_driver_api *api = (const struct usbc_vbus_driver_api *)dev->api;
-
-	return api->discharge(dev, enable);
+	return DEVICE_API_GET(usbc_vbus, dev)->discharge(dev, enable);
 }
 
 /**
@@ -100,9 +94,7 @@ static inline int usbc_vbus_discharge(const struct device *dev, bool enable)
  */
 static inline int usbc_vbus_enable(const struct device *dev, bool enable)
 {
-	const struct usbc_vbus_driver_api *api = (const struct usbc_vbus_driver_api *)dev->api;
-
-	return api->enable(dev, enable);
+	return DEVICE_API_GET(usbc_vbus, dev)->enable(dev, enable);
 }
 
 /**

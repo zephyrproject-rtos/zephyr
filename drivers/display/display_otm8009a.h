@@ -64,13 +64,13 @@
 /** Write Control Display: backlight. */
 #define OTM8009A_WRCTRLD_BL	BIT(2)
 
-/** Adaptibe Brightness Control: off. */
+/** Adaptive Brightness Control: off. */
 #define OTM8009A_WRCABC_OFF	0x00U
-/** Adaptibe Brightness Control: user interface. */
+/** Adaptive Brightness Control: user interface. */
 #define OTM8009A_WRCABC_UI	0x01U
-/** Adaptibe Brightness Control: still picture. */
+/** Adaptive Brightness Control: still picture. */
 #define OTM8009A_WRCABC_ST	0x02U
-/** Adaptibe Brightness Control: moving image. */
+/** Adaptive Brightness Control: moving image. */
 #define OTM8009A_WRCABC_MV	0x03U
 
 /** @} */

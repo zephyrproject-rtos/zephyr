@@ -15,9 +15,6 @@
 	model = "STMicroelectronics STM32U83C-DK board";
 	compatible = "st,stm32u083c-dk";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,console = &usart2;
 		zephyr,shell-uart = &usart2;
@@ -220,4 +217,14 @@ zephyr_udc0: &usb {
 			reg = <0x0003e800 DT_SIZE_K(6)>;
 		};
 	};
+};
+
+&crc {
+	status = "okay";
+};
+
+&rng {
+	clocks = <&rcc STM32_CLOCK(AHB1, 18)>,
+		 <&rcc STM32_SRC_HSI48 CLK48_SEL(1)>;
+	status = "okay";
 };

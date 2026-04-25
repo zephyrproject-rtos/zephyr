@@ -76,10 +76,9 @@ void bt_bap_stream_init(struct bt_bap_stream *stream)
 	stream->user_data = user_data;
 }
 
-void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
-			  struct bt_audio_codec_cfg *codec_cfg)
+void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep)
 {
-	LOG_DBG("conn %p stream %p ep %p codec_cfg %p", (void *)conn, stream, ep, codec_cfg);
+	LOG_DBG("conn %p stream %p ep %p", (void *)conn, stream, ep);
 
 	if (conn != NULL) {
 		__ASSERT(stream->conn == NULL || stream->conn == conn,
@@ -88,7 +87,7 @@ void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, st
 			stream->conn = bt_conn_ref(conn);
 		}
 	}
-	stream->codec_cfg = codec_cfg;
+
 	stream->ep = ep;
 	ep->stream = stream;
 }
@@ -525,14 +524,6 @@ bool bt_bap_stream_can_disconnect(const struct bt_bap_stream *stream)
 	return false;
 }
 
-static bool bt_bap_stream_is_broadcast(const struct bt_bap_stream *stream)
-{
-	return (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&
-		bt_bap_broadcast_source_has_ep(stream->ep)) ||
-	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
-		bt_bap_broadcast_sink_has_ep(stream->ep));
-}
-
 enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *stream,
 						 const struct bt_bap_qos_cfg *qos)
 {
@@ -554,8 +545,6 @@ enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *str
 
 void bt_bap_stream_detach(struct bt_bap_stream *stream)
 {
-	const bool is_broadcast = bt_bap_stream_is_broadcast(stream);
-
 	LOG_DBG("stream %p conn %p ep %p", stream, (void *)stream->conn, (void *)stream->ep);
 
 	if (stream->conn != NULL) {
@@ -567,14 +556,6 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 	if (stream->ep != NULL) {
 		stream->ep->stream = NULL;
 		stream->ep = NULL;
-	}
-
-	if (!is_broadcast) {
-		const int err = bt_bap_stream_disconnect(stream);
-
-		if (err != 0) {
-			LOG_DBG("Failed to disconnect stream %p: %d", stream, err);
-		}
 	}
 }
 
@@ -627,7 +608,7 @@ static uint8_t conn_get_role(const struct bt_conn *conn)
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
 int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
-			 struct bt_audio_codec_cfg *codec_cfg)
+			 const struct bt_audio_codec_cfg *codec_cfg)
 {
 	uint8_t role;
 	int err;
@@ -673,7 +654,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	}
 	__ASSERT(ep->iso == NULL, "endpoint %p already bound to iso %p", ep, ep->iso);
 
-	bt_bap_stream_attach(conn, stream, ep, codec_cfg);
+	bt_bap_stream_attach(conn, stream, ep);
 
 	/* If a stream has been added to a group at this point, then it has a reference to a CIS.
 	 * and we can bind the ep to the CIS
@@ -804,8 +785,7 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
-int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
-			     struct bt_audio_codec_cfg *codec_cfg)
+int bt_bap_stream_reconfig(struct bt_bap_stream *stream, const struct bt_audio_codec_cfg *codec_cfg)
 {
 	enum bt_bap_ep_state state;
 	uint8_t role;

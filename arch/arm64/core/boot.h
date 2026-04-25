@@ -14,8 +14,13 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <stdbool.h>
+#include <zephyr/toolchain.h>
+
 extern void *_vector_table[];
 extern void __start(void);
+extern void z_arm64_mm_init(bool is_primary_core);
+extern FUNC_NORETURN void arch_secondary_cpu_init(void);
 
 #endif /* _ASMLANGUAGE */
 

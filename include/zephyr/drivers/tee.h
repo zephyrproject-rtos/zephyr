@@ -366,7 +366,7 @@ __syscall int tee_get_version(const struct device *dev, struct tee_version_info 
 
 static inline int z_impl_tee_get_version(const struct device *dev, struct tee_version_info *info)
 {
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
+	const struct tee_driver_api *api = DEVICE_API_GET(tee, dev);
 
 	if (!api->get_version) {
 		return -ENOSYS;
@@ -399,7 +399,7 @@ static inline int z_impl_tee_open_session(const struct device *dev,
 					  unsigned int num_param, struct tee_param *param,
 					  uint32_t *session_id)
 {
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
+	const struct tee_driver_api *api = DEVICE_API_GET(tee, dev);
 
 	if (!api->open_session) {
 		return -ENOSYS;
@@ -424,7 +424,7 @@ __syscall int tee_close_session(const struct device *dev, uint32_t session_id);
 
 static inline int z_impl_tee_close_session(const struct device *dev, uint32_t session_id)
 {
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
+	const struct tee_driver_api *api = DEVICE_API_GET(tee, dev);
 
 	if (!api->close_session) {
 		return -ENOSYS;
@@ -451,7 +451,7 @@ __syscall int tee_cancel(const struct device *dev, uint32_t session_id, uint32_t
 static inline int z_impl_tee_cancel(const struct device *dev, uint32_t session_id,
 				    uint32_t cancel_id)
 {
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
+	const struct tee_driver_api *api = DEVICE_API_GET(tee, dev);
 
 	if (!api->cancel) {
 		return -ENOSYS;
@@ -480,7 +480,7 @@ __syscall int tee_invoke_func(const struct device *dev, struct tee_invoke_func_a
 static inline int z_impl_tee_invoke_func(const struct device *dev, struct tee_invoke_func_arg *arg,
 					 unsigned int num_param, struct tee_param *param)
 {
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
+	const struct tee_driver_api *api = DEVICE_API_GET(tee, dev);
 
 	if (!api->invoke_func) {
 		return -ENOSYS;
@@ -622,7 +622,7 @@ __syscall int tee_suppl_recv(const struct device *dev, uint32_t *func, unsigned 
 static inline int z_impl_tee_suppl_recv(const struct device *dev, uint32_t *func,
 					unsigned int *num_params, struct tee_param *param)
 {
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
+	const struct tee_driver_api *api = DEVICE_API_GET(tee, dev);
 
 	if (!api->suppl_recv) {
 		return -ENOSYS;
@@ -650,7 +650,7 @@ __syscall int tee_suppl_send(const struct device *dev, unsigned int ret, unsigne
 static inline int z_impl_tee_suppl_send(const struct device *dev, unsigned int ret,
 					unsigned int num_params, struct tee_param *param)
 {
-	const struct tee_driver_api *api = (const struct tee_driver_api *)dev->api;
+	const struct tee_driver_api *api = DEVICE_API_GET(tee, dev);
 
 	if (!api->suppl_send) {
 		return -ENOSYS;

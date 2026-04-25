@@ -29,63 +29,80 @@ extern "C" {
 #endif
 
 /**
- * @typedef bbram_api_check_invalid_t
- * @brief API template to check if the BBRAM is invalid.
- *
- * @see bbram_check_invalid
+ * @def_driverbackendgroup{BBRAM,bbram_interface}
+ * @{
+ */
+
+/**
+ * @brief Callback API to check if the BBRAM is invalid
+ * See bbram_check_invalid() for argument description
  */
 typedef int (*bbram_api_check_invalid_t)(const struct device *dev);
 
 /**
- * @typedef bbram_api_check_standby_power_t
- * @brief API template to check for standby power failure.
- *
- * @see bbram_check_standby_power
+ * @brief Callback API to check for standby power failure
+ * See bbram_check_standby_power() for argument description
  */
 typedef int (*bbram_api_check_standby_power_t)(const struct device *dev);
 
 /**
- * @typedef bbram_api_check_power_t
- * @brief API template to check for V CC1 power failure.
- *
- * @see bbram_check_power
+ * @brief Callback API to check for V CC1 power failure
+ * See bbram_check_power() for argument description
  */
 typedef int (*bbram_api_check_power_t)(const struct device *dev);
 
 /**
- * @typedef bbram_api_get_size_t
- * @brief API template to check the size of the BBRAM
- *
- * @see bbram_get_size
+ * @brief Callback API to get the size of the BBRAM
+ * See bbram_get_size() for argument description
  */
 typedef int (*bbram_api_get_size_t)(const struct device *dev, size_t *size);
 
 /**
- * @typedef bbram_api_read_t
- * @brief API template to read from BBRAM.
- *
- * @see bbram_read
+ * @brief Callback API to read from BBRAM
+ * See bbram_read() for argument description
  */
 typedef int (*bbram_api_read_t)(const struct device *dev, size_t offset, size_t size,
-			      uint8_t *data);
+				uint8_t *data);
 
 /**
- * @typedef bbram_api_write_t
- * @brief API template to write to BBRAM.
- *
- * @see bbram_write
+ * @brief Callback API to write to BBRAM.
+ * See bbram_write() for argument description
  */
 typedef int (*bbram_api_write_t)(const struct device *dev, size_t offset, size_t size,
-			       const uint8_t *data);
+				 const uint8_t *data);
 
+/**
+ * @driver_ops{BBRAM}
+ */
 __subsystem struct bbram_driver_api {
+	/**
+	 * @driver_ops_optional @copybrief bbram_check_invalid
+	 */
 	bbram_api_check_invalid_t check_invalid;
+	/**
+	 * @driver_ops_optional @copybrief bbram_check_standby_power
+	 */
 	bbram_api_check_standby_power_t check_standby_power;
+	/**
+	 * @driver_ops_optional @copybrief bbram_check_power
+	 */
 	bbram_api_check_power_t check_power;
+	/**
+	 * @driver_ops_optional @copybrief bbram_get_size
+	 */
 	bbram_api_get_size_t get_size;
+	/**
+	 * @driver_ops_optional @copybrief bbram_read
+	 */
 	bbram_api_read_t read;
+	/**
+	 * @driver_ops_optional @copybrief bbram_write
+	 */
 	bbram_api_write_t write;
 };
+/**
+ * @}
+ */
 
 /**
  * @brief Check if BBRAM is invalid
@@ -100,8 +117,7 @@ __syscall int bbram_check_invalid(const struct device *dev);
 
 static inline int z_impl_bbram_check_invalid(const struct device *dev)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->check_invalid) {
 		return -ENOTSUP;
@@ -122,8 +138,7 @@ __syscall int bbram_check_standby_power(const struct device *dev);
 
 static inline int z_impl_bbram_check_standby_power(const struct device *dev)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->check_standby_power) {
 		return -ENOTSUP;
@@ -145,8 +160,7 @@ __syscall int bbram_check_power(const struct device *dev);
 
 static inline int z_impl_bbram_check_power(const struct device *dev)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->check_power) {
 		return -ENOTSUP;
@@ -166,8 +180,7 @@ __syscall int bbram_get_size(const struct device *dev, size_t *size);
 
 static inline int z_impl_bbram_get_size(const struct device *dev, size_t *size)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->get_size) {
 		return -ENOTSUP;
@@ -191,8 +204,7 @@ __syscall int bbram_read(const struct device *dev, size_t offset, size_t size,
 static inline int z_impl_bbram_read(const struct device *dev, size_t offset,
 				    size_t size, uint8_t *data)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->read) {
 		return -ENOTSUP;
@@ -216,8 +228,7 @@ __syscall int bbram_write(const struct device *dev, size_t offset, size_t size,
 static inline int z_impl_bbram_write(const struct device *dev, size_t offset,
 				     size_t size, const uint8_t *data)
 {
-	const struct bbram_driver_api *api =
-		(const struct bbram_driver_api *)dev->api;
+	const struct bbram_driver_api *api = DEVICE_API_GET(bbram, dev);
 
 	if (!api->write) {
 		return -ENOTSUP;

@@ -9,6 +9,7 @@
 #include <ksched.h>
 #include <kthread.h>
 #include <wait_q.h>
+#include <scheduler.h>
 
 #ifdef CONFIG_OBJ_CORE_PIPE
 static struct k_obj_type obj_type_pipe;

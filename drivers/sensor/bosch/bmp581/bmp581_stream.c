@@ -359,7 +359,7 @@ int bmp581_stream_init(const struct device *dev)
 	atomic_set(&data->stream.state, BMP581_STREAM_OFF);
 
 	if (!device_is_ready(cfg->int_gpio.port)) {
-		LOG_ERR("DRDY GPIO device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->int_gpio.port);
 		return -ENODEV;
 	}
 

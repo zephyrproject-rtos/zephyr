@@ -59,11 +59,11 @@ child-binding:
         This macro is available here:
           -include/zephyr/dt-bindings/pinctrl/max32-pinctrl.h
         Some examples of macro usage:
-        P0.9 set as alernate function 1
+        P0.9 set as alternate function 1
         {
           pinmux = <MAX32_PINMUX(0, 9, AF1)>;
         };
-        P0.9 set as alernate function 2
+        P0.9 set as alternate function 2
         {
           pinmux = <MAX32_PINMUX(0, 9, AF2)>;
         };

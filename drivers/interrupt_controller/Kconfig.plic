@@ -94,6 +94,6 @@ config PLIC_WARM_BOOT
 	bool "PLIC warm boot"
 	help
 	  Disable part of the initialisation in case of a warm boot, for example
-	  in case of Assymetric Multi Processing
+	  in case of Asymmetric Multi Processing
 
 endif # PLIC

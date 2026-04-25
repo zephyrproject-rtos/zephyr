@@ -221,22 +221,22 @@ int main(void)
 
 		printf("X-NUCLEO-IKS02A1 sensor Mode 1 dashboard\n\n");
 
-		printf("IIS2DLPC: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("IIS2DLPC: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&accel2[0]), sensor_value_to_double(&accel2[1]),
 		       sensor_value_to_double(&accel2[2]));
 
 		/* iis2mdc */
-		printf("IIS2MDC: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("IIS2MDC: Magn (G): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&magn[0]), sensor_value_to_double(&magn[1]),
 		       sensor_value_to_double(&magn[2]));
 
 		printf("IIS2MDC: Temperature: %.1f C\n", sensor_value_to_double(&die_temp));
 
-		printf("ISM330DHCX: Accel (m.s-2): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("ISM330DHCX: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&accel1[0]), sensor_value_to_double(&accel1[1]),
 		       sensor_value_to_double(&accel1[2]));
 
-		printf("ISM330DHCX: GYro (dps): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("ISM330DHCX: Gyro (rad/s): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&gyro[0]), sensor_value_to_double(&gyro[1]),
 		       sensor_value_to_double(&gyro[2]));
 #ifdef CONFIG_IIS2DLPC_TRIGGER

@@ -10,17 +10,46 @@
 #include <zephyr/ztest.h>
 #include <hal/nrf_timer.h>
 #include <hal/nrf_egu.h>
-#if defined(CONFIG_SOC_NRF54H20_CPURAD)
+#include <helpers/nrfx_gppi.h>
+#if DT_NODE_EXISTS(DT_NODELABEL(pdm0)) && DT_NODE_HAS_STATUS(DT_NODELABEL(pdm0), reserved)
+#include <hal/nrf_pdm.h>
+#elif DT_NODE_EXISTS(DT_NODELABEL(comp)) && DT_NODE_HAS_STATUS(DT_NODELABEL(comp), reserved)
+#include <hal/nrf_lpcomp.h>
+#elif defined(CONFIG_SOC_NRF54H20_CPURAD)
 #include <hal/nrf_ecb.h>
 #endif
-#include <hal/nrf_lpcomp.h>
-#include <helpers/nrfx_gppi.h>
 
 NRF_TIMER_Type *timer0 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer0));
 NRF_TIMER_Type *timer1 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer1));
 NRF_TIMER_Type *timer2 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer2));
 
-#if DT_NODE_EXISTS(DT_NODELABEL(comp)) && DT_NODE_HAS_STATUS(DT_NODELABEL(comp), reserved)
+#if DT_NODE_EXISTS(DT_NODELABEL(pdm0)) && DT_NODE_HAS_STATUS(DT_NODELABEL(pdm0), reserved)
+NRF_PDM_Type *pdm = (NRF_PDM_Type *)DT_REG_ADDR(DT_NODELABEL(pdm0));
+
+static void sink_setup(void)
+{
+	nrf_pdm_task_trigger(pdm, NRF_PDM_TASK_STOP);
+	nrf_pdm_event_clear(pdm, NRF_PDM_EVENT_STARTED);
+	nrf_pdm_enable(pdm);
+}
+
+static void sink_cleanup(void)
+{
+	nrf_pdm_task_trigger(pdm, NRF_PDM_TASK_STOP);
+	nrf_pdm_disable(pdm);
+}
+
+static bool sink_evt_check(void)
+{
+	return nrf_pdm_event_check(pdm, NRF_PDM_EVENT_STARTED);
+}
+
+static uint32_t sink_tsk_addr(void)
+{
+	return nrf_pdm_task_address_get(pdm, NRF_PDM_TASK_START);
+}
+
+#elif DT_NODE_EXISTS(DT_NODELABEL(comp)) && DT_NODE_HAS_STATUS(DT_NODELABEL(comp), reserved)
 NRF_LPCOMP_Type *lpcomp = (NRF_LPCOMP_Type *)DT_REG_ADDR(DT_NODELABEL(comp));
 
 static void sink_setup(void)

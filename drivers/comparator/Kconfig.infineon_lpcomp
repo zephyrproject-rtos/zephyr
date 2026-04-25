@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config COMPARATOR_INFINEON_LPCOMP
+	bool "Infineon LPCOMP driver"
+	default y
+	depends on DT_HAS_INFINEON_LP_COMP_ENABLED
+	select USE_INFINEON_LPCOMP

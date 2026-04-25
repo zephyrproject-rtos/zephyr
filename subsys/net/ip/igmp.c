@@ -60,6 +60,8 @@ static int igmp_v2_create(struct net_pkt *pkt, const struct net_in_addr *addr,
 	NET_PKT_DATA_ACCESS_DEFINE(igmp_access,
 				   struct net_ipv4_igmp_v2_report);
 	struct net_ipv4_igmp_v2_report *igmp;
+	int ret;
+	uint16_t chksum = 0;
 
 	igmp = (struct net_ipv4_igmp_v2_report *)
 				net_pkt_get_data(pkt, &igmp_access);
@@ -76,12 +78,19 @@ static int igmp_v2_create(struct net_pkt *pkt, const struct net_in_addr *addr,
 		return -ENOBUFS;
 	}
 
-	igmp->chksum = net_calc_chksum_igmp(pkt);
+	ret = net_calc_chksum_igmp(pkt, &chksum);
+	if (ret < 0) {
+		return ret;
+	}
+
+	igmp->chksum = chksum;
 
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_cursor_init(pkt);
 
-	net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v2_report, chksum));
+	if (net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v2_report, chksum)) < 0) {
+		return -ENOBUFS;
+	}
 	if (net_pkt_write(pkt, &igmp->chksum, sizeof(igmp->chksum))) {
 		return -ENOBUFS;
 	}
@@ -97,7 +106,8 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 	NET_PKT_DATA_ACCESS_DEFINE(group_record_access, struct net_ipv4_igmp_v3_group_record);
 	struct net_ipv4_igmp_v3_report *igmp;
 	struct net_ipv4_igmp_v3_group_record *group_record;
-
+	int ret;
+	uint16_t chksum = 0;
 	uint16_t group_count = 0;
 
 	igmp = (struct net_ipv4_igmp_v3_report *)net_pkt_get_data(pkt, &igmp_access);
@@ -170,12 +180,20 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 		}
 	}
 
-	igmp->chksum = net_calc_chksum_igmp(pkt);
+	ret = net_calc_chksum_igmp(pkt, &chksum);
+	if (ret < 0) {
+		return ret;
+	}
+
+	igmp->chksum = chksum;
 
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_cursor_init(pkt);
 
-	net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v3_report, chksum));
+	if (net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v3_report, chksum)) < 0) {
+		return -ENOBUFS;
+	}
+
 	if (net_pkt_write(pkt, &igmp->chksum, sizeof(igmp->chksum))) {
 		return -ENOBUFS;
 	}
@@ -245,6 +263,7 @@ static int igmp_v3_create_packet(struct net_pkt *pkt, const struct net_in_addr *
 
 static int igmp_send(struct net_pkt *pkt)
 {
+	__maybe_unused struct net_if *iface = net_pkt_iface(pkt);
 	int ret;
 
 	net_pkt_cursor_init(pkt);
@@ -252,11 +271,11 @@ static int igmp_send(struct net_pkt *pkt)
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
-		net_stats_update_ipv4_igmp_drop(net_pkt_iface(pkt));
+		net_stats_update_ipv4_igmp_drop(iface);
 		return ret;
 	}
 
-	net_stats_update_ipv4_igmp_sent(net_pkt_iface(pkt));
+	net_stats_update_ipv4_igmp_sent(iface);
 
 	return 0;
 }
@@ -415,6 +434,7 @@ drop:
 enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *ip_hdr)
 {
 	int ret;
+	uint16_t chksum = 0;
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv2_access, struct net_ipv4_igmp_v2_query);
 
 	struct net_ipv4_igmp_v2_query *igmpv2_hdr;
@@ -464,21 +484,25 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 	}
 #endif
 
-	ret = net_calc_chksum_igmp(pkt);
-	if (ret != 0u) {
+	ret = net_calc_chksum_igmp(pkt, &chksum);
+	if (ret < 0 || chksum != 0U) {
 		NET_DBG("DROP: Invalid checksum");
 		goto drop;
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	if (version == IGMPV3) {
-		net_pkt_acknowledge_data(pkt, &igmpv3_access);
+		ret = net_pkt_acknowledge_data(pkt, &igmpv3_access);
 	} else {
 #endif
-		net_pkt_acknowledge_data(pkt, &igmpv2_access);
+		ret = net_pkt_acknowledge_data(pkt, &igmpv2_access);
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	}
 #endif
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	dbg_addr_recv("Internet Group Management Protocol", &ip_hdr->src, &ip_hdr->dst);
 

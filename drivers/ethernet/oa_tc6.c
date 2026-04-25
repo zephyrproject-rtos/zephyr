@@ -30,7 +30,7 @@ int oa_tc6_reg_read(struct oa_tc6 *tc6, const uint32_t reg, uint32_t *val)
 
 	/*
 	 * Buffers are allocated for protected (larger) case (by 4 bytes).
-	 * When non-protected case - we need to decrase them
+	 * When non-protected case - we need to decrease them
 	 */
 	if (!tc6->protected) {
 		tx_buf.len -= sizeof(rvn);
@@ -86,7 +86,7 @@ int oa_tc6_reg_write(struct oa_tc6 *tc6, const uint32_t reg, uint32_t val)
 
 	/*
 	 * Buffers are allocated for protected (larger) case (by 4 bytes).
-	 * When non-protected case - we need to decrase them
+	 * When non-protected case - we need to decrease them
 	 */
 	if (!tc6->protected) {
 		tx_buf.len -= sizeof(rvn);

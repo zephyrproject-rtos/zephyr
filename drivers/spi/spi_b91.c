@@ -19,7 +19,7 @@
 LOG_MODULE_REGISTER(spi_telink);
 
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include "spi_context.h"
 #include <zephyr/drivers/pinctrl.h>
 

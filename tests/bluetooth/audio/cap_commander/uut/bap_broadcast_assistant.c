@@ -125,21 +125,22 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	zassert_not_null(inst, "inst is NULL");
 
 	max_src_id++;
-	inst->recv_states.src_id = max_src_id;
 	inst->recv_states.past_avail = false;
-	inst->recv_states.adv_sid = param->adv_sid;
-	inst->recv_states.broadcast_id = param->broadcast_id;
-	inst->pa_sync_state = param->pa_sync;
-	inst->num_subgroups = param->num_subgroups;
-	state.pa_sync_state = param->pa_sync ? BT_BAP_PA_STATE_SYNCED : BT_BAP_PA_STATE_NOT_SYNCED;
-	state.src_id = max_src_id;
-	state.num_subgroups = param->num_subgroups;
+
+	state.src_id = inst->recv_states.src_id = max_src_id;
+	state.adv_sid = inst->recv_states.adv_sid = param->adv_sid;
+	state.broadcast_id = inst->recv_states.broadcast_id = param->broadcast_id;
+	state.pa_sync_state = inst->pa_sync_state =
+		param->pa_sync ? BT_BAP_PA_STATE_SYNCED : BT_BAP_PA_STATE_NOT_SYNCED;
+	state.num_subgroups = inst->num_subgroups = param->num_subgroups;
+
 	for (size_t i = 0; i < param->num_subgroups; i++) {
-		state.subgroups[i].bis_sync = param->subgroups[i].bis_sync;
-		inst->subgroups[i].bis_sync = param->subgroups[i].bis_sync;
+		state.subgroups[i].bis_sync = inst->subgroups[i].bis_sync =
+			param->subgroups[i].bis_sync;
 	}
 
 	bt_addr_le_copy(&inst->recv_states.addr, &param->addr);
+	bt_addr_le_copy(&state.addr, &param->addr);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs, listener, next, _node) {
 		if (listener->add_src != NULL) {

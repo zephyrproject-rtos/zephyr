@@ -36,11 +36,8 @@ struct k_sem connected_sem;
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	char dev[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(addr, dev, sizeof(dev));
 	printk("[DEVICE]: %s, AD evt type %u, AD data len %u, RSSI %i\n",
-	       dev, type, ad->len, rssi);
+	       bt_addr_le_str(addr), type, ad->len, rssi);
 
 	/* We're only interested in connectable events */
 	if (type == BT_GAP_ADV_TYPE_ADV_IND ||
@@ -73,24 +70,19 @@ static void start_scan(void)
 	printk("Scanning successfully started\n");
 }
 
-
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (conn_err != BT_HCI_ERR_SUCCESS) {
-		printk("Failed to connect to %s (%u)\n", addr, conn_err);
+		printk("Failed to connect to %s (%u)\n", bt_conn_dst_str(conn), conn_err);
 
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 
-		TEST_FAIL("Failed to connect to %s (%u)", addr, conn_err);
+		TEST_FAIL("Failed to connect to %s (%u)", bt_conn_dst_str(conn), conn_err);
 		return;
 	}
 
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
 
 	if (conn == default_conn) {
 		connected_conn = bt_conn_ref(conn);
@@ -100,11 +92,8 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
+	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
+	       reason, bt_hci_err_to_str(reason));
 
 	if (default_conn != conn) {
 		return;

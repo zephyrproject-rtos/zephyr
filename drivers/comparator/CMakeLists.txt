@@ -9,6 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE comparator_handlers.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_COMPARATOR_FAKE_COMP comparator_fake_comp.c)
+zephyr_library_sources_ifdef(CONFIG_COMPARATOR_INFINEON_LPCOMP comparator_infineon_lpcomp.c)
 zephyr_library_sources_ifdef(CONFIG_COMPARATOR_IT51XXX_VCMP comparator_it51xxx_vcmp.c)
 zephyr_library_sources_ifdef(CONFIG_COMPARATOR_MCHP_AC_G1 comparator_mchp_ac_g1.c)
 zephyr_library_sources_ifdef(CONFIG_COMPARATOR_MCUX_ACMP comparator_mcux_acmp.c)

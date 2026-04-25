@@ -23,6 +23,12 @@ tests:
     platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_NAMESPACE_COMPAT_MODE=y
+  net.build.vpn.wireguard:
+    platform_allow: qemu_x86
+    extra_configs:
+      - CONFIG_WIREGUARD=y
+      - CONFIG_NET_NAMESPACE_COMPAT_MODE=n
+      - CONFIG_POSIX_API=n
   # Compile test CANBUS
   net.build.no_compat_namespacing_canbus:
     platform_allow: qemu_x86

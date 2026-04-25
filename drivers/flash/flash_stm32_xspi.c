@@ -6,7 +6,7 @@
 
 /*
  * **************************************************************************
- * xSPI flash controller driver for stm32 serie with xSPI periherals
+ * xSPI flash controller driver for stm32 series with xSPI periherals
  * This driver is based on the stm32Cube HAL XSPI driver
  * with one xspi DTS NODE
  * **************************************************************************
@@ -795,7 +795,7 @@ static int stm32_xspi_mem_reset(const struct device *dev)
 	gpio_pin_set_dt(&dev_cfg->reset, 0);
 #else
 
-	/* Reset command sent sucessively for each mode SPI/OPS & STR/DTR */
+	/* Reset command sent successively for each mode SPI/OPS & STR/DTR */
 	XSPI_RegularCmdTypeDef s_command = {
 		.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG,
 		.AddressMode = HAL_XSPI_ADDRESS_NONE,
@@ -2022,8 +2022,31 @@ static int flash_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stream *dma
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/*
+	 * Assume the DMA is HPDMA because GPDMA does not have request line from XSPI.
+	 * Allocate source/destination port based on transfer direction:
+	 *  - XSPI is only accessible by HPDMA port 1
+	 *  - SRAM is only accessible by HPDMA port 0
+	 */
+	if (table_direction[dma_stream->cfg.channel_direction] == DMA_PERIPH_TO_MEMORY) {
+		hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT1 |
+			DMA_DEST_ALLOCATED_PORT0;
+	} else if (table_direction[dma_stream->cfg.channel_direction] == DMA_MEMORY_TO_PERIPH) {
+		hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 |
+			DMA_DEST_ALLOCATED_PORT1;
+	} else {
+		LOG_ERR("DMA direction %d is not valid",
+			table_direction[dma_stream->cfg.channel_direction]);
+		return -EINVAL;
+	}
+#else /* CONFIG_SOC_SERIES_STM32H7RSX */
+	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 |
+		DMA_DEST_ALLOCATED_PORT0;
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 	hdma->Init.SrcDataWidth = DMA_SRC_DATAWIDTH_WORD; /* Fixed value */
 	hdma->Init.DestDataWidth = DMA_DEST_DATAWIDTH_WORD; /* Fixed value */
+
 	hdma->Init.SrcInc = (dma_stream->src_addr_increment)
 		? DMA_SINC_INCREMENTED
 		: DMA_SINC_FIXED;
@@ -2032,9 +2055,9 @@ static int flash_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stream *dma
 		: DMA_DINC_FIXED;
 	hdma->Init.SrcBurstLength = 4;
 	hdma->Init.DestBurstLength = 4;
+
 	hdma->Init.Priority = table_priority[dma_stream->cfg.channel_priority];
 	hdma->Init.Direction = table_direction[dma_stream->cfg.channel_direction];
-	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_SRC_ALLOCATED_PORT1;
 	hdma->Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
 	hdma->Init.Mode = DMA_NORMAL;
 	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;

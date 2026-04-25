@@ -107,7 +107,6 @@
 
 		sys_clk: sys_clk {
 			compatible = "renesas,smartbond-sys-clk";
-			status = "okay";
 			clock-src = <&rc32m>;
 			status = "okay";
 		};

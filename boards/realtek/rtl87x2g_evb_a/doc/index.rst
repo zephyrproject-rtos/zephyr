@@ -15,10 +15,6 @@ The RTL87x2G Model A evaluation board is compatible with the following daughterb
 .. note::
     The RTL8762GC is currently not supported in Zephyr due to its reliance on external flash memory, which results in a variable flash size configuration.
 
-.. image:: img/rtl87x2g_evb_a.webp
-     :align: center
-     :alt: rtl87x2g_evb_a
-
 Hardware
 ********
 
@@ -94,7 +90,7 @@ To fetch these essential images, run the following command:
 
 .. code-block:: console
 
-   west blobs fetch hal_realtek --allow-regex 'bee/rtl87x2g/bin/.*'
+   west blobs fetch hal_realtek --allow-regex 'bee/rtl87x2g/.*'
 
 **Enter Download Mode**
 

@@ -118,7 +118,7 @@ enum lora_cad_mode {
 	 * CAD before receive: lora_recv() performs CAD first and
 	 * returns 0 immediately if no activity is detected.
 	 * For continuous low-power listening, prefer
-	 * @ref lora_recv_duty_cycle instead.
+	 * @ref lora_recv_duty_cycle_async instead.
 	 */
 	LORA_CAD_MODE_RX,
 
@@ -300,15 +300,15 @@ typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
 				  void *user_data);
 
 /**
- * @typedef lora_api_recv_duty_cycle()
+ * @typedef lora_api_recv_duty_cycle_async()
  * @brief Callback API for receive duty cycling (wake-on-radio)
  *
- * @see lora_recv_duty_cycle() for argument descriptions.
+ * @see lora_recv_duty_cycle_async() for argument descriptions.
  */
-typedef int (*lora_api_recv_duty_cycle)(const struct device *dev,
-				       k_timeout_t rx_period,
-				       k_timeout_t sleep_period,
-				       lora_recv_cb cb, void *user_data);
+typedef int (*lora_api_recv_duty_cycle_async)(const struct device *dev,
+					      k_timeout_t rx_period,
+					      k_timeout_t sleep_period,
+					      lora_recv_cb cb, void *user_data);
 
 /**
  * @typedef lora_api_test_cw()
@@ -328,7 +328,7 @@ __subsystem struct lora_driver_api {
 	lora_api_recv_async recv_async;
 	lora_api_cad cad;
 	lora_api_cad_async cad_async;
-	lora_api_recv_duty_cycle recv_duty_cycle;
+	lora_api_recv_duty_cycle_async recv_duty_cycle_async;
 	lora_api_test_cw test_cw;
 };
 
@@ -345,10 +345,7 @@ __subsystem struct lora_driver_api {
 static inline int lora_config(const struct device *dev,
 			      struct lora_modem_config *config)
 {
-	const struct lora_driver_api *api =
-		(const struct lora_driver_api *)dev->api;
-
-	return api->config(dev, config);
+	return DEVICE_API_GET(lora, dev)->config(dev, config);
 }
 
 /**
@@ -362,10 +359,7 @@ static inline int lora_config(const struct device *dev,
  */
 static inline uint32_t lora_airtime(const struct device *dev, uint32_t data_len)
 {
-	const struct lora_driver_api *api =
-		(const struct lora_driver_api *)dev->api;
-
-	return api->airtime(dev, data_len);
+	return DEVICE_API_GET(lora, dev)->airtime(dev, data_len);
 }
 
 /**
@@ -383,10 +377,7 @@ static inline uint32_t lora_airtime(const struct device *dev, uint32_t data_len)
 static inline int lora_send(const struct device *dev,
 			    uint8_t *data, uint32_t data_len)
 {
-	const struct lora_driver_api *api =
-		(const struct lora_driver_api *)dev->api;
-
-	return api->send(dev, data, data_len);
+	return DEVICE_API_GET(lora, dev)->send(dev, data, data_len);
 }
 
 /**
@@ -409,10 +400,7 @@ static inline int lora_send_async(const struct device *dev,
 				  uint8_t *data, uint32_t data_len,
 				  struct k_poll_signal *async)
 {
-	const struct lora_driver_api *api =
-		(const struct lora_driver_api *)dev->api;
-
-	return api->send_async(dev, data, data_len, async);
+	return DEVICE_API_GET(lora, dev)->send_async(dev, data, data_len, async);
 }
 
 /**
@@ -435,10 +423,7 @@ static inline int lora_recv(const struct device *dev, uint8_t *data,
 			    uint8_t size,
 			    k_timeout_t timeout, int16_t *rssi, int8_t *snr)
 {
-	const struct lora_driver_api *api =
-		(const struct lora_driver_api *)dev->api;
-
-	return api->recv(dev, data, size, timeout, rssi, snr);
+	return DEVICE_API_GET(lora, dev)->recv(dev, data, size, timeout, rssi, snr);
 }
 
 /**
@@ -459,10 +444,7 @@ static inline int lora_recv(const struct device *dev, uint8_t *data,
 static inline int lora_recv_async(const struct device *dev, lora_recv_cb cb,
 			       void *user_data)
 {
-	const struct lora_driver_api *api =
-		(const struct lora_driver_api *)dev->api;
-
-	return api->recv_async(dev, cb, user_data);
+	return DEVICE_API_GET(lora, dev)->recv_async(dev, cb, user_data);
 }
 
 /**
@@ -483,8 +465,7 @@ static inline int lora_recv_async(const struct device *dev, lora_recv_cb cb,
  */
 static inline int lora_cad(const struct device *dev, k_timeout_t timeout)
 {
-	const struct lora_driver_api *api =
-		(const struct lora_driver_api *)dev->api;
+	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
 
 	if (api->cad == NULL) {
 		return -ENOSYS;
@@ -510,8 +491,7 @@ static inline int lora_cad(const struct device *dev, k_timeout_t timeout)
 static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
 				 void *user_data)
 {
-	const struct lora_driver_api *api =
-		(const struct lora_driver_api *)dev->api;
+	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
 
 	if (api->cad_async == NULL) {
 		return -ENOSYS;
@@ -538,19 +518,18 @@ static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
  * @param user_data     User data passed to callback
  * @return 0 on success, negative on error
  */
-static inline int lora_recv_duty_cycle(const struct device *dev,
-				       k_timeout_t rx_period,
-				       k_timeout_t sleep_period,
-				       lora_recv_cb cb, void *user_data)
+static inline int lora_recv_duty_cycle_async(const struct device *dev,
+					     k_timeout_t rx_period,
+					     k_timeout_t sleep_period,
+					     lora_recv_cb cb, void *user_data)
 {
-	const struct lora_driver_api *api =
-		(const struct lora_driver_api *)dev->api;
+	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
 
-	if (api->recv_duty_cycle == NULL) {
+	if (api->recv_duty_cycle_async == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->recv_duty_cycle(dev, rx_period, sleep_period, cb, user_data);
+	return api->recv_duty_cycle_async(dev, rx_period, sleep_period, cb, user_data);
 }
 
 /**
@@ -568,8 +547,7 @@ static inline int lora_recv_duty_cycle(const struct device *dev,
 static inline int lora_test_cw(const struct device *dev, uint32_t frequency,
 			       int8_t tx_power, uint16_t duration)
 {
-	const struct lora_driver_api *api =
-		(const struct lora_driver_api *)dev->api;
+	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
 
 	if (api->test_cw == NULL) {
 		return -ENOSYS;

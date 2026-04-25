@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -853,6 +853,12 @@
 			status = "disabled";
 			interrupts = <139 0>, <140 0>, <141 0>;
 			interrupt-names = "mac", "power", "lpi";
+
+			enet_ptp_clock: ptp_clock {
+				compatible = "nxp,enet-qos-ptp-clock";
+				clocks = <&syscon MCUX_ENET_QOS_PTP_CLK>;
+				status = "disabled";
+			};
 		};
 
 		enet_mdio: mdio {
@@ -866,6 +872,7 @@
 	wwdt0: watchdog@16000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0x16000 0x1000>;
+		clocks = <&syscon MCUX_WWDT0_CLK>;
 		interrupts = <152 0>;
 		status = "disabled";
 		clk-divider = <1>;

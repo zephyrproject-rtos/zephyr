@@ -352,7 +352,7 @@ static int lis2mdl_init(const struct device *dev)
 	}
 
 	/* reset sensor configuration */
-	if (lis2mdl_reset_set(ctx, PROPERTY_ENABLE) < 0) {
+	if (lis2mdl_sw_reset(ctx) < 0) {
 		LOG_ERR("s/w reset failed");
 		return -EIO;
 	}
@@ -416,7 +416,7 @@ static int lis2mdl_init(const struct device *dev)
 		}
 
 		/* Reboot sensor after setting the configuration registers */
-		rc = lis2mdl_boot_set(ctx, 1);
+		rc = lis2mdl_reboot(ctx);
 		if (rc) {
 			LOG_ERR("Reboot failed.");
 			return rc;

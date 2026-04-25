@@ -65,37 +65,16 @@ Programming and Debugging
 Applications for the ``fpb_rx140`` board can be built, flashed, and debugged using standard
 Zephyr workflows. Refer to :ref:`build_an_application` and :ref:`application_run` for more details.
 
-**Note:** Currently, the RX140 is built and programmed using the Renesas GCC RX toolchain.
-Please follow the steps below to program it onto the board:
-
-  - Download and install GCC for RX toolchain:
-
-    https://llvm-gcc-renesas.com/rx-download-toolchains/
-
-  - Set env variable:
-
-   .. code-block:: console
-
-      export ZEPHYR_TOOLCHAIN_VARIANT=cross-compile
-      export CROSS_COMPILE=<Path/to/your/toolchain>/bin/rx-elf-
-
-  - Build the Blinky Sample for FPB-RX140
-
-   .. code-block:: console
-
-      cd ~/zephyrproject/zephyr
-      west build -p always -b fpb_rx140 samples/basic/blinky
-
 Flashing
 ========
 
-The program can be flashed to RSK-RX140 using the **E2OB** by connecting the board to the host PC
+The program can be flashed to FPB-RX140 using the **E2OB** by connecting the board to the host PC
 and open Jumper J4.
 Here’s an example for building and flashing the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rsk_rx140
+   :board: fpb_rx140
    :goals: build flash
 
 Debugging

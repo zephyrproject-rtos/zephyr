@@ -31,4 +31,8 @@ config BUILD_OUTPUT_ADJUST_LMA
 	depends on CPU_CORTEX_M33
 	default "0x60000000 - $(dt_node_reg_addr_hex,$(dt_nodelabel_path,flash0))"
 
+# BL2 implementation not available yet
+config TFM_BL2_NOT_SUPPORTED
+	default y
+
 endif # SOC_SERIES_PSE84

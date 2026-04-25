@@ -269,7 +269,7 @@ struct bt_cap_unicast_group_stream_param {
 	struct bt_cap_stream *stream;
 
 	/** The QoS settings for the stream object. */
-	struct bt_bap_qos_cfg *qos_cfg;
+	const struct bt_bap_qos_cfg *qos_cfg;
 };
 
 /**
@@ -404,13 +404,13 @@ int bt_cap_unicast_group_add_streams(struct bt_cap_unicast_group *unicast_group,
  */
 int bt_cap_unicast_group_delete(struct bt_cap_unicast_group *unicast_group);
 
-/** Callback function for bt_bap_unicast_group_foreach_stream()
+/** Callback function for bt_cap_unicast_group_foreach_stream()
  *
  * @param stream     The audio stream
  * @param user_data  User data
  *
- * @retval true Stop iterating.
- * @retval false Continue iterating.
+ * @retval true Continue iterating.
+ * @retval false Stop iterating.
  */
 typedef bool (*bt_cap_unicast_group_foreach_stream_func_t)(struct bt_cap_stream *stream,
 							   void *user_data);
@@ -423,7 +423,7 @@ typedef bool (*bt_cap_unicast_group_foreach_stream_func_t)(struct bt_cap_stream 
  * @param user_data      User specified data that is sent to the callback function
  *
  * @retval 0 Success (even if no streams exists in the group).
- * @retval -ECANCELED The @p func returned true.
+ * @retval -ECANCELED The @p func returned false and stopped the iteration.
  * @retval -EINVAL @p unicast_group or @p func were NULL.
  */
 int bt_cap_unicast_group_foreach_stream(struct bt_cap_unicast_group *unicast_group,
@@ -469,7 +469,7 @@ struct bt_cap_unicast_audio_start_stream_param {
 	 * This value is assigned to the @p stream, and shall remain valid while the stream is
 	 * non-idle.
 	 */
-	struct bt_audio_codec_cfg *codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg;
 };
 
 /** Parameters for the bt_cap_initiator_unicast_audio_start() function */
@@ -654,7 +654,7 @@ struct bt_cap_initiator_broadcast_subgroup_param {
 	struct bt_cap_initiator_broadcast_stream_param *stream_params;
 
 	/** Subgroup Codec configuration. */
-	struct bt_audio_codec_cfg *codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg;
 };
 
 /** Parameters for * bt_cap_initiator_broadcast_audio_create() */
@@ -666,7 +666,7 @@ struct bt_cap_initiator_broadcast_create_param {
 	struct bt_cap_initiator_broadcast_subgroup_param *subgroup_params;
 
 	/** Quality of Service configuration. */
-	struct bt_bap_qos_cfg *qos;
+	const struct bt_bap_qos_cfg *qos;
 
 	/**
 	 * @brief Broadcast Source packing mode.
@@ -841,8 +841,8 @@ int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcas
  * @param stream     The audio stream
  * @param user_data  User data
  *
- * @retval true Stop iterating.
- * @retval false Continue iterating.
+ * @retval true Continue iterating.
+ * @retval false Stop iterating.
  */
 typedef bool (*bt_cap_initiator_broadcast_foreach_stream_func_t)(struct bt_cap_stream *stream,
 								 void *user_data);
@@ -855,7 +855,7 @@ typedef bool (*bt_cap_initiator_broadcast_foreach_stream_func_t)(struct bt_cap_s
  * @param user_data         User specified data that is sent to the callback function.
  *
  * @retval 0          Success (even if no streams exists in the group).
- * @retval -ECANCELED The @p func returned true.
+ * @retval -ECANCELED The @p func returned false and stopped the iteration.
  * @retval -EINVAL    @p broadcast_source or @p func were NULL.
  */
 int bt_cap_initiator_broadcast_foreach_stream(struct bt_cap_broadcast_source *broadcast_source,

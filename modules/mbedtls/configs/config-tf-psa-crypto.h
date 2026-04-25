@@ -7,19 +7,9 @@
 #ifndef TF_PSA_CRYPTO_CONFIG_H
 #define TF_PSA_CRYPTO_CONFIG_H
 
-/* [TO BE IMPROVED]
- * This is a dirty fix to overcome a pre-existing problem: TLS/X509 build
- * symbols influence crypto ones. This not ideal even before the split, but
- * at least it was working. Now that we split the configuration headers in
- * 2 we need to include the TLS/X509 configuration header file here, which
- * is not good.
- * Of course the solution is to:
- * - have 1:1 mapping between Kconfigs and build symbols
- * - let each Kconfig enable ONLY 1 build symbol
- * - resolve all the dependencies at Kconfig level instead of doing that in the
- *   configuration header file.
- */
-#include "config-mbedtls.h"
+#if defined(CONFIG_TF_PSA_CRYPTO_USER_CONFIG)
+#define TF_PSA_CRYPTO_USER_CONFIG_FILE CONFIG_TF_PSA_CRYPTO_USER_CONFIG_FILE
+#endif
 
 /*
  * "config-psa.h" contains all the Kconfig -> build symbols matching for
@@ -110,7 +100,7 @@
 #define MBEDTLS_PEM_WRITE_C
 #endif
 
-#if defined(MBEDTLS_X509_USE_C)
+#if defined(CONFIG_MBEDTLS_PK_PARSE_C)
 #define MBEDTLS_PK_PARSE_C
 #endif
 
@@ -122,7 +112,7 @@
 #define MBEDTLS_PK_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_ASN1_PARSE_C) || defined(MBEDTLS_X509_USE_C)
+#if defined(CONFIG_MBEDTLS_ASN1_PARSE_C)
 #define MBEDTLS_ASN1_PARSE_C
 #endif
 
@@ -172,7 +162,6 @@
 
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
 #define MBEDTLS_PSA_CRYPTO_CLIENT
-#define MBEDTLS_PSA_CRYPTO_CONFIG
 #endif
 
 #if defined(CONFIG_MBEDTLS_NIST_KW_C)
@@ -181,6 +170,14 @@
 
 #if defined(CONFIG_MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
 #define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+#endif
+
+#if defined(CONFIG_TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED)
+#define TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED
+#endif
+
+#if defined(CONFIG_TF_PSA_CRYPTO_PQCP_MLDSA_87_ENABLED)
+#define TF_PSA_CRYPTO_PQCP_MLDSA_87_ENABLED
 #endif
 
 #endif /* TF_PSA_CRYPTO_CONFIG_H */

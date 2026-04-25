@@ -30,7 +30,7 @@
 
 #include "nsos.h"
 #include "nsi_errno.h"
-#include "nsos_fcntl.h"
+#include "nsi_fcntl.h"
 #include "nsos_netdb.h"
 #include "nsos_socket.h"
 
@@ -1113,14 +1113,14 @@ int nsos_adapt_fcntl_getfl(int fd)
 
 	flags = fcntl(fd, F_GETFL);
 
-	return fl_to_nsos_mid(flags);
+	return nsi_fcntl_to_mid(flags);
 }
 
 int nsos_adapt_fcntl_setfl(int fd, int flags)
 {
 	int ret;
 
-	ret = fcntl(fd, F_SETFL, fl_from_nsos_mid(flags));
+	ret = fcntl(fd, F_SETFL, nsi_fcntl_from_mid(flags));
 	if (ret < 0) {
 		return -nsi_errno_to_mid(errno);
 	}

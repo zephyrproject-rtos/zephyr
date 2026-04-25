@@ -15,4 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - uart
+testing:
+  binaries:
+    - flash.bin
 vendor: nxp

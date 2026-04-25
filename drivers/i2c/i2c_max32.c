@@ -535,7 +535,7 @@ static int i2c_max32_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 					MXC_I2C_ClearFlags(i2c, ADI_MAX32_I2C_INT_FL0_MASK,
 							   ADI_MAX32_I2C_INT_FL1_MASK);
 				} else {
-					/* Wait for busy flag to be cleared for clock stetching
+					/* Wait for busy flag to be cleared for clock stretching
 					 * use-cases
 					 */
 					Wrap_MXC_I2C_WaitForBusyClear(i2c);
@@ -672,7 +672,7 @@ static void i2c_max32_isr_target(const struct device *dev, mxc_i2c_regs_t *i2c)
 		}
 	}
 
-	/* Check whether TX FIFO needs to be refilled if interrupt ocurred while transmitting */
+	/* Check whether TX FIFO needs to be refilled if interrupt occurred while transmitting */
 	if (int_en0 & (ADI_MAX32_I2C_INT_EN0_TX_THD | ADI_MAX32_I2C_INT_EN0_TX_LOCK_OUT) ||
 	    int_en1 & ADI_MAX32_I2C_INT_EN1_TX_UNDERFLOW) {
 		if (int_fl0 & ADI_MAX32_I2C_INT_FL0_TX_THD) {
