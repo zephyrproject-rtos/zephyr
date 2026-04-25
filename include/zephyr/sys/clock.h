@@ -291,6 +291,18 @@ typedef struct {
 } k_timepoint_t;
 
 /**
+ * @brief Get the current tick count, as a system call
+ *
+ * Functionally equivalent to sys_clock_tick_get(), but callable from user
+ * mode: the timepoint helpers below execute in the caller's context, so a
+ * user-mode caller must reach the tick counter through a system call
+ * rather than reading it under the kernel's timeout lock.
+ *
+ * @return the current system uptime in ticks
+ */
+__syscall int64_t sys_clock_ticks(void);
+
+/**
  * @brief Calculate a timepoint value
  *
  * Returns a timepoint corresponding to the expiration (relative to an
@@ -306,7 +318,26 @@ typedef struct {
  * @see sys_timepoint_timeout()
  * @see sys_timepoint_expired()
  */
-k_timepoint_t sys_timepoint_calc(k_timeout_t timeout);
+static inline k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)
+{
+	k_timepoint_t timepoint;
+
+	if (K_TIMEOUT_EQ(timeout, Z_FOREVER)) {
+		timepoint.tick = UINT64_MAX;
+	} else if (K_TIMEOUT_EQ(timeout, Z_TIMEOUT_NO_WAIT)) {
+		timepoint.tick = 0;
+	} else {
+		k_ticks_t dt = timeout.ticks;
+
+		if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
+			timepoint.tick = (uint64_t)(sys_clock_ticks() + MAX(1, dt));
+		} else {
+			timepoint.tick = (uint64_t)Z_TICK_ABS(dt);
+		}
+	}
+
+	return timepoint;
+}
 
 /**
  * @brief Remaining time to given timepoint
@@ -321,7 +352,21 @@ k_timepoint_t sys_timepoint_calc(k_timeout_t timeout);
  *
  * @see sys_timepoint_calc()
  */
-k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint);
+static inline k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint)
+{
+	uint64_t now, remaining;
+
+	if (timepoint.tick == UINT64_MAX) {
+		return Z_FOREVER;
+	}
+	if (timepoint.tick == 0) {
+		return Z_TIMEOUT_NO_WAIT;
+	}
+
+	now = (uint64_t)sys_clock_ticks();
+	remaining = (timepoint.tick > now) ? (timepoint.tick - now) : 0;
+	return Z_TIMEOUT_TICKS((k_ticks_t)remaining);
+}
 
 /**
  * @brief Compare two timepoint values.
