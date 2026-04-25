@@ -20,7 +20,6 @@ supported:
   - i2c
   - spi
   - gpio
-  - adc
   - arduino_gpio
   - comparator
   - dma
