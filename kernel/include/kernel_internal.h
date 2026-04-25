@@ -150,6 +150,97 @@ extern int z_stack_adjust_initialized;
 extern struct k_thread z_main_thread;
 #endif /* CONFIG_MULTITHREADING */
 
+#ifdef CONFIG_USERSPACE
+/* thread and stack objects under the kernel-object collector (kernel/userspace.c) */
+/* an OWNED object is about to be disposed: its pool drops the bookkeeping (weak in
+ * the kernel, provided by lib/os); may run under the scheduler lock
+ */
+struct k_object;
+void z_kobj_owner_release(struct k_object *ko, bool sched_locked);
+void z_kobj_halt_begin(const void *obj);
+void z_kobj_halt_clear(const void *obj);
+void z_kobj_collect(const void *obj, bool sched_locked);
+void z_kobj_graveyard_flush(void);
+void z_kobj_halt_end(const void *obj, bool sched_locked);
+void z_kobj_bind_stack(const void *stack);
+void z_kobj_reap(struct k_thread *thread, bool sched_locked);
+#else
+static inline void z_kobj_halt_begin(const void *obj)
+{
+	ARG_UNUSED(obj);
+}
+
+static inline void z_kobj_halt_clear(const void *obj)
+{
+	ARG_UNUSED(obj);
+}
+
+static inline void z_kobj_collect(const void *obj, bool sched_locked)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(sched_locked);
+}
+
+static inline void z_kobj_graveyard_flush(void)
+{
+}
+
+static inline void z_kobj_halt_end(const void *obj, bool sched_locked)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(sched_locked);
+}
+
+static inline void z_kobj_bind_stack(const void *stack)
+{
+	ARG_UNUSED(stack);
+}
+
+static inline void z_kobj_reap(struct k_thread *thread, bool sched_locked)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(sched_locked);
+}
+#endif /* CONFIG_USERSPACE */
+
+/* Explicit reclaim of a pooled thread (and its pooled stack) when there are no
+ * permission bits to count: provided by lib/os, -EINVAL for a thread the pool
+ * does not own. Only reached from the graveyard drain and the join epilogue.
+ */
+int z_sys_thread_reclaim(struct k_thread *thread, bool sched_locked);
+/* whether the pool owns this k_thread (weak false in the kernel) */
+bool z_sys_thread_owned(const struct k_thread *thread);
+
+#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
+/* end of halt_thread(): park the thread in the graveyard; nothing is disposed
+ * under the scheduler lock. self: it halted on its own stack.
+ */
+void z_thread_retire(struct k_thread *thread, bool self, bool reap);
+/* a reap event (join, detach of a dead thread, process reap): finish any deferred
+ * disposal of the thread, then end every reference to it
+ */
+void z_thread_reap(struct k_thread *thread, bool sched_locked);
+/* dispose every graveyard entry, waiting for threads still switching out */
+void z_thread_graveyard_flush(void);
+#else
+static inline void z_thread_retire(struct k_thread *thread, bool self, bool reap)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(self);
+	ARG_UNUSED(reap);
+}
+
+static inline void z_thread_reap(struct k_thread *thread, bool sched_locked)
+{
+	z_kobj_reap(thread, sched_locked);
+}
+
+static inline void z_thread_graveyard_flush(void)
+{
+}
+#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
+
+
 
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 				    CONFIG_ISR_STACK_SIZE);
@@ -284,27 +375,11 @@ int z_kernel_stats_query(struct k_obj_core *obj_core, void *stats);
 
 #if defined(CONFIG_THREAD_ABORT_NEED_CLEANUP)
 /**
- * Perform cleanup at the end of k_thread_abort().
+ * Finish any deferred disposal of a thread object about to be reused.
  *
- * This performs additional cleanup steps at the end of k_thread_abort()
- * where these steps require that the thread is no longer running.
- * If the target thread is not the current running thread, the cleanup
- * steps will be performed immediately. However, if the target thread is
- * the current running thread (e.g. k_thread_abort(_current)), it defers
- * the cleanup steps to later when the work will be finished in another
- * context.
- *
- * @param thread Pointer to thread to be cleaned up.
- */
-void k_thread_abort_cleanup(struct k_thread *thread);
-
-/**
- * Check if thread is the same as the one waiting for cleanup.
- *
- * This is used to guard against reusing the same thread object
- * before the previous cleanup has finished. This will perform
- * the necessary cleanups before the thread object can be
- * reused. Should mainly be used during thread creation.
+ * A thread that halted on its own stack is disposed from the graveyard later;
+ * reusing its k_thread for a new thread must complete that first. Should
+ * mainly be used during thread creation.
  *
  * @param thread Pointer to thread to be checked.
  */

@@ -1,0 +1,15 @@
+# Copyright (c) 2026, Friedt Professional Engineering Services, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config SYS_THREAD_STACK_MIN_ADD_TEST
+	def_int 2
+
+config SYS_THREAD_THREAD_MIN_ADD_TEST
+	def_int 2
+
+# Thread stacks on e.g. x86* can be quite large due to guard regions
+config HEAP_MEM_POOL_ADD_SIZE_TEST
+	def_int 65536 if USERSPACE
+	def_int 16384
+
+source "Kconfig.zephyr"

@@ -21,6 +21,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/timing/timing.h>
+#include <zephyr/sys/thread.h>
 #include <zephyr/sys/util.h>
 #include <metairq.h>
 #include <run_q.h>
@@ -940,16 +941,21 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 		k_obj_core_unlink(K_OBJ_CORE(thread));
 #endif /* CONFIG_OBJ_CORE_THREAD */
 
+		/* a detached thread's death is its last use; a pinned leader stays for reap */
+#ifdef CONFIG_THREAD_DETACH
+		bool reap = k_thread_is_detached(thread);
+#else
+		bool reap = false;
+#endif /* CONFIG_THREAD_DETACH */
+		/* halting on its own stack (decided before _current may be dummified) */
+		bool self = (thread == _current);
 #ifdef CONFIG_USERSPACE
 		z_mem_domain_exit_thread(thread);
+		z_kobj_halt_begin(thread->stack_obj);
+		z_kobj_halt_begin(thread);
 		k_thread_perms_all_clear(thread);
-		k_object_uninit(thread->stack_obj);
-		k_object_uninit(thread);
 #endif /* CONFIG_USERSPACE */
 
-#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
-		k_thread_abort_cleanup(thread);
-#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
 
 		/* Do this "set _current to dummy" step last so that
 		 * subsystems above can rely on _current being
@@ -985,6 +991,8 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 		 * thread_halt_spin()).
 		 */
 		clear_halting(thread);
+
+		z_thread_retire(thread, self, reap);
 	}
 }
 

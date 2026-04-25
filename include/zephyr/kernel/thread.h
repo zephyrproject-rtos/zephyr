@@ -155,6 +155,17 @@ struct _thread_base {
        sys_slist_t cleanup;
 #endif
 
+#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
+	/** Node in the graveyard: dead threads whose objects are not yet disposed */
+	sys_dnode_t graveyard_node;
+	/** The graveyard drain ends every reference to the thread (a reap) */
+	bool graveyard_reap;
+	/** The graveyard drain returns the thread to its pool (no permission bits) */
+	bool graveyard_reclaim;
+	/** Set by a pool that hands out this k_thread; clear proves it is not pooled */
+	bool pool_hint;
+#endif
+
 #ifdef CONFIG_THREAD_SPECIFIC_STORAGE
        /** Thread-specific storage keys */
        sys_dlist_t key_list;
@@ -193,7 +204,7 @@ struct _thread_stack_info {
 	 */
 	size_t delta;
 
-#if defined(CONFIG_THREAD_STACK_MEM_MAPPED)
+#if defined(CONFIG_THREAD_STACK_MEM_MAPPED) || defined(CONFIG_SYS_THREAD_STACK_ALLOC_ANON)
 	struct {
 		/** Base address of the memory mapped thread stack */
 		k_thread_stack_t *addr;
@@ -356,6 +367,11 @@ struct k_thread {
 	/** memory domain info of the thread */
 	struct _mem_domain_info mem_domain_info;
 
+	/** current syscall frame pointer */
+	void *syscall_frame;
+#endif /* CONFIG_USERSPACE */
+
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_SYS_THREAD)
 	/**
 	 * Base address of thread stack.
 	 *
@@ -363,10 +379,7 @@ struct k_thread {
 	 * is enabled, this is the physical address of the stack.
 	 */
 	k_thread_stack_t *stack_obj;
-
-	/** current syscall frame pointer */
-	void *syscall_frame;
-#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_USERSPACE || CONFIG_SYS_THREAD */
 
 
 #if defined(CONFIG_USE_SWITCH)

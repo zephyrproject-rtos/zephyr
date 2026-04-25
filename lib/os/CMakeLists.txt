@@ -120,3 +120,18 @@ zephyr_syscall_header_ifdef(
 )
 
 zephyr_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C atomic_c.c)
+
+zephyr_sources_ifdef(CONFIG_SYS_THREAD thread.c)
+zephyr_syscall_header_ifdef(CONFIG_SYS_THREAD ${ZEPHYR_BASE}/include/zephyr/sys/thread.h)
+
+if(CONFIG_SYS_THREAD)
+  foreach(_pool STACK THREAD)
+    # Sum CONFIG_SYS_THREAD_${_pool}_MIN with any CONFIG_SYS_THREAD_${_pool}_MIN_ADD_* additions
+    import_kconfig(CONFIG_SYS_THREAD_${_pool}_MIN_ADD_ ${DOTCONFIG} _sys_thread_${_pool}_min_add_keys)
+    set(_sys_thread_${_pool}_min ${CONFIG_SYS_THREAD_${_pool}_MIN})
+    foreach(_add ${_sys_thread_${_pool}_min_add_keys})
+      math(EXPR _sys_thread_${_pool}_min "${_sys_thread_${_pool}_min} + ${${_add}}")
+    endforeach()
+    zephyr_compile_definitions(SYS_THREAD_${_pool}_MIN=${_sys_thread_${_pool}_min})
+  endforeach()
+endif()

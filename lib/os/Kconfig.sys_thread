@@ -1,0 +1,99 @@
+# Copyright (c) 2026, Friedt Professional Engineering Services, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config SYS_THREAD
+	bool "Support shared pools of threading primitives"
+	select DYNAMIC_OBJECTS if USERSPACE
+	select THREAD_ABORT_NEED_CLEANUP
+	select SIGNAL
+	select SYS_ELASTIPOOL
+	select THREAD_MONITOR
+	select THREAD_STACK_INFO
+	# to support heap-based allocation by default, can be disabled
+	imply SYS_HASH_MAP
+	imply SYS_HASH_FUNC32
+	help
+	  Select 'y' here to support shared system pools of threading primitives such as
+	    - k_thread_stack_t
+	    - k_thread
+
+if SYS_THREAD
+
+config SYS_THREAD_STACK_MAX
+	int "Maximum size of system k_thread_stack_t pool"
+	default SYS_THREAD_STACK_MIN
+	help
+	  This value represents the maximum number of thread stacks that may be available to
+	  kernel or user threads in the system stack pool. If this value is equal to
+	  SYS_THREAD_STACK_MIN, then only static allocations are permitted via the system
+	  stack pool. If this value is greater than SYS_THREAD_STACK_MIN, then
+	  maximally CONFIG_SYS_THREAD_STACK_MAX - SYS_THREAD_STACK_MIN stacks
+	  may be allocated from the heap.
+
+	  CONFIG_SYS_THREAD_STACK_MAX must be >= SYS_THREAD_STACK_MIN.
+
+config SYS_THREAD_STACK_MIN
+	int "Minimum size of system k_thread_stack_t pool"
+	default 0
+	help
+	  This value represents the minimum number of thread stacks that are guaranteed to be
+	  available to kernel or user threads in the system stack pool. The minimum
+	  number is guaranteed via static allocation.
+
+	  SYS_THREAD_STACK_MIN must be >= 0.
+
+config SYS_THREAD_STACK_ALLOC_ANON
+	bool
+	depends on !ARCH_POSIX
+	default y if MMU
+	help
+	  On systems where an MMU is present, anonymously mapped pages of memory may be used
+	  for allocating thread stacks. Allocation is performed using `k_mem_map()`. The size
+	  of those thread stacks are rouded up to a multiple of CONFIG_MMU_PAGE_SIZE. Two
+	  additional guard pages accompany the anonymous mapping; one before the thread stack,
+	  and the other after the thread stack.
+
+config SYS_THREAD_STACK_ALLOC_HEAP
+	bool
+	default y if !MMU
+	help
+	  Allocate thread stacks from the heap.
+
+config SYS_THREAD_STACK_SIZE
+	int "Size of system thread stacks"
+	default 4096 if COVERAGE_GCOV
+	default 4096 if MMU
+	default 2048 if !MMU && 64BIT
+	default 1024
+	help
+	  Size of each thread stack in the system thread stack pool.
+
+config SYS_THREAD_THREAD_MAX
+	int "Maximum size of system k_thread pool"
+	default SYS_THREAD_THREAD_MIN
+	help
+	  This value represents the maximum number of threads that may be available to
+	  kernel or user threads in the system thread pool. If this value is equal to
+	  SYS_THREAD_THREAD_MIN, then only static allocations are permitted via the system
+	  thread pool. If this value is greater than SYS_THREAD_THREAD_MIN, then
+	  maximally CONFIG_SYS_THREAD_THREAD_MAX - SYS_THREAD_THREAD_MIN threads
+	  may be allocated from the heap.
+
+	  CONFIG_SYS_THREAD_THREAD_MAX must be >= SYS_THREAD_THREAD_MIN.
+
+config SYS_THREAD_THREAD_MIN
+	int "Minimum size of system k_thread pool"
+	default 0
+	help
+	  This value represents the minimum number of threads that are guaranteed to be
+	  available to kernel or user threads in the system thread pool. The minimum
+	  number is guaranteed via static allocation.
+
+	  SYS_THREAD_THREAD_MIN must be >= 0.
+
+module = SYS_THREAD
+module-str = Log level for system thread library
+module-help = Enables system thread logging.
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SYS_THREAD

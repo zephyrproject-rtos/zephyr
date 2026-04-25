@@ -179,6 +179,28 @@ struct dyn_obj {
 	void *data;
 };
 
+/* a thread or stack object is live from k_object_init() at creation until
+ * halt_thread() has finished with it (K_OBJ_FLAG_HALTING): never disposed before
+ */
+static inline bool kobj_live(const struct k_object *ko)
+{
+	return ((ko->type == K_OBJ_THREAD) || (ko->type == K_OBJ_THREAD_STACK_ELEMENT)) &&
+	       ((ko->flags & (K_OBJ_FLAG_INITIALIZED | K_OBJ_FLAG_HALTING)) != 0U);
+}
+
+static void kobj_free_data(struct dyn_obj *dyn);
+
+static inline bool kobj_referenced(const struct k_object *ko)
+{
+	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
+		if (ko->perms[i] != 0U) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 extern struct k_object *z_object_gperf_find(const void *obj);
 extern void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func,
 					     void *context);
@@ -475,6 +497,12 @@ static void *z_object_alloc(enum k_objects otype, size_t size)
 		return NULL;
 	}
 
+	if ((otype == K_OBJ_THREAD) || (otype == K_OBJ_THREAD_STACK_ELEMENT)) {
+		/* deferred disposals of dead threads come back first */
+		z_thread_graveyard_flush();
+	}
+	z_kobj_graveyard_flush();
+
 	switch (otype) {
 	case K_OBJ_THREAD:
 		if (!thread_idx_alloc(&tidx)) {
@@ -532,6 +560,7 @@ void k_object_free(void *obj)
 {
 	struct dyn_obj *dyn = NULL;
 	bool free_thread_idx = false;
+	bool release = false;
 	uintptr_t thread_idx = 0;
 
 	/* This function is intentionally not exposed to user mode.
@@ -548,12 +577,22 @@ void k_object_free(void *obj)
 	dyn = dyn_object_find_locked(obj);
 
 	if (dyn != NULL) {
+		k_spinlock_key_t okey = k_spin_lock(&obj_lock);
+		bool live = kobj_live(&dyn->kobj);
+
+		k_spin_unlock(&obj_lock, okey);
+		if (live) {
+			/* a thread may still run on it: its halt collects it */
+			k_spin_unlock(&lists_lock, key);
+			return;
+		}
 		sys_dlist_remove(&dyn->dobj_list);
 
 		if (dyn->kobj.type == K_OBJ_THREAD) {
 			free_thread_idx = true;
 			thread_idx = dyn->kobj.data.thread_id;
 		}
+		release = (dyn->kobj.flags & K_OBJ_FLAG_OWNED) != 0U;
 	}
 	k_spin_unlock(&lists_lock, key);
 
@@ -566,47 +605,12 @@ void k_object_free(void *obj)
 	}
 
 	if (dyn != NULL) {
-#ifdef CONFIG_OBJ_CORE
-		if (dyn->kobj.type != K_OBJ_THREAD_STACK_ELEMENT) {
-			k_obj_core_evict_range(obj, obj_size_get(dyn->kobj.type));
+		if (release) {
+			z_kobj_owner_release(&dyn->kobj, false);
 		}
-#endif /* CONFIG_OBJ_CORE */
-#ifdef CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED
-		/* We may have nudged the pointer to point to the cached area
-		 * in dynamic_object_create() when we first created the thread
-		 * stack object. So we need to restore the uncached one before
-		 * freeing it.
-		 */
-		if (dyn->kobj.type == K_OBJ_THREAD_STACK_ELEMENT) {
-			uint8_t *stack;
-
-			if (sys_cache_is_ptr_cached(dyn->data)) {
-				stack = sys_cache_uncached_ptr_get(dyn->data);
-			} else {
-				stack = dyn->data;
-			}
-
-			k_free(stack);
-		} else
-#endif /* CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED */
-#ifdef CONFIG_MMU
-		if ((dyn->kobj.flags & K_OBJ_FLAG_MAP) != 0) {
-			/* the data is a k_object_map_size() anonymous mapping, not heap */
-			size_t unmap_size;
-
-#ifdef CONFIG_GEN_PRIV_STACKS
-			unmap_size = dyn->kobj.data.stack_data->size;
-#else
-			unmap_size = dyn->kobj.data.stack_size;
-#endif /* CONFIG_GEN_PRIV_STACKS */
-			k_mem_unmap(dyn->data, unmap_size);
-		} else
-#endif /* CONFIG_MMU */
-		{
-			k_free(dyn->data);
-		}
-		k_free(dyn);
+		kobj_free_data(dyn);
 	}
+	z_kobj_graveyard_flush();
 }
 
 struct k_object *k_object_find(const void *obj)
@@ -650,6 +654,7 @@ void *z_impl_k_object_map_size(enum k_objects otype, size_t size)
 {
 	switch (otype) {
 	case K_OBJ_THREAD_STACK_ELEMENT:
+		z_thread_graveyard_flush();
 		break;
 	default:
 		LOG_WRN_ONCE("%s() does not support object type '%s'",
@@ -692,7 +697,7 @@ void *z_impl_k_object_map_size(enum k_objects otype, size_t size)
 #endif /* CONFIG_GEN_PRIV_STACKS */
 
 	dyn->kobj.type = otype;
-	dyn->kobj.flags = K_OBJ_FLAG_MAP;
+	dyn->kobj.flags = K_OBJ_FLAG_ALLOC | K_OBJ_FLAG_MAP;
 	(void)memset(dyn->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
 
 	K_SPINLOCK(&lists_lock) {
@@ -747,35 +752,79 @@ static unsigned int thread_index_get(struct k_thread *thread)
 	return ko->data.thread_id;
 }
 
-/* Caller must hold lists_lock for the duration of this call so that the
- * sys_dlist_remove() below is mutually exclusive with concurrent
- * obj_list traversal in k_object_wordlist_foreach() on another CPU.
- *
- * Note: The 'locked' parameter in this function refers to the scheduler's
- * spinlock.
- */
-static void unref_check(struct k_object *ko, uintptr_t index, bool locked)
-{
-	k_spinlock_key_t key = k_spin_lock(&obj_lock);
 
-	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
+/* the pool that drew an OWNED object releases its bookkeeping before the object goes */
+__weak void z_kobj_owner_release(struct k_object *ko, bool sched_locked)
+{
+	ARG_UNUSED(ko);
+	ARG_UNUSED(sched_locked);
+}
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
-	if ((ko->flags & K_OBJ_FLAG_ALLOC) == 0U) {
-		/* skip unref check for static kernel object */
-		goto out;
+/* free what the allocator created, by origin: heap block or anonymous mapping */
+static void kobj_free_data(struct dyn_obj *dyn)
+{
+#ifdef CONFIG_OBJ_CORE
+	if (dyn->kobj.type != K_OBJ_THREAD_STACK_ELEMENT) {
+		k_obj_core_evict_range(dyn->kobj.name, obj_size_get(dyn->kobj.type));
+	}
+#endif /* CONFIG_OBJ_CORE */
+#ifdef CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED
+	/* We may have nudged the pointer to point to the cached area
+	 * in dynamic_object_create() when we first created the thread
+	 * stack object. So we need to restore the uncached one before
+	 * freeing it.
+	 */
+	if (dyn->kobj.type == K_OBJ_THREAD_STACK_ELEMENT) {
+		uint8_t *stack;
+
+		if (sys_cache_is_ptr_cached(dyn->data)) {
+			stack = sys_cache_uncached_ptr_get(dyn->data);
+		} else {
+			stack = dyn->data;
+		}
+
+		k_free(stack);
+	} else
+#endif /* CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED */
+#ifdef CONFIG_MMU
+	if ((dyn->kobj.flags & K_OBJ_FLAG_MAP) != 0) {
+		/* the data is a k_object_map_size() anonymous mapping, not heap */
+		size_t unmap_size;
+
+#ifdef CONFIG_GEN_PRIV_STACKS
+		unmap_size = dyn->kobj.data.stack_data->size;
+#else
+		unmap_size = dyn->kobj.data.stack_size;
+#endif /* CONFIG_GEN_PRIV_STACKS */
+		k_mem_unmap(dyn->data, unmap_size);
+	} else
+#endif /* CONFIG_MMU */
+	{
+		k_free(dyn->data);
+	}
+	k_free(dyn);
+}
+
+/* Caller holds obj_lock (and lists_lock when ko may be dynamic). An object that is
+ * not live and has no references is collected: its type cleanup runs here, a
+ * dynamic one is unlinked and its record returned for the caller to free once the
+ * locks are dropped, and *release says whether its pool must be told first.
+ */
+static struct dyn_obj *kobj_collect_locked(struct k_object *ko, bool sched_locked,
+					   bool *release)
+{
+	*release = false;
+
+	if (kobj_live(ko) || kobj_referenced(ko)) {
+		return NULL;
 	}
 
-	void *vko = ko;
+	*release = (ko->flags & K_OBJ_FLAG_OWNED) != 0U;
 
-	struct dyn_obj *dyn = CONTAINER_OF(vko, struct dyn_obj, kobj);
-
-	__ASSERT(IS_PTR_ALIGNED(dyn, struct dyn_obj), "unaligned z_object");
-
-	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
-		if (ko->perms[i] != 0U) {
-			goto out;
-		}
+	if ((ko->flags & K_OBJ_FLAG_ALLOC) == 0U) {
+		/* static: nothing to free, the owner (if any) takes the slot back */
+		return NULL;
 	}
 
 	/* This object has no more references. Some objects may have
@@ -785,10 +834,10 @@ static void unref_check(struct k_object *ko, uintptr_t index, bool locked)
 	 */
 	switch (ko->type) {
 	case K_OBJ_MSGQ:
-		(void)z_msgq_cleanup((struct k_msgq *)ko->name, locked);
+		(void)z_msgq_cleanup((struct k_msgq *)ko->name, sched_locked);
 		break;
 	case K_OBJ_STACK:
-		(void)z_stack_cleanup((struct k_stack *)ko->name, locked);
+		(void)z_stack_cleanup((struct k_stack *)ko->name, sched_locked);
 		break;
 	case K_OBJ_THREAD:
 		/* thread_idx_free() cannot be used here: it takes lists_lock,
@@ -806,7 +855,7 @@ static void unref_check(struct k_object *ko, uintptr_t index, bool locked)
 		 * explicitly here.
 		 */
 		if ((ko->flags & K_OBJ_FLAG_INITIALIZED) != 0U) {
-			(void)z_timer_cleanup((struct k_timer *)ko->name, locked);
+			(void)z_timer_cleanup((struct k_timer *)ko->name, sched_locked);
 		}
 		break;
 	default:
@@ -814,12 +863,210 @@ static void unref_check(struct k_object *ko, uintptr_t index, bool locked)
 		break;
 	}
 
+	void *vko = ko;
+	struct dyn_obj *dyn = CONTAINER_OF(vko, struct dyn_obj, kobj);
+
+	__ASSERT(IS_PTR_ALIGNED(dyn, struct dyn_obj), "unaligned z_object");
+
 	sys_dlist_remove(&dyn->dobj_list);
-	k_free(dyn->data);
-	k_free(dyn);
-out:
+
+	return dyn;
+}
 #endif /* CONFIG_DYNAMIC_OBJECTS */
+
+#define KOBJ_UNREF_ALL  (-1)
+#define KOBJ_UNREF_NONE (-2)
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+/*
+ * Collected dynamic objects wait here for a lock-free context: the pool hook
+ * and the heap reach the scheduler lock, which may already be held, or held by
+ * another CPU that in turn waits for lists_lock (halt_thread() takes it).
+ * Protected by obj_lock; the record reuses its obj_list node.
+ */
+static sys_dlist_t kobj_graveyard = SYS_DLIST_STATIC_INIT(&kobj_graveyard);
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+
+/* Drop one reference (index), every reference (KOBJ_UNREF_ALL) or none
+ * (KOBJ_UNREF_NONE: a collection pass), and collect the object when that leaves
+ * it unreferenced and not live. Caller holds lists_lock whenever ko may be a
+ * dynamic object. Nothing is freed here.
+ */
+static void kobj_unref(struct k_object *ko, int index, bool sched_locked)
+{
+	k_spinlock_key_t key = k_spin_lock(&obj_lock);
+
+	if (index == KOBJ_UNREF_ALL) {
+		(void)memset(ko->perms, 0, CONFIG_MAX_THREAD_BYTES);
+	} else if (index >= 0) {
+		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
+	}
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	bool release;
+	struct dyn_obj *dyn = kobj_collect_locked(ko, sched_locked, &release);
+
+	if (dyn != NULL) {
+		sys_dlist_append(&kobj_graveyard, &dyn->dobj_list);
+	}
 	k_spin_unlock(&obj_lock, key);
+
+	if (release && (dyn == NULL)) {
+		/* a static pool entry: its owner only flips a bitmap bit */
+		z_kobj_owner_release(ko, sched_locked);
+	}
+#else
+	k_spin_unlock(&obj_lock, key);
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+}
+
+/* release and free every collected dynamic object; no lock may be held */
+void z_kobj_graveyard_flush(void)
+{
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	while (true) {
+		struct dyn_obj *dyn = NULL;
+		k_spinlock_key_t key = k_spin_lock(&obj_lock);
+		sys_dnode_t *node = sys_dlist_get(&kobj_graveyard);
+
+		if (node != NULL) {
+			dyn = CONTAINER_OF(node, struct dyn_obj, dobj_list);
+		}
+		k_spin_unlock(&obj_lock, key);
+		if (dyn == NULL) {
+			break;
+		}
+		if ((dyn->kobj.flags & K_OBJ_FLAG_OWNED) != 0U) {
+			z_kobj_owner_release(&dyn->kobj, false);
+		}
+		kobj_free_data(dyn);
+	}
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+}
+
+static void unref_check(struct k_object *ko, uintptr_t index, bool sched_locked)
+{
+	kobj_unref(ko, (int)index, sched_locked);
+}
+
+static struct k_object *kobj_find_for_thread(const void *obj)
+{
+	return (obj != NULL) ? k_object_find(obj) : NULL;
+}
+
+void z_kobj_halt_begin(const void *obj)
+{
+	struct k_object *ko = kobj_find_for_thread(obj);
+
+	if (ko == NULL) {
+		return;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&obj_lock);
+
+	ko->flags = (ko->flags & ~K_OBJ_FLAG_INITIALIZED) | K_OBJ_FLAG_HALTING;
+	k_spin_unlock(&obj_lock, key);
+}
+
+/* the thread no longer runs on the object; nothing is collected here */
+void z_kobj_halt_clear(const void *obj)
+{
+	struct k_object *ko = kobj_find_for_thread(obj);
+
+	if (ko == NULL) {
+		return;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&obj_lock);
+
+	ko->flags &= ~K_OBJ_FLAG_HALTING;
+	k_spin_unlock(&obj_lock, key);
+}
+
+/* the dynamic-object list lock, when there is a dynamic-object list */
+static inline k_spinlock_key_t kobj_lists_lock(void)
+{
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	return k_spin_lock(&lists_lock);
+#else
+	return (k_spinlock_key_t){0};
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+}
+
+static inline void kobj_lists_unlock(k_spinlock_key_t key)
+{
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	k_spin_unlock(&lists_lock, key);
+#else
+	ARG_UNUSED(key);
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+}
+
+/* collect the object if nothing references it and it is no longer live */
+void z_kobj_collect(const void *obj, bool sched_locked)
+{
+	struct k_object *ko = kobj_find_for_thread(obj);
+
+	if (ko == NULL) {
+		return;
+	}
+
+	k_spinlock_key_t key = kobj_lists_lock();
+
+	kobj_unref(ko, KOBJ_UNREF_NONE, sched_locked);
+	kobj_lists_unlock(key);
+	if (!sched_locked) {
+		z_kobj_graveyard_flush();
+	}
+}
+
+/* the thread no longer runs on the object: collect it if nothing references it */
+void z_kobj_halt_end(const void *obj, bool sched_locked)
+{
+	z_kobj_halt_clear(obj);
+	z_kobj_collect(obj, sched_locked);
+}
+
+void z_kobj_bind_stack(const void *stack)
+{
+	struct k_object *ko = kobj_find_for_thread(stack);
+
+	if (ko == NULL) {
+		return;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&obj_lock);
+
+	ko->flags |= K_OBJ_FLAG_BOUND;
+	k_spin_unlock(&obj_lock, key);
+}
+
+/* an object whose lifetime the collector owns: dynamic, or drawn from a pool */
+static inline bool kobj_collectable(const struct k_object *ko)
+{
+	return (ko->flags & (K_OBJ_FLAG_ALLOC | K_OBJ_FLAG_OWNED)) != 0U;
+}
+
+/* A reap (join, detached death, process reap) ends every reference to the thread
+ * object, and to its stack when the stack is bound to it. An application's static
+ * object keeps its grants: it outlives the thread and is reused.
+ */
+void z_kobj_reap(struct k_thread *thread, bool sched_locked)
+{
+	struct k_object *sko = kobj_find_for_thread(thread->stack_obj);
+	struct k_object *ko = kobj_find_for_thread(thread);
+	k_spinlock_key_t key = kobj_lists_lock();
+
+	if ((sko != NULL) && ((sko->flags & K_OBJ_FLAG_BOUND) != 0U) && kobj_collectable(sko)) {
+		kobj_unref(sko, KOBJ_UNREF_ALL, sched_locked);
+	}
+	if ((ko != NULL) && kobj_collectable(ko)) {
+		kobj_unref(ko, KOBJ_UNREF_ALL, sched_locked);
+	}
+	kobj_lists_unlock(key);
+	if (!sched_locked) {
+		z_kobj_graveyard_flush();
+	}
 }
 
 static void wordlist_cb(struct k_object *ko, void *ctx_ptr)
@@ -868,6 +1115,7 @@ void k_thread_perms_clear(struct k_object *ko, struct k_thread *thread)
 
 		unref_check(ko, index, false);
 		k_spin_unlock(&lists_lock, key);
+		z_kobj_graveyard_flush();
 #else
 		unref_check(ko, index, false);
 #endif /* CONFIG_DYNAMIC_OBJECTS */

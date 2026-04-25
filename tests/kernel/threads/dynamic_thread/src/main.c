@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
 #include <zephyr/debug/stack.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
@@ -269,6 +270,104 @@ ZTEST(thread_dynamic, test_thread_index_recycled_on_unref)
 	}
 
 	zassert_mem_equal(before, _thread_idx_map, sizeof(before), "thread indexes leaked");
+}
+
+/* allocate thread objects until none is left, then release them all: the number tells
+ * whether every index has come back
+ */
+static int count_free_thread_objects(void)
+{
+	int n = 0;
+
+	while (n < (int)ARRAY_SIZE(dynamic_threads)) {
+		dynamic_threads[n] = k_object_alloc(K_OBJ_THREAD);
+		if (dynamic_threads[n] == NULL) {
+			break;
+		}
+		n++;
+	}
+	for (int i = 0; i < n; i++) {
+		k_object_release(dynamic_threads[i]);
+		dynamic_threads[i] = NULL;
+	}
+
+	return n;
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief A running thread's object outlives its references; the join disposes of it
+ *
+ * @details The creator's release and even k_object_free() must leave a running
+ * thread's object alone. Joining the dead thread is its reap: the object is
+ * disposed of and its thread index returns.
+ */
+ZTEST(thread_dynamic, test_thread_object_live_until_joined)
+{
+	struct k_thread *t;
+	k_tid_t tid;
+	int free_objs;
+
+	if (!IS_ENABLED(CONFIG_USERSPACE)) {
+		ztest_test_skip();
+	}
+
+	free_objs = count_free_thread_objects();
+	t = k_object_alloc(K_OBJ_THREAD);
+	zassert_not_null(t, "unable to allocate a thread object");
+
+	tid = k_thread_create(t, dyn_thread_stack, STACKSIZE, dyn_thread_entry, NULL, NULL, NULL,
+			      0, 0, K_NO_WAIT);
+	zassert_equal(tid, t);
+
+	/* the creator's reference goes: the thread's own keeps the object */
+	k_object_release(t);
+	zassert_not_null(k_object_find(t), "running thread's object disposed by release");
+	k_object_free(t);
+	zassert_not_null(k_object_find(t), "running thread's object disposed by k_object_free()");
+
+	k_sem_give(&start_sem);
+	zassert_ok(k_sem_take(&end_sem, K_FOREVER));
+	zassert_ok(k_thread_join(t, K_FOREVER));
+
+	zassert_equal(count_free_thread_objects(), free_objs, "joined thread's index not returned");
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief A detached thread's death is its reap
+ *
+ * @details No join is possible; the next thread allocation finds the index of
+ * the dead detached thread back in the map.
+ */
+ZTEST(thread_dynamic, test_thread_object_detached_reaped)
+{
+	struct k_thread *t;
+	int free_objs;
+
+	if (!IS_ENABLED(CONFIG_USERSPACE)) {
+		ztest_test_skip();
+	}
+
+	free_objs = count_free_thread_objects();
+	t = k_object_alloc(K_OBJ_THREAD);
+	zassert_not_null(t, "unable to allocate a thread object");
+
+	(void)k_thread_create(t, dyn_thread_stack, STACKSIZE, dyn_thread_entry, NULL, NULL, NULL,
+			      0, 0, K_NO_WAIT);
+	zassert_ok(k_thread_detach(t));
+
+	k_sem_give(&start_sem);
+	zassert_ok(k_sem_take(&end_sem, K_FOREVER));
+
+	/* the thread exits right after the give: give it a bounded time to halt */
+	for (uint32_t t0 = k_uptime_get_32(); (k_uptime_get_32() - t0) < 500U;) {
+		if (count_free_thread_objects() == free_objs) {
+			break;
+		}
+		k_msleep(1);
+	}
+	zassert_equal(count_free_thread_objects(), free_objs, "detached thread's index not returned");
 }
 
 /**

@@ -528,6 +528,7 @@ config MAX_THREAD_BYTES
 config DYNAMIC_OBJECTS
 	bool "Allow kernel objects to be allocated at runtime"
 	depends on USERSPACE
+	select THREAD_ABORT_NEED_CLEANUP
 	help
 	  Enabling this option allows for kernel objects to be requested from
 	  the calling thread's resource pool, at a slight cost in performance

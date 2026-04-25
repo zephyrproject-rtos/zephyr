@@ -14,6 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/thread.h>
 #include <zephyr/sys/util.h>
 
 #define K_SI_QUEUE      (-1)

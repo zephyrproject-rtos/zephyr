@@ -81,6 +81,12 @@ enum k_objects {
 #define K_OBJ_FLAG_DRIVER	BIT(3)
 /** Object is mapped */
 #define K_OBJ_FLAG_MAP          BIT(4)
+/** Kernel object drawn from a pool: the pool's bookkeeping is released before disposal */
+#define K_OBJ_FLAG_OWNED	BIT(5)
+/** Thread or stack object whose thread is halting: not disposable until halt completes */
+#define K_OBJ_FLAG_HALTING	BIT(6)
+/** Stack object bound to its thread's lifetime: reaped with the thread */
+#define K_OBJ_FLAG_BOUND	BIT(7)
 
 /**
  * Grant a thread access to a kernel object
