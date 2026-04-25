@@ -445,7 +445,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  *
  * @see @kconfig{CONFIG_DYNAMIC_THREAD}
  */
-__syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, int flags);
+__syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, uint32_t flags);
 
 /**
  * @brief Free a dynamically allocated thread stack.

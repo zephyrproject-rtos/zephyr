@@ -10,7 +10,7 @@
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/internal/syscall_handler.h>
 
-k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
+k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, uint32_t flags)
 {
 	ARG_UNUSED(size);
 	ARG_UNUSED(flags);
@@ -19,7 +19,7 @@ k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline k_thread_stack_t *z_vrfy_k_thread_stack_alloc(size_t size, int flags)
+static inline k_thread_stack_t *z_vrfy_k_thread_stack_alloc(size_t size, uint32_t flags)
 {
 	/* No check needed: neither argument is dereferenced, allocation always fails. */
 	return z_impl_k_thread_stack_alloc(size, flags);

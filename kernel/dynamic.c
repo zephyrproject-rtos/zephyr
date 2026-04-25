@@ -31,7 +31,7 @@ static K_THREAD_STACK_ARRAY_DEFINE(dynamic_stack, CONFIG_DYNAMIC_THREAD_POOL_SIZ
 				   K_THREAD_STACK_LEN(CONFIG_DYNAMIC_THREAD_STACK_SIZE));
 SYS_BITARRAY_DEFINE_STATIC(dynamic_ba, BA_SIZE);
 
-static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size, int flags)
+static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size, uint32_t flags)
 {
 	int rv;
 	size_t offset;
@@ -56,7 +56,7 @@ static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size, int flags)
 	return stack;
 }
 
-static k_thread_stack_t *z_thread_stack_alloc_dyn(size_t size, int flags)
+static k_thread_stack_t *z_thread_stack_alloc_dyn(size_t size, uint32_t flags)
 {
 	size_t stack_len;
 
@@ -79,7 +79,7 @@ static k_thread_stack_t *z_thread_stack_alloc_dyn(size_t size, int flags)
 	return z_thread_aligned_alloc(Z_KERNEL_STACK_OBJ_ALIGN, stack_len);
 }
 
-k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
+k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, uint32_t flags)
 {
 	k_thread_stack_t *stack = NULL;
 
@@ -102,7 +102,7 @@ k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline k_thread_stack_t *z_vrfy_k_thread_stack_alloc(size_t size, int flags)
+static inline k_thread_stack_t *z_vrfy_k_thread_stack_alloc(size_t size, uint32_t flags)
 {
 	return z_impl_k_thread_stack_alloc(size, flags);
 }
