@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
 
 LOG_MODULE_REGISTER(lorawan_clock_sync, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
 
@@ -119,10 +120,8 @@ static void clock_sync_package_callback(uint8_t port, uint8_t flags, int16_t rss
 
 			ctx.nb_transmissions = 0;
 
-			time_correction = rx_buf[rx_pos++];
-			time_correction	+= rx_buf[rx_pos++] << 8;
-			time_correction	+= rx_buf[rx_pos++] << 16;
-			time_correction	+= rx_buf[rx_pos++] << 24;
+			time_correction = (int32_t)sys_get_le32(&rx_buf[rx_pos]);
+			rx_pos += sizeof(int32_t);
 
 			uint8_t token = rx_buf[rx_pos++] & 0x0F;
 
