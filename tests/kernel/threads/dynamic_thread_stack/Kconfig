@@ -1,0 +1,12 @@
+# Copyright (c) 2026, Friedt Professional Engineering Services, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config SYS_THREAD_STACK_MIN_ADD_TEST
+    int "Number of statically allocated thread stacks to use in the test"
+    default 2
+
+# This is excuslively used for the hash map storage, which is required for heap-allocated stacks
+config HEAP_MEM_POOL_ADD_SIZE_TEST
+    def_int 1024
+
+source "Kconfig.zephyr"

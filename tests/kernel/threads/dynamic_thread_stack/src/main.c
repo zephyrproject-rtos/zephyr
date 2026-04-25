@@ -9,19 +9,19 @@
 
 #define TIMEOUT_MS 500
 
-#define POOL_SIZE 28672
+#define POOL_SIZE 49152
 
 #ifdef CONFIG_USERSPACE
-#define STACK_OBJ_SIZE K_THREAD_STACK_LEN(CONFIG_DYNAMIC_THREAD_STACK_SIZE)
+#define STACK_OBJ_SIZE K_THREAD_STACK_LEN(CONFIG_SYS_THREAD_STACK_SIZE)
 #else
-#define STACK_OBJ_SIZE K_KERNEL_STACK_LEN(CONFIG_DYNAMIC_THREAD_STACK_SIZE)
+#define STACK_OBJ_SIZE K_KERNEL_STACK_LEN(CONFIG_SYS_THREAD_STACK_SIZE)
 #endif
 
-#define MAX_HEAP_STACKS (POOL_SIZE / STACK_OBJ_SIZE)
+#define MAX_HEAP_STACKS MIN((POOL_SIZE / STACK_OBJ_SIZE), CONFIG_SYS_THREAD_STACK_MAX)
 
 K_HEAP_DEFINE(stack_heap, POOL_SIZE);
 
-ZTEST_DMEM bool tflag[MAX(CONFIG_DYNAMIC_THREAD_POOL_SIZE, MAX_HEAP_STACKS)];
+ZTEST_DMEM bool tflag[MAX_HEAP_STACKS + 1];
 
 static void func(void *arg1, void *arg2, void *arg3)
 {
@@ -72,29 +72,77 @@ ZTEST_USER(dynamic_thread_stack, test_dynamic_thread_stack_userspace_dyn_obj)
 		ztest_test_skip();
 	}
 
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC)) {
+	if (!IS_ENABLED(CONFIG_DYNAMIC_OBJECTS)) {
 		ztest_test_skip();
 	}
 
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
+	if (CONFIG_SYS_THREAD_STACK_MAX == 0) {
 		ztest_test_skip();
 	}
 
-	stack = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	stack = k_thread_stack_alloc(CONFIG_SYS_THREAD_STACK_SIZE, K_USER);
 	zassert_not_null(stack);
 
 	th = k_object_alloc(K_OBJ_THREAD);
 	zassert_not_null(th);
 
-	tid = k_thread_create(th, stack, CONFIG_DYNAMIC_THREAD_STACK_SIZE, func,
-			      &tflag[0], NULL, NULL, 0,
-			      K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+	tid = k_thread_create(th, stack, CONFIG_SYS_THREAD_STACK_SIZE, func, &tflag[0], NULL, NULL,
+			      0, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	zassert_not_null(tid);
 
 	zassert_ok(k_thread_join(tid, K_MSEC(TIMEOUT_MS)));
 	zassert_true(tflag[0]);
-	zassert_ok(k_thread_stack_free(stack));
+	/* With CONFIG_SYS_THREAD, pool-allocated stacks are freed automatically */
+}
+
+/** @brief Exercise stacks larger than the pool slot size (mapped / heap oversize path) */
+ZTEST_USER(dynamic_thread_stack, test_dynamic_thread_stack_oversized)
+{
+	static struct k_thread oversized_th;
+	k_tid_t tid;
+	struct k_thread *th;
+	k_thread_stack_t *stack;
+	const size_t oversize = 2 * CONFIG_SYS_THREAD_STACK_SIZE;
+
+	if (CONFIG_SYS_THREAD_STACK_MAX == 0) {
+		ztest_test_skip();
+	}
+
+	if (IS_ENABLED(CONFIG_USERSPACE) && !IS_ENABLED(CONFIG_DYNAMIC_OBJECTS)) {
+		ztest_test_skip();
+	}
+
+	/* twice, to verify the previous round was torn down completely */
+	for (size_t i = 0; i < 2; ++i) {
+		stack = k_thread_stack_alloc(oversize,
+					     IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0);
+		if ((i == 0) && (stack == NULL)) {
+			/* backend cannot satisfy oversized requests in this config */
+			ztest_test_skip();
+		}
+		zassert_not_null(stack);
+
+		th = IS_ENABLED(CONFIG_USERSPACE) ? k_object_alloc(K_OBJ_THREAD) : &oversized_th;
+		zassert_not_null(th);
+
+		tflag[0] = false;
+		tid = k_thread_create(th, stack, oversize, func, &tflag[0], NULL, NULL, 0,
+				      IS_ENABLED(CONFIG_USERSPACE) ? K_USER | K_INHERIT_PERMS : 0,
+				      K_NO_WAIT);
+		zassert_not_null(tid);
+
+		zassert_ok(k_thread_join(tid, K_MSEC(TIMEOUT_MS)));
+		zassert_true(tflag[0]);
+	}
+
+	/* alloc/free without spawning exercises the destroy path directly */
+	for (size_t i = 0; i < 2; ++i) {
+		stack = k_thread_stack_alloc(oversize,
+					     IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0);
+		zassert_not_null(stack);
+		zassert_ok(k_thread_stack_free(stack));
+	}
 }
 
 /**
@@ -103,12 +151,10 @@ ZTEST_USER(dynamic_thread_stack, test_dynamic_thread_stack_userspace_dyn_obj)
  * @ingroup kernel_thread_tests
  *
  * @details
- * With CONFIG_DYNAMIC_THREAD_PREFER_POOL the allocator hands out stacks from a
- * fixed pool of CONFIG_DYNAMIC_THREAD_POOL_SIZE entries. Allocating exactly
+ * The stack pool holds CONFIG_SYS_THREAD_STACK_MIN entries. Allocating exactly
  * that many stacks must succeed, and each one has to be usable as a real
  * thread stack rather than merely being a non-NULL pointer, which is why a
- * thread is run on every one of them. Skipped when the pool is not the
- * preferred allocator.
+ * thread is run on every one of them. Skipped when the pool is empty.
  *
  * Test steps:
  * - Allocate one stack per pool entry.
@@ -125,52 +171,43 @@ ZTEST_USER(dynamic_thread_stack, test_dynamic_thread_stack_userspace_dyn_obj)
  */
 ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_pool)
 {
-	static k_tid_t tid[CONFIG_DYNAMIC_THREAD_POOL_SIZE];
-	static struct k_thread th[CONFIG_DYNAMIC_THREAD_POOL_SIZE];
-	static k_thread_stack_t *stack[CONFIG_DYNAMIC_THREAD_POOL_SIZE];
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_POOL)) {
-		ztest_test_skip();
-	}
+	static k_tid_t tid[SYS_THREAD_STACK_MIN];
+	static struct k_thread th[SYS_THREAD_STACK_MIN];
+	static k_thread_stack_t *stack[SYS_THREAD_STACK_MIN];
 
 	/* allocate all thread stacks from the pool */
-	for (size_t i = 0; i < CONFIG_DYNAMIC_THREAD_POOL_SIZE; ++i) {
-		stack[i] = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE,
+	for (size_t i = 0; i < SYS_THREAD_STACK_MIN; ++i) {
+		stack[i] = k_thread_stack_alloc(CONFIG_SYS_THREAD_STACK_SIZE,
 						IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0);
 
 		zassert_not_null(stack[i]);
 	}
 
-	if (IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
-		/* ensure 1 thread can be allocated from the heap when the pool is depleted */
-		zassert_ok(k_thread_stack_free(
-			k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE,
-					     IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0)));
+	if (CONFIG_SYS_THREAD_STACK_MAX > SYS_THREAD_STACK_MIN) {
+		/* ensure 1 more stack can be allocated beyond static MIN up to MAX */
+		zassert_ok(k_thread_stack_free(k_thread_stack_alloc(
+			CONFIG_SYS_THREAD_STACK_SIZE, IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0)));
 	} else {
-		/* ensure that no more thread stacks can be allocated from the pool */
-		zassert_is_null(k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE,
-						     IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0));
+		zassert_equal(NULL,
+			      k_thread_stack_alloc(CONFIG_SYS_THREAD_STACK_SIZE,
+						   IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0));
 	}
 
 	/* spawn our threads */
-	for (size_t i = 0; i < CONFIG_DYNAMIC_THREAD_POOL_SIZE; ++i) {
+	for (size_t i = 0; i < SYS_THREAD_STACK_MIN; ++i) {
 		tflag[i] = false;
-		tid[i] = k_thread_create(&th[i], stack[i],
-				CONFIG_DYNAMIC_THREAD_STACK_SIZE, func,
-				&tflag[i], NULL, NULL, 0,
-				K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+		tid[i] = k_thread_create(&th[i], stack[i], CONFIG_SYS_THREAD_STACK_SIZE, func,
+					 &tflag[i], NULL, NULL, 0, K_USER | K_INHERIT_PERMS,
+					 K_NO_WAIT);
 	}
 
 	/* join all threads and check that flags have been set */
-	for (size_t i = 0; i < CONFIG_DYNAMIC_THREAD_POOL_SIZE; ++i) {
+	for (size_t i = 0; i < SYS_THREAD_STACK_MIN; ++i) {
 		zassert_ok(k_thread_join(tid[i], K_MSEC(TIMEOUT_MS)));
 		zassert_true(tflag[i]);
 	}
 
-	/* clean up stacks allocated from the pool */
-	for (size_t i = 0; i < CONFIG_DYNAMIC_THREAD_POOL_SIZE; ++i) {
-		zassert_ok(k_thread_stack_free(stack[i]));
-	}
+	/* With CONFIG_SYS_THREAD, pool-allocated stacks are freed automatically */
 }
 
 /**
@@ -179,7 +216,7 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_pool)
  * @ingroup kernel_thread_tests
  *
  * @details
- * With CONFIG_DYNAMIC_THREAD_PREFER_ALLOC the stacks come from the heap
+ * With CONFIG_SYS_THREAD_STACK_MAX > 0 the stacks beyond the pool come from the heap
  * instead of the fixed pool, so the number available is bounded by memory
  * rather than by a compile-time count. Each allocated stack has to carry a
  * running thread, and freeing them has to return the memory so the sequence
@@ -206,17 +243,13 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_alloc)
 	static struct k_thread th[MAX_HEAP_STACKS];
 	static k_thread_stack_t *stack[MAX_HEAP_STACKS];
 
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC)) {
-		ztest_test_skip();
-	}
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
+	if (CONFIG_SYS_THREAD_STACK_MAX == SYS_THREAD_STACK_MIN) {
 		ztest_test_skip();
 	}
 
 	/* allocate all thread stacks from the heap */
 	for (N = 0; N < MAX_HEAP_STACKS; ++N) {
-		stack[N] = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE,
+		stack[N] = k_thread_stack_alloc(CONFIG_SYS_THREAD_STACK_SIZE,
 						IS_ENABLED(CONFIG_USERSPACE) ? K_USER : 0);
 		if (stack[N] == NULL) {
 			break;
@@ -226,10 +259,9 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_alloc)
 	/* spawn our threads */
 	for (size_t i = 0; i < N; ++i) {
 		tflag[i] = false;
-		tid[i] = k_thread_create(&th[i], stack[i],
-					 CONFIG_DYNAMIC_THREAD_STACK_SIZE, func,
-					 &tflag[i], NULL, NULL, 0,
-					 K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+		tid[i] = k_thread_create(&th[i], stack[i], CONFIG_SYS_THREAD_STACK_SIZE, func,
+					 &tflag[i], NULL, NULL, 0, K_USER | K_INHERIT_PERMS,
+					 K_NO_WAIT);
 	}
 
 	/* join all threads and check that flags have been set */
@@ -238,10 +270,7 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_alloc)
 		zassert_true(tflag[i]);
 	}
 
-	/* clean up stacks allocated from the heap */
-	for (size_t i = 0; i < N; ++i) {
-		zassert_ok(k_thread_stack_free(stack[i]));
-	}
+	/* With CONFIG_SYS_THREAD, pool-allocated stacks are freed automatically */
 }
 
 /** @brief Reject dynamically allocated kernel stacks with overflowing sizes. */
@@ -249,7 +278,7 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_size_overflow)
 {
 	k_thread_stack_t *stack;
 
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
+	if (CONFIG_SYS_THREAD_STACK_MAX == 0) {
 		ztest_test_skip();
 	}
 
@@ -331,35 +360,30 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_permission)
 	static struct k_thread th[2];
 	static k_thread_stack_t *stack[2];
 
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC)) {
-		ztest_test_skip();
-	}
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
-		ztest_test_skip();
-	}
-
 	if (!IS_ENABLED(CONFIG_USERSPACE)) {
 		ztest_test_skip();
 	}
 
-	stack[0] = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	if (CONFIG_SYS_THREAD_STACK_MAX == 0) {
+		ztest_test_skip();
+	}
+
+	stack[0] = k_thread_stack_alloc(CONFIG_SYS_THREAD_STACK_SIZE, K_USER);
 	zassert_not_null(stack[0]);
 
-	stack[1] = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	stack[1] = k_thread_stack_alloc(CONFIG_SYS_THREAD_STACK_SIZE, K_USER);
 	zassert_not_null(stack[1]);
 
 	k_thread_access_grant(k_current_get(), &perm_sem);
 
 	/* First thread inherit permissions */
-	tid[0] = k_thread_create(&th[0], stack[0], CONFIG_DYNAMIC_THREAD_STACK_SIZE, perm_func,
+	tid[0] = k_thread_create(&th[0], stack[0], CONFIG_SYS_THREAD_STACK_SIZE, perm_func,
 				 &perm_sem, NULL, NULL, 0, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	zassert_not_null(tid[0]);
 
 	/* Second thread will have access to specific kobjects only */
-	tid[1] = k_thread_create(&th[1], stack[1], CONFIG_DYNAMIC_THREAD_STACK_SIZE,
-				 perm_func_violator, &perm_sem, stack[0], NULL, 0, K_USER,
-				 K_FOREVER);
+	tid[1] = k_thread_create(&th[1], stack[1], CONFIG_SYS_THREAD_STACK_SIZE, perm_func_violator,
+				 &perm_sem, stack[0], NULL, 0, K_USER, K_FOREVER);
 	zassert_not_null(tid[1]);
 	k_thread_access_grant(tid[1], &perm_sem);
 	k_thread_access_grant(tid[1], &stack[1]);
@@ -374,9 +398,7 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_permission)
 	k_sem_give(&perm_sem);
 	zassert_ok(k_thread_join(tid[0], K_MSEC(TIMEOUT_MS)));
 
-	/* clean up stacks allocated from the heap */
-	zassert_ok(k_thread_stack_free(stack[0]));
-	zassert_ok(k_thread_stack_free(stack[1]));
+	/* With CONFIG_SYS_THREAD, pool-allocated stacks are freed automatically */
 }
 
 static void *dynamic_thread_stack_setup(void)

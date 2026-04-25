@@ -264,12 +264,6 @@ else()
   add_subdirectory_ifdef(CONFIG_USERSPACE userspace)
   add_subdirectory(sys)
 
-  if(${CONFIG_DYNAMIC_THREAD})
-    target_sources(kernel PRIVATE dynamic.c)
-  else()
-    target_sources(kernel PRIVATE dynamic_disabled.c)
-  endif()
-
   target_include_directories(kernel PRIVATE
     ${ZEPHYR_BASE}/kernel/include
     ${ARCH_DIR}/${ARCH}/include

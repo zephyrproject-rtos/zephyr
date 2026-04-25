@@ -306,64 +306,53 @@ config THREAD_CUSTOM_DATA
 	  which can be accessed using the k_thread_custom_data_xxx() APIs.
 
 config DYNAMIC_THREAD
-	bool "Support for dynamic threads [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	depends on THREAD_STACK_INFO
-	select DYNAMIC_OBJECTS if USERSPACE
-	select THREAD_MONITOR
+	bool "Support for dynamic threads [DEPRECATED]"
+	select DEPRECATED
 	help
 	  Enable support for dynamic threads and stacks.
+	  This option is deprecated. Use CONFIG_SYS_THREAD instead.
 
 if DYNAMIC_THREAD
 
 config DYNAMIC_THREAD_STACK_SIZE
-	int "Size of each pre-allocated thread stack"
-	default 4096 if X86 || COVERAGE_GCOV
-	default 1024 if !X86 && !64BIT
-	default 2048 if !X86 && 64BIT
+	int "Size of each pre-allocated thread stack [DEPRECATED]"
+	default 0
 	help
-	  Default stack size (in bytes) for dynamic threads.
+	  This option is deprecated. Use CONFIG_SYS_THREAD_STACK_SIZE instead.
 
 config DYNAMIC_THREAD_ALLOC
-	bool "Support heap-allocated thread objects and stacks"
+	bool "Support heap-allocated thread objects and stacks [DEPRECATED]"
+	select DEPRECATED
 	help
-	  Select this option to enable allocating thread object and
-	  thread stacks from the system heap.
-
-	  Only use this type of allocation in situations
-	  where malloc is permitted.
+	  This option is Deprecated. Use CONFIG_SYS_THREAD in conjunction with
+	  CONFIG_SYS_THREAD_THREAD_MAX instead. Heap-based allocation also requires an appropriately
+	  sized kernel heap (See CONFIG_HEAP_MEM_POOL_SIZE).
 
 config DYNAMIC_THREAD_POOL_SIZE
-	int "Number of statically pre-allocated threads"
+	int "Number of statically pre-allocated threads [DEPRECATED]"
 	default 0
-	range 0 8192
 	help
-	  Pre-allocate a fixed number of thread objects and
-	  stacks at build time.
-
-	  This type of "dynamic" stack is usually suitable in
-	  situations where malloc is not permitted.
+	  This option is deprecated. Use CONFIG_SYS_THREAD in conjunction with
+	  CONFIG_SYS_THREAD_THREAD_MIN instead.
 
 choice DYNAMIC_THREAD_PREFER
-	prompt "Preferred dynamic thread allocator"
+	prompt "Preferred dynamic thread allocator [DEPRECATED]"
 	default DYNAMIC_THREAD_PREFER_POOL
 	help
-	  If both CONFIG_DYNAMIC_THREAD_ALLOC=y and
-	  CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0, then the user may
-	  specify the order in which allocation is attempted.
+	  This option is deprecated. Please use CONFIG_SYS_THREAD instead.
 
 config DYNAMIC_THREAD_PREFER_ALLOC
-	bool "Prefer heap-based allocation"
+	bool "Prefer heap-based allocation [DEPRECATED]"
 	depends on DYNAMIC_THREAD_ALLOC
+	select DEPRECATED
 	help
-	  Select this option to attempt a heap-based allocation
-	  prior to any pool-based allocation.
+	  This option is deprecated. Please use CONFIG_SYS_THREAD instead.
 
 config DYNAMIC_THREAD_PREFER_POOL
-	bool "Prefer pool-based allocation"
+	bool "Prefer pool-based allocation [DEPRECATED]"
+	select DEPRECATED
 	help
-	  Select this option to attempt a pool-based allocation
-	  prior to any heap-based allocation.
+	  This option is deprecated. Please use CONFIG_SYS_THREAD instead.
 
 endchoice # DYNAMIC_THREAD_PREFER
 

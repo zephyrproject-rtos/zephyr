@@ -24,6 +24,7 @@
 #include <zephyr/sys/mem_stats.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/thread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -442,15 +443,15 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 /**
  * @brief Dynamically allocate a thread stack.
  *
- * Dynamically allocate a thread stack either from a pool of thread stacks of
- * size @kconfig{CONFIG_DYNAMIC_THREAD_POOL_SIZE}, or from the system heap.
- * Order is determined by the @kconfig{CONFIG_DYNAMIC_THREAD_PREFER_ALLOC} and
- * @kconfig{CONFIG_DYNAMIC_THREAD_PREFER_POOL} options. Thread stacks from the
- * pool are of maximum size @kconfig{CONFIG_DYNAMIC_THREAD_STACK_SIZE}.
+ * Dynamically allocate a thread stack either from the system pool of thread stacks of
+ * size @kconfig{CONFIG_SYS_THREAD_STACK_SIZE}.
  *
- * @note When no longer required, thread stacks allocated with
+ * @note If not assigned to a spawned thread, thread stacks allocated with
  * `k_thread_stack_alloc()` must be freed with @ref k_thread_stack_free to
- * avoid leaking memory.
+ * avoid leaking memory. However, the kernel will automatically free any thread stacks
+ * allocated with `k_thread_stack_alloc()` when the associated thread is cancelled with
+ * @ref k_thread_cancel, when the thread exits with @ref k_thread_exit, or when the
+ * thread runs to completion.
  *
  * @param size Stack size in bytes.
  * @param flags Stack creation flags, or 0.
@@ -461,9 +462,26 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * Relevant stack creation flags include:
  * - @ref K_USER allocate a userspace thread (requires @kconfig{CONFIG_USERSPACE})
  *
- * @see @kconfig{CONFIG_DYNAMIC_THREAD}
+ * @deprecated Use @ref sys_thread_stack_alloc instead.
+ * @see @kconfig{CONFIG_SYS_THREAD}
  */
-__syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, uint32_t flags);
+static inline k_thread_stack_t *k_thread_stack_alloc(size_t size, uint32_t flags)
+{
+#ifdef CONFIG_SYS_THREAD
+	k_thread_stack_t *stack;
+	uint32_t stack_size = size;
+
+	if (sys_thread_stack_alloc(&stack, &stack_size, 0, flags) < 0) {
+		return NULL;
+	}
+
+	return stack;
+#else
+	ARG_UNUSED(size);
+	ARG_UNUSED(flags);
+	return NULL;
+#endif
+}
 
 /**
  * @brief Free a dynamically allocated thread stack.
@@ -475,9 +493,18 @@ __syscall k_thread_stack_t *k_thread_stack_alloc(size_t size, uint32_t flags);
  * @retval -EINVAL if @p stack is invalid.
  * @retval -ENOSYS if dynamic thread stack allocation is disabled
  *
- * @see @kconfig{CONFIG_DYNAMIC_THREAD}
+ * @deprecated Use @ref sys_thread_stack_destroy instead.
+ * @see @kconfig{CONFIG_SYS_THREAD}
  */
-__syscall int k_thread_stack_free(k_thread_stack_t *stack);
+static inline int k_thread_stack_free(k_thread_stack_t *stack)
+{
+#ifdef CONFIG_SYS_THREAD
+	return sys_thread_stack_destroy(stack);
+#else
+	ARG_UNUSED(stack);
+	return -ENOTSUP;
+#endif
+}
 
 /**
  * @brief Create a thread.
