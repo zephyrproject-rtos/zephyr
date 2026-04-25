@@ -281,33 +281,3 @@ int usbh_req_clear_sfs_halt(struct usb_device *const udev, const uint8_t ep)
 			      bmRequestType, bRequest, wValue, wIndex, 0,
 			      NULL);
 }
-
-int usbh_req_set_hcfs_ppwr(struct usb_device *const udev,
-			   const uint8_t port)
-{
-	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 |
-				      USB_REQTYPE_TYPE_CLASS << 5 |
-				      USB_REQTYPE_RECIPIENT_OTHER << 0;
-	const uint8_t bRequest = USB_HCREQ_SET_FEATURE;
-	const uint16_t wValue = USB_HCFS_PORT_POWER;
-	const uint16_t wIndex = port;
-
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, wIndex, 0,
-			      NULL);
-}
-
-int usbh_req_set_hcfs_prst(struct usb_device *const udev,
-			   const uint8_t port)
-{
-	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 |
-				      USB_REQTYPE_TYPE_CLASS << 5 |
-				      USB_REQTYPE_RECIPIENT_OTHER << 0;
-	const uint8_t bRequest = USB_HCREQ_SET_FEATURE;
-	const uint16_t wValue = USB_HCFS_PORT_RESET;
-	const uint16_t wIndex = port;
-
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, wIndex, 0,
-			      NULL);
-}
