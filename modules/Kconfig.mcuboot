@@ -372,6 +372,13 @@ config MCUBOOT_BOOTLOADER_USES_SHA512
 	help
 	  MCUboot has been compiled to verify images using SHA512.
 
+config MCUBOOT_BOOTLOADER_USES_HW_IMAGE_SWAP
+	bool "MCUboot uses HW image swapping"
+	depends on MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP || MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
+	help
+	  MCUboot has been compiled to use image swapping done by hardware.
+	  This feature can only be used with MCUboot modes based on DIRECT_XIP.
+
 config MCUBOOT_BOOTLOADER_SIGNATURE_TYPE_PURE
 	bool "Signature is verified over an image rather than sha of an image"
 	help

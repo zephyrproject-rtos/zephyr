@@ -145,6 +145,8 @@ mikrobus_serial: &flexcomm0 {};
 	ahb-boundary = "1024";
 	rx-clock-source = <1>;
 	rx-clock-source-b = <1>;
+	nxp,remap-alignment = <4096>;
+	nxp,remap-provide-hwimageswap;
 
 	/* Winbond external flash */
 	ext_flash_ctrl: flash-controller@0 {

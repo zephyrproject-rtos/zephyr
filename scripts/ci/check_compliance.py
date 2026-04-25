@@ -1521,6 +1521,7 @@ flagged.
         "BOOT_ENCRYPT_IMAGE",  # Used in sysbuild
         "BOOT_FIRMWARE_LOADER",  # Used in sysbuild for MCUboot configuration
         "BOOT_FIRMWARE_LOADER_BOOT_MODE",  # Used in sysbuild for MCUboot configuration
+        "BOOT_HW_IMAGE_SWAP",  # Used in sysbuild for MCUboot configuration
         "BOOT_IMAGE_EXECUTABLE_RAM_SIZE",  # MCUboot setting
         "BOOT_IMAGE_EXECUTABLE_RAM_START",  # MCUboot setting
         "BOOT_MAX_IMG_SECTORS_AUTO",  # Used in sysbuild
