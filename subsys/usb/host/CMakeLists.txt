@@ -16,6 +16,7 @@ zephyr_library_sources(
 
 zephyr_library_sources_ifdef(
   CONFIG_USBH_SHELL
+  usbh_ch11.c
   usbh_shell.c
 )
 
