@@ -18,12 +18,12 @@ LOG_MODULE_REGISTER(dap_usb, CONFIG_DAP_LOG_LEVEL);
  * This file implements CMSIS DAP USB backend function using bulk endpoints.
  */
 
-static uint8_t response_buf[512];
+static uint8_t response_buf[USBD_MAX_BULK_MPS];
 
 NET_BUF_POOL_FIXED_DEFINE(dap_func_pool,
 			  1, 0, sizeof(struct udc_buf_info), NULL);
 
-UDC_STATIC_BUF_DEFINE(dap_func_buf, 512);
+UDC_STATIC_BUF_DEFINE(dap_func_buf, USBD_MAX_BULK_MPS);
 
 struct dap_func_desc {
 	struct usb_if_descriptor if0;
@@ -51,7 +51,7 @@ static uint8_t dap_func_get_bulk_out(struct usbd_class_data *const c_data)
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct dap_func_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_out_ep.bEndpointAddress;
 	}
 
@@ -64,7 +64,7 @@ static uint8_t dap_func_get_bulk_in(struct usbd_class_data *const c_data)
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct dap_func_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_in_ep.bEndpointAddress;
 	}
 
@@ -118,9 +118,11 @@ static void *dap_func_get_desc(struct usbd_class_data *const c_data,
 {
 	struct dap_func_data *data = usbd_class_get_private(c_data);
 
+#if USBD_SUPPORTS_HIGH_SPEED
 	if (speed == USBD_SPEED_HS) {
 		return data->hs_desc;
 	}
+#endif
 
 	return data->fs_desc;
 }
@@ -218,6 +220,27 @@ struct usbd_class_api dap_func_api = {
 	.init = dap_func_init,
 };
 
+#define DAP_FUNC_DESCRIPTOR_DEFINE_HS(n)					\
+	/* High-speed Endpoint OUT */						\
+	.if0_hs_out_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x01,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(512),				\
+		.bInterval = 0x00,						\
+	},									\
+										\
+	/* High-speed Endpoint IN */						\
+	.if0_hs_in_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x81,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(512),				\
+		.bInterval = 0x00,						\
+	},									\
+
 #define DAP_FUNC_DESCRIPTOR_DEFINE(n, _)					\
 static struct dap_func_desc dap_func_desc_##n = {				\
 	/* Interface descriptor 0 */						\
@@ -253,25 +276,9 @@ static struct dap_func_desc dap_func_desc_##n = {				\
 		.bInterval = 0x00,						\
 	},									\
 										\
-	/* High-speed Endpoint OUT */						\
-	.if0_hs_out_ep = {							\
-		.bLength = sizeof(struct usb_ep_descriptor),			\
-		.bDescriptorType = USB_DESC_ENDPOINT,				\
-		.bEndpointAddress = 0x01,					\
-		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(512),				\
-		.bInterval = 0x00,						\
-	},									\
-										\
-	/* High-speed Endpoint IN */						\
-	.if0_hs_in_ep = {							\
-		.bLength = sizeof(struct usb_ep_descriptor),			\
-		.bDescriptorType = USB_DESC_ENDPOINT,				\
-		.bEndpointAddress = 0x81,					\
-		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(512),				\
-		.bInterval = 0x00,						\
-	},									\
+	COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED,					\
+		    (DAP_FUNC_DESCRIPTOR_DEFINE_HS(n)),				\
+		    ())								\
 										\
 	/* Termination descriptor */						\
 	.nil_desc = {								\
@@ -286,7 +293,8 @@ const static struct usb_desc_header *dap_func_fs_desc_##n[] = {			\
 	(struct usb_desc_header *) &dap_func_desc_##n.if0_in_ep,		\
 	(struct usb_desc_header *) &dap_func_desc_##n.nil_desc,			\
 };										\
-										\
+
+#define DAP_FUNC_DEFINE_HS_DESC_HEADER(n)					\
 const static struct usb_desc_header *dap_func_hs_desc_##n[] = {			\
 	(struct usb_desc_header *) &dap_func_desc_##n.if0,			\
 	(struct usb_desc_header *) &dap_func_desc_##n.if0_hs_out_ep,		\
@@ -296,6 +304,9 @@ const static struct usb_desc_header *dap_func_hs_desc_##n[] = {			\
 
 
 #define DAP_FUNC_FUNCTION_DATA_DEFINE(n, _)					\
+	COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED,					\
+		    (DAP_FUNC_DEFINE_HS_DESC_HEADER(n)),			\
+		    ())								\
 	USBD_DESC_STRING_DEFINE(iface_str_desc_nd_##n,				\
 				"CMSIS-DAP v2",					\
 				USBD_DUT_STRING_INTERFACE);			\
@@ -303,7 +314,8 @@ const static struct usb_desc_header *dap_func_hs_desc_##n[] = {			\
 	static struct dap_func_data dap_func_data_##n = {			\
 		.desc = &dap_func_desc_##n,					\
 		.fs_desc = dap_func_fs_desc_##n,				\
-		.hs_desc = dap_func_hs_desc_##n,				\
+		.hs_desc = COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED,		\
+				       (dap_func_hs_desc_##n,), (NULL,))	\
 		.iface_str_desc_nd = &iface_str_desc_nd_##n,			\
 	};									\
 										\
