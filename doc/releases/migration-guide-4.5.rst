@@ -95,6 +95,11 @@ Boards
   Applications that relied on ``CONFIG_GPIO=y`` being the default will need to enable
   the option explicitly. (:github:`109468`)
 
+* Boards that use UF2 images that migrate to :dtcompatible:`zephyr,mapped-partition` should enable
+  HEX output in their defconfig (:kconfig:option:`CONFIG_BUILD_OUTPUT_HEX`), as the UF2 image
+  generation can no longer rely on :kconfig:option:`CONFIG_FLASH_LOAD_OFFSET` to determine the code
+  address from a BIN output. HEX to UF2 is now the default (instead of BIN). (:github:`107944`)
+
 * Ezurio bl54l15u_dvk has been removed. The bl54l15_dvk remains available and supports
   both the bl54l15 and bl54l15u variants of the module, with the same features.
   Boards using the bl54l15u_dvk should migrate to bl54l15_dvk/nrf54l15/cpuapp or
