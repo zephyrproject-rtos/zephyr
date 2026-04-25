@@ -208,7 +208,6 @@
 				erase-block-size = <DT_SIZE_K(4)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 			};
 		};
 
