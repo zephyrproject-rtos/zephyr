@@ -7,14 +7,22 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/logging/log.h>
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
 	     "Console device is not ACM CDC UART device");
+
+LOG_MODULE_REGISTER(app);
 
 int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	uint32_t dtr = 0;
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR_DEVICE_NOT_READY(dev);
+		return -ENODEV;
+	}
 
 	/* Poll if the DTR flag was set */
 	while (!dtr) {
