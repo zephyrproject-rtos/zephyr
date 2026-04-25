@@ -439,7 +439,7 @@ static int pd_decode_command(struct osdp_pd *pd, uint8_t *buf, int len)
 		cmd.comset.baud_rate = buf[pos++];
 		cmd.comset.baud_rate |= buf[pos++] << 8;
 		cmd.comset.baud_rate |= buf[pos++] << 16;
-		cmd.comset.baud_rate |= buf[pos++] << 24;
+		cmd.comset.baud_rate |= (uint32_t)buf[pos++] << 24;
 		if (cmd.comset.address >= 0x7F ||
 		    (cmd.comset.baud_rate != 9600 &&
 		     cmd.comset.baud_rate != 19200 &&

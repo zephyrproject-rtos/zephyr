@@ -381,7 +381,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		pd->id.serial_number = buf[pos++];
 		pd->id.serial_number |= buf[pos++] << 8;
 		pd->id.serial_number |= buf[pos++] << 16;
-		pd->id.serial_number |= buf[pos++] << 24;
+		pd->id.serial_number |= (uint32_t)buf[pos++] << 24;
 
 		pd->id.firmware_version = buf[pos++] << 16;
 		pd->id.firmware_version |= buf[pos++] << 8;
@@ -447,7 +447,7 @@ static int cp_decode_response(struct osdp_pd *pd, uint8_t *buf, int len)
 		temp32 = buf[pos++];
 		temp32 |= buf[pos++] << 8;
 		temp32 |= buf[pos++] << 16;
-		temp32 |= buf[pos++] << 24;
+		temp32 |= (uint32_t)buf[pos++] << 24;
 		LOG_WRN("COMSET responded with ID:%d Baud:%d", t1, temp32);
 		pd->address = t1;
 		pd->baud_rate = temp32;
