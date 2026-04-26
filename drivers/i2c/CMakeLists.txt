@@ -64,6 +64,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_NPCX_FIFO_DRIVEN
 
 zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIS i2c_nrfx_twis.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NUMAKER i2c_numaker.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_NUMICRO i2c_numicro.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NXP_II2C i2c_nxp_ii2c.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_OMAP i2c_omap.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RCAR i2c_rcar.c)

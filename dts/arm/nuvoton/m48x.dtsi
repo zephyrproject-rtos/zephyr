@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/reset/numicro_m48x_reset.h>
 #include <zephyr/dt-bindings/clock/numicro_m48x_clock.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <freq.h>
 
 / {
@@ -273,6 +274,42 @@
 			clocks = <&pcc NUMICRO_UART7_MODULE NUMICRO_CLK_CLKSEL3_UART7SEL_HIRC
 				  NUMICRO_CLK_CLKDIV4_UART7(1)>;
 			status = "disabled";
+		};
+
+		i2c0: i2c@40080000 {
+			compatible = "nuvoton,numicro-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40080000 0x6C>;
+			interrupts = <38 0>;
+			resets = <&rst NUMICRO_I2C0_RST>;
+			clocks = <&pcc NUMICRO_I2C0_MODULE 0 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c1: i2c@40081000 {
+			compatible = "nuvoton,numicro-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40081000 0x6C>;
+			interrupts = <39 0>;
+			resets = <&rst NUMICRO_I2C1_RST>;
+			clocks = <&pcc NUMICRO_I2C1_MODULE 0 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c2: i2c@40082000 {
+			compatible = "nuvoton,numicro-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40082000 0x6C>;
+			interrupts = <82 0>;
+			resets = <&rst NUMICRO_I2C2_RST>;
+			clocks = <&pcc NUMICRO_I2C2_MODULE 0 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };
