@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: Chipone CO5300 display controller on MSPI bus
+
+compatible: "chipone,co5300"
+
+include: ["mspi-device.yaml", "chipone,co5300-common.yaml"]
+
+properties:
+  pixel-format:
+    type: int
+    required: true
+    description: |
+      Initial Pixel format of this controller's output data.
+    enum:
+      - 1 # PANEL_PIXEL_FORMAT_RGB_888
+      - 16 # PANEL_PIXEL_FORMAT_RGB_565
+
+  chunk-size:
+    type: int
+    default: 4096
+    description: |
+      Chunk size in bytes to be used for data transfers.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/display/panel.h>
+
+    co5300_display: co5300-display@0 {
+      /* ... */
+
+      pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+    };
