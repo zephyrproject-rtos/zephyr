@@ -36,7 +36,8 @@
 #include <mgmt/mcumgr/transport/smp_internal.h>
 #endif
 
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
 #include <bootutil/boot_status.h>
 #include <zephyr/retention/blinfo.h>
 #endif
@@ -240,7 +241,8 @@ int img_mgmt_active_slot(int image)
 	/* Multi image does not support DirectXIP or RAM load currently */
 #if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1
 	slot = (image << 1);
-#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
+	  defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
 	/* RAM load requires querying bootloader */
 	int rc;
 	uint8_t temp_slot;

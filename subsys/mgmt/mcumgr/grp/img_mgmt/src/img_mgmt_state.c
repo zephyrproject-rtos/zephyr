@@ -51,11 +51,12 @@ LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 #define REPORT_SLOT_CONFIRMED	BIT(2)
 #define REPORT_SLOT_PERMANENT	BIT(3)
 
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
-#define DIRECT_XIP_BOOT_UNSET		0
-#define DIRECT_XIP_BOOT_ONCE		1
-#define DIRECT_XIP_BOOT_REVERT		2
-#define DIRECT_XIP_BOOT_FOREVER		3
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
+#define BOOT_STATE_UNSET		0
+#define BOOT_STATE_ONCE			1
+#define BOOT_STATE_REVERT		2
+#define BOOT_STATE_FOREVER		3
 #endif
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) && \
@@ -159,6 +160,8 @@ img_mgmt_state_flags(int query_slot)
 
 #if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
 	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) && \
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) && \
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) && \
 	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 {
@@ -209,8 +212,9 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 }
 #else
 
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
-static int read_directxip_state(int slot)
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
+static int read_boot_swap_state(int slot)
 {
 	struct boot_swap_state bss;
 	int fa_id = img_mgmt_flash_area_id(slot);
@@ -232,28 +236,33 @@ static int read_directxip_state(int slot)
 
 	if (bss.magic == BOOT_MAGIC_GOOD) {
 		if (bss.image_ok == BOOT_FLAG_SET) {
-			return DIRECT_XIP_BOOT_FOREVER;
+			return BOOT_STATE_FOREVER;
 		} else if (bss.copy_done == BOOT_FLAG_SET) {
-			return DIRECT_XIP_BOOT_REVERT;
+			return BOOT_STATE_REVERT;
 		}
-		return DIRECT_XIP_BOOT_ONCE;
+		return BOOT_STATE_ONCE;
 	}
-	return DIRECT_XIP_BOOT_UNSET;
+	return BOOT_STATE_UNSET;
 }
-#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
+#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) || \
+	   defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) */
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) || \
-	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
 int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 {
 	struct image_version aver;
 	struct image_version over;
 	int active_slot = img_mgmt_active_slot(image);
 	int other_slot = img_mgmt_get_opposite_slot(active_slot);
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
 	int active_slot_state;
 	int other_slot_state;
-#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
+#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) || \
+	   defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) */
 	enum img_mgmt_next_boot_type lt = NEXT_BOOT_TYPE_NORMAL;
 	int return_slot = active_slot;
 
@@ -261,9 +270,10 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 	int rcs = img_mgmt_read_info(other_slot, &over, NULL, NULL);
 	int rca = img_mgmt_read_info(active_slot, &aver, NULL, NULL);
 
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
-	active_slot_state = read_directxip_state(active_slot);
-	other_slot_state = read_directxip_state(other_slot);
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
+	active_slot_state = read_boot_swap_state(active_slot);
+	other_slot_state = read_boot_swap_state(other_slot);
 	if (rca != 0 ||
 	    (rcs != 0 && rcs != IMG_MGMT_ERR_NO_IMAGE)) {
 		/* We do not really know what will happen, as we can not
@@ -287,11 +297,11 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 		goto out;
 	}
 
-	if (active_slot_state == DIRECT_XIP_BOOT_REVERT) {
+	if (active_slot_state == BOOT_STATE_REVERT) {
 		lt = NEXT_BOOT_TYPE_REVERT;
 		return_slot = other_slot;
-	} else if (other_slot_state == DIRECT_XIP_BOOT_UNSET) {
-		if (active_slot_state == DIRECT_XIP_BOOT_ONCE) {
+	} else if (other_slot_state == BOOT_STATE_UNSET) {
+		if (active_slot_state == BOOT_STATE_ONCE) {
 			lt = NEXT_BOOT_TYPE_TEST;
 		}
 	} else if ((img_mgmt_vercmp(&aver, &over) < 0) ||
@@ -302,9 +312,9 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 		 * - If both slots are valid and the versions are equal, a slot with lower number
 		 *   is preferred.
 		 */
-		if (other_slot_state == DIRECT_XIP_BOOT_FOREVER) {
+		if (other_slot_state == BOOT_STATE_FOREVER) {
 			return_slot = other_slot;
-		} else if (other_slot_state == DIRECT_XIP_BOOT_ONCE) {
+		} else if (other_slot_state == BOOT_STATE_ONCE) {
 			lt = NEXT_BOOT_TYPE_TEST;
 			return_slot = other_slot;
 		}
@@ -327,7 +337,8 @@ out:
 		 */
 		return_slot = other_slot;
 	}
-#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
+#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) || \
+	   defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) */
 
 	if (type != NULL) {
 		*type = lt;
@@ -336,10 +347,14 @@ out:
 	return return_slot;
 }
 #endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) || \
-	* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+	* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) || \
+	* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
+	* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
 	*/
 #endif /* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
 	* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) && \
+	* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) && \
+	* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) && \
 	* !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
 	*/
 
@@ -674,7 +689,8 @@ static int img_mgmt_set_next_boot_slot_common(int slot, int active_slot, bool co
 	return rc;
 }
 
-#ifndef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
+#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) && \
+    !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
 int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 {
 	/* image the requested slot is defined within */
