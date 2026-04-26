@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, Numicro I2C controller
+
+compatible: "nuvoton,numicro-i2c"
+
+include: [i2c-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true
+
+  clocks:
+    required: true
