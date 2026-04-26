@@ -141,20 +141,27 @@ again:
 	ret = dns_get_addr_info(host, qtype, &ai_state->dns_id,
 				dns_resolve_cb, ai_state, timeout_ms);
 	if (ret == 0) {
-		/* If the DNS query for reason fails so that the
-		 * dns_resolve_cb() would not be called, then we want the
-		 * semaphore to timeout so that we will not hang forever.
-		 * So make the sem timeout longer than the DNS timeout so that
-		 * we do not need to start to cancel any pending DNS queries.
+		/* If the resolver callback is not called for any reason, let the
+		 * semaphore timeout so getaddrinfo() does not hang forever.
+		 * Keep sem timeout slightly longer than the DNS timeout.
 		 */
 		ret = k_sem_take(&ai_state->sem, K_MSEC(timeout_ms + 100));
 		if (ret == -EAGAIN) {
+			/* Explicitly cancel timed out query before retrying. This
+			 * prevents delayed callbacks from using stack-based state
+			 * after getaddrinfo() returns.
+			 *
+			 * Use name-qualified cancellation so valid resolver-assigned
+			 * id 0 queries (e.g. mDNS) are also canceled without risking
+			 * canceling an unrelated query that happens to use id 0.
+			 */
+			(void) dns_cancel_addr_info_with_name(host, qtype, ai_state->dns_id);
+
 			if (!sys_timepoint_expired(end)) {
+				k_sem_reset(&ai_state->sem);
 				timeout = recalc_timeout(end, timeout);
 				goto again;
 			}
-
-			(void)dns_cancel_addr_info(ai_state->dns_id);
 			st = DNS_EAI_AGAIN;
 		} else {
 			if (ai_state->status == DNS_EAI_CANCELED) {
@@ -172,6 +179,9 @@ again:
 		 * DNS_EAI_ADDRFAMILY.
 		 */
 		st = DNS_EAI_ADDRFAMILY;
+	} else if (ret == -EAGAIN) {
+		/* Temporary resolver-side condition (e.g. no available query slot). */
+		st = DNS_EAI_AGAIN;
 	} else {
 		errno = -ret;
 		st = DNS_EAI_SYSTEM;

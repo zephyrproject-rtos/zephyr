@@ -43,6 +43,8 @@ struct mctp_binding_usb {
 		STATE_WAIT_HDR_LEN,
 		STATE_DATA
 	} rx_state;
+	uint8_t tx_storage[MCTP_PKTBUF_SIZE(MCTP_PACKET_SIZE(MCTP_USB_MAX_PACKET_LENGTH))]
+		PKTBUF_STORAGE_ALIGN;
 	/** @endcond INTERNAL_HIDDEN */
 };
 
@@ -72,6 +74,7 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 			.pkt_size = MCTP_PACKET_SIZE(MCTP_USB_MAX_PACKET_LENGTH),		\
 			.pkt_header = 0,							\
 			.pkt_trailer = 0,							\
+			.tx_storage = _name.tx_storage,						\
 			.start = mctp_usb_start,						\
 			.tx = mctp_usb_tx							\
 		},										\

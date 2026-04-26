@@ -14,9 +14,6 @@
 	model = "STMicroelectronics STM32WBA25CE1-NUCLEO board";
 	compatible = "st,stm32wba25ce1-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,uart-pipe = &usart1;
 		zephyr,console = &usart1;

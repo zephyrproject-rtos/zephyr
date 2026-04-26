@@ -373,7 +373,7 @@ static int hx711_init(const struct device *dev)
 	const struct hx711_config *config = dev->config;
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_DBG("SPI bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->spi.bus);
 		return -ENODEV;
 	}
 

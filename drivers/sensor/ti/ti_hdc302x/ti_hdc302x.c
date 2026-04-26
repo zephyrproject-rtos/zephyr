@@ -936,7 +936,7 @@ static int ti_hdc302x_init(const struct device *dev)
 	       sizeof(data->selected_mode));
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("I2C bus %s not ready", config->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(config->bus.bus);
 		return -ENODEV;
 	}
 
@@ -964,7 +964,7 @@ static int ti_hdc302x_init(const struct device *dev)
 	/* Configure interrupt GPIO if available */
 	if (config->int_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->int_gpio)) {
-			LOG_ERR("GPIO interrupt device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 			return -ENODEV;
 		}
 

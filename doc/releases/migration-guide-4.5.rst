@@ -53,6 +53,28 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+Digital Microphone
+==================
+
+* The DMIC driver backend API now uses :c:struct:`dmic_driver_api` instead of ``struct _dmic_ops``.
+
+  Out-of-tree DMIC drivers must rename their backend API struct definitions and switch their API
+  instances to ``DEVICE_API(dmic, ...)``. See :github:`107695` for examples of how in-tree drivers
+  have been updated. Application code using :c:func:`dmic_configure`, :c:func:`dmic_trigger`, and
+  :c:func:`dmic_read` is not impacted.
+
+Flash
+=====
+* :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
+  of each plane in the flash device. For devices with a single plane, this should be set to the
+  same value as ``size-bytes``.
+
+STM32
+=====
+
+* SoC DTSI files now consistently use interrupt priority zero for all peripherals.
+  Applications must now explicitly configure interrupt priorities using Devicetree
+  if they previously relied on the values found in SoC DTSI files. (:github:`106188`)
 
 .. zephyr-keep-sorted-stop
 
@@ -83,6 +105,25 @@ Bluetooth Audio
   as :c:func:`bt_cap_commander_broadcast_reception_start` now ensures this when
   :c:member:`bt_cap_commander_cb.broadcast_reception_start` is called. This also applies for
   :c:func:`bt_cap_commander_broadcast_reception_stop` in a similar manner. (:github:`101070`)
+* :c:member:`bt_bap_stream.qos` is now ``const``, to better reflect that it is a read-only
+  value. Any non-read uses of it will need to be set with the appropriate operations such as
+  :c:func:`bt_bap_unicast_group_create`, :c:func:`bt_bap_unicast_group_reconfig`,
+  :c:func:`bt_bap_broadcast_source_create` or :c:func:`bt_bap_broadcast_source_reconfig`.
+  (:github:`104887`)
+* Almost all API uses of ``struct bt_bap_qos_cfg *`` is now const, which means that once the
+  ``qos`` has been stored in a parameter struct like
+  :c:struct:`bt_bap_broadcast_source_param` or
+  :c:struct:`bt_bap_unicast_group_stream_param`, then the parameter's pointer cannot be used
+  to modify the ``qos``, and the actual definition of the struct should be modified instead.
+  (:github:`104219`)
+* :c:member:`bt_bap_unicast_group_info.sink_pd` and :c:member:`bt_bap_unicast_group_info.source_pd`
+  now reflect the local values defined for the group, and not the values configured for any remote
+  ASEs. (:github:`104887`)
+* :c:func:`bt_bap_unicast_client_discover` and :c:func:`bt_bap_broadcast_assistant_discover` now
+  require that the connection has already gone through the pairing process and meets the security
+  requirements of BAP before doing any discovery. In most cases this requires a call to
+  :c:func:`bt_conn_set_security` for new devices. Bonded devices that reconnect should not require
+  anything.
 
 Bluetooth HCI
 =============
@@ -95,11 +136,24 @@ Bluetooth HCI
 Networking
 **********
 
+Ethernet
+========
+
+* :kconfig:option:`CONFIG_NET_DEFAULT_IF_ETHERNET` now allows to get the first ethernet interface,
+  instead of the first between ethernet and wifi.
+
 Other subsystems
 ****************
 
+* Demand paging (``subsys/demand_paging``) is moved under Memory Management
+  into ``subsys/mem_mgmt/demand_paging``. Custom backing store and eviction algorithm code need
+  to be moved there.
+
 Modules
 *******
+
+* Support for the `CANopenNode <https://github.com/CANopenNode/CANopenNode>`_ protocol stack was
+  moved to an :ref:`external module<external_module_canopennode>`.
 
 hal_nxp
 =======

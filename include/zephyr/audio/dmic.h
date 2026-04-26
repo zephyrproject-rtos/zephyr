@@ -29,7 +29,7 @@
  *
  * @defgroup audio_dmic_interface Digital Microphone Interface
  * @since 1.13
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup audio_interface
  * @{
  */
@@ -214,14 +214,58 @@ struct dmic_cfg {
 };
 
 /**
- * Function pointers for the DMIC driver operations
+ * @def_driverbackendgroup{Digital Microphone,audio_dmic_interface}
+ * @{
  */
-struct _dmic_ops {
-	int (*configure)(const struct device *dev, struct dmic_cfg *config);
-	int (*trigger)(const struct device *dev, enum dmic_trigger cmd);
-	int (*read)(const struct device *dev, uint8_t stream, void **buffer,
-			size_t *size, int32_t timeout);
+
+/**
+ * @brief Callback API to configure a DMIC device.
+ * See dmic_configure() for argument descriptions.
+ */
+typedef int (*dmic_configure_t)(const struct device *dev, struct dmic_cfg *config);
+
+/**
+ * @brief Callback API to send a command to a DMIC device.
+ * See dmic_trigger() for argument descriptions.
+ */
+typedef int (*dmic_trigger_t)(const struct device *dev, enum dmic_trigger cmd);
+
+/**
+ * @brief Callback API to read PCM data from a DMIC device.
+ * See dmic_read() for argument descriptions.
+ */
+typedef int (*dmic_read_t)(const struct device *dev, uint8_t stream, void **buffer,
+			   size_t *size, int32_t timeout);
+
+/**
+ * Legacy struct tag alias for @ref dmic_driver_api for DMIC drivers that have not been updated to
+ * to use dmic_driver_api for their backend struct.
+ *
+ * @deprecated DMIC drivers should use the DEVICE_API() macro to declare their driver API.
+ */
+#define _dmic_ops dmic_driver_api __DEPRECATED_MACRO
+
+/**
+ * @driver_ops{Digital Microphone}
+ */
+__subsystem struct dmic_driver_api {
+	/**
+	 * @driver_ops_mandatory @copybrief dmic_configure
+	 */
+	dmic_configure_t configure;
+	/**
+	 * @driver_ops_mandatory @copybrief dmic_trigger
+	 */
+	dmic_trigger_t trigger;
+	/**
+	 * @driver_ops_mandatory @copybrief dmic_read
+	 */
+	dmic_read_t read;
 };
+
+/**
+ * @}
+ */
 
 /**
  * Build the channel map to populate struct pdm_chan_cfg
@@ -296,10 +340,7 @@ static inline uint32_t dmic_build_clk_skew_map(uint8_t pdm, uint8_t skew)
 static inline int dmic_configure(const struct device *dev,
 				 struct dmic_cfg *cfg)
 {
-	const struct _dmic_ops *api =
-		(const struct _dmic_ops *)dev->api;
-
-	return api->configure(dev, cfg);
+	return DEVICE_API_GET(dmic, dev)->configure(dev, cfg);
 }
 
 /**
@@ -315,10 +356,7 @@ static inline int dmic_configure(const struct device *dev,
 static inline int dmic_trigger(const struct device *dev,
 			       enum dmic_trigger cmd)
 {
-	const struct _dmic_ops *api =
-		(const struct _dmic_ops *)dev->api;
-
-	return api->trigger(dev, cmd);
+	return DEVICE_API_GET(dmic, dev)->trigger(dev, cmd);
 }
 
 /**
@@ -340,10 +378,7 @@ static inline int dmic_read(const struct device *dev, uint8_t stream,
 			    void **buffer,
 			    size_t *size, int32_t timeout)
 {
-	const struct _dmic_ops *api =
-		(const struct _dmic_ops *)dev->api;
-
-	return api->read(dev, stream, buffer, size, timeout);
+	return DEVICE_API_GET(dmic, dev)->read(dev, stream, buffer, size, timeout);
 }
 
 #ifdef __cplusplus

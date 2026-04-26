@@ -309,7 +309,7 @@ static int adt7420_get_resolution(const struct device *dev,
 		return ret;
 	}
 
-	val->val1 = (ADT7420_CONFIG_RESOLUTION & uval8) ? 13 : 16;
+	val->val1 = (ADT7420_CONFIG_RESOLUTION & uval8) ? 16 : 13;
 	val->val2 = 0;
 
 	return 0;
@@ -557,7 +557,7 @@ static int adt7420_init(const struct device *dev)
 	const struct adt7420_dev_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -EINVAL;
 	}
 

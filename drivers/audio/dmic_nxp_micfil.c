@@ -608,7 +608,7 @@ static int nxp_micfil_init(const struct device *dev)
 	return 0;
 }
 
-static const struct _dmic_ops dmic_ops = {
+static DEVICE_API(dmic, dmic_ops) = {
 	.configure = nxp_micfil_configure,
 	.trigger = nxp_micfil_trigger,
 	.read = nxp_micfil_read,

@@ -16,7 +16,12 @@
 	chosen {
 		zephyr,console = &main_uart0;
 		zephyr,shell-uart = &main_uart0;
-		zephyr,sram = &ddr0;
+		zephyr,sram = &a53_ddr_section;
+		zephyr,ipc = &ipc0;
+	};
+
+	aliases {
+		led0 = &ld1;
 	};
 
 	cpus {
@@ -37,9 +42,41 @@
 		};
 	};
 
-	ddr0: memory@82000000 {
-		/* Note: This board actually has 2GB DRAM available */
-		reg = <0x82000000 DT_SIZE_M(1)>;
+	reserved-memory {
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		/* Reserved memory for TFA/OP-TEE */
+		tfa_memory: memory@80000000 {
+			reg = <0x80000000 DT_SIZE_M(32)>;
+		};
+	};
+
+	ddr0: memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_G(2)>;
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		/* First 32MiB is reserved for TFA/OP-TEE */
+		a53_ddr_section: memory@82000000 {
+			reg = <0x82000000 (DT_SIZE_G(2) - DT_SIZE_M(32))>;
+		};
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		ld1: led_0 {
+			gpios = <&main_gpio1 49 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	/* A53 -> M4F */
+	ipc0: ipc0 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox0 1>, <&mbox0 0>;
+		mbox-names = "tx", "rx";
 	};
 };
 
@@ -48,4 +85,39 @@
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&main_gpio1_1 {
+	pinctrl-0 = <&main_gpio1_led>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_i2c0 {
+	pinctrl-0 = <&main_i2c0_scl &main_i2c0_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@51 {
+		compatible = "atmel,at24";
+		reg = <0x51>;
+		address-width = <16>;
+		pagesize = <128>;
+		size = <65536>;
+		timeout = <5>;
+	};
+};
+
+&main_i2c1 {
+	pinctrl-0 = <&main_i2c1_scl &main_i2c1_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_expander: tca6424a@22 {
+		compatible = "ti,tca6424a";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+	};
 };

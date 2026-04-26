@@ -174,7 +174,7 @@ static int p3t1755_pm_resume(const struct device *dev)
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	if (config->inst_on_bus == P3T1755_BUS_I2C) {
 		if (!i2c_is_ready_dt(&config->bus_cfg.i2c)) {
-			LOG_ERR("I2C bus device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->bus_cfg.i2c.bus);
 			goto put_and_ret;
 		}
 	}

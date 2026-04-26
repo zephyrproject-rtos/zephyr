@@ -367,7 +367,7 @@ static int xbr818_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

@@ -45,8 +45,8 @@
 				power-state-name = "suspend-to-ram";
 				substate-id = <0>;
 
-				/* One millisecond seems reasonable for now. */
-				min-residency-us = <1000>;
+				/* 1.5ms seems to be a sufficient margin. */
+				min-residency-us = <1500>;
 
 				/* exit-latency-us property is not needed
 				 * since the same concept is applied by the hardware automatically.

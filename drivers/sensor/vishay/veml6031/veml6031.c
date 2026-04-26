@@ -536,7 +536,7 @@ static int veml6031_init(const struct device *dev)
 	uint8_t val8;
 
 	if (!i2c_is_ready_dt(&conf->bus)) {
-		LOG_ERR("VEML device not ready");
+		LOG_ERR_DEVICE_NOT_READY(conf->bus.bus);
 		return -ENODEV;
 	}
 

@@ -311,6 +311,7 @@ static void mctp_usb_class_out_work(struct k_work *work)
 
 				if (usb->rx_data_idx == usb->rx_pkt->end) {
 					mctp_bus_rx(&usb->binding, usb->rx_pkt);
+					mctp_pktbuf_free(usb->rx_pkt);
 					usb->rx_pkt = NULL;
 					mctp_usb_reset_rx_state(usb);
 				}

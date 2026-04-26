@@ -7,6 +7,7 @@
 #include <kswap.h>
 #include <ksched.h>
 #include <ipi.h>
+#include <timeslicing.h>
 
 static int slice_ticks = DIV_ROUND_UP(CONFIG_TIMESLICE_SIZE * Z_HZ_ticks, Z_HZ_ms);
 static int slice_max_prio = CONFIG_TIMESLICE_PRIORITY;
@@ -72,7 +73,7 @@ static void slice_timeout(struct _timeout *timeout)
 	}
 }
 
-void z_reset_time_slice(struct k_thread *thread)
+void z_time_slice_reset(struct k_thread *thread)
 {
 	int cpu = _current_cpu->id;
 	int slice_size = z_time_slice_size(thread);
@@ -108,7 +109,7 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 	 */
 
 	if (!thread_defines_time_slice_size(_current)) {
-		z_reset_time_slice(_current);
+		z_time_slice_reset(_current);
 	}
 
 	k_spin_unlock(&_sched_spinlock, key);
@@ -122,7 +123,7 @@ void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks
 		thread->base.slice_ticks = thread_slice_ticks;
 		thread->base.slice_expired = expired;
 		thread->base.slice_data = data;
-		z_reset_time_slice(thread);
+		z_time_slice_reset(thread);
 	}
 }
 #endif
@@ -135,7 +136,7 @@ void z_time_slice(void)
 
 #ifdef CONFIG_SWAP_NONATOMIC
 	if (pending_current == curr) {
-		z_reset_time_slice(curr);
+		z_time_slice_reset(curr);
 		k_spin_unlock(&_sched_spinlock, key);
 		return;
 	}
@@ -155,7 +156,7 @@ void z_time_slice(void)
 		if (!z_is_thread_prevented_from_running(curr)) {
 			move_current_to_end_of_prio_q();
 		}
-		z_reset_time_slice(curr);
+		z_time_slice_reset(curr);
 	}
 	k_spin_unlock(&_sched_spinlock, key);
 }

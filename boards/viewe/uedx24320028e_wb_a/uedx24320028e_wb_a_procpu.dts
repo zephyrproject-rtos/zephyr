@@ -22,6 +22,7 @@
 		uart-0 = &uart0;
 		sw0 = &button0;
 		led-strip = &rgb_led;
+		sdhc0 = &sdhc0;
 	};
 
 	chosen {
@@ -33,6 +34,16 @@
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,display = &gc9307n;
 		zephyr,touch = &chsc6x;
+		zephyr,sdhc = &sdhc0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		buzzer: buzzer {
+			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			label = "Buzzer";
+		};
 	};
 
 	buttons {
@@ -123,7 +134,7 @@
 	pinctrl-names = "default";
 
 	chsc6x: chsc6x@2e {
-		compatible = "chipsemi,chsc6x";
+		compatible = "chipsemi,chsc6540";
 		reg = <0x2e>;
 		irq-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 		screen-width = <240>;
@@ -158,6 +169,22 @@
 				<LED_COLOR_ID_BLUE>;
 		spi-one-frame = <WS2812C_ONE_FRAME>;
 		spi-zero-frame = <WS2812C_ZERO_FRAME>;
+	};
+};
+
+&sdhc {
+	sdhc0: sdhc@0 {
+		status = "okay";
+		pinctrl-0 = <&sdhc0_default>;
+		pinctrl-names = "default";
+		max-bus-freq = <52000000>;
+		bus-width = <4>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
 	};
 };
 

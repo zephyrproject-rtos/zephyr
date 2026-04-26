@@ -281,7 +281,7 @@ int bmg160_init(const struct device *dev)
 	uint16_t range_dps;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 

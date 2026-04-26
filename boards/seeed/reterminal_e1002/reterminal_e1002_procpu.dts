@@ -6,7 +6,9 @@
 
 /dts-v1/;
 
+#include <freq.h>
 #include <espressif/esp32s3/esp32s3_r8.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <espressif/partitions_0x0_amp_32M.dtsi>
@@ -24,6 +26,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,sdhc = &sdcard0;
+		zephyr,display = &epd_ed2208_gca;
 	};
 
 	aliases {
@@ -39,6 +42,15 @@
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 		watchdog0 = &wdt0;
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 0>;
+		output-ohms = <10000>;
+		full-ohms = <20000>;
+		power-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		power-on-sample-delay-us = <10000>;
 	};
 
 	buttons {
@@ -80,6 +92,29 @@
 			label = "Buzzer";
 		};
 	};
+
+	mipi_dbi: mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		epd_ed2208_gca: ed2208_gca@1 {
+			compatible = "eink,el073tf1", "eink,ed2208-gca";
+			mipi-max-frequency = <DT_FREQ_M(4)>;
+			reg = <1>;
+			width = <800>;
+			height = <480>;
+			busy-gpios = <&gpio0 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+};
+
+&dma {
+	status = "okay";
 };
 
 &flash0 {
@@ -121,10 +156,17 @@
 };
 
 &i2c1 {
-	status = "disabled";
+	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+
+	charger: sy6974b@6b {
+		compatible = "silergy,sy6974b";
+		reg = <0x6b>;
+		constant-charge-current-max-microamp = <500000>;
+		constant-charge-voltage-max-microvolt = <4208000>;
+	};
 };
 
 &ledc0 {
@@ -154,7 +196,7 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>, <&gpio0 10 GPIO_ACTIVE_LOW>;
 
 	sdcard0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
@@ -170,6 +212,20 @@
 			disk-name = "SD";
 			status = "okay";
 		};
+	};
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
 	};
 };
 

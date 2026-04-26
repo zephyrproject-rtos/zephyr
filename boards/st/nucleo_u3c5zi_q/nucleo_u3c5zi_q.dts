@@ -14,9 +14,6 @@
 	model = "STMicroelectronics STM32U3C5ZI-NUCLEO-Q board";
 	compatible = "st,stm32u3c5zi-nucleo-q";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;

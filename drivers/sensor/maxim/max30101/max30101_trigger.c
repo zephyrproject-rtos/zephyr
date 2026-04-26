@@ -188,7 +188,7 @@ int max30101_init_interrupts(const struct device *dev)
 	struct max30101_data *data = dev->data;
 
 	if (!gpio_is_ready_dt(&config->irq_gpio)) {
-		LOG_ERR("GPIO is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->irq_gpio.port);
 		return -ENODEV;
 	}
 

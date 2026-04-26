@@ -109,7 +109,7 @@ int icm42605_init_interrupt(const struct device *dev)
 	int result = 0;
 
 	if (!gpio_is_ready_dt(&cfg->gpio_int)) {
-		LOG_ERR("gpio_int gpio not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->gpio_int.port);
 		return -ENODEV;
 	}
 

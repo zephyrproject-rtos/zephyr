@@ -8,20 +8,6 @@ message(STATUS "Found eclair_env: ${ECLAIR_ENV}")
 find_program(ECLAIR_REPORT eclair_report REQUIRED)
 message(STATUS "Found eclair_report: ${ECLAIR_REPORT}")
 
-# Get eclair specific option file variables, also needed if invoked with sysbuild
-zephyr_get(ECLAIR_OPTIONS_FILE)
-
-if(ECLAIR_OPTIONS_FILE)
-  if(IS_ABSOLUTE ${ECLAIR_OPTIONS_FILE})
-    set(ECLAIR_OPTIONS ${ECLAIR_OPTIONS_FILE})
-  else()
-    set(ECLAIR_OPTIONS ${APPLICATION_CONFIG_DIR}/${ECLAIR_OPTIONS_FILE})
-  endif()
-  include(${ECLAIR_OPTIONS})
-else()
-  include(${CMAKE_CURRENT_LIST_DIR}/sca_options.cmake)
-endif()
-
 # ECLAIR Settings
 set(ECLAIR_PROJECT_NAME "Zephyr-${BOARD}/${BOARD_QUALIFIERS}")
 set(ECLAIR_PROJECT_ROOT "${ZEPHYR_BASE}")
@@ -40,6 +26,46 @@ set(AR_ALIASES "${CMAKE_ASM_COMPILER_AR} ${CMAKE_C_COMPILER_AR} ${CMAKE_CXX_COMP
 
 set(ECLAIR_ENV_ADDITIONAL_OPTIONS "")
 set(ECLAIR_REPORT_ADDITIONAL_OPTIONS "")
+
+# Get eclair specific option file variables, also needed if invoked with sysbuild
+zephyr_get(ECLAIR_OPTIONS_FILE)
+
+include(${CMAKE_CURRENT_LIST_DIR}/sca_options.cmake)
+
+if(ECLAIR_OPTIONS_FILE)
+  if(IS_ABSOLUTE ${ECLAIR_OPTIONS_FILE})
+    set(ECLAIR_OPTIONS ${ECLAIR_OPTIONS_FILE})
+  else()
+    set(ECLAIR_OPTIONS ${APPLICATION_CONFIG_DIR}/${ECLAIR_OPTIONS_FILE})
+  endif()
+  include(${ECLAIR_OPTIONS})
+endif()
+
+# Ensure that exactly one ECLAIR_RULESET is selected
+set(ECLAIR_RULESETS
+    ECLAIR_RULESET_FIRST_ANALYSIS
+    ECLAIR_RULESET_STU
+    ECLAIR_RULESET_STU_HEAVY
+    ECLAIR_RULESET_WP
+    ECLAIR_RULESET_STD_LIB
+    ECLAIR_RULESET_ZEPHYR_GUIDELINES
+    ECLAIR_RULESET_USER
+)
+
+set(selected_rulesets "")
+foreach(ruleset ${ECLAIR_RULESETS})
+  if(${ruleset})
+    list(APPEND selected_rulesets ${ruleset})
+  endif()
+endforeach()
+
+list(LENGTH selected_rulesets selected_count)
+if(selected_count EQUAL 0)
+  message(FATAL_ERROR "No ECLAIR_RULESET is selected. Please select exactly one.")
+elseif(selected_count GREATER 1)
+  message(FATAL_ERROR "Only one ECLAIR_RULESET can be selected at a time.
+                       Selected: ${selected_rulesets}")
+endif()
 
 # Default value
 set(ECLAIR_RULESET first_analysis)
@@ -109,7 +135,7 @@ endif()
 if(ECLAIR_FULL_ODT)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-full_odt=${ECLAIR_OUTPUT_DIR}/report_full_odt")
 endif()
-if(ECLAIR_FULL_HTL)
+if(ECLAIR_FULL_HTML)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-full_html=${ECLAIR_OUTPUT_DIR}/report_full_html")
 endif()
 
@@ -139,6 +165,7 @@ add_custom_target(eclair_setup_analysis_dir ALL
 
 # configure the cmake script which will be used to replace the compiler call with the eclair_env
 # call which calls the compiler and to generate analysis files.
+list(JOIN ECLAIR_ENV_ADDITIONAL_OPTIONS "\n                        " ECLAIR_ENV_ADDITIONAL_OPTIONS_STR)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/eclair.template ${ECLAIR_OUTPUT_DIR}/eclair.cmake @ONLY)
 
 set(launch_environment ${CMAKE_COMMAND} -P ${ECLAIR_OUTPUT_DIR}/eclair.cmake --)
@@ -185,3 +212,7 @@ add_custom_target(eclair_summary_print ALL
 
 add_dependencies(eclair_report eclair_project_analysis)
 add_dependencies(eclair_summary_print eclair_report)
+
+# Ensure analysis directory is created before running analysis/report targets
+add_dependencies(eclair_project_analysis eclair_setup_analysis_dir)
+add_dependencies(eclair_report eclair_setup_analysis_dir)

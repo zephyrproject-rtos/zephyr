@@ -268,6 +268,11 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 		return -EINVAL;
 	}
 
+	if ((desc->width & 1) != 0U) {
+		LOG_ERR("Unsupported width");
+		return -EINVAL;
+	}
+
 	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 

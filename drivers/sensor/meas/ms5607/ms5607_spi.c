@@ -141,7 +141,7 @@ static int ms5607_spi_read_adc(const struct ms5607_config *config, uint32_t *val
 static int ms5607_spi_check(const struct ms5607_config *config)
 {
 	if (!spi_is_ready_dt(&config->bus_cfg.spi)) {
-		LOG_DBG("SPI bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->bus_cfg.spi.bus);
 		return -ENODEV;
 	}
 

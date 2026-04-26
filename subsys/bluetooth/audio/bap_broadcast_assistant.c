@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2022-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2026 Nordic Semiconductor ASA
  * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -995,6 +995,12 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
+
+		return -EINVAL;
+	}
+
+	if (bt_audio_security_check(conn) != BT_ATT_ERR_SUCCESS) {
+		LOG_DBG("Invalid conn %p for discovery", conn);
 
 		return -EINVAL;
 	}

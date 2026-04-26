@@ -721,13 +721,13 @@ static int bq274xx_gauge_init(const struct device *dev)
 	int ret = 0;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 
 #if defined(CONFIG_BQ274XX_PM) || defined(CONFIG_BQ274XX_TRIGGER)
 	if (!gpio_is_ready_dt(&config->int_gpios)) {
-		LOG_ERR("GPIO device pointer is not ready to be used");
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpios.port);
 		return -ENODEV;
 	}
 #endif

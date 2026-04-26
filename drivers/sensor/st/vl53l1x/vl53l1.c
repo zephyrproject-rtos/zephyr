@@ -90,7 +90,7 @@ static int vl53l1x_init_interrupt(const struct device *dev)
 	drv_data->dev = dev;
 
 	if (!gpio_is_ready_dt(&config->gpio1)) {
-		LOG_ERR("%s: device %s is not ready", dev->name, config->gpio1.port->name);
+		LOG_ERR_DEVICE_NOT_READY(config->gpio1.port);
 		return -ENODEV;
 	}
 
@@ -425,7 +425,7 @@ static int vl53l1x_init(const struct device *dev)
 	drv_data->vl53l1x.i2c = &config->i2c;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

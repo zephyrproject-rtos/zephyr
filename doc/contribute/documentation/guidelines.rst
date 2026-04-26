@@ -690,7 +690,7 @@ Cross-referencing C documentation
    They are rendered in the HTML output as links to the corresponding Doxygen documentation for the
    item. For example::
 
-      Check out :c:function:`gpio_pin_configure` for more information.
+      Check out :c:func:`gpio_pin_configure` for more information.
 
    Will render as:
 

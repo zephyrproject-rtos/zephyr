@@ -23,6 +23,8 @@
 #include "eth.h"
 #include "eth_stm32_hal_priv.h"
 
+#define DT_DRV_COMPAT st_stm32_ethernet
+
 LOG_MODULE_DECLARE(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
 void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth)

@@ -254,13 +254,6 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
 	int to_process;
 	int reminder;
 
-	/*
-	 * This is max input bytes that can be taken to the frame before encoding with Base64;
-	 * Base64 has three-to-four ratio, which means that for each three input bytes there are
-	 * going to be four bytes of output used. The frame starts with two byte marker and ends
-	 * with newline character, which are not encoded (this is the "-3" in calculation).
-	 */
-	int max_input = (((MCUMGR_SERIAL_MAX_FRAME - 3) >> 2) * 3);
 
 	/* Calculate the CRC16 checksum of the whole packet, prior to splitting it into frames */
 	crc = mcumgr_serial_calc_crc(data, len);
@@ -269,6 +262,15 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
 	u16 = sys_cpu_to_be16(MCUMGR_SERIAL_HDR_PKT);
 
 	while (src_off < len) {
+		/*
+		 * This is max input bytes that can be taken to the frame before encoding with
+		 * Base64; Base64 has three-to-four ratio, which means that for each three input
+		 * bytes there are going to be four bytes of output used. The frame starts with
+		 * two byte marker and ends with newline character, which are not encoded
+		 * (this is the "-3" in calculation).
+		 */
+		int max_input = (((MCUMGR_SERIAL_MAX_FRAME - 3) >> 2) * 3);
+
 		/* Send first frame or continuation frame marker */
 		rc = cb(&u16, sizeof(u16));
 		if (rc != 0) {

@@ -106,7 +106,9 @@ kernel_sources_ifdef(CONFIG_MULTITHREADING
   condvar.c
   thread.c
   sched.c
+  sleep.c
   pipe.c
+  scheduler.c
   )
 
 if(CONFIG_MULTITHREADING)
@@ -120,6 +122,7 @@ endif() # CONFIG_MULTITHREADING
 
 
 kernel_sources_ifdef(CONFIG_TIMESLICING timeslicing.c)
+kernel_sources_ifdef(CONFIG_SCHED_DEADLINE deadline.c)
 kernel_sources_ifdef(CONFIG_SPIN_VALIDATE spinlock_validate.c)
 kernel_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 kernel_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
@@ -182,6 +185,7 @@ if(${CONFIG_KERNEL_MEM_POOL})
 
   endif()
 
+  zephyr_linker_include_var(VAR K_HEAP_MEM_POOL_SIZE VALUE ${final_heap_size})
   zephyr_compile_definitions(K_HEAP_MEM_POOL_SIZE=${final_heap_size})
 endif()
 

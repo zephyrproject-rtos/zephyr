@@ -1,5 +1,5 @@
 /**
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  *
  * @file nxp_wifi_drv.c
@@ -1720,6 +1720,7 @@ static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *
 				wlan_configure_listen_interval(0);
 			}
 			break;
+#ifdef CONFIG_NXP_WIFI_WMM_UAPSD
 		case WIFI_PS_PARAM_MODE:
 			if (params->mode == WIFI_PS_MODE_WMM) {
 				ret = wlan_set_wmm_uapsd(1);
@@ -1734,6 +1735,7 @@ static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *
 					status = NXP_WIFI_RET_FAIL;
 				}
 			}
+#endif
 			break;
 		case WIFI_PS_PARAM_TIMEOUT:
 			wlan_configure_delay_to_ps((int)params->timeout_ms);
@@ -1783,11 +1785,15 @@ int nxp_wifi_get_power_save(const struct device *dev, struct wifi_ps_config *con
 				config->ps_params.wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM;
 			}
 
+#ifdef CONFIG_NXP_WIFI_WMM_UAPSD
 			if (wlan_is_wmm_uapsd_enabled()) {
 				config->ps_params.mode = WIFI_PS_MODE_WMM;
 			} else {
 				config->ps_params.mode = WIFI_PS_MODE_LEGACY;
 			}
+#else
+			config->ps_params.mode = WIFI_PS_MODE_LEGACY;
+#endif
 		} else {
 			status = NXP_WIFI_RET_FAIL;
 		}
@@ -2249,6 +2255,7 @@ void device_pm_dump_wakeup_source(void)
 }
 #endif
 
+#ifdef CONFIG_NXP_WIFI_HOST_SLEEP
 static bool nxp_wifi_wlan_wakeup(void)
 {
 #ifdef CONFIG_NXP_RW610
@@ -2338,6 +2345,13 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 	}
 	return ret;
 }
+#else
+static int device_wlan_pm_action(const struct device *dev, enum pm_device_action pm_action)
+{
+	/* Host sleep not enabled, no PM actions needed */
+	return 0;
+}
+#endif
 
 PM_DEVICE_DT_INST_DEFINE(0, device_wlan_pm_action);
 #endif

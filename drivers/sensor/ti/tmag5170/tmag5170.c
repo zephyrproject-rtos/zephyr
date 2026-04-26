@@ -478,7 +478,7 @@ static int tmag5170_init(const struct device *dev)
 	int ret = 0;
 
 	if (!spi_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("SPI dev %s not ready", cfg->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
 		return -ENODEV;
 	}
 

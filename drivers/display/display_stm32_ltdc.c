@@ -61,6 +61,16 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #define STM32_LTDC_INIT_PIXEL_SIZE	DISPLAY_BITS_PER_PIXEL(DISPLAY_INIT_PIXEL_FORMAT) \
 					/ BITS_PER_BYTE
 
+struct stm32_ltdc_cb_data {
+	const struct device *dev;
+	display_event_cb_t cb_fn;
+	void *user_data;
+	uint32_t event_mask;
+	bool in_isr;
+	uint32_t out_reg_handle;
+	uint32_t user_line_number;
+};
+
 struct display_stm32_ltdc_data {
 	LTDC_HandleTypeDef hltdc;
 	enum display_pixel_format current_pixel_format;
@@ -70,6 +80,8 @@ struct display_stm32_ltdc_data {
 	const uint8_t *pend_buf;
 	const uint8_t *front_buf;
 	struct k_sem sem;
+	struct k_sem cb_sem;
+	struct stm32_ltdc_cb_data cb;
 };
 
 struct display_stm32_ltdc_config {
@@ -88,20 +100,83 @@ struct display_stm32_ltdc_config {
 static void stm32_ltdc_global_isr(const struct device *dev)
 {
 	struct display_stm32_ltdc_data *data = dev->data;
+	uint32_t current_line_number = data->hltdc.Instance->CPSR & 0xFFFF;
+	bool event_handled = false;
 
-	if (__HAL_LTDC_GET_FLAG(&data->hltdc, LTDC_FLAG_LI) &&
+	struct display_event_data event_data = {
+		.timestamp = k_cycle_get_64(),
+		.info.line = current_line_number,
+	};
+
+	if (!__HAL_LTDC_GET_FLAG(&data->hltdc, LTDC_FLAG_LI) &&
 	    __HAL_LTDC_GET_IT_SOURCE(&data->hltdc, LTDC_IT_LI)) {
-		if (data->front_buf != data->pend_buf) {
-			data->front_buf = data->pend_buf;
+		return;
+	}
 
-			LTDC_LAYER(&data->hltdc, LTDC_LAYER_1)->CFBAR = (uint32_t)data->front_buf;
-			__HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&data->hltdc);
+	if (current_line_number == 0) {
+		/* VSync event occurs at the beginning of the frame, line number = 0 */
 
-			k_sem_give(&data->sem);
+		/* Set next interrupt in case the user has programmed a line event */
+		HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
+
+		k_sem_take(&data->cb_sem, K_NO_WAIT);
+
+		if ((data->cb.dev != NULL) &&
+			(data->cb.event_mask & DISPLAY_EVENT_VSYNC)) {
+			event_handled = data->cb.cb_fn(data->cb.dev,
+				DISPLAY_EVENT_VSYNC, &event_data, data->cb.user_data);
+		}
+
+		k_sem_give(&data->cb_sem);
+
+		if (!event_handled) {
+			if (data->front_buf != data->pend_buf) {
+				data->front_buf = data->pend_buf;
+
+				LTDC_LAYER(&data->hltdc, LTDC_LAYER_1)->CFBAR =
+					(uint32_t)data->front_buf;
+
+				__HAL_LTDC_RELOAD_IMMEDIATE_CONFIG(&data->hltdc);
+
+				k_sem_give(&data->sem);
+			}
 		}
 
 		__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
+		return;
 	}
+
+	k_sem_take(&data->cb_sem, K_NO_WAIT);
+
+	if ((data->cb.dev != NULL) &&
+		(data->cb.event_mask & DISPLAY_EVENT_LINE_INT)) {
+		/*
+		 * There is no need to check event_handled return value
+		 * It is only intended for VSYNC
+		 */
+		data->cb.cb_fn(data->cb.dev, DISPLAY_EVENT_LINE_INT, &event_data,
+			data->cb.user_data);
+
+		/* Check if the user configured a new line event in the cb: */
+		uint32_t current_int_line = data->hltdc.Instance->LIPCR;
+
+		if (current_int_line != current_line_number) {
+			data->cb.user_line_number = current_int_line;
+			/*
+			 * Check if the new line number has been passed or not.
+			 * If it has been passed, it should be called after VSYNC
+			 */
+			if (current_int_line > current_line_number) {
+				HAL_LTDC_ProgramLineEvent(&data->hltdc, current_int_line);
+			} else {
+				HAL_LTDC_ProgramLineEvent(&data->hltdc, 0);
+			}
+		}
+	}
+
+	k_sem_give(&data->cb_sem);
+
+	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
 }
 
 static int stm32_ltdc_set_pixel_format(const struct device *dev,
@@ -207,7 +282,9 @@ static void stm32_ltdc_sync_frame(struct display_stm32_ltdc_data *data, const ui
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	__HAL_LTDC_DISABLE_IT(&data->hltdc, LTDC_IT_LI);
+	if (data->cb.dev == NULL) {
+		__HAL_LTDC_DISABLE_IT(&data->hltdc, LTDC_IT_LI);
+	}
 }
 
 static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
@@ -242,7 +319,7 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 	}
 
 	/* Partial write is only possible if LTDC has its own framebuffer */
-	if (CONFIG_STM32_LTDC_FB_NUM == 0)  {
+	if (CONFIG_STM32_LTDC_FB_NUM == 0) {
 		LOG_ERR("Partial write requires internal frame buffer");
 		return -ENOTSUP;
 	}
@@ -374,6 +451,86 @@ static int stm32_ltdc_display_blanking_on(const struct device *dev)
 	return display_blanking_on(display_dev);
 }
 
+static int stm32_ltdc_display_register_event_cb(const struct device *dev, display_event_cb_t cb,
+	void *user_data, uint32_t event_mask, bool in_isr, uint32_t *out_reg_handle)
+{
+	struct display_stm32_ltdc_data *data = dev->data;
+
+	if (out_reg_handle == NULL) {
+		LOG_ERR("Registration failed: output handle pointer is NULL");
+		return -EINVAL;
+	}
+	if (data->cb.dev != NULL) {
+		LOG_ERR("Registration failed: a callback is already registered");
+		return -EBUSY;
+	}
+	if (!in_isr) {
+		LOG_ERR("Registration failed: only ISR context is supported for this driver");
+		return -ENOSYS;
+	}
+	if (event_mask & DISPLAY_EVENT_FRAME_DONE) {
+		LOG_ERR("Registration failed: DISPLAY_EVENT_FRAME_DONE is not supported");
+		return -ENOSYS;
+	}
+
+	/* VSync can only be detected by LTDC line interrupt,
+	 * so the line event is programmed accordingly
+	 */
+	if (event_mask & DISPLAY_EVENT_VSYNC) {
+		HAL_LTDC_ProgramLineEvent(&data->hltdc, 0);
+	}
+
+	*out_reg_handle = 1U;
+
+	data->cb.dev = dev;
+	data->cb.cb_fn = cb;
+	data->cb.user_data = user_data;
+	data->cb.event_mask = event_mask;
+	data->cb.in_isr = in_isr;
+	data->cb.out_reg_handle = *out_reg_handle;
+
+	/*
+	 * Set user_line_number if a line interrupt has already been set up,
+	 * and program it if it is before VSYNC
+	 */
+	if (data->hltdc.Instance->LIPCR != 0 &&
+	    data->hltdc.Instance->LIPCR < data->hltdc.Init.TotalHeigh) {
+		data->cb.user_line_number = data->hltdc.Instance->LIPCR;
+	} else {
+		data->cb.user_line_number = 0;
+	}
+
+	if (data->cb.user_line_number > (data->hltdc.Instance->CPSR & 0xFFFF)) {
+		HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
+	}
+
+	return 0;
+}
+
+static int stm32_ltdc_display_unregister_event_cb(const struct device *dev, uint32_t reg_handle)
+{
+	struct display_stm32_ltdc_data *data = dev->data;
+
+	k_sem_take(&data->cb_sem, K_FOREVER);
+
+	if (data->cb.dev != dev) {
+		LOG_ERR("Unregistration failed: device does not match");
+		k_sem_give(&data->cb_sem);
+		return -EINVAL;
+	}
+	if (reg_handle != 1U) {
+		LOG_ERR("Unregistration failed: invalid registration handle");
+		k_sem_give(&data->cb_sem);
+		return -EINVAL;
+	}
+
+	memset(&data->cb, 0, sizeof(data->cb));
+
+	k_sem_give(&data->cb_sem);
+
+	return 0;
+}
+
 /* This symbol takes the value 1 if one of the device instances */
 /* is configured in dts with a domain clock */
 #if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
@@ -441,6 +598,7 @@ static int stm32_ltdc_init(const struct device *dev)
 	data->current_pixel_size = STM32_LTDC_INIT_PIXEL_SIZE;
 
 	k_sem_init(&data->sem, 0, 1);
+	k_sem_init(&data->cb_sem, 1, 1);
 
 	config->irq_config_func(dev);
 
@@ -555,6 +713,8 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 	.set_orientation = stm32_ltdc_set_orientation,
 	.blanking_off = stm32_ltdc_display_blanking_off,
 	.blanking_on = stm32_ltdc_display_blanking_on,
+	.register_event_cb = stm32_ltdc_display_register_event_cb,
+	.unregister_event_cb = stm32_ltdc_display_unregister_event_cb,
 };
 
 #if DT_INST_NODE_HAS_PROP(0, ext_sdram)

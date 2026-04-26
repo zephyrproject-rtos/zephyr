@@ -17,6 +17,7 @@ zephyr_library_sources_ifdef(CONFIG_CHARGER_MAX20335 charger_max20335.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_NPM10XX charger_npm10xx.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_PCA9422 charger_pca9422.c)
 zephyr_library_sources_ifdef(CONFIG_CHARGER_PF1550 charger_pf1550.c)
+zephyr_library_sources_ifdef(CONFIG_CHARGER_SY6974B charger_sy6974b.c)
 zephyr_library_sources_ifdef(CONFIG_EMUL_SBS_CHARGER emul_sbs_charger.c)
 zephyr_library_sources_ifdef(CONFIG_SBS_CHARGER sbs_charger.c)
 # zephyr-keep-sorted-stop

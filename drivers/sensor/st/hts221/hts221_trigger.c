@@ -132,7 +132,7 @@ int hts221_init_interrupt(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&cfg->gpio_drdy)) {
-		LOG_ERR("device %s is not ready", cfg->gpio_drdy.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->gpio_drdy.port);
 		return -ENODEV;
 	}
 

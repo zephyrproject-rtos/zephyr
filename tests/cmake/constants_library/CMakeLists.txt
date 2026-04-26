@@ -14,23 +14,27 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 zephyr_constants_library(
   NAME test_constants_a
+  INCLUDES ${ARCH_DIR}/common/include
   SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/constants_a.c
   DEPENDS test_constants_b
 )
 
 zephyr_constants_library(
   NAME test_constants_b
+  INCLUDES ${ARCH_DIR}/common/include
   SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/constants_b.c
 )
 
 zephyr_constants_library(
   NAME test_constants_c
+  INCLUDES ${ARCH_DIR}/common/include
   SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/constants_c.c
   DEPENDS test_constants_b
 )
 
 zephyr_constants_library(
   NAME test_constants_d
+  INCLUDES ${ARCH_DIR}/common/include
   SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/constants_d.c
   DEPENDS test_constants_a test_constants_b
 )

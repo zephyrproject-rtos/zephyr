@@ -18,6 +18,7 @@
 #include <ksched.h>
 #include <kthread.h>
 #include <wait_q.h>
+#include <timeout_q.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
 #include <kswap.h>
@@ -31,6 +32,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/llext/symbol.h>
 #include <zephyr/sys/iterable_sections.h>
+
+#include <usage.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -1365,3 +1368,277 @@ void z_dummy_thread_init(struct k_thread *dummy_thread)
 
 	z_current_thread_set(dummy_thread);
 }
+
+/*
+ * Thread lifecycle APIs: suspend, resume, priority, wakeup, abort, join.
+ *
+ * These APIs operate on thread objects and belong here in thread.c.  They
+ * depend on a small set of scheduler internals (z_thread_halt,
+ * z_sched_ready_locked, z_sched_add_to_waitq_locked) exposed via ksched.h.
+ */
+
+void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
+{
+	/*
+	 * Use NULL, since we cannot know what the entry point is (we do not
+	 * keep track of it) and idle cannot change its priority.
+	 */
+	Z_ASSERT_VALID_PRIO(prio, NULL);
+
+	bool need_sched = z_thread_prio_set((struct k_thread *)thread, prio);
+
+	if ((need_sched) && (IS_ENABLED(CONFIG_SMP) ||
+			     (_current->base.sched_locked == 0U))) {
+		z_reschedule_unlocked();
+	}
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	K_OOPS(K_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
+				    "invalid thread priority %d", prio));
+#ifndef CONFIG_USERSPACE_THREAD_MAY_RAISE_PRIORITY
+	K_OOPS(K_SYSCALL_VERIFY_MSG((int8_t)prio >= thread->base.prio,
+				    "thread priority may only be downgraded (%d < %d)",
+				    prio, thread->base.prio));
+#endif /* CONFIG_USERSPACE_THREAD_MAY_RAISE_PRIORITY */
+	z_impl_k_thread_priority_set(thread, prio);
+}
+#include <zephyr/syscalls/k_thread_priority_set_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+void z_impl_k_thread_suspend(k_tid_t thread)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, suspend, thread);
+
+	/* Special case "suspend the current thread" as it doesn't
+	 * need the async complexity below.
+	 */
+	if (!IS_ENABLED(CONFIG_SMP) && (thread == _current) && !arch_is_in_isr()) {
+		z_thread_suspend_current(thread);
+		return;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+	if (unlikely(z_is_thread_suspended(thread))) {
+
+		/* The target thread is already suspended. Nothing to do. */
+
+		k_spin_unlock(&_sched_spinlock, key);
+		return;
+	}
+
+	z_thread_halt(thread, key, false);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, suspend, thread);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_thread_suspend(k_tid_t thread)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	z_impl_k_thread_suspend(thread);
+}
+#include <zephyr/syscalls/k_thread_suspend_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+void z_impl_k_thread_resume(k_tid_t thread)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, resume, thread);
+
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+	/* Do not try to resume a thread that was not suspended */
+	if (unlikely(!z_is_thread_suspended(thread))) {
+		k_spin_unlock(&_sched_spinlock, key);
+		return;
+	}
+
+	z_mark_thread_as_not_suspended(thread);
+	z_sched_ready_locked(thread);
+
+	z_reschedule(&_sched_spinlock, key);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, resume, thread);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_thread_resume(k_tid_t thread)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	z_impl_k_thread_resume(thread);
+}
+#include <zephyr/syscalls/k_thread_resume_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+void z_impl_k_wakeup(k_tid_t thread)
+{
+	SYS_PORT_TRACING_OBJ_FUNC(k_thread, wakeup, thread);
+
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+	if (z_is_thread_sleeping(thread)) {
+		z_abort_thread_timeout(thread);
+		z_mark_thread_as_not_sleeping(thread);
+		z_sched_ready_locked(thread);
+		z_reschedule(&_sched_spinlock, key);
+	} else {
+		k_spin_unlock(&_sched_spinlock, key);
+	}
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_wakeup(k_tid_t thread)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	z_impl_k_wakeup(thread);
+}
+#include <zephyr/syscalls/k_wakeup_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+void z_thread_abort(struct k_thread *thread)
+{
+	bool essential = z_is_thread_essential(thread);
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+	if (z_is_thread_dead(thread)) {
+		k_spin_unlock(&_sched_spinlock, key);
+		return;
+	}
+
+	z_thread_halt(thread, key, true);
+
+	if (essential) {
+		__ASSERT(!essential, "aborted essential thread %p", thread);
+		k_panic();
+	}
+}
+
+#if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
+void z_impl_k_thread_abort(k_tid_t thread)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, abort, thread);
+
+	z_thread_abort(thread);
+
+	__ASSERT_NO_MSG(z_is_thread_dead(thread));
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, abort, thread);
+}
+#endif /* !CONFIG_ARCH_HAS_THREAD_ABORT */
+
+int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
+{
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+	int ret;
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, join, thread, timeout);
+
+	if (z_is_thread_dead(thread)) {
+		z_sched_switch_spin(thread);
+		ret = 0;
+	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		ret = -EBUSY;
+	} else if ((thread == _current) ||
+		   (thread->base.pended_on == &_current->join_queue)) {
+		ret = -EDEADLK;
+	} else {
+		__ASSERT(!arch_is_in_isr(), "cannot join in ISR");
+		z_sched_add_to_waitq_locked(_current, &thread->join_queue);
+		z_add_thread_timeout(_current, timeout);
+
+		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_thread, join, thread, timeout);
+		ret = z_swap(&_sched_spinlock, key);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, join, thread, timeout, ret);
+
+		return ret;
+	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, join, thread, timeout, ret);
+
+	k_spin_unlock(&_sched_spinlock, key);
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+/* Special case: don't oops if the thread is uninitialized.  This is because
+ * the initialization bit does double-duty for thread objects; if false, means
+ * the thread object is truly uninitialized, or the thread ran and exited for
+ * some reason.
+ *
+ * Return true in this case indicating we should just do nothing and return
+ * success to the caller.
+ */
+static bool thread_obj_validate(struct k_thread *thread)
+{
+	struct k_object *ko = k_object_find(thread);
+	int ret = k_object_validate(ko, K_OBJ_THREAD, _OBJ_INIT_TRUE);
+
+	switch (ret) {
+	case 0:
+		return false;
+	case -EINVAL:
+		return true;
+	default:
+#ifdef CONFIG_LOG
+		k_object_dump_error(ret, thread, ko, K_OBJ_THREAD);
+#endif /* CONFIG_LOG */
+		K_OOPS(K_SYSCALL_VERIFY_MSG(ret, "access denied"));
+	}
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
+}
+
+static inline int z_vrfy_k_thread_join(struct k_thread *thread,
+				       k_timeout_t timeout)
+{
+	if (thread_obj_validate(thread)) {
+		return 0;
+	}
+
+	return z_impl_k_thread_join(thread, timeout);
+}
+#include <zephyr/syscalls/k_thread_join_mrsh.c>
+
+static inline void z_vrfy_k_thread_abort(k_tid_t thread)
+{
+	if (thread_obj_validate(thread)) {
+		return;
+	}
+
+	K_OOPS(K_SYSCALL_VERIFY_MSG(!z_is_thread_essential(thread),
+				    "aborting essential thread %p", thread));
+
+	z_impl_k_thread_abort((struct k_thread *)thread);
+}
+#include <zephyr/syscalls/k_thread_abort_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+bool k_can_yield(void)
+{
+	unsigned int k = arch_irq_lock();
+	bool irq_locked = !arch_irq_unlocked(k);
+
+	arch_irq_unlock(k);
+	return !(k_is_pre_kernel() || k_is_in_isr() || irq_locked ||
+		 z_is_idle_thread_object(_current));
+}
+
+void z_impl_k_yield(void)
+{
+	__ASSERT(!arch_is_in_isr(), "");
+
+	SYS_PORT_TRACING_FUNC(k_thread, yield);
+
+	z_sched_yield();
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_yield(void)
+{
+	z_impl_k_yield();
+}
+#include <zephyr/syscalls/k_yield_mrsh.c>
+#endif /* CONFIG_USERSPACE */

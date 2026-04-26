@@ -20,7 +20,7 @@ The board includes the following features:
 - 8MB of PSRAM
 - 800×480 e-ink Spectra 6 (E6) full-color (6 colors) display
 - Micro SD slot
-- 2000 mAh built-in battery
+- 2000 mAh built-in battery + Silergy SY6974B switching battery charger
 - Temperature sensor
 - RTC
 - 3x buttons

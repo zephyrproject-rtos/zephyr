@@ -16,6 +16,8 @@
 
 #include "eth_stm32_hal_priv.h"
 
+#define DT_DRV_COMPAT st_stm32_ethernet
+
 LOG_MODULE_REGISTER(eth_stm32_hal_ptp, CONFIG_ETHERNET_LOG_LEVEL);
 
 /* Naming of the  ETH PTP Config Status changes depending on the stm32 series */

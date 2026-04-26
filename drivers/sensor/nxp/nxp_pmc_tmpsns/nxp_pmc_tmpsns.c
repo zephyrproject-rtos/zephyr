@@ -175,7 +175,7 @@ static int nxp_pmc_tmpsns_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->adc)) {
-		LOG_ERR("ADC device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->adc.dev);
 		return -ENODEV;
 	}
 

@@ -1038,7 +1038,7 @@ Continuous Integration:
     - kartben
   files:
     - .github/
-    - scripts/requirements-actions.*
+    - scripts/requirements-*
     - scripts/ci/
     - scripts/make_bugs_pickle.py
     - .checkpatch.conf
@@ -1142,7 +1142,7 @@ Demand Paging:
     - peter-mitsis
     - nashif
   files:
-    - subsys/demand_paging/
+    - subsys/mem_mgmt/demand_paging/
     - tests/kernel/mem_protect/demand_paging/
     - samples/subsys/demand_paging/
   tests:
@@ -1412,7 +1412,6 @@ Documentation Infrastructure:
     - include/zephyr/net/canbus.h
     - include/zephyr/net/socketcan*.h
     - samples/drivers/can/
-    - samples/modules/canopennode/
     - samples/net/sockets/can/
     - samples/subsys/canbus/
     - scripts/west_commands/runners/canopen_program.py
@@ -2604,9 +2603,9 @@ Documentation Infrastructure:
     - akanisetti
   files:
     - doc/hardware/peripherals/tgpio.rst
-    - drivers/misc/timeaware_gpio/
-    - include/zephyr/drivers/misc/timeaware_gpio/
-    - samples/drivers/misc/timeaware_gpio/
+    - drivers/timeaware_gpio/
+    - include/zephyr/drivers/timeaware_gpio.h
+    - samples/drivers/timeaware_gpio/
   labels:
     - "area: Time Aware GPIO"
   tests:
@@ -4869,8 +4868,8 @@ Realtek Fingerprint Platforms:
 Release:
   status: maintained
   maintainers:
-    - MaureenHelm
-    - stephanosio
+    - henrikbrixandersen
+    - teburd
   collaborators:
     - kartben
     - nashif
@@ -5779,6 +5778,7 @@ Utilities:
     - dcpleung
     - peter-mitsis
   files:
+    - include/zephyr/data/cobs.h
     - lib/utils/
     - tests/unit/timeutil/
     - tests/unit/time_units/
@@ -5804,6 +5804,14 @@ Utilities:
     - utilities
     - libraries.ring_buffer
     - libraries.linear_range
+  file-groups:
+    - name: COBS
+      collaborators:
+        - pdgendt
+      files:
+        - include/zephyr/data/cobs.h
+        - lib/utils/cobs.c
+        - tests/lib/cobs/
 
 VFS:
   status: maintained
@@ -5955,15 +5963,6 @@ West:
   files: []
   labels:
     - "platform: nRF BSIM"
-
-"West project: canopennode":
-  status: maintained
-  maintainers:
-    - henrikbrixandersen
-  files:
-    - modules/canopennode/
-  labels:
-    - "area: CAN"
 
 "West project: chre":
   status: maintained
@@ -6746,20 +6745,6 @@ West:
     - samples/modules/tflite-micro/
   labels:
     - "area: Neural Networks"
-
-"West project: thrift":
-  status: maintained
-  maintainers:
-    - cfriedt
-  files:
-    - modules/thrift/
-    - samples/modules/thrift/
-    - tests/modules/thrift/
-  labels:
-    - "area: Thrift"
-    - "area: Serialization"
-  tests:
-    - thrift
 
 "West project: trusted-firmware-a":
   status: odd fixes

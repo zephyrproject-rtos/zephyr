@@ -242,3 +242,69 @@ void flash_stm32_page_layout(const struct device *dev,
 	*layout = &flash_layout;
 	*layout_size = 1;
 }
+
+int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask, uint32_t value)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	volatile uint16_t *ob_addr = (volatile uint16_t *)OB;
+	OB_TypeDef new_ob = *OB;
+	int rc;
+
+	if ((regs->CR & FLASH_CR_OPTWRE) == 0) {
+		return -EIO;
+	}
+
+	value = (regs->OBR & ~mask) | (value & mask);
+	if (regs->OBR == value) {
+		return 0;
+	}
+
+	/* Compute new option byte values from updated OBR value.
+	 * Read protection is disabled when option byte has value RDP_KEY;
+	 * any other value enables it (we use 0xFF here arbitrarily).
+	 */
+	new_ob.RDP = ((value & FLASH_OBR_RDPRT) == 0) ? RDP_KEY : 0xFF;
+	new_ob.USER = (value >> FLASH_OBR_USER_Pos) & 0xFF;
+	new_ob.Data0 = (value >> FLASH_OBR_DATA0_Pos) & 0xFF;
+	new_ob.Data1 = (value >> FLASH_OBR_DATA1_Pos) & 0xFF;
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* erase all option bytes */
+	regs->CR |= FLASH_CR_OPTER;
+	regs->CR |= FLASH_CR_STRT;
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	regs->CR &= ~FLASH_CR_OPTER;
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* write the full option bytes memory area back */
+	for (int i = 0; i < (sizeof(new_ob) / sizeof(uint16_t)); i++) {
+		regs->CR |= FLASH_CR_OPTPG;
+
+		ob_addr[i] = ((uint16_t *)&new_ob)[i];
+
+		/* Make sure write is completed. */
+		barrier_dsync_fence_full();
+
+		rc = flash_stm32_wait_flash_idle(dev);
+		regs->CR &= ~FLASH_CR_OPTPG;
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	return 0;
+}
+
+uint32_t flash_stm32_option_bytes_read(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	return regs->OBR;
+}

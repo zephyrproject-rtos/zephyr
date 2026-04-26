@@ -877,7 +877,7 @@ static int fdc2x1x_init_sd_pin(const struct device *dev)
 	const struct fdc2x1x_config *cfg = dev->config;
 
 	if (!gpio_is_ready_dt(&cfg->sd_gpio)) {
-		LOG_ERR("%s: sd_gpio device not ready", cfg->sd_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->sd_gpio.port);
 		return -ENODEV;
 	}
 
@@ -917,7 +917,7 @@ static int fdc2x1x_init(const struct device *dev)
 	}
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 

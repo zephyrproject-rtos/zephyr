@@ -67,10 +67,13 @@
 };
 
 &fdcan1 {
+	/* NOTE: FDCAN is enabled by default on the Linux side.
+	 * It must be disabled there before enabling it here.
+	 */
 	pinctrl-0 = <&fdcan1_rx_pg12 &fdcan1_tx_pg11>;
 	pinctrl-names = "default";
 	phys = <&transceiver0>;
-	status = "okay";
+	status = "disabled";
 };
 
 &mailbox {

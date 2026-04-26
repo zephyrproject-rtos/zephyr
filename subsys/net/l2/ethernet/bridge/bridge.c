@@ -258,13 +258,7 @@ static void bridge_iface_init(struct net_if *iface)
 	struct virtual_interface_context *vctx = net_if_l2_data(iface);
 	char name[MAX_BRIDGE_NAME_LEN];
 
-	if (ctx->is_init) {
-		return;
-	}
-
 	k_mutex_init(&ctx->lock);
-
-	ctx->iface = iface;
 
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	net_if_flag_set(iface, NET_IF_IPV4);
@@ -290,7 +284,6 @@ static void bridge_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, vctx->lladdr.addr,
 			     vctx->lladdr.len, vctx->lladdr.type);
 
-	ctx->is_init = true;
 	ctx->is_setup = false;
 }
 
@@ -476,9 +469,8 @@ static const struct virtual_interface_api bridge_iface_api = {
 };
 
 #define ETH_DEFINE_BRIDGE(x, _)						\
-	static struct eth_bridge_iface_context bridge_context_data_##x = { \
-		.id = x,						\
-	};								\
+	static struct eth_bridge_iface_context bridge_context_data_##x;	\
+									\
 	NET_VIRTUAL_INTERFACE_INIT_INSTANCE(bridge_##x,			\
 					    "BRIDGE_" #x,		\
 					    x,				\
@@ -488,6 +480,11 @@ static const struct virtual_interface_api bridge_iface_api = {
 					    NULL, /* config */		\
 					    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, \
 					    &bridge_iface_api,		\
-					    NET_ETH_MTU)
+					    NET_ETH_MTU)		\
+									\
+	static struct eth_bridge_iface_context bridge_context_data_##x = { \
+		.iface = NET_IF_GET(bridge_##x, x),			\
+		.id = x,						\
+	};
 
 LISTIFY(CONFIG_NET_ETHERNET_BRIDGE_COUNT, ETH_DEFINE_BRIDGE, (;), _);

@@ -738,7 +738,7 @@ int lsm9ds0_mfd_init(const struct device *dev)
 	const struct lsm9ds0_mfd_config * const config = dev->config;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

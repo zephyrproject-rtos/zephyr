@@ -1,0 +1,33 @@
+# Copyright (c) 2023 Enphase Energy
+# Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_J721E
+
+config KERNEL_ENTRY
+	default "_vector_table" if SOC_SERIES_J721E_R5
+
+config NUM_IRQS
+	default 512 if SOC_SERIES_J721E_R5
+
+# The frequency for Cortex-R cores depends on the external crystal on the
+# board. Therefor it is defined for each board individually
+
+if SERIAL
+
+config UART_NS16550
+	default y
+
+config UART_NS16550_TI_K3
+	default y if SOC_SERIES_J721E_R5
+
+choice UART_NS16550_VARIANT
+	default UART_NS16550_VARIANT_NS16750
+endchoice
+
+endif # SERIAL
+
+config BUILD_OUTPUT_BIN
+	default n if SOC_SERIES_J721E_R5
+
+endif # SOC_SERIES_J721E

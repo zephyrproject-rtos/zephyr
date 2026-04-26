@@ -35,11 +35,11 @@
 		};
 
 		lptim1: timers@46004400 {
-			interrupts = <45 1>;
+			interrupts = <45 0>;
 		};
 
 		lptim2: timers@40009400 {
-			interrupts = <46 1>;
+			interrupts = <46 0>;
 		};
 
 		lpuart1: serial@46002400 {

@@ -209,7 +209,7 @@ static int lm95234_init(const struct device *dev)
 	uint8_t value, model_select, model_status;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("I2C dev not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 

@@ -40,6 +40,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/arch/common/init.h>
+#include <scheduler.h>
 
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 

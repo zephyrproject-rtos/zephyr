@@ -41,6 +41,7 @@
 	aliases {
 		led0 = &green_led;
 		pwm-led0 = &red_pwm_led;
+		rtc = &rtc;
 		sw0 = &user_button;
 	};
 };

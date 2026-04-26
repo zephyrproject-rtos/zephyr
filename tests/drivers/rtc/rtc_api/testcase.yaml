@@ -26,3 +26,19 @@ tests:
       - CONFIG_RTC_ALARM=y
       - CONFIG_RTC_INIT_PRIORITY=70
       - CONFIG_TEST_RTC_ALARM_TIME_MASK=255
+
+  drivers.rtc.rtc_api.stm32.alarm_calibration:
+    tags:
+      - drivers
+      - rtc
+      - api
+    filter: dt_alias_exists("rtc") and CONFIG_SOC_FAMILY_STM32
+    depends_on: rtc
+    timeout: 100
+    extra_configs:
+      - CONFIG_RTC_ALARM=y
+      - CONFIG_RTC_CALIBRATION=y
+    platform_exclude:
+      - nucleo_f207zg
+      - nucleo_wb09ke
+      - nucleo_wl55jc

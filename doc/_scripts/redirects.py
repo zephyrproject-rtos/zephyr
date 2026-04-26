@@ -312,6 +312,7 @@ REDIRECTS = (
     ('samples/drivers/led_strip/README', 'samples/drivers/led/led_strip/README'),
     ('samples/drivers/led_sx1509b_intensity/README', 'samples/drivers/led/sx1509b_intensity/README'),
     ('samples/drivers/led_xec/README', 'samples/drivers/led/xec/README'),
+    ('samples/modules/canopennode/README', 'develop/manifest/external/canopennode'),
     ('samples/posix/env/README', 'samples/subsys/portability/posix/env/README'),
     ('samples/posix/eventfd/README', 'samples/subsys/portability/posix/eventfd/README'),
     ('samples/posix/gettimeofday/README', 'samples/subsys/portability/posix/gettimeofday/README'),

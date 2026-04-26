@@ -15,9 +15,6 @@
 	model = "STMicroelectronics STM32C562RE-NUCLEO board";
 	compatible = "st,stm32c562re-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,console = &usart2;
 		zephyr,shell-uart = &usart2;

@@ -15,9 +15,6 @@
 	model = "STMicroelectronics STM32WB09KE-NUCLEO board";
 	compatible = "st,stm32wb09ke-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;

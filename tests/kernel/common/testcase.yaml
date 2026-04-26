@@ -7,15 +7,24 @@ common:
   min_ram: 32
   timeout: 120
 tests:
+  kernel.common.toolchain2:
+    integration_toolchains:
+      - zephyr/llvm
+      - zephyr/gnu
+    platform_allow:
+      - mps2/an385
   kernel.common:
     platform_exclude:
       - native_sim
+      - mps2/an385
   kernel.common.toolchain:
     platform_allow:
       - native_sim
     integration_toolchains:
       - host
       - llvm
+      - zephyr/llvm
+      - zephyr/gnu
   kernel.common.tls:
     # ARCMWDT can't handle THREAD_LOCAL_STORAGE with USERSPACE, see #52570 for details
     filter: >

@@ -544,7 +544,7 @@ static int tmp11x_init(const struct device *dev)
 	uint16_t id;
 
 	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR("I2C dev %s not ready", cfg->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
 		return -EINVAL;
 	}
 

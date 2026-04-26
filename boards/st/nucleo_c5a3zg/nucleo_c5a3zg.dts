@@ -15,9 +15,6 @@
 	model = "STMicroelectronics STM32C5A3ZG-NUCLEO board";
 	compatible = "st,stm32c5a3zg-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,canbus = &fdcan1;
 		zephyr,console = &lpuart1;
@@ -31,6 +28,7 @@
 		die-temp0 = &die_temp;
 		led0 = &green_led;
 		sw0 = &user_button;
+		rtc = &rtc;
 		volt-sensor0 = &vref;
 		watchdog0 = &iwdg;
 	};

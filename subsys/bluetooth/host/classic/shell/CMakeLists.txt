@@ -18,3 +18,4 @@ if(CONFIG_BT_AVRCP_TG_COVER_ART OR CONFIG_BT_AVRCP_CT_COVER_ART)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_BT_PBAP pbap.c)
+zephyr_library_sources_ifdef(CONFIG_BT_MAP map.c)

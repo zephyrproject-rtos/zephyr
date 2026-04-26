@@ -224,7 +224,7 @@ static int sht4x_init(const struct device *dev)
 	const struct sht4x_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR("Device not ready.");
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
 		return -ENODEV;
 	}
 
