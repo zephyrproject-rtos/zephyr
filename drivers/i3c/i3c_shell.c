@@ -286,7 +286,7 @@ static int cmd_i3c_speed(const struct shell *sh, size_t argc, char **argv)
 
 	speed = strtol(argv[ARGV_DEV + 1], NULL, 10);
 
-	ret = i3c_config_get(dev, I3C_CONFIG_CONTROLLER, &config);
+	ret = i3c_config_get_controller(dev, &config);
 	if (ret != 0) {
 		shell_error(sh, "I3C: Failed to retrieve configuration");
 		return ret;
@@ -300,7 +300,7 @@ static int cmd_i3c_speed(const struct shell *sh, size_t argc, char **argv)
 		config.scl_od_min.low_ns  = strtol(argv[ARGV_DEV + 3], NULL, 10);
 	}
 
-	ret = i3c_configure(dev, I3C_CONFIG_CONTROLLER, &config);
+	ret = i3c_configure_controller(dev, &config);
 	if (ret != 0) {
 		shell_error(sh, "I3C: Failed to configure device");
 		return ret;
