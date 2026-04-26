@@ -29,6 +29,19 @@ struct i3c_ctrl {
 	const union shell_cmd_entry *i3c_list_dev_subcmd;
 #endif
 };
+/* Apply fn to every known I3C controller compatible. */
+#define I3C_FOREACH_STATUS_OKAY(fn)                         \
+	/* zephyr-keep-sorted-start */                      \
+	DT_FOREACH_STATUS_OKAY(adi_max32_i3c, fn)           \
+	DT_FOREACH_STATUS_OKAY(cdns_i3c, fn)                \
+	DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cm, fn)        \
+	DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cs, fn)        \
+	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_i3c, fn)        \
+	DT_FOREACH_STATUS_OKAY(nxp_mcux_i3c, fn)            \
+	DT_FOREACH_STATUS_OKAY(renesas_ra_i3c, fn)          \
+	DT_FOREACH_STATUS_OKAY(snps_designware_i3c, fn)     \
+	DT_FOREACH_STATUS_OKAY(st_stm32_i3c, fn)            \
+	/* zephyr-keep-sorted-stop */
 #ifdef CONFIG_I3C_CONTROLLER
 #define I3C_ATTACHED_DEV_GET_FN(node_id)                                                           \
 	static void node_id##cmd_i3c_attached_get(size_t idx, struct shell_static_entry *entry);   \
@@ -80,17 +93,7 @@ struct i3c_ctrl {
 	I3C_ATTACHED_DEV_GET_FN(node_id)                                                           \
 	I3C_LIST_DEV_GET_FN(node_id)
 
-/* zephyr-keep-sorted-start */
-DT_FOREACH_STATUS_OKAY(adi_max32_i3c, I3C_CTRL_FN)
-DT_FOREACH_STATUS_OKAY(cdns_i3c, I3C_CTRL_FN)
-DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cm, I3C_CTRL_FN)
-DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cs, I3C_CTRL_FN)
-DT_FOREACH_STATUS_OKAY(nuvoton_npcx_i3c, I3C_CTRL_FN)
-DT_FOREACH_STATUS_OKAY(nxp_mcux_i3c, I3C_CTRL_FN)
-DT_FOREACH_STATUS_OKAY(renesas_ra_i3c, I3C_CTRL_FN)
-DT_FOREACH_STATUS_OKAY(snps_designware_i3c, I3C_CTRL_FN)
-DT_FOREACH_STATUS_OKAY(st_stm32_i3c, I3C_CTRL_FN)
-/* zephyr-keep-sorted-stop */
+I3C_FOREACH_STATUS_OKAY(I3C_CTRL_FN)
 #endif /* CONFIG_I3C_CONTROLLER */
 #define I3C_CTRL_LIST_ENTRY(node_id)                                                               \
 	{                                                                                          \
@@ -101,17 +104,7 @@ DT_FOREACH_STATUS_OKAY(st_stm32_i3c, I3C_CTRL_FN)
 	},
 
 const struct i3c_ctrl i3c_list[] = {
-	/* zephyr-keep-sorted-start */
-	DT_FOREACH_STATUS_OKAY(adi_max32_i3c, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(cdns_i3c, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cm, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cs, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_i3c, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(nxp_mcux_i3c, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(renesas_ra_i3c, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(snps_designware_i3c, I3C_CTRL_LIST_ENTRY)
-	DT_FOREACH_STATUS_OKAY(st_stm32_i3c, I3C_CTRL_LIST_ENTRY)
-	/* zephyr-keep-sorted-stop */
+	I3C_FOREACH_STATUS_OKAY(I3C_CTRL_LIST_ENTRY)
 };
 #ifdef CONFIG_I3C_CONTROLLER
 static int get_bytes_count_for_hex(char *arg)
