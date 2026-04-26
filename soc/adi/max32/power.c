@@ -20,7 +20,9 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
-extern uint8_t pm_get_s2ram_retention_mask(void);
+#ifdef CONFIG_PM_S2RAM
+extern int pm_s2ram_suspend(pm_s2ram_system_off_fn_t system_off);
+#endif /* CONFIG_PM_S2RAM */
 
 #if defined(CONFIG_PM_S2RAM) && defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER)
 static const struct device *idle_timer =
@@ -69,12 +71,8 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		}
 #endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER */
 
-		/* SRAM retention configurable via Kconfig */
-		Wrap_MXC_LP_EnableRetentionReg();
-		Wrap_MXC_LP_EnableSramRetention(pm_get_s2ram_retention_mask());
-
 		/* Suspend to RAM */
-		arch_pm_s2ram_suspend(Wrap_MXC_LP_EnterBackupMode);
+		pm_s2ram_suspend(Wrap_MXC_LP_EnterBackupMode);
 #else
 		LOG_WRN("PM_STATE_SUSPEND_TO_RAM must be enabled by Kconfig option!");
 #endif /* CONFIG_PM_S2RAM */
@@ -106,7 +104,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_SUSPEND_TO_RAM:
 #ifdef CONFIG_PM_S2RAM
 		max32xx_system_init();
-		Wrap_MXC_LP_DisableSramRetention();
 		Wrap_MXC_LP_ExitBackupMode();
 
 #ifdef CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER
