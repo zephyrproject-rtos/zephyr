@@ -1338,9 +1338,11 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 	case 0x16609d: /* IS25LP032 */
 	case 0x17609d: /* IS25LP064 */
 	case 0x18609d: /* IS25LP128 */
+	case 0x19609d: /* IS25LP256 */
 	case 0x16709d: /* IS25WP032 */
 	case 0x17709d: /* IS25WP064 */
 	case 0x18709d: /* IS25WP128 */
+	case 0x19709d: /* IS25WP256 */
 		/*
 		 * We can support this flash with the JEDEC probe, but we need to
 		 * ensure Dummy Cycles are at the default value
