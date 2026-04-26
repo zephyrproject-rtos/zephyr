@@ -1,0 +1,25 @@
+# PI4IOE5V6408 GPIO configuration options
+
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_PI4IOE5V6408
+	bool "PI4IOE5V6408 I2C GPIO expander"
+	default y
+	depends on DT_HAS_DIODES_PI4IOE5V6408_ENABLED
+	select I2C
+	help
+	  Enable driver for the Diodes/Pericom PI4IOE5V6408 8-bit
+	  I2C-bus I/O expander.
+
+if GPIO_PI4IOE5V6408
+
+config GPIO_PI4IOE5V6408_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	help
+	  Device driver initialization priority. Must be higher than
+	  CONFIG_I2C_INIT_PRIORITY so the I2C bus is available, and
+	  higher than any GPIO controller hosting the INT line.
+
+endif # GPIO_PI4IOE5V6408
