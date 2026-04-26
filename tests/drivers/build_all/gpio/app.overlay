@@ -260,6 +260,15 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
+			test_i2c_pi4ioe5v6408: pi4ioe5v6408@43 {
+				compatible = "diodes,pi4ioe5v6408";
+				reg = <0x43>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
 			test_i2c_axp192: axp192@d {
 				compatible = "x-powers,axp192";
 				reg = <0x0d>;
