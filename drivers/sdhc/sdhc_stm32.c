@@ -380,12 +380,6 @@ static int sdhc_stm32_switch_to_1_8v(const struct device *dev)
 	struct sdhc_stm32_data *data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
 
-	/* Check if host supports 1.8V signaling */
-	if (!data->props.host_caps.vol_180_support) {
-		LOG_ERR("Host does not support 1.8V signaling");
-		return -ENOTSUP;
-	}
-
 	res = SDMMC_CmdVoltageSwitch(config->hsd->Instance);
 	if (res != 0) {
 		LOG_ERR("CMD11 failed: %#x", res);
