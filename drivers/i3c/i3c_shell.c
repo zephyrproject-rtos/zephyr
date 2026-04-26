@@ -172,6 +172,36 @@ static int i3c_parse_args(const struct shell *sh, char **argv, const struct devi
 	return 0;
 }
 
+static void print_i3c_device_info(const struct shell *sh, const struct i3c_device_desc *desc)
+{
+	shell_print(sh,
+		    "name: %s\n"
+		    "\tpid: 0x%012llx\n"
+		    "\tstatic_addr: 0x%02x\n"
+		    "\tdynamic_addr: 0x%02x\n"
+		    "\tbcr: 0x%02x\n"
+		    "\tdcr: 0x%02x\n"
+		    "\tmaxrd: 0x%02x\n"
+		    "\tmaxwr: 0x%02x\n"
+		    "\tmax_read_turnaround: 0x%06x\n"
+		    "\tmrl: 0x%04x\n"
+		    "\tmwl: 0x%04x\n"
+		    "\tmax_ibi: 0x%02x\n"
+		    "\tcrhdly1: 0x%02x\n"
+		    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x\n"
+		    "\tcrcaps: 0x%02x; 0x%02x",
+		    desc->dev->name, (uint64_t)desc->pid,
+		    desc->static_addr, desc->dynamic_addr,
+		    desc->bcr, desc->dcr, desc->data_speed.maxrd,
+		    desc->data_speed.maxwr,
+		    desc->data_speed.max_read_turnaround,
+		    desc->data_length.mrl, desc->data_length.mwl,
+		    desc->data_length.max_ibi, desc->crhdly1,
+		    desc->getcaps.getcap1, desc->getcaps.getcap2,
+		    desc->getcaps.getcap3, desc->getcaps.getcap4,
+		    desc->crcaps.crcaps1, desc->crcaps.crcaps2);
+}
+
 /* i3c info <device> [<target>] */
 static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 {
@@ -199,32 +229,7 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 			I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
 				/* only look for a device with the same name */
 				if (strcmp(desc->dev->name, tdev->name) == 0) {
-					shell_print(sh,
-						    "name: %s\n"
-						    "\tpid: 0x%012llx\n"
-						    "\tstatic_addr: 0x%02x\n"
-						    "\tdynamic_addr: 0x%02x\n"
-						    "\tbcr: 0x%02x\n"
-						    "\tdcr: 0x%02x\n"
-						    "\tmaxrd: 0x%02x\n"
-						    "\tmaxwr: 0x%02x\n"
-						    "\tmax_read_turnaround: 0x%06x\n"
-						    "\tmrl: 0x%04x\n"
-						    "\tmwl: 0x%04x\n"
-						    "\tmax_ibi: 0x%02x\n"
-						    "\tcrhdly1: 0x%02x\n"
-						    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x\n"
-						    "\tcrcaps: 0x%02x; 0x%02x",
-						    desc->dev->name, (uint64_t)desc->pid,
-						    desc->static_addr, desc->dynamic_addr,
-						    desc->bcr, desc->dcr, desc->data_speed.maxrd,
-						    desc->data_speed.maxwr,
-						    desc->data_speed.max_read_turnaround,
-						    desc->data_length.mrl, desc->data_length.mwl,
-						    desc->data_length.max_ibi, desc->crhdly1,
-						    desc->getcaps.getcap1, desc->getcaps.getcap2,
-						    desc->getcaps.getcap3, desc->getcaps.getcap4,
-						    desc->crcaps.crcaps1, desc->crcaps.crcaps2);
+					print_i3c_device_info(sh, desc);
 					found = true;
 					break;
 				}
@@ -242,32 +247,7 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 		if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
 			shell_print(sh, "I3C: Devices found:");
 			I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
-				shell_print(sh,
-					    "name: %s\n"
-					    "\tpid: 0x%012llx\n"
-					    "\tstatic_addr: 0x%02x\n"
-					    "\tdynamic_addr: 0x%02x\n"
-					    "\tbcr: 0x%02x\n"
-					    "\tdcr: 0x%02x\n"
-					    "\tmaxrd: 0x%02x\n"
-					    "\tmaxwr: 0x%02x\n"
-					    "\tmax_read_turnaround: 0x%06x\n"
-					    "\tmrl: 0x%04x\n"
-					    "\tmwl: 0x%04x\n"
-					    "\tmax_ibi: 0x%02x\n"
-					    "\tcrhdly1: 0x%02x\n"
-					    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x\n"
-					    "\tcrcaps: 0x%02x; 0x%02x",
-					    desc->dev->name, (uint64_t)desc->pid, desc->static_addr,
-					    desc->dynamic_addr,
-					    desc->bcr, desc->dcr, desc->data_speed.maxrd,
-					    desc->data_speed.maxwr,
-					    desc->data_speed.max_read_turnaround,
-					    desc->data_length.mrl, desc->data_length.mwl,
-					    desc->data_length.max_ibi, desc->crhdly1,
-					    desc->getcaps.getcap1, desc->getcaps.getcap2,
-					    desc->getcaps.getcap3, desc->getcaps.getcap4,
-					    desc->crcaps.crcaps1, desc->crcaps.crcaps2);
+				print_i3c_device_info(sh, desc);
 			}
 		} else {
 			shell_print(sh, "I3C: No devices found.");
