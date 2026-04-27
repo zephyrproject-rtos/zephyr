@@ -1,0 +1,7 @@
+&lpi2c15 {
+	status = "disabled";
+};
+
+&pca9422 {
+	status = "disabled";
+};
