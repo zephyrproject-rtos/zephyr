@@ -864,7 +864,11 @@ static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr, uint32_t prev_cyc
 	rc = zms_get_sector_cycle(fs, addr, &cycle_cnt);
 	if (rc == -ENOENT) {
 		/* sector erased or never used */
+#if !defined(CONFIG_ZMS_ID_64BIT)
 		cycle_cnt = 0;
+#else
+		cycle_cnt = (uint8_t)prev_cycle_cnt;
+#endif
 	} else if (rc) {
 		/* bad flash read */
 		return rc;
@@ -875,8 +879,9 @@ static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr, uint32_t prev_cyc
 	if (rc < 0) {
 		return rc;
 	}
-	/* full_cycle_cnt tracks the total erase count independently */
+#if !defined(CONFIG_ZMS_ID_64BIT)
 	empty_ate.full_cycle_cnt = prev_cycle_cnt + 1;
+#endif
 	empty_ate.cycle_cnt = cycle_cnt;
 
 	zms_ate_crc8_update(&empty_ate);
@@ -935,11 +940,15 @@ static int zms_get_full_sector_cycle(struct zms_fs *fs, uint64_t addr, uint32_t 
 	}
 
 	if (zms_empty_ate_valid(fs, &empty_ate)) {
+#if !defined(CONFIG_ZMS_ID_64BIT)
 		if (empty_ate.full_cycle_cnt == 0 && empty_ate.cycle_cnt > 0) {
 			*cycle_cnt = empty_ate.cycle_cnt;
 		} else {
 			*cycle_cnt = empty_ate.full_cycle_cnt;
 		}
+#else
+		*cycle_cnt = empty_ate.cycle_cnt;
+#endif
 		return 0;
 	}
 
