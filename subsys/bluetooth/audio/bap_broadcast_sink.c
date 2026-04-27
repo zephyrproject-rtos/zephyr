@@ -1024,7 +1024,6 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 	bt_bap_iso_unref(iso);
 
 	bt_bap_stream_attach(NULL, stream, ep);
-	stream->codec_cfg = &ep->codec_cfg;
 	stream->qos = &ep->qos;
 	stream->group = sink;
 

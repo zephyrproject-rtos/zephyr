@@ -1761,7 +1761,6 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 	ep->qos_pref = *qos_pref;
 
 	bt_bap_stream_attach(conn, stream, ep);
-	stream->codec_cfg = &ep->codec_cfg;
 
 	err = ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 	if (err != 0) {

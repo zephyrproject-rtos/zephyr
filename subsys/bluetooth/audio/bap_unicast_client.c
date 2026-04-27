@@ -895,6 +895,9 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 		return;
 	}
 
+	__ASSERT(stream->codec_cfg == &ep->codec_cfg, "Stream %p not attached to ep %p", stream,
+		 ep);
+
 	cfg = net_buf_simple_pull_mem(buf, sizeof(*cfg));
 
 	if (buf->len < cfg->cc_len) {
@@ -935,7 +938,6 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 
 	unicast_client_ep_set_codec_cfg(ep, cfg->codec.id, sys_le16_to_cpu(cfg->codec.cid),
 					sys_le16_to_cpu(cfg->codec.vid), cc, cfg->cc_len);
-	stream->codec_cfg = &ep->codec_cfg;
 
 	/* Notify upper layer */
 	if (stream->ops != NULL && stream->ops->configured != NULL) {
@@ -3254,6 +3256,7 @@ int bt_bap_unicast_group_get_info(const struct bt_bap_unicast_group *unicast_gro
 int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 				 const struct bt_audio_codec_cfg *codec_cfg)
 {
+	struct bt_audio_codec_cfg *ep_codec_cfg;
 	struct bt_bap_ep *ep = stream->ep;
 	struct bt_ascs_config_op *op;
 	struct net_buf_simple *buf;
@@ -3261,10 +3264,22 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 
 	LOG_DBG("stream %p", stream);
 
+	if (stream == NULL) {
+		LOG_DBG("Stream is NULL");
+
+		return -EINVAL;
+	}
+
 	if (stream->conn == NULL) {
 		LOG_DBG("Stream %p does not have a connection", stream);
 
 		return -ENOTCONN;
+	}
+
+	if (stream->ep == NULL || &stream->ep->codec_cfg != stream->codec_cfg) {
+		LOG_DBG("Invalid stream %p and stream->ep %p combination", stream, stream->ep);
+
+		return -EINVAL;
 	}
 
 	buf = bt_bap_unicast_client_ep_create_pdu(stream->conn, BT_ASCS_CONFIG_OP);
@@ -3285,6 +3300,15 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 	if (err != 0) {
 		return err;
 	}
+
+	/* Some values like path_id, ctlr_transcode, target_latency and target_phy are not updated
+	 * via the notification, so store them here immediately
+	 */
+	ep_codec_cfg = &stream->ep->codec_cfg;
+	ep_codec_cfg->path_id = codec_cfg->path_id;
+	ep_codec_cfg->ctlr_transcode = codec_cfg->ctlr_transcode;
+	ep_codec_cfg->target_latency = codec_cfg->target_latency;
+	ep_codec_cfg->target_phy = codec_cfg->target_phy;
 
 	return 0;
 }

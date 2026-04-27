@@ -89,6 +89,7 @@ void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, st
 	}
 
 	stream->ep = ep;
+	stream->codec_cfg = &ep->codec_cfg;
 	ep->stream = stream;
 }
 
@@ -828,11 +829,9 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream, const struct bt_audio_c
 
 	if (err != 0) {
 		LOG_DBG("reconfiguring stream failed: %d", err);
-	} else {
-		stream->codec_cfg = codec_cfg;
 	}
 
-	return 0;
+	return err;
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
