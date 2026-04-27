@@ -422,7 +422,8 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivOstimerClk, 1U);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && CONFIG_UDC_NXP_EHCI
+#if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && CONFIG_UDC_NXP_EHCI) || \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbh0)) && (CONFIG_UHC_NXP_EHCI)))
 	/* Power on COM VDDN domain for USB */
 	POWER_DisablePD(kPDRUNCFG_DSR_VDDN_COM);
 

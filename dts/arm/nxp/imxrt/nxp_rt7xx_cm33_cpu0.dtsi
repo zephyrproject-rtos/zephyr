@@ -922,6 +922,15 @@
 		status = "disabled";
 	};
 
+	usbh0: usbh@418000 {
+		compatible = "nxp,uhc-ehci";
+		reg = <0x418000 0x1000>;
+		interrupts = <40 0>;
+		interrupt-names = "usb_otg";
+		clocks = <&usbclk>;
+		status = "disabled";
+	};
+
 	usb1: usb@419000 {
 		compatible = "nxp,ehci";
 		reg = <0x419000 0x1000>;
@@ -929,6 +938,15 @@
 		interrupt-names = "usb_otg";
 		clocks = <&usbclk>;
 		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usbh1: usbh@419000 {
+		compatible = "nxp,uhc-ehci";
+		reg = <0x419000 0x1000>;
+		interrupts = <41 0>;
+		interrupt-names = "usb_otg";
+		clocks = <&usbclk>;
 		status = "disabled";
 	};
 
