@@ -465,6 +465,8 @@ static void cap_commander_ba_add_src_cb(struct bt_conn *conn, int err)
 		if (proc_param != NULL) {
 			err = broadcast_reception_start_add_src(active_proc, proc_param);
 			if (err != 0) {
+				LOG_DBG("broadcast_reception_start_add_src failed: %d", err);
+
 				bt_cap_common_abort_proc(proc_param->conn, err);
 				cap_commander_proc_complete(active_proc);
 			} else {
@@ -869,6 +871,9 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 			if (proc_param != NULL) {
 				err = broadcast_reception_start_add_src(active_proc, proc_param);
 				if (err != 0) {
+					LOG_DBG("broadcast_reception_start_add_src failed: %d",
+						err);
+
 					bt_cap_common_abort_proc(proc_param->conn, err);
 					cap_commander_proc_complete(active_proc);
 
@@ -897,6 +902,12 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 				}
 
 				if (err != 0) {
+					LOG_DBG("%s failed: %d",
+						subproc_type == BT_CAP_COMMON_SUBPROC_TYPE_STOP_SRC
+							? "broadcast_reception_stop_mod_src"
+							: "broadcast_reception_stop_rem_src",
+						err);
+
 					bt_cap_common_abort_proc(proc_param->conn, err);
 					cap_commander_proc_complete(active_proc);
 
@@ -920,6 +931,8 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 
 		err = broadcast_reception_stop_rem_src(active_proc, proc_param);
 		if (err != 0) {
+			LOG_DBG("broadcast_reception_stop_rem_src failed: %d", err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -1006,6 +1019,8 @@ static void cap_commander_ba_rem_src_cb(struct bt_conn *conn, int err)
 			err = broadcast_reception_stop_rem_src(active_proc, proc_param);
 
 			if (err != 0) {
+				LOG_DBG("broadcast_reception_stop_rem_src failed: %d", err);
+
 				bt_cap_common_abort_proc(proc_param->conn, err);
 				cap_commander_proc_complete(active_proc);
 			} else {
@@ -1074,6 +1089,8 @@ static void cap_commander_ba_mod_src_cb(struct bt_conn *conn, int err)
 		if (proc_param != NULL) {
 			err = broadcast_reception_stop_mod_src(active_proc, proc_param);
 			if (err != 0) {
+				LOG_DBG("broadcast_reception_stop_mod_src failed: %d", err);
+
 				bt_cap_common_abort_proc(proc_param->conn, err);
 				cap_commander_proc_complete(active_proc);
 			} else {
@@ -1103,6 +1120,8 @@ static void cap_commander_ba_mod_src_cb(struct bt_conn *conn, int err)
 			 */
 			err = broadcast_reception_stop_rem_src(active_proc, proc_param);
 			if (err != 0) {
+				LOG_DBG("broadcast_reception_stop_rem_src failed: %d", err);
+
 				bt_cap_common_abort_proc(proc_param->conn, err);
 				cap_commander_proc_complete(active_proc);
 			} else {
@@ -1312,6 +1331,7 @@ static void cap_commander_ba_set_broadcast_code_cb(struct bt_conn *conn, int err
 		if (err != 0) {
 			LOG_DBG("Failed to perform set broadcast code for conn %p: %d",
 				(void *)proc_param->conn, err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -1682,6 +1702,7 @@ static void cap_commander_vcp_vol_set_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int e
 	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set volume: %d", err);
+
 		bt_cap_common_abort_proc(conn, err);
 	} else {
 		LOG_DBG("Conn %p volume updated (%zu/%zu streams done)", (void *)conn,
@@ -1709,6 +1730,7 @@ static void cap_commander_vcp_vol_set_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int e
 		if (err != 0) {
 			LOG_DBG("Failed to set volume for conn %p: %d", (void *)proc_param->conn,
 				err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -1872,6 +1894,7 @@ static void cap_commander_vcp_vol_mute_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int 
 	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set volume: %d", err);
+
 		bt_cap_common_abort_proc(conn, err);
 	} else {
 		LOG_DBG("Conn %p volume updated (%zu/%zu streams done)", (void *)conn,
@@ -1903,6 +1926,7 @@ static void cap_commander_vcp_vol_mute_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int 
 		if (err != 0) {
 			LOG_DBG("Failed to set volume for conn %p: %d", (void *)proc_param->conn,
 				err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -2093,6 +2117,7 @@ static void cap_commander_vcp_set_offset_cb(struct bt_vocs *inst, int err)
 	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set offset: %d", err);
+
 		bt_cap_common_abort_proc(conn, err);
 	} else {
 		LOG_DBG("Conn %p offset updated (%zu/%zu streams done)", (void *)conn,
@@ -2121,6 +2146,7 @@ static void cap_commander_vcp_set_offset_cb(struct bt_vocs *inst, int err)
 		if (err != 0) {
 			LOG_DBG("Failed to set offset for conn %p: %d", (void *)proc_param->conn,
 				err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -2332,6 +2358,7 @@ static void cap_commander_micp_mic_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, in
 	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to change microphone mute: %d", err);
+
 		bt_cap_common_abort_proc(conn, err);
 	} else {
 		LOG_DBG("Conn %p mute updated (%zu/%zu streams done)", (void *)conn,
@@ -2363,6 +2390,7 @@ static void cap_commander_micp_mic_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, in
 		if (err != 0) {
 			LOG_DBG("Failed to change mute for conn %p: %d", (void *)proc_param->conn,
 				err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -2545,6 +2573,7 @@ static void cap_commander_micp_gain_set_cb(struct bt_aics *inst, int err)
 	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set gain: %d", err);
+
 		bt_cap_common_abort_proc(conn, err);
 	} else {
 		LOG_DBG("Conn %p gain updated (%zu/%zu streams done)", (void *)conn,
@@ -2571,6 +2600,7 @@ static void cap_commander_micp_gain_set_cb(struct bt_aics *inst, int err)
 		if (err != 0) {
 			LOG_DBG("Failed to set gain for conn %p: %d", (void *)proc_param->conn,
 				err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {

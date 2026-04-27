@@ -270,6 +270,8 @@ void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
 
 	ARG_UNUSED(reason);
 
+	LOG_DBG("conn %p disconnected", conn);
+
 	if (client->conn != NULL) {
 		bt_conn_unref(client->conn);
 	}
