@@ -96,51 +96,64 @@ Bluetooth
 Bluetooth Audio
 ===============
 
-* :c:member:`bt_bap_stream.codec_cfg` is now ``const``, to better reflect that it is a read-only
-  value. Any non-read uses of it will need to be updated with the appropriate operations such as
-  :c:func:`bt_bap_stream_config`, :c:func:`bt_bap_stream_reconfig`, :c:func:`bt_bap_stream_enable`
-  or :c:func:`bt_bap_stream_metadata`. (:github:`104219`)
-* Almost all API uses of ``struct bt_audio_codec_cfg *`` is now const, which means that once the
-  ``codec_cfg`` has been stored in a parameter struct like
-  :c:struct:`bt_cap_initiator_broadcast_subgroup_param` or
-  :c:struct:`bt_cap_unicast_audio_start_stream_param`, then the parameter's pointer cannot be used
-  to modify the ``codec_cfg``, and the actual definition of the struct should be modified instead.
-  (:github:`104219`)
-* :c:func:`bt_cap_commander_broadcast_reception_start` now waits for the CAP acceptors to sync to
-  the broadcast before completing. This means that if the broadcast source is offline,
-  including colocated broadcast sources like the ones created by
-  :c:func:`bt_cap_handover_unicast_to_broadcast`, shall be active and have the periodic advertising
-  enabled with a configured BASE. For :c:func:`bt_cap_handover_unicast_to_broadcast` the newly
-  added :c:member:`bt_cap_handover_cb.unicast_to_broadcast_created` can be used to configure the
-  BASE. This also means that any current checks implemented by an application to wait for receive
-  state updates indicating successful sync can be removed,
-  as :c:func:`bt_cap_commander_broadcast_reception_start` now ensures this when
-  :c:member:`bt_cap_commander_cb.broadcast_reception_start` is called. This also applies for
-  :c:func:`bt_cap_commander_broadcast_reception_stop` in a similar manner. (:github:`101070`)
-* :c:member:`bt_bap_stream.qos` is now ``const``, to better reflect that it is a read-only
-  value. Any non-read uses of it will need to be set with the appropriate operations such as
-  :c:func:`bt_bap_unicast_group_create`, :c:func:`bt_bap_unicast_group_reconfig`,
-  :c:func:`bt_bap_broadcast_source_create` or :c:func:`bt_bap_broadcast_source_reconfig`.
-  (:github:`104887`)
-* Almost all API uses of ``struct bt_bap_qos_cfg *`` is now const, which means that once the
-  ``qos`` has been stored in a parameter struct like
-  :c:struct:`bt_bap_broadcast_source_param` or
-  :c:struct:`bt_bap_unicast_group_stream_param`, then the parameter's pointer cannot be used
-  to modify the ``qos``, and the actual definition of the struct should be modified instead.
-  (:github:`104219`)
-* :c:member:`bt_bap_unicast_group_info.sink_pd` and :c:member:`bt_bap_unicast_group_info.source_pd`
-  now reflect the local values defined for the group, and not the values configured for any remote
-  ASEs. (:github:`104887`)
-* :c:func:`bt_bap_unicast_client_discover` and :c:func:`bt_bap_broadcast_assistant_discover` now
-  require that the connection has already gone through the pairing process and meets the security
-  requirements of BAP before doing any discovery. In most cases this requires a call to
-  :c:func:`bt_conn_set_security` for new devices. Bonded devices that reconnect should not require
-  anything.
-* Optional CSIS characteristics have been made configurable via Kconfig and must be enabled explicitly:
+.. zephyr-keep-sorted-start re(^\* \w)
 
-  * Coordinated Set Size → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
-  * Set Member Lock → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
-  * Set Member Rank → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
+* BAP
+
+  * :c:member:`bt_bap_stream.codec_cfg` is now ``const``, to better reflect that it is a read-only
+    value. Any non-read uses of it will need to be updated with the appropriate operations such as
+    :c:func:`bt_bap_stream_config`, :c:func:`bt_bap_stream_reconfig`, :c:func:`bt_bap_stream_enable`
+    or :c:func:`bt_bap_stream_metadata`. (:github:`104219`)
+  * :c:member:`bt_bap_stream.qos` is now ``const``, to better reflect that it is a read-only
+    value. Any non-read uses of it will need to be set with the appropriate operations such as
+    :c:func:`bt_bap_unicast_group_create`, :c:func:`bt_bap_unicast_group_reconfig`,
+    :c:func:`bt_bap_broadcast_source_create` or :c:func:`bt_bap_broadcast_source_reconfig`.
+    (:github:`104887`)
+  * Almost all API uses of ``struct bt_bap_qos_cfg *`` is now const, which means that once the
+    ``qos`` has been stored in a parameter struct like
+    :c:struct:`bt_bap_broadcast_source_param` or
+    :c:struct:`bt_bap_unicast_group_stream_param`, then the parameter's pointer cannot be used
+    to modify the ``qos``, and the actual definition of the struct should be modified instead.
+    (:github:`104219`)
+  * :c:member:`bt_bap_unicast_group_info.sink_pd` and :c:member:`bt_bap_unicast_group_info.source_pd`
+    now reflect the local values defined for the group, and not the values configured for any remote
+    ASEs. (:github:`104887`)
+  * :c:func:`bt_bap_unicast_client_discover` and :c:func:`bt_bap_broadcast_assistant_discover` now
+    require that the connection has already gone through the pairing process and meets the security
+    requirements of BAP before doing any discovery. In most cases this requires a call to
+    :c:func:`bt_conn_set_security` for new devices. Bonded devices that reconnect should not require
+    anything.
+
+* CAP
+
+  * Almost all API uses of ``struct bt_audio_codec_cfg *`` is now const, which means that once the
+    ``codec_cfg`` has been stored in a parameter struct like
+    :c:struct:`bt_cap_initiator_broadcast_subgroup_param` or
+    :c:struct:`bt_cap_unicast_audio_start_stream_param`, then the parameter's pointer cannot be used
+    to modify the ``codec_cfg``, and the actual definition of the struct should be modified instead.
+    (:github:`104219`)
+  * :c:func:`bt_cap_commander_broadcast_reception_start` now waits for the CAP acceptors to sync to
+    the broadcast before completing. This means that if the broadcast source is offline,
+    including colocated broadcast sources like the ones created by
+    :c:func:`bt_cap_handover_unicast_to_broadcast`, shall be active and have the periodic advertising
+    enabled with a configured BASE. For :c:func:`bt_cap_handover_unicast_to_broadcast` the newly
+    added :c:member:`bt_cap_handover_cb.unicast_to_broadcast_created` can be used to configure the
+    BASE. This also means that any current checks implemented by an application to wait for receive
+    state updates indicating successful sync can be removed,
+    as :c:func:`bt_cap_commander_broadcast_reception_start` now ensures this when
+    :c:member:`bt_cap_commander_cb.broadcast_reception_start` is called. This also applies for
+    :c:func:`bt_cap_commander_broadcast_reception_stop` in a similar manner. (:github:`101070`)
+
+* CSIP
+
+   * Optional CSIS characteristics have been made configurable via Kconfig and must be enabled
+     explicitly:
+
+     * Coordinated Set Size → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
+     * Set Member Lock → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
+     * Set Member Rank → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
+
+.. zephyr-keep-sorted-stop
 
 Bluetooth HCI
 =============
