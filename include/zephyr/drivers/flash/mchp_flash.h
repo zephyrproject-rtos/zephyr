@@ -23,5 +23,8 @@
 #ifdef CONFIG_FLASH_MCHP_NVMCTRL_G1
 #include "mchp_nvmctrl_g1.h"
 #endif /* CONFIG_FLASH_MCHP_NVMCTRL_G1 */
+#ifdef CONFIG_FLASH_MCHP_NVMCTRL_G3
+#include "mchp_nvmctrl_g3.h"
+#endif /* CONFIG_FLASH_MCHP_NVMCTRL_G3 */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_MCHP_FLASH_H_ */
