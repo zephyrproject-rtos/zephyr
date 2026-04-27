@@ -141,6 +141,22 @@ Bluetooth Audio
   * Coordinated Set Size → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
   * Set Member Lock → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
   * Set Member Rank → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
+* All BAP roles now require :kconfig:option:`CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE` to be at least
+  19 octets, as mandated by the BAP spec.
+  If :kconfig:option:`CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE` is set to a lower value when used
+  with BAP, then applications need to set it to at least 19 octets. The following Kconfig options
+  are affected:
+
+  * :kconfig:option:`CONFIG_BT_ASCS`
+  * :kconfig:option:`CONFIG_BT_BAP_UNICAST_SERVER`
+  * :kconfig:option:`CONFIG_BT_BAP_UNICAST_CLIENT`
+  * :kconfig:option:`CONFIG_BT_BAP_BROADCAST_SOURCE`
+  * :kconfig:option:`CONFIG_BT_BAP_BROADCAST_SINK`
+  * :kconfig:option:`CONFIG_BT_BAP_SCAN_DELEGATOR`
+  * :kconfig:option:`CONFIG_BT_BAP_BROADCAST_ASSISTANT`
+
+  (:github:`107989`)
+
 
 Bluetooth HCI
 =============
