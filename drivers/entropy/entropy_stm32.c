@@ -353,6 +353,27 @@ static int recover_seed_error(RNG_TypeDef *rng)
 	}
 #endif /* !CONFIG_SOC_SERIES_STM32WB0X */
 
+#if defined(CONFIG_SOC_STM32WB09XX)
+	if (ll_rng_is_active_seis(rng) != 0) {
+		/* RM0505 §14.7.11 "Health Test Control Register (TRNG_HEALTH_CR)":
+		 * When some oscillators are powered down, the cutoff values
+		 * must be increased as health tests could trigger an error.
+		 * The values 100 and 850 are arbitrarily higher than the default ones.
+		 * It is recommended to disable TRNG before changing these values.
+		 */
+		LL_RNG_Disable(rng);
+		ll_rng_clear_seis(rng);
+		LL_RNG_SetAesReset(rng, 1);
+		if (LL_RNG_IsActiveFlag_OSCS_REPET_ERROR(rng)) {
+			LL_RNG_SetRepetCutoff(rng, 100);
+		}
+		if (LL_RNG_IsActiveFlag_OSCS_ADAPT_ERROR(rng)) {
+			LL_RNG_SetAdapCutoff(rng, 850);
+		}
+		LL_RNG_Enable(rng);
+	}
+#endif /* CONFIG_SOC_STM32WB09XX */
+
 	if (ll_rng_is_active_seis(rng) != 0) {
 		return -EIO;
 	}
@@ -445,6 +466,8 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 	do {
 		while (ll_rng_is_active_drdy(
 				entropy_stm32_rng_data.rng) != 1) {
+
+#if !defined(CONFIG_PM_S2RAM)
 #if !IRQLESS_TRNG
 			/*
 			 * Enter low-power mode while waiting for event
@@ -462,6 +485,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 			__SEV();
 			__WFE();
 #endif /* !IRQLESS_TRNG */
+#endif /* !CONFIG_PM_S2RAM */
 		}
 
 		ret = random_sample_get(&rnd_sample);
@@ -793,7 +817,9 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 		if (z_stm32_hsem_is_owned(CFG_HW_RNG_SEMID)) {
 			rng_already_acquired = true;
 		}
-		acquire_rng();
+		if (!rng_already_acquired) {
+			acquire_rng();
+		}
 
 		cnt = generate_from_isr(buf, len);
 
