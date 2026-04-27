@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Andrew Yong <me@ndoo.sg>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Himax HX8353-E 132RGB×162 dot TFT Mobile Single Chip controller.
+
+  Driven via the MIPI DBI Type B (Intel 8080) parallel interface.
+
+compatible: "himax,hx8353e"
+
+include: ["mipi-dbi-device.yaml", "display-controller.yaml"]
+
+properties:
+  rotation:
+    type: int
+    default: 0
+    description: Initial display rotation in degrees (0, 90, 180, 270).
+    enum:
+      - 0
+      - 90
+      - 180
+      - 270
+
+  bit-inversion:
+    type: boolean
+    description: |
+      Invert the display output. Every pixel color value is bitwise complemented
+      before display; white appears black and vice versa (INVON). Omit for normal
+      output (INVOFF).
+
+  backlight-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin that enables the LCD backlight. Used for binary on/off control.
+      Omit if backlight is managed externally or via PWM only.
+
+  pwms:
+    type: phandle-array
+    description: |
+      PWM channel for backlight brightness control. Duty cycle is scaled
+      linearly from 0 (off) to period (full brightness).
