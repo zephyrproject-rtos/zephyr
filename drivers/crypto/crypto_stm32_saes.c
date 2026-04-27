@@ -21,6 +21,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(crypto_stm32_saes);
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_saes)
 #define DT_DRV_COMPAT st_stm32_saes
 
 #define STM32_CRYPTO_TYPEDEF AES_TypeDef
@@ -127,3 +128,5 @@ DEVICE_DT_INST_DEFINE(0, crypto_stm32_saes_init, NULL,
 		      &crypto_stm32_saes_dev_data,
 		      &crypto_stm32_saes_dev_config, POST_KERNEL,
 		      CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_saes_enc_funcs);
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_saes) */

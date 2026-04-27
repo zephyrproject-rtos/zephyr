@@ -26,9 +26,9 @@ LOG_MODULE_REGISTER(crypto_stm32_aes);
 #define DT_DRV_COMPAT st_stm32_cryp
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
 #define DT_DRV_COMPAT st_stm32_aes
-#else
-#error No STM32 HW Crypto Accelerator in device tree
 #endif
+
+#if defined(DT_DRV_COMPAT) /* Build only if the compatible is present in the device tree. */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
 #define STM32_CRYPTO_TYPEDEF            CRYP_TypeDef
@@ -139,3 +139,5 @@ DEVICE_DT_INST_DEFINE(0, crypto_stm32_aes_init, NULL,
 		      &crypto_stm32_aes_dev_data,
 		      &crypto_stm32_aes_dev_config, POST_KERNEL,
 		      CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_aes_enc_funcs);
+
+#endif /* DT_DRV_COMPAT */
