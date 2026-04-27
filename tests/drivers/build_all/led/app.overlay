@@ -200,6 +200,20 @@
 				compatible = "nxp,pca9533";
 				reg = <0x15>;
 			};
+
+			lp5815@16 {
+				compatible = "ti,lp5815";
+				reg = <0x16>;
+				out0-dot-current = <255>;
+				out1-dot-current = <255>;
+				out2-dot-current = <255>;
+
+				led_0 {
+					label = "rgb-led";
+					index = <0>;
+					color-mapping = <0>, <1>, <2>;
+				};
+			};
 		};
 
 		test_pwm: pwm@12341234 {
