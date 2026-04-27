@@ -7,6 +7,7 @@ from __future__ import annotations
 import abc
 import logging
 import os
+import shlex
 import shutil
 import threading
 from datetime import datetime
@@ -65,7 +66,7 @@ class DeviceAdapter(abc.ABC):
         if not self.command:
             self.generate_command()
             if self.device_config.extra_test_args:
-                self.command.extend(self.device_config.extra_test_args.split())
+                self.command.extend(shlex.split(self.device_config.extra_test_args))
 
         self.start_reader()
         self._device_launch()
