@@ -168,7 +168,7 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 8ee5e121da0d3800f0723280b6640038cb1bad95
+      revision: 0100626b16e63ca5e1238a9ffba90d103e61c227
       groups:
         - hal
     - name: hal_espressif
