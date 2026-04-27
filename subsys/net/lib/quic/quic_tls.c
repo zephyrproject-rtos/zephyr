@@ -2838,14 +2838,15 @@ static int handle_client_hello(struct quic_tls_context *ctx,
 /*
  * Parse Certificate message from peer
  */
-static int parse_certificate(struct quic_tls_context *ctx,
-			     const uint8_t *data, size_t len)
+ZTESTABLE_STATIC int parse_certificate(struct quic_tls_context *ctx,
+				       const uint8_t *data, size_t len)
 {
 	size_t pos = 0;
 	uint8_t context_len;
 	uint32_t cert_list_len;
 	int cert_count = 0;
 	size_t cert_list_end;
+	int verify_level = quic_tls_effective_verify_level(ctx);
 
 	if (len < 4) {
 		return -EINVAL;
@@ -2880,17 +2881,19 @@ static int parse_certificate(struct quic_tls_context *ctx,
 		return -EINVAL;
 	}
 
-	/* Empty certificate list is valid (no client cert) */
-	if (cert_list_len == 0) {
-		if (ctx->expecting_client_cert) {
-			if (ctx->options.verify_level == MBEDTLS_SSL_VERIFY_REQUIRED) {
-				NET_DBG("Client certificate required but not provided");
-				return -EACCES;
-			}
+	ctx->peer_cert_len = 0;
 
+	/* Empty certificate list is only valid when peer auth is optional. */
+	if (cert_list_len == 0) {
+		if (verify_level == MBEDTLS_SSL_VERIFY_REQUIRED) {
+			NET_DBG("Peer certificate required but not provided");
+			return -EACCES;
+		}
+
+		if (ctx->expecting_client_cert) {
 			NET_DBG("Client did not provide certificate (client auth optional)");
 		} else {
-			NET_DBG("Peer sent empty certificate (no client auth)");
+			NET_DBG("Peer sent empty certificate");
 		}
 
 		return 0;
@@ -3330,10 +3333,10 @@ static int verify_certificate_verify(struct quic_tls_context *ctx,
 /*
  * Process a single handshake message
  */
-static int process_handshake_message(struct quic_tls_context *ctx,
-				     uint8_t msg_type,
-				     const uint8_t *msg, size_t msg_len,
-				     const uint8_t *full_msg, size_t full_msg_len)
+ZTESTABLE_STATIC int process_handshake_message(struct quic_tls_context *ctx,
+					       uint8_t msg_type,
+					       const uint8_t *msg, size_t msg_len,
+					       const uint8_t *full_msg, size_t full_msg_len)
 {
 	int ret;
 
@@ -3428,6 +3431,11 @@ static int process_handshake_message(struct quic_tls_context *ctx,
 
 	case TLS_HS_FINISHED:
 		NET_DBG("[%p] HS finished", ctx);
+		if (quic_tls_effective_verify_level(ctx) == MBEDTLS_SSL_VERIFY_REQUIRED &&
+		    ctx->peer_cert_len == 0) {
+			NET_DBG("Peer certificate required but not provided");
+			return -EACCES;
+		}
 		/* Update transcript with Finished message */
 		ret = transcript_update(ctx, full_msg, full_msg_len);
 		if (ret != 0) {
