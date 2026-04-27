@@ -94,7 +94,7 @@ New APIs and options
   like you need to add more details, add them in the API documentation code
   instead.
 
-.. zephyr-keep-sorted-start re(^\* \w)
+.. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
 * Audio
 
