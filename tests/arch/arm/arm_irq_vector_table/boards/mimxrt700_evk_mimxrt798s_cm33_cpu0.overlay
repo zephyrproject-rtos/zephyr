@@ -1,0 +1,13 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lpi2c15 {
+	status = "disabled";
+};
+
+&pca9422 {
+	status = "disabled";
+};
