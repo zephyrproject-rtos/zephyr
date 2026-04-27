@@ -626,6 +626,63 @@ static int llext_allocate_symtab(struct llext_loader *ldr, struct llext *ext)
 	return 0;
 }
 
+/* Sorts symbol table using the heapsort algorithm in ascending order */
+static void llext_sort_symbols(struct llext_symtable *sym_tab)
+{
+	struct llext_symbol *syms = sym_tab->syms;
+	const size_t n = sym_tab->sym_cnt;
+	size_t i, parent, child;
+	struct llext_symbol tmp;
+
+	if (n <= 1) {
+		return;
+	}
+
+	/* Build max-heap: sift down from last parent to root */
+	for (i = (n >> 1); i > 0; i--) {
+		parent = i - 1;
+		tmp = syms[parent];
+
+		child = (parent << 1) + 1;
+		while (child < n) {
+			if (child + 1 < n && strcmp(syms[child + 1].name, syms[child].name) > 0) {
+				child++;
+			}
+			if (strcmp(syms[child].name, tmp.name) <= 0) {
+				break;
+			}
+			syms[parent] = syms[child];
+			parent = child;
+			child = (parent << 1) + 1;
+		}
+		syms[parent] = tmp;
+	}
+
+	/* Extract elements: swap root with last, then sift down */
+	for (i = n - 1; i > 0; i--) {
+		tmp = syms[0];
+		syms[0] = syms[i];
+		syms[i] = tmp;
+
+		parent = 0;
+		tmp = syms[0];
+
+		child = 1;
+		while (child < i) {
+			if (child + 1 < i && strcmp(syms[child + 1].name, syms[child].name) > 0) {
+				child++;
+			}
+			if (strcmp(syms[child].name, tmp.name) <= 0) {
+				break;
+			}
+			syms[parent] = syms[child];
+			parent = child;
+			child = (parent << 1) + 1;
+		}
+		syms[parent] = tmp;
+	}
+}
+
 static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext,
 				const struct llext_load_param *ldr_parm)
 {
@@ -677,6 +734,8 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext,
 		exp_tab->syms[i].addr = sym->addr;
 		LOG_DBG("sym %p name %s", sym->addr, sym->name);
 	}
+
+	llext_sort_symbols(exp_tab);
 
 	return 0;
 }
@@ -756,6 +815,8 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 			j++;
 		}
 	}
+
+	llext_sort_symbols(sym_tab);
 
 	return 0;
 }
