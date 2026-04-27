@@ -604,7 +604,7 @@ if(CONFIG_BUILD_WITH_TFM)
     set(TFM_S_MERGE_HEX_FILE $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>)
 
     if(CONFIG_SOC_SERIES_PSE84)
-      pse84_add_metadata_secure_hex(${TFM_S_HEX_FILE} ${S_SIGNED_HEX_FILE})
+      pse84_add_extboot_metadata (${TFM_S_HEX_FILE} ${S_SIGNED_HEX_FILE})
       set(TFM_S_MERGE_HEX_FILE ${S_SIGNED_HEX_FILE})
     endif()
 

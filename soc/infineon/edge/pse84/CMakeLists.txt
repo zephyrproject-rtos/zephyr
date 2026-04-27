@@ -13,10 +13,17 @@ if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
   zephyr_sources(security_config/pse84_s_system.c)
   zephyr_sources(security_config/pse84_s_sau.c)
 
-  set(unsigned_hex ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.hex)
-  set(signed_hex ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.signed.hex)
-
-  pse84_add_metadata_secure_hex(${unsigned_hex} ${signed_hex})
+  if(CONFIG_MCUBOOT OR NOT CONFIG_BOOTLOADER_MCUBOOT)
+    # CONFIG_MCUBOOT: MCUBoot bootloader image itself, needs ext-boot header
+    #   using boot_partition address/size.
+    # !CONFIG_BOOTLOADER_MCUBOOT: Standalone secure image, needs ext-boot header
+    #   using m33s_header/m33s_xip.
+    # CONFIG_BOOTLOADER_MCUBOOT && !CONFIG_MCUBOOT: app chain-loaded by MCUBoot,
+    #   signing handled by cmake/mcuboot.cmake — no action here.
+    set(unsigned_hex ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.hex)
+    set(signed_hex ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.signed.hex)
+    pse84_add_extboot_metadata(${unsigned_hex} ${signed_hex})
+  endif()
 elseif(CONFIG_CPU_CORTEX_M33)
   zephyr_sources(soc_pse84_m33_ns.c)
 elseif(CONFIG_CPU_CORTEX_M55)

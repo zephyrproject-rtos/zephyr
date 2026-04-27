@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * DTS overlay applied to the MCUBoot bootloader image only.
+ * Overrides the chosen code-partition to boot_partition so that
+ * MCUBoot is linked at the boot_partition address where the
+ * extended boot expects it (0x70100000 SAHB).
+ */
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};

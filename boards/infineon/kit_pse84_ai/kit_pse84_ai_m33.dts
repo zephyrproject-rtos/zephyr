@@ -24,8 +24,9 @@
 	};
 
 	chosen {
-		zephyr,flash = &m33s_xip;
+		zephyr,flash = &flash0_s;
 		zephyr,sram = &m33s_data;
+		zephyr,code-partition = &m33s_xip;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 	};

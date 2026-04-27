@@ -1,0 +1,81 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * MCUBoot memory map overlay for kit_pse84_ai.
+ *
+ * This overlay replaces the default flash partitions with MCUBoot-compatible
+ * partitions when CONFIG_BOOTLOADER_MCUBOOT is enabled.
+ *
+ * Extended boot jumps to 0x70100000 (SAHB alias) and validates the MCUBoot
+ * image header at that location. MCUBoot in turn validates and boots the
+ * application(s) from slot0_partition (and slot2_partition for dual-image).
+ *
+ * Flash layout (offsets within flash0):
+ *   0x000000 - 0x0FFFFF : storage (1 MB) - unchanged
+ *   0x100000 - 0x13FFFF : boot_partition (256 KB) - MCUBoot bootloader
+ *   0x140000 - 0x33FFFF : slot0_partition (2 MB) - CM33 primary image
+ *   0x340000 - 0x53FFFF : slot1_partition (2 MB) - CM33 secondary (update)
+ *   0x540000 - 0x73FFFF : slot2_partition (2 MB) - CM55 primary image
+ *   0x740000 - 0x93FFFF : slot3_partition (2 MB) - CM55 secondary (update)
+ */
+
+/* Remove default non-MCUBoot partitions (replaced by slot0-slot3) */
+/delete-node/ &m33s_header;
+/delete-node/ &m33s_xip;
+/delete-node/ &m33_xip;
+/delete-node/ &m55_xip;
+
+/* Override chosen to point at slot0 (app image under MCUBoot).
+ * The MCUBoot bootloader image itself overrides this to &boot_partition
+ * via kit_pse84_ai_mcuboot_bl.overlay and an eventual cm55 image
+ * overrides this to &slot2_partition via kit_pse84_ai_mcuboot_cm55.overlay.
+ */
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flash0_s {
+	partitions {
+		boot_partition: boot_partition@100000 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x100000 0x40000>;
+			read-only;
+		};
+
+		slot0_partition: slot0_partition@140000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x140000 0x200000>;
+		};
+
+		slot1_partition: slot1_partition@340000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x340000 0x200000>;
+		};
+	};
+};
+
+&flash0_sahb {
+	partitions {
+		slot2_partition: slot2_partition@540000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-2";
+			reg = <0x540000 0x200000>;
+		};
+
+		slot3_partition: slot3_partition@740000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-3";
+			reg = <0x740000 0x200000>;
+		};
+	};
+};
