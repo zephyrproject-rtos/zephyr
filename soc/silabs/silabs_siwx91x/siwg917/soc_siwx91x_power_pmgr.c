@@ -7,14 +7,15 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
+#include "siwx91x_nwp_bus.h"
+#include "siwx91x_nwp.h"
+
 #include "sl_si91x_power_manager.h"
 #include "sli_si91x_clock_manager.h"
 #include "sl_rsi_utility.h"
 #include "sl_si91x_m4_ps.h"
 
 LOG_MODULE_REGISTER(siwx91x_pm);
-
-extern uint32_t frontend_switch_control;
 
 /*
  * Power state map:
@@ -23,52 +24,41 @@ extern uint32_t frontend_switch_control;
  */
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	ARG_UNUSED(substate_id);
-
-	/* Set PRIMASK */
-	__disable_irq();
-	/* Set BASEPRI to 0. */
-	irq_unlock(0);
-
-	if (!sl_si91x_power_manager_is_ok_to_sleep()) {
-		/* Device is not ready to sleep; perform necessary actions if required. */
-		goto out;
-	}
+	const struct device *dev_nwp = DEVICE_DT_GET(DT_NODELABEL(nwp));
+	int ret;
 
 	if (state == PM_STATE_RUNTIME_IDLE) {
-		sl_si91x_power_manager_standby();
-	} else {
-		if (sli_si91x_config_clocks_to_mhz_rc() != 0) {
-			LOG_ERR("Failed to configure clocks for sleep mode");
-			goto out;
-		}
-		if (IS_ENABLED(CONFIG_SILABS_SIWX91X_NWP)) {
-			if (!(M4_ULP_SLP_STATUS_REG & ULP_MODE_SWITCHED_NPSS)) {
-				if (!sl_si91x_is_device_initialized()) {
-					LOG_ERR("Device is not initialized");
-					goto out;
-				}
-				sli_si91x_xtal_turn_off_request_from_m4_to_TA();
-			}
-		}
-		sl_si91x_power_manager_sleep();
+		arch_cpu_idle();
+		return;
 	}
-
-	if (!(M4_ULP_SLP_STATUS_REG & ULP_MODE_SWITCHED_NPSS)) {
-		if (frontend_switch_control != 0) {
-			sli_si91x_configure_wireless_frontend_controls(frontend_switch_control);
-		}
-
-		sl_si91x_host_clear_sleep_indicator();
-		sli_si91x_m4_ta_wakeup_configurations();
+	if (!device_is_ready(dev_nwp)) {
+		arch_cpu_idle();
+		return;
 	}
-out:
-	/* Clear PRIMASK */
+	if (sl_si91x_get_lowest_ps() != SL_SI91X_POWER_MANAGER_SLEEP) {
+		arch_cpu_idle();
+		return;
+	}
+	ret = siwx91x_nwp_prepare_sleep(dev_nwp);
+	if (ret) {
+		arch_cpu_idle();
+		return;
+	}
+	ret = sli_si91x_config_clocks_to_mhz_rc();
+	if (ret) {
+		arch_cpu_idle();
+		goto fail_clock;
+	}
+	siwx91x_nwp_enter_sleep(dev_nwp);
+	__disable_irq();
+	irq_unlock(0);
+	ret = sl_si91x_power_manager_sleep();
 	__enable_irq();
+	__ASSERT(!ret, "sl_si91x_power_manager_sleep: Failure: %d", ret);
+fail_clock:
+	siwx91x_nwp_exit_sleep(dev_nwp);
 }
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	ARG_UNUSED(state);
-	ARG_UNUSED(substate_id);
 }

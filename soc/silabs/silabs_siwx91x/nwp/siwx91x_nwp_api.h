@@ -60,7 +60,7 @@ void siwx91x_nwp_set_region_ap(const struct device *dev);
 void siwx91x_nwp_set_region_sta(const struct device *dev, sl_wifi_region_code_t region_code);
 void siwx91x_nwp_set_psk(const struct device *dev, const char *psk);
 void siwx91x_nwp_set_sta_config(const struct device *dev);
-void siwx91x_nwp_set_band(const struct device *dev, sl_wifi_band_mode_t band);
+int siwx91x_nwp_set_band(const struct device *dev, sl_wifi_band_mode_t band);
 void siwx91x_nwp_set_ht_caps(const struct device *dev, bool enabled);
 void siwx91x_nwp_set_config(const struct device *dev, uint16_t type, uint16_t value);
 void siwx91x_nwp_get_mac_address(const struct device *dev, uint8_t mac[NET_ETH_ADDR_LEN]);

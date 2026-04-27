@@ -9,5 +9,7 @@ struct device;
 
 int siwx91x_nwp_fw_boot(const struct device *dev);
 void siwx91x_nwp_fw_reset(const struct device *dev);
+void siwx91x_nwp_request_xtal(const struct device *dev);
+void siwx91x_nwp_release_xtal(const struct device *dev);
 
 #endif

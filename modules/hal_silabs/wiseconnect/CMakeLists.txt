@@ -209,14 +209,13 @@ if(CONFIG_SILABS_SISDK_SLEEPTIMER)
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_sysrtc.c
     ${SISDK}/platform/service/sleeptimer/src/sl_sleeptimer.c
     ${ZEPHYR_BASE}/arch/arm/core/cortex_m/isr_wrapper.c
-    LOCATION RAM
+    LOCATION RAM NOKEEP
   )
 endif() # CONFIG_SILABS_SISDK_SLEEPTIMER
 
 if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
   zephyr_library_sources(
     ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/rsi_ps_ram_func.c
-    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/sl_si91x_m4_ps.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sl_si91x_power_manager.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sli_si91x_power_manager.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sli_si91x_clock_manager.c
@@ -226,17 +225,10 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
   zephyr_compile_definitions(
     SL_SI91X_TICKLESS_MODE
     SL_SLEEP_TIMER
-    SLI_WIRELESS_COMPONENT_PRESENT
     SL_WIFI_COMPONENT_INCLUDED
   )
   zephyr_code_relocate(FILES
     ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/rsi_deepsleep_soc.c
-    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sl_si91x_power_manager.c
-    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sli_si91x_power_manager.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_rom.c
-    ${ZEPHYR_BASE}/drivers/gpio/gpio_silabs_siwx91x.c
-    ${ZEPHYR_BASE}/drivers/gpio/gpio_silabs_siwx91x_uulp.c
-    LOCATION RAM
+    LOCATION RAM NOKEEP
   )
 endif() # CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR

@@ -16,6 +16,8 @@
 #include "siwx91x_wifi_scan.h"
 #include "siwx91x_wifi_socket.h"
 
+#include "device/silabs/si91x/mcu/drivers/service/power_manager/inc/sl_si91x_power_manager.h"
+
 LOG_MODULE_REGISTER(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 BUILD_ASSERT(SLI_WIFI_SSID_LEN >= WIFI_SSID_MAX_LEN,
@@ -91,6 +93,9 @@ static void siwx91x_wifi_iface_init(struct net_if *iface)
 	uint8_t mac_addr[NET_ETH_ADDR_LEN];
 
 	data->iface = iface;
+	/* Note siwx91x_nwp_set_band() and siwx91x_nwp_wifi_init() are already called from NWP
+	 * driver but it does not hurt to call them twice.
+	 */
 	siwx91x_nwp_set_band(config->nwp_dev, SL_WIFI_BAND_MODE_2_4GHZ);
 	siwx91x_nwp_wifi_init(config->nwp_dev);
 	siwx91x_nwp_set_region_sta(config->nwp_dev, SL_WIFI_DEFAULT_REGION);
@@ -105,11 +110,12 @@ static void siwx91x_wifi_iface_init(struct net_if *iface)
 static int siwx91x_wifi_init(const struct device *dev)
 {
 	const struct siwx91x_wifi_config *config = dev->config;
-	struct siwx91x_wifi_data *data =  dev->data;
+	struct siwx91x_wifi_data *data = dev->data;
 
 	if (!device_is_ready(config->nwp_dev)) {
 		return -ENODEV;
 	}
+
 	siwx91x_nwp_register_wifi(config->nwp_dev, &data->nwp_ops);
 
 	return 0;

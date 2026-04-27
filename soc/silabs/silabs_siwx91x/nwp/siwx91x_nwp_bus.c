@@ -142,6 +142,48 @@ static const struct {
 	{ SLI_WLAN_MGMT_Q, SLI_WLAN_RSP_SELECT_REQUEST,      .cb = siwx91x_nwp_cb_sock_select    },
 };
 
+void siwx91x_nwp_wakeup_nwp(const struct device *dev)
+{
+	const struct siwx91x_nwp_config *cfg = dev->config;
+	struct siwx91x_nwp_data *data = dev->data;
+	unsigned int key;
+
+	/* FIXME: If the NWP is about to sleep, can't we have this sequence:
+	 *   - Set SIWX91X_M4_WAKEUP_TA
+	 *   - Read SIWX91X_TA_IS_ACTIVE, so the loop below exits
+	 *   - Reset SIWX91X_TA_IS_ACTIVE because the NWP was about to go asleep
+	 *   - Possible corrupted access here
+	 *   - Set SIWX91X_TA_IS_ACTIVE because of SIWX91X_M4_WAKEUP_TA
+	 */
+	/* In fact, data->nwp_use_cnt is probably useless since this functions is called either by
+	 * the nwp thread or in an atomic section in the idle thread.
+	 */
+	key = irq_lock();
+	if (atomic_inc(&data->nwp_use_cnt) == 0) {
+		cfg->m4_regs->status |= SIWX91X_M4_WAKEUP_TA;
+	}
+	irq_unlock(key);
+
+	/* Always wait — even if someone else started the wake-up */
+	while (!(cfg->m4_regs->status & SIWX91X_TA_IS_ACTIVE)) {
+		; /* empty */
+	}
+}
+
+/* sl_si91x_host_clear_sleep_indicator() */
+void siwx91x_nwp_release_nwp(const struct device *dev)
+{
+	const struct siwx91x_nwp_config *cfg = dev->config;
+	struct siwx91x_nwp_data *data = dev->data;
+	unsigned int key;
+
+	key = irq_lock();
+	if (atomic_dec(&data->nwp_use_cnt) == 1) {
+		cfg->m4_regs->status &= ~SIWX91X_M4_WAKEUP_TA;
+	}
+	irq_unlock(key);
+}
+
 struct siwx91x_nwp_cmd_queue *siwx91x_nwp_get_queue(const struct device *dev, int id)
 {
 	struct siwx91x_nwp_data *data = dev->data;
@@ -320,6 +362,7 @@ static void siwx91x_nwp_handle_tx(const struct device *dev, struct siwx91x_nwp_c
 }
 
 /* sli_wifi_command_engine */
+/* FIXME: Split this function */
 void siwx91x_nwp_thread(void *arg1, void *arg2, void *arg3)
 {
 	const struct device *dev = arg1;
@@ -328,6 +371,7 @@ void siwx91x_nwp_thread(void *arg1, void *arg2, void *arg3)
 	const struct siwx91x_nwp_config *cfg = dev->config;
 	uint32_t nwp_status;
 	struct net_buf *rx_buffer;
+	bool released_nwp = true;
 	int i, ret;
 	struct k_poll_event events[] = {
 		[0] = K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -365,6 +409,9 @@ void siwx91x_nwp_thread(void *arg1, void *arg2, void *arg3)
 
 	for (;;) {
 		ret = k_poll(events, ARRAY_SIZE(events), K_FOREVER);
+		if (released_nwp) {
+			siwx91x_nwp_wakeup_nwp(dev);
+		}
 		nwp_status = cfg->ta_regs->status;
 		__ASSERT(!(nwp_status & SIWX91X_NWP_ASSERT_INTR), "NWP asserted");
 		/* Tx path */
@@ -440,6 +487,18 @@ void siwx91x_nwp_thread(void *arg1, void *arg2, void *arg3)
 			} else {
 				events[i].type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
 			}
+		}
+		released_nwp = true;
+		for (i = 0; i < ARRAY_SIZE(data->cmd_queues); i++) {
+			if (events[i].type != K_POLL_TYPE_FIFO_DATA_AVAILABLE) {
+				released_nwp = false;
+			}
+			if (!k_fifo_is_empty(&data->cmd_queues[i].tx_queue)) {
+				released_nwp = false;
+			}
+		}
+		if (released_nwp) {
+			siwx91x_nwp_release_nwp(dev);
 		}
 	}
 }

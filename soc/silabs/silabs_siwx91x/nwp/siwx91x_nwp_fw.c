@@ -4,12 +4,53 @@
  */
 #include <zephyr/logging/log.h>
 #include "siwx91x_nwp.h"
+#include "siwx91x_nwp_fw.h"
+#include "siwx91x_nwp_bus.h"
 
 #include "device/silabs/si91x/mcu/drivers/systemlevel/inc/rsi_power_save.h"
 
 LOG_MODULE_DECLARE(siwx91x_nwp, CONFIG_SIWX91X_NWP_LOG_LEVEL);
 
 #define SIWX91X_NWP_FW_REGISTER_VALID     0xAB
+
+/* Required to avoid link error with Wiseconnect clock manager */
+void sli_si91x_xtal_turn_on_request_from_m4_to_TA(void)
+{
+	const struct device *dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(nwp));
+
+	if (!device_is_ready(dev)) {
+		return ;
+	}
+	siwx91x_nwp_request_xtal(dev);
+}
+
+/* sli_si91x_raise_xtal_interrupt_to_ta() */
+static void siwx91x_nwp_sync_status(const struct device *dev, uint16_t bit)
+{
+	const struct siwx91x_nwp_config *cfg = dev->config;
+
+	cfg->m4_regs->m4_int_set = bit;
+	while (!(cfg->m4_regs->ta_int & bit))
+		;
+
+	/* cfg->m4_regs->ta_int = bit; */
+	cfg->ta_regs->ta_int_clr = bit;
+}
+
+void siwx91x_nwp_request_xtal(const struct device *dev)
+{
+	siwx91x_nwp_wakeup_nwp(dev);
+	siwx91x_nwp_sync_status(dev, SIWX91X_TURN_ON_XTAL_REQUEST);
+	siwx91x_nwp_sync_status(dev, SIWX91X_M4_IS_USING_XTAL_REQUEST);
+	siwx91x_nwp_release_nwp(dev);
+}
+
+void siwx91x_nwp_release_xtal(const struct device *dev)
+{
+	siwx91x_nwp_wakeup_nwp(dev);
+	siwx91x_nwp_sync_status(dev, SIWX91X_TURN_OFF_XTAL_REQUEST);
+	siwx91x_nwp_release_nwp(dev);
+}
 
 static int siwx91x_nwp_fw_wait_ready(const struct device *dev)
 {
@@ -92,4 +133,6 @@ void siwx91x_nwp_fw_reset(const struct device *dev)
 		SIWX91X_NWP_DEINIT |
 		SIWX91X_TA_BUFFER_FULL_CLEAR;
 	config->m4_regs->status |= SIWX91X_M4_IS_ACTIVE;
+	/* FIXME: Should be done only if xtal is in use (managed by clock_control driver) */
+	siwx91x_nwp_request_xtal(dev);
 }

@@ -7,13 +7,14 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/kernel.h>
 #include "siwx91x_nwp.h"
 #include "siwx91x_nwp_bus.h"
 #include "siwx91x_nwp_api.h"
 #include "siwx91x_nwp_fw.h"
 #include "siwx91x_nwp_fw_version.h"
-#include "device/silabs/si91x/wireless/ble/inc/sl_si91x_ble.h"
-#include "device/silabs/si91x/mcu/drivers/service/power_manager/inc/sl_si91x_power_manager.h"
+
+#include "device/silabs/si91x/mcu/drivers/service/clock_manager/inc/sli_si91x_clock_manager.h"
 #include "device/silabs/si91x/wireless/ble/inc/rsi_ble_common_config.h"
 
 LOG_MODULE_REGISTER(siwx91x_nwp, CONFIG_SIWX91X_NWP_LOG_LEVEL);
@@ -34,6 +35,56 @@ void siwx91x_nwp_register_bt(const struct device *dev, const struct siwx91x_nwp_
 	struct siwx91x_nwp_data *data = dev->data;
 
 	data->bt = val;
+}
+
+int siwx91x_nwp_prepare_sleep(const struct device *dev)
+{
+	const struct siwx91x_nwp_config *cfg = dev->config;
+	int i;
+
+	cfg->m4_regs->status &= ~SIWX91X_M4_IS_ACTIVE;
+	/* 180MHz on M4 while NWP run at 80MHz. 3 cycles should be sufficient, but let's be
+	 * conservative
+	 */
+	for (i = 0; i < 10; i++) {
+		arch_nop();
+	}
+	/* FIXME: Without the line below, I have already get M4 stuck in this state:
+	 * (gdb) bt
+	 * #0  0x0000142e in siwx91x_nwp_isr (dev=0x8236ee0 <__device_dts_ord_30>) at /home/jerome/zephyr/zephyr/soc/silabs/silabs_siwx91x/nwp/siwx91x_nwp_bus.c:631
+	 * #1  0x0000043e in _isr_wrapper () at /home/jerome/zephyr/zephyr/arch/arm/core/cortex_m/isr_wrapper.c:80
+	 * #2  <signal handler called>
+	 * #3  __ISB () at /home/jerome/zephyr/modules/hal/cmsis_6/CMSIS/Core/Include/cmsis_gcc.h:175
+	 * #4  arch_cpu_idle () at /home/jerome/zephyr/zephyr/arch/arm/core/cortex_m/cpu_idle.c:105
+	 * #5  0x08209ab0 in pm_state_set (state=<optimized out>, substate_id=<optimized out>) at /home/jerome/zephyr/zephyr/soc/silabs/silabs_siwx91x/siwg917/soc_siwx91x_power_pmgr.c:34
+	 * #6  0x0820cd48 in pm_system_suspend (kernel_ticks=<optimized out>) at /home/jerome/zephyr/zephyr/subsys/pm/pm.c:243
+	 * #7  0x0822c942 in idle (unused1=<optimized out>, unused2=<optimized out>, unused3=<optimized out>) at /home/jerome/zephyr/zephyr/kernel/idle.c:71
+	 * #8  0x082066a8 in z_thread_entry (entry=0x822c8d3 <idle>, p1=0x72a8 <_kernel>, p2=0x0, p3=0x0) at /home/jerome/zephyr/zephyr/lib/os/thread_entry.c:60
+	 * I assume the line below avoid that problem.
+	 */
+	if (cfg->m4_regs->status & SIWX91X_TA_WAKEUP_M4) {
+		cfg->m4_regs->status |= SIWX91X_M4_IS_ACTIVE;
+		return -EBUSY;
+	}
+	return 0;
+}
+
+void siwx91x_nwp_enter_sleep(const struct device *dev)
+{
+	/* FIXME; Ensure host switched to RC clock before to call this function */
+	siwx91x_nwp_release_xtal(dev);
+}
+
+void siwx91x_nwp_exit_sleep(const struct device *dev)
+{
+	const struct siwx91x_nwp_config *cfg = dev->config;
+	int ret;
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	__ASSERT(ret == 0 || ret == -ENOENT, "Corrupted state");
+
+	cfg->m4_regs->status |= SIWX91X_M4_IS_ACTIVE;
+	siwx91x_nwp_request_xtal(dev);
 }
 
 static void siwx91x_apply_sram_config(sl_wifi_system_boot_configuration_t *params)
@@ -264,41 +315,6 @@ int siwx91x_nwp_reset(const struct device *dev, uint8_t oper_mode,
 	return 0;
 }
 
-int siwx91x_nwp_apply_power_profile(const struct device *dev)
-{
-	struct siwx91x_nwp_data *data = dev->data;
-	sl_wifi_performance_profile_v2_t performance_profile = {
-		.profile = data->power_profile
-	};
-	sl_bt_performance_profile_t bt_performance_profile = {
-		.profile = data->power_profile
-	};
-	int ret;
-
-	if (!IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
-		/* no_op if PM is not enabled*/
-		return 0;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-		ret = sl_si91x_bt_set_performance_profile(&bt_performance_profile);
-		if (ret) {
-			LOG_ERR("Failed to initiate power save in BLE mode");
-			return -EINVAL;
-		}
-	}
-
-	ret = sl_wifi_set_performance_profile_v2(&performance_profile);
-	if (ret) {
-		return -EINVAL;
-	}
-
-	/* Remove the previously added PS4 power state requirement */
-	sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
-
-	return 0;
-}
-
 static int siwx91x_check_nwp_version(const struct device *dev)
 {
 	struct siwx91x_nwp_version version;
@@ -349,6 +365,10 @@ static int siwx91x_nwp_init(const struct device *dev)
 	const struct siwx91x_nwp_config *config = dev->config;
 	struct siwx91x_nwp_data *data = dev->data;
 	struct net_buf_pool *rx_buf_pool;
+	sli_wifi_power_save_request_t ps_params = {
+		.power_mode = SLI_CONNECTED_M4_BASED_PS,
+		.ulp_mode_enable = 1,
+	};
 	int ret, i;
 
 	if (!config->rx_pool) {
@@ -406,25 +426,20 @@ static int siwx91x_nwp_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X) || IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
-		data->power_profile = ASSOCIATED_POWER_SAVE;
-	}
-	/* WORKAROUND:
-	 * Only set the power profile if Bluetooth is not enabled.
-	 *
-	 * If bt is enabled, we need to wait for the bt setup to complete
-	 * before setting the power profile.
-	 *
-	 * Because of that, if CONFIG_BT_SILABS_SIWX91X is enabled and
-	 * bt_enable() is not called, you will never go in sleep.
-	 */
-	if (!IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-		ret = siwx91x_nwp_apply_power_profile(dev);
-		if (ret) {
-			return -EINVAL;
-		}
-	}
+	/* These 2 commands are required to enable NWP Power Management */
+	siwx91x_nwp_set_band(dev, SL_WIFI_BAND_MODE_2_4GHZ);
+	siwx91x_nwp_wifi_init(dev);
 
+	/* FIXME Rather than making this call conditionnal, emulate the BT
+	 * driver and send ble_tx_power request here. Thus, we fix the case
+	 * where the user does not call bt_setup().
+	 */
+	if (IS_ENABLED(CONFIG_PM) && !IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+		/* FIXME: Find a proper fix */
+		sli_si91x_config_clocks_to_mhz_rc();
+		sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
+		siwx91x_nwp_ps_enable(dev, &ps_params);
+	}
 	return 0;
 }
 

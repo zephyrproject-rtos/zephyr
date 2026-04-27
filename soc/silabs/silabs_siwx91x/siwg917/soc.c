@@ -27,9 +27,10 @@ void soc_early_init_hook(void)
 		.ulpss_ram_size_kb = 4,
 	};
 
+
 	SystemInit();
 	if (IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
-		sli_si91x_platform_init();
+		RSI_Set_Cntrls_To_M4();
 		sl_si91x_power_manager_init();
 		sl_si91x_power_manager_remove_peripheral_requirement(&peripheral_config);
 		sl_si91x_power_manager_configure_ram_retention(&ram_configuration);
