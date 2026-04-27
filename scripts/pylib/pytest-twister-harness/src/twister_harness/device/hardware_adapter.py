@@ -10,7 +10,6 @@ import time
 from pathlib import Path
 
 from serial import SerialException
-
 from twister_harness.device.device_adapter import DeviceAdapter
 from twister_harness.device.utils import log_command, terminate_process
 from twister_harness.exceptions import (
@@ -29,12 +28,14 @@ class HardwareAdapter(DeviceAdapter):
         super().__init__(device_config)
         self._flashing_timeout: float = device_config.flash_timeout
 
-        self.device_log_path: Path = device_config.build_dir / 'device.log'
+        self.device_log_path: Path = device_config.build_dir / (
+            "device" + (f"{device_config.dut_number}" if device_config.dut_number else "") + ".log"
+        )
         self._log_files.append(self.device_log_path)
 
-    def _generate_flash_command(self) -> None:
+    def _generate_flash_command(self, build_dir: Path) -> None:
         command = [self.device_config.flash_command[0]]
-        command.extend(['--build-dir', str(self.device_config.build_dir)])
+        command.extend(['--build-dir', str(build_dir)])
 
         if self.device_config.id:
             command.extend(['--board-id', self.device_config.id])
@@ -45,8 +46,9 @@ class HardwareAdapter(DeviceAdapter):
 
     def generate_command(self) -> None:
         """Return command to flash."""
+        build_dir = self.device_config.current_build_dir or self.device_config.build_dir
         if self.device_config.flash_command:
-            self._generate_flash_command()
+            self._generate_flash_command(build_dir)
             return
 
         command = [
@@ -54,7 +56,7 @@ class HardwareAdapter(DeviceAdapter):
             self.device_config.west_flash_cmd or 'flash',
             '--no-rebuild',
             '--build-dir',
-            str(self.device_config.build_dir),
+            str(build_dir),
         ]
 
         command_extra_args = []
@@ -199,7 +201,6 @@ class HardwareAdapter(DeviceAdapter):
 
             except subprocess.TimeoutExpired as exc:
                 terminate_process(proc)
-                proc.communicate(timeout=timeout)
                 msg = f'Timeout occurred ({timeout}s) during execution custom script: {script_path}'
                 logger.error(msg)
                 raise TwisterHarnessTimeoutException(msg) from exc
