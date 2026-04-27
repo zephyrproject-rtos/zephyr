@@ -88,25 +88,28 @@
 
 &mx25lm51245 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * The flash partition (0 and 1) are aligned
 		 * with the TF-M flash layout expectation.
 		 */
 		slot1_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00000000 DT_SIZE_K(512)>;
 		};
 
 		slot1_ns_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1-nonsecure";
 			reg = <0x00080000 DT_SIZE_K(1024)>;
 		};
 
 		external_partition: partition@180000 {
+			compatible = "zephyr,mapped-partition";
 			label = "external";
 			reg = <0x00180000 (DT_SIZE_M(64) - DT_SIZE_K(1024) - DT_SIZE_K(512))>;
 		};

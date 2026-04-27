@@ -50,14 +50,20 @@
 				write-command = <0x12ed>; /* WRite 4Bytes */
 				rx-dummy = <20>;
 				jedec-id = [c2 85 3a];
+
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0 0x90000000 DT_SIZE_M(64)>;
+
 				status = "okay";
 
 				partitions {
-					compatible = "fixed-partitions";
 					#address-cells = <1>;
 					#size-cells = <1>;
+					ranges;
 
 					partition@0 {
+						compatible = "zephyr,mapped-partition";
 						label = "nor";
 						reg = <0x00000000 DT_SIZE_M(4)>;
 					};

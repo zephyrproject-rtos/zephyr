@@ -16,7 +16,9 @@ if(CONFIG_BUILD_WITH_TFM)
   # System entry point is TF-M vector, located 1kByte after tfm_fmw_partition in DTS
   dt_nodelabel(tfm_partition_path NODELABEL slot0_secure_partition REQUIRED)
   dt_reg_addr(tfm_partition_offset PATH ${tfm_partition_path} REQUIRED)
-  math(EXPR tfm_fwm_boot_address "${tfm_partition_offset}+${FLASH_BASE_ADDRESS_S}+0x400")
+  math(EXPR tfm_fwm_boot_address
+       "${tfm_partition_offset}-${CONFIG_FLASH_BASE_ADDRESS}+${FLASH_BASE_ADDRESS_S}+0x400"
+  )
 
   board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw"
     "--erase" "--start-address=${tfm_fwm_boot_address}"
