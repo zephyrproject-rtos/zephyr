@@ -33,6 +33,7 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,canbus = &flexcan0;
+		zephyr,edac = &erm0;
 	};
 
 	leds {
@@ -203,5 +204,17 @@
 };
 
 &wwdt0 {
+	status = "okay";
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&erm0 {
 	status = "okay";
 };
