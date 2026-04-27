@@ -51,6 +51,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define LINK_STATUS_SEMAPHORE_SET	0x1
 
+/* Test Mode Control register (T1STSTCTL) in MMS3 (PHY PMA/PMD)
+ * Accessed via MDIO_MMD_PMAPMD (devad 1) which maps to MMS3 in the OA TC6 layer.
+ */
+#define LAN86XX_REG_T1STSTCTL    0x08FB
+#define LAN86XX_TSTCTL_SHIFT     13
+#define LAN86XX_TSTCTL_MASK      (0x7 << LAN86XX_TSTCTL_SHIFT)
+#define LAN86XX_TEST_MODE_MAX    4
+
 /* Structure holding configuration register address and value */
 typedef struct {
 	uint32_t address;
@@ -566,6 +574,46 @@ static int phy_mc_t1s_set_plca_cfg(const struct device *dev, struct phy_plca_cfg
 	return lan86xx_config_collision_detection(dev, plca_cfg->enable);
 }
 
+#if defined(CONFIG_ETH_PHY_TEST_MODES)
+static int phy_mc_t1s_set_test_mode(const struct device *dev, uint8_t mode)
+{
+	uint16_t reg_val;
+	int ret;
+
+	if (mode > LAN86XX_TEST_MODE_MAX) {
+		return -EINVAL;
+	}
+
+	ret = phy_mc_t1s_c45_read(dev, MDIO_MMD_PMAPMD,
+				   LAN86XX_REG_T1STSTCTL, &reg_val);
+	if (ret) {
+		return ret;
+	}
+
+	reg_val &= ~LAN86XX_TSTCTL_MASK;
+	reg_val |= ((uint16_t)mode << LAN86XX_TSTCTL_SHIFT) & LAN86XX_TSTCTL_MASK;
+
+	return phy_mc_t1s_c45_write(dev, MDIO_MMD_PMAPMD,
+				    LAN86XX_REG_T1STSTCTL, reg_val);
+}
+
+static int phy_mc_t1s_get_test_mode(const struct device *dev, uint8_t *mode)
+{
+	uint16_t reg_val;
+	int ret;
+
+	ret = phy_mc_t1s_c45_read(dev, MDIO_MMD_PMAPMD,
+				   LAN86XX_REG_T1STSTCTL, &reg_val);
+	if (ret) {
+		return ret;
+	}
+
+	*mode = (reg_val & LAN86XX_TSTCTL_MASK) >> LAN86XX_TSTCTL_SHIFT;
+
+	return 0;
+}
+#endif /* CONFIG_ETH_PHY_TEST_MODES */
+
 static int phy_mc_t1s_set_dt_plca(const struct device *dev)
 {
 	const struct mc_t1s_config *cfg = dev->config;
@@ -641,6 +689,10 @@ static DEVICE_API(ethphy, mc_t1s_phy_api) = {
 	.write = phy_mc_t1s_write,
 	.read_c45 = phy_mc_t1s_c45_read,
 	.write_c45 = phy_mc_t1s_c45_write,
+#if defined(CONFIG_ETH_PHY_TEST_MODES)
+	.set_test_mode = phy_mc_t1s_set_test_mode,
+	.get_test_mode = phy_mc_t1s_get_test_mode,
+#endif /* CONFIG_ETH_PHY_TEST_MODES */
 };
 
 #define MICROCHIP_T1S_PHY_INIT(n)                                                                  \
