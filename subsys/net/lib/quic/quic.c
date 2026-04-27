@@ -4095,7 +4095,7 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	/* RX flow control is initialized once the stream type is known. */
 	stream->local_max_data = 0;
 	stream->local_max_data_sent = 0;
-	stream->bytes_received = 0;
+	stream->fc_bytes_received = 0;
 	stream->highest_offset_received = 0;
 	stream->read_closed = false;
 	stream->stop_sending_error_code = QUIC_ERROR_NO_ERROR;
@@ -5135,6 +5135,14 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 	}
 
 	if (end > stream->highest_offset_received) {
+		/*
+		 * QUIC receive flow control is based on absolute byte offsets.
+		 * MAX_STREAM_DATA limits the maximum stream offset, and MAX_DATA
+		 * limits the sum of offsets consumed across streams. Therefore,
+		 * when a newly received frame advances the highest offset on this
+		 * stream, any gap up to that offset also consumes flow-control
+		 * credit. Duplicate data must not be counted twice.
+		 */
 		new_bytes = end - stream->highest_offset_received;
 		if (ep != NULL &&
 		    (new_bytes > ep->rx_fc.max_data ||
@@ -5203,7 +5211,7 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 			memcpy(seg->data, data, len);
 			stream->highest_offset_received =
 				MAX(stream->highest_offset_received, end);
-			stream->bytes_received += new_bytes;
+			stream->fc_bytes_received += new_bytes;
 			if (ep != NULL) {
 				ep->rx_fc.bytes_received += new_bytes;
 			}
@@ -5270,7 +5278,7 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 
 	/* Update flow control tracking */
 	stream->highest_offset_received = MAX(stream->highest_offset_received, end);
-	stream->bytes_received += new_bytes;
+	stream->fc_bytes_received += new_bytes;
 	if (ep != NULL) {
 		ep->rx_fc.bytes_received += new_bytes;
 	}
@@ -5451,7 +5459,7 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 
 	/* Set local limits for receiving data on this stream */
 	stream->local_max_data = quic_stream_local_rx_limit(ep, stream->type);
-	stream->bytes_received = 0;
+	stream->fc_bytes_received = 0;
 	stream->highest_offset_received = 0;
 	stream->local_max_data_sent = stream->local_max_data;
 

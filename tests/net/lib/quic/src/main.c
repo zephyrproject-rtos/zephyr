@@ -959,7 +959,8 @@ ZTEST(net_socket_quic, test_150_stream_rx_flow_control_limit)
 
 	ret = quic_stream_receive_data(&stream, 0, data, sizeof(data), false);
 	zassert_equal(ret, -EPROTO, "Expected MAX_STREAM_DATA violation (%d)", ret);
-	zassert_equal(stream.bytes_received, 0, "Stream RX accounting changed unexpectedly");
+	zassert_equal(stream.fc_bytes_received, 0,
+		      "Stream RX accounting changed unexpectedly");
 	zassert_equal(stream.highest_offset_received, 0,
 		      "Highest offset changed on rejected data");
 	zassert_equal(ep->rx_fc.bytes_received, 0,
@@ -993,6 +994,43 @@ ZTEST(net_socket_quic, test_160_connection_rx_flow_control_limit)
 		      "Connection RX accounting should not grow after violation");
 }
 
+ZTEST(net_socket_quic, test_165_connection_rx_flow_control_gap_counts_offsets)
+{
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t data4[4] = { 0 };
+	uint8_t data1[1] = { 0 };
+	int ret;
+
+	init_test_rx_stream(&stream, ep, 8, 8, 1);
+
+	ret = quic_stream_receive_data(&stream, 4, data4, sizeof(data4), false);
+	zassert_equal(ret, -EAGAIN, "Expected gap data to be queued (%d)", ret);
+	zassert_equal(stream.highest_offset_received, 8,
+		      "Gap data should advance the highest received end");
+	zassert_equal(stream.fc_bytes_received, 8,
+		      "Gap data should consume stream flow-control credit");
+	zassert_equal(ep->rx_fc.bytes_received, 8,
+		      "Gap data should consume connection flow-control credit");
+
+	ret = quic_stream_receive_data(&stream, 0, data4, sizeof(data4), false);
+	zassert_equal(ret, 0, "Expected missing prefix to succeed (%d)", ret);
+	zassert_equal(stream.rx_buf.ooo_count, 0, "Gap replay should drain the OOO queue");
+	zassert_equal(stream.rx_buf.tail - stream.rx_buf.head, 8,
+		      "Gap replay should make 8 bytes readable");
+	zassert_equal(stream.fc_bytes_received, 8,
+		      "Filling the gap must not double-count stream credit");
+	zassert_equal(ep->rx_fc.bytes_received, 8,
+		      "Filling the gap must not double-count connection credit");
+
+	ret = quic_stream_receive_data(&stream, 8, data1, sizeof(data1), false);
+	zassert_equal(ret, -EPROTO, "Expected MAX_DATA violation after gap (%d)", ret);
+	zassert_equal(stream.fc_bytes_received, 8,
+		      "Violation must not change stream flow-control credit");
+	zassert_equal(ep->rx_fc.bytes_received, 8,
+		      "Violation must not change connection flow-control credit");
+}
+
 ZTEST(net_socket_quic, test_170_rx_flow_control_ooo_no_double_count)
 {
 	static struct quic_stream stream;
@@ -1007,7 +1045,7 @@ ZTEST(net_socket_quic, test_170_rx_flow_control_ooo_no_double_count)
 	zassert_equal(stream.rx_buf.ooo_count, 1, "Expected one OOO segment");
 	zassert_equal(stream.highest_offset_received, 8,
 		      "OOO segment should advance highest received end");
-	zassert_equal(stream.bytes_received, 8,
+	zassert_equal(stream.fc_bytes_received, 8,
 		      "OOO segment should count against stream flow control");
 	zassert_equal(ep->rx_fc.bytes_received, 8,
 		      "OOO segment should count against connection flow control");
@@ -1015,7 +1053,7 @@ ZTEST(net_socket_quic, test_170_rx_flow_control_ooo_no_double_count)
 	ret = quic_stream_receive_data(&stream, 4, data4, sizeof(data4), false);
 	zassert_equal(ret, -EAGAIN, "Expected duplicate OOO data to remain non-fatal (%d)", ret);
 	zassert_equal(stream.rx_buf.ooo_count, 1, "Duplicate OOO data should not add slots");
-	zassert_equal(stream.bytes_received, 8,
+	zassert_equal(stream.fc_bytes_received, 8,
 		      "Duplicate OOO data must not double-count stream bytes");
 	zassert_equal(ep->rx_fc.bytes_received, 8,
 		      "Duplicate OOO data must not double-count connection bytes");
@@ -1025,7 +1063,7 @@ ZTEST(net_socket_quic, test_170_rx_flow_control_ooo_no_double_count)
 	zassert_equal(stream.rx_buf.ooo_count, 0, "OOO queue should be replayed");
 	zassert_equal(stream.rx_buf.tail - stream.rx_buf.head, 8,
 		      "In-order replay should make 8 bytes readable");
-	zassert_equal(stream.bytes_received, 8,
+	zassert_equal(stream.fc_bytes_received, 8,
 		      "OOO replay must not double-count stream bytes");
 	zassert_equal(ep->rx_fc.bytes_received, 8,
 		      "OOO replay must not double-count connection bytes");
@@ -1053,7 +1091,7 @@ ZTEST(net_socket_quic, test_175_rx_flow_control_ooo_unbufferable_is_fatal)
 	zassert_equal(stream.rx_buf.ooo_count, slots, "Expected OOO queue to be full");
 	zassert_equal(stream.highest_offset_received, queued_bytes,
 		      "Unexpected highest received end after filling OOO queue");
-	zassert_equal(stream.bytes_received, queued_bytes,
+	zassert_equal(stream.fc_bytes_received, queued_bytes,
 		      "Unexpected stream RX accounting after filling OOO queue");
 	zassert_equal(ep->rx_fc.bytes_received, queued_bytes,
 		      "Unexpected connection RX accounting after filling OOO queue");
@@ -1064,7 +1102,7 @@ ZTEST(net_socket_quic, test_175_rx_flow_control_ooo_unbufferable_is_fatal)
 		      ret);
 	zassert_equal(stream.rx_buf.ooo_count, slots,
 		      "Duplicate OOO data should not consume extra slots");
-	zassert_equal(stream.bytes_received, queued_bytes,
+	zassert_equal(stream.fc_bytes_received, queued_bytes,
 		      "Duplicate OOO data must not change stream accounting");
 	zassert_equal(ep->rx_fc.bytes_received, queued_bytes,
 		      "Duplicate OOO data must not change connection accounting");
@@ -1077,7 +1115,7 @@ ZTEST(net_socket_quic, test_175_rx_flow_control_ooo_unbufferable_is_fatal)
 		      "Fatal OOO data should not change the queued segment count");
 	zassert_equal(stream.highest_offset_received, queued_bytes,
 		      "Fatal OOO data must not advance highest received end");
-	zassert_equal(stream.bytes_received, queued_bytes,
+	zassert_equal(stream.fc_bytes_received, queued_bytes,
 		      "Fatal OOO data must not change stream accounting");
 	zassert_equal(ep->rx_fc.bytes_received, queued_bytes,
 		      "Fatal OOO data must not change connection accounting");
@@ -1090,7 +1128,7 @@ ZTEST(net_socket_quic, test_175_rx_flow_control_ooo_unbufferable_is_fatal)
 	zassert_equal(stream.rx_buf.ooo_count, 0, "Oversized OOO data must not be queued");
 	zassert_equal(stream.highest_offset_received, 0,
 		      "Oversized OOO data must not advance highest received end");
-	zassert_equal(stream.bytes_received, 0,
+	zassert_equal(stream.fc_bytes_received, 0,
 		      "Oversized OOO data must not change stream accounting");
 	zassert_equal(ep->rx_fc.bytes_received, 0,
 		      "Oversized OOO data must not change connection accounting");
