@@ -7,10 +7,10 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_EM32F967_PINCTRL_H_
 
 /**
- * @brief EM32F967 Pin Control Definitions (STM32-style)
+ * @brief EM32F967 Pin Control Definitions (EM32-style)
  *
  * This header defines the pin control macros for the EM32F967 microcontroller
- * following the STM32 pinctrl design pattern.
+ * following the EM32 pinctrl design pattern.
  * Based on EM32F967_Complete_Specification_v1.0.md
  */
 
@@ -25,7 +25,7 @@
 #define EM32F967_AF7  7 /* 111: Alternate function 7 (PWM, etc.) */
 
 /**
- * @brief Pin configuration bit field encoding (STM32-style)
+ * @brief Pin configuration bit field encoding (EM32-style)
  *
  * Fields:
  * - mux  [ 0 : 2 ]  - Multiplexing function (3 bits)
@@ -42,7 +42,7 @@
 #define EM32F967_PORT_MASK  0x1U
 
 /**
- * @brief EM32F967 Pin Multiplexing Macro (STM32-style)
+ * @brief EM32F967 Pin Multiplexing Macro (EM32-style)
  *
  * @param port Port identifier ('A' or 'B')
  * @param pin Pin number (0-15)

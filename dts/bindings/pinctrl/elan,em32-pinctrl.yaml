@@ -1,0 +1,73 @@
+# Copyright (c) 2026 ELAN Microelectronics Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    EM32 Pin controller.
+
+    Based on pincfg-node.yaml binding.
+
+    Note: `bias-disable` and `drive-push-pull` are default pin configurations.
+           They will be applied in case no `bias-foo` or `driver-bar` properties
+           are set.
+
+compatible: "elan,em32-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+      This binding gives a base representation of the EM32 pins configuration
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-push-pull
+        - drive-open-drain
+        - drive-strength
+        - output-low
+        - output-high
+
+  properties:
+    pinmux:
+      required: true
+      type: int
+      description: |
+        Integer represents gpio pin number and mux setting.
+        Each integer encodes a port, line and alternate function.
+        With:
+        - port: The gpio port index (PA = 0, PB = 1)
+        - line: The line offset within the port (PA0 = 0, PA1 = 1)
+        - function: The function number, can be:
+        * 0 : Alternate Function 0
+        * 1 : Alternate Function 1
+        * 2 : Alternate Function 2
+        * ...
+        * 15 : Alternate Function 15
+        * 16 : Analog
+        * 17 : GPIO
+        In case selected pin function is GPIO, pin is statically configured as
+        a plain input/output GPIO. Default configuration is input. Output value
+        can be configured by adding 'output-low' or 'output-high' properties
+        to the pin configuration.
+
+        To simplify the usage, macro is available to generate "pinmux" field.
+        This macro is available here:
+          -include/zephyr/dt-bindings/pinctrl/em32f967-pinctrl.h
+
+    slew-rate:
+      type: string
+      default: "low-speed"
+      enum:
+        - "low-speed"           # Default value.
+        - "medium-speed"
+        - "high-speed"
+        - "very-high-speed"
+      description: |
+        Pin speed. Default to low-speed.
