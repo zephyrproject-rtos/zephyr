@@ -5,10 +5,19 @@ description: |
   GPIO based QDEC input device
 
   Implement an input device generating relative axis event reports for a rotary
-  encoder connected to two GPIOs. The driver is normally idling until it sees a
-  transition on any of the encoder signal lines, then switches to polling mode
-  and samples the two signal lines periodically to track the encoder position,
-  and goes back to idling after the specified timeout.
+  encoder connected to two GPIOs.
+
+  By default (ISR mode) the driver registers an edge interrupt on gpios[0] (A
+  signal) only. On every edge it reads both A and B immediately and determines
+  direction from whether they match, with no polling delay. gpios[1] (B) is a
+  plain input read inside the callback, so only one GPIO interrupt line is
+  claimed. This avoids shared-line conflicts on platforms such as STM32.
+
+  When the polling-mode property is set the driver reverts to the original
+  behaviour: it idles until it sees a transition on any encoder signal line,
+  then switches to polling both signal lines periodically at sample-time-us,
+  and goes back to idling after idle-timeout-ms. sample-time-us and
+  idle-timeout-ms are required when polling-mode is set.
 
 compatible: "gpio-qdec"
 
@@ -19,12 +28,15 @@ properties:
     type: phandle-array
     required: true
     description: |
-      GPIO for the A and B encoder signals.
+      GPIO for the A and B encoder signals. In ISR mode (default) only
+      gpios[0] (A) receives a GPIO interrupt; gpios[1] (B) is a plain input
+      read inside the ISR callback.
 
   led-gpios:
     type: phandle-array
     description: |
       GPIOs for LED or other components needed for sensing the AB signals.
+      Only used in polling-mode.
 
   led-pre-us:
     type: int
@@ -38,7 +50,10 @@ properties:
     type: int
     required: true
     description: |
-      How many steps to count before reporting an input event.
+      How many steps to count before reporting an input event. In ISR mode
+      each qualifying A-signal edge counts as one step; use 1 for one report
+      per detent on a standard encoder. In polling mode each sampled quadrature
+      state transition counts as one step; use 4 for one report per detent.
 
   zephyr,axis:
     type: int
@@ -49,10 +64,9 @@ properties:
 
   sample-time-us:
     type: int
-    required: true
     description: |
       How often to sample the A and B signal lines when tracking the encoder
-      movement.
+      movement. Required when polling-mode is set.
 
   idle-poll-time-us:
     type: int
@@ -62,24 +76,41 @@ properties:
       specified in led-gpios will be enabled all the time. If non zero, then
       the driver will poll every idle-poll-time-us microseconds while idle, and
       only activate led-gpios before sampling the encoder state.
+      Only used in polling-mode.
 
   idle-timeout-ms:
     type: int
-    required: true
     description: |
       Timeout for the last detected transition before stopping the sampling
-      timer and going back to idle state.
+      timer and going back to idle state. Required when polling-mode is set.
+
+  polling-mode:
+    type: boolean
+    description: |
+      Use the original polling-based decoder instead of ISR mode. When set,
+      sample-time-us and idle-timeout-ms must also be specified.
 
 examples:
   - |
     #include <zephyr/dt-bindings/input/input-event-codes.h>
 
-    qdec {
+    /* ISR mode (default): one interrupt line, immediate direction decode. */
+    qdec_isr {
+            compatible = "gpio-qdec";
+            gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>,
+                    <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
+            steps-per-period = <1>;
+            zephyr,axis = <INPUT_REL_WHEEL>;
+    };
+
+    /* Polling mode (original behaviour). */
+    qdec_poll {
             compatible = "gpio-qdec";
             gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>,
                     <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
             steps-per-period = <4>;
             zephyr,axis = <INPUT_REL_WHEEL>;
+            polling-mode;
             sample-time-us = <2000>;
             idle-timeout-ms = <200>;
     };
