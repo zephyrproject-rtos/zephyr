@@ -159,6 +159,14 @@ SD Host Controller
   consolidated into the existing ``pwr-gpios`` property. Replace
   ``sdhi-on-gpios`` with ``pwr-gpios`` in out-of-tree devicetree nodes.
 
+Sensor
+======
+
+* The ``girqs`` and ``pcrs`` properties (array type) of :dtcompatible:`microchip,xec-tach` have been
+  replaced by ``pcr-scr`` (int type) to use encoded PCR register index and bit position macros.
+  GIRQ configuration is now handled via the ``microchip,dmec-ecia-girq`` binding include
+  (:github:`104808`).
+
 STM32
 =====
 
