@@ -662,7 +662,7 @@ static inline uint32_t hal_radio_rx_chain_delay_us_get(uint8_t phy, uint8_t flag
 	}
 }
 
-static inline uint32_t hal_radio_tx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
+static inline uint32_t hal_radio_tifs_tx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
 {
 	switch (phy) {
 	default:
@@ -682,7 +682,7 @@ static inline uint32_t hal_radio_tx_ready_delay_ns_get(uint8_t phy, uint8_t flag
 	}
 }
 
-static inline uint32_t hal_radio_rx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
+static inline uint32_t hal_radio_tifs_rx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
 {
 	switch (phy) {
 	default:
