@@ -29,8 +29,8 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #error No STM32 HW Crypto Accelerator in device tree
 #endif
 
-#define CRYP_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
-		      CAP_NO_IV_PREFIX)
+#if defined(DT_DRV_COMPAT) /* Build only if the compatible is present in the device tree. */
+
 #define BLOCK_LEN_BYTES 16
 #define BLOCK_LEN_WORDS (BLOCK_LEN_BYTES / sizeof(uint32_t))
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_STM32_MAX_SESSION
@@ -44,8 +44,6 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
 #define STM32_CRYPTO_TYPEDEF            AES_TypeDef
 #endif
-
-struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
 typedef HAL_StatusTypeDef status_t;
 
@@ -303,37 +301,14 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 	return ret;
 }
 
-static int crypto_stm32_get_unused_session_index(const struct device *dev)
+int crypto_stm32_session_setup(const struct device *dev, struct cipher_ctx *ctx,
+			       enum cipher_algo algo, enum cipher_mode mode, enum cipher_op op_type,
+			       struct crypto_stm32_session *session)
 {
-	int i;
-
+	int ret;
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
 
-	k_sem_take(&data->session_sem, K_FOREVER);
-
-	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
-		if (!crypto_stm32_sessions[i].in_use) {
-			crypto_stm32_sessions[i].in_use = true;
-			k_sem_give(&data->session_sem);
-			return i;
-		}
-	}
-
-	k_sem_give(&data->session_sem);
-
-	return -1;
-}
-
-static int crypto_stm32_session_setup(const struct device *dev,
-				      struct cipher_ctx *ctx,
-				      enum cipher_algo algo,
-				      enum cipher_mode mode,
-				      enum cipher_op op_type)
-{
-	int ctx_idx, ret;
-	struct crypto_stm32_session *session;
-
-	if (ctx->flags & ~(CRYP_SUPPORT)) {
+	if (ctx->flags & ~(crypto_query_hwcaps(dev))) {
 		LOG_ERR("Unsupported flag");
 		return -ENOTSUP;
 	}
@@ -352,9 +327,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	 * not a multiple of 128 bits. Therefore, CCM mode is not supported by
 	 * this driver.
 	 */
-	if ((mode != CRYPTO_CIPHER_MODE_ECB) &&
-	    (mode != CRYPTO_CIPHER_MODE_CBC) &&
-	    (mode != CRYPTO_CIPHER_MODE_CTR)) {
+	if ((BIT(mode) & (data->caps & CRYPTO_STM32_CAPS_AES_MODES_MSK)) == 0U) {
 		LOG_ERR("Unsupported mode");
 		return -ENOTSUP;
 	}
@@ -371,17 +344,9 @@ static int crypto_stm32_session_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ctx_idx = crypto_stm32_get_unused_session_index(dev);
-	if (ctx_idx < 0) {
-		LOG_ERR("No free session for now");
-		return -ENOSPC;
-	}
-	session = &crypto_stm32_sessions[ctx_idx];
 	memset(&session->config, 0, sizeof(session->config));
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
-	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
-
 	if (data->hcryp.State == HAL_CRYP_STATE_RESET) {
 		if (HAL_CRYP_Init(&data->hcryp) != HAL_OK) {
 			LOG_ERR("Initialization error");
@@ -472,25 +437,26 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	return 0;
 }
 
-static int crypto_stm32_session_free(const struct device *dev,
-				     struct cipher_ctx *ctx)
+int crypto_stm32_session_free(const struct device *dev, struct cipher_ctx *ctx,
+			      uint32_t sessions_in_use_count)
 {
-	int i;
-
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
 	const struct crypto_stm32_config *cfg = CRYPTO_STM32_CFG(dev);
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
-	session->in_use = false;
+	if (session != NULL) {
+		if (sessions_in_use_count > 0) {
+			sessions_in_use_count--;
+		}
+		session->in_use = false;
+	}
 
 	k_sem_take(&data->session_sem, K_FOREVER);
 
 	/* Disable peripheral only if there are no more active sessions. */
-	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
-		if (crypto_stm32_sessions[i].in_use) {
-			k_sem_give(&data->session_sem);
-			return 0;
-		}
+	if (sessions_in_use_count > 0) {
+		k_sem_give(&data->session_sem);
+		return 0;
 	}
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
@@ -509,12 +475,7 @@ static int crypto_stm32_session_free(const struct device *dev,
 	return 0;
 }
 
-static int crypto_stm32_query_caps(const struct device *dev)
-{
-	return CRYP_SUPPORT;
-}
-
-static int crypto_stm32_init(const struct device *dev)
+int crypto_stm32_init(const struct device *dev, uint32_t crypto_stm32_caps)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
@@ -524,6 +485,8 @@ static int crypto_stm32_init(const struct device *dev)
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
+
+	data->caps = crypto_stm32_caps;
 
 	k_sem_init(&data->device_sem, 1, 1);
 	k_sem_init(&data->session_sem, 1, 1);
@@ -536,25 +499,103 @@ static int crypto_stm32_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(crypto, crypto_enc_funcs) = {
-	.cipher_begin_session = crypto_stm32_session_setup,
-	.cipher_free_session = crypto_stm32_session_free,
+/* AES engine specific pieces. */
+#define CRYP_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
+#define CRYPTO_STM32_AES_MODES                                                                     \
+	(CRYPTO_CIPHER_MODE_ECB | CRYPTO_CIPHER_MODE_CBC | CRYPTO_CIPHER_MODE_CTR)
+
+struct crypto_stm32_session crypto_stm32_aes_sessions[CRYPTO_MAX_SESSION];
+
+static int crypto_stm32_aes_get_unused_session_index(const struct device *dev)
+{
+	int i;
+
+	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
+
+	k_sem_take(&data->session_sem, K_FOREVER);
+
+	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
+		if (!crypto_stm32_aes_sessions[i].in_use) {
+			crypto_stm32_aes_sessions[i].in_use = true;
+			k_sem_give(&data->session_sem);
+			return i;
+		}
+	}
+
+	k_sem_give(&data->session_sem);
+
+	return -1;
+}
+
+static int crypto_stm32_aes_session_setup(const struct device *dev, struct cipher_ctx *ctx,
+					  enum cipher_algo algo, enum cipher_mode mode,
+					  enum cipher_op op_type)
+{
+	int ctx_idx, ret;
+	struct crypto_stm32_session *session;
+
+	ctx_idx = crypto_stm32_aes_get_unused_session_index(dev);
+	if (ctx_idx < 0) {
+		LOG_ERR("No free session for now");
+		return -ENOSPC;
+	}
+	session = &crypto_stm32_aes_sessions[ctx_idx];
+
+	ret = crypto_stm32_session_setup(dev, ctx, algo, mode, op_type, session);
+
+	/* Here, the session may be linked (so marked as in_use) or not to the
+	 * cipher context depending on the status of crypto_stm32_session_setup.
+	 */
+
+	return ret;
+}
+
+static int crypto_stm32_aes_session_free(const struct device *dev, struct cipher_ctx *ctx)
+{
+	int i;
+	uint32_t in_use_count = 0;
+
+	/* Count the number of sessions currently in use, including the one hold
+	 * by the cipher context.
+	 */
+	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
+		if (crypto_stm32_aes_sessions[i].in_use) {
+			in_use_count++;
+		}
+	}
+
+	return crypto_stm32_session_free(dev, ctx, in_use_count);
+}
+
+static int crypto_stm32_aes_query_caps(const struct device *dev)
+{
+	return CRYP_SUPPORT;
+}
+
+static int crypto_stm32_aes_init(const struct device *dev)
+{
+	return crypto_stm32_init(dev, CRYPTO_STM32_AES_MODES);
+}
+
+static DEVICE_API(crypto, crypto_aes_enc_funcs) = {
+	.cipher_begin_session = crypto_stm32_aes_session_setup,
+	.cipher_free_session = crypto_stm32_aes_session_free,
 	.cipher_async_callback_set = NULL,
-	.query_hw_caps = crypto_stm32_query_caps,
+	.query_hw_caps = crypto_stm32_aes_query_caps,
 };
 
-static struct crypto_stm32_data crypto_stm32_dev_data = {
+static struct crypto_stm32_data crypto_stm32_aes_dev_data = {
 	.hcryp = {
 		.Instance = (STM32_CRYPTO_TYPEDEF *)DT_INST_REG_ADDR(0),
 	}
 };
 
-static const struct crypto_stm32_config crypto_stm32_dev_config = {
+static const struct crypto_stm32_config crypto_stm32_aes_dev_config = {
 	.reset = RESET_DT_SPEC_INST_GET(0),
 	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, crypto_stm32_init, NULL,
-		    &crypto_stm32_dev_data,
-		    &crypto_stm32_dev_config, POST_KERNEL,
-		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);
+DEVICE_DT_INST_DEFINE(0, crypto_stm32_aes_init, NULL,
+		      &crypto_stm32_aes_dev_data,
+		      &crypto_stm32_aes_dev_config, POST_KERNEL,
+		      CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_aes_enc_funcs);
