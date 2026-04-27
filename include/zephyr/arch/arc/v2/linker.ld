@@ -138,10 +138,6 @@ SECTIONS {
 		*(".rodata.*")
 		*(".rodata$*")
 		*(.gnu.linkonce.r.*)
-#if defined(CONFIG_LLEXT) && defined(CONFIG_HARVARD) && \
-	!defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
-		*(.llext_instr_heap)
-#endif /* CONFIG_LLEXT && CONFIG_HARVARD && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -157,6 +153,13 @@ SECTIONS {
 		MPU_ALIGN(ABSOLUTE(.) - __rom_region_start);
 #endif
 	} GROUP_LINK_IN(ROMABLE_REGION)
+
+#if defined(CONFIG_LLEXT) && defined(CONFIG_HARVARD) && \
+	!defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+	SECTION_PROLOGUE(.llext_instr_heap,,) {
+		*(.llext_instr_heap)
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_LLEXT && CONFIG_HARVARD && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
 
 	__rodata_region_end = .;
 
