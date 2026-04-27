@@ -45,6 +45,7 @@ struct mcux_flexcomm_config {
 #ifdef CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY
 	struct gpio_dt_spec scl;
 	struct gpio_dt_spec sda;
+	bool recover_bus_on_init;
 #endif /* CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY */
 };
 
@@ -594,6 +595,15 @@ static int mcux_flexcomm_init_common(const struct device *dev)
 		return error;
 	}
 
+#ifdef CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY
+	if (config->recover_bus_on_init) {
+		error = mcux_flexcomm_recover_bus(dev);
+		if (error != 0) {
+			return error;
+		}
+	}
+#endif /* CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY */
+
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
@@ -683,13 +693,24 @@ static DEVICE_API(i2c, mcux_flexcomm_driver_api) = {
 #if CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY
 #define I2C_MCUX_FLEXCOMM_SCL_INIT(n) .scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),
 #define I2C_MCUX_FLEXCOMM_SDA_INIT(n) .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),
+#define I2C_MCUX_FLEXCOMM_RECOVER_BUS_ON_INIT(n) \
+	.recover_bus_on_init = DT_INST_PROP(n, recover_bus_on_init),
+#define I2C_MCUX_FLEXCOMM_RECOVER_CHECK(n)					\
+	BUILD_ASSERT(!DT_INST_PROP(n, recover_bus_on_init) ||			\
+		     (DT_INST_NODE_HAS_PROP(n, scl_gpios) &&			\
+		      DT_INST_NODE_HAS_PROP(n, sda_gpios)),			\
+		     "I2C node " DT_NODE_FULL_NAME(DT_DRV_INST(n))		\
+		     " has recover-bus-on-init but is missing scl-gpios or sda-gpios");
 #else
 #define I2C_MCUX_FLEXCOMM_SCL_INIT(n)
 #define I2C_MCUX_FLEXCOMM_SDA_INIT(n)
+#define I2C_MCUX_FLEXCOMM_RECOVER_BUS_ON_INIT(n)
+#define I2C_MCUX_FLEXCOMM_RECOVER_CHECK(n)
 #endif /* CONFIG_I2C_MCUX_FLEXCOMM_BUS_RECOVERY */
 
 #define I2C_MCUX_FLEXCOMM_DEVICE(id)					\
 	PINCTRL_DT_INST_DEFINE(id);					\
+	I2C_MCUX_FLEXCOMM_RECOVER_CHECK(id)				\
 	static void mcux_flexcomm_config_func_##id(const struct device *dev); \
 	static const struct mcux_flexcomm_config mcux_flexcomm_config_##id = {	\
 		.base = (I2C_Type *) DT_INST_REG_ADDR(id),		\
@@ -702,6 +723,7 @@ static DEVICE_API(i2c, mcux_flexcomm_driver_api) = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
 		I2C_MCUX_FLEXCOMM_SCL_INIT(id)				\
 		I2C_MCUX_FLEXCOMM_SDA_INIT(id)				\
+		I2C_MCUX_FLEXCOMM_RECOVER_BUS_ON_INIT(id)		\
 		.reset = RESET_DT_SPEC_INST_GET(id),			\
 	};								\
 	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;	\
