@@ -54,6 +54,18 @@
 			zephyr,memory-region = "KM4_IMG2_ENTRY";
 		};
 
+		wifi0: wifi@40000000 {
+			compatible = "realtek,ameba-wifi";
+			reg = <0x40000000 0x40000>;
+			status = "disabled";
+		};
+
+		wifi1: wifi@40040000 {
+			compatible = "realtek,ameba-wifi";
+			reg = <0x40040000 0x40000>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@41008800 {
 			compatible = "realtek,ameba-pinctrl";
 			reg = <0x41008800 0x200>;

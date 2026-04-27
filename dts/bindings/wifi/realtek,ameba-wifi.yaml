@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek Ameba SoC WiFi
+
+compatible: "realtek,ameba-wifi"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    description: WiFi controller register space
+    required: true
