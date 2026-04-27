@@ -67,6 +67,8 @@ $defs:
         type: string
       tier:
         type: integer
+      preferred_toolchain:
+        type: string
       toolchain:
         type: array
         items:
