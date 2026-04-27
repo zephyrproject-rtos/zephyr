@@ -1,0 +1,323 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Low-power autonomous analog configuration for voice/audio input.
+ *
+ * Signal path:
+ *   Analog mic -> CTB0 OA0 (open-loop preamp) -> SAR MUX ch0 -> FIFO
+ *   CTB0 OA0 output -> PTCOMP comp0/comp1 vs PRB thresholds (AAD)
+ *
+ * The SAR ADC runs in LP mode using LPOSC at 4.096 MHz.  The FIFO
+ * collects conversion results and fires a watermark interrupt every
+ * 160 samples (~10 ms at ~16 kHz effective rate).
+ *
+ * The Autonomous Controller (AC) uses an 11-state advanced state machine:
+ *   State 0:  Init - wait for BLOCK_READY, enable LP mode, unlock peripherals
+ *   State 1:  Wait for FW trigger 0 (start command from application)
+ *   State 2:  Branch unconditionally to state 6 (skip AAD on first pass)
+ *   State 3:  AAD entry - wait for BLOCK_READY
+ *   State 4:  AAD - wait for PTCOMP_RANGE0 (acoustic activity detected)
+ *   State 5:  No-op, fall through to state 6
+ *   State 6:  Wait for TIMER_DONE_WAKE (periodic sampling tick, period=255)
+ *   State 7:  Wait for BLOCK_READY, enable SAR
+ *   State 8:  Trigger SAR conversion, wait for SAR_DONE
+ *   State 9:  Check FW trigger 1 (stop): if not set -> loop to state 6
+ *   State 10: Branch unconditionally to state 3 (return to AAD idle)
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/infineon-autanalog-sar.h>
+#include <zephyr/dt-bindings/comparator/infineon-autanalog-ptcomp.h>
+#include <zephyr/dt-bindings/regulator/infineon-autanalog-prb.h>
+#include <zephyr/dt-bindings/opamp/infineon-autanalog-ctb.h>
+#include <zephyr/dt-bindings/mfd/infineon-autanalog.h>
+
+/ {
+	zephyr,user {
+		/* Single MUX channel: CTB0 OA0 output (mic preamp) */
+		io-channels = <&adc0 8>;
+	};
+
+	/*
+	 * Autonomous Controller: 11-state advanced state machine
+	 *
+	 * Reference: analog_mic_interface_states_stt / analog_mic_interface_states_cfg
+	 *
+	 * Flow:
+	 *   [0] Init -> [1] wait FW_TRIGGER0 -> [2] branch -> [6] timer loop
+	 *   [6] TIMER_DONE_WAKE -> [7] enable SAR -> [8] trigger/SAR_DONE ->
+	 *   [9] check FW_TRIGGER1: not set -> [6]; set -> [10] -> [3] AAD idle
+	 *   [3] BLOCK_READY -> [4] PTCOMP_RANGE0 -> [5] -> [6] resume sampling
+	 */
+
+	/* State 0: Init - unlock, LP mode, wait BLOCK_READY -> state 1 */
+	ac_state0: ac-state-0 {
+		compatible = "infineon,autanalog-ac-state";
+		ac-unlock = <1>;
+		ac-lp-mode = <1>;
+		ac-condition = <IFX_AUTANALOG_AC_COND_BLOCK_READY>;
+		ac-action = <IFX_AUTANALOG_AC_ACTION_WAIT_FOR>;
+		branch-state = <1>;
+		/* PRB: set initial reference taps */
+		prb-unlock = <1>;
+		prb-vref0-fw = <1>;
+		prb-vref0-tap = <IFX_AUTANALOG_PRB_TAP_8>;
+		prb-vref1-fw = <1>;
+		prb-vref1-tap = <IFX_AUTANALOG_PRB_TAP_6>;
+		/* CTB0: enable opamp0 (mic preamp) */
+		ctb0-unlock = <1>;
+		ctb0-enable-opamp0 = <1>;
+		ctb0-gain-opamp0 = <IFX_AUTANALOG_CTB_OA_GAIN_1_00>;
+	};
+
+	/* State 1: Wait for FW trigger 0 (application start command) */
+	ac_state1: ac-state-1 {
+		compatible = "infineon,autanalog-ac-state";
+		ac-condition = <IFX_AUTANALOG_AC_COND_TR_IN0>;
+		ac-action = <IFX_AUTANALOG_AC_ACTION_WAIT_FOR>;
+	};
+
+	/* State 2: Unconditional branch to state 6 (skip AAD on first pass) */
+	ac_state2: ac-state-2 {
+		compatible = "infineon,autanalog-ac-state";
+		ac-condition = <IFX_AUTANALOG_AC_COND_TRUE>;
+		ac-action = <IFX_AUTANALOG_AC_ACTION_BRANCH_IF_TRUE>;
+		branch-state = <6>;
+		/* Enable PTCOMP comparators for AAD detection */
+		ptcomp0-enable-comp0 = <1>;
+		ptcomp0-enable-comp1 = <1>;
+		ptcomp0-dyn-cfg-idx-comp0 = <0>;
+		ptcomp0-dyn-cfg-idx-comp1 = <1>;
+	};
+
+	/* State 3: AAD idle entry - wait BLOCK_READY */
+	ac_state3: ac-state-3 {
+		compatible = "infineon,autanalog-ac-state";
+		ac-condition = <IFX_AUTANALOG_AC_COND_BLOCK_READY>;
+		ac-action = <IFX_AUTANALOG_AC_ACTION_WAIT_FOR>;
+		/* Re-enable PTCOMP for AAD (unlock to reconfigure) */
+		ptcomp0-unlock = <1>;
+		ptcomp0-enable-comp0 = <1>;
+		ptcomp0-enable-comp1 = <1>;
+		ptcomp0-dyn-cfg-idx-comp0 = <0>;
+		ptcomp0-dyn-cfg-idx-comp1 = <1>;
+	};
+
+	/* State 4: AAD - wait for acoustic activity (PTCOMP range 0) */
+	ac_state4: ac-state-4 {
+		compatible = "infineon,autanalog-ac-state";
+		ac-condition = <IFX_AUTANALOG_AC_COND_PTCOMP_RANGE0>;
+		ac-action = <IFX_AUTANALOG_AC_ACTION_WAIT_FOR>;
+	};
+
+	/* State 5: No-op, fall through to state 6 */
+	ac_state5: ac-state-5 {
+		compatible = "infineon,autanalog-ac-state";
+		ac-condition = <IFX_AUTANALOG_AC_COND_FALSE>;
+		ac-action = <IFX_AUTANALOG_AC_ACTION_NEXT>;
+		/* Disable PTCOMP during active sampling */
+		ptcomp0-unlock = <0>;
+	};
+
+	/* State 6: Wait for timer tick (periodic sampling interval) */
+	ac_state6: ac-state-6 {
+		compatible = "infineon,autanalog-ac-state";
+		ac-condition = <IFX_AUTANALOG_AC_COND_TIMER_DONE_WAKE>;
+		ac-action = <IFX_AUTANALOG_AC_ACTION_WAIT_FOR>;
+	};
+
+	/* State 7: Enable SAR, wait BLOCK_READY */
+	ac_state7: ac-state-7 {
+		compatible = "infineon,autanalog-ac-state";
+		ac-condition = <IFX_AUTANALOG_AC_COND_BLOCK_READY>;
+		ac-action = <IFX_AUTANALOG_AC_ACTION_WAIT_FOR>;
+		sar-unlock = <1>;
+		sar-enable = <1>;
+	};
+
+	/* State 8: Trigger SAR conversion, wait SAR_DONE */
+	ac_state8: ac-state-8 {
+		compatible = "infineon,autanalog-ac-state";
+		ac-condition = <IFX_AUTANALOG_AC_COND_SAR_DONE>;
+		ac-action = <IFX_AUTANALOG_AC_ACTION_WAIT_FOR>;
+		sar-unlock = <1>;
+		sar-enable = <1>;
+		sar-trigger = <1>;
+	};
+
+	/* State 9: Check FW trigger 1 (stop). If NOT set -> loop to 6.
+	 * If set -> fall through to state 10 (return to AAD).
+	 */
+	ac_state9: ac-state-9 {
+		compatible = "infineon,autanalog-ac-state";
+		ac-condition = <IFX_AUTANALOG_AC_COND_TR_IN1>;
+		ac-action = <IFX_AUTANALOG_AC_ACTION_BRANCH_IF_FALSE>;
+		branch-state = <6>;
+		sar-unlock = <1>;
+	};
+
+	/* State 10: Unconditional branch to state 3 (AAD idle) */
+	ac_state10: ac-state-10 {
+		compatible = "infineon,autanalog-ac-state";
+		ac-condition = <IFX_AUTANALOG_AC_COND_TRUE>;
+		ac-action = <IFX_AUTANALOG_AC_ACTION_BRANCH_IF_TRUE>;
+		branch-state = <3>;
+	};
+};
+
+&autanalog {
+	ac-timer-enable;
+	ac-timer-clk-src = <IFX_AUTANALOG_TIMER_CLK_LP>; /* LPOSC 4.096 MHz */
+	ac-timer-period = <255>;
+
+	ac-states = <&ac_state0 &ac_state1 &ac_state2 &ac_state3 &ac_state4
+		     &ac_state5 &ac_state6 &ac_state7 &ac_state8 &ac_state9
+		     &ac_state10>;
+};
+
+/*
+ * CTB0 OA0: Microphone preamplifier (open-loop opamp)
+ *
+ * Reference: mic_preamps_and_filters_sta_cfg / mic_preamps_and_filters_dyn_cfg
+ *   - Ultra-low power, open-loop topology
+ *   - Non-inverting input: P14.0 (OA0_P0)
+ *   - Inverting input:     P14.1 (OA0_P1)
+ *   - Output routed to pin P14.2 and internally to SAR MUX / PTCOMP
+ */
+&ctb0 {
+	ctb0_opamp0: opamp@0 {
+		compatible = "infineon,autanalog-ctb-opamp";
+		reg = <0>;
+		power-mode = <IFX_AUTANALOG_CTB_OA_PWR_ULTRA_LOW>;
+		topology = <IFX_AUTANALOG_CTB_OA_TOPO_OPEN_LOOP_OPAMP>;
+		ninv-inp-pin = <IFX_AUTANALOG_CTB_OA_NINV_PIN_OA0_P0_OA1_P5>;
+		inv-inp-pin = <IFX_AUTANALOG_CTB_OA_INV_PIN_OA0_P1_OA1_P4>;
+		out-to-pin;
+		functional-mode = "standalone";
+	};
+};
+
+/*
+ * PRB: Programmable reference voltages for AAD thresholds
+ *
+ * Reference: aad_threshold_voltages_0 / aad_threshold_voltages_1
+ *   - VREF0: 0.5625 × VDDA (upper threshold)
+ *   - VREF1: 0.4375 × VDDA (lower threshold)
+ *   For VDDA = 1.8 V: VREF0 ≈ 1.013 V, VREF1 ≈ 0.788 V
+ */
+&prb0 {
+	status = "okay";
+
+	vref0: vref@0 {
+		compatible = "infineon,autanalog-prb-vref";
+		reg = <0>;
+		source = <IFX_AUTANALOG_PRB_SRC_VDDA>;
+		tap = <IFX_AUTANALOG_PRB_TAP_8>;  /* 0.5625 × Vsrc */
+	};
+
+	vref1: vref@1 {
+		compatible = "infineon,autanalog-prb-vref";
+		reg = <1>;
+		source = <IFX_AUTANALOG_PRB_SRC_VDDA>;
+		tap = <IFX_AUTANALOG_PRB_TAP_6>;  /* 0.4375 × Vsrc */
+	};
+};
+
+/*
+ * PTCOMP: Acoustic Activity Detection (AAD) comparators
+ *
+ * Reference: aad_comparators_sta_cfg / aad_comparators_dyn_cfg / aad_comparators_pp_cfg
+ *   - Comp0: mic output (CTB0 OA0) vs upper threshold (PRB OUT0)
+ *   - Comp1: lower threshold (PRB OUT1) vs mic output (CTB0 OA0)
+ *   - Both use ULP power with hysteresis, rising-edge interrupts
+ *   - Post-processing: frame-based level counting (period=3, window=2)
+ *     triggers when count exceeds 2 in the frame -> acoustic activity
+ */
+&ptcomp0 {
+	status = "okay";
+
+	comp0: comp@0 {
+		compatible = "infineon,autanalog-ptcomp-comp";
+		reg = <0>;
+		power-mode = <IFX_AUTANALOG_PTCOMP_PWR_ULP>;
+		hysteresis;
+		interrupt-mode = <IFX_AUTANALOG_PTCOMP_INT_EDGE_RISING>;
+		positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_CTB0_OA0_OUT>;
+		negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+		pp-input-source = <IFX_AUTANALOG_PTCOMP_PP_SRC_COMP0>;
+		pp-input-type = <IFX_AUTANALOG_PTCOMP_PP_TYPE_LEVEL>;
+		pp-count-mode = <IFX_AUTANALOG_PTCOMP_PP_MODE_FRAME>;
+		pp-data-function = <IFX_AUTANALOG_PTCOMP_PP_FUNC_A_OR_B>;
+		pp-window-size = <IFX_AUTANALOG_PTCOMP_PP_WIN_2>;
+		pp-period = <3>;
+		pp-limit-condition = <IFX_AUTANALOG_PTCOMP_PP_COND_ABOVE>;
+		pp-threshold-low = <0>;
+		pp-threshold-high = <2>;
+	};
+
+	comp1: comp@1 {
+		compatible = "infineon,autanalog-ptcomp-comp";
+		reg = <1>;
+		power-mode = <IFX_AUTANALOG_PTCOMP_PWR_ULP>;
+		hysteresis;
+		interrupt-mode = <IFX_AUTANALOG_PTCOMP_INT_EDGE_RISING>;
+		positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT1>;
+		negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_CTB0_OA0_OUT>;
+		pp-input-source = <IFX_AUTANALOG_PTCOMP_PP_SRC_COMP1>;
+		pp-input-type = <IFX_AUTANALOG_PTCOMP_PP_TYPE_LEVEL>;
+		pp-count-mode = <IFX_AUTANALOG_PTCOMP_PP_MODE_FRAME>;
+		pp-data-function = <IFX_AUTANALOG_PTCOMP_PP_FUNC_A_OR_B>;
+		pp-window-size = <IFX_AUTANALOG_PTCOMP_PP_WIN_2>;
+		pp-period = <3>;
+		pp-limit-condition = <IFX_AUTANALOG_PTCOMP_PP_COND_ABOVE>;
+		pp-threshold-low = <0>;
+		pp-threshold-high = <2>;
+	};
+};
+
+/*
+ * SAR ADC: Low-power audio sampling
+ *
+ * Reference: adc_for_vad_sta_cfg / adc_for_vad_mux_ch_cfg / adc_for_vad_fifo_cfg
+ *   - LP mode (LPOSC 4.096 MHz), VDDA/2 reference
+ *   - MUX channel 0: positive = CTB0 OA0 output, negative = CTB0 PIN1
+ *   - Sign-extended differential result, buffer bypass
+ *   - FIFO: single 512-word buffer, watermark at 159 words (~10 ms of audio)
+ */
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	lp-mode;
+	vref-source = <IFX_AUTANALOG_SAR_VREF_VDDA_BY_2>;
+	pos-buf-pwr = <IFX_AUTANALOG_SAR_BUF_PWR_OFF>;
+	neg-buf-pwr = <IFX_AUTANALOG_SAR_BUF_PWR_OFF>;
+
+	/* MUX channel 0: mic preamp output (differential, sign-extended) */
+	channel@8 {
+		reg = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IFX_AUTANALOG_SAR_PIN_MUX_CTB0_OA0_OUT>;
+		/* Negative MUX pin defaults to CTB0_PIN1 (0) - no need for
+		 * zephyr,input-negative (which would incorrectly set differential).
+		 */
+		sign;
+		mux-buf-bypass;
+		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_0>;
+	};
+
+	/* FIFO: single 512-word buffer, watermark at 159 words */
+	fifo {
+		compatible = "infineon,autanalog-sar-fifo";
+		fifo-levels = <159>;
+	};
+};
