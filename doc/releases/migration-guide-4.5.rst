@@ -124,6 +124,14 @@ Bluetooth Audio
   requirements of BAP before doing any discovery. In most cases this requires a call to
   :c:func:`bt_conn_set_security` for new devices. Bonded devices that reconnect should not require
   anything.
+* :c:member:`bt_tbs_client_cb.technology` has changed the ``value`` parameter from ``uint32_t``
+  to ``enum bt_bearer_tech``. Applications using this application should switch the type.
+  (:github:`102430`)
+* All ``BT_TBS_TECHNOLOGY_*`` values like ``BT_TBS_TECHNOLOGY_3G`` are renamed to
+  ``BT_BEARER_TECH_*`` like ``BT_BEARER_TECH_3G``. Applications can do search-and-replace from
+  ``BT_TBS_TECHNOLOGY`` to ``BT_BEARER_TECH``. Additionally the values are now defined in
+  :zephyr_file:`include/zephyr/bluetooth/assigned_numbers.h` instead of
+  :zephyr_file:`include/zephyr/bluetooth/audio/tbs.h`. (:github:`102430`)
 
 Bluetooth HCI
 =============
