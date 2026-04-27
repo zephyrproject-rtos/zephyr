@@ -51,6 +51,14 @@
 			label = "green led";
 		};
 	};
+
+	vbus1: vbus {
+		compatible = "zephyr,usb-c-vbus-adc";
+		io-channels = <&adc1 18>;
+		output-ohms = <49900>;
+		full-ohms = <(330000 + 49900)>;
+		status = "disabled";
+	};
 };
 
 &clk_hse {
@@ -170,11 +178,25 @@
 	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 	clock-names = "adcx", "adc_ker";
-	pinctrl-0 = <&adc1_inp3_pa6 &adc1_inp15_pa3>; /* Zio A0, Zio D35 */
+	/* Zio A0, Zio D35, VBUS_SENSE */
+	pinctrl-0 = <&adc1_inp3_pa6 &adc1_inp15_pa3 &adc1_inp18_pa4>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <6>;
 	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@12 {
+		reg = <18>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		/* Noisy board requires a bit of oversampling to have reliable VBUS_SENSE */
+		zephyr,oversampling = <8>;
+	};
 };
 
 &fdcan1 {
@@ -212,6 +234,38 @@
 			reg = <0x001f0000 DT_SIZE_K(64)>;
 		};
 	};
+};
+
+&ucpd1 {
+	status = "okay";
+
+	/*
+	 * UCPD is fed ucpd_ker_ck (HSI / 4) which is @ 16MHz. The ucpd_ker_ck goes to
+	 * a prescaler who's output feeds the 'half-bit' divider which is used
+	 * to generate clock for delay counters and BMC Rx/Tx blocks. The rx is
+	 * designed to work in freq ranges of 6 <--> 18 MHz, however recommended
+	 * range is 6 <--> 12 MHz (STM's HAL sets prescaler to /2 by default and
+	 * hbit to /14)
+	 *
+	 *          +-------+ @ 8 MHz  +-------+   @ ~600 kHz   +-----------+
+	 * HSI ---->| /psc  |--------->| /hbit |--------------->| trans_cnt |
+	 *          +-------+          +-------+   |            +-----------+
+	 *                                         |            +-----------+
+	 *                                         +----------->| ifrgap_cnt|
+	 *                                                      +-----------+
+	 * Requirements:
+	 *   1. hbit_clk ~= 600 kHz: 8 MHz / 600 kHz = 13.33
+	 *   2. tTransitionWindow - 12 to 20 uSec
+	 *   3. tInterframGap - >= 25 uSec
+	 *
+	 * hbit_clk = HSI / 4 / psc / hbit = 571.4 kHz = 1.751 uSec period
+	 * tTransitionWindow = 1.751uS * 8 = 14 uS
+	 * tInterFrameGap = 1.751 uS * 17 = 29.76 uS
+	 */
+	psc-ucpdclk = <2>;
+	hbitclkdiv = <14>;
+	pinctrl-0 = <&ucpd1_cc1_pb13 &ucpd1_cc2_pb14>;
+	pinctrl-names = "default";
 };
 
 zephyr_udc0: &usb {
