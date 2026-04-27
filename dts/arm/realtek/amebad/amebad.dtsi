@@ -58,6 +58,13 @@
 			reg = <0x48000400 0x200>;
 		};
 
+		prng: prng@48002000 {
+			compatible = "realtek,ameba-trng";
+			reg = <0x48002000 0x100>;
+			clocks = <&rcc AMEBA_PRNG_CLK>;
+			status = "disabled";
+		};
+
 		loguart: serial@48012000 {
 			compatible = "realtek,ameba-loguart";
 			reg = <0x48012000 0x100>;

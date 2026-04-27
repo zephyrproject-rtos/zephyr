@@ -54,6 +54,13 @@
 			zephyr,memory-region = "KM4_IMG2_ENTRY";
 		};
 
+		trng: trng@41008200 {
+			compatible = "realtek,ameba-trng";
+			reg = <0x41008200 0x100>;
+			clocks = <&rcc AMEBA_TRNG_CLK>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@41008800 {
 			compatible = "realtek,ameba-pinctrl";
 			reg = <0x41008800 0x200>;
