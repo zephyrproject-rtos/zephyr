@@ -288,7 +288,7 @@ static int vcmp_it8xxx2_init(const struct device *dev)
 	 * so we need to set ADC channel to alternate mode first.
 	 */
 	if (!device_is_ready(config->adc)) {
-		LOG_ERR_DEVICE_NOT_READY(config->adc.dev);
+		LOG_ERR_DEVICE_NOT_READY(config->adc);
 		return -ENODEV;
 	}
 	adc_channel_setup(config->adc, &data->adc_ch_cfg);
