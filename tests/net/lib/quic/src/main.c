@@ -869,6 +869,9 @@ ZTEST(net_socket_quic, test_130_anti_amplification_budget)
 		     "Remaining budget should allow final bytes");
 	zassert_false(quic_endpoint_can_send_unvalidated(child_ep, 11),
 		      "Send beyond remaining budget must fail");
+	child_ep->anti_amplification.bytes_sent = 1;
+	zassert_false(quic_endpoint_can_send_unvalidated(child_ep, SIZE_MAX),
+		      "Huge send requests must not wrap anti-amplification accounting");
 #else
 	zassert_true(quic_endpoint_can_send_unvalidated(child_ep, SIZE_MAX),
 		     "Budget check should be disabled");
