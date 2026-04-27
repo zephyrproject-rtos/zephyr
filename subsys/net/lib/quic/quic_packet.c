@@ -49,6 +49,19 @@ static int quic_handle_crypto_frame_error(struct quic_endpoint *ep, int ret)
 	return quic_handle_frame_error(ep, QUIC_FRAME_TYPE_CRYPTO, ret);
 }
 
+static int quic_handle_stream_frame_error(struct quic_endpoint *ep, uint8_t frame_type,
+					  int ret)
+{
+	/* STREAM protocol violations already emit a specific CONNECTION_CLOSE
+	 * inside handle_stream_frame() or quic_stream_receive_data().
+	 */
+	if (ret == -EPROTO) {
+		return ret;
+	}
+
+	return quic_handle_frame_error(ep, frame_type, ret);
+}
+
 ZTESTABLE_STATIC int quic_validate_frame_type(uint8_t frame_type,
 					      enum quic_secret_level level)
 {
@@ -1670,12 +1683,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 		/* Check for STREAM frames (0x08 - 0x0f) */
 		if ((frame_type & 0xF8) == QUIC_FRAME_TYPE_STREAM_BASE) {
 			ret = handle_stream_frame(ep, &buf[pos], len - pos, &consumed);
-			if (ret == -EPROTO) {
-				goto close;
-			}
-
 			if (ret < 0) {
-				ret = quic_handle_frame_error(ep, frame_type, ret);
+				ret = quic_handle_stream_frame_error(ep, frame_type, ret);
 				NET_DBG("[EP:%p/%d] Failed to handle STREAM frame: %d",
 					ep, quic_get_by_ep(ep), ret);
 				if (ret == -EPROTO) {
@@ -2084,7 +2093,7 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 			ret = handle_stream_frame(ep, &payload[pos],
 						  payload_len - pos, &consumed);
 			if (ret < 0) {
-				ret = quic_handle_frame_error(ep, frame_type, ret);
+				ret = quic_handle_stream_frame_error(ep, frame_type, ret);
 				NET_DBG("[EP:%p/%d] Failed to handle %s frame: %d",
 					ep, quic_get_by_ep(ep), "STREAM", ret);
 				return ret;
