@@ -101,14 +101,12 @@ struct bt_bap_unicast_group {
 	uint32_t source_pd;
 };
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 struct bt_audio_broadcast_stream_data {
 	/** Codec Specific Data len */
 	size_t data_len;
 	/** Codec Specific Data */
 	uint8_t data[CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE];
 };
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 struct bt_bap_broadcast_source {
 	uint8_t stream_count;
@@ -123,10 +121,8 @@ struct bt_bap_broadcast_source {
 	uint16_t iso_interval;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	/* The codec specific configured data for each stream in the subgroup */
 	struct bt_audio_broadcast_stream_data stream_data[BROADCAST_STREAM_CNT];
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
 	/* The subgroups containing the streams used to create the broadcast source */

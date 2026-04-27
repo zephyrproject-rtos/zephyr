@@ -289,12 +289,9 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source, bool 
 	for (size_t i = 0; i < stream_cnt; i++) {
 		stream_params[i].stream =
 			bap_stream_from_audio_test_stream(&broadcast_source_streams[i]);
-		bt_bap_stream_cb_register(stream_params[i].stream,
-					    &stream_ops);
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
+		bt_bap_stream_cb_register(stream_params[i].stream, &stream_ops);
 		stream_params[i].data_len = ARRAY_SIZE(bis_codec_data);
 		stream_params[i].data = bis_codec_data;
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 	}
 
 	for (size_t i = 0U; i < subgroup_cnt_arg; i++) {

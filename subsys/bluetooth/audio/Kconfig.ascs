@@ -9,6 +9,7 @@
 config BT_ASCS
 	bool "Audio Stream Control Service Support"
 	depends on BT_SMP
+	depends on BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE >= 19 # Minimum requirement for LC3 per BAP
 	help
 	  This option enables support for Audio Stream Control Service.
 
