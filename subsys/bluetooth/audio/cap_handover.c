@@ -435,6 +435,7 @@ static bool valid_unicast_to_broadcast_stream_metadata_param(
 	 */
 
 	if (unicast_ret < 0 && unicast_ret != -ENODATA) {
+		LOG_DBG("Could not get unicast CCID list: %d", unicast_ret);
 		return false;
 	}
 
@@ -442,22 +443,26 @@ static bool valid_unicast_to_broadcast_stream_metadata_param(
 							      &broadcast_ccid_list);
 
 	if (unicast_ret != broadcast_ret) {
+		LOG_DBG("Could not get broadcast CCID list: %d != %d", unicast_ret, broadcast_ret);
 		return false;
 	}
 
 	/* we only need to compare if the list exists and is non-empty */
 	if (unicast_ret > 0 && !util_memeq(unicast_ccid_list, broadcast_ccid_list, unicast_ret)) {
+		LOG_DBG("Unicast and broadcast CCID lists are not the same");
 		return false;
 	}
 
 	/* Verify streaming contexts (mandatory to be in the metadata )*/
 	unicast_ret = bt_audio_codec_cfg_meta_get_stream_context(stream->bap_stream.codec_cfg);
 	if (unicast_ret <= 0) { /* mandatory to have a streaming context */
+		LOG_DBG("Could not get unicast stream context: %d", unicast_ret);
 		return false;
 	}
 
 	broadcast_ret = bt_audio_codec_cfg_meta_get_stream_context(subgroup_param->codec_cfg);
 	if (unicast_ret != broadcast_ret) {
+		LOG_DBG("Could not get broadcast stream context: %d", unicast_ret);
 		return false;
 	}
 
