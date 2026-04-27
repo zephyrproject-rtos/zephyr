@@ -27,6 +27,7 @@ config MDIO_SHELL
 # zephyr-keep-sorted-start
 rsource "Kconfig.adin2111"
 rsource "Kconfig.dwcxgmac"
+rsource "Kconfig.dwmac"
 rsource "Kconfig.esp32"
 rsource "Kconfig.gpio"
 rsource "Kconfig.intel_igc"
