@@ -405,12 +405,12 @@ a window smaller than the buffer under-utilises available memory.
      - Initial receive window for unidirectional streams opened by the peer.
        Only relevant when :kconfig:option:`CONFIG_QUIC_MAX_STREAMS_UNI` > 0.
    * - :kconfig:option:`CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI`
-     - =QUIC_MAX_STREAMS_BIDI
+     - QUIC_MAX_STREAMS_BIDI
      - Maximum number of bidirectional streams the peer may open before
        receiving a ``MAX_STREAMS`` frame.  Defaults to the local build-time
        limit.
    * - :kconfig:option:`CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI`
-     - =QUIC_MAX_STREAMS_UNI
+     - QUIC_MAX_STREAMS_UNI
      - Maximum number of unidirectional streams the peer may open.
    * - :kconfig:option:`CONFIG_QUIC_STREAM_RX_WINDOW_UPDATE_THRESHOLD`
      - 25
@@ -468,7 +468,7 @@ breakdown of how these interact.
        Size to at least the bandwidth-delay product:
        ``throughput_bytes_per_ms × rtt_ms``.
    * - :kconfig:option:`CONFIG_QUIC_STREAM_RX_BUFFER_SIZE`
-     - =QUIC_STREAM_TX_BUFFER_SIZE
+     - QUIC_STREAM_TX_BUFFER_SIZE
      - Per-stream receive buffer.  Defaults to the TX buffer size, which
        is optimal for symmetric request/response patterns.  Can be
        reduced independently for asymmetric workloads (e.g. download-only
@@ -553,7 +553,7 @@ Service Thread Options
        only if RAM is extremely constrained and profiling confirms the stack
        headroom is not needed.
    * - :kconfig:option:`CONFIG_QUIC_PKT_COUNT`
-     - =QUIC_MAX_ENDPOINTS
+     - QUIC_MAX_ENDPOINTS
      - Number of simultaneous pending packet receive operations.  Defaults
        to the number of endpoints so that one packet per endpoint can be
        in flight concurrently.  Increase (e.g. 2× endpoints) for
