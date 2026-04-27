@@ -211,6 +211,14 @@ __subsystem struct ethphy_driver_api {
 
 	/* Get PLCA status */
 	int (*get_plca_sts)(const struct device *dev, bool *plca_sts);
+
+#if defined(CONFIG_ETH_PHY_TEST_MODES)
+	/* Set PHY test mode */
+	int (*set_test_mode)(const struct device *dev, uint8_t mode);
+
+	/* Get PHY test mode */
+	int (*get_test_mode)(const struct device *dev, uint8_t *mode);
+#endif /* CONFIG_ETH_PHY_TEST_MODES */
 };
 /**
  * @endcond
@@ -442,6 +450,53 @@ static inline int phy_get_plca_sts(const struct device *dev, bool *plca_status)
 
 	return DEVICE_API_GET(ethphy, dev)->get_plca_sts(dev, plca_status);
 }
+
+#if defined(CONFIG_ETH_PHY_TEST_MODES)
+/**
+ * @brief      Set PHY test mode
+ *
+ * This routine sets the IEEE 802.3 PHY test mode.
+ * For 10BASE-T1S, 4 test modes are defined in IEEE 802.3-2022 Clause 147.5.2.
+ *
+ * @param[in]  dev   PHY device structure
+ * @param[in]  mode  Test mode (0 = normal)
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ * @retval -EINVAL If the test mode value is invalid.
+ * @retval -ENOSYS If not supported by the PHY driver.
+ */
+static inline int phy_set_test_mode(const struct device *dev, uint8_t mode)
+{
+	if (DEVICE_API_GET(ethphy, dev)->set_test_mode == NULL) {
+		return -ENOSYS;
+	}
+
+	return DEVICE_API_GET(ethphy, dev)->set_test_mode(dev, mode);
+}
+
+/**
+ * @brief      Get PHY test mode
+ *
+ * This routine reads the current IEEE 802.3 PHY test mode.
+ * For 10BASE-T1S, 4 test modes are defined in IEEE 802.3-2022 Clause 147.5.2.
+ *
+ * @param[in]  dev   PHY device structure
+ * @param[out] mode  Pointer to receive the current test mode
+ *
+ * @retval 0 If successful.
+ * @retval -EIO If communication with PHY failed.
+ * @retval -ENOSYS If not supported by the PHY driver.
+ */
+static inline int phy_get_test_mode(const struct device *dev, uint8_t *mode)
+{
+	if (DEVICE_API_GET(ethphy, dev)->get_test_mode == NULL) {
+		return -ENOSYS;
+	}
+
+	return DEVICE_API_GET(ethphy, dev)->get_test_mode(dev, mode);
+}
+#endif /* CONFIG_ETH_PHY_TEST_MODES */
 
 #ifdef __cplusplus
 }

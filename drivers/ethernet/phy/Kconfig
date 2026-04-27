@@ -20,6 +20,13 @@ source "drivers/ethernet/phy/Kconfig.dm8806"
 source "drivers/ethernet/phy/Kconfig.microchip_t1s"
 source "drivers/ethernet/phy/Kconfig.nxp_t1s"
 
+config ETH_PHY_TEST_MODES
+	bool "PHY test mode support"
+	help
+	  Enable support for IEEE 802.3 PHY test modes.
+	  PHY test modes are used for hardware compliance
+	  testing and should only be enabled when needed.
+
 config PHY_INIT_PRIORITY
 	int "Ethernet PHY driver init priority"
 	default ETH_INIT_PRIORITY
